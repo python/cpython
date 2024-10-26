@@ -4978,12 +4978,17 @@ PyUnicode_DecodeUTF8(const char *s,
 #include "stringlib/codecs.h"
 #include "stringlib/undef.h"
 
+#if (SIZEOF_SIZE_T == 8)
 /* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_SIZE_T == 8)
 # define ASCII_CHAR_MASK 0x8080808080808080ULL
+// used to count codepoints in UTF-8 string.
+# define VECTOR_0101     0x0101010101010101ULL
+# define VECTOR_00FF     0x00ff00ff00ff00ffULL
 #elif (SIZEOF_SIZE_T == 4)
 # define ASCII_CHAR_MASK 0x80808080U
+# define VECTOR_0101     0x01010101U
+# define VECTOR_00FF     0x00ff00ffU
 #else
 # error C 'size_t' size should be either 4 or 8!
 #endif
@@ -5056,11 +5061,13 @@ find_first_nonascii(const char *start, const char *end)
             while (p <= e) {
                 size_t value = (*(const size_t *)p) & ASCII_CHAR_MASK;
                 if (value) {
-                    // Optimization only for major platforms we have CI.
 #if PY_LITTLE_ENDIAN && (defined(__clang__) || defined(__GNUC__))
-#if SIZEOF_SIZE_T == SIZEOF_LONG
+#if SIZEOF_SIZE_T == 4
+                    // __builtin_ctzl(0x8000) == 15.
+                    // (15-7) / 8 == 1.
+                    // p+1 is first non-ASCII char.
                     return p - start + (__builtin_ctzl(value)-7) / 8;
-#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#else
                     return p - start + (__builtin_ctzll(value)-7) / 8;
 #endif
 #elif PY_LITTLE_ENDIAN && defined(_MSC_VER)
@@ -5071,8 +5078,11 @@ find_first_nonascii(const char *start, const char *end)
                     _BitScanForward64(&bitpos, value);
 #endif
                     return p - start + (bitpos-7) / 8;
-#endif
+#else
+                    // big endian and minor compilers are difficult to test.
+                    // fallback to per byte check.
                     break;
+#endif
                 }
                 p += SIZEOF_SIZE_T;
             }
@@ -5086,6 +5096,52 @@ find_first_nonascii(const char *start, const char *end)
     return p - start;
 }
 
+static inline int scalar_utf8_start_char(unsigned int ch)
+{
+    // 0xxxxxxx or 11xxxxxx are first byte.
+    return (~ch >> 7 | ch >> 6) & 1;
+}
+
+static inline size_t vector_utf8_start_chars(size_t v)
+{
+    return ((~v>>7) | (v>>6)) & VECTOR_0101;
+}
+
+static Py_ssize_t utf8_count_codepoints(const unsigned char *s, Py_ssize_t size)
+{
+    Py_ssize_t len = 0;
+    const unsigned char *end = s+size;
+
+    if (end - s > SIZEOF_SIZE_T*2) {
+        while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
+            len += scalar_utf8_start_char(*s++);
+        }
+
+        while (s + SIZEOF_SIZE_T <= end) {
+            const unsigned char *e = end;
+            if (e - s > SIZEOF_SIZE_T * 255) {
+                e = s + SIZEOF_SIZE_T * 255;
+            }
+            Py_ssize_t vstart = 0;
+            while (s + SIZEOF_SIZE_T <= e) {
+                size_t v = *(size_t*)s;
+                size_t vs = vector_utf8_start_chars(v);
+                vstart += vs;
+                s += SIZEOF_SIZE_T;
+            }
+            vstart = (vstart & VECTOR_00FF) + ((vstart >> 8) & VECTOR_00FF);
+            vstart += vstart >> 16;
+#if SIZEOF_SIZE_T == 8
+            vstart += vstart >> 32;
+#endif
+            len += vstart & 0x7ff;
+        }
+    }
+    while (s < end) {
+        len += scalar_utf8_start_char(*s++);
+    }
+    return len;
+}
 
 static int
 unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
@@ -5234,8 +5290,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     const char *end = s + size;
 
     Py_ssize_t pos = find_first_nonascii(starts, end);
-    if (pos == size) {
-        // fast path: ASCII
+    if (pos == size) {  // fast path: ASCII string.
         PyObject *u = PyUnicode_New(size, 127);
         if (u == NULL) {
             return NULL;
@@ -5248,8 +5303,11 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     }
 
     int maxchr = 127;
+    Py_ssize_t maxsize = size;
+
     unsigned char ch = (unsigned char)s[pos];
     if (error_handler == _Py_ERROR_STRICT && ch >= 0xc2) {
+        maxsize = utf8_count_codepoints((const unsigned char *)s, size);
         if (ch < 0xc4) { // latin1
             maxchr = 255;
         }
@@ -5260,7 +5318,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             maxchr = 0x10ffff;
         }
     }
-    PyObject *u = PyUnicode_New(size, maxchr);
+    PyObject *u = PyUnicode_New(maxsize, maxchr);
     if (!u) {
         return NULL;
     }
