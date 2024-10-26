@@ -1003,8 +1003,8 @@ class BaseFutureDoneCallbackTests():
         # see: https://github.com/python/cpython/issues/125984
 
         class EvilEventLoop(SimpleEvilEventLoop):
-            def call_soon(self, callback, *args, context=None):
-                super().call_soon(callback, *args, context=context)
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
                 raise ReachableCode
 
             def __getattribute__(self, name):
@@ -1027,8 +1027,8 @@ class BaseFutureDoneCallbackTests():
         # see: https://github.com/python/cpython/issues/125984
 
         class EvilEventLoop(SimpleEvilEventLoop):
-            def call_soon(self, callback, *args, context=None):
-                super().call_soon(callback, *args, context=context)
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
                 raise ReachableCode
 
             def __getattribute__(self, name):
