@@ -118,7 +118,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -127,7 +127,7 @@ def find_function(funcname, filename):
             return None
         fp = io.StringIO(''.join(lines))
     funcdef = ""
-    funcstart = None
+    funcstart = 0
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
@@ -138,9 +138,12 @@ def find_function(funcname, filename):
 
             if funcdef:
                 try:
-                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                    code = compile(funcdef, filename, 'exec')
                 except SyntaxError:
                     continue
+                # We should always be able to find the code object here
+                funccode = next(c for c in code.co_consts if
+                                isinstance(c, CodeType) and c.co_name == funcname)
                 lineno_offset = find_first_executable_line(funccode)
                 return funcname, filename, funcstart + lineno_offset - 1
     return None
@@ -402,6 +405,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe = self.stack[self.curindex][0]
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
+        self._save_initial_file_mtime(self.curframe)
+
         if self._chained_exceptions:
             self.set_convenience_variable(
                 self.curframe,
@@ -494,9 +499,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _save_initial_file_mtime(self, frame):
+        """save the mtime of the all the files in the frame stack in the file mtime table
+        if they haven't been saved yet."""
+        while frame:
+            filename = frame.f_code.co_filename
+            if filename not in self._file_mtime_table:
+                try:
+                    self._file_mtime_table[filename] = os.path.getmtime(filename)
+                except Exception:
+                    pass
+            frame = frame.f_back
+
     def _validate_file_mtime(self):
-        """Check if the source file of the current frame has been modified since
-        the last time we saw it. If so, give a warning."""
+        """Check if the source file of the current frame has been modified.
+        If so, give a warning and reset the modify time to current."""
         try:
             filename = self.curframe.f_code.co_filename
             mtime = os.path.getmtime(filename)
@@ -506,7 +523,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             mtime != self._file_mtime_table[filename]):
             self.message(f"*** WARNING: file '{filename}' was edited, "
                          "running stale code until the program is rerun")
-        self._file_mtime_table[filename] = mtime
+            self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -741,6 +758,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
+                    self.lastcmd = buffer
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -765,7 +783,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if "$" not in line:
             return line
 
-        dollar_start = dollar_end = -1
+        dollar_start = dollar_end = (-1, -1)
         replace_variables = []
         try:
             for t in tokenize.generate_tokens(io.StringIO(line).readline):
@@ -836,7 +854,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._validate_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
@@ -980,6 +997,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _pdbcmd_print_frame_status(self, arg):
         self.print_stack_trace(0)
+        self._validate_file_mtime()
         self._show_display()
 
     def _pdbcmd_silence_frame_status(self, arg):
@@ -1070,7 +1088,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
-    def do_break(self, arg, temporary = 0):
+    def do_break(self, arg, temporary=False):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
 
         Without argument, list all breaks.
@@ -1185,7 +1203,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
-        self.do_break(arg, 1)
+        self.do_break(arg, True)
 
     complete_tbreak = _complete_location
 
@@ -1861,6 +1879,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+        self._validate_file_mtime()
     do_l = do_list
 
     def do_longlist(self, arg):
@@ -1879,6 +1898,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._validate_file_mtime()
     do_ll = do_longlist
 
     def do_source(self, arg):

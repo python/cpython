@@ -744,7 +744,7 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
                 next(tkn_iter)  # '('
                 t = next(tkn_iter)
-                if t.text == "true":
+                if t.text in ("true", "1"):
                     return True
     return False
 
