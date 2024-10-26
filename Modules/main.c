@@ -101,6 +101,7 @@ pymain_err_print(int *exitcode_p)
     int exitcode;
     if (_Py_HandleSystemExit(&exitcode)) {
         *exitcode_p = exitcode;
+        Py_Exit(exitcode);
         return 1;
     }
 
@@ -572,7 +573,7 @@ pymain_run_stdin(PyConfig *config)
         return (run != 0);
     }
     int run = pymain_run_module(L"_pyrepl", 0);
-    return run;
+    return (run != 0);
 }
 
 
