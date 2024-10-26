@@ -965,7 +965,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # the fold point.
 
         m = EmailMessage(policy.default)
-        m['Message-ID'] = '123456789'*3
+        m['Message-ID'] = '123456789' * 3
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
