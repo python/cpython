@@ -244,6 +244,9 @@ extern PyThreadState * _PyThreadState_Swap(
 
 extern PyStatus _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 
+extern PyThreadState *
+_PyThreadState_SwapAttached(PyThreadState *tstate);
+
 #ifdef HAVE_FORK
 extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);

@@ -2406,6 +2406,19 @@ PyThreadState_Swap(PyThreadState *newts)
     return _PyThreadState_Swap(&_PyRuntime, newts);
 }
 
+/*
+ * Calls PyThreadState_Swap() on the a bound thread state.
+ * This breaks the GIL, so it should only be used if certain that
+ * it's impossible for the thread to be running code.
+ */
+PyThreadState *
+_PyThreadState_SwapAttached(PyThreadState *tstate)
+{
+    tstate->_status.bound_gilstate = 0;
+    tstate->_status.holds_gil = 0;
+    tstate->_status.active = 0;
+    return PyThreadState_Swap(tstate);
+}
 
 void
 _PyThreadState_Bind(PyThreadState *tstate)
