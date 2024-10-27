@@ -308,6 +308,7 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_assert_unicode(self):
+        # See gh-126018
         returncode, _, stderr = self.run_python("test_assert_unicode")
         if returncode:
             self.fail(stderr)
