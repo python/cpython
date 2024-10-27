@@ -409,12 +409,19 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state,
-            fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+        // Beware: An evil call_soon could alter fut_callback0 or fut_context0.
+        // Since we are anyway clearing them after the call, whether call_soon
+        // succeeds or not, the idea is to transfer ownership so that external
+        // code is not able to alter them during the call.
+        PyObject *fut_callback0 = fut->fut_callback0;
+        fut->fut_callback0 = NULL;
+        PyObject *fut_context0 = fut->fut_context0;
+        fut->fut_context0 = NULL;
 
-        Py_CLEAR(fut->fut_callback0);
-        Py_CLEAR(fut->fut_context0);
+        int ret = call_soon(state, fut->fut_loop, fut_callback0,
+                            (PyObject *)fut, fut_context0);
+        Py_CLEAR(fut_callback0);
+        Py_CLEAR(fut_context0);
         if (ret) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
