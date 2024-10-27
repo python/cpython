@@ -1181,6 +1181,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls296, 296, 298)
         self.assertSourceEqual(mod2.cls310, 310, 312)
 
+    def test_class_defined_in_pyrepl(self):
+        class A: pass
+        A.__module__ = "__main__"
+        self.assertRaises(OSError, inspect.getsource, A)
+
 class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
