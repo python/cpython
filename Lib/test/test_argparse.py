@@ -20,6 +20,8 @@ import warnings
 
 from enum import StrEnum
 from pathlib import Path
+from test.support import REPO_ROOT
+from test.support import TEST_HOME_DIR
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
@@ -7022,9 +7024,8 @@ class TestProgName(TestCase):
 # Translation tests
 # =================
 
-i18n_tools = Path(__file__).parents[2] / 'Tools' / 'i18n'
-pygettext = i18n_tools / 'pygettext.py'
-snapshot_path = Path(__file__).parent / 'translationdata' / 'argparse' / 'msgids.txt'
+pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
+snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
 
 msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
 msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
