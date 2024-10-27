@@ -108,11 +108,6 @@ class PathGlobber(_GlobberBase):
         """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
 
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir()."""
-        return entry
-
 
 class PurePathBase:
     """Base class for pure path objects.

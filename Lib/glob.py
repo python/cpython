@@ -248,12 +248,6 @@ class _GlobberBase:
         """
         raise NotImplementedError
 
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
-        """
-        raise NotImplementedError
-
     # High-level methods
 
     def compile(self, pat):
@@ -328,10 +322,10 @@ class _GlobberBase:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     with self.scandir(fd) as scandir_it:
                         entries = list(scandir_it)
-                    prefix = self.add_slash(path)
             except OSError:
                 pass
             else:
+                prefix = self.add_slash(path)
                 for entry in entries:
                     if match is None or match(entry.name):
                         if dir_only:
@@ -340,9 +334,7 @@ class _GlobberBase:
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.parse_entry(entry)
-                        if fd is not None:
-                            entry_path = self.concat_path(prefix, entry_path)
+                        entry_path = self.concat_path(prefix, entry.name)
                         if dir_only:
                             yield from select_next(
                                 entry_path, fd, entry.name, exists=True)
@@ -412,10 +404,10 @@ class _GlobberBase:
                     stack.append((None, fd, None))
                     with self.scandir(fd) as scandir_it:
                         entries = list(scandir_it)
-                    prefix = self.add_slash(path)
             except OSError:
                 pass
             else:
+                prefix = self.add_slash(path)
                 for entry in entries:
                     is_dir = False
                     try:
@@ -425,9 +417,7 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.parse_entry(entry)
-                        if fd is not None:
-                            entry_path = self.concat_path(prefix, entry_path)
+                        entry_path = self.concat_path(prefix, entry.name)
                         if match is None or match(str(entry_path), match_pos):
                             if dir_only:
                                 yield from select_next(
@@ -467,7 +457,6 @@ class _StringGlobber(_GlobberBase):
     open = staticmethod(os.open)
     scandir = staticmethod(os.scandir)
     close = staticmethod(os.close)
-    parse_entry = operator.attrgetter('path')
     concat_path = operator.add
 
     if os.name == 'nt':
