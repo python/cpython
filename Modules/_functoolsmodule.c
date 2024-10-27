@@ -933,11 +933,12 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 /* reduce (used to be a builtin) ********************************************/
 
 /*[clinic input]
+@text_signature "($module, function, iterable[, initial], /)"
 _functools.reduce
 
     function as func: object
     iterable as seq: object
-    initial as result: object(c_default="NULL") = _functools._initial_missing
+    initial as result: object = NULL
     /
 
 Apply a function of two arguments cumulatively to an iterable, from left to right.
@@ -953,7 +954,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=0315d8e82beb5e6d]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=d85ca22bf7ee578b]*/
 {
     PyObject *args, *it;
 
@@ -1794,12 +1795,6 @@ _functools_exec(PyObject *module)
     }
     // lru_list_elem is used only in _lru_cache_wrapper.
     // So we don't expose it in module namespace.
-
-    if (PyModule_Add(module, "_initial_missing",
-                     PyObject_New(PyObject, &PyBaseObject_Type)) < 0)
-    {
-        return -1;
-    }
 
     return 0;
 }
