@@ -1318,6 +1318,12 @@ class TestMain(ReplTestCase):
         self.assertEqual(exit_code, 0)
         self.assertNotIn("TypeError", output)
 
+    def test_inspect_getsource(self):
+        code = "import inspect\nclass A: pass\nprint(inspect.getsource(A))"
+        output, exit_code = self.run_repl(code)
+        self.assertNotEqual(exit_code, 0)
+        self.assertIn("OSError('source code not available')", output)
+
     def test_readline_history_file(self):
         # skip, if readline module is not available
         readline = import_module('readline')
