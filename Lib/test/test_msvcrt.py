@@ -4,7 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
-from test.support import os_helper, requires_resource
+from test.support import os_helper, requires_resource, Py_DEBUG
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
 if sys.platform != "win32":
@@ -114,6 +114,28 @@ class TestOther(unittest.TestCase):
             msvcrt.heapmin()
         except OSError:
             pass
+
+    def test_GetErrorMode(self):
+        msvcrt.GetErrorMode()
+
+    def test_SetErrorMode(self):
+        old = msvcrt.SetErrorMode(0)
+        msvcrt.SetErrorMode(old)
+
+    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    def test_set_error_mode(self):
+        old = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
+        msvcrt.set_error_mode(old)
+
+    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    def test_CrtSetReportMode(self):
+        old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, msvcrt.CRTDBG_MODE_DEBUG)
+        msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, old)
+
+    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    def test_CrtSetReportFile(self):
+        old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, sys.stdout.fileno())
+        msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, old)
 
 
 if __name__ == "__main__":
