@@ -1279,6 +1279,25 @@ class TurtleScreen(TurtleScreenBase):
             return self._delayvalue
         self._delayvalue = int(delay)
 
+    @contextmanager
+    def no_animation(self):
+        """Temporarily turn off auto-updating the screen.
+
+        This is useful for drawing complex shapes where even the fastest setting
+        is too slow. Once this context manager is exited, the drawing will
+        be displayed.
+
+        Example (for a TurtleScreen instance named screen):
+        >>> with turtle.no_animation()
+        ...    turtle.circle(50)
+        """
+        tracer = self.tracer()
+        try:
+            self.tracer(0)
+            yield
+        finally:
+            self.tracer(tracer)
+
     def _incrementudc(self):
         """Increment update counter."""
         if not TurtleScreen._RUNNING:

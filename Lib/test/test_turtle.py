@@ -56,6 +56,24 @@ visible = False
 """
 
 
+@contextmanager
+def patch_screen():
+    """Patch turtle._Screen for testing without a display.
+
+    We must patch the `_Screen` class itself instead of the `_Screen`
+    instance because instatiating it requires a display.
+    """
+    m = unittest.mock.MagicMock()
+    m.__class__ = turtle._Screen
+    m.mode.return_value = "standard"
+
+    patch = unittest.mock.patch('turtle._Screen.__new__', return_value=m)
+    try:
+        yield patch.__enter__()
+    finally:
+        patch.__exit__(*sys.exc_info())
+
+
 class TurtleConfigTest(unittest.TestCase):
 
     def get_cfg_file(self, cfg_str):
@@ -528,28 +546,34 @@ class TestTurtleScreen(unittest.TestCase):
             with open(file_path) as f:
                 assert f.read() == "postscript"
 
+    def test_no_animation_sets_tracer_0(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+
+        with s.no_animation():
+            assert s.tracer() == 0
+
+    def test_no_animation_resets_tracer_to_old_value(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+
+        for tracer in [0, 1, 5]:
+            s.tracer(tracer)
+            with s.no_animation():
+                pass
+            assert s.tracer() == tracer
+
+    def test_no_animation_calls_update_at_exit(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+        s.update = unittest.mock.MagicMock()
+
+        with s.no_animation():
+            s.update.assert_not_called()
+        s.update.assert_called_once()
+
 
 class TestTurtle(unittest.TestCase):
-    @contextmanager
-    def patch_screen(self):
-        """Patch turtle._Screen for testing without a display.
-
-        We must patch the `_Screen` class itself instead of the `_Screen`
-        instance because instatiating it requires a display.
-        """
-        m = unittest.mock.MagicMock()
-        m.__class__ = turtle._Screen
-        m.mode.return_value = "standard"
-
-        patch = unittest.mock.patch('turtle._Screen.__new__', return_value=m)
-        try:
-            yield patch.__enter__()
-        finally:
-            patch.__exit__(*sys.exc_info())
-
     def test_begin_end_fill(self):
         """begin_fill and end_fill counter each other."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         self.assertFalse(t.filling())
@@ -560,7 +584,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_fill(self):
         """The context manager behaves like begin_ and end_ fill."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         self.assertFalse(t.filling())
@@ -570,7 +594,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_fill_resets_after_exception(self):
         """The context manager cleans up correctly after exceptions."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
         try:
             with t.fill():
@@ -581,7 +605,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_fill_context_when_filling(self):
         """The context manager works even when the turtle is already filling."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         t.begin_fill()
@@ -592,7 +616,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_begin_end_poly(self):
         """begin_fill and end_poly counter each other."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         self.assertFalse(t._creatingPoly)
@@ -603,7 +627,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_poly(self):
         """The context manager behaves like begin_ and end_ poly."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         self.assertFalse(t._creatingPoly)
@@ -613,7 +637,7 @@ class TestTurtle(unittest.TestCase):
 
     def test_poly_resets_after_exception(self):
         """The context manager cleans up correctly after exceptions."""
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
         try:
             with t.poly():
@@ -625,7 +649,7 @@ class TestTurtle(unittest.TestCase):
     def test_poly_context_when_creating_poly(self):
         """The context manager works when the turtle is already creating poly.
         """
-        with self.patch_screen():
+        with patch_screen():
             t = turtle.Turtle()
 
         t.begin_poly()
