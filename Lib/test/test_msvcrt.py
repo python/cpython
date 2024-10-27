@@ -127,12 +127,12 @@ class TestOther(unittest.TestCase):
         old = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
         msvcrt.set_error_mode(old)
 
-    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportMode(self):
         old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, msvcrt.CRTDBG_MODE_DEBUG)
         msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, old)
 
-    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportFile(self):
         old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, sys.stdout.fileno())
         msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, old)
