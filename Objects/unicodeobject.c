@@ -5285,7 +5285,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    if (PY_SSIZE_T_MAX - sizeof(PyCompactUnicodeObject) < size) {
+    if (PY_SSIZE_T_MAX - sizeof(PyCompactUnicodeObject) < (size_t)size) {
         PyErr_NoMemory();
         return NULL;
     }
