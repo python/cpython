@@ -1339,6 +1339,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])

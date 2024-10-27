@@ -810,6 +810,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
                POP_TOP
        L1:     RESUME                   0
                LOAD_FAST                0 (.0)
+               GET_ITER
        L2:     FOR_ITER                10 (to L3)
                STORE_FAST               1 (z)
                LOAD_DEREF               2 (x)
