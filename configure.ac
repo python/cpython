@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -1339,6 +1339,9 @@ AC_ARG_WITH([suffix],
   )
 ])
 AC_MSG_RESULT([$EXEEXT])
+
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
@@ -4043,6 +4046,46 @@ AS_VAR_IF([have_libffi], [yes], [
     PY_CHECK_FUNC([ffi_closure_alloc], [@%:@include <ffi.h>])
   ])
 ])
+
+# Check for libffi with real complex double support.
+# This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+# but real support was provided only in libffi v3.3.0.
+# See https://github.com/python/cpython/issues/125206 for more details.
+#
+AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
+[ac_save_cc="$CC"
+CC="$CC -lffi"
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <complex.h>
+#include <ffi.h>
+int z_is_expected(double complex z)
+{
+    const double complex expected = CMPLX(1.25, -0.5);
+    return z == expected;
+}
+int main(void)
+{
+    double complex z = 1.25 - 0.5 * I;
+    ffi_type *args[1] = {&ffi_type_complex_double};
+    void *values[1] = {&z};
+    ffi_cif cif;
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+        &ffi_type_sint, args) != FFI_OK)
+    {
+        return 2;
+    }
+    ffi_arg rc;
+    ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
+    return !rc;
+}
+]])], [ac_cv_ffi_complex_double_supported=yes],
+[ac_cv_ffi_complex_double_supported=no],
+[ac_cv_ffi_complex_double_supported=no])
+CC="$ac_save_cc"])
+if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
+    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+              [Defined if _Complex C type can be used with libffi.])
+fi
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING([for --with-system-libmpdec])
@@ -7452,7 +7495,7 @@ CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
 AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
                [ac_cv_libatomic_needed],
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 // pyatomic.h needs uint64_t and Py_ssize_t types
 #include <stdint.h>  // int64_t, intptr_t
 #ifdef HAVE_SYS_TYPES_H
@@ -7489,9 +7532,8 @@ int main()
     return 0; // all good
 }
 ]])],
-  [ac_cv_libatomic_needed=no],  dnl build succeeded
-  [ac_cv_libatomic_needed=yes], dnl build failed
-  [ac_cv_libatomic_needed=no])  dnl cross compilation
+  [ac_cv_libatomic_needed=no],  dnl build and link succeeded
+  [ac_cv_libatomic_needed=yes]) dnl build and link failed
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],

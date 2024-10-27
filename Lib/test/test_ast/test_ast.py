@@ -2259,7 +2259,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
