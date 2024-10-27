@@ -14,6 +14,7 @@ module instead.
 #endif
 
 #include "Python.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -34,7 +35,7 @@ typedef struct {
     PyTypeObject *dialect_type;
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
-    long field_limit;   /* max parsed field size */
+    Py_ssize_t field_limit;   /* max parsed field size */
     PyObject *str_write;
 } _csvstate;
 
@@ -367,6 +368,8 @@ static struct PyMemberDef Dialect_memberlist[] = {
     { NULL }
 };
 
+#undef D_OFF
+
 static PyGetSetDef Dialect_getsetlist[] = {
     { "delimiter",          (getter)Dialect_get_delimiter},
     { "escapechar",             (getter)Dialect_get_escapechar},
@@ -502,6 +505,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
         DIALECT_GETATTR(strict, "strict");
     }
+#undef DIALECT_GETATTR
 
     /* check types and convert to C values */
 #define DIASET(meth, name, target, src, dflt) \
@@ -515,6 +519,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
     DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
     DIASET(_set_bool, "strict", &self->strict, strict, false);
+#undef DIASET
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
@@ -702,10 +707,11 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-    if (self->field_len >= module_state->field_limit) {
+    Py_ssize_t field_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
+    if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
-                     "field larger than field limit (%ld)",
-                     module_state->field_limit);
+                     "field larger than field limit (%zd)",
+                     field_limit);
         return -1;
     }
     if (self->field_len == self->field_size && !parse_grow_buff(self))
@@ -1026,6 +1032,8 @@ static struct PyMemberDef Reader_memberlist[] = {
     { NULL }
 };
 
+#undef R_OFF
+
 
 static PyType_Slot Reader_Type_slots[] = {
     {Py_tp_doc, (char*)Reader_Type_doc},
@@ -1072,7 +1080,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
     }
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "reader", 1, 2, &iterator, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1441,6 +1449,8 @@ static struct PyMemberDef Writer_memberlist[] = {
     { NULL }
 };
 
+#undef W_OFF
+
 static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
@@ -1519,7 +1529,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->error_obj = Py_NewRef(module_state->error_obj);
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "writer", 1, 2, &output_file, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1571,7 +1581,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
+    if (!PyArg_UnpackTuple(args, "register_dialect", 1, 2, &name_obj, &dialect_obj))
         return NULL;
     if (!PyUnicode_Check(name_obj)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1651,20 +1661,20 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
 /*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    long old_limit = module_state->field_limit;
+    Py_ssize_t old_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
                          "limit must be an integer");
             return NULL;
         }
-        module_state->field_limit = PyLong_AsLong(new_limit);
-        if (module_state->field_limit == -1 && PyErr_Occurred()) {
-            module_state->field_limit = old_limit;
+        Py_ssize_t new_limit_value = PyLong_AsSsize_t(new_limit);
+        if (new_limit_value == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        FT_ATOMIC_STORE_SSIZE_RELAXED(module_state->field_limit, new_limit_value);
     }
-    return PyLong_FromLong(old_limit);
+    return PyLong_FromSsize_t(old_limit);
 }
 
 static PyType_Slot error_slots[] = {

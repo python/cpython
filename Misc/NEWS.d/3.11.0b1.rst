@@ -58,7 +58,7 @@ may have prevented Python-to-Python calls respecting PEP 523.
 .. nonce: -igcjS
 .. section: Core and Builtins
 
-Add a closure keyword-only parameter to :func:`exec()`. It can only be specified
+Add a closure keyword-only parameter to :func:`exec`. It can only be specified
 when exec-ing a code object that uses free variables. When specified, it
 must be a tuple, with exactly the number of cell variables referenced by the
 code object. closure has a default value of ``None``, and it must be ``None`` if the
@@ -1801,8 +1801,8 @@ The documentation now lists which members of C structs are part of the
 .. section: Documentation
 
 All docstrings in code snippets are now wrapped into :c:macro:`PyDoc_STR` to
-follow the guideline of `PEP 7's Documentation Strings paragraph
-<https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
+follow the guideline of :pep:`PEP 7's Documentation Strings paragraph
+<0007#documentation-strings>`. Patch
 by Oleg Iarygin.
 
 ..

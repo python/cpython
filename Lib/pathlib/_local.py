@@ -3,7 +3,6 @@ import ntpath
 import operator
 import os
 import posixpath
-import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -120,9 +119,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -273,8 +272,7 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
     @property
     def _raw_path(self):
@@ -824,7 +822,10 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    _rmtree = shutil.rmtree
+    def _rmtree(self):
+        # Lazy import to improve module import time
+        import shutil
+        shutil.rmtree(self)
 
     def rename(self, target):
         """

@@ -152,7 +152,7 @@ htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 .PHONY: htmllive
-htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
+htmllive: SPHINXBUILD = PATH=$(VENVDIR)/bin:$$PATH sphinx-autobuild
 htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
 htmllive: _ensure-sphinx-autobuild html
 
@@ -182,13 +182,26 @@ venv:
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
+.PHONY: dist-no-html
+dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+
 .PHONY: dist
 dist:
 	rm -rf dist
 	mkdir -p dist
+	$(MAKE) dist-html
+	$(MAKE) dist-text
+	$(MAKE) dist-pdf
+	$(MAKE) dist-epub
+	$(MAKE) dist-texinfo
 
+.PHONY: dist-html
+dist-html:
 	# archive the HTML
 	@echo "Building HTML..."
+	mkdir -p dist
+	rm -rf build/html
+	find dist -name 'python-$(DISTVERSION)-docs-html*' -exec rm -rf {} \;
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
@@ -198,8 +211,13 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-html.tar
 	@echo "Build finished and archived!"
 
+.PHONY: dist-text
+dist-text:
 	# archive the text build
 	@echo "Building text..."
+	mkdir -p dist
+	rm -rf build/text
+	find dist -name 'python-$(DISTVERSION)-docs-text*' -exec rm -rf {} \;
 	$(MAKE) text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
@@ -209,9 +227,13 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-text.tar
 	@echo "Build finished and archived!"
 
+.PHONY: dist-pdf
+dist-pdf:
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
+	mkdir -p dist
 	rm -rf build/latex
+	find dist -name 'python-$(DISTVERSION)-docs-pdf*' -exec rm -rf {} \;
 	$(MAKE) latex PAPER=a4
 	# remove zip & bz2 dependency on all-pdf,
 	# as otherwise the full latexmk process is run twice.
@@ -222,26 +244,24 @@ dist:
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
 
-	# archive the letter latex
-	@echo "Building LaTeX (US paper)..."
-	rm -rf build/latex
-	$(MAKE) latex PAPER=letter
-	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
-	@echo "Build finished and archived!"
-
+.PHONY: dist-epub
+dist-epub:
 	# copy the epub build
 	@echo "Building EPUB..."
+	mkdir -p dist
 	rm -rf build/epub
+	rm -f dist/python-$(DISTVERSION)-docs.epub
 	$(MAKE) epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 	@echo "Build finished and archived!"
 
+.PHONY: dist-texinfo
+dist-texinfo:
 	# archive the texinfo build
 	@echo "Building Texinfo..."
+	mkdir -p dist
 	rm -rf build/texinfo
+	find dist -name 'python-$(DISTVERSION)-docs-texinfo*' -exec rm -rf {} \;
 	$(MAKE) texinfo
 	$(MAKE) info --directory=build/texinfo
 	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
@@ -285,13 +305,15 @@ serve:
 
 # for development releases: always build
 .PHONY: autobuild-dev
+autobuild-dev: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev:
-	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
 
-# for quick rebuilds (HTML only)
+# for HTML-only rebuilds
 .PHONY: autobuild-dev-html
+autobuild-dev-html: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev-html:
-	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage

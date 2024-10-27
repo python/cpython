@@ -2574,9 +2574,9 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = (1 << 30) - 1
+        IMMORTAL_REFCOUNT = 3 << 29
     else:
-        IMMORTAL_REFCOUNT = (1 << 32) - 1
+        IMMORTAL_REFCOUNT = 3 << 30
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
@@ -2607,6 +2607,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(A.__module__, __name__)
         self.assertEqual(A.__bases__, (object,))
         self.assertIs(A.__base__, object)
+        self.assertNotIn('__firstlineno__', A.__dict__)
         x = A()
         self.assertIs(type(x), A)
         self.assertIs(x.__class__, A)
@@ -2684,6 +2685,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_firstlineno(self):
+        A = type('A', (), {'__firstlineno__': 42})
+        self.assertEqual(A.__name__, 'A')
+        self.assertEqual(A.__module__, __name__)
+        self.assertEqual(A.__dict__['__firstlineno__'], 42)
+        A.__module__ = 'testmodule'
+        self.assertEqual(A.__module__, 'testmodule')
+        self.assertNotIn('__firstlineno__', A.__dict__)
+        A.__firstlineno__ = 43
+        self.assertEqual(A.__dict__['__firstlineno__'], 43)
 
     def test_type_typeparams(self):
         class A[T]:
