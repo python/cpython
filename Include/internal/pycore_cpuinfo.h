@@ -3,10 +3,10 @@
  * See https://en.wikipedia.org/wiki/CPUID for details on the bit values.
  *
  * If a module requires to support SIMD instructions, it should determine
- * the compiler flags and the instruction sets required for the instrinsics
+ * the compiler flags and the instruction sets required for the intrinsics
  * to work.
  *
- * For the headers and expected CPUID bits needed by Intel intrinics, see
+ * For the headers and expected CPUID bits needed by Intel intrinsics, see
  * https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html.
  */
 
