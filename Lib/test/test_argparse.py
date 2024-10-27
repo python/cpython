@@ -6,8 +6,10 @@ import inspect
 import io
 import operator
 import os
+import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import tempfile
@@ -16,7 +18,14 @@ import argparse
 import warnings
 
 from enum import StrEnum
-from test.support import os_helper, captured_stderr
+from pathlib import Path
+from test.support import REPO_ROOT
+from test.support import TEST_HOME_DIR
+from test.support import captured_stderr
+from test.support import import_helper
+from test.support import os_helper
+from test.support import requires_subprocess
+from test.support import script_helper
 from unittest import mock
 
 
@@ -6752,6 +6761,55 @@ class TestExitOnError(TestCase):
                                self.parser.parse_args, ['@no-such-file'])
 
 
+# =================
+# Translation tests
+# =================
+
+pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
+snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
+
+msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
+msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
+
+
+@requires_subprocess()
+class TestTranslations(unittest.TestCase):
+
+    def test_translations(self):
+        # Test messages extracted from the argparse module against a snapshot
+        res = generate_po_file(stdout_only=False)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(res.stderr, '')
+        msgids = extract_msgids(res.stdout)
+        snapshot = snapshot_path.read_text().splitlines()
+        self.assertListEqual(msgids, snapshot)
+
+
+def generate_po_file(*, stdout_only=True):
+    res = subprocess.run([sys.executable, pygettext,
+                          '--no-location', '-o', '-', argparse.__file__],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if stdout_only:
+        return res.stdout
+    return res
+
+
+def extract_msgids(po):
+    msgids = []
+    for msgid in msgid_pattern.findall(po):
+        msgid_string = ''.join(msgid_string_pattern.findall(msgid))
+        msgid_string = msgid_string.replace(r'\"', '"')
+        if msgid_string:
+            msgids.append(msgid_string)
+    return sorted(msgids)
+
+
+def update_translation_snapshots():
+    contents = generate_po_file()
+    msgids = extract_msgids(contents)
+    snapshot_path.write_text('\n'.join(msgids))
+
+
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
@@ -6759,4 +6817,8 @@ def tearDownModule():
 
 
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots()
+        sys.exit(0)
     unittest.main()
