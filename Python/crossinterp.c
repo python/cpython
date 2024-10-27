@@ -1692,57 +1692,6 @@ _PyXI_HasCapturedException(_PyXI_session *session)
     return session->error != NULL;
 }
 
-static int
-_PyXI_ThreadStateRecovery(void *ptr)
-{
-    /*
-     * GH-126016: If the subinterpreter was running in a
-     * thread, and joining that thread was interrupted (namely with CTRL+C), then
-     * the thread state isn't cleaned up. This forces it to get cleaned up
-     * upon finalization.
-     */
-    if ((&_PyRuntime)->_main_interpreter.finalizing != 1)
-    {
-        // If the interpreter isn't finalizing, then
-        // it's not our job to clean anything up.
-        return 0;
-    }
-
-    PyThreadState *interp_tstate = (PyThreadState *)ptr;
-    if (interp_tstate->interp == NULL)
-    {
-        // Interpreter was cleaned up, do nothing.
-        return 0;
-    }
-
-    if (!_PyInterpreterState_IsRunningMain(interp_tstate->interp))
-    {
-        // Main thread was cleaned up, nothing to fix.
-        return 0;
-    }
-
-    /* Subinterpreter is in a thread that suspended early!
-     * Get rid of this thread state or else finalize_subinterpreters() won't be
-     * happy.
-     */
-
-    // We have to use SwapAttached because the thread state is technically active.
-    // Though, we're certain that nothing is using it, because the thread got
-    // interrupted.
-    PyThreadState *return_tstate = _PyThreadState_SwapAttached(interp_tstate);
-    _PyInterpreterState_SetNotRunningMain(interp_tstate->interp);
-
-    // TODO: While this cleans up the thread state and lets the interpreter
-    // finalize gracefully, it doesn't deal with any reference on the
-    // _PyXI_session, because that's a stack reference which might be dead
-    // by now. So, those references get leaked right now--that needs to get
-    // fixed.
-    PyThreadState_Clear(interp_tstate);
-    PyThreadState_Swap(return_tstate);
-    PyThreadState_Delete(interp_tstate);
-    return 0;
-}
-
 int
 _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates)
@@ -1769,7 +1718,6 @@ _PyXI_Enter(_PyXI_session *session,
         errcode = _PyXI_ERR_ALREADY_RUNNING;
         goto error;
     }
-    Py_AddPendingCall(_PyXI_ThreadStateRecovery, _PyThreadState_GET());
     session->running = 1;
 
     // Cache __main__.__dict__.

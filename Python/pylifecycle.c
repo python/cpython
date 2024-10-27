@@ -2477,7 +2477,28 @@ finalize_subinterpreters(void)
 
     /* Clean up all remaining subinterpreters. */
     while (interp != NULL) {
-        assert(!_PyInterpreterState_IsRunningMain(interp));
+        if (_PyInterpreterState_IsRunningMain(interp))
+        {
+            /*
+             * GH-126016: If a subinterpreter was running in another
+             * thread, and the user interrupted the joining of that thread
+             * with CTRL+C, then a thread state for this interpreter is still
+             * active. We need to destroy it before proceeding.
+             */
+            // XXX Are there more threads we have to worry about?
+            PyThreadState *to_destroy = interp->threads.main;
+
+            // We have to use SwapAttached to attach to an attached thread state.
+            // If the thread were really running, this would be a thread safety headache.
+            // Luckily, we know it isn't.
+            _PyThreadState_SwapAttached(to_destroy);
+            _PyInterpreterState_SetNotRunningMain(interp);
+            PyThreadState_Clear(to_destroy);
+
+            // Back to a NULL tstate
+            PyThreadState_Swap(NULL);
+            PyThreadState_Delete(to_destroy);
+        }
 
         /* Find the tstate to use for fini.  We assume the interpreter
            will have at most one tstate at this point. */
