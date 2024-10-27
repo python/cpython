@@ -234,7 +234,7 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.elementsize = support.calcobjsize('5P')
         # extra
-        self.extra = struct.calcsize('PnnP4Pnn')
+        self.extra = struct.calcsize('PnnP4PNN')
 
     check_sizeof = support.check_sizeof
 

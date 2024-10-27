@@ -231,9 +231,9 @@ typedef struct {
     PyObject* _children[STATIC_CHILDREN];
 
     /* incremented whenever 'attrib' is externally mutated */
-    uint64_t attrib_version;
+    size_t attrib_version;
     /* incremented whenever children are externally mutated */
-    uint64_t version;
+    size_t version;
 } ElementObjectExtra;
 
 typedef struct {
