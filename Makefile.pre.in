@@ -2418,8 +2418,6 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
-		test/test_argparse \
-		test/test_argparse/data \
 		test/test_ast \
 		test/test_ast/data \
 		test/archivetestdata \
@@ -2550,6 +2548,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tkinterdata \
 		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
