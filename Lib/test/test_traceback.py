@@ -4637,6 +4637,49 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
+    def test_colorized_traceback_from_exception_group(self):
+        def foo():
+            exceptions = []
+            try:
+                1 / 0
+            except ZeroDivisionError as inner_exc:
+                exceptions.append(inner_exc)
+            raise ExceptionGroup("test", exceptions)
+
+        try:
+            foo()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
+        lno_foo = foo.__code__.co_firstlineno
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        expected = [f"  + Exception Group Traceback (most recent call last):",
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
+                   f'  |     {red}foo{reset}{boldr}(){reset}',
+                   f'  |     {red}~~~{reset}{boldr}^^{reset}',
+                   f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                   f"  |     foo = {foo}",
+                   f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
+                   f'  |     raise ExceptionGroup("test", exceptions)',
+                   f"  |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'  | {boldm}ExceptionGroup{reset}: {magenta}test (1 sub-exception){reset}',
+                   f'  +-+---------------- 1 ----------------',
+                   f'    | Traceback (most recent call last):',
+                   f'    |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+3}{reset}, in {magenta}foo{reset}',
+                   f'    |     {red}1 {reset}{boldr}/{reset}{red} 0{reset}',
+                   f'    |     {red}~~{reset}{boldr}^{reset}{red}~~{reset}',
+                   f"    |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'    | {boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}',
+                   f'    +------------------------------------']
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()
