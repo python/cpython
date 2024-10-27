@@ -21,9 +21,9 @@ import warnings
 from enum import StrEnum
 from pathlib import Path
 from test.support import captured_stderr
-from test.support import has_subprocess_support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import script_helper
 from unittest import mock
 
@@ -7030,7 +7030,7 @@ msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTA
 msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
 
 
-@unittest.skipIf(not has_subprocess_support, "test requires subprocess")
+@requires_subprocess()
 class TestTranslations(unittest.TestCase):
 
     def test_translations(self):
