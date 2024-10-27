@@ -1,0 +1,2 @@
+The :class:`memoryview` type now supports subscription, making it a
+:term:`generic type`.
