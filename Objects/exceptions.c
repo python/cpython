@@ -2748,32 +2748,6 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     return end;
 }
 
-static inline int
-unicode_error_is_single_bad_char(PyUnicodeErrorObject *exc)
-{
-    // We use the 'start' and the 'end' values here and NOT those given
-    // by the corresponding getters since they clip the output. This is
-    // done to keep a behaviour since Python 3.1 (see gh-51558).
-    Py_ssize_t start = exc->start, end = exc->end;
-    return (
-        start >= 0 && start < PyUnicode_GET_LENGTH(exc->object) &&
-        end >= 0 && end == start + 1
-    );
-}
-
-static inline int
-unicode_error_is_single_bad_byte(PyUnicodeErrorObject *exc)
-{
-    // We use the 'start' and the 'end' values here and NOT those given
-    // by the corresponding getters since they clip the output. This is
-    // done to keep a behaviour since Python 3.1 (see gh-51558).
-    Py_ssize_t start = exc->start, end = exc->end;
-    return (
-        start >= 0 && start < PyBytes_GET_SIZE(exc->object) &&
-        end >= 0 && end == start + 1
-    );
-}
-
 PyObject *
 PyUnicodeEncodeError_GetEncoding(PyObject *exc)
 {
