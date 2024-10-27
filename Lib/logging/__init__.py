@@ -26,11 +26,12 @@ To use, simply 'import logging' and log away!
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from types import GenericAlias
+from typing import TypeAlias
 from string import Template
 from string import Formatter as StrFormatter
 
 
-__all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
+__all__ = ['BASIC_FORMAT', 'AnyLogger', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
            'LogRecord', 'Logger', 'LoggerAdapter', 'NOTSET', 'NullHandler',
            'StreamHandler', 'WARN', 'WARNING', 'addLevelName', 'basicConfig',
@@ -1991,6 +1992,8 @@ class LoggerAdapter(object):
         return '<%s %s (%s)>' % (self.__class__.__name__, logger.name, level)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+AnyLogger: TypeAlias = Logger | LoggerAdapter
 
 root = RootLogger(WARNING)
 Logger.root = root
