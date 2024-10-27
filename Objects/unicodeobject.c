@@ -5063,12 +5063,12 @@ find_first_nonascii(const char *start, const char *end)
                 if (value) {
 #if PY_LITTLE_ENDIAN && (defined(__clang__) || defined(__GNUC__))
 #if SIZEOF_SIZE_T == 4
-                    // __builtin_ctzl(0x8000) == 15.
+                    // __builtin_ctz(0x8000) == 15.
                     // (15-7) / 8 == 1.
                     // p+1 is first non-ASCII char.
-                    return p - start + (__builtin_ctzl(value)-7) / 8;
+                    return p - start + (__builtin_ctz(value) - 7) / 8;
 #else
-                    return p - start + (__builtin_ctzll(value)-7) / 8;
+                    return p - start + (__builtin_ctzll(value) - 7) / 8;
 #endif
 #elif PY_LITTLE_ENDIAN && defined(_MSC_VER)
                     unsigned long bitpos;
@@ -5077,7 +5077,7 @@ find_first_nonascii(const char *start, const char *end)
 #else
                     _BitScanForward64(&bitpos, value);
 #endif
-                    return p - start + (bitpos-7) / 8;
+                    return p - start + (bitpos - 7) / 8;
 #else
                     // big endian and minor compilers are difficult to test.
                     // fallback to per byte check.
@@ -5104,15 +5104,15 @@ static inline int scalar_utf8_start_char(unsigned int ch)
 
 static inline size_t vector_utf8_start_chars(size_t v)
 {
-    return ((~v>>7) | (v>>6)) & VECTOR_0101;
+    return ((~v >> 7) | (v >> 6)) & VECTOR_0101;
 }
 
 static Py_ssize_t utf8_count_codepoints(const unsigned char *s, Py_ssize_t size)
 {
     Py_ssize_t len = 0;
-    const unsigned char *end = s+size;
+    const unsigned char *end = s + size;
 
-    if (end - s > SIZEOF_SIZE_T*2) {
+    if (end - s > SIZEOF_SIZE_T * 2) {
         while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
             len += scalar_utf8_start_char(*s++);
         }
@@ -5306,7 +5306,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     Py_ssize_t maxsize = size;
 
     unsigned char ch = (unsigned char)s[pos];
-    if (error_handler == _Py_ERROR_STRICT && ch >= 0xc2) {
+    if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
         maxsize = utf8_count_codepoints((const unsigned char *)s, size);
         if (ch < 0xc4) { // latin1
             maxchr = 255;
