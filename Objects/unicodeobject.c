@@ -1305,6 +1305,45 @@ _PyUnicode_Dump(PyObject *op)
 }
 #endif
 
+// Simplified version of PyUnicode_New() that only creates ASCII strings.
+// This function does not test if size == 0.
+static PyObject *
+ascii_new(Py_ssize_t size)
+{
+    PyObject *obj;
+    void *data;
+    Py_ssize_t struct_size = sizeof(PyASCIIObject);
+
+    if (size > ((PY_SSIZE_T_MAX - struct_size) - 1))
+        return PyErr_NoMemory();
+
+    /* Duplicated allocation code from _PyObject_New() instead of a call to
+     * PyObject_New() so we are able to allocate space for the object and
+     * it's data buffer.
+     */
+    obj = (PyObject *) PyObject_Malloc(struct_size + (size + 1));
+    if (obj == NULL) {
+        return PyErr_NoMemory();
+    }
+    _PyObject_Init(obj, &PyUnicode_Type);
+
+    data = ((PyASCIIObject*)obj) + 1;
+
+    _PyUnicode_LENGTH(obj) = size;
+    _PyUnicode_HASH(obj) = -1;
+    _PyUnicode_STATE(obj).interned = 0;
+    _PyUnicode_STATE(obj).kind = PyUnicode_1BYTE_KIND;
+    _PyUnicode_STATE(obj).compact = 1;
+    _PyUnicode_STATE(obj).ascii = 1;
+    _PyUnicode_STATE(obj).statically_allocated = 0;
+    ((char*)data)[size] = 0;
+
+#ifdef Py_DEBUG
+    unicode_fill_invalid((PyObject*)unicode, 0);
+#endif
+    assert(_PyUnicode_CheckConsistency(obj, 0));
+    return obj;
+}
 
 PyObject *
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
@@ -2208,13 +2247,16 @@ _PyUnicode_FromASCII(const char *buffer, Py_ssize_t size)
 {
     const unsigned char *s = (const unsigned char *)buffer;
     PyObject *unicode;
+    if (size == 0) {
+        return unicode_get_empty();
+    }
     if (size == 1) {
 #ifdef Py_DEBUG
         assert((unsigned char)s[0] < 128);
 #endif
         return get_latin1_char(s[0]);
     }
-    unicode = PyUnicode_New(size, 127);
+    unicode = ascii_new(size);
     if (!unicode)
         return NULL;
     memcpy(PyUnicode_1BYTE_DATA(unicode), s, size);
@@ -5297,11 +5339,13 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 
     Py_ssize_t pos = find_first_nonascii(starts, end);
     if (pos == size) {  // fast path: ASCII string.
-        PyObject *u = PyUnicode_New(size, 127);
+        PyObject *u = ascii_new(size);
         if (u == NULL) {
             return NULL;
         }
-        memcpy(PyUnicode_1BYTE_DATA(u), s, size);
+        // memcpy(PyUnicode_1BYTE_DATA(u), s, size);
+        // bypass iscompact & isascii checks.
+        memcpy(_Py_STATIC_CAST(void*, (_PyASCIIObject_CAST(u) + 1)), s, size);
         if (consumed) {
             *consumed = size;
         }
@@ -5338,7 +5382,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_InitWithBuffer(&writer, u);
     if (maxchr <= 255) {
-        memcpy(PyUnicode_1BYTE_DATA(u), s, pos);
+        memcpy(_PyUnicode_COMPACT_DATA(u), s, pos);
         s += pos;
         size -= pos;
         writer.pos = pos;
@@ -7419,7 +7463,7 @@ PyUnicode_DecodeASCII(const char *s,
     }
 
     // Shortcut for simple case
-    PyObject *u = PyUnicode_New(size, 127);
+    PyObject *u = ascii_new(size);
     if (u == NULL) {
         return NULL;
     }
