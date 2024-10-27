@@ -1012,10 +1012,9 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
     ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
-        // Beware: An evil PyObject_RichCompareBool could change fut_callback0
-        // (see https://github.com/python/cpython/issues/125789 for details)
-        // In addition, the reference to self->fut_callback0 may be cleared,
-        // so we need to temporarily hold it explicitly.
+        // Beware: An evil PyObject_RichCompareBool could free fut_callback0
+        // before a recursive call is made with that same arg. For details, see
+        // https://github.com/python/cpython/pull/125967#discussion_r1816593340.
         PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
         int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
         Py_DECREF(fut_callback0);
