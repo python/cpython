@@ -586,8 +586,8 @@ email
 idlelib and IDLE
 ----------------
 
-* While doing copy/cut a empty selection, the current line will be selected
-  and copied/cut automatically.
+* If no selection is made during copy/cut, the current line will
+  copied/cut automatically.
   (Contributed by Jiahao Li in :gh:`94521`.)
 
 importlib

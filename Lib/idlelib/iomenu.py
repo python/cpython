@@ -7,7 +7,6 @@ import tokenize
 
 from tkinter import filedialog
 from tkinter import messagebox
-from tkinter import TclError
 from tkinter.simpledialog import askstring  # loadfile encoding.
 
 from idlelib.config import idleConf

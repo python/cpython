@@ -4,8 +4,8 @@ Released on 2025-10-xx
 =========================
 
 
-gh-94521: While doing copy/cut a empty selection, the current line will
-be selected and copied/cut automatically.
+gh-94521: If no selection is made during copy/cut, the current line
+will copied/cut automatically.
 
 What's New in IDLE 3.13.0
 (since 3.12.0)
