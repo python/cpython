@@ -5090,52 +5090,98 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     return p - start;
 }
 
-static Py_ssize_t
-find_first_nonascii(const char *start, const char *end)
-{
-    const char *p = start;
+#if (defined(__clang__) || defined(__GNUC__))
+#define HAS_CTZ 1
+static inline unsigned int ctz(size_t v) {
+    return __builtin_ctzll((unsigned long long)v);
+}
+#elif defined(_MSC_VER)
+#define HAS_CTZ 1
+static inline unsigned int ctz(size_t v) {
+    unsigned long pos;
+#if SIZEOF_SIZE_T == 4
+    _BitScanForward(&pos, v);
+#else
+    _BitScanForward64(&pos, v);
+#endif /* SIZEOF_SIZE_T */
+    return pos;
+}
+#endif
 
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            const char *e = end - SIZEOF_SIZE_T;
-            while (p <= e) {
-                size_t value = (*(const size_t *)p) & ASCII_CHAR_MASK;
-                if (value) {
-#if PY_LITTLE_ENDIAN && (defined(__clang__) || defined(__GNUC__))
-#if SIZEOF_SIZE_T == 4
-                    // __builtin_ctz(0x8000) == 15.
-                    // (15-7) / 8 == 1.
-                    // p+1 is first non-ASCII char.
-                    return p - start + (__builtin_ctz(value) - 7) / 8;
-#else
-                    return p - start + (__builtin_ctzll(value) - 7) / 8;
-#endif
-#elif PY_LITTLE_ENDIAN && defined(_MSC_VER)
-                    unsigned long bitpos;
-#if SIZEOF_SIZE_T == 4
-                    _BitScanForward(&bitpos, value);
-#else
-                    _BitScanForward64(&bitpos, value);
-#endif
-                    return p - start + (bitpos - 7) / 8;
-#else
-                    // big endian and minor compilers are difficult to test.
-                    // fallback to per byte check.
-                    break;
-#endif
-                }
-                p += SIZEOF_SIZE_T;
+static Py_ssize_t
+find_first_nonascii(const unsigned char *start, const unsigned char *end)
+{
+    const unsigned char *p = start;
+
+    if (end - start > SIZEOF_SIZE_T + ALIGNOF_SIZE_T) {
+        while (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+            if ((unsigned char)*p & 0x80) {
+                return p - start;
             }
-            if (p == end)
+            p++;
+        }
+        const unsigned char *e = end - SIZEOF_SIZE_T;
+        while (p <= e) {
+            size_t value = (*(const size_t *)p) & ASCII_CHAR_MASK;
+            if (value) {
+#if PY_LITTLE_ENDIAN && HAS_CTZ
+                return p - start + (ctz(value) - 7) / 8;
+#else
+                // big endian and minor compilers are difficult to test.
+                // fallback to per byte check.
+                break;
+#endif
+            }
+            p += SIZEOF_SIZE_T;
+        }
+    }
+#if HAS_CTZ
+    // This part looks bit tricky, but decoding short ASCII is super important.
+    // Since we copy from p to size_t manually, this part works fine with big endian.
+    while (p < end) {
+        size_t u = (size_t)(p[0]);
+        switch (end - p) {
+            default:
+#if SIZEOF_SIZE_T == 8
+                u |= (size_t)(p[7]) << 56ull;
+            // fall through
+            case 7:
+                u |= (size_t)(p[6]) << 48ull;
+            // fall through
+            case 6:
+                u |= (size_t)(p[5]) << 40ull;
+            // fall through
+            case 5:
+                u |= (size_t)(p[4]) << 32ull;
+            // fall through
+            case 4:
+#endif
+                u |= (size_t)(p[3]) << 24;
+            // fall through
+            case 3:
+                u |= (size_t)(p[2]) << 16;
+            // fall through
+            case 2:
+                u |= (size_t)(p[1]) << 8;
+                break;
+            case 1:
                 break;
         }
-        if ((unsigned char)*p & 0x80)
+        if (u & ASCII_CHAR_MASK) {
+            return p - start + (ctz(u & ASCII_CHAR_MASK) - 7) / 8;
+        }
+        p += SIZEOF_SIZE_T;
+    }
+    return end - start;
+#else
+    while (p < end) {
+        if ((unsigned char)*p & 0x80) {
             break;
-        ++p;
+        }
+        p++;
     }
     return p - start;
+#endif
 }
 
 static inline int scalar_utf8_start_char(unsigned int ch)
@@ -5153,7 +5199,7 @@ static Py_ssize_t utf8_count_codepoints(const unsigned char *s, const unsigned c
 {
     Py_ssize_t len = 0;
 
-    if (end - s > SIZEOF_SIZE_T * 2) {
+    if (end - s > SIZEOF_SIZE_T + ALIGNOF_SIZE_T) {
         while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
             len += scalar_utf8_start_char(*s++);
         }
@@ -5337,7 +5383,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     const char *starts = s;
     const char *end = s + size;
 
-    Py_ssize_t pos = find_first_nonascii(starts, end);
+    Py_ssize_t pos = find_first_nonascii((const unsigned char*)starts, (const unsigned char*)end);
     if (pos == size) {  // fast path: ASCII string.
         PyObject *u = ascii_new(size);
         if (u == NULL) {
@@ -5355,7 +5401,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     int maxchr = 127;
     Py_ssize_t maxsize = size;
 
-    unsigned char ch = (unsigned char)s[pos];
+    unsigned char ch = (unsigned char)(s[pos]);
     // error handler other than strict may remove/replace the invalid byte.
     // consumed != NULL allows 1~3 bytes remainings.
     // 0x80 <= ch < 0xc2 is invalid start byte that cause UnicodeDecodeError.
