@@ -745,7 +745,69 @@ class CAPICodecs(unittest.TestCase):
                 codec_stream_writer(NULL, stream, 'strict')
 
 
+class UnsafeUnicodeEncodeError(UnicodeEncodeError):
+    def __init__(self, encoding, message, start, end, reason):
+        self.may_crash = (end - start) < 0 or (end - start) >= len(message)
+        super().__init__(encoding, message, start, end, reason)
+
+
+class UnsafeUnicodeDecodeError(UnicodeDecodeError):
+    def __init__(self, encoding, message, start, end, reason):
+        # the case end - start >= len(message) does not crash
+        self.may_crash = (end - start) < 0
+        super().__init__(encoding, message, start, end, reason)
+
+
+class UnsafeUnicodeTranslateError(UnicodeTranslateError):
+    def __init__(self, message, start, end, reason):
+        # <= 0 because PyCodec_ReplaceErrors tries to check the Unicode kind
+        # of a 0-length result (which is by convention PyUnicode_1BYTE_KIND
+        # and not PyUnicode_2BYTE_KIND as it currently expects)
+        self.may_crash = (end - start) <= 0 or (end - start) >= len(message)
+        super().__init__(message, start, end, reason)
+
+
 class CAPICodecErrors(unittest.TestCase):
+    @classmethod
+    def _generate_exceptions(cls, atomic_literal, factory, objlens):
+        for objlen in objlens:
+            obj = atomic_literal * objlen
+            m = 2 * max(2, objlen)
+            for start in range(-m, m):
+                for end in range(-m, m):
+                    yield factory(obj, start, end)
+
+    @classmethod
+    def generate_encode_errors(cls, objlen, *objlens):
+        def factory(obj, start, end):
+            return UnsafeUnicodeEncodeError('utf-8', obj, start, end, 'reason')
+        return tuple(cls._generate_exceptions('0', factory, [objlen, *objlens]))
+
+    @classmethod
+    def generate_decode_errors(cls, objlen, *objlens):
+        def factory(obj, start, end):
+            return UnsafeUnicodeDecodeError('utf-8', obj, start, end, 'reason')
+        return tuple(cls._generate_exceptions(b'0', factory, [objlen, *objlens]))
+
+    @classmethod
+    def generate_translate_errors(cls, objlen, *objlens):
+        def factory(obj, start, end):
+            return UnsafeUnicodeTranslateError(obj, start, end, 'reason')
+        return tuple(cls._generate_exceptions('0', factory, [objlen, *objlens]))
+
+    @classmethod
+    def setUpClass(cls):
+        cls.unicode_encode_errors = cls.generate_encode_errors(0, 1, 5)
+        cls.unicode_decode_errors = cls.generate_decode_errors(0, 1, 5)
+        cls.unicode_translate_errors = cls.generate_translate_errors(0, 1, 5)
+        cls.all_unicode_errors = (
+            cls.unicode_encode_errors
+            + cls.unicode_decode_errors
+            + cls.unicode_translate_errors
+        )
+        cls.bad_unicode_errors = (
+            ValueError(),
+        )
 
     def test_codec_register_error(self):
         # for cleaning up between tests
@@ -780,33 +842,70 @@ class CAPICodecErrors(unittest.TestCase):
         self.assertIs(codec_lookup_error('ignore'), codecs.ignore_errors)
         self.assertIs(codec_lookup_error('replace'), codecs.replace_errors)
         self.assertIs(codec_lookup_error('xmlcharrefreplace'), codecs.xmlcharrefreplace_errors)
+        self.assertIs(codec_lookup_error('backslashreplace'), codecs.backslashreplace_errors)
         self.assertIs(codec_lookup_error('namereplace'), codecs.namereplace_errors)
         self.assertRaises(LookupError, codec_lookup_error, 'unknown')
 
-    def test_codec_error_handlers(self):
-        exceptions = [
-            # A UnicodeError with an empty message currently crashes:
-            # See: https://github.com/python/cpython/issues/123378
-            # UnicodeEncodeError('bad', '', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'x', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'xyz123', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'xyz123', 1, 4, 'reason'),
-        ]
+    def test_codec_strict_errors_handler(self):
+        handler = _testcapi.codec_strict_errors
+        for exc in self.all_unicode_errors + self.bad_unicode_errors:
+            with self.subTest(handler=handler, exc=exc):
+                self.assertRaises(type(exc), handler, exc)
 
-        strict_handler = _testcapi.codec_strict_errors
+    def test_codec_ignore_errors_handler(self):
+        handler = _testcapi.codec_ignore_errors
+        all_exceptions = self.all_unicode_errors
+        bad_exceptions = self.bad_unicode_errors
+        self.do_test_codec_errors_handler(handler, all_exceptions, bad_exceptions)
+
+    def test_codec_replace_errors_handler(self):
+        handler = _testcapi.codec_replace_errors
+        all_exceptions = self.all_unicode_errors
+        bad_exceptions = self.bad_unicode_errors
+        self.do_test_codec_errors_handler(handler, all_exceptions, bad_exceptions)
+
+    def test_codec_xmlcharrefreplace_errors_handler(self):
+        handler = _testcapi.codec_xmlcharrefreplace_errors
+        exceptions = self.unicode_encode_errors
+        bad_exceptions = (
+            self.bad_unicode_errors
+            + tuple(e for e in self.all_unicode_errors if e not in exceptions)
+        )
+        self.do_test_codec_errors_handler(handler, exceptions, bad_exceptions)
+
+    def test_codec_backslashreplace_errors_handler(self):
+        handler = _testcapi.codec_backslashreplace_errors
+        exceptions = self.all_unicode_errors
+        bad_exceptions = self.bad_unicode_errors
+        self.do_test_codec_errors_handler(handler, exceptions, bad_exceptions)
+
+    def test_codec_namereplace_errors_handler(self):
+        handler = _testlimitedcapi.codec_namereplace_errors
+        exceptions = self.unicode_encode_errors
+        bad_exceptions = (
+            self.bad_unicode_errors
+            + tuple(e for e in self.all_unicode_errors if e not in exceptions)
+        )
+        self.do_test_codec_errors_handler(handler, exceptions, bad_exceptions)
+
+    def do_test_codec_errors_handler(self, handler, exceptions, bad_exceptions):
+        at_least_one = False
         for exc in exceptions:
-            with self.subTest(handler=strict_handler, exc=exc):
-                self.assertRaises(UnicodeEncodeError, strict_handler, exc)
+            # See https://github.com/python/cpython/issues/123378 and related
+            # discussion and issues for details.
+            if exc.may_crash:
+                continue
 
-        for handler in [
-            _testcapi.codec_ignore_errors,
-            _testcapi.codec_replace_errors,
-            _testcapi.codec_xmlcharrefreplace_errors,
-            _testlimitedcapi.codec_namereplace_errors,
-        ]:
-            for exc in exceptions:
-                with self.subTest(handler=handler, exc=exc):
-                    self.assertIsInstance(handler(exc), tuple)
+            at_least_one = True
+            with self.subTest(handler=handler, exc=exc):
+                # test that the handler does not crash
+                self.assertIsInstance(handler(exc), tuple)
+
+        self.assertTrue(at_least_one, "all exceptions are crashing")
+
+        for bad_exc in bad_exceptions:
+            with self.subTest('bad type', handler=handler, exc=bad_exc):
+                self.assertRaises(TypeError, handler, bad_exc)
 
 
 if __name__ == "__main__":
