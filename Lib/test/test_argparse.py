@@ -27,6 +27,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import requires_subprocess
 from test.support import script_helper
+from test.test_tools import skip_if_missing
 from unittest import mock
 
 
@@ -7036,6 +7037,7 @@ class TestTranslations(unittest.TestCase):
 
     def test_translations(self):
         # Test messages extracted from the argparse module against a snapshot
+        skip_if_missing('i18n')
         res = generate_po_file(stdout_only=False)
         self.assertEqual(res.returncode, 0)
         self.assertEqual(res.stderr, '')
