@@ -519,7 +519,6 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
     }
 
     assert(args[0] != NULL);
-    assert(PyUnicode_Check(args[0]));
 
     if (!should_audit(tstate->interp)) {
         Py_RETURN_NONE;
