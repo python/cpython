@@ -287,30 +287,42 @@ class _PlistParser:
 
 
 class _DumbXMLWriter:
-    def __init__(self, file, indent_level=0, indent="\t"):
+    def __init__(self, file, indent_level=0, indent="\t", compact=False):
         self.file = file
         self.stack = []
         self._indent_level = indent_level
         self.indent = indent
+        self.compact = compact
 
     def begin_element(self, element):
         self.stack.append(element)
-        self.writeln("<%s>" % element)
+        if not self.compact:
+            self.writeln("<%s>" % element)
+        else:
+            self.write("<%s>" % element)
         self._indent_level += 1
 
     def end_element(self, element):
         assert self._indent_level > 0
         assert self.stack.pop() == element
         self._indent_level -= 1
-        self.writeln("</%s>" % element)
+        if not self.compact:
+            self.writeln("</%s>" % element)
+        else:
+            self.write("</%s>" % element)
 
     def simple_element(self, element, value=None):
         if value is not None:
             value = _escape(value)
-            self.writeln("<%s>%s</%s>" % (element, value, element))
-
+            if not self.compact:
+                self.writeln("<%s>%s</%s>" % (element, value, element))
+            else:
+                self.write("<%s>%s</%s>" % (element, value, element))
         else:
-            self.writeln("<%s/>" % element)
+            if not self.compact:
+                self.writeln("<%s/>" % element)
+            else:
+                self.write("<%s/>" % element)
 
     def writeln(self, line):
         if line:
@@ -323,23 +335,39 @@ class _DumbXMLWriter:
             self.file.write(line)
         self.file.write(b'\n')
 
+    def write(self, line):
+        if line:
+            # plist has fixed encoding of utf-8
+
+            # XXX: is this test needed?
+            if isinstance(line, str):
+                line = line.encode('utf-8')
+            self.file.write(self._indent_level * self.indent)
+            self.file.write(line)
+
 
 class _PlistWriter(_DumbXMLWriter):
     def __init__(
             self, file, indent_level=0, indent=b"\t", writeHeader=1,
-            sort_keys=True, skipkeys=False, aware_datetime=False):
+            sort_keys=True, skipkeys=False, aware_datetime=False, compact=False):
 
         if writeHeader:
             file.write(PLISTHEADER)
-        _DumbXMLWriter.__init__(self, file, indent_level, indent)
+        _DumbXMLWriter.__init__(self, file, indent_level, indent, compact)
         self._sort_keys = sort_keys
         self._skipkeys = skipkeys
         self._aware_datetime = aware_datetime
 
     def write(self, value):
-        self.writeln("<plist version=\"1.0\">")
+        if not self.compact:
+            self.writeln("<plist version=\"1.0\">")
+        else:
+            self.write("<plist version=\"1.0\">")
         self.write_value(value)
-        self.writeln("</plist>")
+        if not self.compact:
+            self.writeln("</plist>")
+        else:
+            self.write("</plist>")
 
     def write_value(self, value):
         if isinstance(value, str):
@@ -724,9 +752,8 @@ class _BinaryPlistWriter (object):
                 if not isinstance(k, str):
                     if self._skipkeys:
                         continue
-                    raise TypeError("keys must be strings")
-                keys.append(k)
-                values.append(v)
+                    keys.append(k)
+                    values.append(v)
 
             for o in itertools.chain(keys, values):
                 self._flatten(o)
@@ -917,7 +944,7 @@ def loads(value, *, fmt=None, dict_type=dict, aware_datetime=False):
 
 
 def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False,
-         aware_datetime=False):
+         aware_datetime=False, compact=False):
     """Write 'value' to a .plist file. 'fp' should be a writable,
     binary file object.
     """
@@ -925,15 +952,15 @@ def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False,
         raise ValueError("Unsupported format: %r"%(fmt,))
 
     writer = _FORMATS[fmt]["writer"](fp, sort_keys=sort_keys, skipkeys=skipkeys,
-                                     aware_datetime=aware_datetime)
+                                     aware_datetime=aware_datetime, compact=compact)
     writer.write(value)
 
 
 def dumps(value, *, fmt=FMT_XML, skipkeys=False, sort_keys=True,
-          aware_datetime=False):
+          aware_datetime=False, compact=False):
     """Return a bytes object with the contents for a .plist file.
     """
     fp = BytesIO()
     dump(value, fp, fmt=fmt, skipkeys=skipkeys, sort_keys=sort_keys,
-         aware_datetime=aware_datetime)
+         aware_datetime=aware_datetime, compact=compact)
     return fp.getvalue()

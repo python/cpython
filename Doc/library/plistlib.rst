@@ -97,7 +97,7 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       *data* can be a string when *fmt* equals :data:`FMT_XML`.
 
-.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
+.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False, compact=False)
 
    Write *value* to a plist file. *Fp* should be a writable, binary
    file object.
@@ -120,6 +120,8 @@ This module defines the following functions:
    is set as an :ref:`aware object <datetime-naive-aware>`, it will convert to
    UTC timezone before writing it.
 
+   When *compact* is true, the XML elements are written without indentation.
+
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
    a container that contains objects of unsupported types.
 
@@ -131,14 +133,20 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       The keyword-only parameter *aware_datetime* has been added.
 
+   .. versionchanged:: 3.13
+      The keyword-only parameter *compact* has been added.
 
-.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
+
+.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False, compact=False)
 
    Return *value* as a plist-formatted bytes object. See
    the documentation for :func:`dump` for an explanation of the keyword
    arguments of this function.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.13
+      The keyword-only parameter *compact* has been added.
 
 
 The following classes are available:

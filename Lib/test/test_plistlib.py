@@ -900,6 +900,13 @@ class TestPlistlib(unittest.TestCase):
             expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
             self.assertEqual(parsed, expected)
 
+    def test_compact_mode(self):
+        pl = self._create()
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                data = plistlib.dumps(pl, fmt=fmt, compact=True)
+                pl2 = plistlib.loads(data)
+                self.assertEqual(dict(pl), dict(pl2))
 
 class TestBinaryPlistlib(unittest.TestCase):
 
