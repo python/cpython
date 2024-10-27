@@ -4144,7 +4144,7 @@ copying.
 
       Count the number of occurrences of *value*.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    There are also several readonly attributes available:
 
