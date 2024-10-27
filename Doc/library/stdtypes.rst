@@ -4147,7 +4147,7 @@ copying.
 
       Raises a :exc:`ValueError` if *value* cannot be found.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    There are also several readonly attributes available:
 
