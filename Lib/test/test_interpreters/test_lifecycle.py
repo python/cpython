@@ -195,16 +195,20 @@ class FinalizationTests(TestBase):
         with subprocess.Popen([
             sys.executable, "-c",
             "import threading, _interpreters\n"
-            "def run_interp(): _interpreters.run_string(_interpreters.create(), 'import time; print(1, flush=True); time.sleep(5)')\n"
+            "def run_interp(): _interpreters.run_string(_interpreters.create(),"
+            "'import time; print(1, flush=True); time.sleep(5)')\n"
             "threading.Thread(target=run_interp).start()"
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as proc:
             with proc.stdout:
+                # Make sure that the thread has actually started
                 self.assertEqual(proc.stdout.read(1), "1")
 
+            # Send a KeyboardInterrupt to the process
             proc.send_signal(signal.SIGINT)
             with proc.stderr:
                 self.assertIn("KeyboardInterrupt", proc.stderr.read())
             proc.wait()
+            # Make sure it didn't segfault
             self.assertEqual(proc.returncode, 0)
 
 if __name__ == '__main__':

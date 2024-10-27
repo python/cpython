@@ -2414,6 +2414,9 @@ PyThreadState_Swap(PyThreadState *newts)
 PyThreadState *
 _PyThreadState_SwapAttached(PyThreadState *tstate)
 {
+    // Evil thread state magic: we manually
+    // mark it as unbound so we can re-attach it
+    // to current thread.
     tstate->_status.bound_gilstate = 0;
     tstate->_status.holds_gil = 0;
     tstate->_status.active = 0;
