@@ -535,7 +535,7 @@ class partialmethod:
 # Helper functions
 
 def _unwrap_partial(func):
-    if isinstance(func, partial):
+    while isinstance(func, partial):
         func = func.func
     return func
 
