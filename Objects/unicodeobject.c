@@ -5285,6 +5285,8 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
+    // I don't know this check is necessary or not. But there is a test
+    // case that requires size=PY_SSIZE_T_MAX cause MemoryError.
     if (PY_SSIZE_T_MAX - sizeof(PyCompactUnicodeObject) < (size_t)size) {
         PyErr_NoMemory();
         return NULL;
@@ -5310,6 +5312,11 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     Py_ssize_t maxsize = size;
 
     unsigned char ch = (unsigned char)s[pos];
+    // error handler other than strict may remove/replace the invalid byte.
+    // consumed != NULL allows 1~3 bytes remainings.
+    // 0x80 <= ch < 0xc2 is invalid start byte that cause UnicodeDecodeError.
+    // otherwise: check the input and decide the maxchr and maxsize to reduce
+    // reallocation and copy.
     if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
         maxsize = utf8_count_codepoints((const unsigned char *)s, (const unsigned char *)end);
         if (ch < 0xc4) { // latin1
