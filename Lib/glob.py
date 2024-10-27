@@ -47,10 +47,10 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         pathname = os.fsdecode(pathname)
         if root_dir is not None:
             root_dir = os.fsdecode(root_dir)
-        for path in _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
-            yield os.fsencode(path)
+        paths = _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
+        return map(os.fsencode, paths)
     else:
-        yield from _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
+        return _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
 
 def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     if os.name == 'nt':
@@ -70,10 +70,9 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
             root_dir = os.path.curdir
         paths = _relative_glob(select, root_dir, dir_fd)
         # Skip empty string.
-        for path in paths:
-            if path:
-                yield path
-            break
+        path = next(paths, None)
+        if path:
+            yield path
     yield from paths
 
 _deprecated_function_message = (
@@ -93,12 +92,12 @@ def glob1(dirname, pattern):
 
 def _relative_glob(select, dirname, dir_fd=None):
     """Globs using a *select* function from the given dirname. The dirname
-    prefix is removed from results.
+    prefix is removed from results. If dir_fd is supplied, then dirname is
+    opened relative to the given file descriptor.
     """
     dirname = _StringGlobber.add_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
-    for path in select(dirname, dir_fd, dirname):
-        yield slicer(path)
+    return map(slicer, select(dirname, dir_fd, dirname))
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -391,7 +390,7 @@ class _GlobberBase:
             finally:
                 # Close any file descriptors still on the stack.
                 while stack:
-                    path, dir_fd, rel_path = stack.pop()
+                    path, dir_fd, _rel_path = stack.pop()
                     if path is None:
                         try:
                             self.close(dir_fd)
