@@ -587,7 +587,7 @@ idlelib and IDLE
 ----------------
 
 * If no selection is made during copy/cut, the current line will
-  copied/cut automatically.
+  copy/cut automatically.
   (Contributed by Jiahao Li in :gh:`94521`.)
 
 importlib
