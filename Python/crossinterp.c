@@ -1695,6 +1695,12 @@ _PyXI_HasCapturedException(_PyXI_session *session)
 static int
 _PyXI_ThreadStateRecovery(void *ptr)
 {
+    /*
+     * GH-126016: If the subinterpreter was running in a
+     * thread, and joining that thread was interrupted (namely with CTRL+C), then
+     * the thread state isn't cleaned up. This forces it to get cleaned up
+     * upon finalization.
+     */
     if ((&_PyRuntime)->_main_interpreter.finalizing != 1)
     {
         // If the interpreter isn't finalizing, then
@@ -1716,6 +1722,8 @@ _PyXI_ThreadStateRecovery(void *ptr)
     }
 
     // Subinterpreter is in a thread that suspended early!
+    // Get rid of this thread state or else finalize_subinterpreters() won't be
+    // happy.
     PyThreadState *return_tstate = _PyThreadState_SwapAttached(interp_tstate);
     _PyInterpreterState_SetNotRunningMain(interp_tstate->interp);
 
