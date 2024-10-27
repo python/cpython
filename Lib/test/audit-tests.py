@@ -574,6 +574,8 @@ def test_assert_unicode():
         sys.audit(9)
     except TypeError:
         pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
 
 
 if __name__ == "__main__":
