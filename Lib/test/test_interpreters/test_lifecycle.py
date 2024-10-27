@@ -185,6 +185,7 @@ class FinalizationTests(TestBase):
         self.assertEqual(proc.returncode, 1)
 
     @support.requires_subprocess()
+    @unittest.skipIf(sys.platform == "win32", "SIGINT does not work on Windows")
     def test_interrupt_thread_with_interpreter(self):
         # See GH-126016: Subinterpreters that are created
         # in another thread might not have their thread states
