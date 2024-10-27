@@ -185,6 +185,7 @@ class FinalizationTests(TestBase):
         self.assertEqual(proc.returncode, 1)
 
     @support.requires_subprocess()
+    @unittest.skipIf(sys.platform == "win32", "SIGINT does not work on Windows")
     def test_interrupt_thread_with_interpreter(self):
         # See GH-126016: Subinterpreters that are created
         # in another thread might not have their thread states
@@ -192,23 +193,19 @@ class FinalizationTests(TestBase):
         import subprocess
         import signal
 
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
         with subprocess.Popen([
             sys.executable, "-c",
             "import threading, _interpreters\n"
             "def run_interp(): _interpreters.run_string(_interpreters.create(),"
             "'import time; print(1, flush=True); time.sleep(5)')\n"
             "threading.Thread(target=run_interp).start()"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=flags) as proc:
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as proc:
             with proc.stdout:
                 # Make sure that the thread has actually started
                 self.assertEqual(proc.stdout.read(1), "1")
 
             # Send a KeyboardInterrupt to the process
-            if sys.platform == "win32":
-                proc.send_signal(signal.CTRL_C_EVENT)
-            else:
-                proc.send_signal(signal.SIGINT)
+            proc.send_signal(signal.SIGINT)
             with proc.stderr:
                 self.assertIn("KeyboardInterrupt", proc.stderr.read())
             proc.wait()
