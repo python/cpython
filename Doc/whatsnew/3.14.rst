@@ -583,6 +583,13 @@ email
 * Remove the *isdst* parameter from :func:`email.utils.localtime`.
   (Contributed by Hugo van Kemenade in :gh:`118798`.)
 
+idlelib and IDLE
+----------------
+
+* While doing copy/cut a empty selection, the current line will be selected
+  and copied/cut automatically.
+  (Contributed by Jiahao Li in :gh:`94521`.)
+
 importlib
 ---------
 

@@ -1,0 +1,2 @@
+While doing copy/cut a empty selection, the current line will be selected
+and copied/cut automatically.

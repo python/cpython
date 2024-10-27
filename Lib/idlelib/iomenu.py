@@ -7,6 +7,7 @@ import tokenize
 
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import TclError
 from tkinter.simpledialog import askstring  # loadfile encoding.
 
 from idlelib.config import idleConf
@@ -33,6 +34,8 @@ class IOBinding:
                                             self.save_a_copy)
         self.fileencoding = 'utf-8'
         self.__id_print = self.text.bind("<<print-window>>", self.print_window)
+        self.__id_copy = self.text.bind("<<copy>>", self.copy)
+        self.__id_cut = self.text.bind("<<cut>>", self.cut)
 
     def close(self):
         # Undo command bindings
@@ -41,6 +44,8 @@ class IOBinding:
         self.text.unbind("<<save-window-as-file>>",self.__id_saveas)
         self.text.unbind("<<save-copy-of-window-as-file>>", self.__id_savecopy)
         self.text.unbind("<<print-window>>", self.__id_print)
+        self.text.unbind("<<copy>>", self.__id_copy)
+        self.text.unbind("<<cut>>", self.__id_cut)
         # Break cycles
         self.editwin = None
         self.text = None
@@ -346,6 +351,20 @@ class IOBinding:
             messagebox.showinfo("Print status", message, parent=self.text)
         if tempfilename:
             os.unlink(tempfilename)
+        return "break"
+
+    def copy(self, event):
+        if not self.text.tag_ranges("sel"):
+            self.text.tag_add("sel", "insert linestart", "insert+1l linestart")
+            self.text.mark_set("insert", "insert linestart")
+        self.text.event_generate("<<Copy>>")
+        return "break"
+
+    def cut(self, event):
+        if not self.text.tag_ranges("sel"):
+            self.text.tag_add("sel", "insert linestart", "insert+1l linestart")
+            self.text.mark_set("insert", "insert linestart")
+        self.text.event_generate("<<Cut>>")
         return "break"
 
     opendialog = None
