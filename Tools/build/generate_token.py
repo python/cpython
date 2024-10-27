@@ -83,6 +83,8 @@ extern "C" {
 #define ISSTRINGLIT(x)          ((x) == STRING           || \\
                                  (x) == FSTRING_MIDDLE)
 
+#define GENERATE_2CHAR_CODE(x, y) ((int)((x) << 8 | (y))) // Generate a 16-bit integer from 2 8-bit characters
+#define GENERATE_3CHAR_CODE(x, y, z) ((int)((x) << 16 | (y) << 8 | (z))) // Generate a 24-bit integer from 3 8-bit characters
 
 // Export these 4 symbols for 'test_peg_generator'
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
@@ -149,6 +151,31 @@ _PyToken_ThreeChars(int c1, int c2, int c3)
 }
 """
 
+def generate_one_char_tokens(tokens):
+    result = []
+    result.append('    switch (c1) {\n')
+    for c, name in sorted(tokens.items()):
+        result.append("        case '%s': return %s;\n" % (c, name))
+    result.append('    }\n')
+    return ''.join(result)
+
+def generate_two_char_tokens(tokens):
+    result = []
+    result.append('    switch (GENERATE_2CHAR_CODE(c1, c2)) {\n')
+    for (c1, c2), name in sorted(tokens.items()):
+        result.append("        case GENERATE_2CHAR_CODE('%s', '%s'): return %s;\n" % (c1, c2, name))
+    result.append('    }\n')
+    return ''.join(result)
+
+def generate_three_char_tokens(tokens):
+    result = []
+    result.append('    switch (GENERATE_3CHAR_CODE(c1, c2, c3)) {\n')
+    for (c1, c2, c3), name in sorted(tokens.items()):
+        result.append("        case GENERATE_3CHAR_CODE('%s', '%s', '%s'): return %s;\n" % (c1, c2, c3, name))
+    result.append('    }\n')
+    return ''.join(result)
+
+
 def generate_chars_to_token(mapping, n=1):
     result = []
     write = result.append
@@ -172,14 +199,15 @@ def generate_chars_to_token(mapping, n=1):
 def make_c(infile, outfile='Parser/token.c'):
     tok_names, ERRORTOKEN, string_to_tok = load_tokens(infile)
     string_to_tok['<>'] = string_to_tok['!=']
-    chars_to_token = {}
+    chars_to_token = {
+        1: {},
+        2: {},
+        3: {},
+    }
     for string, value in string_to_tok.items():
         assert 1 <= len(string) <= 3
         name = tok_names[value]
-        m = chars_to_token.setdefault(len(string), {})
-        for c in string[:-1]:
-            m = m.setdefault(c, {})
-        m[string[-1]] = name
+        chars_to_token[len(string)][string] = name
 
     names = []
     for value, name in enumerate(tok_names):
@@ -190,9 +218,9 @@ def make_c(infile, outfile='Parser/token.c'):
 
     if update_file(outfile, token_c_template % (
             ''.join(names),
-            generate_chars_to_token(chars_to_token[1]),
-            generate_chars_to_token(chars_to_token[2]),
-            generate_chars_to_token(chars_to_token[3])
+            generate_one_char_tokens(chars_to_token[1]),
+            generate_two_char_tokens(chars_to_token[2]),
+            generate_three_char_tokens(chars_to_token[3])
         )):
         print("%s regenerated from %s" % (outfile, infile))
 

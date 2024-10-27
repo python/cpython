@@ -81,30 +81,30 @@ int
 _PyToken_OneChar(int c1)
 {
     switch (c1) {
-    case '!': return EXCLAMATION;
-    case '%': return PERCENT;
-    case '&': return AMPER;
-    case '(': return LPAR;
-    case ')': return RPAR;
-    case '*': return STAR;
-    case '+': return PLUS;
-    case ',': return COMMA;
-    case '-': return MINUS;
-    case '.': return DOT;
-    case '/': return SLASH;
-    case ':': return COLON;
-    case ';': return SEMI;
-    case '<': return LESS;
-    case '=': return EQUAL;
-    case '>': return GREATER;
-    case '@': return AT;
-    case '[': return LSQB;
-    case ']': return RSQB;
-    case '^': return CIRCUMFLEX;
-    case '{': return LBRACE;
-    case '|': return VBAR;
-    case '}': return RBRACE;
-    case '~': return TILDE;
+        case '!': return EXCLAMATION;
+        case '%': return PERCENT;
+        case '&': return AMPER;
+        case '(': return LPAR;
+        case ')': return RPAR;
+        case '*': return STAR;
+        case '+': return PLUS;
+        case ',': return COMMA;
+        case '-': return MINUS;
+        case '.': return DOT;
+        case '/': return SLASH;
+        case ':': return COLON;
+        case ';': return SEMI;
+        case '<': return LESS;
+        case '=': return EQUAL;
+        case '>': return GREATER;
+        case '@': return AT;
+        case '[': return LSQB;
+        case ']': return RSQB;
+        case '^': return CIRCUMFLEX;
+        case '{': return LBRACE;
+        case '|': return VBAR;
+        case '}': return RBRACE;
+        case '~': return TILDE;
     }
     return OP;
 }
@@ -112,83 +112,27 @@ _PyToken_OneChar(int c1)
 int
 _PyToken_TwoChars(int c1, int c2)
 {
-    switch (c1) {
-    case '!':
-        switch (c2) {
-        case '=': return NOTEQUAL;
-        }
-        break;
-    case '%':
-        switch (c2) {
-        case '=': return PERCENTEQUAL;
-        }
-        break;
-    case '&':
-        switch (c2) {
-        case '=': return AMPEREQUAL;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*': return DOUBLESTAR;
-        case '=': return STAREQUAL;
-        }
-        break;
-    case '+':
-        switch (c2) {
-        case '=': return PLUSEQUAL;
-        }
-        break;
-    case '-':
-        switch (c2) {
-        case '=': return MINEQUAL;
-        case '>': return RARROW;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/': return DOUBLESLASH;
-        case '=': return SLASHEQUAL;
-        }
-        break;
-    case ':':
-        switch (c2) {
-        case '=': return COLONEQUAL;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '<': return LEFTSHIFT;
-        case '=': return LESSEQUAL;
-        case '>': return NOTEQUAL;
-        }
-        break;
-    case '=':
-        switch (c2) {
-        case '=': return EQEQUAL;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '=': return GREATEREQUAL;
-        case '>': return RIGHTSHIFT;
-        }
-        break;
-    case '@':
-        switch (c2) {
-        case '=': return ATEQUAL;
-        }
-        break;
-    case '^':
-        switch (c2) {
-        case '=': return CIRCUMFLEXEQUAL;
-        }
-        break;
-    case '|':
-        switch (c2) {
-        case '=': return VBAREQUAL;
-        }
-        break;
+    switch (GENERATE_2CHAR_CODE(c1, c2)) {
+        case GENERATE_2CHAR_CODE('!', '='): return NOTEQUAL;
+        case GENERATE_2CHAR_CODE('%', '='): return PERCENTEQUAL;
+        case GENERATE_2CHAR_CODE('&', '='): return AMPEREQUAL;
+        case GENERATE_2CHAR_CODE('*', '*'): return DOUBLESTAR;
+        case GENERATE_2CHAR_CODE('*', '='): return STAREQUAL;
+        case GENERATE_2CHAR_CODE('+', '='): return PLUSEQUAL;
+        case GENERATE_2CHAR_CODE('-', '='): return MINEQUAL;
+        case GENERATE_2CHAR_CODE('-', '>'): return RARROW;
+        case GENERATE_2CHAR_CODE('/', '/'): return DOUBLESLASH;
+        case GENERATE_2CHAR_CODE('/', '='): return SLASHEQUAL;
+        case GENERATE_2CHAR_CODE(':', '='): return COLONEQUAL;
+        case GENERATE_2CHAR_CODE('<', '<'): return LEFTSHIFT;
+        case GENERATE_2CHAR_CODE('<', '='): return LESSEQUAL;
+        case GENERATE_2CHAR_CODE('<', '>'): return NOTEQUAL;
+        case GENERATE_2CHAR_CODE('=', '='): return EQEQUAL;
+        case GENERATE_2CHAR_CODE('>', '='): return GREATEREQUAL;
+        case GENERATE_2CHAR_CODE('>', '>'): return RIGHTSHIFT;
+        case GENERATE_2CHAR_CODE('@', '='): return ATEQUAL;
+        case GENERATE_2CHAR_CODE('^', '='): return CIRCUMFLEXEQUAL;
+        case GENERATE_2CHAR_CODE('|', '='): return VBAREQUAL;
     }
     return OP;
 }
@@ -196,52 +140,12 @@ _PyToken_TwoChars(int c1, int c2)
 int
 _PyToken_ThreeChars(int c1, int c2, int c3)
 {
-    switch (c1) {
-    case '*':
-        switch (c2) {
-        case '*':
-            switch (c3) {
-            case '=': return DOUBLESTAREQUAL;
-            }
-            break;
-        }
-        break;
-    case '.':
-        switch (c2) {
-        case '.':
-            switch (c3) {
-            case '.': return ELLIPSIS;
-            }
-            break;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':
-            switch (c3) {
-            case '=': return DOUBLESLASHEQUAL;
-            }
-            break;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '<':
-            switch (c3) {
-            case '=': return LEFTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '>':
-            switch (c3) {
-            case '=': return RIGHTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
+    switch (GENERATE_3CHAR_CODE(c1, c2, c3)) {
+        case GENERATE_3CHAR_CODE('*', '*', '='): return DOUBLESTAREQUAL;
+        case GENERATE_3CHAR_CODE('.', '.', '.'): return ELLIPSIS;
+        case GENERATE_3CHAR_CODE('/', '/', '='): return DOUBLESLASHEQUAL;
+        case GENERATE_3CHAR_CODE('<', '<', '='): return LEFTSHIFTEQUAL;
+        case GENERATE_3CHAR_CODE('>', '>', '='): return RIGHTSHIFTEQUAL;
     }
     return OP;
 }
