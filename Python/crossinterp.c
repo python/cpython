@@ -1721,12 +1721,22 @@ _PyXI_ThreadStateRecovery(void *ptr)
         return 0;
     }
 
-    // Subinterpreter is in a thread that suspended early!
-    // Get rid of this thread state or else finalize_subinterpreters() won't be
-    // happy.
+    /* Subinterpreter is in a thread that suspended early!
+     * Get rid of this thread state or else finalize_subinterpreters() won't be
+     * happy.
+     */
+
+    // We have to use SwapAttached because the thread state is technically active.
+    // Though, we're certain that nothing is using it, because the thread got
+    // interrupted.
     PyThreadState *return_tstate = _PyThreadState_SwapAttached(interp_tstate);
     _PyInterpreterState_SetNotRunningMain(interp_tstate->interp);
 
+    // TODO: While this cleans up the thread state and lets the interpreter
+    // finalize gracefully, it doesn't deal with any reference on the
+    // _PyXI_session, because that's a stack reference which might be dead
+    // by now. So, those references get leaked right now--that needs to get
+    // fixed.
     PyThreadState_Clear(interp_tstate);
     PyThreadState_Swap(return_tstate);
     PyThreadState_Delete(interp_tstate);
