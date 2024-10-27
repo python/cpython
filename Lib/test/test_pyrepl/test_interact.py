@@ -117,6 +117,15 @@ SyntaxError: duplicate argument 'x' in function definition"""
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
 
+    def test_runsource_survives_null_bytes(self):
+        console = InteractiveColoredConsole()
+        source = "\x00\n"
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertIn("source code string cannot contain null bytes", f.getvalue())
+
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
         source = dedent("""\
