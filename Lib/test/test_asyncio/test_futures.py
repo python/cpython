@@ -1007,6 +1007,24 @@ class BaseFutureDoneCallbackTests():
             # returns an empty list but the C implementation returns None.
             self.assertIn(fut._callbacks, (None, []))
 
+    def test_use_after_free_on_fut_callback_0_with_evil__eq__(self):
+        # Special thanks to Nico-Posada for the original PoC.
+        # See https://github.com/python/cpython/issues/125966.
+
+        fut = self._new_future()
+
+        class cb_pad:
+            def __eq__(self, other):
+                return True
+
+        class evil(cb_pad):
+            def __eq__(self, other):
+                fut.remove_done_callback(None)
+                return NotImplemented
+
+        fut.add_done_callback(cb_pad())
+        fut.remove_done_callback(evil())
+
     def test_use_after_free_on_fut_callback_0_with_evil__getattribute__(self):
         # see: https://github.com/python/cpython/issues/125984
 
