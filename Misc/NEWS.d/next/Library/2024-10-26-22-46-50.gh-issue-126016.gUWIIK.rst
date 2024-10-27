@@ -1,0 +1,2 @@
+Fixed crash upon using CTRL+C while a thread containing a subinterpreter was
+joining.
