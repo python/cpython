@@ -34,6 +34,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -628,7 +629,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self, visited=None, *, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -2218,7 +2221,7 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
-    def reset_mock(self, /, *args, return_value=False, **kwargs):
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
         if (
             return_value
             and self._mock_name
@@ -2754,7 +2757,15 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
-    _kwargs = {'spec': spec}
+
+    entries = [(entry, _missing) for entry in dir(spec)]
+    if is_type and instance and is_dataclass(spec):
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+    else:
+        _kwargs = {'spec': spec}
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2811,7 +2822,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2825,10 +2836,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is _missing:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
         child_kwargs = {'spec': original}
         # Wrap child attributes also.

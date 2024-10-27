@@ -14,6 +14,11 @@
    from turtle import *
    turtle = Turtle()
 
+.. testcleanup::
+
+   import os
+   os.remove("my_drawing.ps")
+
 --------------
 
 Introduction
@@ -2772,9 +2777,6 @@ Changes since Python 3.0
 - Two input methods have been added: :func:`Screen.textinput <textinput>` and
   :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
-
-- Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
-  have been added to the :file:`Lib/turtledemo` directory.
 
 
 .. doctest::

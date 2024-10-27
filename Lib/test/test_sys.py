@@ -206,6 +206,20 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # Overflow results in a -1 exit code, which may be converted to 0xff
+        # or 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         # call with integer argument
         with self.assertRaises(SystemExit) as cm:
             sys.exit(42)
@@ -1042,14 +1056,10 @@ class SysModuleTest(unittest.TestCase):
         # Output of sys._debugmallocstats() depends on configure flags.
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
-            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-            if with_freelists:
-                self.assertIn(b"free PyDictObjects", err)
+            self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
-                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)

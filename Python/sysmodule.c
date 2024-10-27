@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
 #include "pycore_dict.h"          // _PyDict_GetItemWithError()
@@ -2384,10 +2385,11 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
         f = f->previous;
     }
-    if (f == NULL || f->f_funcobj == NULL) {
+    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
+    PyObject *r = PyFunction_GetModule(func);
     if (!r) {
         PyErr_Clear();
         r = Py_None;

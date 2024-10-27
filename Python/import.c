@@ -1,6 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
@@ -14,7 +15,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -815,6 +816,8 @@ static int clear_singlephase_extension(PyInterpreterState *interp,
 
 // Currently, this is only used for testing.
 // (See _testinternalcapi.clear_extension().)
+// If adding another use, be careful about modules that import themselves
+// recursively (see gh-123880).
 int
 _PyImport_ClearExtension(PyObject *name, PyObject *filename)
 {
@@ -1049,7 +1052,7 @@ del_cached_def(struct extensions_cache_value *value)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    assert(value->def == NULL || _Py_IsImmortalLoose(value->def));
+    assert(value->def == NULL || _Py_IsImmortal(value->def));
 
     Py_XDECREF(value->def->m_base.m_copy);
     value->def->m_base.m_copy = NULL;
@@ -1322,12 +1325,16 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     value = entry == NULL
         ? NULL
         : (struct extensions_cache_value *)entry->value;
-    /* We should never be updating an existing cache value. */
-    assert(value == NULL);
     if (value != NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "extension module %R is already cached", name);
-        goto finally;
+        /* gh-123880: If there's an existing cache value, it means a module is
+         * being imported recursively from its PyInit_* or Py_mod_* function.
+         * (That function presumably handles returning a partially
+         *  constructed module in such a case.)
+         * We can reuse the existing cache value; it is owned by the cache.
+         * (Entries get removed from it in exceptional circumstances,
+         *  after interpreter shutdown, and in runtime shutdown.)
+         */
+        goto finally_oldvalue;
     }
     newvalue = alloc_extensions_cache_value();
     if (newvalue == NULL) {
@@ -1392,6 +1399,7 @@ finally:
         cleanup_old_cached_def(&olddefbase);
     }
 
+finally_oldvalue:
     extensions_lock_release();
     if (key != NULL) {
         hashtable_destroy_str(key);
@@ -2128,6 +2136,7 @@ error:
 }
 
 
+// Used in _PyImport_ClearExtension; see notes there.
 static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)

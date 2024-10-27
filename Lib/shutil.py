@@ -44,11 +44,11 @@ if sys.platform == 'win32':
 else:
     _winapi = None
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 256 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = (hasattr(os, "sendfile")
-                    and sys.platform.startswith(("linux", "android", "solaris")))
+                    and sys.platform.startswith(("linux", "android", "sunos")))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
