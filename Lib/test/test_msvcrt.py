@@ -122,7 +122,7 @@ class TestOther(unittest.TestCase):
         old = msvcrt.SetErrorMode(0)
         msvcrt.SetErrorMode(old)
 
-    @unittest.skipUnless(Py_DEBUG, "only avialable under debug build")
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_set_error_mode(self):
         old = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
         msvcrt.set_error_mode(old)
