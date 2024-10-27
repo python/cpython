@@ -1,9 +1,3 @@
-/*
- * Python CPU SIMD features detection.
- *
- * See https://en.wikipedia.org/wiki/CPUID for details.
- */
-
 #include "Python.h"
 #include "pycore_cpuinfo.h"
 

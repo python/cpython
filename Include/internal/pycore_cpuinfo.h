@@ -1,3 +1,15 @@
+/*
+ * Interface for detecting the different CPUID flags in an opaque manner.
+ * See https://en.wikipedia.org/wiki/CPUID for details on the bit values.
+ *
+ * If a module requires to support SIMD instructions, it should determine
+ * the compiler flags and the instruction sets required for the instrinsics
+ * to work.
+ *
+ * For the headers and expected CPUID bits needed by Intel intrinics, see
+ * https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html.
+ */
+
 #ifndef Py_INTERNAL_CPUINFO_H
 #define Py_INTERNAL_CPUINFO_H
 
@@ -44,7 +56,7 @@ typedef struct py_cpuid_features {
      * FP16 since they operate on bfloat16 and binary16 (half-float).
      *
      * See https://en.wikipedia.org/wiki/AVX-512#Instruction_set for
-     * the meaning of each suffix (e.g., 'f' stands for 'Foundation').
+     * the suffix meanings (for instance 'f' stands for 'Foundation').
      */
     _Py_CPUID_DECL_FLAG(avx512_f);
     _Py_CPUID_DECL_FLAG(avx512_cd);
@@ -103,6 +115,8 @@ typedef struct py_cpuid_features {
  * could lead to an illegal instruction error.
  *
  * This does not mark 'flags' as being ready yet.
+ *
+ * Note: This function does not set any exception and thus never fails.
  */
 extern void
 _Py_cpuid_disable_features(py_cpuid_features *flags);
@@ -113,6 +127,8 @@ _Py_cpuid_disable_features(py_cpuid_features *flags);
  *
  * The caller should disable all CPUID detected features if the check
  * fails to avoid encountering runtime illegal instruction errors.
+ *
+ * Note: This function does not set any exception and thus never fails.
  */
 extern int
 _Py_cpuid_check_features(const py_cpuid_features *flags);
@@ -121,22 +137,29 @@ _Py_cpuid_check_features(const py_cpuid_features *flags);
  * Return 1 if all expected flags are set in 'actual', 0 otherwise.
  *
  * If 'actual' or 'expect' are not ready yet, this also returns 0.
+ *
+ * Note: This function does not set any exception and thus never fails.
  */
 extern int
 _Py_cpuid_has_features(const py_cpuid_features *actual,
                        const py_cpuid_features *expect);
 
-
 /*
  * Return 1 if 'actual' and 'expect' are identical, 0 otherwise.
  *
  * If 'actual' or 'expect' are not ready yet, this also returns 0.
+ *
+ * Note: This function does not set any exception and thus never fails.
  */
 extern int
 _Py_cpuid_match_features(const py_cpuid_features *actual,
                          const py_cpuid_features *expect);
 
-/* Detect the available features on this machine. */
+/*
+ * Detect the available features on this machine, storing the result in 'flags'.
+ *
+ * Note: This function does not set any exception and thus never fails.
+ */
 extern void
 _Py_cpuid_detect_features(py_cpuid_features *flags);
 
