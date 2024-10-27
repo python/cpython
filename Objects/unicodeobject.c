@@ -1314,8 +1314,9 @@ ascii_new(Py_ssize_t size)
     void *data;
     Py_ssize_t struct_size = sizeof(PyASCIIObject);
 
-    if (size > ((PY_SSIZE_T_MAX - struct_size) - 1))
+    if (size > ((PY_SSIZE_T_MAX - struct_size) - 1)) {
         return PyErr_NoMemory();
+    }
 
     /* Duplicated allocation code from _PyObject_New() instead of a call to
      * PyObject_New() so we are able to allocate space for the object and
@@ -1339,7 +1340,7 @@ ascii_new(Py_ssize_t size)
     ((char*)data)[size] = 0;
 
 #ifdef Py_DEBUG
-    unicode_fill_invalid((PyObject*)unicode, 0);
+    unicode_fill_invalid((PyObject*)obj, 0);
 #endif
     assert(_PyUnicode_CheckConsistency(obj, 0));
     return obj;
@@ -5092,12 +5093,16 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 
 #if (defined(__clang__) || defined(__GNUC__))
 #define HAS_CTZ 1
-static inline unsigned int ctz(size_t v) {
+static inline unsigned int
+ctz(size_t v)
+{
     return __builtin_ctzll((unsigned long long)v);
 }
 #elif defined(_MSC_VER)
 #define HAS_CTZ 1
-static inline unsigned int ctz(size_t v) {
+static inline unsigned int
+ctz(size_t v)
+{
     unsigned long pos;
 #if SIZEOF_SIZE_T == 4
     _BitScanForward(&pos, v);
@@ -5410,10 +5415,10 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
         maxsize = utf8_count_codepoints((const unsigned char *)s, (const unsigned char *)end);
         if (ch < 0xc4) { // latin1
-            maxchr = 255;
+            maxchr = 0xff;
         }
         else if (ch < 0xf0) { // ucs2
-            maxchr = 65535;
+            maxchr = 0xffff;
         }
         else { // ucs4
             maxchr = 0x10ffff;
@@ -5493,8 +5498,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
                              Py_ssize_t *consumed)
 {
     return unicode_decode_utf8(s, size,
-            errors ? _Py_ERROR_UNKNOWN : _Py_ERROR_STRICT,
-            errors, consumed);
+                               errors ? _Py_ERROR_UNKNOWN : _Py_ERROR_STRICT,
+                               errors, consumed);
 }
 
 
