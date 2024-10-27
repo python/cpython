@@ -6,9 +6,9 @@ It also provides some help for examining source code and class layout.
 
 Here are some of the useful functions provided by this module:
 
-    ismodule(), isclass(), ismethod(), isfunction(), isgeneratorfunction(),
-        isgenerator(), istraceback(), isframe(), iscode(), isbuiltin(),
-        isroutine() - check object types
+    ismodule(), isclass(), ismethod(), ispackage(), isfunction(),
+        isgeneratorfunction(), isgenerator(), istraceback(), isframe(),
+        iscode(), isbuiltin(), isroutine() - check object types
     getmembers() - get members of an object that satisfy a given condition
 
     getfile(), getsourcefile(), getsource() - find an object's source code
@@ -128,6 +128,7 @@ __all__ = [
     "ismethoddescriptor",
     "ismethodwrapper",
     "ismodule",
+    "ispackage",
     "isroutine",
     "istraceback",
     "markcoroutinefunction",
@@ -185,6 +186,10 @@ def isclass(object):
 def ismethod(object):
     """Return true if the object is an instance method."""
     return isinstance(object, types.MethodType)
+
+def ispackage(object):
+    """Return true if the object is a package."""
+    return ismodule(object) and hasattr(object, "__path__")
 
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
