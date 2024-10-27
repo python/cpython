@@ -575,6 +575,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
     "_PyEval_FrameClearAndPop",
+    "_PyFloat_FromDouble_ConsumeInputs",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
@@ -743,7 +744,7 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
                 next(tkn_iter)  # '('
                 t = next(tkn_iter)
-                if t.text == "true":
+                if t.text in ("true", "1"):
                     return True
     return False
 

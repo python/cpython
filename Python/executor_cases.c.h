@@ -643,8 +643,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval *
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -664,8 +664,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval +
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -685,8 +685,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval -
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -737,7 +737,9 @@
             _PyStackRef left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            #ifndef NDEBUG
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            #endif
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             int next_oparg;
             #if TIER_ONE
@@ -2813,7 +2815,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            PyObject *old_value;
             if (!DK_IS_UNICODE(dict->ma_keys)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2823,14 +2824,17 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            PyObject *old_value = ep->me_value;
+            if (old_value == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
@@ -4297,10 +4301,11 @@
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Str(arg_o));
+            PyObject *res_o = PyObject_Str(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(arg);
-            if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -4329,10 +4334,11 @@
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPyObjectSteal(PySequence_Tuple(arg_o));
+            PyObject *res_o = PySequence_Tuple(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(arg);
-            if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
