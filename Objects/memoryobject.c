@@ -2803,7 +2803,7 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
             // when calling the == operator, their shape cannot. As such,
             // it is safe to assume that the index remains valid for the
             // entire loop.
-            assert(index < Py_SIZE(obj));
+            assert(index < n);
 
             PyObject *item = memory_item(obj, index);
             if (item == NULL) {
