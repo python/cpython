@@ -5107,10 +5107,9 @@ static inline size_t vector_utf8_start_chars(size_t v)
     return ((~v >> 7) | (v >> 6)) & VECTOR_0101;
 }
 
-static Py_ssize_t utf8_count_codepoints(const unsigned char *s, Py_ssize_t size)
+static Py_ssize_t utf8_count_codepoints(const unsigned char *s, const unsigned char *end)
 {
     Py_ssize_t len = 0;
-    const unsigned char *end = s + size;
 
     if (end - s > SIZEOF_SIZE_T * 2) {
         while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
@@ -5286,6 +5285,11 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
+    if (PY_SSIZE_T_MAX - sizeof(PyCompactUnicodeObject) < size) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     const char *starts = s;
     const char *end = s + size;
 
@@ -5307,7 +5311,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 
     unsigned char ch = (unsigned char)s[pos];
     if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
-        maxsize = utf8_count_codepoints((const unsigned char *)s, size);
+        maxsize = utf8_count_codepoints((const unsigned char *)s, (const unsigned char *)end);
         if (ch < 0xc4) { // latin1
             maxchr = 255;
         }
