@@ -213,6 +213,32 @@ useful when working with learners for whom typing is not a skill.
     use turtle graphics with a learner.
 
 
+Automatically begin and end filling
+-----------------------------------
+
+If you have Python 3.14 or later, you don't need to call :func:`begin_fill` and
+:func:`end_fill` for filling. Instead, you can use the :func:`fill`
+:term:`context manager` to automatically begin and end fill. Here is an
+example::
+
+   with fill():
+      for i in range(4):
+         forward(100)
+         right(90)
+
+   forward(200)
+
+The code above is equivalent to::
+
+   begin_fill()
+   for i in range(4):
+      forward(100)
+      right(90)
+   end_fill()
+
+   forward(200)
+
+
 Use the ``turtle`` module namespace
 -----------------------------------
 
@@ -381,6 +407,7 @@ Using events
    | :func:`ondrag`
 
 Special Turtle methods
+   | :func:`poly`
    | :func:`begin_poly`
    | :func:`end_poly`
    | :func:`get_poly`
@@ -403,6 +430,7 @@ Window control
    | :func:`setworldcoordinates`
 
 Animation control
+   | :func:`no_animation`
    | :func:`delay`
    | :func:`tracer`
    | :func:`update`
@@ -1275,6 +1303,29 @@ Filling
       ... else:
       ...    turtle.pensize(3)
 
+.. function:: fill()
+
+   Fill the shape drawn in the ``with turtle.fill():`` block.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("black", "red")
+      >>> with turtle.fill():
+      ...     turtle.circle(80)
+
+   Using ``fill``  is equivalent to adding the :func:`begin_fill` before the
+   fill-block and :func:`end_fill` after the fill-block
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.color("black", "red")
+      >>> turtle.begin_fill()
+      >>> turtle.circle(80)
+      >>> turtle.end_fill()
+
+   .. versionadded:: 3.14
 
 
 .. function:: begin_fill()
@@ -1648,6 +1699,22 @@ Using events
 Special Turtle methods
 ----------------------
 
+
+.. function:: poly()
+
+   Record the vertices of a polygon.  The first and last vertices will be
+   connected.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> with turtle.poly():
+      ...     turtle.forward(100)
+      ...     turtle.right(60)
+      ...     turtle.forward(100)
+
+   .. versionadded:: 3.14
+
 .. function:: begin_poly()
 
    Start recording the vertices of a polygon.  Current turtle position is first
@@ -1924,6 +1991,24 @@ Window control
 
 Animation control
 -----------------
+
+.. function:: no_animation()
+
+   Temporarilly disable turtle animation. The code written inside the
+   ``no_animation`` block will not be animated, and once the code block is
+   exitted, the drawing will appear.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> with screen.no_animation():
+      ...     for i in range(200):
+      ...         fd(dist)
+      ...         rt(90)
+      ...         dist += 2
+
+
+   .. versionadded:: 3.14
 
 .. function:: delay(delay=None)
 
