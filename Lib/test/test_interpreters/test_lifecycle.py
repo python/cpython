@@ -184,6 +184,28 @@ class FinalizationTests(TestBase):
             print("------")
         self.assertEqual(proc.returncode, 1)
 
+    @support.requires_subprocess()
+    def test_interrupt_thread_with_interpreter(self):
+        # See GH-126016: Subinterpreters that are created
+        # in another thread might not have their thread states
+        # cleaned up if the user interrupted joining with CTRL+C.
+        import subprocess
+        import signal
+
+        with subprocess.Popen([
+            sys.executable, "-c",
+            "import threading, _interpreters\n"
+            "def run_interp(): _interpreters.run_string(_interpreters.create(), 'import time; print(1, flush=True); time.sleep(5)')\n"
+            "threading.Thread(target=run_interp).start()"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as proc:
+            with proc.stdout:
+                self.assertEqual(proc.stdout.read(1), "1")
+
+            proc.send_signal(signal.SIGINT)
+            with proc.stderr:
+                self.assertIn("KeyboardInterrupt", proc.stderr.read())
+            proc.wait()
+            self.assertEqual(proc.returncode, 0)
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
