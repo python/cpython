@@ -399,8 +399,9 @@ class CLanguage(Language):
         requires_defining_class = (len(selfless)
                                    and isinstance(selfless[0].converter,
                                                   defining_class_converter))
-        has_varag_hack = all(p.is_positional_only() or p.is_vararg()
-                             for p in selfless) and not requires_defining_class
+        pass_vararg_directly = (all(p.is_positional_only() or p.is_vararg()
+                                    for p in selfless)
+                                and not requires_defining_class)
 
         # offset i by -1 because first_optional needs to ignore self
         for i, p in enumerate(parameters, -1):
@@ -409,7 +410,7 @@ class CLanguage(Language):
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
 
-            if p.is_vararg() and not has_varag_hack:
+            if p.is_vararg() and not pass_vararg_directly:
                 data.cleanup.append(f"Py_XDECREF({c.parser_name});")
 
             # insert group variable
@@ -423,7 +424,7 @@ class CLanguage(Language):
                     data.impl_parameters.append("int " + group_name)
                     has_option_groups = True
 
-            if p.is_vararg() and has_varag_hack:
+            if p.is_vararg() and pass_vararg_directly:
                 data.impl_arguments.append('nvararg')
                 data.impl_parameters.append('Py_ssize_t nargs')
                 p.converter.type = 'PyObject *const *'
