@@ -39,7 +39,7 @@ jobs:
             awaiting changes
             awaiting change review
       - id: is-feature
-        name: Check for type-feature label
+        name: Check for type-feature
         uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
