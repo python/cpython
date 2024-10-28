@@ -3675,7 +3675,6 @@ features:
               os.remove(os.path.join(root, name))
           for name in dirs:
               os.rmdir(os.path.join(root, name))
-
       os.rmdir(top)
 
    .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
