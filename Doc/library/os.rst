@@ -3676,6 +3676,8 @@ features:
           for name in dirs:
               os.rmdir(os.path.join(root, name))
 
+      os.rmdir(top)
+
    .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
 
    .. versionchanged:: 3.5
