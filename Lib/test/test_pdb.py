@@ -352,6 +352,42 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoint_on_annotated_function_def():
+    """Test breakpoints on function definitions with annotation.
+
+    >>> def foo[T]():
+    ...     return 0
+
+    >>> def bar() -> int:
+    ...     return 0
+
+    >>> def foobar[T]() -> int:
+    ...     return 0
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break foo',
+    ...     'break bar',
+    ...     'break foobar',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(3)test_function()
+    -> pass
+    (Pdb) break foo
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:1
+    (Pdb) break bar
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[1]>:1
+    (Pdb) break foobar
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[2]>:1
+    (Pdb) continue
+    """
+
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
@@ -2283,6 +2319,20 @@ def bœr():
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
+    def test_step_into_botframe(self):
+        # gh-125422
+        # pdb should not be able to step into the botframe (bdb.py)
+        script = "x = 1"
+        commands = """
+            step
+            step
+            step
+            quit
+        """
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn("The program finished", stdout)
+        self.assertNotIn("bdb.py", stdout)
+
     def test_pdbrc_basic(self):
         script = textwrap.dedent("""
             a = 1
@@ -2739,6 +2789,16 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_empty_file(self):
+        script = ''
+        commands = 'q\n'
+        # We check that pdb stopped at line 0, but anything reasonable
+        # is acceptable here, as long as it does not halt
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('main.py(0)', stdout)
+        stdout, _ = self.run_pdb_module(script, commands)
+        self.assertIn('__main__.py(0)', stdout)
 
     def test_non_utf8_encoding(self):
         script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')

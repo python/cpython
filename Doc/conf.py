@@ -82,11 +82,12 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '6.2.1'
+needs_sphinx = '7.2.6'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = False
+toc_object_entries = True
+toc_object_entries_show_parents = 'hide'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.

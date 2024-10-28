@@ -690,6 +690,21 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
+* ``'extend'`` - This stores a list and appends each item from the multi-value
+  argument list to it.
+  The ``'extend'`` action is typically used with the nargs_ keyword argument
+  value ``'+'`` or ``'*'``.
+  Note that when nargs_ is ``None`` (the default) or ``'?'``, each
+  character of the argument string will be appended to the list.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+  .. versionadded:: 3.8
+
 * ``'count'`` - This counts the number of times a keyword argument occurs. For
   example, this is useful for increasing verbosity levels::
 
@@ -714,17 +729,6 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
     >>> parser.parse_args(['--version'])
     PROG 2.0
-
-* ``'extend'`` - This stores a list, and extends each argument value to the
-  list.
-  Example usage::
-
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
-    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
-    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
-
-  .. versionadded:: 3.8
 
 Only actions that consume command-line arguments (e.g. ``'store'``,
 ``'append'`` or ``'extend'``) can be used with positional arguments.
@@ -1740,7 +1744,8 @@ FileType objects
 Argument groups
 ^^^^^^^^^^^^^^^
 
-.. method:: ArgumentParser.add_argument_group(title=None, description=None)
+.. method:: ArgumentParser.add_argument_group(title=None, description=None, *, \
+                                              [argument_default], [conflict_handler])
 
    By default, :class:`ArgumentParser` groups command-line arguments into
    "positional arguments" and "options" when displaying help
@@ -1784,6 +1789,11 @@ Argument groups
        group2 description
 
        --bar BAR  bar help
+
+   The optional, keyword-only parameters argument_default_ and conflict_handler_
+   allow for finer-grained control of the behavior of the argument group. These
+   parameters have the same meaning as in the :class:`ArgumentParser` constructor,
+   but apply specifically to the argument group rather than the entire parser.
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
