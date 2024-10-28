@@ -1,1 +1,1 @@
-Fixed use-after-crash crashes on :class:`ElementTree` which underlying __eq__() function implements clearing its base. Reported by picnixz. Patch by Xingru Li.
+Fixed use-after-crash crashes on :class:`xml.etree.ElementTree` which underlying :meth:`~object.__eq__` function implements clearing its base. Reported by picnixz. Patch by Xingru Li.
