@@ -13535,46 +13535,33 @@ struct constdef {
 };
 
 static int
-conv_confname(PyObject *arg, int *valuep, struct constdef *table,
-              size_t tablesize)
+conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablename)
 {
-    if (PyLong_Check(arg)) {
-        int value = PyLong_AsInt(arg);
-        if (value == -1 && PyErr_Occurred())
-            return 0;
-        *valuep = value;
-        return 1;
-    }
-    else {
-        /* look up the value in the table using a binary search */
-        size_t lo = 0;
-        size_t mid;
-        size_t hi = tablesize;
-        int cmp;
-        const char *confname;
-        if (!PyUnicode_Check(arg)) {
-            PyErr_SetString(PyExc_TypeError,
-                "configuration names must be strings or integers");
-            return 0;
-        }
-        confname = PyUnicode_AsUTF8(arg);
-        if (confname == NULL)
-            return 0;
-        while (lo < hi) {
-            mid = (lo + hi) / 2;
-            cmp = strcmp(confname, table[mid].name);
-            if (cmp < 0)
-                hi = mid;
-            else if (cmp > 0)
-                lo = mid + 1;
-            else {
-                *valuep = table[mid].value;
-                return 1;
+    if (PyUnicode_Check(arg)) {
+        PyObject *table = PyObject_GetAttrString(module, tablename);
+        if (table != NULL) {
+            arg = PyObject_GetItem(table, arg);
+            if (arg == NULL) {
+                PyErr_SetString(
+                    PyExc_ValueError, "unrecognized configuration name");
             }
+            Py_DECREF(table);
         }
-        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
-        return 0;
+        if (PyErr_Occurred())
+            return 0;
+    } else {
+        Py_INCREF(arg);
     }
+
+    if (PyLong_Check(arg)) {
+        *valuep = PyLong_AsInt(arg);
+    } else {
+        PyErr_SetString(PyExc_TypeError,
+            "configuration names must be strings or integers");
+    }
+
+    Py_DECREF(arg);
+    return !PyErr_Occurred();
 }
 
 
@@ -13665,14 +13652,6 @@ static struct constdef  posix_constants_pathconf[] = {
     {"PC_TIMESTAMP_RESOLUTION", _PC_TIMESTAMP_RESOLUTION},
 #endif
 };
-
-static int
-conv_path_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_pathconf,
-                         sizeof(posix_constants_pathconf)
-                           / sizeof(struct constdef));
-}
 #endif
 
 
@@ -13896,14 +13875,6 @@ static struct constdef posix_constants_confstr[] = {
     {"MIPS_CS_VENDOR",  _MIPS_CS_VENDOR},
 #endif
 };
-
-static int
-conv_confstr_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_confstr,
-                         sizeof(posix_constants_confstr)
-                           / sizeof(struct constdef));
-}
 
 
 /*[clinic input]
@@ -14454,14 +14425,6 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 };
 
-static int
-conv_sysconf_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_sysconf,
-                         sizeof(posix_constants_sysconf)
-                           / sizeof(struct constdef));
-}
-
 
 /*[clinic input]
 os.sysconf -> long
@@ -14486,40 +14449,15 @@ os_sysconf_impl(PyObject *module, int name)
 #endif /* HAVE_SYSCONF */
 
 
-/* This code is used to ensure that the tables of configuration value names
- * are in sorted order as required by conv_confname(), and also to build
- * the exported dictionaries that are used to publish information about the
- * names available on the host platform.
- *
- * Sorting the table at runtime ensures that the table is properly ordered
- * when used, even for platforms we're not able to test on.  It also makes
- * it easier to add additional entries to the tables.
- */
-
-static int
-cmp_constdefs(const void *v1,  const void *v2)
-{
-    const struct constdef *c1 =
-    (const struct constdef *) v1;
-    const struct constdef *c2 =
-    (const struct constdef *) v2;
-
-    return strcmp(c1->name, c2->name);
-}
-
 static int
 setup_confname_table(struct constdef *table, size_t tablesize,
                      const char *tablename, PyObject *module)
 {
-    PyObject *d = NULL;
-    size_t i;
-
-    qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
-    d = PyDict_New();
+    PyObject *d = PyDict_New();
     if (d == NULL)
         return -1;
 
-    for (i=0; i < tablesize; ++i) {
+    for (size_t i=0; i < tablesize; ++i) {
         PyObject *o = PyLong_FromLong(table[i].value);
         if (o == NULL || PyDict_SetItemString(d, table[i].name, o) == -1) {
             Py_XDECREF(o);
