@@ -126,6 +126,7 @@ __all__ = [
     'cast',
     'clear_overloads',
     'copy_func_params',
+    'copy_method_params',
     'dataclass_transform',
     'evaluate_forward_ref',
     'final',
