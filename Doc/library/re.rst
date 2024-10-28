@@ -795,11 +795,11 @@ Flags
 
    Note that when the Unicode patterns ``[a-z]`` or ``[A-Z]`` are used in
    combination with the :const:`IGNORECASE` flag, they will match the 52 ASCII
-   letters and 4 additional non-ASCII letters: 'İ' (U+0130, Latin capital
-   letter I with dot above), 'ı' (U+0131, Latin small letter dotless i),
-   'ſ' (U+017F, Latin small letter long s) and 'K' (U+212A, Kelvin sign).
-   If the :py:const:`~re.ASCII` flag is used, only letters 'a' to 'z'
-   and 'A' to 'Z' are matched.
+   letters and 4 additional non-ASCII letters: ``'İ'`` (U+0130, Latin capital
+   letter I with dot above), ``'ı'`` (U+0131, Latin small letter dotless i),
+   ``'ſ'`` (U+017F, Latin small letter long s) and ``'K'`` (U+212A, Kelvin sign).
+   If the :py:const:`~re.ASCII` flag is used, only letters  ``'a'`` to ``'z'``
+   and ``'A'`` to ``'Z'`` are matched.
 
 .. data:: L
           LOCALE
