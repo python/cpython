@@ -47,7 +47,7 @@ static PyObject *
 set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("update", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -148,7 +148,7 @@ static PyObject *
 set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("union", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -178,7 +178,7 @@ static PyObject *
 set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("intersection", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -208,7 +208,7 @@ static PyObject *
 set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("intersection_update", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -262,7 +262,7 @@ static PyObject *
 set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("difference_update", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -292,7 +292,7 @@ static PyObject *
 set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("difference", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -536,4 +536,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=240fed957387b958 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d4b41191b2c602f input=a9049054013a1b77]*/

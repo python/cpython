@@ -319,7 +319,7 @@ static PyObject *
 gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("get_referrers", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -349,7 +349,7 @@ static PyObject *
 gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("get_referents", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -575,4 +575,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b827f188bde9435d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f488a0d4d6bd3687 input=a9049054013a1b77]*/

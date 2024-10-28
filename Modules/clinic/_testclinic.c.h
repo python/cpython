@@ -2536,7 +2536,7 @@ static PyObject *
 varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("varpos", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -2565,7 +2565,7 @@ static PyObject *
 posonly_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = Py_MAX(nargs - 2, 0);
+    Py_ssize_t nvararg = nargs - 2;
     PyObject *a;
     PyObject *b;
     PyObject *const *__clinic_args = NULL;
@@ -3131,7 +3131,7 @@ static PyObject *
 gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs;
+    Py_ssize_t nvararg = nargs - 0;
     PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
@@ -3676,4 +3676,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=c3ed3d007eb394f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7662d07e7d29cbeb input=a9049054013a1b77]*/
