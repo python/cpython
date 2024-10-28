@@ -400,6 +400,7 @@ class _GlobberBase:
                         entries = list(scandir_it)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    # Schedule the file descriptor to be closed next step.
                     stack.append((None, fd, None))
                     with self.scandir(fd) as scandir_it:
                         entries = list(scandir_it)
