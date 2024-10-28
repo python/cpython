@@ -2899,7 +2899,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
         return ERROR;
     }
 
-    RETURN_IF_ERROR(convert_pseudo_ops(g, IS_GENERATOR(code_flags)));
+    RETURN_IF_ERROR(convert_pseudo_ops(g));
 
     /* Order of basic blocks must have been determined by now */
 
