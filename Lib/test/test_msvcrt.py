@@ -119,8 +119,12 @@ class TestOther(unittest.TestCase):
         msvcrt.GetErrorMode()
 
     def test_SetErrorMode(self):
-        old = msvcrt.SetErrorMode(0)
-        msvcrt.SetErrorMode(old)
+        old = msvcrt.GetErrorMode()
+        self.addCleanup(msvcrt.SetErrorMode, old)
+
+        returned = msvcrt.SetErrorMode(0)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_set_error_mode(self):
