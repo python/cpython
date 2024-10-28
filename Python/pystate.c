@@ -1391,14 +1391,15 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
 }
 
 #ifdef HAVE_THREAD_LOCAL
-const _Py_thread_local struct _Py_freelist thread_states = { 0 };
+_Py_thread_local const struct _Py_freelist thread_states = { 0 };
+#define _PyThreadState_FREELIST() ((struct _Py_freelist *) &thread_states)
 #endif
 
 static _PyThreadStateImpl *
 alloc_threadstate(void)
 {
 #ifdef HAVE_THREAD_LOCAL
-    _PyThreadStateImpl *impl = _PyFreeList_PopMem(&thread_states);
+    _PyThreadStateImpl *impl = _PyFreeList_PopMem(_PyThreadState_FREELIST());
     if (impl == NULL)
     {
         return PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
@@ -1425,7 +1426,7 @@ free_threadstate(_PyThreadStateImpl *tstate)
     else {
 #ifdef HAVE_THREAD_LOCAL
         // Maximum of 100 thread states in the freelist
-        _PyFreeList_Free(&thread_states, tstate, 100, PyMem_RawFree);
+        _PyFreeList_Free(_PyThreadState_FREELIST(), tstate, 100, PyMem_RawFree);
 #else
         PyMem_RawFree(tstate);
 #endif
