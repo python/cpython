@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # Check that the PR is not awaiting changes from the author due to previous review.
       - name: Check there's no required changes
         uses: mheap/github-action-required-labels@v5
         with:
@@ -39,14 +40,15 @@ jobs:
             awaiting changes
             awaiting change review
       - id: is-feature
-        name: Check for type-feature
+        name: Check whether this PR is a feature (contains a "type-feature" label)
         uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
           count: 1
           labels: |
             type-feature
-          exit_type: success
+          exit_type: success  # don't fail the check if the PR is not a feature, just record the result
+      # In case of a feature PR, check for a complete review (contains an "awaiting merge" label).
       - id: awaiting-merge
         if: steps.is-feature.outputs.status == 'success'
         name: Check for complete review
