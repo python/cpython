@@ -231,9 +231,9 @@ typedef struct {
     PyObject* _children[STATIC_CHILDREN];
 
     /* incremented whenever 'attrib' is externally mutated */
-    size_t attrib_version;
+    size_t attrs_version;
     /* incremented whenever children are externally mutated */
-    size_t version;
+    size_t nodes_version;
 } ElementObjectExtra;
 
 typedef struct {
@@ -283,8 +283,8 @@ create_extra(ElementObject* self, PyObject* attrib)
     self->extra->allocated = STATIC_CHILDREN;
     self->extra->children = self->extra->_children;
 
-    self->extra->attrib_version = 0;
-    self->extra->version = 0;
+    self->extra->attrs_version = 0;
+    self->extra->nodes_version = 0;
 
     return 0;
 }
@@ -513,7 +513,7 @@ element_resize(ElementObject* self, Py_ssize_t extra)
         }
         self->extra->children = children;
         self->extra->allocated = size;
-        self->extra->version++;
+        self->extra->nodes_version++;
     }
 
     return 0;
@@ -547,7 +547,7 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
     self->extra->children[self->extra->length] = Py_NewRef(element);
 
     self->extra->length++;
-    self->extra->version++;
+    self->extra->nodes_version++;
 
     return 0;
 }
@@ -789,7 +789,7 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
 
         assert(!element->extra->length);
         element->extra->length = self->extra->length;
-        element->extra->version = self->extra->version;
+        element->extra->nodes_version = self->extra->nodes_version;
     }
 
     return (PyObject*) element;
@@ -873,7 +873,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
         assert(!element->extra->length);
         element->extra->length = self->extra->length;
-        element->extra->version = 0;
+        element->extra->nodes_version = 0;
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
@@ -1029,12 +1029,10 @@ element_setstate_from_attributes(elementtreestate *st,
 
     Py_XSETREF(self->tag, Py_NewRef(tag));
 
-    // TODO(picnix): determine how versioning would work with an evil text
     text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
     Py_INCREF(JOIN_OBJ(text));
     _set_joined_ptr(&self->text, text);
 
-    // TODO(picnix): determine how versioning would work with an evil tail
     tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
     Py_INCREF(JOIN_OBJ(tail));
     _set_joined_ptr(&self->tail, tail);
@@ -1085,7 +1083,6 @@ element_setstate_from_attributes(elementtreestate *st,
 
         assert(!self->extra->length);
         self->extra->length = nchildren;
-        self->extra->version++;
     }
     else {
         if (element_resize(self, 0)) {
@@ -1095,7 +1092,6 @@ element_setstate_from_attributes(elementtreestate *st,
 
     /* Stash attrib. */
     Py_XSETREF(self->extra->attrib, Py_XNewRef(attrib));
-    self->extra->attrib_version++;
     dealloc_extra(oldextra);
 
     Py_RETURN_NONE;
@@ -1564,7 +1560,7 @@ _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
     self->extra->children[index] = Py_NewRef(subelement);
 
     self->extra->length++;
-    self->extra->version++;
+    self->extra->nodes_version++;
 
     Py_RETURN_NONE;
 }
@@ -1687,7 +1683,7 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     self->extra->length--;
     for (; i < self->extra->length; i++)
         self->extra->children[i] = self->extra->children[i+1];
-    self->extra->version++;
+    self->extra->nodes_version++;
 
     Py_DECREF(found);
     Py_RETURN_NONE;
@@ -1743,7 +1739,7 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
     if (PyDict_SetItem(attrib, key, value) < 0)
         return NULL;
 
-    self->extra->attrib_version++;
+    self->extra->attrs_version++;
     Py_RETURN_NONE;
 }
 
@@ -1777,7 +1773,7 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
             self->extra->children[i] = self->extra->children[i+1];
     }
 
-    self->extra->version++;
+    self->extra->nodes_version++;
     Py_DECREF(old);
 
     return 0;
@@ -1928,7 +1924,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             }
 
             self->extra->length -= slicelen;
-            self->extra->version++;
+            self->extra->nodes_version++;
 
             /* Discard the recycle list with all the deleted sub-elements */
             Py_DECREF(recycle);
@@ -2004,7 +2000,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         }
 
         self->extra->length += newlen - slicelen;
-        self->extra->version++;
+        self->extra->nodes_version++;
 
         Py_DECREF(seq);
 
@@ -2101,7 +2097,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
             return -1;
     }
     Py_XSETREF(self->extra->attrib, Py_NewRef(value));
-    self->extra->attrib_version++;
+    self->extra->attrs_version++;
     return 0;
 }
 
