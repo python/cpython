@@ -818,12 +818,11 @@ def getfile(object):
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
-            # Protect against fetching the wrong source in PyREPL
-            if object.__module__ == '__main__':
-                raise OSError('source code not available')
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
