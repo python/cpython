@@ -2303,17 +2303,16 @@ dummy_func(
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
-            PyObject *old_value;
             DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name);
+            PyObject *old_value = ep->me_value;
+            DEOPT_IF(old_value == NULL);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
@@ -3629,11 +3628,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Str(arg_o));
+            PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
             PyStackRef_CLOSE(arg);
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(CALL_STR_1) =
@@ -3650,11 +3650,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectSteal(PySequence_Tuple(arg_o));
+            PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
             DEAD(callable);
             PyStackRef_CLOSE(arg);
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(CALL_TUPLE_1) =

@@ -1325,19 +1325,22 @@ AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
 [
 	AS_CASE([$with_suffix],
-    [no], [EXE_SUFFIX=],
-    [yes], [EXE_SUFFIX=.exe],
-    [EXE_SUFFIX=$with_suffix]
+    [no], [EXEEXT=],
+    [yes], [EXEEXT=.exe],
+    [EXEEXT=$with_suffix]
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXE_SUFFIX=.js],
-    [Emscripten/node*], [EXE_SUFFIX=.js],
-    [WASI/*], [EXE_SUFFIX=.wasm],
-    [EXE_SUFFIX=]
+    [Emscripten/browser*], [EXEEXT=.js],
+    [Emscripten/node*], [EXEEXT=.js],
+    [WASI/*], [EXEEXT=.wasm],
+    [EXEEXT=]
   )
 ])
-AC_MSG_RESULT([$EXE_SUFFIX])
+AC_MSG_RESULT([$EXEEXT])
+
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
@@ -1347,13 +1350,13 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir && test -z "$EXE_SUFFIX"
+if test -d casesensitivetestdir && test -z "$EXEEXT"
 then
     AC_MSG_RESULT([yes])
     BUILDEXEEXT=.exe
 else
 	AC_MSG_RESULT([no])
-	BUILDEXEEXT=$EXE_SUFFIX
+	BUILDEXEEXT=$EXEEXT
 fi
 rmdir CaseSensitiveTestDir
 

@@ -176,7 +176,7 @@ EXPORTSYMS=	@EXPORTSYMS@
 EXPORTSFROM=	@EXPORTSFROM@
 
 # Executable suffix (.exe on Windows and Mac OS X)
-EXE=		@EXE_SUFFIX@
+EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
 # Name of the patch file to apply for app store compliance
@@ -2534,6 +2534,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tools \
 		test/test_ttk \
 		test/test_unittest \
+		test/test_unittest/namespace_test_pkg \
+		test/test_unittest/namespace_test_pkg/bar \
+		test/test_unittest/namespace_test_pkg/noop \
+		test/test_unittest/namespace_test_pkg/noop/no2 \
 		test/test_unittest/testmock \
 		test/test_warnings \
 		test/test_warnings/data \
@@ -2544,6 +2548,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tkinterdata \
 		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
