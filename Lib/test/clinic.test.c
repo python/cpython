@@ -4155,7 +4155,7 @@ static PyObject *
 test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = Py_MAX(nargs - 1, 0);
+    Py_ssize_t nvararg = nargs - 1;
     PyObject *a;
     PyObject *const *__clinic_args = NULL;
 
@@ -4173,7 +4173,7 @@ exit:
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, Py_ssize_t nargs,
                              PyObject *const *args)
-/*[clinic end generated code: output=f0f68154d891dd6d input=9cfa748bbff09877]*/
+/*[clinic end generated code: output=dc2dd9483cc0459e input=9cfa748bbff09877]*/
 
 /*[clinic input]
 test_vararg
