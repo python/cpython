@@ -961,7 +961,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference((PyObject *) v);
 #endif
-    _PyReftracerTrack(v, PyRefTracer_DESTROY);
+    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
     /* DECREF items deleted by shrinkage */
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
