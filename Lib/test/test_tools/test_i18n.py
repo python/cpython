@@ -379,8 +379,7 @@ class Test_pygettext(unittest.TestCase):
             pymod3.write_text(f'_({text3!r})', encoding='utf-8')
 
             assert_python_ok(self.script, sdir)
-            with open('messages.pot', encoding='utf-8') as fp:
-                data = fp.read()
+            data = Path('messages.pot').read_text(encoding='utf-8')
             self.assertIn(f'msgid "{text1}"', data)
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
