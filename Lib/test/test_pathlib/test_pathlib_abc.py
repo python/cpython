@@ -1632,11 +1632,9 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             p.joinpath('linkA').symlink_to('fileA')
             p.joinpath('brokenLink').symlink_to('non-existing')
-            p.joinpath('linkB').symlink_to('dirB', target_is_directory=True)
-            p.joinpath('dirA', 'linkC').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
-            p.joinpath('dirB', 'linkD').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
+            p.joinpath('linkB').symlink_to('dirB')
+            p.joinpath('dirA', 'linkC').symlink_to(parser.join('..', 'dirB'))
+            p.joinpath('dirB', 'linkD').symlink_to(parser.join('..', 'dirB'))
             p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
 
     def tearDown(self):
@@ -1803,7 +1801,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'copySource'
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
-        target.symlink_to(base / 'dirC', target_is_directory=True)
+        target.symlink_to(base / 'dirC')
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
 
@@ -1813,7 +1811,7 @@ class DummyPathTest(DummyPurePathTest):
         source = base / 'copySource'
         target = base / 'copyTarget'
         source.symlink_to(base / 'fileA')
-        target.symlink_to(base / 'dirC', target_is_directory=True)
+        target.symlink_to(base / 'dirC')
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
 
@@ -1849,7 +1847,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'copySource'
         target = base / 'copyTarget'
-        source.symlink_to(base / 'dirC', target_is_directory=True)
+        source.symlink_to(base / 'dirC')
         target.symlink_to(base / 'fileA')
         self.assertRaises(FileExistsError, source.copy, target)
         self.assertRaises(FileExistsError, source.copy, target, follow_symlinks=False)
@@ -1859,8 +1857,8 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'copySource'
         target = base / 'copyTarget'
-        source.symlink_to(base / 'dirC' / 'dirD', target_is_directory=True)
-        target.symlink_to(base / 'dirC', target_is_directory=True)
+        source.symlink_to(base / 'dirC' / 'dirD')
+        target.symlink_to(base / 'dirC')
         self.assertRaises(FileExistsError, source.copy, target)
         self.assertRaises(FileExistsError, source.copy, target, follow_symlinks=False)
 
@@ -1951,7 +1949,7 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             # Add some symlinks
             source.joinpath('linkC').symlink_to('fileC')
-            source.joinpath('linkD').symlink_to('dirD', target_is_directory=True)
+            source.joinpath('linkD').symlink_to('dirD')
 
         # Perform the copy
         target = base / 'copyC'
@@ -2219,22 +2217,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
                                            errno.ENOENT, errno.EINVAL))
 
-    def test_scandir(self):
-        p = self.cls(self.base)
-        with p.scandir() as entries:
-            self.assertTrue(list(entries))
-        with p.scandir() as entries:
-            for entry in entries:
-                child = p / entry.name
-                self.assertIsNotNone(entry)
-                self.assertEqual(entry.name, child.name)
-                self.assertEqual(entry.is_symlink(),
-                                 child.is_symlink())
-                self.assertEqual(entry.is_dir(follow_symlinks=False),
-                                 child.is_dir(follow_symlinks=False))
-                if entry.name != 'brokenLinkLoop':
-                    self.assertEqual(entry.is_dir(), child.is_dir())
-
     def test_glob_common(self):
         def _check(glob, expected):
             self.assertEqual(set(glob), { P(self.base, q) for q in expected })
@@ -2480,7 +2462,7 @@ class DummyPathTest(DummyPurePathTest):
             if i % 2:
                 link.symlink_to(P(self.base, "dirE", "nonexistent"))
             else:
-                link.symlink_to(P(self.base, "dirC"), target_is_directory=True)
+                link.symlink_to(P(self.base, "dirC"))
 
         self.assertEqual(len(set(base.glob("*"))), 100)
         self.assertEqual(len(set(base.glob("*/"))), 50)
@@ -2563,10 +2545,8 @@ class DummyPathTest(DummyPurePathTest):
             self._check_resolve_relative(p, P(self.base, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks.
         d = self.tempdir()
-        P(self.base, 'dirA', 'linkX').symlink_to(
-            d, target_is_directory=True)
-        P(self.base, str(d), 'linkY').symlink_to(
-            self.parser.join(self.base, 'dirB'), target_is_directory=True)
+        P(self.base, 'dirA', 'linkX').symlink_to(d)
+        P(self.base, str(d), 'linkY').symlink_to(self.parser.join(self.base, 'dirB'))
         p = P(self.base, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(self.base, 'dirB', 'fileB'))
         # Non-strict
@@ -2970,7 +2950,7 @@ class DummyPathTest(DummyPurePathTest):
                 f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
 
         if self.can_symlink:
-            self.link_path.symlink_to(t2_path, target_is_directory=True)
+            self.link_path.symlink_to(t2_path)
             broken_link_path.symlink_to('broken')
             broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
             self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
@@ -3088,7 +3068,7 @@ class DummyPathWithSymlinks(DummyPath):
     def readlink(self):
         path = str(self.parent.resolve() / self.name)
         if path in self._symlinks:
-            return self.with_segments(self._symlinks[path][0])
+            return self.with_segments(self._symlinks[path])
         elif path in self._files or path in self._directories:
             raise OSError(errno.EINVAL, "Not a symlink", path)
         else:
@@ -3100,7 +3080,7 @@ class DummyPathWithSymlinks(DummyPath):
         if path in self._symlinks:
             raise FileExistsError(errno.EEXIST, "File exists", path)
         self._directories[parent].add(self.name)
-        self._symlinks[path] = str(target), target_is_directory
+        self._symlinks[path] = str(target)
 
 
 class DummyPathWithSymlinksTest(DummyPathTest):

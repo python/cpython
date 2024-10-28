@@ -94,12 +94,24 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('scandir')
+
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        import contextlib
+        return contextlib.nullcontext(path.iterdir())
 
     @staticmethod
     def concat_path(path, text):
         """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir()."""
+        return entry
 
 
 class PurePathBase:
@@ -693,17 +705,16 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path.scandir() as entries:
-                    for entry in entries:
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(path.joinpath(entry.name))
-                                dirnames.append(entry.name)
-                            else:
-                                filenames.append(entry.name)
-                        except OSError:
-                            filenames.append(entry.name)
+                for child in path.iterdir():
+                    try:
+                        if child.is_dir(follow_symlinks=follow_symlinks):
+                            if not top_down:
+                                paths.append(child)
+                            dirnames.append(child.name)
+                        else:
+                            filenames.append(child.name)
+                    except OSError:
+                        filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -871,19 +882,18 @@ class PathBase(PurePathBase):
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
         self._ensure_distinct_path(target)
-        stack = [(self, self, target)]
+        stack = [(self, target)]
         while stack:
-            src_entry, src, dst = stack.pop()
-            if not follow_symlinks and src_entry.is_symlink():
+            src, dst = stack.pop()
+            if not follow_symlinks and src.is_symlink():
                 dst._symlink_to_target_of(src)
                 if preserve_metadata:
                     src._copy_metadata(dst, follow_symlinks=False)
-            elif src_entry.is_dir():
-                with src.scandir() as entries:
-                    dst.mkdir(exist_ok=dirs_exist_ok)
-                    stack.extend(
-                        (entry, src.joinpath(entry.name), dst.joinpath(entry.name))
-                        for entry in entries)
+            elif src.is_dir():
+                children = src.iterdir()
+                dst.mkdir(exist_ok=dirs_exist_ok)
+                stack.extend((child, dst.joinpath(child.name))
+                             for child in children)
                 if preserve_metadata:
                     src._copy_metadata(dst)
             else:
