@@ -1085,16 +1085,16 @@ def is_instruction_size_macro(token: lexer.Token) -> bool:
     return token.kind == "IDENTIFIER" and token.text == "INSTRUCTION_SIZE"
 
 
-def contains_instruction_size_macro(uop: Uop) -> bool:
-    return any(is_instruction_size_macro(token) for token in uop.body)
-
-
-def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
-    """Return the size of the instruction that contains the given uop.
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int | None:
+    """Return the size of the instruction that contains the given uop or
+    `None` if the uop does not contains the `INSTRUCTION_SIZE` macro.
 
     If there is more than one instruction that contains the uop,
     ensure that they all have the same size.
     """
+    if not any(is_instruction_size_macro(token) for token in uop.body):
+        return None
+
     size = None
     for inst in instructions.values():
         if uop in inst.parts:
@@ -1157,8 +1157,6 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 if target.text in instructions:
                     instructions[target.text].is_target = True
     for uop in uops.values():
-        if not contains_instruction_size_macro(uop):
-            continue
         uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
     # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
