@@ -1398,25 +1398,8 @@ class TestGeneratedCases(unittest.TestCase):
         macro(OP2) = unused/1 + OP;
         """
 
-        output = """
-        TARGET(OP) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            frame->return_offset = 1 ;
-            DISPATCH();
-        }
-
-        TARGET(OP2) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(OP2);
-            /* Skip 1 cache entry */
-            frame->return_offset = 2 ;
-            DISPATCH();
-        }
-        """
-        with self.assertRaisesRegex(AssertionError, "All instructions containing a uop"):
+        output = ""  # No output needed as this should raise an error.
+        with self.assertRaisesRegex(SyntaxError, "All instructions containing a uop"):
             self.run_cases_test(input, output)
 
 
