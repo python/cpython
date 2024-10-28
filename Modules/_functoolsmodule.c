@@ -1011,7 +1011,7 @@ PyDoc_STRVAR(functools_reduce_doc,
 \n\
 Apply a function of two arguments cumulatively to an iterable, from left to right.\n\
 \n\
-This efficiently reduces the iterable to a single value.  If initial is present,\n\
+This effectively reduces the iterable to a single value.  If initial is present,\n\
 it is placed before the items of the iterable in the calculation, and serves as\n\
 a default when the iterable is empty.\n\
 \n\
