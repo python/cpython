@@ -415,6 +415,7 @@ pydoc
 
 plistlib
 --------
+
 * Add a new parameter *compact* to :func:`plistlib.dump` and
   :func:`plistlib.dumps`. When *compact* is true, the XML elements will
   be written without indentation.
