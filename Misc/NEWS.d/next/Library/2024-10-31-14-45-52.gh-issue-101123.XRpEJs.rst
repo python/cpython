@@ -1,0 +1,1 @@
+Fix :func:`math.hypot` signature.
