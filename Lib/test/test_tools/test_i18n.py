@@ -340,20 +340,18 @@ class Test_pygettext(unittest.TestCase):
         self.assertIn('bar', msgids)
 
     def test_pygettext_output(self):
-        """Test that the pygettext output exactly matches a file."""
-        filenames = (('messages.py', 'messages.pot'),
-                     ('docstrings.py', 'docstrings.pot'),
-                     ('fileloc.py', 'fileloc.pot'))
-
-        for input_file, output_file in filenames:
-            with self.subTest(input_file=f'data/{input_file}'):
-                contents = (DATA_DIR / input_file).read_text(encoding='utf-8')
+        """Test that the pygettext output exactly matches snapshots."""
+        self.maxDiff = None
+        for input_file in DATA_DIR.glob('*.py'):
+            output_file = input_file.with_suffix('.pot')
+            with self.subTest(input_file=f'i18n_data/{input_file}'):
+                contents = input_file.read_text(encoding='utf-8')
                 with temp_cwd(None):
-                    Path(input_file).write_text(contents)
-                    assert_python_ok(self.script, '--docstrings', input_file)
+                    Path(input_file.name).write_text(contents)
+                    assert_python_ok(self.script, '--docstrings', input_file.name)
                     output = Path('messages.pot').read_text()
 
-                expected = (DATA_DIR / output_file).read_text(encoding='utf-8')
+                expected = output_file.read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
     def test_files_list(self):
