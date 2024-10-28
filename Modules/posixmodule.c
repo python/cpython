@@ -3111,18 +3111,22 @@ class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
 
-class path_confname_converter(CConverter):
+class confname_converter(CConverter):
     type="int"
-    converter="conv_path_confname"
+    converter="conv_confname"
 
-class confstr_confname_converter(path_confname_converter):
-    converter='conv_confstr_confname'
+    def converter_init(self, *, table):
+        self.table = table
 
-class sysconf_confname_converter(path_confname_converter):
-    converter="conv_sysconf_confname"
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            if (!{converter}(module, {argname}, &{paramname}, "{table}")) {{{{
+                goto exit;
+            }}}}
+        """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=1860d32584c2a539]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=8189d5ae78244626]*/
 
 /*[clinic input]
 
@@ -13660,7 +13664,7 @@ static struct constdef  posix_constants_pathconf[] = {
 os.fpathconf -> long
 
     fd: fildes
-    name: path_confname
+    name: confname(table="pathconf_names")
     /
 
 Return the configuration limit name for the file descriptor fd.
@@ -13670,7 +13674,7 @@ If there is no limit, return -1.
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name)
-/*[clinic end generated code: output=d5b7042425fc3e21 input=5b8d2471cfaae186]*/
+/*[clinic end generated code: output=d5b7042425fc3e21 input=023d44589c9ed6aa]*/
 {
     long limit;
 
@@ -13688,7 +13692,7 @@ os_fpathconf_impl(PyObject *module, int fd, int name)
 /*[clinic input]
 os.pathconf -> long
     path: path_t(allow_fd='PATH_HAVE_FPATHCONF')
-    name: path_confname
+    name: confname(table="pathconf_names")
 
 Return the configuration limit name for the file or directory path.
 
@@ -13699,7 +13703,7 @@ On some platforms, path may also be specified as an open file descriptor.
 
 static long
 os_pathconf_impl(PyObject *module, path_t *path, int name)
-/*[clinic end generated code: output=5bedee35b293a089 input=bc3e2a985af27e5e]*/
+/*[clinic end generated code: output=5bedee35b293a089 input=6f6072f57b10c787]*/
 {
     long limit;
 
@@ -13880,7 +13884,7 @@ static struct constdef posix_constants_confstr[] = {
 /*[clinic input]
 os.confstr
 
-    name: confstr_confname
+    name: confname(table="confstr_names")
     /
 
 Return a string-valued system configuration variable.
@@ -13888,7 +13892,7 @@ Return a string-valued system configuration variable.
 
 static PyObject *
 os_confstr_impl(PyObject *module, int name)
-/*[clinic end generated code: output=bfb0b1b1e49b9383 input=18fb4d0567242e65]*/
+/*[clinic end generated code: output=bfb0b1b1e49b9383 input=4c6ffca2837ec959]*/
 {
     PyObject *result = NULL;
     char buffer[255];
@@ -14428,7 +14432,7 @@ static struct constdef posix_constants_sysconf[] = {
 
 /*[clinic input]
 os.sysconf -> long
-    name: sysconf_confname
+    name: confname(table="sysconf_names")
     /
 
 Return an integer-valued system configuration variable.
@@ -14436,7 +14440,7 @@ Return an integer-valued system configuration variable.
 
 static long
 os_sysconf_impl(PyObject *module, int name)
-/*[clinic end generated code: output=3662f945fc0cc756 input=279e3430a33f29e4]*/
+/*[clinic end generated code: output=3662f945fc0cc756 input=930b8f23b5d15086]*/
 {
     long value;
 
