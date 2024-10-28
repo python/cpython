@@ -380,6 +380,12 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
+* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
+  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
+  :func:`os.scandir` on a path object.
+
+  (Contributed by Barney Gale in :gh:`125413`.)
+
 
 pdb
 ---
