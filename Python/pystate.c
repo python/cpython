@@ -1391,7 +1391,7 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
 }
 
 #ifdef HAVE_THREAD_LOCAL
-_Py_thread_local const struct _Py_freelist thread_states = { 0 };
+_Py_thread_local static const struct _Py_freelist thread_states = { 0 };
 #define _PyThreadState_FREELIST() ((struct _Py_freelist *) &thread_states)
 #endif
 
