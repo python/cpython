@@ -483,6 +483,9 @@ Functions
    |           |                                                |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%u``    | Day of the week (Monday is 1; Sunday is 7)     |       |
+   |           | as a decimal number [1, 7].                    |       |
+   +-----------+------------------------------------------------+-------+
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
@@ -514,6 +517,16 @@ Functions
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
+   |           | the rules for the ISO 8601 calendar year).     |       |
+   |           | The year starts with the week that contains    |       |
+   |           | the first Thursday of the calendar year.       |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%V``    | ISO 8601 week number (as a decimal number      |       |
+   |           | [01,53]). The first week of the year is the    |       |
+   |           | one that contains the first Thursday of the    |       |
+   |           | year. Weeks start on Monday.                   |       |
    +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+
