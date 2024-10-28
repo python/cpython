@@ -477,7 +477,6 @@ class ParseArgsCodeGen:
         else:
             self.declarations = ""
 
-        left_args = f"{nargs} - {self.max_pos}"
         max_args = NO_VARARG if (self.vararg != NO_VARARG) else self.max_pos
         if self.limited_capi:
             parser_code = []
@@ -528,7 +527,7 @@ class ParseArgsCodeGen:
             if p.is_vararg():
                 if self.fastcall:
                     parser_code.append(libclinic.normalize_snippet("""
-                        %s = args + %d;
+                        %s = args + %s;
                         """ % (
                             p.converter.parser_name,
                             self.vararg
