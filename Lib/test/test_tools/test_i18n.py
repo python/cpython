@@ -1,11 +1,11 @@
 """Tests to cover the Tools/i18n package"""
 
 import os
-from pathlib import Path
 import re
 import sys
 import unittest
 from textwrap import dedent
+from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
@@ -14,13 +14,13 @@ from test.support.os_helper import temp_cwd, temp_dir
 
 skip_if_missing()
 
-DATA_DIR = Path(__file__).resolve().parent / 'data'
+DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 class Test_pygettext(unittest.TestCase):
     """Tests for the pygettext.py tool"""
 
-    script = os.path.join(toolsdir, 'i18n', 'pygettext.py')
+    script = Path(toolsdir, 'i18n', 'pygettext.py')
 
     def get_header(self, data):
         """ utility: return the header of a .po file as a dictionary """
@@ -364,18 +364,18 @@ class Test_pygettext(unittest.TestCase):
         text2 = 'Text to translate2'
         text3 = 'Text to ignore'
         with temp_cwd(None), temp_dir(None) as sdir:
-            os.mkdir(os.path.join(sdir, 'pypkg'))
-            with open(os.path.join(sdir, 'pypkg', 'pymod.py'), 'w',
-                      encoding='utf-8') as sfile:
-                sfile.write(f'_({text1!r})')
-            os.mkdir(os.path.join(sdir, 'pkg.py'))
-            with open(os.path.join(sdir, 'pkg.py', 'pymod2.py'), 'w',
-                      encoding='utf-8') as sfile:
-                sfile.write(f'_({text2!r})')
-            os.mkdir(os.path.join(sdir, 'CVS'))
-            with open(os.path.join(sdir, 'CVS', 'pymod3.py'), 'w',
-                      encoding='utf-8') as sfile:
-                sfile.write(f'_({text3!r})')
+            pymod = Path(sdir, 'pypkg', 'pymod.py')
+            pymod.parent.mkdir()
+            pymod.write_text(f'_({text1!r})', encoding='utf-8')
+
+            pymod2 = Path(sdir, 'pkg.py', 'pymod2.py')
+            pymod2.parent.mkdir()
+            pymod2.write_text(f'_({text2!r})', encoding='utf-8')
+
+            pymod3 = Path(sdir, 'CVS', 'pymod3.py')
+            pymod3.parent.mkdir()
+            pymod3.write_text(f'_({text3!r})', encoding='utf-8')
+
             assert_python_ok(self.script, sdir)
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
