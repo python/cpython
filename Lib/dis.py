@@ -673,7 +673,7 @@ def _get_const_value(op, arg, co_consts):
        Otherwise (if it is a LOAD_CONST and co_consts is not
        provided) returns the dis.UNKNOWN sentinel.
     """
-    assert op in hasconst
+    assert op in hasconst or op == LOAD_SMALL_INT
 
     if op == LOAD_SMALL_INT:
         return arg
@@ -993,7 +993,8 @@ def _find_imports(co):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
-            if (from_op[0] in hasconst and level_op[0] in hasconst):
+            if (from_op[0] in hasconst and
+                (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
                 yield (names[oparg], level, fromlist)

@@ -6231,8 +6231,6 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SMALL_INT);
             _PyStackRef value;
-            /* Tell code generator that this is a const load */
-            (void)FRAME_CO_CONSTS;
             assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);

@@ -1264,11 +1264,17 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
     return false;
 }
 
+static int
+loads_const(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
+}
+
 static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
-    assert(OPCODE_HAS_CONST(opcode));
+    assert(loads_const(opcode));
     if (opcode == LOAD_CONST) {
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
@@ -1332,7 +1338,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (!OPCODE_HAS_CONST(inst[i].i_opcode)) {
+        if (!loads_const(inst[i].i_opcode)) {
             return SUCCESS;
         }
     }
@@ -2102,7 +2108,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             int opcode = b->b_instr[i].i_opcode;
-            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_SMALL_INT) {
+            if (OPCODE_HAS_CONST(opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -2156,7 +2162,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             int opcode = b->b_instr[i].i_opcode;
-            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_SMALL_INT) {
+            if (OPCODE_HAS_CONST(opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
