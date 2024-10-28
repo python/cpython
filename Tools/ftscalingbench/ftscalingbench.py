@@ -1,5 +1,5 @@
 # This script runs a set of small benchmarks to help identify scaling
-# bottlenecks in the free-threaded interpreter. The benchmarks consists
+# bottlenecks in the free-threaded interpreter. The benchmarks consist
 # of patterns that ought to scale well, but haven't in the past. This is
 # typically due to reference count contention or lock contention.
 #
