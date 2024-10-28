@@ -943,7 +943,7 @@ _functools.reduce
 
 Apply a function of two arguments cumulatively to an iterable, from left to right.
 
-This efficiently reduces the iterable to a single value.  If initial is present,
+This effectively reduces the iterable to a single value.  If initial is present,
 it is placed before the items of the iterable in the calculation, and serves as
 a default when the iterable is empty.
 
