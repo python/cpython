@@ -470,10 +470,7 @@ class ParseArgsCodeGen:
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
         if self.vararg != NO_VARARG:
-            if self.max_pos == 0:
-                self.declarations = "Py_ssize_t nvararg = %s;" % nargs
-            else:
-                self.declarations = "Py_ssize_t nvararg = Py_MAX(%s - %d, 0);" % (nargs, self.max_pos)
+            self.declarations = f"Py_ssize_t nvararg = {nargs} - {self.max_pos};"
         else:
             self.declarations = ""
 
@@ -525,17 +522,13 @@ class ParseArgsCodeGen:
         use_parser_code = True
         for i, p in enumerate(self.parameters):
             if p.is_vararg():
+                var = p.converter.parser_name
                 if self.fastcall:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = args + %s;
-                        """ % (
-                            p.converter.parser_name,
-                            self.vararg
-                        ), indent=4))
+                    code = f"{var} = args + {self.vararg};"
                 else:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = _PyTuple_CAST(args)->ob_item;
-                        """ % p.converter.parser_name, indent=4))
+                    code = f"{var} = _PyTuple_CAST(args)->ob_item;"
+                formatted_code = libclinic.normalize_snippet(code, indent=4)
+                parser_code.append(formatted_code)
                 continue
 
             displayname = p.get_displayname(i+1)
