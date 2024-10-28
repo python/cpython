@@ -120,7 +120,7 @@ This module defines the following functions:
    is set as an :ref:`aware object <datetime-naive-aware>`, it will convert to
    UTC timezone before writing it.
 
-   When *compact* is true, the XML elements are written without indentation.
+   When *compact* is true, the XML elements will be written without indentation.
 
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
    a container that contains objects of unsupported types.
@@ -133,8 +133,8 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       The keyword-only parameter *aware_datetime* has been added.
 
-   .. versionchanged:: 3.13
-      The keyword-only parameter *compact* has been added.
+   .. versionchanged:: 3.14
+      The parameter *compact* has been added.
 
 
 .. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False, compact=False)
@@ -144,9 +144,6 @@ This module defines the following functions:
    arguments of this function.
 
    .. versionadded:: 3.4
-
-   .. versionchanged:: 3.13
-      The keyword-only parameter *compact* has been added.
 
 
 The following classes are available:

@@ -413,6 +413,14 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+plist
+-----
+* Add a new parameter *compact* to :func:`plist.dump` and
+  :func:`plist.dumps`. When *compact* is true, the XML elements will
+  be written without indentation.
+  (Contributed by Jiahao Li in :gh:`113056`.)
+
+
 symtable
 --------
 

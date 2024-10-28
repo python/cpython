@@ -1,0 +1,3 @@
+Add a new parameter *compact* to :func:`plist.dump` and :func:`plist.dumps`.
+When *compact* is true, the XML elements will be written without
+indentation.

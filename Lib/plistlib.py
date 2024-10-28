@@ -296,33 +296,21 @@ class _DumbXMLWriter:
 
     def begin_element(self, element):
         self.stack.append(element)
-        if not self.compact:
-            self.writeln("<%s>" % element)
-        else:
-            self.write("<%s>" % element)
+        self.writeln("<%s>" % element)
         self._indent_level += 1
 
     def end_element(self, element):
         assert self._indent_level > 0
         assert self.stack.pop() == element
         self._indent_level -= 1
-        if not self.compact:
-            self.writeln("</%s>" % element)
-        else:
-            self.write("</%s>" % element)
+        self.writeln("</%s>" % element)
 
     def simple_element(self, element, value=None):
         if value is not None:
             value = _escape(value)
-            if not self.compact:
-                self.writeln("<%s>%s</%s>" % (element, value, element))
-            else:
-                self.write("<%s>%s</%s>" % (element, value, element))
+            self.writeln("<%s>%s</%s>" % (element, value, element))
         else:
-            if not self.compact:
-                self.writeln("<%s/>" % element)
-            else:
-                self.write("<%s/>" % element)
+            self.writeln("<%s/>" % element)
 
     def writeln(self, line):
         if line:
@@ -331,18 +319,11 @@ class _DumbXMLWriter:
             # XXX: is this test needed?
             if isinstance(line, str):
                 line = line.encode('utf-8')
+        if not self.compact:
             self.file.write(self._indent_level * self.indent)
             self.file.write(line)
-        self.file.write(b'\n')
-
-    def write(self, line):
-        if line:
-            # plist has fixed encoding of utf-8
-
-            # XXX: is this test needed?
-            if isinstance(line, str):
-                line = line.encode('utf-8')
-            self.file.write(self._indent_level * self.indent)
+            self.file.write(b'\n')
+        else:
             self.file.write(line)
 
 
@@ -359,15 +340,9 @@ class _PlistWriter(_DumbXMLWriter):
         self._aware_datetime = aware_datetime
 
     def write(self, value):
-        if not self.compact:
-            self.writeln("<plist version=\"1.0\">")
-        else:
-            self.write("<plist version=\"1.0\">")
+        self.writeln("<plist version=\"1.0\">")
         self.write_value(value)
-        if not self.compact:
-            self.writeln("</plist>")
-        else:
-            self.write("</plist>")
+        self.writeln("</plist>")
 
     def write_value(self, value):
         if isinstance(value, str):
@@ -670,11 +645,12 @@ def _count_to_size(count):
 _scalars = (str, int, float, datetime.datetime, bytes)
 
 class _BinaryPlistWriter (object):
-    def __init__(self, fp, sort_keys, skipkeys, aware_datetime=False):
+    def __init__(self, fp, sort_keys, skipkeys, aware_datetime=False, compact=False):
         self._fp = fp
         self._sort_keys = sort_keys
         self._skipkeys = skipkeys
         self._aware_datetime = aware_datetime
+        self._compact = compact
 
     def write(self, value):
 
@@ -752,8 +728,9 @@ class _BinaryPlistWriter (object):
                 if not isinstance(k, str):
                     if self._skipkeys:
                         continue
-                    keys.append(k)
-                    values.append(v)
+                    raise TypeError("keys must be strings")
+                keys.append(k)
+                values.append(v)
 
             for o in itertools.chain(keys, values):
                 self._flatten(o)
