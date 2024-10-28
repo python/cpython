@@ -2011,7 +2011,8 @@ if 1:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
-                    self.check_roundtrip(f)
+                    compare_tokens_only = os.path.basename(testfile) == "test_traceback.py"  # Ambiguous backslash continuation
+                    self.check_roundtrip(f, compare_tokens_only=compare_tokens_only)
                     self.check_line_extraction(f)
 
 
