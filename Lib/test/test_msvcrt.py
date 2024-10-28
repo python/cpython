@@ -128,18 +128,34 @@ class TestOther(unittest.TestCase):
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_set_error_mode(self):
-        old = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
-        msvcrt.set_error_mode(old)
+        old = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
+        self.addCleanup(msvcrt.set_error_mode, old)
+
+        returned = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportMode(self):
-        old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, msvcrt.CRTDBG_MODE_DEBUG)
-        msvcrt.CrtSetReportMode(msvcrt.CRT_WARN, old)
+        old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                      msvcrt.CRTDBG_REPORT_MODE)
+        self.addCleanup(msvcrt.CrtSetReportMode, msvcrt.CRT_WARN, old)
+
+        returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_MODE_DEBUG)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportFile(self):
-        old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, sys.stdout.fileno())
-        msvcrt.CrtSetReportFile(msvcrt.CRT_WARN, old)
+        old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                      msvcrt.CRTDBG_REPORT_FILE)
+        self.addCleanup(msvcrt.CrtSetReportFile, msvcrt.CRT_WARN, old)
+
+        returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_FILE_STDOUT)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
 
 
 if __name__ == "__main__":
