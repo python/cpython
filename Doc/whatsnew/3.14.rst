@@ -319,6 +319,14 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 
+idlelib and IDLE
+----------------
+
+* If no selection is made during copy/cut, the current line will
+  copy/cut automatically.
+  (Contributed by Jiahao Li in :gh:`94521`.)
+
+
 inspect
 -------
 
@@ -582,13 +590,6 @@ email
 
 * Remove the *isdst* parameter from :func:`email.utils.localtime`.
   (Contributed by Hugo van Kemenade in :gh:`118798`.)
-
-idlelib and IDLE
-----------------
-
-* If no selection is made during copy/cut, the current line will
-  copy/cut automatically.
-  (Contributed by Jiahao Li in :gh:`94521`.)
 
 importlib
 ---------
