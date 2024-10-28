@@ -17,6 +17,31 @@ skip_if_missing()
 DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
+def normalize_POT_file(pot):
+    """Normalize the POT creation timestamp, charset and
+    file locations to make the POT file easier to compare.
+
+    """
+    # Normalize the creation date.
+    date_pattern = re.compile(r'"POT-Creation-Date: .+?\\n"')
+    header = r'"POT-Creation-Date: 2000-01-01 00:00+0000\\n"'
+    pot = re.sub(date_pattern, header, pot)
+
+    # Normalize charset to UTF-8 (currently there's no way to specify the output charset).
+    charset_pattern = re.compile(r'"Content-Type: text/plain; charset=.+?\\n"')
+    charset = r'"Content-Type: text/plain; charset=UTF-8\\n"'
+    pot = re.sub(charset_pattern, charset, pot)
+
+    # Normalize file location path separators in case this test is
+    # running on Windows (which uses '\').
+    fileloc_pattern = re.compile(r'#:.+')
+
+    def replace(match):
+        return match[0].replace(os.sep, "/")
+    pot = re.sub(fileloc_pattern, replace, pot)
+    return pot
+
+
 class Test_pygettext(unittest.TestCase):
     """Tests for the pygettext.py tool"""
 
@@ -59,28 +84,7 @@ class Test_pygettext(unittest.TestCase):
 
     def assert_POT_equal(self, expected, actual):
         """Check if two POT files are equal"""
-        # Normalize the creation date
-        date_pattern = re.compile(r'"POT-Creation-Date: .+?\n"')
-        header = '"POT-Creation-Date: 2000-01-01 00:00+0000\\n"'
-        expected = re.sub(date_pattern, header, expected)
-        actual = re.sub(date_pattern, header, actual)
-
-        # Normalize charset to UTF-8 (currently there's no way to specify the output charset)
-        charset_pattern = re.compile(r'"Content-Type: text/plain; charset=.+?\n"')
-        charset = "Content-Type: text/plain; charset=UTF-8\\n"
-        expected = re.sub(charset_pattern, charset, expected)
-        actual = re.sub(charset_pattern, charset, actual)
-
-        # Normalize the file location path separators in case this test is
-        # running on Windows (which uses '\')
-        fileloc_pattern = re.compile(r'#:.+')
-
-        def replace(match):
-            return match[0].replace(os.sep, "/")
-        expected = re.sub(fileloc_pattern, replace, expected)
-        actual = re.sub(fileloc_pattern, replace, actual)
-
-        self.assertEqual(expected, actual)
+        self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
     def extract_docstrings_from_str(self, module_content):
         """ utility: return all msgids extracted from module_content """
