@@ -181,6 +181,32 @@ class MiscTests(unittest.TestCase):
         r = e.get(X())
         self.assertIsNone(r)
 
+    def test_use_after_free_crash_with_evil_element(self):
+        # test fix for reported used-after-free issue gh-126033
+        class EvilElement(cET.Element):
+            def __eq__(self, other):
+                base.clear()  # this frees base->extra
+                return False
+
+        base = cET.Element('a')
+        base.append(EvilElement('a'))
+        base.append(EvilElement('a'))
+
+        with self.assertRaisesRegex(ReferenceError, r'base has been cleared during'):
+            base.remove(cET.Element('b'))
+
+    def test_use_after_free_crash_with_evil_tag(self):
+        # test fix for reported used-after-free issue gh-126037
+        class EvilTag(str):
+            def __eq__(self, other):
+                base.clear() # this frees base->extra
+                return False
+        base = cET.Element('a')
+        base.append(cET.Element(EvilTag('x')))
+
+        with self.assertRaisesRegex(ReferenceError, r'base has been cleared during'):
+            base.find('a')
+
     @support.cpython_only
     def test_immutable_types(self):
         root = cET.fromstring('<a></a>')

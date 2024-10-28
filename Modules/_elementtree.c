@@ -1267,6 +1267,13 @@ _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
         assert(Element_Check(st, item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
+        if (!self->extra) {
+            PyErr_SetString(
+                PyExc_ReferenceError,
+                "list.find(x): list's base has been cleared during finding");
+            Py_DECREF(item);
+            return NULL;
+        }
         if (rc > 0)
             return item;
         Py_DECREF(item);
@@ -1649,6 +1656,12 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
         if (self->extra->children[i] == subelement)
             break;
         rc = PyObject_RichCompareBool(self->extra->children[i], subelement, Py_EQ);
+        if (!self->extra) {
+            PyErr_SetString(
+                PyExc_ReferenceError,
+                "list.remove(x): list's base has been cleared during removing");
+            return NULL;
+        }
         if (rc > 0)
             break;
         if (rc < 0)
