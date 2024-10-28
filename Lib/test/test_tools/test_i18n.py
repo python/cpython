@@ -84,6 +84,7 @@ class Test_pygettext(unittest.TestCase):
 
     def assert_POT_equal(self, expected, actual):
         """Check if two POT files are equal"""
+        self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
     def extract_docstrings_from_str(self, module_content):
@@ -345,7 +346,6 @@ class Test_pygettext(unittest.TestCase):
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
-        self.maxDiff = None
         for input_file in DATA_DIR.glob('*.py'):
             output_file = input_file.with_suffix('.pot')
             with self.subTest(input_file=f'i18n_data/{input_file}'):
