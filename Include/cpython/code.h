@@ -174,6 +174,9 @@ struct PyCodeObject _PyCode_DEF(1);
 
 #define CO_NO_MONITORING_EVENTS 0x2000000
 
+/* Whether the first element in co_consts is doc string  */
+#define CO_HAS_DOCSTRING 0x4000000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
