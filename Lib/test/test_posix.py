@@ -594,10 +594,10 @@ class PosixTester(unittest.TestCase):
         ):
             posix.sysconf(1.23)
 
-        open_max = posix.sysconf("SC_OPEN_MAX")
-        self.assertGreater(open_max, 0)
+        arg_max = posix.sysconf("SC_ARG_MAX")
+        self.assertGreater(arg_max, 0)
         self.assertEqual(
-            posix.sysconf(posix.sysconf_names["SC_OPEN_MAX"]), open_max)
+            posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
