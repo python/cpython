@@ -170,13 +170,13 @@ class TestAsyncioREPLContextVars(unittest.TestCase):
         var = ContextVar('var', default='failed')
         """)
         p = spawn_repl("-m", "asyncio")
-        p.stdin.write(user_input)
+        p.stdin.write(user_input+"\n")
         user_input2 = "async def set_var(): var.set('ok')\n"
-        p.stdin.write(user_input2)
+        p.stdin.write(user_input2+"\n")
         user_input3 = "await set_var()\n"
-        p.stdin.write(user_input3)
+        p.stdin.write(user_input3+"\n")
         user_input4 = "print(f'toplevel contextvar test: {var.get()}')\n"
-        p.stdin.write(user_input4)
+        p.stdin.write(user_input4+"\n")
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
         expected = "toplevel contextvar test: ok"
