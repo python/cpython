@@ -269,7 +269,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectImmortal(obj);
         }
 
-        replicate(4) inst(LOAD_INT, (-- value)) {
+        replicate(4) inst(LOAD_SMALL_INT, (-- value)) {
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
             assert(oparg < _PY_NSMALLPOSINTS);

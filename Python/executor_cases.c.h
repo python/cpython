@@ -222,7 +222,7 @@
             break;
         }
 
-        case _LOAD_INT_0: {
+        case _LOAD_SMALL_INT_0: {
             _PyStackRef value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
@@ -237,7 +237,7 @@
             break;
         }
 
-        case _LOAD_INT_1: {
+        case _LOAD_SMALL_INT_1: {
             _PyStackRef value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
@@ -252,7 +252,7 @@
             break;
         }
 
-        case _LOAD_INT_2: {
+        case _LOAD_SMALL_INT_2: {
             _PyStackRef value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
@@ -267,7 +267,7 @@
             break;
         }
 
-        case _LOAD_INT_3: {
+        case _LOAD_SMALL_INT_3: {
             _PyStackRef value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
@@ -282,7 +282,7 @@
             break;
         }
 
-        case _LOAD_INT: {
+        case _LOAD_SMALL_INT: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             /* Tell code generator that this is a const load */

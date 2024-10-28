@@ -79,7 +79,7 @@
             break;
         }
 
-        case _LOAD_INT: {
+        case _LOAD_SMALL_INT: {
             _Py_UopsSymbol *value;
             PyObject *val = PyLong_FromLong(this_instr->oparg);
             value = sym_new_const(ctx, val);

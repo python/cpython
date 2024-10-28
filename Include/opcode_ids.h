@@ -98,8 +98,8 @@ extern "C" {
 #define LOAD_FROM_DICT_OR_DEREF                 85
 #define LOAD_FROM_DICT_OR_GLOBALS               86
 #define LOAD_GLOBAL                             87
-#define LOAD_INT                                88
-#define LOAD_NAME                               89
+#define LOAD_NAME                               88
+#define LOAD_SMALL_INT                          89
 #define LOAD_SPECIAL                            90
 #define LOAD_SUPER_ATTR                         91
 #define MAKE_CELL                               92

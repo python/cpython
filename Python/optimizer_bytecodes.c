@@ -433,7 +433,7 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
-    op(_LOAD_INT, (-- value)) {
+    op(_LOAD_SMALL_INT, (-- value)) {
         PyObject *val = PyLong_FromLong(this_instr->oparg);
         value = sym_new_const(ctx, val);
     }

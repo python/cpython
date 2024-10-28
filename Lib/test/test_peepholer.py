@@ -249,7 +249,7 @@ class TestTranforms(BytecodeTestCase):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
                 if isinstance(elem, int):
-                    self.assertInBytecode(code, 'LOAD_INT', elem)
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
                 else:
                     self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
@@ -258,7 +258,7 @@ class TestTranforms(BytecodeTestCase):
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
-        self.assertInBytecode(code, 'LOAD_INT', 2)
+        self.assertInBytecode(code, 'LOAD_SMALL_INT', 2)
         self.assertInBytecode(code, 'LOAD_CONST', 'b')
         self.check_lnotab(code)
 
@@ -311,7 +311,7 @@ class TestTranforms(BytecodeTestCase):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
                 if isinstance(elem, int):
-                    self.assertInBytecode(code, 'LOAD_INT', elem)
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
                 else:
                     self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):

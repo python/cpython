@@ -1115,7 +1115,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 int opcode = instr->i_opcode;
                 bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (prev_opcode == LOAD_CONST || prev_opcode == LOAD_INT) {
+                   if (prev_opcode == LOAD_CONST || prev_opcode == LOAD_SMALL_INT) {
                        is_redundant_pair = true;
                    }
                    else if (prev_opcode == COPY && prev_oparg == 1) {
@@ -1272,7 +1272,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     if (opcode == LOAD_CONST) {
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
-    if (opcode == LOAD_INT) {
+    if (opcode == LOAD_SMALL_INT) {
         return PyLong_FromLong(oparg);
     }
 
@@ -1570,7 +1570,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
             oparg = inst->i_oparg;
         }
         assert(!IS_ASSEMBLER_OPCODE(opcode));
-        if (opcode != LOAD_CONST && opcode != LOAD_INT) {
+        if (opcode != LOAD_CONST && opcode != LOAD_SMALL_INT) {
             continue;
         }
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
@@ -2102,7 +2102,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             int opcode = b->b_instr[i].i_opcode;
-            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_INT) {
+            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_SMALL_INT) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -2156,7 +2156,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             int opcode = b->b_instr[i].i_opcode;
-            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_INT) {
+            if (OPCODE_HAS_CONST(opcode) && opcode != LOAD_SMALL_INT) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);

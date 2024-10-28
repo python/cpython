@@ -1079,7 +1079,7 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
-.. opcode:: LOAD_INT (i)
+.. opcode:: LOAD_SMALL_INT (i)
 
    Pushes the integer ``i`` onto the stack.
    ``i`` must be in ``range(256)``
