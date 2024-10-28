@@ -1,0 +1,3 @@
+Fix exceptions in the :mod:`argparse` module. Only error messages for
+ArgumentError and ArgumentTypeError are now translated. ArgumentError is now
+only used for command line errors, not for logical errors in the program.

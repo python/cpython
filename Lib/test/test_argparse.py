@@ -2377,11 +2377,24 @@ class TestInvalidAction(TestCase):
         self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
 
     def test_modified_invalid_action(self):
-        parser = ErrorRaisingArgumentParser()
+        parser = argparse.ArgumentParser(exit_on_error=False)
         action = parser.add_argument('--foo')
         # Someone got crazy and did this
         action.type = 1
-        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+        self.assertRaisesRegex(RuntimeError, '1 is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        action.type = ()
+        self.assertRaisesRegex(RuntimeError, r'\(\) is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        # It is impossible to distinguish a TypeError raised due to mismatch
+        # of the required function arguments from a TypeError raised for wrong
+        # argument value, and it is not worth to use heavy inspect machinery
+        # which does not work in all cases anyway.
+        # So we get a dumb ArgumentError for such logical error.
+        action.type = pow
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "argument --foo: invalid pow value: 'bar'",
+                               parser.parse_args, ['--foo', 'bar'])
 
 
 # ================
@@ -2418,7 +2431,7 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertRaisesRegex(argparse.ArgumentError,
+        self.assertRaisesRegex(ValueError,
                                'cannot have multiple subparser arguments',
                                parser.add_subparsers)
 
@@ -5733,14 +5746,18 @@ class TestConflictHandling(TestCase):
         parser = argparse.ArgumentParser()
         sp = parser.add_subparsers()
         sp.add_parser('fullname', aliases=['alias'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'fullname')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'alias')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['fullname'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['alias'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: fullname',
+                               sp.add_parser, 'fullname')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: alias',
+                               sp.add_parser, 'alias')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: fullname',
+                               sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: alias',
+                               sp.add_parser, 'other', aliases=['alias'])
 
 
 # =============================
