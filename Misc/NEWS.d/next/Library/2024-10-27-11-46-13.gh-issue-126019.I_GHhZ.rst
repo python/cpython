@@ -1,1 +1,3 @@
-Fix :func:`inspect.getsource` to avoid fetching unrelated source code for classes defined in PyREPL.
+Remove the `__file__` attribute from the `__main__` namespace created by
+PyREPL, to avoid :func:`inspect.getsource` from fetching unrelated source
+code for classes defined in the REPL.
