@@ -53,8 +53,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         return _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
 
 def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
-    if os.name == 'nt':
-        pathname = pathname.replace('/', '\\')
+    if os.path.altsep:
+        pathname = pathname.replace(os.path.altsep, os.path.sep)
     drive, root, tail = os.path.splitroot(pathname)
     anchor = drive + root
     parts = tail.split(os.path.sep)[::-1] if tail else []
@@ -70,8 +70,7 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
             root_dir = os.path.curdir
         paths = _relative_glob(select, root_dir, dir_fd)
         # Skip empty string.
-        path = next(paths, None)
-        if path:
+        if path := next(paths, None):
             yield path
     yield from paths
 
