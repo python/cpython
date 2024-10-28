@@ -33,7 +33,7 @@ usage of the backslash in string literals now generate a :exc:`SyntaxWarning`
 and in the future this will become a :exc:`SyntaxError`. This behaviour
 will happen even if it is a valid escape sequence for a regular expression.
 
-The solution is to use Python's :ref:`raw string notation
+The solution is to use :ref:`Python's raw string notation
 for regular expression patterns <raw-string-notation>`; backslashes are not
 handled in any special way in a string literal
 prefixed with ``'r'``.  So ``r"\n"`` is a two-character string containing
