@@ -242,7 +242,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_LINE:
             return 0;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
-            return 3;
+            return 0;
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
             return 0;
         case INSTRUMENTED_POP_JUMP_IF_NONE:
@@ -701,7 +701,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_LINE:
             return 0;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
-            return 1 + (oparg & 1);
+            return 0;
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
             return 0;
         case INSTRUMENTED_POP_JUMP_IF_NONE:
@@ -1117,7 +1117,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_LINE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
-    [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IXC, 0 },
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
