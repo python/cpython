@@ -62,6 +62,7 @@ __all__ = [
     "force_not_colorized",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
+    "initialized_with_pyrepl",
     ]
 
 
@@ -2850,7 +2851,8 @@ def force_not_colorized(func):
 def initialized_with_pyrepl():
     """Detect whether PyREPL was used during Python initialization."""
     # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
-    return hasattr(sys.modules["__main__"], "__file__")
+    spec = getattr(sys.modules.get("__main__", None), "__spec__", None)
+    return getattr(spec, "name", None) == "_pyrepl.__main__"
 
 
 WINDOWS_STATUS = {

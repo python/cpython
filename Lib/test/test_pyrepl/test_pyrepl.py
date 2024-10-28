@@ -1087,19 +1087,13 @@ class TestMain(ReplTestCase):
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
 
-        # if `__main__` is not a file (impossible with pyrepl)
+        # if `__main__` is an uncached .py file (no .pyc), `__file__` was removed
         case1 = f"{pre}, '__doc__', {post}" in output
 
-        # if `__main__` is an uncached .py file (no .pyc)
-        case2 = f"{pre}, '__doc__', '__file__', {post}" in output
+        # if `__main__` is a cached .pyc, `__file__` was removed
+        case2 = f"{pre}, '__cached__', '__doc__', {post}" in output
 
-        # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
-
-        # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
-
-        self.assertTrue(case1 or case2 or case3 or case4, output)
+        self.assertTrue(case1 or case2, output)
 
     def _assertMatchOK(
             self, var: str, expected: str | re.Pattern, actual: str
