@@ -48,6 +48,7 @@ jobs:
             type-feature
           exit_type: success
       - id: awaiting-merge
+        if: steps.is-feature.outputs.status == 'success'
         name: Check for complete review
         uses: mheap/github-action-required-labels@v5
         with:
@@ -55,7 +56,3 @@ jobs:
           count: 1
           labels: |
             awaiting merge
-          exit_type: success
-      - name: Don't accept feature PRs with no review
-        if: steps.is-feature.outputs.status == 'success' && steps.awaiting-merge.outputs.status == 'failure'
-        run: exit 1
