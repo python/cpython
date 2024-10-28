@@ -8,6 +8,7 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
+#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -225,15 +226,11 @@ gc_get_referrers_impl(PyObject *module, Py_ssize_t nargs,
                       PyObject *const *args)
 /*[clinic end generated code: output=1d44a7695ea25c40 input=bae96961b14a0922]*/
 {
-    PyObject *varargs = PyTuple_New(nargs);
+    PyObject *varargs = _PyTuple_FromArray(args, nargs);
 
     if (!varargs) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; i < nargs; i++) {
-        PyTuple_SET_ITEM(varargs, i, Py_NewRef(args[i]));
-    }
-
     if (PySys_Audit("gc.get_referrers", "(O)", varargs) < 0) {
         Py_DECREF(varargs);
         return NULL;
@@ -287,15 +284,11 @@ gc_get_referents_impl(PyObject *module, Py_ssize_t nargs,
                       PyObject *const *args)
 /*[clinic end generated code: output=e459f3e8c0d19311 input=b3ceab0c34038cbf]*/
 {
-    PyObject *varargs = PyTuple_New(nargs);
+    PyObject *varargs = _PyTuple_FromArray(args, nargs);
 
     if (!varargs) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; i < nargs; i++) {
-        PyTuple_SET_ITEM(varargs, i, Py_NewRef(args[i]));
-    }
-
     if (PySys_Audit("gc.get_referents", "(O)", varargs) < 0) {
         Py_DECREF(varargs);
         return NULL;
