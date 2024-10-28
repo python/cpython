@@ -215,7 +215,8 @@ def determine_num_threads_and_affinity():
     # Try to use `lscpu -p` on Linux
     import subprocess
     try:
-        output = subprocess.check_output(["lscpu", "-p=cpu,node,core,MAXMHZ"], text=True)
+        output = subprocess.check_output(["lscpu", "-p=cpu,node,core,MAXMHZ"],
+                                         text=True, env={"LC_NUMERIC": "C"})
     except (FileNotFoundError, subprocess.CalledProcessError):
         return [None] * os.cpu_count()
 
@@ -224,6 +225,8 @@ def determine_num_threads_and_affinity():
         if line.startswith("#"):
             continue
         cpu, node, core, maxhz = line.split(",")
+        if maxhz == "":
+            maxhz = "0"
         table.append((int(cpu), int(node), int(core), float(maxhz)))
 
     cpus = []
