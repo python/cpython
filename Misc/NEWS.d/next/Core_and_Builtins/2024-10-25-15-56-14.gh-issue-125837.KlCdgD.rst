@@ -2,3 +2,4 @@ Adds :opcode:`LOAD_INT` and :opcode:`LOAD_CONST_IMMORTAL` instructions.
 ``LOAD_INT`` pushes a small integer equal to the ``oparg`` to the stack.
 ``LOAD_CONST_IMMORTAL`` does the same as ``LOAD_CONST`` but is more
 efficient for immortal objects.
+Removes ``RETRUN_CONST``  instruction.

@@ -2303,7 +2303,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname in ('LOAD_CONST', 'LOAD_CONST_IMMORTAL', 'LOAD_INT'):
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 

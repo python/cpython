@@ -2419,7 +2419,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
 }
 
 static int
-convert_pseudo_ops(cfg_builder *g, int is_generator)
+convert_pseudo_ops(cfg_builder *g)
 {
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {

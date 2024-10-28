@@ -448,6 +448,7 @@ _PyCode_Quicken(PyCodeObject *code)
     for (int i = 0; i < Py_SIZE(code)-1; i++) {
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
+        oparg = (oparg << 8) | instructions[i].op.arg;
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
@@ -469,16 +470,13 @@ _PyCode_Quicken(PyCodeObject *code)
         else if (opcode == LOAD_CONST) {
             /* We can't do this in the bytecode compiler as
              * marshalling can intern strings and make them immortal. */
-            oparg = (oparg << 8) | instructions[i].op.arg;
+
             PyObject *obj = PyTuple_GET_ITEM(code->co_consts, oparg);
             if (_Py_IsImmortal(obj)) {
                 instructions[i].op.code = LOAD_CONST_IMMORTAL;
             }
         }
-        if (opcode == EXTENDED_ARG) {
-            oparg = (oparg << 8) | instructions[i].op.arg;
-        }
-        else {
+        if (opcode != EXTENDED_ARG) {
             oparg = 0;
         }
     }
