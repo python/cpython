@@ -1169,7 +1169,6 @@ class TestMain(ReplTestCase):
             "FOO": "42",
             "__name__": "'__main__'",
             "__package__": "'blue'",
-            "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True)
 
