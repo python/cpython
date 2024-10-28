@@ -719,17 +719,8 @@ m_log10(double x)
 }
 
 
-/*[clinic input]
-math.gcd
-
-    *integers as args: object
-
-Greatest Common Divisor.
-[clinic start generated code]*/
-
 static PyObject *
-math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=b57687fcf431c1b8 input=94e675b7ceeaf0c9]*/
+math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     // Fast-path for the common case: gcd(int, int)
     if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
@@ -772,6 +763,12 @@ math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
     return res;
 }
 
+PyDoc_STRVAR(math_gcd_doc,
+"gcd($module, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
 
 static PyObject *
 long_lcm(PyObject *a, PyObject *b)
@@ -801,17 +798,8 @@ long_lcm(PyObject *a, PyObject *b)
 }
 
 
-/*[clinic input]
-math.lcm
-
-    *integers as args: object
-
-Least Common Multiple.
-[clinic start generated code]*/
-
 static PyObject *
-math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=f3eff0c25e4d7030 input=e64c33e85f4c47c6]*/
+math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *res, *x;
     Py_ssize_t i;
@@ -849,6 +837,13 @@ math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
     }
     return res;
 }
+
+
+PyDoc_STRVAR(math_lcm_doc,
+"lcm($module, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
 
 
 /* Call is_error when errno != 0, and where x is the result libm
@@ -2626,28 +2621,9 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     return NULL;
 }
 
-/*[clinic input]
-math.hypot
-
-    *coordinates as args: object
-
-Multidimensional Euclidean distance from the origin to a point.
-
-Roughly equivalent to:
-    sqrt(sum(x**2 for x in coordinates))
-
-For a two dimensional point (x, y), gives the hypotenuse
-using the Pythagorean theorem:  sqrt(x*x + y*y).
-
-For example, the hypotenuse of a 3/4/5 right triangle is:
-
-    >>> hypot(3.0, 4.0)
-    5.0
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=dcb6d4b7a1102ee1 input=5c0061a2d11235ed]*/
+math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i;
     PyObject *item;
@@ -2687,6 +2663,22 @@ math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
 }
 
 #undef NUM_STACK_ELEMS
+
+PyDoc_STRVAR(math_hypot_doc,
+             "hypot(*coordinates) -> value\n\n\
+Multidimensional Euclidean distance from the origin to a point.\n\
+\n\
+Roughly equivalent to:\n\
+    sqrt(sum(x**2 for x in coordinates))\n\
+\n\
+For a two dimensional point (x, y), gives the hypotenuse\n\
+using the Pythagorean theorem:  sqrt(x*x + y*y).\n\
+\n\
+For example, the hypotenuse of a 3/4/5 right triangle is:\n\
+\n\
+    >>> hypot(3.0, 4.0)\n\
+    5.0\n\
+");
 
 /** sumprod() ***************************************************************/
 
@@ -4120,14 +4112,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    MATH_GCD_METHODDEF
-    MATH_HYPOT_METHODDEF
+    {"gcd",             _PyCFunction_CAST(math_gcd),       METH_FASTCALL,  math_gcd_doc},
+    {"hypot",           _PyCFunction_CAST(math_hypot),     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    MATH_LCM_METHODDEF
+    {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     {"log",             _PyCFunction_CAST(math_log),       METH_FASTCALL,  math_log_doc},
