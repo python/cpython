@@ -6418,7 +6418,7 @@ printf "%s\n" "$ac_cv_gcc_compat" >&6; }
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$CC_BASENAME" in
+        case "$ac_cv_cc_name" in
         gcc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}g++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}g++; ac_word=$2
