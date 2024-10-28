@@ -22,12 +22,11 @@
 #
 
 import math
-import threading
-import time
-import sys
 import os
 import queue
-import gc
+import sys
+import threading
+import time
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
