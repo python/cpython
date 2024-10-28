@@ -24,7 +24,7 @@ jobs:
           labels: |
             DO-NOT-MERGE
   label-reviews:
-    name: DO-NOT-MERGE / unresolved review
+    name: Unresolved review
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     timeout-minutes: 10
