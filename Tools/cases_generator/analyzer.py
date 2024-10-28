@@ -1100,10 +1100,13 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
         if uop in inst.parts:
             if size is None:
                 size = inst.size
-            assert size == inst.size, (
-                "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
-                f"must have the same size: {size} != {inst.size}"
-            )
+            if size != inst.size:
+                token = next(t for t in uop.body if is_instruction_size_macro(t))
+                raise analysis_error(
+                    "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                    f"must have the same size: {size} != {inst.size}",
+                    token
+                )
     if size is None:
         token = next(t for t in uop.body if is_instruction_size_macro(t))
         raise analysis_error(f"No instruction containing the uop '{uop.name}' was found", token)
