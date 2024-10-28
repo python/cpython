@@ -1092,7 +1092,7 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
     If there is more than one instruction that contains the uop,
     ensure that they all have the same size.
     """
-    if not any(is_instruction_size_macro(token) for token in uop.body):
+    if not (token := next((t for t in uop.body if is_instruction_size_macro(t)), None)):
         return None
 
     size = None
@@ -1101,14 +1101,12 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
             if size is None:
                 size = inst.size
             if size != inst.size:
-                token = next(t for t in uop.body if is_instruction_size_macro(t))
                 raise analysis_error(
                     "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
                     f"must have the same size: {size} != {inst.size}",
                     token
                 )
     if size is None:
-        token = next(t for t in uop.body if is_instruction_size_macro(t))
         raise analysis_error(f"No instruction containing the uop '{uop.name}' was found", token)
     return size
 
