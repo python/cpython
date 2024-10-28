@@ -384,3 +384,24 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text1}"', data)
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
+
+
+def update_POT_snapshots():
+    for input_file in DATA_DIR.glob('*.py'):
+        output_file = input_file.with_suffix('.pot')
+        contents = input_file.read_text(encoding='utf-8')
+        with temp_cwd(None):
+            Path(input_file.name).write_text(contents)
+            assert_python_ok(Test_pygettext.script, '--docstrings', input_file.name)
+            output = Path('messages.pot').read_text()
+
+        output = normalize_POT_file(output)
+        output_file.write_text(output, encoding='utf-8')
+
+
+if __name__ == '__main__':
+    # To regenerate POT files
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_POT_snapshots()
+        sys.exit(0)
+    unittest.main()
