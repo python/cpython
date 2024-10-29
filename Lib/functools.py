@@ -238,7 +238,7 @@ def reduce(function, sequence, initial=_initial_missing):
     """
     reduce(function, iterable[, initial], /) -> value
 
-    Apply a function of two arguments cumulatively to an iterable, from left to right.
+    Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
     This effectively reduces the iterable to a single value.  If initial is present,
     it is placed before the items of the iterable in the calculation, and serves as
