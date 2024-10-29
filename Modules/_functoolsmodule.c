@@ -1009,7 +1009,7 @@ Fail:
 PyDoc_STRVAR(functools_reduce_doc,
 "reduce(function, iterable[, initial], /) -> value\n\
 \n\
-Apply a function of two arguments cumulatively to an iterable, from left to right.\n\
+Apply a function of two arguments cumulatively to the items of an iterable, from left to right.\n\
 \n\
 This effectively reduces the iterable to a single value.  If initial is present,\n\
 it is placed before the items of the iterable in the calculation, and serves as\n\
