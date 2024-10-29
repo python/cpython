@@ -772,6 +772,10 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
             assert(st->kind == Expr_kind);
             location loc = LOC(st->v.Expr.value);
             ADDOP_LOAD_CONST(c, loc, cleandoc);
+
+            PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+            ste->ste_has_docstring = 1;
+
             Py_DECREF(cleandoc);
             RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
@@ -1225,6 +1229,7 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
     assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (docstring) {
         first_instr = 1;
         docstring = _PyCompile_CleanDoc(docstring);
@@ -1232,14 +1237,14 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
             _PyCompile_ExitScope(c);
             return ERROR;
         }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        ste->ste_has_docstring = 1;
+        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
-    Py_ssize_t idx = _PyCompile_AddConst(c, docstring ? docstring : Py_None);
     Py_XDECREF(docstring);
-    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
-    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
     if (add_stopiteration_handler) {
         /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
