@@ -564,7 +564,7 @@ Other constructors, all class methods:
 
 .. classmethod:: date.strptime(date_string, format)
 
-   Return a :class:`date` corresponding to *date_string*, parsed according to
+   Return a :class:`.date` corresponding to *date_string*, parsed according to
    *format*. This is equivalent to::
 
      date(*(time.strptime(date_string, format)[0:3]))
@@ -812,7 +812,7 @@ Instance methods:
 .. method:: date.__format__(format)
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
-   string for a :class:`date` object in :ref:`formatted string
+   string for a :class:`.date` object in :ref:`formatted string
    literals <f-strings>` and when using :meth:`str.format`.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
@@ -1060,7 +1060,7 @@ Other constructors, all class methods:
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used. If the *date* argument is a :class:`!datetime` object, its time components
+   is used.  If the *date* argument is a :class:`!datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object ``d``,
