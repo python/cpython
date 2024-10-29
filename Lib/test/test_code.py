@@ -550,18 +550,23 @@ class CodeTest(unittest.TestCase):
         co_framesize = _testinternalcapi.get_co_framesize(c)
         FRAME_SPECIALS_SIZE = co_framesize - c.co_stacksize - co_nlocalsplus
 
-        ptr_sizeof = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
+        ps = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
+        smallest_evil_co_stacksize = (
+            (_testcapi.INT_MAX - co_nlocalsplus - FRAME_SPECIALS_SIZE) // ps
+        )
 
         for evil_co_stacksize in [
             _testcapi.INT_MAX,
-            _testcapi.INT_MAX // ptr_sizeof,
-            (_testcapi.INT_MAX - co_nlocalsplus - FRAME_SPECIALS_SIZE) // ptr_sizeof,
+            _testcapi.INT_MAX // ps,
+            smallest_evil_co_stacksize,
         ]:
             with (
                 self.subTest(evil_co_stacksize),
                 self.assertRaisesRegex(OverflowError, "co_stacksize")
             ):
-                foo.__code__.__replace__(co_stacksize=evil_co_stacksize)
+                c.__replace__(co_stacksize=evil_co_stacksize)
+
+        c.__replace__(co_stacksize=smallest_evil_co_stacksize - 1)
 
 
 def isinterned(s):
