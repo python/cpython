@@ -887,16 +887,18 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
-    if (fields) {
-        numfields = PySequence_Size(fields);
-        if (numfields == -1) {
-            goto cleanup;
-        }
-        remaining_fields = PySet_New(fields);
+    if (fields == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.400s has no fields",
+                     _PyType_Name(Py_TYPE(self)));
+        goto cleanup;
     }
-    else {
-        remaining_fields = PySet_New(NULL);
+
+    numfields = PySequence_Size(fields);
+    if (numfields == -1) {
+        goto cleanup;
     }
+    remaining_fields = PySet_New(fields);
     if (remaining_fields == NULL) {
         goto cleanup;
     }
