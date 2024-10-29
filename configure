@@ -15109,7 +15109,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+LIBS="$ac_save_libs"
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
