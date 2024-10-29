@@ -56,6 +56,7 @@ __all__ = [
     "CO_OPTIMIZED",
     "CO_VARARGS",
     "CO_VARKEYWORDS",
+    "CO_HAS_DOCSTRING",
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
