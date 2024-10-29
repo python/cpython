@@ -5036,70 +5036,15 @@ PyUnicode_DecodeUTF8(const char *s,
 # error C 'size_t' size should be either 4 or 8!
 #endif
 
-static Py_ssize_t
-ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
-{
-    const char *p = start;
-
-#if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
-        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
-    {
-        /* Fast path, see in STRINGLIB(utf8_decode) for
-           an explanation. */
-        /* Help allocation */
-        const char *_p = p;
-        Py_UCS1 * q = dest;
-        while (_p + SIZEOF_SIZE_T <= end) {
-            size_t value = *(const size_t *) _p;
-            if (value & ASCII_CHAR_MASK)
-                break;
-            *((size_t *)q) = value;
-            _p += SIZEOF_SIZE_T;
-            q += SIZEOF_SIZE_T;
-        }
-        p = _p;
-        while (p < end) {
-            if ((unsigned char)*p & 0x80)
-                break;
-            *q++ = *p++;
-        }
-        return p - start;
-    }
-#endif
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help allocation */
-            const char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
-                size_t value = *(const size_t *) _p;
-                if (value & ASCII_CHAR_MASK)
-                    break;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (_p == end)
-                break;
-        }
-        if ((unsigned char)*p & 0x80)
-            break;
-        ++p;
-    }
-    memcpy(dest, start, p - start);
-    return p - start;
-}
-
 #if (defined(__clang__) || defined(__GNUC__))
-#define HAS_CTZ 1
+#define HAVE_CTZ 1
 static inline unsigned int
 ctz(size_t v)
 {
     return __builtin_ctzll((unsigned long long)v);
 }
 #elif defined(_MSC_VER)
-#define HAS_CTZ 1
+#define HAVE_CTZ 1
 static inline unsigned int
 ctz(size_t v)
 {
@@ -5113,24 +5058,79 @@ ctz(size_t v)
 }
 #endif
 
+#if HAVE_CTZ
+// load p[0]..p[size-1] as a little-endian size_t
+// without unaligned access nor read ahead.
+static size_t
+load_unaligned(const unsigned char *p, size_t size)
+{
+    assert(0 <= size && size <= SIZEOF_SIZE_T);
+    union {
+        size_t s;
+        unsigned char b[SIZEOF_SIZE_T];
+    } u;
+    u.s = 0;
+    switch (size) {
+    case 8:
+        u.b[7] = p[7];
+    // fall through
+    case 7:
+        u.b[6] = p[6];
+    // fall through
+    case 6:
+        u.b[5] = p[5];
+    // fall through
+    case 5:
+        u.b[4] = p[4];
+    // fall through
+    case 4:
+        u.b[3] = p[3];
+    // fall through
+    case 3:
+        u.b[2] = p[2];
+    // fall through
+    case 2:
+        u.b[1] = p[1];
+    // fall through
+    case 1:
+        u.b[0] = p[0];
+        break;
+    case 0:
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+    return u.s;
+}
+#endif
+
 static Py_ssize_t
 find_first_nonascii(const unsigned char *start, const unsigned char *end)
 {
     const unsigned char *p = start;
 
-    if (end - start > SIZEOF_SIZE_T + ALIGNOF_SIZE_T) {
-        while (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            if ((unsigned char)*p & 0x80) {
+    if (end - start >= SIZEOF_SIZE_T) {
+        const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
+#if HAVE_CTZ
+        size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
+        if (u) {
+            return p - start + (ctz(u) - 7) / 8;
+        }
+        p = p2;
+#else
+        while (p < p2) {
+            if (*p & 0x80) {
                 return p - start;
             }
             p++;
         }
+#endif
         const unsigned char *e = end - SIZEOF_SIZE_T;
         while (p <= e) {
-            size_t value = (*(const size_t *)p) & ASCII_CHAR_MASK;
-            if (value) {
-#if PY_LITTLE_ENDIAN && HAS_CTZ
-                return p - start + (ctz(value) - 7) / 8;
+            size_t u = (*(const size_t *)p) & ASCII_CHAR_MASK;
+            if (u) {
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
+                return p - start + (ctz(u) - 7) / 8;
 #else
                 // big endian and minor compilers are difficult to test.
                 // fallback to per byte check.
@@ -5140,47 +5140,15 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             p += SIZEOF_SIZE_T;
         }
     }
-#if HAS_CTZ
-    // This part looks bit tricky, but decoding short ASCII is super important.
-    // Since we copy from p to size_t manually, this part works fine with big endian.
-    while (p < end) {
-        size_t u = (size_t)(p[0]);
-        switch (end - p) {
-            default:
-#if SIZEOF_SIZE_T == 8
-                u |= (size_t)(p[7]) << 56ull;
-            // fall through
-            case 7:
-                u |= (size_t)(p[6]) << 48ull;
-            // fall through
-            case 6:
-                u |= (size_t)(p[5]) << 40ull;
-            // fall through
-            case 5:
-                u |= (size_t)(p[4]) << 32ull;
-            // fall through
-            case 4:
-#endif
-                u |= (size_t)(p[3]) << 24;
-            // fall through
-            case 3:
-                u |= (size_t)(p[2]) << 16;
-            // fall through
-            case 2:
-                u |= (size_t)(p[1]) << 8;
-                break;
-            case 1:
-                break;
-        }
-        if (u & ASCII_CHAR_MASK) {
-            return p - start + (ctz(u & ASCII_CHAR_MASK) - 7) / 8;
-        }
-        p += SIZEOF_SIZE_T;
+#if HAVE_CTZ
+    size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
+    if (u) {
+        return p - start + (ctz(u) - 7) / 8;
     }
     return end - start;
 #else
     while (p < end) {
-        if ((unsigned char)*p & 0x80) {
+        if (*p & 0x80) {
             break;
         }
         p++;
@@ -5204,7 +5172,7 @@ static Py_ssize_t utf8_count_codepoints(const unsigned char *s, const unsigned c
 {
     Py_ssize_t len = 0;
 
-    if (end - s > SIZEOF_SIZE_T + ALIGNOF_SIZE_T) {
+    if (end - s >= SIZEOF_SIZE_T) {
         while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
             len += scalar_utf8_start_char(*s++);
         }
@@ -5233,6 +5201,39 @@ static Py_ssize_t utf8_count_codepoints(const unsigned char *s, const unsigned c
         len += scalar_utf8_start_char(*s++);
     }
     return len;
+}
+
+static Py_ssize_t
+ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
+{
+#if SIZEOF_SIZE_T <= SIZEOF_VOID_P
+    if (_Py_IS_ALIGNED(start, ALIGNOF_SIZE_T)
+        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
+    {
+        /* Fast path, see in STRINGLIB(utf8_decode) for
+           an explanation. */
+        const char *p = start;
+        Py_UCS1 *q = dest;
+        while (p + SIZEOF_SIZE_T <= end) {
+            size_t value = *(const size_t *) p;
+            if (value & ASCII_CHAR_MASK)
+                break;
+            *((size_t *)q) = value;
+            p += SIZEOF_SIZE_T;
+            q += SIZEOF_SIZE_T;
+        }
+        while (p < end) {
+            if ((unsigned char)*p & 0x80)
+                break;
+            *q++ = *p++;
+        }
+        return p - start;
+    }
+#endif
+    Py_ssize_t pos = find_first_nonascii((const unsigned char*)start,
+                                         (const unsigned char*)end);
+    memcpy(dest, start, pos);
+    return pos;
 }
 
 static int
