@@ -461,7 +461,7 @@ urllib.request
   * On non-Windows platforms, :func:`~urllib.request.pathname2url` generates
     URIs that begin with three slashes (rather than one) when given an
     absolute path. :func:`~urllib.request.url2pathname` performs the opposite
-    transformation, so ``file:///etc/hosts` becomes ``/etc/hosts``.
+    transformation, so ``file:///etc/hosts`` becomes ``/etc/hosts``.
   * On non-Windows platforms, :func:`~urllib.request.url2pathname` raises
     :exc:`urllib.error.URLError` if the URI includes a non-local authority,
     like ``file://other-machine/etc/hosts``.

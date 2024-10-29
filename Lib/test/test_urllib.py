@@ -1534,7 +1534,7 @@ class Pathname_Tests(unittest.TestCase):
         # Long drive letter
         self.assertEqual(fn("XX:\\"), "XX%3A/")
         # No drive letter
-        self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
+        self.assertEqual(fn("\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
         self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
