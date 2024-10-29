@@ -23,7 +23,7 @@ __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
     # exceptions
-    "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
+    "ReachableCode", "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
     "record_original_stdout", "get_original_stdout", "captured_stdout",
     "captured_stdin", "captured_stderr", "captured_output",
@@ -107,6 +107,11 @@ TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 STDLIB_DIR = os.path.dirname(TEST_HOME_DIR)
 REPO_ROOT = os.path.dirname(STDLIB_DIR)
 
+class ReachableCode(Exception):
+    """Exception to raise to indicate that some code was reached.
+
+    Use this exception if using mocks is not a good alternative.
+    """
 
 class Error(Exception):
     """Base class for regression test exceptions."""
