@@ -133,6 +133,5 @@ Bugs in the content should be reported to the
 
 Bugs in the toolset should be reported to the tools themselves.
 
-If you want to help the Documentation Team, you are always welcome.
-Leave a message on
-`discuss.python.org <https://discuss.python.org/c/documentation>`_.
+To help with the documentation, or report any problems, please leave a message
+on `discuss.python.org <https://discuss.python.org/c/documentation>`_.
