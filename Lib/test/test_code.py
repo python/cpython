@@ -161,7 +161,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 67108995
-consts: ("'This is a docstring from async function'", '0', 'None', '1')
+consts: ("'This is a docstring from async function'", 'None')
 
 >>> def no_docstring(x, y, z):
 ...     return x + "hello" + y + z + "world"
