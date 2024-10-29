@@ -872,6 +872,23 @@ class BasicTest(BaseTest):
                 else:
                     self.assertFalse(same_path(path1, path2))
 
+    # gh-126084: venvwlauncher should run pythonw, not python
+    @requireVenvCreate
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_venvwlauncher(self):
+        """
+        Test that the GUI launcher runs the GUI python.
+        """
+        rmtree(self.env_dir)
+        venv.create(self.env_dir)
+        pythonw = os.path.join(self.env_dir, self.bindir, "pythonw.exe")
+        try:
+            subprocess.check_call([pythonw, "-c", "import _winapi; "
+                "assert _winapi.GetModuleFileName(0).endswith('pythonw.exe')"])
+        except subprocess.CalledProcessError:
+            self.fail("venvwlauncher.exe did not run pythonw.exe")
+
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
