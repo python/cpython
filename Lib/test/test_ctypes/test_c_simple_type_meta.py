@@ -87,6 +87,9 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         self.assertTrue(issubclass(POINTER(Sub), Sub))
 
     def test_creating_pointer_in_dunder_init_1(self):
+        # Test for modern metaclass initialization that does not
+        # require recursion avoidance.
+
         class ct_meta(type):
             def __init__(self, name, bases, namespace):
                 if bases == (object,):
@@ -117,6 +120,8 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
 
     def test_creating_pointer_in_dunder_init_2(self):
+        # A simpler variant of the above.
+
         class ct_meta(type):
             def __init__(self, name, bases, namespace):
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
