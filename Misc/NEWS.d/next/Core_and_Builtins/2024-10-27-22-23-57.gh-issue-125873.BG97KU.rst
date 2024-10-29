@@ -1,1 +1,1 @@
-Improved error message when an environment variable is misonfigured.
+Improved error message when an environment variable is misconfigured.
