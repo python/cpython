@@ -4,16 +4,6 @@ Pending removal in future versions
 The following APIs will be removed in the future,
 although there is currently no date scheduled for their removal.
 
-* :mod:`argparse`:
-
-  * Nesting argument groups and nesting mutually exclusive
-    groups are deprecated.
-  * Passing the undocumented keyword argument *prefix_chars* to
-    :meth:`~argparse.ArgumentParser.add_argument_group` is now
-    deprecated.
-
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
   * ``bool(NotImplemented)``.
@@ -42,6 +32,17 @@ although there is currently no date scheduled for their removal.
     :func:`complex` constructor is now deprecated; it should only be passed
     as a single positional argument.
     (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`argparse`:
+
+  * Nesting argument groups and nesting mutually exclusive
+    groups are deprecated.
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+  * The :class:`argparse.FileType` type converter is deprecated.
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
   deprecated and replaced by :data:`calendar.JANUARY` and

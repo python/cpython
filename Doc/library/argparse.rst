@@ -741,6 +741,21 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
+* ``'extend'`` - This stores a list and appends each item from the multi-value
+  argument list to it.
+  The ``'extend'`` action is typically used with the nargs_ keyword argument
+  value ``'+'`` or ``'*'``.
+  Note that when nargs_ is ``None`` (the default) or ``'?'``, each
+  character of the argument string will be appended to the list.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+  .. versionadded:: 3.8
+
 * ``'count'`` - This counts the number of times a keyword argument occurs. For
   example, this is useful for increasing verbosity levels::
 
@@ -765,17 +780,6 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
     >>> parser.parse_args(['--version'])
     PROG 2.0
-
-* ``'extend'`` - This stores a list, and extends each argument value to the
-  list.
-  Example usage::
-
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
-    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
-    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
-
-  .. versionadded:: 3.8
 
 Only actions that consume command-line arguments (e.g. ``'store'``,
 ``'append'`` or ``'extend'``) can be used with positional arguments.
@@ -865,16 +869,14 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
   output files::
 
      >>> parser = argparse.ArgumentParser()
-     >>> parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
-     ...                     default=sys.stdin)
-     >>> parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
-     ...                     default=sys.stdout)
+     >>> parser.add_argument('infile', nargs='?')
+     >>> parser.add_argument('outfile', nargs='?')
      >>> parser.parse_args(['input.txt', 'output.txt'])
-     Namespace(infile=<_io.TextIOWrapper name='input.txt' encoding='UTF-8'>,
-               outfile=<_io.TextIOWrapper name='output.txt' encoding='UTF-8'>)
+     Namespace(infile='input.txt', outfile='output.txt')
+     >>> parser.parse_args(['input.txt'])
+     Namespace(infile='input.txt', outfile=None)
      >>> parser.parse_args([])
-     Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
-               outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)
+     Namespace(infile=None, outfile=None)
 
 .. index:: single: * (asterisk); in argparse module
 
@@ -1033,7 +1035,6 @@ Common built-in types and functions can be used as type converters:
    parser.add_argument('distance', type=float)
    parser.add_argument('street', type=ascii)
    parser.add_argument('code_point', type=ord)
-   parser.add_argument('dest_file', type=argparse.FileType('w', encoding='latin-1'))
    parser.add_argument('datapath', type=pathlib.Path)
 
 User defined functions can be used as well:
@@ -1827,8 +1828,18 @@ FileType objects
       >>> parser.parse_args(['-'])
       Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
+   .. note::
+
+      If one argument uses *FileType* and then a subsequent argument fails,
+      an error is reported but the file is not automatically closed.
+      This can also clobber the output files.
+      In this case, it would be better to wait until after the parser has
+      run and then use the :keyword:`with`-statement to manage the files.
+
    .. versionchanged:: 3.4
       Added the *encodings* and *errors* parameters.
+
+   .. deprecated:: 3.14
 
 
 Argument groups
