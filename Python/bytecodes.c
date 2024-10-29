@@ -255,8 +255,24 @@ dummy_func(
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
         }
 
+        family(LOAD_CONST, 0) = {
+            LOAD_CONST_IMMORTAL,
+        };
+
         pure inst(LOAD_CONST, (-- value)) {
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+        }
+
+        inst(LOAD_CONST_IMMORTAL, (-- value)) {
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            assert(_Py_IsImmortal(obj));
+            value = PyStackRef_FromPyObjectImmortal(obj);
+        }
+
+        replicate(4) inst(LOAD_SMALL_INT, (-- value)) {
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
@@ -979,10 +995,9 @@ dummy_func(
             return result;
         }
 
-        // The stack effect here is ambiguous.
-        // We definitely pop the return value off the stack on entry.
-        // We also push it onto the stack on exit, but that's a
-        // different frame, and it's accounted for by _PUSH_FRAME.
+        // The stack effect here is a bit misleading.
+        // retval is popped from the stack, but res
+        // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -1010,15 +1025,6 @@ dummy_func(
         }
 
         macro(INSTRUMENTED_RETURN_VALUE) =
-            _RETURN_VALUE_EVENT +
-            RETURN_VALUE;
-
-        macro(RETURN_CONST) =
-            LOAD_CONST +
-            RETURN_VALUE;
-
-        macro(INSTRUMENTED_RETURN_CONST) =
-            LOAD_CONST +
             _RETURN_VALUE_EVENT +
             RETURN_VALUE;
 

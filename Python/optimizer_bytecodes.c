@@ -445,6 +445,17 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
+    op(_LOAD_CONST_IMMORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
+    op(_LOAD_SMALL_INT, (-- value)) {
+        PyObject *val = PyLong_FromLong(this_instr->oparg);
+        value = sym_new_const(ctx, val);
+    }
+
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
     }
