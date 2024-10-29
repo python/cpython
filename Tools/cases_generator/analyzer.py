@@ -1082,7 +1082,7 @@ def assign_opcodes(
 
 
 def is_instruction_size_macro(token: lexer.Token) -> bool:
-    return token.kind == "IDENTIFIER" and token.text == "INSTRUCTION_SIZE"
+    return token.text == "INSTRUCTION_SIZE"
 
 
 def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int | None:
