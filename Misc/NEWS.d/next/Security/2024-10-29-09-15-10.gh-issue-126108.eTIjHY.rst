@@ -1,0 +1,1 @@
+Fix potential null pointer dereference in PySys_AddWarnOptionUnicode
