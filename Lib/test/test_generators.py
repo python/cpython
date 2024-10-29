@@ -1,6 +1,7 @@
 import copy
 import gc
 import pickle
+import re
 import sys
 import doctest
 import unittest
@@ -267,6 +268,17 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
+
+    @unittest.skipUnless(_testcapi, "requires _testcapi.INT_MAX")
+    def test_gi_frame_f_code_overflow(self):
+        # See: https://github.com/python/cpython/issues/126119
+
+        def f(): yield
+
+        evil_co_stacksize = _testcapi.INT_MAX // support.calcobjsize("P")
+        evil = f().gi_frame.f_code.__replace__(co_stacksize=evil_co_stacksize)
+        evil_gi = types.FunctionType(evil, {})()
+        self.assertGreaterEqual(evil_gi.__sizeof__(), evil_co_stacksize)
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):

@@ -222,6 +222,15 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    @unittest.skipUnless(_testcapi, "requires _testcapi")
+    def test_sizeof_overflow(self):
+        # See: https://github.com/python/cpython/issues/126119
+        evil_co_stacksize = _testcapi.INT_MAX // support.calcobjsize('P')
+        f, _, _ = self.make_frames()
+        evil_code = f.f_code.replace(co_stacksize=evil_co_stacksize)
+        frame = _testcapi.frame_new(evil_code, globals(), locals())
+        self.assertGreaterEqual(frame.__sizeof__(), evil_co_stacksize)
+
 
 class ReprTest(unittest.TestCase):
     """

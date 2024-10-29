@@ -1809,10 +1809,11 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     int nslots = _PyFrame_NumSlotsForCodeObject(code);
     assert(nslots >= 0);
-    if ((size_t)nslots >= (PY_SSIZE_T_MAX - res) / sizeof(PyObject *)) {
-        PyErr_SetString(PyExc_OverflowError, "size exceeds PY_SSIZE_T_MAX");
-        return NULL;
-    }
+    // By construction, 0 <= nslots < code->co_framesize <= INT_MAX.
+    // It should not be possible to have nslots >= PY_SSIZE_T_MAX
+    // even if PY_SSIZE_T_MAX < INT_MAX because code->co_framesize
+    // is checked in _PyCode_Validate().
+    assert((size_t)nslots < (INT_MAX - res) / sizeof(PyObject *));
     return PyLong_FromSsize_t(res + nslots * sizeof(PyObject *));
 }
 

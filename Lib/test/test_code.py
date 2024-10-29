@@ -139,6 +139,18 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
+
+from test import support
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED)
@@ -523,17 +535,33 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code1, code2)
         sys.settrace(None)
 
-    def test_co_stacksize_overflow(self):
+    @unittest.skipUnless(_testcapi, "requires _testcapi")
+    @unittest.skipUnless(_testinternalcapi, "requires _testinternalcapi")
+    def test_co_framesize_overflow(self):
         # See: https://github.com/python/cpython/issues/126119.
 
-        # Since co_framesize = nlocalsplus + co_stacksize + FRAME_SPECIALS_SIZE,
-        # we need to check that co_stacksize is not too large. We could fortify
-        # the test by explicitly checking that bound, but this needs to expose
-        # FRAME_SPECIALS_SIZE and a getter for 'nlocalsplus'.
+        def foo(a, b):
+            x = a * b
+            return x
 
-        c = (lambda: ...).__code__
-        with self.assertRaisesRegex(OverflowError, "co_stacksize"):
-            c.__replace__(co_stacksize=2147483647)
+        c = foo.__code__
+        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
+        # co_framesize = co_stacksize + co_nlocalsplus + FRAME_SPECIALS_SIZE
+        co_framesize = _testinternalcapi.get_co_framesize(c)
+        FRAME_SPECIALS_SIZE = co_framesize - c.co_stacksize - co_nlocalsplus
+
+        ptr_sizeof = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
+
+        for evil_co_stacksize in [
+            _testcapi.INT_MAX,
+            _testcapi.INT_MAX // ptr_sizeof,
+            (_testcapi.INT_MAX - co_nlocalsplus - FRAME_SPECIALS_SIZE) // ptr_sizeof,
+        ]:
+            with (
+                self.subTest(evil_co_stacksize),
+                self.assertRaisesRegex(OverflowError, "co_stacksize")
+            ):
+                foo.__code__.__replace__(co_stacksize=evil_co_stacksize)
 
 
 def isinterned(s):
