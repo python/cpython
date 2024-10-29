@@ -2174,7 +2174,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
-        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
             new_ste->ste_has_docstring = 1;
         }
 
