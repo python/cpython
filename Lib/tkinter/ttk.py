@@ -573,7 +573,8 @@ class Widget(tkinter.Widget):
 
     def cget(self, key):
         """Return the resource value for a KEY given as string."""
-        if isinstance(return_value := super().cget(key), _tkinter.Tcl_Obj):
+        return_value = super().cget(key)
+        if isinstance(return_value, _tkinter.Tcl_Obj):
             return str(return_value)
         return return_value
 
