@@ -140,8 +140,7 @@ class _Target(typing.Generic[_S, _R]):
             f"{c}",
             *self.args,
         ]
-        args_o = args + ["-o", f"{o}", f"{c}"]
-        await _llvm.run("clang", args_o, echo=self.verbose)
+        await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
