@@ -199,6 +199,7 @@ nitpick_ignore = [
     ('envvar', 'LC_TIME'),
     ('envvar', 'LINES'),
     ('envvar', 'LOGNAME'),
+    ('envvar', 'MANPAGER'),
     ('envvar', 'PAGER'),
     ('envvar', 'PATH'),
     ('envvar', 'PATHEXT'),
