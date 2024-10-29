@@ -1532,7 +1532,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
         # Long drive letter
-        self.assertEqual(fn("XX:\\"), "file:XX:/")
+        self.assertEqual(fn("XX:\\"), "XX%3A/")
         # No drive letter
         self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
@@ -1566,7 +1566,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('/C|//'), 'C:\\\\')
         self.assertEqual(fn('///C|/path'), 'C:\\path')
         # No DOS drive
-        self.assertEqual(fn("///C/test/"), '\\\\\\C\\test\\')
+        self.assertEqual(fn("///C/test/"), '\\C\\test\\')
         self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
         # DOS drive paths
         self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
