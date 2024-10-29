@@ -1832,7 +1832,7 @@ def contains_ambiguous_backslash(source):
     the tokenizer does not produce any tokens for the line containing
     the backslash and so there is no way to know its indent.
     """
-    pattern = re.compile(br'\n\s*\\\s*\r?\n')
+    pattern = re.compile(br'\n\s*\\\r?\n')
     return pattern.search(source) is not None
 
 
