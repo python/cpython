@@ -106,6 +106,39 @@ pylong_getsign(PyObject *module, PyObject *arg)
 
 
 static PyObject *
+pylong_ispositive(PyObject *module, PyObject *arg)
+{
+    int s;
+    if ((s = PyLong_IsPositive(arg)) == -1) {
+        return NULL;
+    }
+    return PyLong_FromLong(s);
+}
+
+
+static PyObject *
+pylong_isnegative(PyObject *module, PyObject *arg)
+{
+    int s;
+    if ((s = PyLong_IsNegative(arg)) == -1) {
+        return NULL;
+    }
+    return PyLong_FromLong(s); 
+}
+
+
+static PyObject *
+pylong_iszero(PyObject *module, PyObject *arg)
+{
+    int s;
+    if ((s = PyLong_IsZero(arg)) == -1) {
+        return NULL;
+    }
+    return PyLong_FromLong(s);
+}
+
+
+static PyObject *
 pylong_aspid(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
@@ -124,6 +157,9 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_ispositive",           pylong_ispositive,          METH_O},
+    {"pylong_isnegative",           pylong_isnegative,          METH_O},
+    {"pylong_iszero",               pylong_iszero,              METH_O},
     {NULL},
 };
 
