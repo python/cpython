@@ -436,7 +436,12 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
         return -1;
     }
-
+    /* Ensure that the framesize will not overflow */
+    int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
+    if (con->stacksize >= INT_MAX - nlocalsplus - FRAME_SPECIALS_SIZE) {
+        PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
+        return -1;
+    }
     return 0;
 }
 

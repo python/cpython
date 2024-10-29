@@ -523,6 +523,18 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code1, code2)
         sys.settrace(None)
 
+    def test_co_stacksize_overflow(self):
+        # See: https://github.com/python/cpython/issues/126119.
+
+        # Since co_framesize = nlocalsplus + co_stacksize + FRAME_SPECIALS_SIZE,
+        # we need to check that co_stacksize is not too large. We could fortify
+        # the test by explicitly checking that bound, but this needs to expose
+        # FRAME_SPECIALS_SIZE and a getter for 'nlocalsplus'.
+
+        c = (lambda: ...).__code__
+        with self.assertRaisesRegex(OverflowError, "co_stacksize"):
+            c.__replace__(co_stacksize=2147483647)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])

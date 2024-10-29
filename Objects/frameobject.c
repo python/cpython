@@ -1804,11 +1804,22 @@ PyDoc_STRVAR(clear__doc__,
 static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
+    Py_ssize_t res = offsetof(PyFrameObject, _f_frame_data)
+                     + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
-    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
-    return PyLong_FromSsize_t(res);
+    int nslots = _PyFrame_NumSlotsForCodeObject(code);
+    assert(nslots >= 0);
+    if ((size_t)nslots >= (PY_SSIZE_T_MAX - res) / sizeof(PyObject *)) {
+        // This could happen if the underlying code object has a
+        // very large stacksize (but at most INT_MAX) yet that the
+        // above offsets make the result overflow.
+        //
+        // This should normally only happen if PY_SSIZE_T_MAX == INT_MAX,
+        // but we anyway raise an exception on other systems for safety.
+        PyErr_SetString(PyExc_OverflowError, "size exceeds PY_SSIZE_T_MAX");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(res + nslots * sizeof(PyObject *));
 }
 
 PyDoc_STRVAR(sizeof__doc__,
