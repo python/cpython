@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>')
+consts: ('<code object g>',)
 
 >>> dump(f(4).__code__)
 name: g
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 3
+flags: 67108867
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):

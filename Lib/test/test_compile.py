@@ -834,7 +834,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         (None, "used"))
+                         (True, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_extended_args(self):
@@ -852,7 +852,7 @@ class TestSpecifics(unittest.TestCase):
         eval(compile(code, "file.py", "exec"), g)
         exec(code, g)
         f = g['f']
-        expected = tuple([None, ''] + [f't{i}' for i in range(N)])
+        expected = tuple(['', 1] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
         expected = "".join(expected[2:])
         self.assertEqual(expected, f())
@@ -1244,7 +1244,7 @@ class TestSpecifics(unittest.TestCase):
                     y)
         genexp_lines = [0, 4, 2, 0, 4]
 
-        genexp_code = return_genexp.__code__.co_consts[1]
+        genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)
         self.assertEqual(genexp_lines, code_lines)
 
