@@ -68,7 +68,7 @@ exit:
 }
 
 PyDoc_STRVAR(_functools_reduce__doc__,
-"reduce($module, function, iterable[, initial], /)\n"
+"reduce($module, function, iterable, initial=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Apply a function of two arguments cumulatively to the items of an iterable, from left to right.\n"
@@ -158,4 +158,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=866d9921a492239f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9cf40255d4e89c27 input=a9049054013a1b77]*/
