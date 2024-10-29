@@ -346,7 +346,8 @@ MODULE_OBJS=	\
 		Modules/main.o \
 		Modules/gcmodule.o
 
-IO_H=		Modules/_io/_iomodule.h \
+IO_H=		\
+		Modules/_io/_iomodule.h \
 		Include/internal/pycore_emscripten_trampoline.h
 
 IO_OBJS=	\
@@ -449,7 +450,6 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
-		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -1297,7 +1297,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
-		$(srcdir)/Python/condvar.h \
 		$(DTRACE_HEADERS) \
 		@PLATFORM_HEADERS@ \
 		\
@@ -1958,7 +1957,6 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/segment-map.c \
 		$(srcdir)/Objects/mimalloc/static.c \
 		$(srcdir)/Objects/mimalloc/stats.c \
-		$(srcdir)/Objects/mimalloc/page-queue.c \
 		$(srcdir)/Objects/mimalloc/prim/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
@@ -2044,11 +2042,13 @@ Python/ceval.o: \
 		$(srcdir)/Include/internal/pycore_emscripten_signal.h \
 		$(srcdir)/Include/internal/pycore_emscripten_trampoline.h \
 		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
 
+Python/ceval_gil.o \
+		$(srcdir)/Python/condvar.h
+		
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
 
