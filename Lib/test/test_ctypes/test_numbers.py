@@ -4,12 +4,12 @@ import struct
 import sys
 import unittest
 from itertools import combinations
-from math import copysign, isnan
 from operator import truth
 from ctypes import (byref, sizeof, alignment,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble, c_bool)
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 
 def valid_ranges(*types):
@@ -62,34 +62,7 @@ INF = float("inf")
 NAN = float("nan")
 
 
-class NumberTestCase(unittest.TestCase):
-    # from Lib/test/test_complex.py
-    def assertFloatsAreIdentical(self, x, y):
-        """assert that floats x and y are identical, in the sense that:
-        (1) both x and y are nans, or
-        (2) both x and y are infinities, with the same sign, or
-        (3) both x and y are zeros, with the same sign, or
-        (4) x and y are both finite and nonzero, and x == y
-
-        """
-        msg = 'floats {!r} and {!r} are not identical'
-
-        if isnan(x) or isnan(y):
-            if isnan(x) and isnan(y):
-                return
-        elif x == y:
-            if x != 0.0:
-                return
-            # both zero; check that signs match
-            elif copysign(1.0, x) == copysign(1.0, y):
-                return
-            else:
-                msg += ': zeros have different signs'
-        self.fail(msg.format(x, y))
-
-    def assertComplexesAreIdentical(self, x, y):
-        self.assertFloatsAreIdentical(x.real, y.real)
-        self.assertFloatsAreIdentical(x.imag, y.imag)
+class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
 
     def test_default_init(self):
         # default values are set to zero
@@ -146,7 +119,8 @@ class NumberTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
-        for t in [ctypes.c_double_complex]:
+        for t in [ctypes.c_double_complex, ctypes.c_float_complex,
+                  ctypes.c_longdouble_complex]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
             self.assertEqual(t(1+0.125j).value, 1+0.125j)
@@ -162,9 +136,10 @@ class NumberTestCase(unittest.TestCase):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            with self.subTest(z=z):
-                z2 = ctypes.c_double_complex(z).value
-                self.assertComplexesAreIdentical(z, z2)
+            for t in [ctypes.c_double_complex, ctypes.c_float_complex,
+                      ctypes.c_longdouble_complex]:
+                with self.subTest(z=z, type=t):
+                    self.assertComplexesAreIdentical(z, t(z).value)
 
     def test_integers(self):
         f = FloatLike()

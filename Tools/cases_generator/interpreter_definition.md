@@ -74,7 +74,7 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
+and a piece of C code describing its semantics:
 
 ```
   file:
@@ -178,15 +178,17 @@ list of annotations and their meanings are as follows:
 
 ### Special functions/macros
 
-The C code may include special functions that are understood by the tools as
+The C code may include special functions and macros that are understood by the tools as
 part of the DSL.
 
-Those functions include:
+Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
 * `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 * `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
+* `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
+to `1 + INLINE_CACHE_ENTRIES`.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -245,7 +247,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 

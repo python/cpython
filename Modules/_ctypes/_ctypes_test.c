@@ -13,9 +13,7 @@
 
 #include <Python.h>
 
-#include <ffi.h>                  // FFI_TARGET_HAS_COMPLEX_TYPE
-
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #  include "../_complex.h"        // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
@@ -186,9 +184,9 @@ _testfunc_array_in_struct3B_set_defaults(void)
 
 /*
  * Test3C struct tests the MAX_STRUCT_SIZE 32. Structs containing arrays of up
- * to four floating point types are passed in registers on Arm platforms.
- * This struct is used for within bounds test on Arm platfroms and for an
- * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 32.
+ * to four floating-point types are passed in registers on Arm platforms.
+ * This struct is used for within-bounds tests on Arm platforms and for an
+ * out-of-bounds test for platforms where MAX_STRUCT_SIZE is less than 32.
  * See gh-110190.
  */
 typedef struct {
@@ -210,9 +208,9 @@ _testfunc_array_in_struct3C_set_defaults(void)
 
 /*
  * Test3D struct tests the MAX_STRUCT_SIZE 64. Structs containing arrays of up
- * to eight floating point types are passed in registers on PPC64LE platforms.
- * This struct is used for within bounds test on PPC64LE platfroms and for an
- * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 64.
+ * to eight floating-point types are passed in registers on PPC64LE platforms.
+ * This struct is used for within bounds test on PPC64LE platforms and for an
+ * out-of-bounds tests for platforms where MAX_STRUCT_SIZE is less than 64.
  * See gh-110190.
  */
 typedef struct {
@@ -449,10 +447,20 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
+}
+
+EXPORT(float complex) my_csqrtf(float complex a)
+{
+    return csqrtf(a);
+}
+
+EXPORT(long double complex) my_csqrtl(long double complex a)
+{
+    return csqrtl(a);
 }
 #endif
 

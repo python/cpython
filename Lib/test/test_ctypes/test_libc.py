@@ -23,7 +23,7 @@ class LibTest(unittest.TestCase):
         self.assertEqual(lib.my_sqrt(2.0), math.sqrt(2.0))
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
-                         "requires C11 complex type")
+                         "requires C11 complex type and libffi >= 3.3.0")
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
@@ -31,6 +31,20 @@ class LibTest(unittest.TestCase):
         self.assertAlmostEqual(lib.my_csqrt(-1+0.01j),
                                0.004999937502734214+1.0000124996093955j)
         self.assertAlmostEqual(lib.my_csqrt(-1-0.01j),
+                               0.004999937502734214-1.0000124996093955j)
+
+        lib.my_csqrtf.argtypes = ctypes.c_float_complex,
+        lib.my_csqrtf.restype = ctypes.c_float_complex
+        self.assertAlmostEqual(lib.my_csqrtf(-1+0.01j),
+                               0.004999937502734214+1.0000124996093955j)
+        self.assertAlmostEqual(lib.my_csqrtf(-1-0.01j),
+                               0.004999937502734214-1.0000124996093955j)
+
+        lib.my_csqrtl.argtypes = ctypes.c_longdouble_complex,
+        lib.my_csqrtl.restype = ctypes.c_longdouble_complex
+        self.assertAlmostEqual(lib.my_csqrtl(-1+0.01j),
+                               0.004999937502734214+1.0000124996093955j)
+        self.assertAlmostEqual(lib.my_csqrtl(-1-0.01j),
                                0.004999937502734214-1.0000124996093955j)
 
     def test_qsort(self):

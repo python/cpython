@@ -2329,16 +2329,6 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(normalize('setUpModule (test.test_x)', is_error=True))
         self.assertIsNone(normalize('tearDownModule (test.test_module)', is_error=True))
 
-    def test_get_signal_name(self):
-        for exitcode, expected in (
-            (-int(signal.SIGINT), 'SIGINT'),
-            (-int(signal.SIGSEGV), 'SIGSEGV'),
-            (128 + int(signal.SIGABRT), 'SIGABRT'),
-            (3221225477, "STATUS_ACCESS_VIOLATION"),
-            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
-        ):
-            self.assertEqual(utils.get_signal_name(exitcode), expected, exitcode)
-
     def test_format_resources(self):
         format_resources = utils.format_resources
         ALL_RESOURCES = utils.ALL_RESOURCES

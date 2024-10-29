@@ -4,6 +4,7 @@ import ast
 import asyncio
 import builtins
 import collections
+import contextlib
 import decimal
 import fractions
 import gc
@@ -16,6 +17,7 @@ import platform
 import random
 import re
 import sys
+import textwrap
 import traceback
 import types
 import typing
@@ -30,6 +32,7 @@ from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
 from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
+from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -412,7 +415,7 @@ class BuiltinTest(unittest.TestCase):
         "socket.accept is broken"
     )
     def test_compile_top_level_await(self):
-        """Test whether code some top level await can be compiled.
+        """Test whether code with top level await can be compiled.
 
         Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
         set, and make sure the generated code object has the CO_COROUTINE flag
@@ -426,6 +429,7 @@ class BuiltinTest(unittest.TestCase):
                 yield i
 
         modes = ('single', 'exec')
+        optimizations = (-1, 0, 1, 2)
         code_samples = [
             '''a = await asyncio.sleep(0, result=1)''',
             '''async for i in arange(1):
@@ -438,34 +442,52 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
-            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
+            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
+            # gh-121637: Make sure we correctly handle the case where the
+            # async code is optimized away
+            '''assert not await asyncio.sleep(0); a = 1''',
+            '''assert [x async for x in arange(1)]; a = 1''',
+            '''assert {x async for x in arange(1)}; a = 1''',
+            '''assert {x: x async for x in arange(1)}; a = 1''',
+            '''
+            if (a := 1) and __debug__:
+                async with asyncio.Lock() as l:
+                    pass
+            ''',
+            '''
+            if (a := 1) and __debug__:
+                async for x in arange(2):
+                    pass
+            ''',
         ]
         policy = maybe_get_event_loop_policy()
         try:
-            for mode, code_sample in product(modes, code_samples):
-                source = dedent(code_sample)
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+            for mode, code_sample, optimize in product(modes, code_samples, optimizations):
+                with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
+                    source = dedent(code_sample)
+                    with self.assertRaises(
+                            SyntaxError, msg=f"source={source} mode={mode}"):
+                        compile(source, '?', mode, optimize=optimize)
 
-                co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                    co = compile(source,
+                                '?',
+                                mode,
+                                flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                                optimize=optimize)
 
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg=f"source={source} mode={mode}")
+                    self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                    msg=f"source={source} mode={mode}")
 
-                # test we can create and  advance a function type
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                async_f = FunctionType(co, globals_)
-                asyncio.run(async_f())
-                self.assertEqual(globals_['a'], 1)
+                    # test we can create and  advance a function type
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    async_f = FunctionType(co, globals_)
+                    asyncio.run(async_f())
+                    self.assertEqual(globals_['a'], 1)
 
-                # test we can await-eval,
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                asyncio.run(eval(co, globals_))
-                self.assertEqual(globals_['a'], 1)
+                    # test we can await-eval,
+                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                    asyncio.run(eval(co, globals_))
+                    self.assertEqual(globals_['a'], 1)
         finally:
             asyncio.set_event_loop_policy(policy)
 
@@ -1758,6 +1780,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [], '')
         self.assertRaises(TypeError, sum, [], b'')
         self.assertRaises(TypeError, sum, [], bytearray())
+        self.assertRaises(OverflowError, sum, [1.0, 10**1000])
+        self.assertRaises(OverflowError, sum, [1j, 10**1000])
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1768,6 +1792,11 @@ class BuiltinTest(unittest.TestCase):
         sum(([x] for x in range(10)), empty)
         self.assertEqual(empty, [])
 
+        xs = [complex(random.random() - .5, random.random() - .5)
+              for _ in range(10000)]
+        self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
+                                          sum(z.imag for z in xs)))
+
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "sum accuracy not guaranteed on machines with double rounding")
@@ -1775,6 +1804,13 @@ class BuiltinTest(unittest.TestCase):
     def test_sum_accuracy(self):
         self.assertEqual(sum([0.1] * 10), 1.0)
         self.assertEqual(sum([1.0, 10E100, 1.0, -10E100]), 2.0)
+        self.assertEqual(sum([1.0, 10E100, 1.0, -10E100, 2j]), 2+2j)
+        self.assertEqual(sum([2+1j, 10E100j, 1j, -10E100j]), 2+2j)
+        self.assertEqual(sum([1j, 1, 10E100j, 1j, 1.0, -10E100j]), 2+2j)
+        self.assertEqual(sum([2j, 1., 10E100, 1., -10E100]), 2+2j)
+        self.assertEqual(sum([1.0, 10**100, 1.0, -10**100]), 2.0)
+        self.assertEqual(sum([2j, 1.0, 10**100, 1.0, -10**100]), 2+2j)
+        self.assertEqual(sum([0.1j]*10 + [fractions.Fraction(1, 10)]), 0.1+1j)
 
     def test_type(self):
         self.assertEqual(type(''),  type('123'))
@@ -2378,7 +2414,8 @@ class PtyTests(unittest.TestCase):
                 print(ascii(input(prompt)), file=wpipe)
             except BaseException as e:
                 print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
-        lines = self.run_child(child, terminal_input + b"\r\n")
+        with self.detach_readline():
+            lines = self.run_child(child, terminal_input + b"\r\n")
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
@@ -2391,28 +2428,36 @@ class PtyTests(unittest.TestCase):
                 expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
-    def test_input_tty(self):
-        # Test input() functionality when wired to a tty (the code path
-        # is different and invokes GNU readline if available).
-        self.check_input_tty("prompt", b"quux")
-
-    def skip_if_readline(self):
+    @contextlib.contextmanager
+    def detach_readline(self):
         # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
-        # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intended to test
+        # non-ASCII characters.
+        # Unlink readline temporarily from PyOS_Readline() for those tests,
+        # since test_builtin is not intended to test
         # the readline module, but the builtins module.
-        if 'readline' in sys.modules:
-            self.skipTest("the readline module is loaded")
+        if "readline" in sys.modules:
+            c = import_module("ctypes")
+            fp_api = "PyOS_ReadlineFunctionPointer"
+            prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
+            c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
+            try:
+                yield
+            finally:
+                c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
+        else:
+            yield
+
+    def test_input_tty(self):
+        # Test input() functionality when wired to a tty
+        self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
-        self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
@@ -2422,14 +2467,12 @@ class PtyTests(unittest.TestCase):
                          'null characters')
 
     def test_input_tty_nonencodable_prompt(self):
-        self.skip_if_readline()
         self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
                 expected="UnicodeEncodeError: 'ascii' codec can't encode "
                          "character '\\xe9' in position 6: ordinal not in "
                          "range(128)")
 
     def test_input_tty_nondecodable_input(self):
-        self.skip_if_readline()
         self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
                 expected="UnicodeDecodeError: 'ascii' codec can't decode "
                          "byte 0xe9 in position 4: ordinal not in "
@@ -2531,9 +2574,9 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = (1 << 30) - 1
+        IMMORTAL_REFCOUNT = 3 << 29
     else:
-        IMMORTAL_REFCOUNT = (1 << 32) - 1
+        IMMORTAL_REFCOUNT = 3 << 30
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
@@ -2564,6 +2607,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(A.__module__, __name__)
         self.assertEqual(A.__bases__, (object,))
         self.assertIs(A.__base__, object)
+        self.assertNotIn('__firstlineno__', A.__dict__)
         x = A()
         self.assertIs(type(x), A)
         self.assertIs(x.__class__, A)
@@ -2641,6 +2685,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_firstlineno(self):
+        A = type('A', (), {'__firstlineno__': 42})
+        self.assertEqual(A.__name__, 'A')
+        self.assertEqual(A.__module__, __name__)
+        self.assertEqual(A.__dict__['__firstlineno__'], 42)
+        A.__module__ = 'testmodule'
+        self.assertEqual(A.__module__, 'testmodule')
+        self.assertNotIn('__firstlineno__', A.__dict__)
+        A.__firstlineno__ = 43
+        self.assertEqual(A.__dict__['__firstlineno__'], 43)
 
     def test_type_typeparams(self):
         class A[T]:

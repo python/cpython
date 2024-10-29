@@ -1,1 +1,0 @@
-String search is now slightly faster for certain cases. It now utilizes last character gap (good suffix rule) for two-way periodic needles.

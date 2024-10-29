@@ -557,7 +557,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_file("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_file("/Library/Frameworks/lib/python98.zip")
 
         expected = dict(
@@ -605,7 +605,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_xfile("/Library/lib/python98.zip")
         expected = dict(
             executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
@@ -844,6 +844,7 @@ DEFAULT_NAMESPACE = dict(
     PYDEBUGEXT="",
     VERSION_MAJOR=9,    # fixed version number for ease
     VERSION_MINOR=8,    # of testing
+    ABI_THREAD="",
     PYWINVER=None,
     EXE_SUFFIX=None,
 
