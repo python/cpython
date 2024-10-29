@@ -884,8 +884,8 @@ class BasicTest(BaseTest):
         exename = "pythonw.exe"
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
-            subprocess.check_call([envpyw, "-c", "import _winapi; "
-                "assert _winapi.GetModuleFileName(0).endswith('%s')" % exename])
+            subprocess.check_call([envpyw, "-c", "import sys; "
+                "assert sys._base_executable.endswith('%s')" % exename])
         except subprocess.CalledProcessError:
             self.fail("venvwlauncher.exe did not run %s" % exename)
 
