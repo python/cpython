@@ -852,6 +852,7 @@ class TestSpecifics(unittest.TestCase):
         eval(compile(code, "file.py", "exec"), g)
         exec(code, g)
         f = g['f']
+        # Issue #126072: None is no longer the first element in co_consts
         expected = tuple(['', 1] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
         expected = "".join(expected[2:])
@@ -1244,6 +1245,7 @@ class TestSpecifics(unittest.TestCase):
                     y)
         genexp_lines = [0, 4, 2, 0, 4]
 
+        # Issue #126072: None is no longer the first element in co_consts
         genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)
         self.assertEqual(genexp_lines, code_lines)

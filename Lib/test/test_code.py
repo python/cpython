@@ -123,6 +123,61 @@ nlocals: 3
 flags: 3
 consts: ('None',)
 
+>>> def has_docstring(x: str):
+...     'This is a one-line doc string'
+...     x += x
+...     x += "hello world"
+...     # co_flags should be 0x4000003 = 67108867
+...     return x
+
+>>> dump(has_docstring.__code__)
+name: has_docstring
+argcount: 1
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x',)
+cellvars: ()
+freevars: ()
+nlocals: 1
+flags: 67108867
+consts: ("'This is a one-line doc string'", "'hello world'")
+
+>>> async def async_func_docstring(x: str, y: str):
+...     "This is a docstring from async function"
+...     import asyncio
+...     await asyncio.sleep(1)
+...     # co_flags should be 0x4000083 = 67108995
+...     return x + y
+
+>>> dump(async_func_docstring.__code__)
+name: async_func_docstring
+argcount: 2
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ('asyncio', 'sleep')
+varnames: ('x', 'y', 'asyncio')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 67108995
+consts: ("'This is a docstring from async function'", '0', 'None', '1')
+
+>>> def no_docstring(x, y, z):
+...     return x + "hello" + y + z + "world"
+
+>>> dump(no_docstring.__code__)
+name: no_docstring
+argcount: 3
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x', 'y', 'z')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 3
+consts: ("'hello'", "'world'")
 """
 
 import copy

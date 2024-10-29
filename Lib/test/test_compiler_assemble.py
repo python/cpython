@@ -84,6 +84,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
                 return x
             return inner() % 2
 
+        # Issue #126072: None is no longer the first element in co_consts
         inner_code = mod_two.__code__.co_consts[0]
         assert isinstance(inner_code, types.CodeType)
 
