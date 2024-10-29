@@ -280,6 +280,14 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
+    if (PyLong_CheckExact(o)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(o, &overflow);
+        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
+            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
+            return SUCCESS;
+        }
+    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
@@ -656,6 +664,9 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
+    // Insert None into consts to prevent an annotation
+    // appearing to be a docstring
+    _PyCompile_AddConst(c, Py_None);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);

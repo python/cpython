@@ -261,6 +261,7 @@ Known values:
     Python 3.14a1 3606 (Specialize CALL_KW)
     Python 3.14a1 3607 (Add pseudo instructions JUMP_IF_TRUE/FALSE)
     Python 3.14a1 3608 (Add support for slices)
+    Python 3.14a2 3609 (Add LOAD_SMALL_INT and LOAD_CONST_IMMORTAL instructions, remove RETURN_CONST)
 
     Python 3.15 will start with 3650
 
@@ -273,7 +274,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3608
+#define PYC_MAGIC_NUMBER 3609
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

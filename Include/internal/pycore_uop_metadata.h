@@ -36,6 +36,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_PURE_FLAG,
+    [_LOAD_CONST_IMMORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
+    [_LOAD_SMALL_INT_0] = 0,
+    [_LOAD_SMALL_INT_1] = 0,
+    [_LOAD_SMALL_INT_2] = 0,
+    [_LOAD_SMALL_INT_3] = 0,
+    [_LOAD_SMALL_INT] = HAS_ARG_FLAG,
     [_STORE_FAST_0] = HAS_LOCAL_FLAG,
     [_STORE_FAST_1] = HAS_LOCAL_FLAG,
     [_STORE_FAST_2] = HAS_LOCAL_FLAG,
@@ -289,6 +295,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = 8,
+    [_LOAD_SMALL_INT] = 4,
     [_STORE_FAST] = 8,
     [_INIT_CALL_PY_EXACT_ARGS] = 5,
 };
@@ -460,6 +467,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
     [_LOAD_CONST] = "_LOAD_CONST",
+    [_LOAD_CONST_IMMORTAL] = "_LOAD_CONST_IMMORTAL",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
     [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = "_LOAD_CONST_INLINE_BORROW_WITH_NULL",
@@ -485,6 +493,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_GLOBAL_MODULE_FROM_KEYS] = "_LOAD_GLOBAL_MODULE_FROM_KEYS",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
     [_LOAD_NAME] = "_LOAD_NAME",
+    [_LOAD_SMALL_INT] = "_LOAD_SMALL_INT",
+    [_LOAD_SMALL_INT_0] = "_LOAD_SMALL_INT_0",
+    [_LOAD_SMALL_INT_1] = "_LOAD_SMALL_INT_1",
+    [_LOAD_SMALL_INT_2] = "_LOAD_SMALL_INT_2",
+    [_LOAD_SMALL_INT_3] = "_LOAD_SMALL_INT_3",
     [_LOAD_SPECIAL] = "_LOAD_SPECIAL",
     [_LOAD_SUPER_ATTR_ATTR] = "_LOAD_SUPER_ATTR_ATTR",
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
@@ -597,6 +610,18 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_FAST_LOAD_FAST:
             return 0;
         case _LOAD_CONST:
+            return 0;
+        case _LOAD_CONST_IMMORTAL:
+            return 0;
+        case _LOAD_SMALL_INT_0:
+            return 0;
+        case _LOAD_SMALL_INT_1:
+            return 0;
+        case _LOAD_SMALL_INT_2:
+            return 0;
+        case _LOAD_SMALL_INT_3:
+            return 0;
+        case _LOAD_SMALL_INT:
             return 0;
         case _STORE_FAST_0:
             return 1;
