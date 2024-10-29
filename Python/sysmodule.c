@@ -2854,7 +2854,7 @@ PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate  && _PySys_AddWarnOptionWithError(tstate, option) < 0) {
+    if (tstate && _PySys_AddWarnOptionWithError(tstate, option) < 0) {
         /* No return value, therefore clear error state if possible */
         _PyErr_Clear(tstate);
     }
