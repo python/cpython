@@ -194,6 +194,10 @@ Other language changes
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
 
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
 
 New modules
 ===========
@@ -325,6 +329,10 @@ inspect
 * :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
   If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+* Add function :func:`inspect.ispackage` to determine whether an object is a
+  :term:`package` or not.
+  (Contributed by Zhikang Yan in :gh:`125634`.)
 
 
 json

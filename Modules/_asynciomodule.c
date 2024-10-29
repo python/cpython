@@ -409,12 +409,19 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state,
-            fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+        // Beware: An evil call_soon could alter fut_callback0 or fut_context0.
+        // Since we are anyway clearing them after the call, whether call_soon
+        // succeeds or not, the idea is to transfer ownership so that external
+        // code is not able to alter them during the call.
+        PyObject *fut_callback0 = fut->fut_callback0;
+        fut->fut_callback0 = NULL;
+        PyObject *fut_context0 = fut->fut_context0;
+        fut->fut_context0 = NULL;
 
-        Py_CLEAR(fut->fut_callback0);
-        Py_CLEAR(fut->fut_context0);
+        int ret = call_soon(state, fut->fut_loop, fut_callback0,
+                            (PyObject *)fut, fut_context0);
+        Py_CLEAR(fut_callback0);
+        Py_CLEAR(fut_context0);
         if (ret) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
@@ -1012,7 +1019,12 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
     ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
+        // Beware: An evil PyObject_RichCompareBool could free fut_callback0
+        // before a recursive call is made with that same arg. For details, see
+        // https://github.com/python/cpython/pull/125967#discussion_r1816593340.
+        PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
+        int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
+        Py_DECREF(fut_callback0);
         if (cmp == -1) {
             return NULL;
         }
