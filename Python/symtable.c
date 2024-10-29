@@ -1843,6 +1843,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
+        }
+
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns, new_ste)) {
             Py_DECREF(new_ste);
@@ -2168,6 +2172,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                            LOCATION(s));
         if (!new_ste) {
             return 0;
+        }
+
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
         }
 
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
