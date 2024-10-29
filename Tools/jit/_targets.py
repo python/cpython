@@ -135,6 +135,9 @@ class _Target(typing.Generic[_S, _R]):
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
+            "-o",
+            f"{o}",
+            f"{c}",
             *self.args,
         ]
         args_o = args + ["-o", f"{o}", f"{c}"]
