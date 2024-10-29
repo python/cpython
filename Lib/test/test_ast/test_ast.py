@@ -94,11 +94,11 @@ class AST_Tests(unittest.TestCase):
 
         del ast.AST._fields
 
-        msg = 'AST has no fields'
+        msg = "type object 'ast.AST' has no attribute '_fields'"
         # Both examples used to crash:
-        with self.assertRaisesRegex(TypeError, msg):
+        with self.assertRaisesRegex(AttributeError, msg):
             ast.AST(arg1=123)
-        with self.assertRaisesRegex(TypeError, msg):
+        with self.assertRaisesRegex(AttributeError, msg):
             ast.AST()
 
     def test_AST_garbage_collection(self):

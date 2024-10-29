@@ -5083,13 +5083,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
-        goto cleanup;
-    }
+
+    fields = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_fields);
     if (fields == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.400s has no fields",
-                     _PyType_Name(Py_TYPE(self)));
         goto cleanup;
     }
 

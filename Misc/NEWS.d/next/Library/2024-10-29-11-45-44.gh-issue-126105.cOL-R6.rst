@@ -1,1 +1,1 @@
-Fix a crash in :mod:`ast` when ``_fields`` attribute is deleted.
+Fix a crash in :mod:`ast` when the :attr:`ast.AST._fields` attribute is deleted.
