@@ -212,6 +212,82 @@
             break;
         }
 
+        case _LOAD_CONST_IMMORTAL: {
+            _PyStackRef value;
+            oparg = CURRENT_OPARG();
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            assert(_Py_IsImmortal(obj));
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT_0: {
+            _PyStackRef value;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT_1: {
+            _PyStackRef value;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT_2: {
+            _PyStackRef value;
+            oparg = 2;
+            assert(oparg == CURRENT_OPARG());
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT_3: {
+            _PyStackRef value;
+            oparg = 3;
+            assert(oparg == CURRENT_OPARG());
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT: {
+            _PyStackRef value;
+            oparg = CURRENT_OPARG();
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _STORE_FAST_0: {
             _PyStackRef value;
             oparg = 0;
@@ -2853,7 +2929,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            PyObject *old_value;
             if (!DK_IS_UNICODE(dict->ma_keys)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2863,14 +2938,17 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            PyObject *old_value = ep->me_value;
+            if (old_value == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,

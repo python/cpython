@@ -4755,8 +4755,6 @@
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
@@ -4889,62 +4887,6 @@
             DISPATCH();
         }
 
-        TARGET(INSTRUMENTED_RETURN_CONST) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
-            (void)this_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(INSTRUMENTED_RETURN_CONST);
-            _PyStackRef value;
-            _PyStackRef val;
-            _PyStackRef retval;
-            _PyStackRef res;
-            // _LOAD_CONST
-            {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _RETURN_VALUE_EVENT
-            {
-                val = value;
-                stack_pointer[0] = val;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
-            }
-            // _RETURN_VALUE
-            {
-                retval = val;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                _PyStackRef temp = retval;
-                assert(PyStackRef_IsHeapSafe(temp));
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(EMPTY());
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(frame->return_offset);
-                res = temp;
-                LLTRACE_RESUME_FRAME();
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
         TARGET(INSTRUMENTED_RETURN_VALUE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
@@ -5072,9 +5014,11 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return PyStackRef_AsPyObjectSteal(retval);
+            PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            /* Not strictly necessary, but prevents warnings */
+            return result;
         }
 
         TARGET(IS_OP) {
@@ -5913,10 +5857,26 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
+            PREDICTED(LOAD_CONST);
             _PyStackRef value;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(LOAD_CONST_IMMORTAL) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_CONST_IMMORTAL);
+            static_assert(0 == 0, "incorrect cache size");
+            _PyStackRef value;
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            assert(_Py_IsImmortal(obj));
+            value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -6272,6 +6232,20 @@
             if (v_o == NULL) goto error;
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(LOAD_SMALL_INT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_SMALL_INT);
+            _PyStackRef value;
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -6965,45 +6939,6 @@
             DISPATCH();
         }
 
-        TARGET(RETURN_CONST) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(RETURN_CONST);
-            _PyStackRef value;
-            _PyStackRef retval;
-            _PyStackRef res;
-            // _LOAD_CONST
-            {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _RETURN_VALUE
-            {
-                retval = value;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                _PyStackRef temp = retval;
-                assert(PyStackRef_IsHeapSafe(temp));
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(EMPTY());
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(frame->return_offset);
-                res = temp;
-                LLTRACE_RESUME_FRAME();
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
         TARGET(RETURN_GENERATOR) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
@@ -7461,18 +7396,17 @@
                 assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
-                PyObject *old_value;
                 DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys), STORE_ATTR);
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
+                PyObject *old_value = ep->me_value;
+                DEOPT_IF(old_value == NULL, STORE_ATTR);
                 /* Ensure dict is GC tracked if it needs to be */
                 if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                     _PyObject_GC_TRACK(dict);
                 }
-                old_value = ep->me_value;
-                PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+                _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 ep->me_value = PyStackRef_AsPyObjectSteal(value);
                 // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
