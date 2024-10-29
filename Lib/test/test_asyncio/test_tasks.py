@@ -19,6 +19,7 @@ from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import ReachableCode
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import ignore_warnings
 
@@ -89,8 +90,8 @@ class BaseTaskTests:
     Future = None
     all_tasks = None
 
-    def new_task(self, loop, coro, name='TestTask', context=None):
-        return self.__class__.Task(coro, loop=loop, name=name, context=context)
+    def new_task(self, loop, coro, name='TestTask', context=None, **kwargs):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context, **kwargs)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -2688,6 +2689,76 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
+        # Special thanks to Nico-Posada for the original PoC.
+        # see: https://github.com/python/cpython/issues/126080
+        asserter = self
+
+        class Break:
+            def __str__(self):
+                # to break recursion errors in Task.__init__
+                raise ReachableCode(type(self))
+
+        class EvilEventLoop:
+            get_debug = staticmethod(lambda: False)
+            is_running = staticmethod(lambda: True)
+
+            def call_soon(self, *args, **kwargs):
+                # raise an exception just to make sure this was called
+                raise ReachableCode(type(self))
+
+            def __getattribute__(self, name):
+                if name == "call_soon":
+                    with asserter.assertRaises(ReachableCode) as cm:
+                        # The context must be set to `None` for it to use
+                        # Py_XSETREF instead of a plain regular assignment.
+                        evil_task.__init__(evil_coro, loop=self, name=Break())
+                    asserter.assertEqual(len(cm.exception.args), 1)
+                    asserter.assertIs(cm.exception.args[0], Break)
+                return object.__getattribute__(self, name)
+
+        class TaskWakeupCatch:
+            _asyncio_future_blocking = True
+            get_loop = staticmethod(lambda: evil_loop)
+            task_wakeup_method = None
+
+            def add_done_callback(self, callback, *args, **kwargs):
+                # Retrieve the 'task_wakeup' method of the Task object
+                # which is not accessible from pure Python code.
+                if self.task_wakeup_method is None:
+                    self.task_wakeup_method = callback
+
+        catcher = TaskWakeupCatch()
+
+        # We want a synchronous generator wrapped in a coroutine function
+        # and not an asynchronous generator defined via 'async def'.
+        async def evil_coroutine():
+            @types.coroutine
+            def sync_generator():
+                # ensure to keep catcher alive after the first send() call
+                nonlocal catcher
+                while 1:
+                    yield catcher
+            await sync_generator()
+
+        evil_coro = evil_coroutine()
+        evil_loop = EvilEventLoop()
+
+        self.assertIsNone(catcher.task_wakeup_method)
+        evil_task = self.new_task(evil_loop, evil_coro, eager_start=True)
+        self.assertIsInstance(catcher.task_wakeup_method, types.BuiltinMethodType)
+
+        with asserter.assertRaises(ReachableCode) as cm:
+            evil_task.__init__(evil_coro, loop=evil_loop, name=Break())
+        self.assertEqual(len(cm.exception.args), 1)
+        self.assertIs(cm.exception.args[0], Break)
+
+        self.assertIsInstance(catcher.task_wakeup_method, types.BuiltinMethodType)
+        with self.assertRaises(ReachableCode) as cm:
+            catcher.task_wakeup_method(mock.Mock())
+        self.assertEqual(len(cm.exception.args), 1)
+        self.assertIs(cm.exception.args[0], EvilEventLoop)
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2863,6 +2934,9 @@ class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
     Task = tasks._PyTask
     all_tasks = tasks._py_all_tasks
 
+    def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
+        self.skipTest("Python implementation is safe")
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
@@ -2881,6 +2955,9 @@ class PyTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
     Future = getattr(futures, '_CFuture', None)
     all_tasks = staticmethod(tasks._py_all_tasks)
 
+    def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
+        self.skipTest("Python implementation is safe")
+
 
 class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
                             test_utils.TestCase):
@@ -2889,11 +2966,17 @@ class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
     Future = futures._PyFuture
     all_tasks = staticmethod(tasks._py_all_tasks)
 
+    def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
+        self.skipTest("Python implementation is safe")
+
 
 @add_subclass_tests
 class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
     Task = tasks._PyTask
     Future = futures._PyFuture
+
+    def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
+        self.skipTest("Python implementation is safe")
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
