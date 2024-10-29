@@ -2521,7 +2521,6 @@ _Py_ResurrectReference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    _PyReftracerTrack(op, PyRefTracer_CREATE);
 }
 
 
@@ -2910,11 +2909,11 @@ _Py_Dealloc(PyObject *op)
     // Make sure that type->tp_name remains valid
     Py_INCREF(type);
 #endif
-    _PyReftracerTrack(op, PyRefTracer_DESTROY);
 
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
     (*dealloc)(op);
 
 #ifdef Py_DEBUG
