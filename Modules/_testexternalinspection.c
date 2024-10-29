@@ -51,7 +51,9 @@
 #    define Py_BUILD_CORE_MODULE 1
 #endif
 #include "Python.h"
-#include <internal/pycore_runtime.h>
+#include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
+#include <internal/pycore_frame.h>          // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_stackref.h>       // Py_TAG_BITS
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
