@@ -1810,12 +1810,6 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     int nslots = _PyFrame_NumSlotsForCodeObject(code);
     assert(nslots >= 0);
     if ((size_t)nslots >= (PY_SSIZE_T_MAX - res) / sizeof(PyObject *)) {
-        // This could happen if the underlying code object has a
-        // very large stacksize (but at most INT_MAX) yet that the
-        // above offsets make the result overflow.
-        //
-        // This should normally only happen if PY_SSIZE_T_MAX == INT_MAX,
-        // but we anyway raise an exception on other systems for safety.
         PyErr_SetString(PyExc_OverflowError, "size exceeds PY_SSIZE_T_MAX");
         return NULL;
     }
