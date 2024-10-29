@@ -681,13 +681,13 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    if (PyFunction_Check(f->f_funcobj)) {
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list, func->func_name);
         if (res < 0) {
             return NULL;
         }
@@ -1966,32 +1966,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyObject *
-suppress_immortalization(PyObject *self, PyObject *value)
-{
-#ifdef Py_GIL_DISABLED
-    int suppress = PyObject_IsTrue(value);
-    if (suppress < 0) {
-        return NULL;
-    }
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    // Subtract two to suppress immortalization (so that 1 -> -1)
-    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
-#endif
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
-#else
-    Py_RETURN_FALSE;
-#endif
-}
-
-static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -2137,8 +2111,6 @@ static PyMethodDef module_functions[] = {
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
-    {"suppress_immortalization", suppress_immortalization, METH_O},
-    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif

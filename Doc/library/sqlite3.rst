@@ -525,21 +525,20 @@ Module constants
    The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
    are as follows:
 
-   +------------------+-----------------+----------------------+-------------------------------+
-   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
-   | mode             |                 |                      |                               |
-   +==================+=================+======================+===============================+
-   | single-thread    | 0               | 0                    | Threads may not share the     |
-   |                  |                 |                      | module                        |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | multi-thread     | 1               | 2                    | Threads may share the module, |
-   |                  |                 |                      | but not connections           |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | serialized       | 3               | 1                    | Threads may share the module, |
-   |                  |                 |                      | connections and cursors       |
-   +------------------+-----------------+----------------------+-------------------------------+
+   +------------------+----------------------+----------------------+-------------------------------+
+   | SQLite threading | :pep:`threadsafety   | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
+   | mode             | <0249#threadsafety>` |                      |                               |
+   +==================+======================+======================+===============================+
+   | single-thread    | 0                    | 0                    | Threads may not share the     |
+   |                  |                      |                      | module                        |
+   +------------------+----------------------+----------------------+-------------------------------+
+   | multi-thread     | 1                    | 2                    | Threads may share the module, |
+   |                  |                      |                      | but not connections           |
+   +------------------+----------------------+----------------------+-------------------------------+
+   | serialized       | 3                    | 1                    | Threads may share the module, |
+   |                  |                      |                      | connections and cursors       |
+   +------------------+----------------------+----------------------+-------------------------------+
 
-   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
    .. versionchanged:: 3.11

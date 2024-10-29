@@ -476,7 +476,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
             assert(PyTuple_GET_SIZE(bases) == 1);
             assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
             assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-            assert(_Py_IsImmortalLoose(self->tp_base));
+            assert(_Py_IsImmortal(self->tp_base));
         }
         _Py_SetImmortal(bases);
     }
@@ -493,7 +493,7 @@ clear_tp_bases(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_bases);
                 }
                 else {
-                    assert(_Py_IsImmortalLoose(self->tp_bases));
+                    assert(_Py_IsImmortal(self->tp_bases));
                     _Py_ClearImmortal(self->tp_bases);
                 }
             }
@@ -558,7 +558,7 @@ clear_tp_mro(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_mro);
                 }
                 else {
-                    assert(_Py_IsImmortalLoose(self->tp_mro));
+                    assert(_Py_IsImmortal(self->tp_mro));
                     _Py_ClearImmortal(self->tp_mro);
                 }
             }
@@ -1435,6 +1435,9 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyType_Modified(type);
 
     PyObject *dict = lookup_tp_dict(type);
+    if (PyDict_Pop(dict, &_Py_ID(__firstlineno__), NULL) < 0) {
+        return -1;
+    }
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
@@ -3926,9 +3929,10 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_token = NULL;
 
 #ifdef Py_GIL_DISABLED
-    _PyType_AssignId(et);
+    et->unique_id = _PyObject_AssignUniqueId((PyObject *)et);
 #endif
 
     return type;
@@ -4633,6 +4637,32 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
+static int
+check_immutable_bases(const char *type_name, PyObject *bases, int skip_first)
+{
+    Py_ssize_t i = 0;
+    if (skip_first) {
+        // When testing the MRO, skip the type itself
+        i = 1;
+    }
+    for (; i<PyTuple_GET_SIZE(bases); i++) {
+        PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
+        if (!b) {
+            return -1;
+        }
+        if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "Creating immutable type %s from mutable base %N",
+                type_name, b
+            );
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 /* Set *dest to the offset specified by a special "__*offset__" member.
  * Return 0 on success, -1 on failure.
  */
@@ -4668,10 +4698,10 @@ special_offset_from_member(
     return -1;
 }
 
-static PyObject *
-_PyType_FromMetaclass_impl(
+PyObject *
+PyType_FromMetaclass(
     PyTypeObject *metaclass, PyObject *module,
-    PyType_Spec *spec, PyObject *bases_in, int _allow_tp_new)
+    PyType_Spec *spec, PyObject *bases_in)
 {
     /* Invariant: A non-NULL value in one of these means this function holds
      * a strong reference or owns allocated memory.
@@ -4816,19 +4846,8 @@ _PyType_FromMetaclass_impl(
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        for (int i=0; i<PyTuple_GET_SIZE(bases); i++) {
-            PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
-            if (!b) {
-                goto finally;
-            }
-            if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "Creating immutable type %s from mutable base %N",
-                    spec->name, b
-                );
-                goto finally;
-            }
+        if (check_immutable_bases(spec->name, bases, 0) < 0) {
+            goto finally;
         }
     }
 
@@ -4848,21 +4867,10 @@ _PyType_FromMetaclass_impl(
         goto finally;
     }
     if (metaclass->tp_new && metaclass->tp_new != PyType_Type.tp_new) {
-        if (_allow_tp_new) {
-            if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "Type %s uses PyType_Spec with a metaclass that has custom "
-                    "tp_new. This is deprecated and will no longer be allowed in "
-                    "Python 3.14.", spec->name) < 0) {
-                goto finally;
-            }
-        }
-        else {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "Metaclasses with custom tp_new are not supported.");
-            goto finally;
-        }
+        PyErr_SetString(
+            PyExc_TypeError,
+            "Metaclasses with custom tp_new are not supported.");
+        goto finally;
     }
 
     /* Calculate best base, and check that all bases are type objects */
@@ -4995,6 +5003,11 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_tp_token:
+            {
+                res->ht_token = slot->pfunc == Py_TP_USE_SPEC ? spec : slot->pfunc;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
@@ -5027,8 +5040,8 @@ _PyType_FromMetaclass_impl(
     type->tp_dictoffset = dictoffset;
 
 #ifdef Py_GIL_DISABLED
-    // Assign a type id to enable thread-local refcounting
-    _PyType_AssignId(res);
+    // Assign a unique id to enable per-thread refcounting
+    res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
     /* Ready the type (which includes inheritance).
@@ -5110,28 +5123,21 @@ _PyType_FromMetaclass_impl(
 }
 
 PyObject *
-PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
-                     PyType_Spec *spec, PyObject *bases_in)
-{
-    return _PyType_FromMetaclass_impl(metaclass, module, spec, bases_in, 0);
-}
-
-PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, module, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, module, spec, bases);
 }
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, NULL, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -5162,8 +5168,15 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         PyErr_BadInternalCall();
         return NULL;
     }
+    int slot_offset = pyslot_offsets[slot].slot_offset;
 
-    parent_slot = *(void**)((char*)type + pyslot_offsets[slot].slot_offset);
+    if (slot_offset >= (int)sizeof(PyTypeObject)) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+    }
+
+    parent_slot = *(void**)((char*)type + slot_offset);
     if (parent_slot == NULL) {
         return NULL;
     }
@@ -5212,8 +5225,8 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
  */
-static inline PyObject *
-get_module_by_def(PyTypeObject *type, PyModuleDef *def)
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -5246,7 +5259,7 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
-        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
             continue;
         }
@@ -5259,38 +5272,101 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
         }
     }
     END_TYPE_LOCK();
-    return res;
-}
 
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    PyObject *module = get_module_by_def(type, def);
-    if (module == NULL) {
+    if (res == NULL) {
         PyErr_Format(
             PyExc_TypeError,
             "PyType_GetModuleByDef: No superclass of '%s' has the given module",
             type->tp_name);
     }
-    return module;
+    return res;
 }
 
-PyObject *
-_PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
-                        PyModuleDef *def)
+
+static PyTypeObject *
+get_base_by_token_recursive(PyObject *bases, void *token)
 {
-    PyObject *module = get_module_by_def(left, def);
-    if (module == NULL) {
-        module = get_module_by_def(right, def);
-        if (module == NULL) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "PyType_GetModuleByDef: No superclass of '%s' nor '%s' has "
-                "the given module", left->tp_name, right->tp_name);
+    assert(bases != NULL);
+    PyTypeObject *res = NULL;
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            res = base;
+            break;
+        }
+        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
+        if (base != NULL) {
+            res = base;
+            break;
         }
     }
-    return module;
+    return res;  // Prefer to return recursively from one place
 }
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (result != NULL) {
+        *result = NULL;
+    }
+
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
+        return 0;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+found:
+        if (result != NULL) {
+            *result = (PyTypeObject *)Py_NewRef(type);
+        }
+        return 1;
+    }
+
+    PyObject *mro = type->tp_mro;  // No lookup, following PyType_IsSubtype()
+    if (mro == NULL) {
+        PyTypeObject *base;
+        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
+        if (base != NULL) {
+            // Copying the given type can cause a slowdown,
+            // unlike the overwrite below.
+            type = base;
+            goto found;
+        }
+        return 0;
+    }
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+        if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
+            && ((PyHeapTypeObject*)base)->ht_token == token) {
+            type = base;
+            goto found;
+        }
+    }
+    return 0;
+}
+
 
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
@@ -5905,7 +5981,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
                  int isbuiltin, int final)
 {
     assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-    assert(_Py_IsImmortalLoose((PyObject *)type));
+    assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
 
@@ -5982,8 +6058,9 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyType_ReleaseId(et);
+    assert(et->unique_id == -1);
 #endif
+    et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -7297,18 +7374,7 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-#define objreduce \
-    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_GET(), objreduce))
-    PyObject *reduce, *res;
-
-    if (objreduce == NULL) {
-        PyObject *dict = lookup_tp_dict(&PyBaseObject_Type);
-        objreduce = PyDict_GetItemWithError(dict, &_Py_ID(__reduce__));
-        if (objreduce == NULL && PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-
+    PyObject *reduce;
     if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
         return NULL;
     }
@@ -7322,10 +7388,12 @@ object___reduce_ex___impl(PyObject *self, int protocol)
             Py_DECREF(reduce);
             return NULL;
         }
-        override = (clsreduce != objreduce);
+
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        override = (clsreduce != _Py_INTERP_CACHED_OBJECT(interp, objreduce));
         Py_DECREF(clsreduce);
         if (override) {
-            res = _PyObject_CallNoArgs(reduce);
+            PyObject *res = _PyObject_CallNoArgs(reduce);
             Py_DECREF(reduce);
             return res;
         }
@@ -7334,7 +7402,6 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     }
 
     return _common_reduce(self, protocol);
-#undef objreduce
 }
 
 static PyObject *
@@ -11263,6 +11330,30 @@ add_operators(PyTypeObject *type)
             Py_DECREF(descr);
         }
     }
+    return 0;
+}
+
+
+int
+PyType_Freeze(PyTypeObject *type)
+{
+    // gh-121654: Check the __mro__ instead of __bases__
+    PyObject *mro = type_get_mro(type, NULL);
+    if (!PyTuple_Check(mro)) {
+        Py_DECREF(mro);
+        PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
+        return -1;
+    }
+
+    int check = check_immutable_bases(type->tp_name, mro, 1);
+    Py_DECREF(mro);
+    if (check < 0) {
+        return -1;
+    }
+
+    type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    PyType_Modified(type);
+
     return 0;
 }
 

@@ -2142,6 +2142,13 @@ class TestPosixWeaklinking(unittest.TestCase):
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.stat("file", dir_fd=0)
 
+    def test_ptsname_r(self):
+        self._verify_available("HAVE_PTSNAME_R")
+        if self.mac_ver >= (10, 13, 4):
+            self.assertIn("HAVE_PTSNAME_R", posix._have_functions)
+        else:
+            self.assertNotIn("HAVE_PTSNAME_R", posix._have_functions)
+
     def test_access(self):
         self._verify_available("HAVE_FACCESSAT")
         if self.mac_ver >= (10, 10):

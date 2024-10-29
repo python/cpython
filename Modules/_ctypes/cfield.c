@@ -14,7 +14,7 @@
 #include <ffi.h>
 #include "ctypes.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #  include "../_complex.h"        // complex
 #endif
 
@@ -46,31 +46,9 @@ class _ctypes.CField "PyObject *" "PyObject"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=602817ea3ffc709c]*/
 
 static inline
-Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
-{
-    assert(numToRound >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0)
-        return numToRound;
-    return (numToRound / multiple) * multiple;
-}
-
-static inline
-Py_ssize_t round_up(Py_ssize_t numToRound, Py_ssize_t multiple)
-{
-    assert(numToRound >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0)
-        return numToRound;
-    return ((numToRound + multiple - 1) / multiple) * multiple;
-}
-
-static inline
 Py_ssize_t NUM_BITS(Py_ssize_t bitsize);
 static inline
 Py_ssize_t LOW_BIT(Py_ssize_t offset);
-static inline
-Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
 
 /*[clinic input]
@@ -403,20 +381,6 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset) {
 static inline
 Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
     return bitsize >> 16;
-}
-
-static inline
-Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset) {
-    assert(0 <= offset);
-    assert(offset <= 0xFFFF);
-    // We don't support zero length bitfields.
-    // And GET_BITFIELD uses NUM_BITS(size)==0,
-    // to figure out whether we are handling a bitfield.
-    assert(0 < bitsize);
-    Py_ssize_t result = (bitsize << 16) + offset;
-    assert(bitsize == NUM_BITS(result));
-    assert(offset == LOW_BIT(result));
-    return result;
 }
 
 /* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
@@ -1008,7 +972,7 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1581,7 +1545,7 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
     { 'C', C_set, C_get, NULL},
     { 'E', E_set, E_get, NULL},
     { 'F', F_set, F_get, NULL},
@@ -1636,7 +1600,7 @@ _ctypes_init_fielddesc(void)
         case 'B': fd->pffi_type = &ffi_type_uchar; break;
         case 'c': fd->pffi_type = &ffi_type_schar; break;
         case 'd': fd->pffi_type = &ffi_type_double; break;
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
         case 'C': fd->pffi_type = &ffi_type_complex_double; break;
         case 'E': fd->pffi_type = &ffi_type_complex_float; break;
         case 'F': fd->pffi_type = &ffi_type_complex_longdouble; break;
