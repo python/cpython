@@ -1,1 +1,1 @@
-Improved error message when ``PYTHONHOME`` is invalid.
+Improved error message when an environment variable is misonfigured.
