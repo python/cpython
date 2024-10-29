@@ -123,7 +123,7 @@ pylong_isnegative(PyObject *module, PyObject *arg)
     if ((s = PyLong_IsNegative(arg)) == -1) {
         return NULL;
     }
-    return PyLong_FromLong(s); 
+    return PyLong_FromLong(s);
 }
 
 
