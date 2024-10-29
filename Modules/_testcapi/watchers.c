@@ -1,3 +1,6 @@
+// clinic/watchers.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 
 #include "clinic/watchers.c.h"
@@ -5,6 +8,7 @@
 #define Py_BUILD_CORE
 #include "pycore_function.h"  // FUNC_MAX_WATCHERS
 #include "pycore_code.h"  // CODE_MAX_WATCHERS
+#include "pycore_context.h" // CONTEXT_MAX_WATCHERS
 
 /*[clinic input]
 module _testcapi
@@ -12,8 +16,8 @@ module _testcapi
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 // Test dict watching
-static PyObject *g_dict_watch_events;
-static int g_dict_watchers_installed;
+static PyObject *g_dict_watch_events = NULL;
+static int g_dict_watchers_installed = 0;
 
 static int
 dict_watch_callback(PyDict_WatchEvent event,
@@ -295,6 +299,7 @@ _testcapi_unwatch_type_impl(PyObject *module, int watcher_id, PyObject *type)
 // Test code object watching
 
 #define NUM_CODE_WATCHERS 2
+static int code_watcher_ids[NUM_CODE_WATCHERS] = {-1, -1};
 static int num_code_object_created_events[NUM_CODE_WATCHERS] = {0, 0};
 static int num_code_object_destroyed_events[NUM_CODE_WATCHERS] = {0, 0};
 
@@ -345,11 +350,13 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l == 0) {
         watcher_id = PyCode_AddWatcher(first_code_object_callback);
+        code_watcher_ids[0] = watcher_id;
         num_code_object_created_events[0] = 0;
         num_code_object_destroyed_events[0] = 0;
     }
     else if (which_l == 1) {
         watcher_id = PyCode_AddWatcher(second_code_object_callback);
+        code_watcher_ids[1] = watcher_id;
         num_code_object_created_events[1] = 0;
         num_code_object_destroyed_events[1] = 0;
     }
@@ -375,9 +382,14 @@ clear_code_watcher(PyObject *self, PyObject *watcher_id)
         return NULL;
     }
     // reset static events counters
-    if (watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS) {
-        num_code_object_created_events[watcher_id_l] = 0;
-        num_code_object_destroyed_events[watcher_id_l] = 0;
+    if (watcher_id_l >= 0) {
+        for (int i = 0; i < NUM_CODE_WATCHERS; i++) {
+            if (watcher_id_l == code_watcher_ids[i]) {
+                code_watcher_ids[i] = -1;
+                num_code_object_created_events[i] = 0;
+                num_code_object_destroyed_events[i] = 0;
+            }
+        }
     }
     Py_RETURN_NONE;
 }
@@ -432,9 +444,9 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
 
 // Test function watchers
 
-#define NUM_FUNC_WATCHERS 2
-static PyObject *pyfunc_watchers[NUM_FUNC_WATCHERS];
-static int func_watcher_ids[NUM_FUNC_WATCHERS] = {-1, -1};
+#define NUM_TEST_FUNC_WATCHERS 2
+static PyObject *pyfunc_watchers[NUM_TEST_FUNC_WATCHERS];
+static int func_watcher_ids[NUM_TEST_FUNC_WATCHERS] = {-1, -1};
 
 static PyObject *
 get_id(PyObject *obj)
@@ -508,7 +520,7 @@ second_func_watcher_callback(PyFunction_WatchEvent event,
     return call_pyfunc_watcher(pyfunc_watchers[1], event, func, new_value);
 }
 
-static PyFunction_WatchCallback func_watcher_callbacks[NUM_FUNC_WATCHERS] = {
+static PyFunction_WatchCallback func_watcher_callbacks[NUM_TEST_FUNC_WATCHERS] = {
     first_func_watcher_callback,
     second_func_watcher_callback
 };
@@ -516,13 +528,7 @@ static PyFunction_WatchCallback func_watcher_callbacks[NUM_FUNC_WATCHERS] = {
 static int
 add_func_event(PyObject *module, const char *name, PyFunction_WatchEvent event)
 {
-    PyObject *value = PyLong_FromLong(event);
-    if (value == NULL) {
-        return -1;
-    }
-    int ok = PyModule_AddObjectRef(module, name, value);
-    Py_DECREF(value);
-    return ok;
+    return PyModule_Add(module, name, PyLong_FromLong(event));
 }
 
 static PyObject *
@@ -533,26 +539,25 @@ add_func_watcher(PyObject *self, PyObject *func)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == -1) {
             idx = i;
             break;
         }
     }
     if (idx == -1) {
-        PyErr_SetString(PyExc_RuntimeError, "no free watchers");
-        return NULL;
-    }
-    PyObject *result = PyLong_FromLong(idx);
-    if (result == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no free test watchers");
         return NULL;
     }
     func_watcher_ids[idx] = PyFunction_AddWatcher(func_watcher_callbacks[idx]);
     if (func_watcher_ids[idx] < 0) {
-        Py_DECREF(result);
         return NULL;
     }
     pyfunc_watchers[idx] = Py_NewRef(func);
+    PyObject *result = PyLong_FromLong(func_watcher_ids[idx]);
+    if (result == NULL) {
+        return NULL;
+    }
     return result;
 }
 
@@ -569,7 +574,7 @@ clear_func_watcher(PyObject *self, PyObject *watcher_id_obj)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == wid) {
             idx = i;
             break;
@@ -604,6 +609,152 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
+            PyErr_WriteUnraisable(Py_None);
+            break;
+        }
+    }
+    if (exc) {
+        PyErr_SetRaisedException(exc);
+        return NULL;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+// Test contexct object watchers
+#define NUM_CONTEXT_WATCHERS 2
+static int context_watcher_ids[NUM_CONTEXT_WATCHERS] = {-1, -1};
+static PyObject *context_switches[NUM_CONTEXT_WATCHERS];
+
+static int
+handle_context_watcher_event(int which_watcher, PyContextEvent event, PyObject *ctx) {
+    if (event == Py_CONTEXT_SWITCHED) {
+        PyList_Append(context_switches[which_watcher], ctx);
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+first_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
+    return handle_context_watcher_event(0, event, ctx);
+}
+
+static int
+second_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
+    return handle_context_watcher_event(1, event, ctx);
+}
+
+static int
+noop_context_event_handler(PyContextEvent event, PyObject *ctx) {
+    return 0;
+}
+
+static int
+error_context_event_handler(PyContextEvent event, PyObject *ctx) {
+    PyErr_SetString(PyExc_RuntimeError, "boom!");
+    return -1;
+}
+
+static PyObject *
+add_context_watcher(PyObject *self, PyObject *which_watcher)
+{
+    static const PyContext_WatchCallback callbacks[] = {
+        &first_context_watcher_callback,
+        &second_context_watcher_callback,
+        &error_context_event_handler,
+    };
+    assert(PyLong_Check(which_watcher));
+    long which_l = PyLong_AsLong(which_watcher);
+    if (which_l < 0 || which_l >= (long)Py_ARRAY_LENGTH(callbacks)) {
+        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        return NULL;
+    }
+    int watcher_id = PyContext_AddWatcher(callbacks[which_l]);
+    if (watcher_id < 0) {
+        return NULL;
+    }
+    if (which_l >= 0 && which_l < NUM_CONTEXT_WATCHERS) {
+        context_watcher_ids[which_l] = watcher_id;
+        Py_XSETREF(context_switches[which_l], PyList_New(0));
+        if (context_switches[which_l] == NULL) {
+            return NULL;
+        }
+    }
+    return PyLong_FromLong(watcher_id);
+}
+
+static PyObject *
+clear_context_watcher(PyObject *self, PyObject *watcher_id)
+{
+    assert(PyLong_Check(watcher_id));
+    long watcher_id_l = PyLong_AsLong(watcher_id);
+    if (PyContext_ClearWatcher(watcher_id_l) < 0) {
+        return NULL;
+    }
+    // reset static events counters
+    if (watcher_id_l >= 0) {
+        for (int i = 0; i < NUM_CONTEXT_WATCHERS; i++) {
+            if (watcher_id_l == context_watcher_ids[i]) {
+                context_watcher_ids[i] = -1;
+                Py_CLEAR(context_switches[i]);
+            }
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+clear_context_stack(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate->context == NULL) {
+        Py_RETURN_NONE;
+    }
+    if (((PyContext *)tstate->context)->ctx_prev != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "must first exit all non-base contexts");
+        return NULL;
+    }
+    Py_CLEAR(tstate->context);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_context_switches(PyObject *Py_UNUSED(self), PyObject *watcher_id)
+{
+    assert(PyLong_Check(watcher_id));
+    long watcher_id_l = PyLong_AsLong(watcher_id);
+    if (watcher_id_l < 0 || watcher_id_l >= NUM_CONTEXT_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", watcher_id_l);
+        return NULL;
+    }
+    if (context_switches[watcher_id_l] == NULL) {
+        return PyList_New(0);
+    }
+    return Py_NewRef(context_switches[watcher_id_l]);
+}
+
+static PyObject *
+allocate_too_many_context_watchers(PyObject *self, PyObject *args)
+{
+    int watcher_ids[CONTEXT_MAX_WATCHERS + 1];
+    int num_watchers = 0;
+    for (unsigned long i = 0; i < sizeof(watcher_ids) / sizeof(int); i++) {
+        int watcher_id = PyContext_AddWatcher(noop_context_event_handler);
+        if (watcher_id == -1) {
+            break;
+        }
+        watcher_ids[i] = watcher_id;
+        num_watchers++;
+    }
+    PyObject *exc = PyErr_GetRaisedException();
+    for (int i = 0; i < num_watchers; i++) {
+        if (PyContext_ClearWatcher(watcher_ids[i]) < 0) {
             PyErr_WriteUnraisable(Py_None);
             break;
         }
@@ -685,6 +836,14 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_FUNC_KWDEFAULTS_VIA_CAPI_METHODDEF
     {"allocate_too_many_func_watchers", allocate_too_many_func_watchers,
      METH_NOARGS, NULL},
+
+    // Code object watchers.
+    {"add_context_watcher",         add_context_watcher,        METH_O,       NULL},
+    {"clear_context_watcher",       clear_context_watcher,      METH_O,       NULL},
+    {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
+    {"get_context_switches",     get_context_switches,    METH_O,       NULL},
+    {"allocate_too_many_context_watchers",
+     (PyCFunction) allocate_too_many_context_watchers,       METH_NOARGS,  NULL},
     {NULL},
 };
 

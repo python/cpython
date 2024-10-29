@@ -1,21 +1,19 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "marshal.h"              // PyMarshal_ReadObjectFromString
-#include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_fileutils.h"     // _Py_wgetcwd()
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+
+#include "marshal.h"              // PyMarshal_ReadObjectFromString
+#include "osdefs.h"               // DELIM
+
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
 #  include <shlwapi.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 
@@ -253,8 +251,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetPythonHome(const wchar_t *home)
 {
     int has_value = home && home[0];
@@ -277,8 +274,7 @@ Py_SetPythonHome(const wchar_t *home)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetProgramName(const wchar_t *program_name)
 {
     int has_value = program_name && program_name[0];
@@ -498,8 +494,3 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
     *path0_p = path0_obj;
     return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif

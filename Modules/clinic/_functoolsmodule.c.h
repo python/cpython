@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_functools_cmp_to_key__doc__,
 "cmp_to_key($module, /, mycmp)\n"
@@ -81,7 +82,13 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self);
 static PyObject *
 _functools__lru_cache_wrapper_cache_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _functools__lru_cache_wrapper_cache_info_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _functools__lru_cache_wrapper_cache_info_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_functools__lru_cache_wrapper_cache_clear__doc__,
@@ -99,6 +106,12 @@ _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self);
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _functools__lru_cache_wrapper_cache_clear_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _functools__lru_cache_wrapper_cache_clear_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=7e7f3bcf9ed61f23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=755265bb6d5ea751 input=a9049054013a1b77]*/

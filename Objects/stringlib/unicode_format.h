@@ -2,6 +2,7 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 
 /************************************************************************/
@@ -72,7 +73,7 @@ Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
     if (str->str == NULL) {
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return SubString_new_object(str);
 }
@@ -530,7 +531,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *write
                                                      format_spec->start,
                                                      format_spec->end);
         else
-            format_spec_object = PyUnicode_New(0, 0);
+            format_spec_object = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (format_spec_object == NULL)
             goto done;
 

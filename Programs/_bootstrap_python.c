@@ -15,19 +15,6 @@
 #include "Python/frozen_modules/zipimport.h"
 /* End includes */
 
-uint32_t _Py_next_func_version = 1;
-
-/* Empty initializer for deepfrozen modules */
-int _Py_Deepfreeze_Init(void)
-{
-    return 0;
-}
-/* Empty finalizer for deepfrozen modules */
-void
-_Py_Deepfreeze_Fini(void)
-{
-}
-
 /* Note that a negative size indicates a package. */
 
 static const struct _frozen bootstrap_modules[] = {

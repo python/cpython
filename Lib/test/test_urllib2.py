@@ -1,12 +1,14 @@
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import warnings_helper
 from test import test_urllib
 from unittest import mock
 
 import os
 import io
+import ftplib
 import socket
 import array
 import sys
@@ -14,10 +16,11 @@ import tempfile
 import subprocess
 
 import urllib.request
-# The proxy bypass method imported below has logic specific to the OSX
-# proxy config data structure but is testable on all platforms.
+# The proxy bypass method imported below has logic specific to the
+# corresponding system but is testable on all platforms.
 from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             HTTPPasswordMgrWithPriorAuth, _parse_proxy,
+                            _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
 from urllib.parse import urlparse
@@ -752,7 +755,6 @@ class HandlerTests(unittest.TestCase):
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         h.parent = MockOpener()
@@ -775,7 +777,7 @@ class HandlerTests(unittest.TestCase):
              ["foo", "bar"], "", None),
             ("ftp://localhost/baz.gif;type=a",
              "localhost", ftplib.FTP_PORT, "", "", "A",
-             [], "baz.gif", None),  # XXX really this should guess image/gif
+             [], "baz.gif", "image/gif"),
             ]:
             req = Request(url)
             req.timeout = None
@@ -791,6 +793,28 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+
+    @support.requires_resource("network")
+    def test_ftp_error(self):
+        class ErrorFTPHandler(urllib.request.FTPHandler):
+            def __init__(self, exception):
+                self._exception = exception
+
+            def connect_ftp(self, user, passwd, host, port, dirs,
+                            timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                raise self._exception
+
+        exception = ftplib.error_perm(
+            "500 OOPS: cannot change directory:/nonexistent")
+        h = ErrorFTPHandler(exception)
+        urlopen = urllib.request.build_opener(h).open
+        try:
+            urlopen("ftp://www.pythontest.net/")
+        except urllib.error.URLError as raised:
+            self.assertEqual(raised.reason,
+                             f"ftp error: {exception.args[0]}")
+        else:
+            self.fail("Did not raise ftplib exception")
 
     def test_file(self):
         import email.utils
@@ -998,6 +1022,7 @@ class HandlerTests(unittest.TestCase):
 
         file_obj.close()
 
+    @requires_subprocess()
     def test_http_body_pipe(self):
         # A file reading from a pipe.
         # A pipe cannot be seek'ed.  There is no way to determine the
@@ -1399,6 +1424,15 @@ class HandlerTests(unittest.TestCase):
                 request = handler.last_buf
                 self.assertTrue(request.startswith(expected), repr(request))
 
+    def test_redirect_head_request(self):
+        from_url = "http://example.com/a.html"
+        to_url = "http://example.com/b.html"
+        h = urllib.request.HTTPRedirectHandler()
+        req = Request(from_url, method="HEAD")
+        fp = MockFile()
+        new_req = h.redirect_request(req, fp, 302, "Found", {}, to_url)
+        self.assertEqual(new_req.get_method(), "HEAD")
+
     def test_proxy(self):
         u = "proxy.example.com:3128"
         for d in dict(http=u), dict(HTTP=u):
@@ -1482,6 +1516,30 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+
+    @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
+    def test_winreg_proxy_bypass(self):
+        proxy_override = "www.example.com;*.example.net; 192.168.0.1"
+        proxy_bypass = _proxy_bypass_winreg_override
+        for host in ("www.example.com", "www.example.net", "192.168.0.1"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("example.com", "www.example.org", "example.net",
+                     "192.168.0.2"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
+        # check intranet address bypass
+        proxy_override = "example.com; <local>"
+        self.assertTrue(proxy_bypass("example.com", proxy_override),
+                        "expected bypass of %s to be true" % host)
+        self.assertFalse(proxy_bypass("example.net", proxy_override),
+                         "expected bypass of %s to be False" % host)
+        for host in ("test", "localhost"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expect <local> to bypass intranet address '%s'"
+                            % host)
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):

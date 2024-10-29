@@ -386,6 +386,16 @@ class TestLongMessage(unittest.TestCase):
                                '^UserWarning not triggered$',
                                '^UserWarning not triggered : oops$'])
 
+    def test_assertNotWarns(self):
+        def warn_future():
+            warnings.warn('xyz', FutureWarning, stacklevel=2)
+        self.assertMessagesCM('_assertNotWarns', (FutureWarning,),
+                              warn_future,
+                              ['^FutureWarning triggered$',
+                               '^oops$',
+                               '^FutureWarning triggered$',
+                               '^FutureWarning triggered : oops$'])
+
     def testAssertWarnsRegex(self):
         # test error not raised
         self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'unused regex'),

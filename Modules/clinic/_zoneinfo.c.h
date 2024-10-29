@@ -3,10 +3,67 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(zoneinfo_ZoneInfo__doc__,
+"ZoneInfo(key)\n"
+"--\n"
+"\n"
+"Create a new ZoneInfo instance.");
+
+static PyObject *
+zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key);
+
+static PyObject *
+zoneinfo_ZoneInfo(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(key), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"key", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ZoneInfo",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *key;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    key = fastargs[0];
+    Py_BEGIN_CRITICAL_SECTION(type);
+    return_value = zoneinfo_ZoneInfo_impl(type, key);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(zoneinfo_ZoneInfo_from_file__doc__,
 "from_file($type, file_obj, /, key=None)\n"
@@ -182,7 +239,9 @@ zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *c
     }
     only_keys = args[0];
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(type);
     return_value = zoneinfo_ZoneInfo_clear_cache_impl(type, cls, only_keys);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -372,4 +431,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=54051388dfc408af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4fdc0b30247110a input=a9049054013a1b77]*/

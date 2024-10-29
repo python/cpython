@@ -1,0 +1,4 @@
+This directory is intentionally empty.
+
+It should be used as a target for `--enable-framework` when compiling an iOS on-device
+build for testing purposes.

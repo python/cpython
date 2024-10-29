@@ -51,7 +51,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <ctype.h>
 #include <unistd.h>
 
 #include "addrinfo.h"
@@ -228,8 +227,9 @@ str_isnumber(const char *p)
 {
     unsigned char *q = (unsigned char *)p;
     while (*q) {
-        if (! isdigit(*q))
+        if (!Py_ISDIGIT(*q)) {
             return NO;
+        }
         q++;
     }
     return YES;
