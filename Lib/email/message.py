@@ -300,7 +300,7 @@ class Message:
             elif decode:
                 try:
                     if cte == '8bit':
-                        bpayload = payload.encode('utf-8')
+                        bpayload = payload.encode(self.get_param('charset', 'ascii')))
                     else:
                         bpayload = payload.encode('ascii')
                 except UnicodeError:
