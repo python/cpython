@@ -853,9 +853,9 @@ class TestSpecifics(unittest.TestCase):
         exec(code, g)
         f = g['f']
         # Issue #126072: None is no longer the first element in co_consts
-        expected = tuple(['', 1] + [f't{i}' for i in range(N)])
+        expected = tuple([''] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
-        expected = "".join(expected[2:])
+        expected = "".join(expected[1:])
         self.assertEqual(expected, f())
 
     # Stripping unused constants is not a strict requirement for the
