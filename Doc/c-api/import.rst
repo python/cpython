@@ -136,14 +136,14 @@ Importing Modules
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
-   The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
-   not set already, with the appropriate values.  The spec's loader will
-   be set to the module's ``__loader__`` (if set) and to an instance of
-   :class:`~importlib.machinery.SourceFileLoader` otherwise.
+   The module's :attr:`~module.__spec__` and :attr:`~module.__loader__` will be
+   set, if not set already, with the appropriate values.  The spec's loader
+   will be set to the module's :attr:`!__loader__` (if set) and to an instance
+   of :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
-   The module's :attr:`__file__` attribute will be set to the code object's
-   :attr:`~codeobject.co_filename`.  If applicable, :attr:`__cached__` will also
-   be set.
+   The module's :attr:`~module.__file__` attribute will be set to the code
+   object's :attr:`~codeobject.co_filename`.  If applicable,
+   :attr:`~module.__cached__` will also be set.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.
@@ -155,29 +155,29 @@ Importing Modules
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
    .. versionchanged:: 3.12
-      The setting of :attr:`__cached__` and :attr:`__loader__` is
-      deprecated. See :class:`~importlib.machinery.ModuleSpec` for
+      The setting of :attr:`~module.__cached__` and :attr:`~module.__loader__`
+      is deprecated. See :class:`~importlib.machinery.ModuleSpec` for
       alternatives.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
 
-   Like :c:func:`PyImport_ExecCodeModule`, but the :attr:`__file__` attribute of
-   the module object is set to *pathname* if it is non-``NULL``.
+   Like :c:func:`PyImport_ExecCodeModule`, but the :attr:`~module.__file__`
+   attribute of the module object is set to *pathname* if it is non-``NULL``.
 
    See also :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname, PyObject *cpathname)
 
-   Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`__cached__`
+   Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`~module.__cached__`
    attribute of the module object is set to *cpathname* if it is
    non-``NULL``.  Of the three functions, this is the preferred one to use.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:`__cached__` is deprecated. See
+      Setting :attr:`~module.__cached__` is deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
 
