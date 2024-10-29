@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -1338,6 +1338,9 @@ AC_ARG_WITH([suffix],
   )
 ])
 AC_MSG_RESULT([$EXEEXT])
+
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given

@@ -5883,6 +5883,8 @@ class TestResourceTracker(unittest.TestCase):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)
 
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-125620: Skip on NetBSD due to long wait for SIGKILL process termination.")
     def test_resource_tracker_sigkill(self):
         # Uncatchable signal.
         self.check_resource_tracker_death(signal.SIGKILL, True)
