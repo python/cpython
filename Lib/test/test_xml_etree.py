@@ -2680,18 +2680,51 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
-        class X(ET.Element):
-            def __eq__(self, o):
-                del e[:]
-                return False
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+    def test_remove_with_clear_children(self):
+        # See: https://github.com/python/cpython/issues/126033
 
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+        class EvilElement(ET.Element):
+            def __eq__(self, o):
+                root.clear()
+                return False
+
+        # The pure Python implementation raises a ValueError but the C
+        # implementation raises a RuntimeError (like OrderedDict does).
+        exc_type = ValueError if ET is pyET else RuntimeError
+
+        root = ET.Element('.')
+        root.append(EvilElement('foo'))
+        root.append(ET.Element('bar'))
+        self.assertRaises(exc_type, root.remove, ET.Element('pouet'))
+
+        root = ET.Element('.')
+        root.append(ET.Element('foo'))
+        root.append(EvilElement('bar'))
+        self.assertRaises(exc_type, root.remove, EvilElement('pouet'))
+
+    def test_remove_with_mutate_children(self):
+        # See: https://github.com/python/cpython/issues/126033
+
+        class EvilElement(ET.Element):
+            def __eq__(self, o):
+                # Remove the first element so that the list size changes.
+                # This causes an infinite recursion error in the Python
+                # implementation, but we do not really care about it.
+                root.remove(ET.Element('foo'))
+                return False
+
+        # The pure Python implementation raises a ValueError (or hits the
+        # recursion limit) but the C implementation raises a RuntimeError
+        # (like OrderedDict does).
+        exc_type = (RecursionError, ValueError) if ET is pyET else RuntimeError
+
+        root = ET.Element('.')
+        root.extend([ET.Element('foo'), EvilElement('bar')])
+        self.assertRaises(exc_type, root.remove, ET.Element('baz'))
+
+        root = ET.Element('.')
+        root.extend([ET.Element('foo'), EvilElement('bar')])
+        self.assertRaises(exc_type, root.remove, EvilElement('baz'))
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):

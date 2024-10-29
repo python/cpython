@@ -1642,48 +1642,58 @@ static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 /*[clinic end generated code: output=38fe6c07d6d87d1f input=6133e1d05597d5ee]*/
 {
-    Py_ssize_t i;
-    int rc;
-    PyObject *found;
-
-    if (!self->extra) {
+    if (self->extra == NULL) {
         /* element has no children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
-        return NULL;
+        goto not_found;
     }
 
-    // TODO(picnixz): check against evil __eq__
-    for (i = 0; i < self->extra->length; i++) {
-        if (self->extra->children[i] == subelement)
+    Py_ssize_t i;
+    size_t old_version = self->extra->version;
+    for (i = 0; self->extra && i < self->extra->length; i++) {
+        if (old_version != self->extra->version) {
+            goto fail;
+        }
+        else if (self->extra->children[i] == subelement) {
             break;
-        rc = PyObject_RichCompareBool(self->extra->children[i], subelement, Py_EQ);
-        if (rc > 0)
+        }
+        PyObject *child = Py_NewRef(self->extra->children[i]);
+        int rc = PyObject_RichCompareBool(child, subelement, Py_EQ);
+        Py_DECREF(child);
+        if (rc > 0) {
             break;
-        if (rc < 0)
+        }
+        else if (rc < 0) {
             return NULL;
+        }
     }
 
-    if (i >= self->extra->length) {
+    // An extra check must be done if the mutation occurs at the very last step.
+    if (self->extra == NULL || old_version != self->extra->version) {
+        goto fail;
+    }
+    else if (i >= self->extra->length) {
         /* subelement is not in children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
-        return NULL;
+        goto not_found;
     }
 
-    found = self->extra->children[i];
+    PyObject *found = self->extra->children[i];
 
     self->extra->length--;
-    for (; i < self->extra->length; i++)
+    for (; i < self->extra->length; i++) {
         self->extra->children[i] = self->extra->children[i+1];
+    }
     self->extra->version++;
 
     Py_DECREF(found);
     Py_RETURN_NONE;
+
+not_found:
+    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+    return NULL;
+
+fail:
+    PyErr_SetString(PyExc_RuntimeError, "children mutated during iteration");
+    return NULL;
 }
 
 static PyObject*
