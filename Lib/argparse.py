@@ -1580,8 +1580,9 @@ class _ActionsContainer(object):
         for option_string in args:
             # error on strings that don't start with an appropriate prefix
             if not option_string[0] in self.prefix_chars:
-                raise ValueError(f'invalid option string {option_string!r}: '
-                       f'must start with a character {self.prefix_chars!r}')
+                raise ValueError(
+                    f'invalid option string {option_string!r}: '
+                    f'must start with a character {self.prefix_chars!r}')
 
             # strings starting with two prefix characters are long options
             option_strings.append(option_string)
