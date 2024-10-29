@@ -1,2 +1,1 @@
-Fixed a reference leak that would happen in asyncio tasks when you would
-reinitialize your task object with a non-None context.
+Fixed a reference leak in :class:`asyncio.Task` objects when reinitializing the same object with a non-``None`` context. Patch by Nico Posada.
