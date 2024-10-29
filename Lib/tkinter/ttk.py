@@ -26,6 +26,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "tclobjs_to_py", "setup_master"]
 
 import tkinter
+import _tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
 
@@ -572,7 +573,9 @@ class Widget(tkinter.Widget):
 
     def cget(self, key):
         """Return the resource value for a KEY given as string."""
-        return str(super().cget(key))
+        if isinstance(return_value := super().cget(key), _tkinter.Tcl_Obj):
+            return str(return_value)
+        return return_value
 
     __getitem__ = cget
 
