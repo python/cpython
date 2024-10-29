@@ -713,7 +713,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             filePath.encode("utf-8")
         except UnicodeEncodeError:
             raise unittest.SkipTest("filePath is not encodable to utf8")
-        return "file://%s" % urllib.request.pathname2url(filePath)
+        return urllib.request.pathname2url(filePath, include_scheme=True)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
@@ -1569,7 +1569,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn("///C/test/"), '\\C\\test\\')
         self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
         # DOS drive paths
-        self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('file:C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
