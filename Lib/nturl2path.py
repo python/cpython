@@ -1,9 +1,9 @@
 """Convert a NT pathname to a file URL and vice versa.
 
-This module only exists to provide OS-specific code
+This module previously provided OS-specific code
 for urllib.requests, thus do not use directly.
 """
-# Testing is done through test_urllib.
+# Testing is done through test_nturl2path.
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme

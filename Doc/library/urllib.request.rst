@@ -147,18 +147,33 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path)
+.. function:: pathname2url(path, include_scheme=False)
 
-   Convert the pathname *path* from the local syntax for a path to the form used in
-   the path component of a URL.  This does not produce a complete URL.  The return
-   value will already be quoted using the :func:`~urllib.parse.quote` function.
+   Convert the local pathname *path* to a percent-encoded URL. If
+   *include_scheme* is false (the default), the URL is returned without a
+   ``file:`` scheme prefix; set this argument to true to generate a complete
+   URL.
+
+   .. versionchanged:: 3.14
+      The *include_scheme* argument was added.
+
+   .. versionchanged:: 3.14
+      Generates :rfc:`8089`-compliant file URLs for absolute paths. URLs for
+      UNC paths on Windows systems begin with two slashes (previously four.)
+      URLs for absolute paths on non-Windows systems begin with three slashes
+      (previously one.)
 
 
-.. function:: url2pathname(path)
+.. function:: url2pathname(url)
 
-   Convert the path component *path* from a percent-encoded URL to the local syntax for a
-   path.  This does not accept a complete URL.  This function uses
-   :func:`~urllib.parse.unquote` to decode *path*.
+   Convert the percent-encoded *url* to a local pathname.
+
+   .. versionchanged:: 3.14
+      Supports :rfc:`8089`-compliant file URLs. Raises :exc:`URLError` if a
+      scheme other than ``file:`` is used. If the URL uses a non-local
+      authority, then on Windows a UNC path is returned, and on other
+      platforms a :exc:`URLError` exception is raised.
+
 
 .. function:: getproxies()
 

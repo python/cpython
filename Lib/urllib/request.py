@@ -1448,16 +1448,6 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def file_open(self, req):
-        url = req.selector
-        if url[:2] == '//' and url[2:3] != '/' and (req.host and
-                req.host != 'localhost'):
-            if not req.host in self.get_names():
-                raise URLError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(req)
-
     # names for the localhost
     names = None
     def get_names(self):
@@ -1474,8 +1464,7 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        host = req.host
-        filename = req.selector
+        filename = req.full_url
         localfile = url2pathname(filename)
         try:
             stats = os.stat(localfile)
@@ -1485,24 +1474,22 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            if host:
-                host, port = _splitport(host)
-            if not host or \
-                (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
-                return addinfourl(open(localfile, 'rb'), headers, origurl)
+            return addinfourl(open(localfile, 'rb'), headers, filename)
         except OSError as exp:
             raise URLError(exp)
-        raise URLError('file not on local host')
 
-def _safe_gethostbyname(host):
+    file_open = open_local_file
+
+
+def _is_local_host(host):
+    if not host or host == 'localhost':
+        return True
     try:
-        return socket.gethostbyname(host)
+        name = socket.gethostbyname(host)
     except socket.gaierror:
-        return None
+        return False
+    return name in FileHandler().get_names()
+
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1649,19 +1636,46 @@ class DataHandler(BaseHandler):
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
-# Helper for non-unix systems
-if os.name == 'nt':
-    from nturl2path import url2pathname, pathname2url
-else:
-    def url2pathname(pathname):
-        """OS-specific conversion from a relative URL of the 'file' scheme
-        to a file system path; not recommended for general use."""
-        return unquote(pathname)
+def pathname2url(path, include_scheme=False):
+    """Convert the local pathname *path* to a percent-encoded URL."""
+    prefix = 'file:' if include_scheme else ''
+    if os.name == 'nt':
+        path = path.replace('\\', '/')
+    drive, root, tail = os.path.splitroot(path)
+    if drive:
+        if drive[1:2] == ':':
+            prefix += '///'
+    elif root:
+        prefix += '//'
+    tail = quote(tail)
+    return prefix + drive + root + tail
 
-    def pathname2url(pathname):
-        """OS-specific conversion from a file system path to a relative URL
-        of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
+def url2pathname(url):
+    """Convert the percent-encoded URL *url* to a local pathname."""
+    scheme, authority, path = urlsplit(url, scheme='file')[:3]
+    if scheme != 'file':
+        raise URLError(f'URI does not use "file" scheme: {url!r}')
+    if os.name == 'nt':
+        path = unquote(path)
+        if authority and authority != 'localhost':
+            # e.g. file://server/share/path
+            path = f'//{authority}{path}'
+        elif path.startswith('///'):
+            # e.g. file://///server/share/path
+            path = path[1:]
+        else:
+            if path[0:1] == '/' and path[2:3] in ':|':
+                # e.g. file:////c:/path
+                path = path[1:]
+            if path[1:2] == '|':
+                # e.g. file:///c|path
+                path = path[:1] + ':' + path[2:]
+        path = path.replace('/', '\\')
+    else:
+        if not _is_local_host(authority):
+            raise URLError(f'file URI not on local host: {url!r}')
+        path = unquote(path)
+    return path
 
 
 ftpcache = {}

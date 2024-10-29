@@ -1551,9 +1551,9 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_pathname2url_posix(self):
         fn = urllib.request.pathname2url
-        self.assertEqual(fn('/'), '/')
-        self.assertEqual(fn('/a/b.c'), '/a/b.c')
-        self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
+        self.assertEqual(fn('/'), '///')
+        self.assertEqual(fn('/a/b.c'), '///a/b.c')
+        self.assertEqual(fn('/a/b%#c'), '///a/b%25%23c')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1595,10 +1595,10 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
-        self.assertEqual(fn('//foo/bar'), '//foo/bar')
-        self.assertEqual(fn('///foo/bar'), '///foo/bar')
-        self.assertEqual(fn('////foo/bar'), '////foo/bar')
-        self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
+        self.assertEqual(fn('///foo/bar'), '/foo/bar')
+        self.assertEqual(fn('////foo/bar'), '//foo/bar')
+        self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
