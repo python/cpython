@@ -1575,7 +1575,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
         # Non-ASCII drive letter
-        self.assertEqual(fn("///\u00e8|/"), "u00e8:\\")
+        self.assertEqual(fn("///\u00e8|/"), "\u00e8:\\")
         # UNC paths
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')

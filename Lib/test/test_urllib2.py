@@ -823,14 +823,15 @@ class HandlerTests(unittest.TestCase):
         urls = [
             "file://localhost%s" % urlpath,
             "file://%s" % urlpath,
-            "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
             ]
-        try:
-            localaddr = socket.gethostbyname(socket.gethostname())
-        except socket.gaierror:
-            localaddr = ''
-        if localaddr:
-            urls.append("file://%s%s" % (localaddr, urlpath))
+        if os.name == 'nt':
+            urls.append("file://%s%s" % (socket.gethostbyname('localhost'), urlpath))
+            try:
+                localaddr = socket.gethostbyname(socket.gethostname())
+            except socket.gaierror:
+                localaddr = ''
+            if localaddr:
+                urls.append("file://%s%s" % (localaddr, urlpath))
 
         for url in urls:
             f = open(TESTFN, "wb")
