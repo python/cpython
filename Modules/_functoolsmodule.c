@@ -933,7 +933,6 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 /* reduce (used to be a builtin) ********************************************/
 
 /*[clinic input]
-@text_signature "($module, function, iterable[, initial], /)"
 _functools.reduce
 
     function as func: object
