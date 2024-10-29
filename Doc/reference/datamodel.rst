@@ -3334,12 +3334,13 @@ left undefined.
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
-   (swapped) operands.  These functions are only called if the left operand does
-   not support the corresponding operation [#]_ and the operands are of different
-   types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
-   an instance of a class that has an :meth:`__rsub__` method,
-   ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   :data:`NotImplemented`.
+   (swapped) operands.  These functions are only called if the operands
+   are of different types, when the left operand does not support the corresponding
+   operation [#]_, or the right operand's class is derived from the left operand's
+   class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
+   an instance of a class that has an :meth:`__rsub__` method, ``type(y).__rsub__(y, x)``
+   is called if ``type(x).__sub__(x, y)`` returns :data:`NotImplemented` or ``type(y)``
+   is a subclass of ``type(x)``. [#]_
 
    .. index:: pair: built-in function; pow
 
@@ -3353,7 +3354,6 @@ left undefined.
       for the operation, this method will be called before the left operand's
       non-reflected method. This behavior allows subclasses to override their
       ancestors' operations.
-
 
 .. method:: object.__iadd__(self, other)
             object.__isub__(self, other)
@@ -3881,7 +3881,10 @@ An example of an asynchronous context manager class::
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
 
-.. [#] For operands of the same type, it is assumed that if the non-reflected
-   method -- such as :meth:`~object.__add__` -- fails then the overall
-   operation is not
-   supported, which is why the reflected method is not called.
+.. [#] For operands of the same type, it is assumed that if the non-reflected method
+   (such as :meth:`~object.__add__`) fails then the operation is not supported, which is why the
+   reflected method is not called.
+
+.. [#] If the right operand's type is a subclass of the left operand's type, the
+   reflected method having precedence allows subclasses to override their ancestors'
+   operations.
