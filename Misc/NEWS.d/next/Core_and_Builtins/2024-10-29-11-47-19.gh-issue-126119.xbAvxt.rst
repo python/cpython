@@ -1,0 +1,3 @@
+Fix a crash due to an overflow when the :attr:`co_stacksize
+<codeobject.co_stacksize>` field of a :ref:`code object <code-objects>` is
+set to an absurdely large integer. Patch by Bénédikt Tran.
