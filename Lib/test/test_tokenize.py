@@ -1804,7 +1804,7 @@ class UntokenizeTest(TestCase):
         u.prev_row = 2
         u.add_whitespace((4, 4))
         self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
-        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n')
+        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n', compare_tokens_only=True)
 
     def test_iter_compat(self):
         u = tokenize.Untokenizer()
@@ -1838,7 +1838,7 @@ def contains_ambiguous_backslash(source):
 
 class TestRoundtrip(TestCase):
 
-    def check_roundtrip(self, f):
+    def check_roundtrip(self, f, *, compare_tokens_only=False):
         """
         Test roundtrip for `untokenize`. `f` is an open file or a string.
         The source code in f is tokenized to both 5- and 2-tuples.
@@ -1846,8 +1846,8 @@ class TestRoundtrip(TestCase):
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
 
-        If the source code can be untokenized unambiguously, the
-        untokenized code must match the original code exactly.
+        If `compare_tokens_only` is False, the exact output of `untokenize`
+        is compared against the original source code.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1872,7 +1872,9 @@ class TestRoundtrip(TestCase):
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
 
-        if not contains_ambiguous_backslash(code):
+        if compare_tokens_only:
+            self.assertTrue(contains_ambiguous_backslash(code))
+        else:
             # The BOM does not produce a token so there is no way to preserve it.
             code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
             readline = iter(code_without_bom.splitlines(keepends=True)).__next__
@@ -2019,6 +2021,8 @@ if 1:
         import glob, random
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
+        # Known files which cannot be untokenized exactly
+        known_ambiguous_files = [os.path.join(tempdir, "test_traceback.py")]
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)
@@ -2028,7 +2032,8 @@ if 1:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
-                    self.check_roundtrip(f)
+                    compare_tokens_only = testfile in known_ambiguous_files
+                    self.check_roundtrip(f, compare_tokens_only=compare_tokens_only)
                     self.check_line_extraction(f)
 
 
