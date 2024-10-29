@@ -506,6 +506,14 @@ class TestPegen(unittest.TestCase):
         val = eval(code)
         self.assertEqual(val, 3.0)
 
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
+
     def test_nullable(self) -> None:
         grammar_source = """
         start: sign NUMBER
