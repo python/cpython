@@ -77,6 +77,13 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 #define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
 
 static inline PyObject *
+PyStackRef_NotDeferred_AsPyObject(_PyStackRef stackref)
+{
+    assert(!PyStackRef_IsDeferred(stackref));
+    return (PyObject *)stackref.bits;
+}
+
+static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
@@ -153,6 +160,8 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
     return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
 }
 
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
+
 
 #else // Py_GIL_DISABLED
 
@@ -177,6 +186,7 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 
 #define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) _Py_DECREF_SPECIALIZED(PyStackRef_AsPyObjectBorrow(stackref), dealloc)
 
 #endif // Py_GIL_DISABLED
 

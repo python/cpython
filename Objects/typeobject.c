@@ -4637,6 +4637,32 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
+static int
+check_immutable_bases(const char *type_name, PyObject *bases, int skip_first)
+{
+    Py_ssize_t i = 0;
+    if (skip_first) {
+        // When testing the MRO, skip the type itself
+        i = 1;
+    }
+    for (; i<PyTuple_GET_SIZE(bases); i++) {
+        PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
+        if (!b) {
+            return -1;
+        }
+        if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "Creating immutable type %s from mutable base %N",
+                type_name, b
+            );
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 /* Set *dest to the offset specified by a special "__*offset__" member.
  * Return 0 on success, -1 on failure.
  */
@@ -4820,19 +4846,8 @@ PyType_FromMetaclass(
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        for (int i=0; i<PyTuple_GET_SIZE(bases); i++) {
-            PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
-            if (!b) {
-                goto finally;
-            }
-            if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "Creating immutable type %s from mutable base %N",
-                    spec->name, b
-                );
-                goto finally;
-            }
+        if (check_immutable_bases(spec->name, bases, 0) < 0) {
+            goto finally;
         }
     }
 
@@ -5025,7 +5040,7 @@ PyType_FromMetaclass(
     type->tp_dictoffset = dictoffset;
 
 #ifdef Py_GIL_DISABLED
-    // Assign a type id to enable thread-local refcounting
+    // Assign a unique id to enable per-thread refcounting
     res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
@@ -6043,7 +6058,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyObject_ReleaseUniqueId(et->unique_id);
+    assert(et->unique_id == -1);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
@@ -11315,6 +11330,30 @@ add_operators(PyTypeObject *type)
             Py_DECREF(descr);
         }
     }
+    return 0;
+}
+
+
+int
+PyType_Freeze(PyTypeObject *type)
+{
+    // gh-121654: Check the __mro__ instead of __bases__
+    PyObject *mro = type_get_mro(type, NULL);
+    if (!PyTuple_Check(mro)) {
+        Py_DECREF(mro);
+        PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
+        return -1;
+    }
+
+    int check = check_immutable_bases(type->tp_name, mro, 1);
+    Py_DECREF(mro);
+    if (check < 0) {
+        return -1;
+    }
+
+    type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    PyType_Modified(type);
+
     return 0;
 }
 
