@@ -1654,7 +1654,7 @@ def url2pathname(url):
     """Convert the percent-encoded URL *url* to a local pathname."""
     scheme, authority, path = urlsplit(url, scheme='file')[:3]
     if scheme != 'file':
-        raise URLError(f'URI does not use "file" scheme: {url!r}')
+        raise URLError(f'URL {url!r} uses non-`file` scheme {scheme!r}')
     if os.name == 'nt':
         path = unquote(path)
         if authority and authority != 'localhost':
@@ -1673,7 +1673,7 @@ def url2pathname(url):
         path = path.replace('/', '\\')
     else:
         if not _is_local_host(authority):
-            raise URLError(f'file URI not on local host: {url!r}')
+            raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
         path = unquote(path)
     return path
 
