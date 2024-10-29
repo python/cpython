@@ -23,7 +23,7 @@ from pyspecific import SOURCE_URI
 # General configuration
 # ---------------------
 
-# Add CPython doc extensions `Doc/Tools/extensions`
+# Our custom Sphinx extensions are found in Doc/Tools/extensions/
 extensions = [
     'audit_events',
     'availability',
