@@ -2693,7 +2693,7 @@ class BaseTaskTests:
         class Break:
             def __str__(self):
                 raise RuntimeError("break")
-        
+
         obj = object()
         initial_refcount = sys.getrefcount(obj)
 
