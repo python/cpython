@@ -13,7 +13,7 @@ import time
 
 import sphinx
 
-# Set path to cpython's doc extensions
+# Set path to CPython's doc extensions
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
