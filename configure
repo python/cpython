@@ -15074,7 +15074,7 @@ save_LIBS=$LIBS
 
  CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
  LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
- LIBS="$LIBFFI_LIBS"
+ LIBS="$LIBFFI_LIBS $LIBS"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
