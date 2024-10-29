@@ -882,7 +882,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         venv.create(self.env_dir)
         exename = "pythonw.exe"
-        envpyw = os.path.join(os.path.realpath(self.env_dir), self.bindir, exename)
+        envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
             subprocess.check_call([envpyw, "-c", "import _winapi; "
                 "assert _winapi.GetModuleFileName(0).endswith('%s')" % exename])
