@@ -2386,11 +2386,11 @@ class TestInvalidAction(TestCase):
         action.type = ()
         self.assertRaisesRegex(RuntimeError, r'\(\) is not callable',
                                parser.parse_args, ['--foo', 'bar'])
-        # It is impossible to distinguish a TypeError raised due to mismatch
-        # of the required function arguments from a TypeError raised for wrong
-        # argument value, and it is not worth to use heavy inspect machinery
-        # which does not work in all cases anyway.
-        # So we get a dumb ArgumentError for such logical error.
+        # It is impossible to distinguish a TypeError raised due to a mismatch
+        # of the required function arguments from a TypeError raised for an incorrect
+        # argument value, and using the heavy inspection machinery is not worthwhile
+        # as it does not reliably work in all cases.
+        # Therefore, a generic ArgumentError is raised to handle this logical error.
         action.type = pow
         self.assertRaisesRegex(argparse.ArgumentError,
                                "argument --foo: invalid pow value: 'bar'",
