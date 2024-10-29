@@ -297,6 +297,8 @@ class Message:
                         payload = bpayload.decode(self.get_content_charset('ascii'), 'replace')
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
+                except UnicodeEncodeError:
+                    pass
             return payload
         if isinstance(payload, str):
             try:
