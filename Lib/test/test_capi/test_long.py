@@ -644,6 +644,7 @@ class LongTests(unittest.TestCase):
         # CRASHES getsign(NULL)
 
     def test_long_ispositive(self):
+        # Test PyLong_IsPositive()
         ispositive = _testcapi.pylong_ispositive
         self.assertEqual(ispositive(1), 1)
         self.assertEqual(ispositive(123), 1)
@@ -655,7 +656,10 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, ispositive, 1.0)
         self.assertRaises(TypeError, ispositive, Index(123))
 
+        # CRACHES ispositive(NULL)
+
     def test_long_isnegative(self):
+        # Test PyLong_IsNegative()
         isnegative = _testcapi.pylong_isnegative
         self.assertEqual(isnegative(1), 0)
         self.assertEqual(isnegative(123), 0)
@@ -667,13 +671,22 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, isnegative, 1.0)
         self.assertRaises(TypeError, isnegative, Index(123))
 
+        # CRACHES isnegative(NULL)
+
     def test_long_iszero(self):
+        # Test PyLong_IsZero()
         iszero = _testcapi.pylong_iszero
         self.assertEqual(iszero(1), 0)
         self.assertEqual(iszero(-1), 0)
         self.assertEqual(iszero(0), 1)
+        self.assertEqual(iszero(True), 0)
+        self.assertEqual(iszero(False), 1)
+        self.assertEqual(iszero(IntSubclass(-1)), 0)
+        self.assertEqual(iszero(IntSubclass(0)), 1)
         self.assertRaises(TypeError, iszero, 1.0)
         self.assertRaises(TypeError, iszero, Index(123))
+
+        # CRACHES iszero(NULL)
 
     def test_long_asint32(self):
         # Test PyLong_AsInt32() and PyLong_FromInt32()
