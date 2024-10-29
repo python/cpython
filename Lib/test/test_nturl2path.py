@@ -73,7 +73,7 @@ class nturl2path_Tests(unittest.TestCase):
         for url in urls:
             self.assertEqual(fn(nturl2path.url2pathname(url)), url)
 
-    def test_url2pathname_win(self):
+    def test_url2pathname(self):
         fn = nturl2path.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
         self.assertEqual(fn("///C|"), 'C:')
