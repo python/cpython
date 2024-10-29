@@ -1,4 +1,5 @@
 import os
+import re
 import token
 import tokenize
 import unittest
@@ -1803,7 +1804,7 @@ class UntokenizeTest(TestCase):
         u.prev_row = 2
         u.add_whitespace((4, 4))
         self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
-        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n', compare_tokens_only=True)
+        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n')
 
     def test_iter_compat(self):
         u = tokenize.Untokenizer()
@@ -1819,9 +1820,25 @@ class UntokenizeTest(TestCase):
         self.assertEqual(tokenize.untokenize(iter(tokens)), b'Hello ')
 
 
+def contains_ambiguous_backslash(source):
+    """Return `True` if the source contains a backslash on a
+    line by itself. For example:
+
+    a = (1
+        \\
+    )
+
+    Code like this cannot be untokenized exactly. This is because
+    the tokenizer does not produce any tokens for the line containing
+    the backslash and so there is no way to know its indent.
+    """
+    pattern = re.compile(br'\n\s*\\\s*\r?\n')
+    return pattern.search(source) is not None
+
+
 class TestRoundtrip(TestCase):
 
-    def check_roundtrip(self, f, *, compare_tokens_only=False):
+    def check_roundtrip(self, f):
         """
         Test roundtrip for `untokenize`. `f` is an open file or a string.
         The source code in f is tokenized to both 5- and 2-tuples.
@@ -1829,8 +1846,8 @@ class TestRoundtrip(TestCase):
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
 
-        If `compare_tokens_only` is False, the exact output of `untokenize`
-        is compared against the original source code.
+        If the source code can be untokenized unambiguously, the
+        untokenized code must match the original code exactly.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1855,12 +1872,12 @@ class TestRoundtrip(TestCase):
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
 
-        # Compare the exact output
-        if not compare_tokens_only:
-            readline = iter(code.splitlines(keepends=True)).__next__
-            # The BOM does not produce a token so there is no way to preserve it
+        if not contains_ambiguous_backslash(code):
+            # The BOM does not produce a token so there is no way to preserve it.
             code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
-            self.assertEqual(code_without_bom, tokenize.untokenize(tokenize.tokenize(readline)))
+            readline = iter(code_without_bom.splitlines(keepends=True)).__next__
+            untokenized_code = tokenize.untokenize(tokenize.tokenize(readline))
+            self.assertEqual(code_without_bom, untokenized_code)
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
@@ -2011,8 +2028,7 @@ if 1:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
-                    compare_tokens_only = os.path.basename(testfile) == "test_traceback.py"  # Ambiguous backslash continuation
-                    self.check_roundtrip(f, compare_tokens_only=compare_tokens_only)
+                    self.check_roundtrip(f)
                     self.check_line_extraction(f)
 
 
