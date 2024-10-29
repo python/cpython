@@ -377,7 +377,9 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
         _Py_NegativeRefcount(filename, lineno, op);
     }
     _Py_DECREF_STAT_INC();
-    _Py_DECREF_DecRefTotal();
+    if (!_Py_IsImmortal(op)) {
+        _Py_DECREF_DecRefTotal();
+    }
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }

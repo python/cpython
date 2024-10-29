@@ -195,23 +195,30 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 
 // With GIL
 
-#define Py_TAG_BITS 1
+#define Py_TAG_BITS 3
 #define Py_TAG_REFCNT 1
+#define Py_TAG_IMMORTAL 3
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
 
-#define PyStackRef_NULL_BITS Py_TAG_REFCNT
+#define PyStackRef_NULL_BITS Py_TAG_IMMORTAL
 static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 
 #define PyStackRef_IsNull(ref) ((ref).bits == PyStackRef_NULL_BITS)
-#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
-#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT })
-#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
+#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL })
 
 static inline int
 PyStackRef_HasCount(_PyStackRef ref)
 {
     return ref.bits & Py_TAG_REFCNT;
+}
+
+static inline int
+PyStackRef_HasCountAndMortal(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT;
 }
 
 static inline PyObject *
@@ -238,7 +245,7 @@ static inline _PyStackRef
 PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     assert(obj != NULL);
-    unsigned int tag = _Py_IsDeferrable(obj) ? Py_TAG_REFCNT : 0;
+    unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_IMMORTAL : 0;
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
     return ref;
 }
@@ -289,12 +296,10 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
 static inline _PyStackRef
 PyStackRef_HeapSafe(_PyStackRef ref)
 {
-    if (PyStackRef_HasCount(ref)) {
+    if (PyStackRef_HasCountAndMortal(ref)) {
         PyObject *obj = BITS_TO_PTR_MASKED(ref);
-        if (obj != NULL && !_Py_IsImmortal(obj)) {
-            Py_INCREF_MORTAL(obj);
-            ref.bits = (uintptr_t)obj;
-        }
+        Py_INCREF_MORTAL(obj);
+        ref.bits = (uintptr_t)obj;
     }
     return ref;
 }
