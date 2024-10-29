@@ -102,7 +102,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
             tracer->tracer_func(obj, (operation), data); \
         } \
     } while(0)
- 
 
 #ifdef Py_REF_DEBUG
 /* The symbol is only exposed in the API for the sake of extensions
