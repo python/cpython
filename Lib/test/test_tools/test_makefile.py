@@ -53,7 +53,7 @@ class TestMakefile(unittest.TestCase):
                 continue
             # Skip dirs with hidden-only files:
             if files and all(
-                filename.startswith('.') or filename in {'__pycache__'}
+                filename.startswith('.') or filename == '__pycache__'
                 for filename in files
             ):
                 continue
