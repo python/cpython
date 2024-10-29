@@ -4098,8 +4098,11 @@ AS_VAR_IF([have_libffi], [yes], [
 # See https://github.com/python/cpython/issues/125206 for more details.
 #
 AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
-[ac_save_libs=“$LIBS”
-LIBS="-lffi"
+[WITH_SAVE_ENV([
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+    LIBS="$LIBFFI_LIBS"
+
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 #include <ffi.h>
@@ -4126,7 +4129,7 @@ int main(void)
 ]])], [ac_cv_ffi_complex_double_supported=yes],
 [ac_cv_ffi_complex_double_supported=no],
 [ac_cv_ffi_complex_double_supported=no])
-LIBS="$ac_save_libs"])
+])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
     AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
