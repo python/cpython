@@ -22,7 +22,6 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
-    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO
