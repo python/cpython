@@ -859,7 +859,7 @@ dummy_func(
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             INPUTS_DEAD();
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            frame->return_offset = INSTRUCTION_SIZE;
         }
 
         macro(BINARY_SUBSCR_GETITEM) =
@@ -1111,8 +1111,8 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(next_instr - this_instr + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
+                assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
                 assert(gen_frame->previous == NULL);
                 gen_frame->previous = frame;
                 DISPATCH_INLINED(gen_frame);
@@ -1157,8 +1157,8 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(1 + INLINE_CACHE_ENTRIES_SEND + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
             gen_frame->previous = frame;
         }
 
@@ -2265,7 +2265,7 @@ dummy_func(
             new_frame->localsplus[0] = owner;
             DEAD(owner);
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            frame->return_offset = INSTRUCTION_SIZE;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3062,7 +3062,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             gen_frame->previous = frame;
             // oparg is the return offset from the next instruction.
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
         }
 
         macro(FOR_ITER_GEN) =
@@ -3341,7 +3341,7 @@ dummy_func(
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
                 }
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4205,8 +4205,8 @@ dummy_func(
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
                 }
-                assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL_KW;
+                assert(INSTRUCTION_SIZE == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4472,7 +4472,7 @@ dummy_func(
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
-                    assert(next_instr - this_instr == 1);
+                    assert(INSTRUCTION_SIZE == 1);
                     frame->return_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
