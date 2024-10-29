@@ -881,7 +881,7 @@ class BasicTest(BaseTest):
         """
         rmtree(self.env_dir)
         venv.create(self.env_dir)
-        exename = "pythonw.exe"
+        exename = "pythonw_d.exe"
         envpyw = os.path.join(self.env_dir, self.bindir, exename)
         try:
             subprocess.check_call([envpyw, "-c", "import sys; "
