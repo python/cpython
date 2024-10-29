@@ -4098,8 +4098,8 @@ AS_VAR_IF([have_libffi], [yes], [
 # See https://github.com/python/cpython/issues/125206 for more details.
 #
 AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
-[ac_save_cc="$CC"
-CC="$CC -lffi"
+[ac_save_libs=“$LIBS”
+LIBS="-lffi"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 #include <ffi.h>

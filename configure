@@ -15066,8 +15066,8 @@ if test ${ac_cv_ffi_complex_double_supported+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_save_cc="$CC"
-CC="$CC -lffi"
+  ac_save_libs=“$LIBS”
+LIBS="-lffi"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
