@@ -5206,13 +5206,13 @@ PySSLSession_dealloc(PySSLSession *self)
 static PyObject *
 PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
 {
-    int result;
-    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
-
     if (left == NULL || right == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
+
+    int result;
+    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;
