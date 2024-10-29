@@ -783,7 +783,6 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
             assert(st->kind == Expr_kind);
             location loc = LOC(st->v.Expr.value);
             ADDOP_LOAD_CONST(c, loc, cleandoc);
-
             Py_DECREF(cleandoc);
             RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }

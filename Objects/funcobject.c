@@ -162,7 +162,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *consts = code_obj->co_consts;
     assert(PyTuple_Check(consts));
     PyObject *doc;
-    if (PyTuple_Size(consts) >= 1) {
+    if (PyTuple_Size(consts) >= 1 && code_obj->co_flags & CO_HAS_DOCSTRING) {
         doc = PyTuple_GetItem(consts, 0);
         if (!PyUnicode_Check(doc)) {
             doc = Py_None;
