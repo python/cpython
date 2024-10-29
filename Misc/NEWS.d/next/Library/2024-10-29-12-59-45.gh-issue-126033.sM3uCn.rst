@@ -1,0 +1,3 @@
+Fix a crash in :meth:`Element.remove <xml.etree.ElementTree.Element.remove>`
+when either the element to remove or one of the children implements an evil
+:meth:`~object.__eq__` method. Patch by Bénédikt Tran.
