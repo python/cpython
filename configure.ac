@@ -4099,10 +4099,9 @@ AS_VAR_IF([have_libffi], [yes], [
 #
 AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
 [WITH_SAVE_ENV([
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
-    LIBS="$LIBFFI_LIBS"
-
+ CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 #include <ffi.h>

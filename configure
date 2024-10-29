@@ -15072,10 +15072,9 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
-    LIBS="$LIBFFI_LIBS"
-
+ CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
