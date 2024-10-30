@@ -1768,6 +1768,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_set_config", config,
                                api=API_ISOLATED)
 
+    @unittest.skipIf("-D_Py_JIT" in (sysconfig.get_config_var('PY_CORE_CFLAGS') or ''),
+                     "JIT and perf don't work together")
     def test_initconfig_api(self):
         preconfig = {
             'configure_locale': True,
