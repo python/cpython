@@ -2287,6 +2287,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=a12df928758a82b4]*/
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
+#ifdef _Py_JIT
+    _PyOptimizerObject* optimizer = _Py_GetOptimizer();
+    if (optimizer != NULL) {
+        PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
+        return NULL;
+    }
+#endif
+
     if (strcmp(backend, "perf") == 0) {
         _PyPerf_Callbacks cur_cb;
         _PyPerfTrampoline_GetCallbacks(&cur_cb);

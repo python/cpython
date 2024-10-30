@@ -1,0 +1,2 @@
+Don't allow the JIT and perf support to be active at the same time. Patch by
+Pablo Galindo
