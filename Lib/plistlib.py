@@ -319,12 +319,12 @@ class _DumbXMLWriter:
             # XXX: is this test needed?
             if isinstance(line, str):
                 line = line.encode('utf-8')
-        if not self.compact:
-            self.file.write(self._indent_level * self.indent)
-            self.file.write(line)
-            self.file.write(b'\n')
-        else:
-            self.file.write(line)
+            if not self.compact:
+                self.file.write(self._indent_level * self.indent)
+                self.file.write(line)
+                self.file.write(b'\n')
+            else:
+                self.file.write(line)
 
 
 class _PlistWriter(_DumbXMLWriter):
