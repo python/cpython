@@ -1942,7 +1942,8 @@ Basic customization
    "informal" string representation of instances of that class is required.
 
    This is typically used for debugging, so it is important that the representation
-   is information-rich and unambiguous.
+   is information-rich and unambiguous. A default implementation is provided by the
+   :class:`object` class itself.
 
    .. index::
       single: string; __str__() (object method)
@@ -1952,10 +1953,10 @@ Basic customization
 
 .. method:: object.__str__(self)
 
-   Called by :func:`str(object) <str>` and the built-in functions
-   :func:`format` and :func:`print` to compute the "informal" or nicely
+   Called by :func:`str(object) <str>`, the default :meth:`__format__` implementation,
+   and the built-in function :func:`print`, to compute the "informal" or nicely
    printable string representation of an object.  The return value must be a
-   :ref:`string <textseq>` object.
+   :ref:`str <textseq>` object.
 
    This method differs from :meth:`object.__repr__` in that there is no
    expectation that :meth:`__str__` return a valid Python expression: a more
@@ -1972,7 +1973,8 @@ Basic customization
    .. index:: pair: built-in function; bytes
 
    Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
-   of an object. This should return a :class:`bytes` object.
+   of an object. This should return a :class:`bytes` object. The :class:`object`
+   class itself does not provide this method.
 
    .. index::
       single: string; __format__() (object method)
@@ -1995,6 +1997,9 @@ Basic customization
    See :ref:`formatspec` for a description of the standard formatting syntax.
 
    The return value must be a string object.
+
+   The default implementation by the :class:`object` class should be given
+   an empty *format_spec* string. It delegates to :meth:`__str__`.
 
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
@@ -2037,6 +2042,12 @@ Basic customization
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
+
+   By default, the :class:`object` class provides implementations consistent
+   with :ref:`expressions-value-comparisons`: equality compares according to
+   object identity, and order comparisons raise :exc:`TypeError`. Each default
+   method may generate these results directly, but may also return
+   :data:`NotImplemented`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
@@ -2093,9 +2104,9 @@ Basic customization
    bucket).
 
    User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
-   by default; with them, all objects compare unequal (except with themselves)
-   and ``x.__hash__()`` returns an appropriate value such that ``x == y``
-   implies both that ``x is y`` and ``hash(x) == hash(y)``.
+   by default (inherited from the :class:`object` class); with them, all objects compare
+   unequal (except with themselves) and ``x.__hash__()`` returns an appropriate
+   value such that ``x == y`` implies both that ``x is y`` and ``hash(x) == hash(y)``.
 
    A class that overrides :meth:`__eq__` and does not define :meth:`__hash__`
    will have its :meth:`__hash__` implicitly set to ``None``.  When the
@@ -2145,8 +2156,8 @@ Basic customization
    ``bool()``; should return ``False`` or ``True``.  When this method is not
    defined, :meth:`~object.__len__` is called, if it is defined, and the object is
    considered true if its result is nonzero.  If a class defines neither
-   :meth:`!__len__` nor :meth:`!__bool__`, all its instances are considered
-   true.
+   :meth:`!__len__` nor :meth:`!__bool__` (which is true of the :class:`object`
+   class itself), all its instances are considered true.
 
 
 .. _attribute-access:
@@ -2168,6 +2179,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    for ``self``; or :meth:`__get__` of a *name* property raises
    :exc:`AttributeError`).  This method should either return the (computed)
    attribute value or raise an :exc:`AttributeError` exception.
+   The :class:`object` class itself does not provide this method.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
@@ -2306,8 +2318,8 @@ method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
 dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
-class' :attr:`~object.__dict__`.
-
+class' :attr:`~object.__dict__`.  The :class:`object` class itself does not
+implement any of these protocols.
 
 .. method:: object.__get__(self, instance, owner=None)
 
@@ -2999,6 +3011,7 @@ Emulating callable objects
 
    Called when the instance is "called" as a function; if this method is defined,
    ``x(arg1, arg2, ...)`` roughly translates to ``type(x).__call__(x, arg1, ...)``.
+   The :class:`object` class itself does not provide this method.
 
 
 .. _sequence-types:
@@ -3006,10 +3019,11 @@ Emulating callable objects
 Emulating container types
 -------------------------
 
-The following methods can be defined to implement container objects.  Containers
-usually are :term:`sequences <sequence>` (such as :class:`lists <list>` or
+The following methods can be defined to implement container objects. None of them
+are provided by the :class:`object` class itself. Containers usually are
+:term:`sequences <sequence>` (such as :class:`lists <list>` or
 :class:`tuples <tuple>`) or :term:`mappings <mapping>` (like
-:class:`dictionaries <dict>`),
+:term:`dictionaries <dictionary>`),
 but can represent other containers as well.  The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
@@ -3372,6 +3386,7 @@ Typical uses of context managers include saving and restoring various kinds of
 global state, locking and unlocking resources, closing opened files, etc.
 
 For more information on context managers, see :ref:`typecontextmanager`.
+The :class:`object` class itself does not provide the context manager methods.
 
 
 .. method:: object.__enter__(self)
@@ -3576,6 +3591,8 @@ are awaitable.
    Must return an :term:`iterator`.  Should be used to implement
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
+   The :class:`object` class itself is not awaitable and does not provide
+   this method.
 
    .. note::
 
@@ -3661,6 +3678,9 @@ its ``__anext__`` method.
 
 Asynchronous iterators can be used in an :keyword:`async for` statement.
 
+The :class:`object` class itself does not provide these methods.
+
+
 .. method:: object.__aiter__(self)
 
    Must return an *asynchronous iterator* object.
@@ -3706,6 +3726,8 @@ An *asynchronous context manager* is a *context manager* that is able to
 suspend execution in its ``__aenter__`` and ``__aexit__`` methods.
 
 Asynchronous context managers can be used in an :keyword:`async with` statement.
+
+The :class:`object` class itself does not provide these methods.
 
 .. method:: object.__aenter__(self)
 
