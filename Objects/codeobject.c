@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
 
 static const char *
@@ -107,14 +108,8 @@ should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
     // The free-threaded build interns (and immortalizes) all string constants
-    // unless we've disabled immortalizing objects that use deferred reference
-    // counting.
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int(&interp->gc.immortalize) < 0) {
-        return 1;
-    }
-#endif
-
+    return 1;
+#else
     // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
@@ -128,6 +123,7 @@ should_intern_string(PyObject *o)
             return 0;
     }
     return 1;
+#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -236,13 +232,10 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string constants in the free-threaded build, but only if
-        // we are also immortalizing objects that use deferred reference
-        // counting.
-        PyThreadState *tstate = PyThreadState_GET();
+        // Intern non-string constants in the free-threaded build
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
         if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) &&
-            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
+            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
@@ -676,7 +669,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
     init_code(co, con);
 #ifdef Py_GIL_DISABLED
-    _PyObject_SetDeferredRefcount((PyObject *)co);
+    co->_co_unique_id = _PyObject_AssignUniqueId((PyObject *)co);
     _PyObject_GC_TRACK(co);
 #endif
     Py_XDECREF(replacement_locations);
@@ -1864,6 +1857,9 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+#ifdef Py_GIL_DISABLED
+    assert(co->_co_unique_id == -1);
+#endif
     if (co->_co_cached != NULL) {
         Py_XDECREF(co->_co_cached->_co_code);
         Py_XDECREF(co->_co_cached->_co_cellvars);

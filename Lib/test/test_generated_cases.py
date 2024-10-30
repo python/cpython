@@ -1270,6 +1270,33 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_error_if_true(self):
+
+        input = """
+        inst(OP1, ( --)) {
+            ERROR_IF(true, here);
+        }
+        inst(OP2, ( --)) {
+            ERROR_IF(1, there);
+        }
+        """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            goto here;
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP2);
+            goto there;
+        }
+        """
+        self.run_cases_test(input, output)
+
     def test_scalar_array_inconsistency(self):
 
         input = """
@@ -1369,6 +1396,37 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, output)
+
+    def test_instruction_size_macro(self):
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1 ;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+        # Two instructions of different sizes referencing the same
+        # uop containing the `INSTRUCTION_SIZE` macro is not allowed.
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        macro(OP2) = unused/1 + OP;
+        """
+
+        output = ""  # No output needed as this should raise an error.
+        with self.assertRaisesRegex(SyntaxError, "All instructions containing a uop"):
             self.run_cases_test(input, output)
 
 

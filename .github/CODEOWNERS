@@ -17,7 +17,7 @@ Makefile.pre.in               @erlend-aasland
 Modules/Setup*                @erlend-aasland
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
+**/*asyncio*                  @1st1 @asvetlov @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
@@ -282,3 +282,5 @@ Lib/test/test_configparser.py @jaraco
 
 # Doc sections
 Doc/reference/                @willingc
+
+**/*weakref*                  @kumaraditya303
