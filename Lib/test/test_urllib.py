@@ -1524,7 +1524,7 @@ class Pathname_Tests(unittest.TestCase):
         # Test special prefixes are correctly handled in pathname2url()
         fn = urllib.request.pathname2url
         self.assertEqual(fn('\\\\?\\C:\\dir'), '///C:/dir')
-        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '/server/share/dir')
+        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
         self.assertEqual(fn("C:"), '///C:')
         self.assertEqual(fn("C:\\"), '///C:')
         self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
@@ -1535,14 +1535,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertRaises(IOError, fn, "XX:\\")
         # No drive letter
         self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
-        self.assertEqual(fn("\\\\folder\\test\\"), '////folder/test/')
-        self.assertEqual(fn("\\\\\\folder\\test\\"), '/////folder/test/')
-        self.assertEqual(fn('\\\\some\\share\\'), '////some/share/')
-        self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '////some/share/a/b.c')
-        self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '////some/share/a/b%25%23c%C3%A9')
+        self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
+        self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
+        self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
+        self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
         # Round-tripping
         urls = ['///C:',
-                '/////folder/test/',
+                '///folder/test/',
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(urllib.request.url2pathname(url)), url)
