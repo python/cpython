@@ -18,11 +18,12 @@ command-line and writes the result to a file::
         'integers', metavar='int', nargs='+', type=int,
         help='an integer to be summed')
     parser.add_argument(
-        '--log', default=sys.stdout, type=argparse.FileType('w'),
+        '--log',
         help='the file where the sum should be written')
     args = parser.parse_args()
-    args.log.write('%s' % sum(args.integers))
-    args.log.close()
+    with (open(args.log, 'w') if args.log is not None
+          else contextlib.nullcontext(sys.stdout)) as log:
+        log.write('%s' % sum(args.integers))
 
 The module contains the following public classes:
 
@@ -39,7 +40,8 @@ The module contains the following public classes:
 
     - FileType -- A factory for defining types of files to be created. As the
         example above shows, instances of FileType are typically passed as
-        the type= argument of add_argument() calls.
+        the type= argument of add_argument() calls. Deprecated since
+        Python 3.14.
 
     - Action -- The base class for parser actions. Typically actions are
         selected by passing strings like 'store_true' or 'append_const' to
@@ -844,7 +846,7 @@ class Action(_AttributeHolder):
         return self.option_strings[0]
 
     def __call__(self, parser, namespace, values, option_string=None):
-        raise NotImplementedError(_('.__call__() not defined'))
+        raise NotImplementedError('.__call__() not defined')
 
 
 class BooleanOptionalAction(Action):
@@ -1170,11 +1172,10 @@ class _SubParsersAction(Action):
         aliases = kwargs.pop('aliases', ())
 
         if name in self._name_parser_map:
-            raise ArgumentError(self, _('conflicting subparser: %s') % name)
+            raise ValueError(f'conflicting subparser: {name}')
         for alias in aliases:
             if alias in self._name_parser_map:
-                raise ArgumentError(
-                    self, _('conflicting subparser alias: %s') % alias)
+                raise ValueError(f'conflicting subparser alias: {alias}')
 
         # create a pseudo-action to hold the choice help
         if 'help' in kwargs:
@@ -1252,7 +1253,7 @@ class _ExtendAction(_AppendAction):
 # ==============
 
 class FileType(object):
-    """Factory for creating file object types
+    """Deprecated factory for creating file object types
 
     Instances of FileType are typically passed as type= arguments to the
     ArgumentParser add_argument() method.
@@ -1269,6 +1270,12 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+        import warnings
+        warnings.warn(
+            "FileType is deprecated. Simply open files after parsing arguments.",
+            category=PendingDeprecationWarning,
+            stacklevel=2
+        )
         self._mode = mode
         self._bufsize = bufsize
         self._encoding = encoding
@@ -1422,8 +1429,8 @@ class _ActionsContainer(object):
         chars = self.prefix_chars
         if not args or len(args) == 1 and args[0][0] not in chars:
             if args and 'dest' in kwargs:
-                raise ValueError('dest supplied twice for positional argument,'
-                                 ' did you mean metavar?')
+                raise TypeError('dest supplied twice for positional argument,'
+                                ' did you mean metavar?')
             kwargs = self._get_positional_kwargs(*args, **kwargs)
 
         # otherwise, we're adding an optional argument
@@ -1442,7 +1449,7 @@ class _ActionsContainer(object):
         action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
-            raise ValueError('unknown action "%s"' % (action_class,))
+            raise ValueError('unknown action {action_class!r}')
         action = action_class(**kwargs)
 
         # raise an error if action for positional argument does not
@@ -1453,11 +1460,11 @@ class _ActionsContainer(object):
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
-            raise ValueError('%r is not callable' % (type_func,))
+            raise TypeError(f'{type_func!r} is not callable')
 
         if type_func is FileType:
-            raise ValueError('%r is a FileType class object, instance of it'
-                             ' must be passed' % (type_func,))
+            raise TypeError(f'{type_func!r} is a FileType class object, '
+                            f'instance of it must be passed')
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
@@ -1510,8 +1517,8 @@ class _ActionsContainer(object):
             if group.title in title_group_map:
                 # This branch could happen if a derived class added
                 # groups with duplicated titles in __init__
-                msg = _('cannot merge actions - two groups are named %r')
-                raise ValueError(msg % (group.title))
+                msg = f'cannot merge actions - two groups are named {group.title!r}'
+                raise ValueError(msg)
             title_group_map[group.title] = group
 
         # map each action to its group
@@ -1552,7 +1559,7 @@ class _ActionsContainer(object):
     def _get_positional_kwargs(self, dest, **kwargs):
         # make sure required is not specified
         if 'required' in kwargs:
-            msg = _("'required' is an invalid argument for positionals")
+            msg = "'required' is an invalid argument for positionals"
             raise TypeError(msg)
 
         # mark positional arguments as required if at least one is
@@ -1573,11 +1580,9 @@ class _ActionsContainer(object):
         for option_string in args:
             # error on strings that don't start with an appropriate prefix
             if not option_string[0] in self.prefix_chars:
-                args = {'option': option_string,
-                        'prefix_chars': self.prefix_chars}
-                msg = _('invalid option string %(option)r: '
-                        'must start with a character %(prefix_chars)r')
-                raise ValueError(msg % args)
+                raise ValueError(
+                    f'invalid option string {option_string!r}: '
+                    f'must start with a character {self.prefix_chars!r}')
 
             # strings starting with two prefix characters are long options
             option_strings.append(option_string)
@@ -1593,8 +1598,8 @@ class _ActionsContainer(object):
                 dest_option_string = option_strings[0]
             dest = dest_option_string.lstrip(self.prefix_chars)
             if not dest:
-                msg = _('dest= is required for options like %r')
-                raise ValueError(msg % option_string)
+                msg = f'dest= is required for options like {option_string!r}'
+                raise TypeError(msg)
             dest = dest.replace('-', '_')
 
         # return the updated keyword arguments
@@ -1610,8 +1615,8 @@ class _ActionsContainer(object):
         try:
             return getattr(self, handler_func_name)
         except AttributeError:
-            msg = _('invalid conflict_resolution value: %r')
-            raise ValueError(msg % self.conflict_handler)
+            msg = f'invalid conflict_resolution value: {self.conflict_handler!r}'
+            raise ValueError(msg)
 
     def _check_conflict(self, action):
 
@@ -1719,7 +1724,7 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
 
     def _add_action(self, action):
         if action.required:
-            msg = _('mutually exclusive arguments must be optional')
+            msg = 'mutually exclusive arguments must be optional'
             raise ValueError(msg)
         action = self._container._add_action(action)
         self._group_actions.append(action)
@@ -1863,7 +1868,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ==================================
     def add_subparsers(self, **kwargs):
         if self._subparsers is not None:
-            raise ArgumentError(None, _('cannot have multiple subparser arguments'))
+            raise ValueError('cannot have multiple subparser arguments')
 
         # add the parser class to the arguments if it's not present
         kwargs.setdefault('parser_class', type(self))
@@ -1924,6 +1929,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return args
 
     def parse_known_args(self, args=None, namespace=None):
+        return self._parse_known_args2(args, namespace, intermixed=False)
+
+    def _parse_known_args2(self, args, namespace, intermixed):
         if args is None:
             # args default to the system args
             args = _sys.argv[1:]
@@ -1950,18 +1958,18 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
-                namespace, args = self._parse_known_args(args, namespace)
+                namespace, args = self._parse_known_args(args, namespace, intermixed)
             except ArgumentError as err:
                 self.error(str(err))
         else:
-            namespace, args = self._parse_known_args(args, namespace)
+            namespace, args = self._parse_known_args(args, namespace, intermixed)
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
             delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
         return namespace, args
 
-    def _parse_known_args(self, arg_strings, namespace):
+    def _parse_known_args(self, arg_strings, namespace, intermixed):
         # replace arg strings that are file references
         if self.fromfile_prefix_chars is not None:
             arg_strings = self._read_args_from_files(arg_strings)
@@ -2052,6 +2060,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 # if we found no optional action, skip it
                 if action is None:
                     extras.append(arg_strings[start_index])
+                    extras_pattern.append('O')
                     return start_index + 1
 
                 # if there is an explicit argument, try to match the
@@ -2087,6 +2096,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 sep = ''
                         else:
                             extras.append(char + explicit_arg)
+                            extras_pattern.append('O')
                             stop = start_index + 1
                             break
                     # if the action expect exactly one argument, we've
@@ -2165,6 +2175,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # consume Positionals and Optionals alternately, until we have
         # passed the last option string
         extras = []
+        extras_pattern = []
         start_index = 0
         if option_string_indices:
             max_option_string_index = max(option_string_indices)
@@ -2178,7 +2189,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 if next_option_string_index in option_string_indices:
                     break
                 next_option_string_index += 1
-            if start_index != next_option_string_index:
+            if not intermixed and start_index != next_option_string_index:
                 positionals_end_index = consume_positionals(start_index)
 
                 # only try to parse the next optional if we didn't consume
@@ -2194,16 +2205,35 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if start_index not in option_string_indices:
                 strings = arg_strings[start_index:next_option_string_index]
                 extras.extend(strings)
+                extras_pattern.extend(arg_strings_pattern[start_index:next_option_string_index])
                 start_index = next_option_string_index
 
             # consume the next optional and any arguments for it
             start_index = consume_optional(start_index)
 
-        # consume any positionals following the last Optional
-        stop_index = consume_positionals(start_index)
+        if not intermixed:
+            # consume any positionals following the last Optional
+            stop_index = consume_positionals(start_index)
 
-        # if we didn't consume all the argument strings, there were extras
-        extras.extend(arg_strings[stop_index:])
+            # if we didn't consume all the argument strings, there were extras
+            extras.extend(arg_strings[stop_index:])
+        else:
+            extras.extend(arg_strings[start_index:])
+            extras_pattern.extend(arg_strings_pattern[start_index:])
+            extras_pattern = ''.join(extras_pattern)
+            assert len(extras_pattern) == len(extras)
+            # consume all positionals
+            arg_strings = [s for s, c in zip(extras, extras_pattern) if c != 'O']
+            arg_strings_pattern = extras_pattern.replace('O', '')
+            stop_index = consume_positionals(0)
+            # leave unknown optionals and non-consumed positionals in extras
+            for i, c in enumerate(extras_pattern):
+                if not stop_index:
+                    break
+                if c != 'O':
+                    stop_index -= 1
+                    extras[i] = None
+            extras = [s for s in extras if s is not None]
 
         # make sure all required actions were present and also convert
         # action defaults which were not given as arguments
@@ -2469,10 +2499,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # are then parsed.  If the parser definition is incompatible with the
         # intermixed assumptions (e.g. use of REMAINDER, subparsers) a
         # TypeError is raised.
-        #
-        # positionals are 'deactivated' by setting nargs and default to
-        # SUPPRESS.  This blocks the addition of that positional to the
-        # namespace
 
         positionals = self._get_positional_actions()
         a = [action for action in positionals
@@ -2481,59 +2507,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             raise TypeError('parse_intermixed_args: positional arg'
                             ' with nargs=%s'%a[0].nargs)
 
-        if [action.dest for group in self._mutually_exclusive_groups
-            for action in group._group_actions if action in positionals]:
-            raise TypeError('parse_intermixed_args: positional in'
-                            ' mutuallyExclusiveGroup')
-
-        try:
-            save_usage = self.usage
-            try:
-                if self.usage is None:
-                    # capture the full usage for use in error messages
-                    self.usage = self.format_usage()[7:]
-                for action in positionals:
-                    # deactivate positionals
-                    action.save_nargs = action.nargs
-                    # action.nargs = 0
-                    action.nargs = SUPPRESS
-                    action.save_default = action.default
-                    action.default = SUPPRESS
-                namespace, remaining_args = self.parse_known_args(args,
-                                                                  namespace)
-                for action in positionals:
-                    # remove the empty positional values from namespace
-                    if (hasattr(namespace, action.dest)
-                            and getattr(namespace, action.dest)==[]):
-                        from warnings import warn
-                        warn('Do not expect %s in %s' % (action.dest, namespace))
-                        delattr(namespace, action.dest)
-            finally:
-                # restore nargs and usage before exiting
-                for action in positionals:
-                    action.nargs = action.save_nargs
-                    action.default = action.save_default
-            optionals = self._get_optional_actions()
-            try:
-                # parse positionals.  optionals aren't normally required, but
-                # they could be, so make sure they aren't.
-                for action in optionals:
-                    action.save_required = action.required
-                    action.required = False
-                for group in self._mutually_exclusive_groups:
-                    group.save_required = group.required
-                    group.required = False
-                namespace, extras = self.parse_known_args(remaining_args,
-                                                          namespace)
-            finally:
-                # restore parser values before exiting
-                for action in optionals:
-                    action.required = action.save_required
-                for group in self._mutually_exclusive_groups:
-                    group.required = group.save_required
-        finally:
-            self.usage = save_usage
-        return namespace, extras
+        return self._parse_known_args2(args, namespace, intermixed=True)
 
     # ========================
     # Value conversion methods
@@ -2588,8 +2562,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _get_value(self, action, arg_string):
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
-            msg = _('%r is not callable')
-            raise ArgumentError(action, msg % type_func)
+            raise TypeError(f'{type_func!r} is not callable')
 
         # convert the value to the appropriate type
         try:
