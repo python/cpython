@@ -1542,7 +1542,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
         # Round-tripping
         urls = ['///C:',
-                '/////folder/test/',
+                '///folder/test/',
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(urllib.request.url2pathname(url)), url)
