@@ -446,7 +446,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts, int enable);
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
+                int enable_counters);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -529,11 +530,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
-    _PyCode_InitCounters(_PyCode_CODE(co), Py_SIZE(co),
-                         co->co_consts,
-                         interp->config.tlbc_enabled);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts,
+                    interp->config.tlbc_enabled);
 #else
-    _PyCode_InitCounters(_PyCode_CODE(co), Py_SIZE(co), co->co_consts, 1);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts, 1);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -2751,7 +2751,7 @@ copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
-    _PyCode_InitCounters(dst, code_len, co->co_consts, 1);
+    _PyCode_Quicken(dst, code_len, co->co_consts, 1);
 }
 
 static Py_ssize_t

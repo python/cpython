@@ -455,13 +455,14 @@ do { \
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-// Initialize warmup counters. This cannot fail.
+// Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts, int enable)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
+                int enable_counters)
 {
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;
-    if (enable) {
+    if (enable_counters) {
         jump_counter = initial_jump_backoff_counter();
         adaptive_counter = adaptive_counter_warmup();
     }
