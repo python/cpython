@@ -50,7 +50,7 @@ the extracted data in a :class:`argparse.Namespace` object::
    print(args.filename, args.count, args.verbose)
 
 .. note::
-   If you're looking a guide about how to upgrade :mod:`optparse` code
+   If you're looking for a guide about how to upgrade :mod:`optparse` code
    to :mod:`!argparse`, see :ref:`Upgrading Optparse Code <upgrading-optparse-code>`.
 
 ArgumentParser objects
