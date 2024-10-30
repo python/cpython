@@ -785,8 +785,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):
@@ -1207,6 +1205,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_c_call(self):
@@ -1231,6 +1230,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 40),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
+            ('instruction', 'func2', 46),
             ('line', 'get_events', 11)])
 
     def test_try_except(self):
@@ -1264,6 +1264,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func3', 30),
             ('instruction', 'func3', 32),
             ('instruction', 'func3', 34),
+            ('instruction', 'func3', 36),
             ('line', 'get_events', 11)])
 
     def test_with_restart(self):
@@ -1284,6 +1285,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
         sys.monitoring.restart_events()
@@ -1300,6 +1302,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_turn_off_only_instruction(self):

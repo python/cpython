@@ -56,8 +56,6 @@ PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 PyObject _PyInstrumentation_MISSING = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
-    [RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
-    [INSTRUMENTED_RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
     [RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
     [INSTRUMENTED_RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
     [CALL] = PY_MONITORING_EVENT_CALL,
@@ -94,7 +92,6 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
 static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_RESUME] = RESUME,
     [INSTRUMENTED_RETURN_VALUE] = RETURN_VALUE,
-    [INSTRUMENTED_RETURN_CONST] = RETURN_CONST,
     [INSTRUMENTED_CALL] = CALL,
     [INSTRUMENTED_CALL_KW] = CALL_KW,
     [INSTRUMENTED_CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
@@ -112,8 +109,6 @@ static const uint8_t DE_INSTRUMENT[256] = {
 };
 
 static const uint8_t INSTRUMENTED_OPCODES[256] = {
-    [RETURN_CONST] = INSTRUMENTED_RETURN_CONST,
-    [INSTRUMENTED_RETURN_CONST] = INSTRUMENTED_RETURN_CONST,
     [RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [CALL] = INSTRUMENTED_CALL,
@@ -643,8 +638,8 @@ de_instrument(PyCodeObject *code, int i, int event)
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
     FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, deinstrumented);
     if (_PyOpcode_Caches[deinstrumented]) {
-        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
-                                       adaptive_counter_warmup().as_counter);
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                       adaptive_counter_warmup().value_and_backoff);
     }
 }
 
@@ -719,8 +714,8 @@ instrument(PyCodeObject *code, int i)
         assert(instrumented);
         FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
-          FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
-                                         adaptive_counter_warmup().as_counter);
+            FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                           adaptive_counter_warmup().value_and_backoff);
             instr[1].counter = adaptive_counter_warmup();
         }
     }

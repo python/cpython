@@ -1,3 +1,5 @@
+name: Reusable macOS
+
 on:
   workflow_call:
     inputs:
@@ -28,7 +30,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:

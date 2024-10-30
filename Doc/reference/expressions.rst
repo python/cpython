@@ -1820,6 +1820,8 @@ returns a boolean value regardless of the type of its argument
    single: named expression
    pair: assignment; expression
 
+.. _assignment-expressions:
+
 Assignment expressions
 ======================
 

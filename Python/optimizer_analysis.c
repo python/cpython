@@ -131,6 +131,26 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
     return 0;
 }
 
+static int
+check_next_uop(_PyUOpInstruction *buffer, int size, int pc, uint16_t expected)
+{
+    if (pc + 1 >= size) {
+        DPRINTF(1, "Cannot rewrite %s at pc %d: buffer too small\n",
+                _PyOpcode_uop_name[buffer[pc].opcode], pc);
+        return 0;
+    }
+    uint16_t next_opcode = buffer[pc + 1].opcode;
+    if (next_opcode != expected) {
+        DPRINTF(1,
+                "Cannot rewrite %s at pc %d: unexpected next opcode %s, "
+                "expected %s\n",
+                _PyOpcode_uop_name[buffer[pc].opcode], pc,
+                _PyOpcode_uop_name[next_opcode], _PyOpcode_uop_name[expected]);
+        return 0;
+    }
+    return 1;
+}
+
 /* Returns 1 if successfully optimized
  *         0 if the trace is not suitable for optimization (yet)
  *        -1 if there was an error. */
@@ -174,12 +194,16 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         _PyUOpInstruction *inst = &buffer[pc];
         int opcode = inst->opcode;
         switch(opcode) {
-            case _GUARD_BUILTINS_VERSION:
+            case _GUARD_BUILTINS_VERSION_PUSH_KEYS:
                 if (incorrect_keys(inst, builtins)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+                    continue;
+                }
+                if (!check_next_uop(buffer, buffer_size, pc,
+                                    _LOAD_GLOBAL_BUILTINS_FROM_KEYS)) {
                     continue;
                 }
                 if ((builtins_watched & 1) == 0) {
@@ -194,14 +218,24 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     buffer[pc].operand = function_version;
                     function_checked |= 1;
                 }
+                // We're no longer pushing the builtins keys; rewrite the
+                // instruction that consumed the keys to load them from the
+                // frame.
+                buffer[pc + 1].opcode = _LOAD_GLOBAL_BUILTINS;
                 break;
             case _GUARD_GLOBALS_VERSION:
+            case _GUARD_GLOBALS_VERSION_PUSH_KEYS:
                 if (incorrect_keys(inst, globals)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 uint64_t watched_mutations = get_mutations(globals);
                 if (watched_mutations >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    continue;
+                }
+                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS &&
+                    !check_next_uop(buffer, buffer_size, pc,
+                                    _LOAD_GLOBAL_MODULE_FROM_KEYS)) {
                     continue;
                 }
                 if ((globals_watched & 1) == 0) {
@@ -216,6 +250,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     buffer[pc].opcode = _CHECK_FUNCTION;
                     buffer[pc].operand = function_version;
                     function_checked |= 1;
+                }
+                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS) {
+                    // We're no longer pushing the globals keys; rewrite the
+                    // instruction that consumed the keys to load them from the
+                    // frame.
+                    buffer[pc + 1].opcode = _LOAD_GLOBAL_MODULE;
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
