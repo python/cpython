@@ -49,7 +49,7 @@ except ImportError:
     ShareableList = None
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType, AsyncGeneratorType
+from types import GenericAlias, MappingProxyType, AsyncGeneratorType, CoroutineType, GeneratorType
 from tempfile import TemporaryDirectory, SpooledTemporaryFile
 from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
@@ -57,6 +57,10 @@ from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
 from typing import Unpack
+try:
+    from tkinter import Event
+except ImportError:
+    Event = None
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -96,7 +100,7 @@ _UNPACKED_TUPLES = [
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
-    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
+    generic_types = [type, tuple, list, dict, set, frozenset, enumerate, memoryview,
                      defaultdict, deque,
                      SequenceMatcher,
                      dircmp,
@@ -120,6 +124,7 @@ class BaseTest(unittest.TestCase):
                      KeysView, ItemsView, ValuesView,
                      Sequence, MutableSequence,
                      MappingProxyType, AsyncGeneratorType,
+                     GeneratorType, CoroutineType,
                      DirEntry,
                      chain,
                      LoggerAdapter, StreamHandler,
@@ -138,6 +143,8 @@ class BaseTest(unittest.TestCase):
     if ValueProxy is not None:
         generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
+    if Event is not None:
+        generic_types.append(Event)
 
     def test_subscriptable(self):
         for t in self.generic_types:

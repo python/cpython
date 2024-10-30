@@ -1,5 +1,5 @@
-:mod:`optparse` --- Parser for command line options
-===================================================
+:mod:`!optparse` --- Parser for command line options
+====================================================
 
 .. module:: optparse
    :synopsis: Command-line option parsing library.
@@ -1352,7 +1352,7 @@ The whole point of creating and populating an OptionParser is to call its
       the list of arguments to process (default: ``sys.argv[1:]``)
 
    ``values``
-      an :class:`Values` object to store option arguments in (default: a
+      a :class:`Values` object to store option arguments in (default: a
       new instance of :class:`Values`) -- if you give an existing object, the
       option defaults will not be initialized on it
 
@@ -1739,7 +1739,7 @@ seen, but blow up if it comes after ``-b`` in the command-line.  ::
 Callback example 3: check option order (generalized)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to re-use this callback for several similar options (set a flag, but
+If you want to reuse this callback for several similar options (set a flag, but
 blow up if ``-b`` has already been seen), it needs a bit of work: the error
 message and the flag that it sets must be generalized.  ::
 

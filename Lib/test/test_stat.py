@@ -2,8 +2,7 @@ import unittest
 import os
 import socket
 import sys
-from test.support import os_helper
-from test.support import socket_helper
+from test.support import is_apple, os_helper, socket_helper
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
 
@@ -247,7 +246,7 @@ class TestFilemode:
         for flag in self.file_flags:
             if flag.startswith("UF"):
                 self.assertTrue(getattr(self.statmod, flag) & self.statmod.UF_SETTABLE, f"{flag} not in UF_SETTABLE")
-            elif sys.platform == 'darwin' and self.statmod is c_stat and flag == 'SF_DATALESS':
+            elif is_apple and self.statmod is c_stat and flag == 'SF_DATALESS':
                 self.assertTrue(self.statmod.SF_DATALESS & self.statmod.SF_SYNTHETIC, "SF_DATALESS not in SF_SYNTHETIC")
                 self.assertFalse(self.statmod.SF_DATALESS & self.statmod.SF_SETTABLE, "SF_DATALESS in SF_SETTABLE")
             else:

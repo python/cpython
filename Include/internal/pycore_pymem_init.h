@@ -92,6 +92,11 @@ extern void _PyMem_ArenaFree(void *, void *, size_t);
     { NULL, _PyMem_ArenaAlloc, _PyMem_ArenaFree }
 
 
+#define _Py_mem_free_queue_INIT(queue) \
+    { \
+        .head = LLIST_INIT(queue.head), \
+    }
+
 #ifdef __cplusplus
 }
 #endif

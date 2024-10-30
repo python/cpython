@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generate Python documentation in HTML or text for interactive use.
 
 At the Python interactive prompt, calling help(thing) on a Python object
@@ -72,9 +71,25 @@ import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
+
+from _pyrepl.pager import (get_pager, pipe_pager,
+                           plain_pager, tempfile_pager, tty_pager)
+
+# Expose plain() as pydoc.plain()
+from _pyrepl.pager import plain  # noqa: F401
+
+
+# --------------------------------------------------------- old names
+
+getpager = get_pager
+pipepager = pipe_pager
+plainpager = plain_pager
+tempfilepager = tempfile_pager
+ttypager = tty_pager
 
 
 # --------------------------------------------------------- common routines
@@ -127,9 +142,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
@@ -199,12 +213,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -224,6 +238,19 @@ def classname(object, modname):
     if object.__module__ != modname:
         name = object.__module__ + '.' + name
     return name
+
+def parentname(object, modname):
+    """Get a name of the enclosing class (qualified it with a module name
+    if necessary) or module."""
+    if '.' in object.__qualname__:
+        name = object.__qualname__.rpartition('.')[0]
+        if object.__module__ != modname:
+            return object.__module__ + '.' + name
+        else:
+            return name
+    else:
+        if object.__module__ != modname:
+            return object.__module__
 
 def isdata(object):
     """Check if an object is of a type that probably means it's data."""
@@ -301,7 +328,8 @@ def visiblename(name, all=None, obj=None):
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__'}:
+                '__path__', '__qualname__', '__slots__', '__version__',
+                '__static_attributes__', '__firstlineno__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -319,13 +347,15 @@ def visiblename(name, all=None, obj=None):
         return not name.startswith('_')
 
 def classify_class_attrs(object):
-    """Wrap inspect.classify_class_attrs, with fixup for data descriptors."""
+    """Wrap inspect.classify_class_attrs, with fixup for data descriptors and bound methods."""
     results = []
     for (name, kind, cls, value) in inspect.classify_class_attrs(object):
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
             if isinstance(value, property) and value.fset is None:
                 kind = 'readonly property'
+        elif kind == 'method' and _is_bound_method(value):
+            kind = 'static method'
         results.append((name, kind, cls, value))
     return results
 
@@ -537,7 +567,7 @@ class Doc:
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
+            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
@@ -681,6 +711,25 @@ class HTMLDoc(Doc):
                 module.__name__, name, classname(object, modname))
         return classname(object, modname)
 
+    def parentlink(self, object, modname):
+        """Make a link for the enclosing class or module."""
+        link = None
+        name, module = object.__name__, sys.modules.get(object.__module__)
+        if hasattr(module, name) and getattr(module, name) is object:
+            if '.' in object.__qualname__:
+                name = object.__qualname__.rpartition('.')[0]
+                if object.__module__ != modname:
+                    link = '%s.html#%s' % (module.__name__, name)
+                else:
+                    link = '#%s' % name
+            else:
+                if object.__module__ != modname:
+                    link = '%s.html' % module.__name__
+        if link:
+            return '<a href="%s">%s</a>' % (link, parentname(object, modname))
+        else:
+            return parentname(object, modname)
+
     def modulelink(self, object):
         """Make a link for a module."""
         return '<a href="%s.html">%s</a>' % (object.__name__, object.__name__)
@@ -822,9 +871,9 @@ class HTMLDoc(Doc):
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
@@ -925,7 +974,7 @@ class HTMLDoc(Doc):
                         push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value, name, mod,
-                                        funcs, classes, mdict, object))
+                                        funcs, classes, mdict, object, homecls))
                     push('\n')
             return attrs
 
@@ -1043,24 +1092,44 @@ class HTMLDoc(Doc):
         return self.grey('=' + self.repr(object))
 
     def docroutine(self, object, name=None, mod=None,
-                   funcs={}, classes={}, methods={}, cl=None):
+                   funcs={}, classes={}, methods={}, cl=None, homecls=None):
         """Produce HTML documentation for a function or method object."""
         realname = object.__name__
         name = name or realname
-        anchor = (cl and cl.__name__ or '') + '-' + name
+        if homecls is None:
+            homecls = cl
+        anchor = ('' if cl is None else cl.__name__) + '-' + name
         note = ''
-        skipdocs = 0
+        skipdocs = False
+        imfunc = None
         if _is_bound_method(object):
-            imclass = object.__self__.__class__
-            if cl:
-                if imclass is not cl:
-                    note = ' from ' + self.classlink(imclass, mod)
+            imself = object.__self__
+            if imself is cl:
+                imfunc = getattr(object, '__func__', None)
+            elif inspect.isclass(imself):
+                note = ' class method of %s' % self.classlink(imself, mod)
             else:
-                if object.__self__ is not None:
-                    note = ' method of %s instance' % self.classlink(
-                        object.__self__.__class__, mod)
-                else:
-                    note = ' unbound %s method' % self.classlink(imclass,mod)
+                note = ' method of %s instance' % self.classlink(
+                    imself.__class__, mod)
+        elif (inspect.ismethoddescriptor(object) or
+              inspect.ismethodwrapper(object)):
+            try:
+                objclass = object.__objclass__
+            except AttributeError:
+                pass
+            else:
+                if cl is None:
+                    note = ' unbound %s method' % self.classlink(objclass, mod)
+                elif objclass is not homecls:
+                    note = ' from ' + self.classlink(objclass, mod)
+        else:
+            imfunc = object
+        if inspect.isfunction(imfunc) and homecls is not None and (
+            imfunc.__module__ != homecls.__module__ or
+            imfunc.__qualname__ != homecls.__qualname__ + '.' + realname):
+            pname = self.parentlink(imfunc, mod)
+            if pname:
+                note = ' from %s' % pname
 
         if (inspect.iscoroutinefunction(object) or
                 inspect.isasyncgenfunction(object)):
@@ -1071,10 +1140,13 @@ class HTMLDoc(Doc):
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if cl and inspect.getattr_static(cl, realname, []) is object:
+            if (cl is not None and
+                inspect.getattr_static(cl, realname, []) is object):
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
-                skipdocs = 1
+                skipdocs = True
+                if note.startswith(' from '):
+                    note = ''
             else:
                 reallink = realname
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
@@ -1087,7 +1159,8 @@ class HTMLDoc(Doc):
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1102,7 +1175,7 @@ class HTMLDoc(Doc):
             doc = doc and '<dd><span class="code">%s</span></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def docdata(self, object, name=None, mod=None, cl=None):
+    def docdata(self, object, name=None, mod=None, cl=None, *ignored):
         """Produce html documentation for a data descriptor."""
         results = []
         push = results.append
@@ -1213,7 +1286,7 @@ class TextDoc(Doc):
                     entry, modname, c, prefix + '    ')
         return result
 
-    def docmodule(self, object, name=None, mod=None):
+    def docmodule(self, object, name=None, mod=None, *ignored):
         """Produce text documentation for a given module object."""
         name = object.__name__ # ignore the passed-in name
         synop, desc = splitdoc(getdoc(object))
@@ -1242,9 +1315,9 @@ location listed above.
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
         data = []
@@ -1392,7 +1465,7 @@ location listed above.
                         push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value,
-                                        name, mod, object))
+                                        name, mod, object, homecls))
             return attrs
 
         def spilldescriptors(msg, attrs, predicate):
@@ -1467,23 +1540,43 @@ location listed above.
         """Format an argument default value as text."""
         return '=' + self.repr(object)
 
-    def docroutine(self, object, name=None, mod=None, cl=None):
+    def docroutine(self, object, name=None, mod=None, cl=None, homecls=None):
         """Produce text documentation for a function or method object."""
         realname = object.__name__
         name = name or realname
+        if homecls is None:
+            homecls = cl
         note = ''
-        skipdocs = 0
+        skipdocs = False
+        imfunc = None
         if _is_bound_method(object):
-            imclass = object.__self__.__class__
-            if cl:
-                if imclass is not cl:
-                    note = ' from ' + classname(imclass, mod)
+            imself = object.__self__
+            if imself is cl:
+                imfunc = getattr(object, '__func__', None)
+            elif inspect.isclass(imself):
+                note = ' class method of %s' % classname(imself, mod)
             else:
-                if object.__self__ is not None:
-                    note = ' method of %s instance' % classname(
-                        object.__self__.__class__, mod)
-                else:
-                    note = ' unbound %s method' % classname(imclass,mod)
+                note = ' method of %s instance' % classname(
+                    imself.__class__, mod)
+        elif (inspect.ismethoddescriptor(object) or
+              inspect.ismethodwrapper(object)):
+            try:
+                objclass = object.__objclass__
+            except AttributeError:
+                pass
+            else:
+                if cl is None:
+                    note = ' unbound %s method' % classname(objclass, mod)
+                elif objclass is not homecls:
+                    note = ' from ' + classname(objclass, mod)
+        else:
+            imfunc = object
+        if inspect.isfunction(imfunc) and homecls is not None and (
+            imfunc.__module__ != homecls.__module__ or
+            imfunc.__qualname__ != homecls.__qualname__ + '.' + realname):
+            pname = parentname(imfunc, mod)
+            if pname:
+                note = ' from %s' % pname
 
         if (inspect.iscoroutinefunction(object) or
                 inspect.isasyncgenfunction(object)):
@@ -1494,8 +1587,11 @@ location listed above.
         if name == realname:
             title = self.bold(realname)
         else:
-            if cl and inspect.getattr_static(cl, realname, []) is object:
-                skipdocs = 1
+            if (cl is not None and
+                inspect.getattr_static(cl, realname, []) is object):
+                skipdocs = True
+                if note.startswith(' from '):
+                    note = ''
             title = self.bold(name) + ' = ' + realname
         argspec = None
 
@@ -1506,7 +1602,8 @@ location listed above.
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1]
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
@@ -1517,7 +1614,7 @@ location listed above.
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
-    def docdata(self, object, name=None, mod=None, cl=None):
+    def docdata(self, object, name=None, mod=None, cl=None, *ignored):
         """Produce text documentation for a data descriptor."""
         results = []
         push = results.append
@@ -1533,7 +1630,8 @@ location listed above.
 
     docproperty = docdata
 
-    def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
+    def docother(self, object, name=None, mod=None, parent=None, *ignored,
+                 maxlen=None, doc=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
         if maxlen:
@@ -1554,140 +1652,11 @@ class _PlainTextDoc(TextDoc):
 
 # --------------------------------------------------------- user interfaces
 
-def pager(text):
+def pager(text, title=''):
     """The first time this is called, determine what kind of pager to use."""
     global pager
-    pager = getpager()
-    pager(text)
-
-def getpager():
-    """Decide what method to use for paging through text."""
-    if not hasattr(sys.stdin, "isatty"):
-        return plainpager
-    if not hasattr(sys.stdout, "isatty"):
-        return plainpager
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        return plainpager
-    if sys.platform == "emscripten":
-        return plainpager
-    use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
-    if use_pager:
-        if sys.platform == 'win32': # pipes completely broken in Windows
-            return lambda text: tempfilepager(plain(text), use_pager)
-        elif os.environ.get('TERM') in ('dumb', 'emacs'):
-            return lambda text: pipepager(plain(text), use_pager)
-        else:
-            return lambda text: pipepager(text, use_pager)
-    if os.environ.get('TERM') in ('dumb', 'emacs'):
-        return plainpager
-    if sys.platform == 'win32':
-        return lambda text: tempfilepager(plain(text), 'more <')
-    if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
-        return lambda text: pipepager(text, 'less')
-
-    import tempfile
-    (fd, filename) = tempfile.mkstemp()
-    os.close(fd)
-    try:
-        if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
-            return lambda text: pipepager(text, 'more')
-        else:
-            return ttypager
-    finally:
-        os.unlink(filename)
-
-def plain(text):
-    """Remove boldface formatting from text."""
-    return re.sub('.\b', '', text)
-
-def pipepager(text, cmd):
-    """Page through text by feeding it to another program."""
-    import subprocess
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                            errors='backslashreplace')
-    try:
-        with proc.stdin as pipe:
-            try:
-                pipe.write(text)
-            except KeyboardInterrupt:
-                # We've hereby abandoned whatever text hasn't been written,
-                # but the pager is still in control of the terminal.
-                pass
-    except OSError:
-        pass # Ignore broken pipes caused by quitting the pager program.
-    while True:
-        try:
-            proc.wait()
-            break
-        except KeyboardInterrupt:
-            # Ignore ctl-c like the pager itself does.  Otherwise the pager is
-            # left running and the terminal is in raw mode and unusable.
-            pass
-
-def tempfilepager(text, cmd):
-    """Page through text by invoking a program on a temporary file."""
-    import tempfile
-    with tempfile.TemporaryDirectory() as tempdir:
-        filename = os.path.join(tempdir, 'pydoc.out')
-        with open(filename, 'w', errors='backslashreplace',
-                  encoding=os.device_encoding(0) if
-                  sys.platform == 'win32' else None
-                  ) as file:
-            file.write(text)
-        os.system(cmd + ' "' + filename + '"')
-
-def _escape_stdout(text):
-    # Escape non-encodable characters to avoid encoding errors later
-    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
-    return text.encode(encoding, 'backslashreplace').decode(encoding)
-
-def ttypager(text):
-    """Page through text on a text terminal."""
-    lines = plain(_escape_stdout(text)).split('\n')
-    try:
-        import tty
-        fd = sys.stdin.fileno()
-        old = tty.tcgetattr(fd)
-        tty.setcbreak(fd)
-        getchar = lambda: sys.stdin.read(1)
-    except (ImportError, AttributeError, io.UnsupportedOperation):
-        tty = None
-        getchar = lambda: sys.stdin.readline()[:-1][:1]
-
-    try:
-        try:
-            h = int(os.environ.get('LINES', 0))
-        except ValueError:
-            h = 0
-        if h <= 1:
-            h = 25
-        r = inc = h - 1
-        sys.stdout.write('\n'.join(lines[:inc]) + '\n')
-        while lines[r:]:
-            sys.stdout.write('-- more --')
-            sys.stdout.flush()
-            c = getchar()
-
-            if c in ('q', 'Q'):
-                sys.stdout.write('\r          \r')
-                break
-            elif c in ('\r', '\n'):
-                sys.stdout.write('\r          \r' + lines[r] + '\n')
-                r = r + 1
-                continue
-            if c in ('b', 'B', '\x1b'):
-                r = r - inc - inc
-                if r < 0: r = 0
-            sys.stdout.write('\n' + '\n'.join(lines[r:r+inc]) + '\n')
-            r = r + inc
-
-    finally:
-        if tty:
-            tty.tcsetattr(fd, tty.TCSAFLUSH, old)
-
-def plainpager(text):
-    """Simply print unformatted text.  This is the ultimate fallback."""
-    sys.stdout.write(plain(_escape_stdout(text)))
+    pager = get_pager()
+    pager(text, title)
 
 def describe(thing):
     """Produce a short description of the given thing."""
@@ -1714,6 +1683,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1787,7 +1763,15 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            pager(render_doc(thing, title, forceload))
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
+            pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
                 raise
@@ -1887,6 +1871,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -1980,6 +1965,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',
@@ -2041,7 +2027,7 @@ has the same effect as typing a particular string at the help> prompt.
             if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
                     and request[0] not in request[1:-1]):
                 request = request[1:-1]
-            if request.lower() in ('q', 'quit'): break
+            if request.lower() in ('q', 'quit', 'exit'): break
             if request == 'help':
                 self.intro()
             else:
@@ -2068,7 +2054,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:', is_cli=is_cli)
+                doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
@@ -2093,7 +2079,7 @@ the modules whose name or summary contain a given string such as "spam",
 enter "modules spam".
 
 To quit this help utility and return to the interpreter,
-enter "q" or "quit".
+enter "q", "quit" or "exit".
 '''.format('%d.%d' % sys.version_info[:2]))
 
     def list(self, items, columns=4, width=80):
@@ -2161,7 +2147,11 @@ module "pydoc_data.topics" could not be found.
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
-        pager(doc)
+
+        if self._output is None:
+            pager(doc, f'Help on {topic!s}')
+        else:
+            self.output.write(doc)
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).
@@ -2413,6 +2403,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2445,9 +2436,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 

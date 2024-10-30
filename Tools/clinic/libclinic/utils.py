@@ -1,9 +1,10 @@
 import collections
+import enum
 import hashlib
 import os
 import re
 import string
-from typing import Literal
+from typing import Literal, Final
 
 
 def write_file(filename: str, new_contents: str) -> None:
@@ -66,3 +67,27 @@ class FormatCounterFormatter(string.Formatter):
     ) -> Literal[""]:
         self.counts[key] += 1
         return ""
+
+
+VersionTuple = tuple[int, int]
+
+
+class Sentinels(enum.Enum):
+    unspecified = "unspecified"
+    unknown = "unknown"
+
+    def __repr__(self) -> str:
+        return f"<{self.value.capitalize()}>"
+
+
+unspecified: Final = Sentinels.unspecified
+unknown: Final = Sentinels.unknown
+
+
+# This one needs to be a distinct class, unlike the other two
+class Null:
+    def __repr__(self) -> str:
+        return '<Null>'
+
+
+NULL = Null()

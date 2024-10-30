@@ -1,1 +1,0 @@
-``_DummyThread`` entries in ``threading._active`` are now automatically removed when the related thread dies.

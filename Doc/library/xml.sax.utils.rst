@@ -1,5 +1,5 @@
-:mod:`xml.sax.saxutils` --- SAX Utilities
-=========================================
+:mod:`!xml.sax.saxutils` --- SAX Utilities
+==========================================
 
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
