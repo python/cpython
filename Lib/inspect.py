@@ -410,6 +410,7 @@ def iscode(object):
         co_flags            bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
                             | 16=nested | 32=generator | 64=nofree | 128=coroutine
                             | 256=iterable_coroutine | 512=async_generator
+                            | 0x4000000=has_docstring
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
