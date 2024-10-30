@@ -462,16 +462,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     }
 
-    /* FileIO.__init__ may be called on an already initialized object. Closing
-       out the old fd (see: internal_close) should always nullify
-       self->stat_atopen before this point. Just in case though, to prevent
-       leaks, only allocate a new one if required. */
+    if (self->stat_atopen != NULL) {
+        PyMem_Free(self->stat_atopen);
+    }
+    self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
     if (self->stat_atopen == NULL) {
-        self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
-        if (self->stat_atopen == NULL) {
-            PyErr_NoMemory();
-            goto error;
-        }
+        PyErr_NoMemory();
+        goto error;
     }
     Py_BEGIN_ALLOW_THREADS
     fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
