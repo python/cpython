@@ -2055,7 +2055,7 @@ class TestFileTypeMissingInitialization(TestCase):
 
     def test(self):
         parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('-x', type=argparse.FileType)
 
         self.assertEqual(
@@ -2381,10 +2381,10 @@ class TestInvalidAction(TestCase):
         action = parser.add_argument('--foo')
         # Someone got crazy and did this
         action.type = 1
-        self.assertRaisesRegex(RuntimeError, '1 is not callable',
+        self.assertRaisesRegex(TypeError, '1 is not callable',
                                parser.parse_args, ['--foo', 'bar'])
         action.type = ()
-        self.assertRaisesRegex(RuntimeError, r'\(\) is not callable',
+        self.assertRaisesRegex(TypeError, r'\(\) is not callable',
                                parser.parse_args, ['--foo', 'bar'])
         # It is impossible to distinguish a TypeError raised due to a mismatch
         # of the required function arguments from a TypeError raised for an incorrect
@@ -5547,20 +5547,27 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
-        self.assertValueError('--')
-        self.assertValueError('---')
+        self.assertTypeError('-', errmsg='dest= is required')
+        self.assertTypeError('--', errmsg='dest= is required')
+        self.assertTypeError('---', errmsg='dest= is required')
 
     def test_invalid_prefix(self):
-        self.assertValueError('--foo', '+foo')
+        self.assertValueError('--foo', '+foo',
+                              errmsg='must start with a character')
 
     def test_invalid_type(self):
-        self.assertValueError('--foo', type='int')
-        self.assertValueError('--foo', type=(int, float))
+        self.assertTypeError('--foo', type='int',
+                             errmsg="'int' is not callable")
+        self.assertTypeError('--foo', type=(int, float),
+                             errmsg='is not callable')
 
     def test_invalid_action(self):
-        self.assertValueError('-x', action='foo')
-        self.assertValueError('foo', action='baz')
-        self.assertValueError('--foo', action=('store', 'append'))
+        self.assertValueError('-x', action='foo',
+                              errmsg='unknown action')
+        self.assertValueError('foo', action='baz',
+                              errmsg='unknown action')
+        self.assertValueError('--foo', action=('store', 'append'),
+                              errmsg='unknown action')
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
@@ -5575,7 +5582,7 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('bar', dest='baz')
         self.assertIn('dest supplied twice for positional argument,'
                       ' did you mean metavar?',

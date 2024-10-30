@@ -1429,8 +1429,8 @@ class _ActionsContainer(object):
         chars = self.prefix_chars
         if not args or len(args) == 1 and args[0][0] not in chars:
             if args and 'dest' in kwargs:
-                raise ValueError('dest supplied twice for positional argument,'
-                                 ' did you mean metavar?')
+                raise TypeError('dest supplied twice for positional argument,'
+                                ' did you mean metavar?')
             kwargs = self._get_positional_kwargs(*args, **kwargs)
 
         # otherwise, we're adding an optional argument
@@ -1449,7 +1449,7 @@ class _ActionsContainer(object):
         action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
-            raise ValueError('unknown action "%s"' % (action_class,))
+            raise ValueError('unknown action {action_class!r}')
         action = action_class(**kwargs)
 
         # raise an error if action for positional argument does not
@@ -1460,11 +1460,11 @@ class _ActionsContainer(object):
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
-            raise ValueError('%r is not callable' % (type_func,))
+            raise TypeError(f'{type_func!r} is not callable')
 
         if type_func is FileType:
-            raise ValueError('%r is a FileType class object, instance of it'
-                             ' must be passed' % (type_func,))
+            raise TypeError(f'{type_func!r} is a FileType class object, '
+                            f'instance of it must be passed')
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
@@ -1599,7 +1599,7 @@ class _ActionsContainer(object):
             dest = dest_option_string.lstrip(self.prefix_chars)
             if not dest:
                 msg = f'dest= is required for options like {option_string!r}'
-                raise ValueError(msg)
+                raise TypeError(msg)
             dest = dest.replace('-', '_')
 
         # return the updated keyword arguments
@@ -2562,7 +2562,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _get_value(self, action, arg_string):
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
-            raise RuntimeError('%r is not callable' % (type_func,))
+            raise TypeError(f'{type_func!r} is not callable')
 
         # convert the value to the appropriate type
         try:
