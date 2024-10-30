@@ -11,5 +11,3 @@ backwards compatibility. They have been superseded by other modules.
 .. toctree::
    :maxdepth: 1
 
-   getopt.rst
-   optparse.rst

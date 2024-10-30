@@ -1787,14 +1787,6 @@ New Deprecations
     Check membership in :data:`~dis.hasarg` instead.
     (Contributed by Irit Katriel in :gh:`109319`.)
 
-* :mod:`getopt` and :mod:`optparse`:
-
-  * Both modules are now :term:`soft deprecated`,
-    with :mod:`argparse` preferred for new projects.
-    This is a new soft-deprecation for the :mod:`!getopt` module,
-    whereas the :mod:`!optparse` module was already *de facto* soft deprecated.
-    (Contributed by Victor Stinner in :gh:`106535`.)
-
 * :mod:`gettext`:
 
   * Deprecate non-integer numbers as arguments to functions and methods

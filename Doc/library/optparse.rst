@@ -3,22 +3,14 @@
 
 .. module:: optparse
    :synopsis: Command-line option parsing library.
-   :deprecated:
 
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Greg Ward <gward@python.net>
 
 **Source code:** :source:`Lib/optparse.py`
 
-.. deprecated:: 3.2
-   The :mod:`optparse` module is :term:`soft deprecated` and will not be
-   developed further; development will continue with the :mod:`argparse`
-   module.
-
---------------
-
 :mod:`optparse` is a more convenient, flexible, and powerful library for parsing
-command-line options than the old :mod:`getopt` module.  :mod:`optparse` uses a
+command-line options than the simple :mod:`getopt` module.  :mod:`optparse` uses a
 more declarative style of command-line parsing: you create an instance of
 :class:`OptionParser`, populate it with options, and parse the command
 line. :mod:`optparse` allows users to specify options in the conventional

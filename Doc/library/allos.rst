@@ -15,7 +15,9 @@ but they are available on most other systems as well.  Here's an overview:
    os.rst
    io.rst
    time.rst
+   optparse.rst
    argparse.rst
+   getopt.rst
    logging.rst
    logging.config.rst
    logging.handlers.rst

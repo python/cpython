@@ -463,6 +463,8 @@ asyncio
 Deprecated
 ==========
 
+The :mod:`optparse` and :mod:`getopt` modules are no longer considered deprecated.
+
 * :mod:`argparse`:
 
   * Passing the undocumented keyword argument *prefix_chars* to

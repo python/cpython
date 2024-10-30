@@ -7,26 +7,17 @@
 
 **Source code:** :source:`Lib/getopt.py`
 
-.. deprecated:: 3.13
-   The :mod:`getopt` module is :term:`soft deprecated` and will not be
-   developed further; development will continue with the :mod:`argparse`
-   module.
-
-.. note::
-
-   The :mod:`getopt` module is a parser for command line options whose API is
-   designed to be familiar to users of the C :c:func:`!getopt` function. Users who
-   are unfamiliar with the C :c:func:`!getopt` function or who would like to write
-   less code and get better help and error messages should consider using the
-   :mod:`argparse` module instead.
-
---------------
-
 This module helps scripts to parse the command line arguments in ``sys.argv``.
 It supports the same conventions as the Unix :c:func:`!getopt` function (including
 the special meanings of arguments of the form '``-``' and '``--``').  Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument.
+
+The :mod:`getopt` module is a parser for command line options whose API is
+designed to be familiar to users of the C :c:func:`!getopt` function. Users who
+are unfamiliar with the C :c:func:`!getopt` function or who would like to write
+less code and get better help and error messages should consider using the
+:mod:`optparse` or :mod:`argparse` module instead.
 
 This module provides two functions and an
 exception:
@@ -144,13 +135,25 @@ In a script, typical usage is something like this::
                output = a
            else:
                assert False, "unhandled option"
-       # ...
+       process(args, output=output, verbose=verbose)
 
    if __name__ == "__main__":
        main()
 
 Note that an equivalent command line interface could be produced with less code
-and more informative help and error messages by using the :mod:`argparse` module::
+and more informative help and error messages by using the :mod:`optparse` module::
+
+   import optparse
+
+   if __name__ == '__main__':
+       parser = optparse.OptionParser()
+       parser.add_option('-o', '--output')
+       parser.add_option('-v', dest='verbose', action='store_true')
+       opts, args = parser.parse_args()
+       process(args, output=opts.output, verbose=opts.verbose)
+
+A roughtly equivalent command line interface could also be produced by using
+the :mod:`argparse` module::
 
    import argparse
 
@@ -158,11 +161,14 @@ and more informative help and error messages by using the :mod:`argparse` module
        parser = argparse.ArgumentParser()
        parser.add_argument('-o', '--output')
        parser.add_argument('-v', dest='verbose', action='store_true')
+       parser.add_argument('rest', nargs='*')
        args = parser.parse_args()
-       # ... do something with args.output ...
-       # ... do something with args.verbose ..
+       process(args.rest, output=args.output, verbose=args.verbose)
 
 .. seealso::
+
+   Module :mod:`optparse`
+      More object-oriented command line option parsing.
 
    Module :mod:`argparse`
       Alternative command line option and argument parsing library.
