@@ -28,6 +28,7 @@
 This module has the following process-global state:
 
 _globals (static struct globals):
+    mutex (PyMutex)
     module_count (int)
     channels (struct _channels):
         numopen (int64_t)
@@ -1349,21 +1350,29 @@ typedef struct _channels {
 static void
 _channels_init(_channels *channels, PyThread_type_lock mutex)
 {
-    channels->mutex = mutex;
-    channels->head = NULL;
-    channels->numopen = 0;
-    channels->next_id = 0;
+    assert(mutex != NULL);
+    assert(channels->mutex == NULL);
+    *channels = (_channels){
+        .mutex = mutex,
+        .head = NULL,
+        .numopen = 0,
+        .next_id = 0,
+    };
 }
 
 static void
-_channels_fini(_channels *channels)
+_channels_fini(_channels *channels, PyThread_type_lock *p_mutex)
 {
+    PyThread_type_lock mutex = channels->mutex;
+    assert(mutex != NULL);
+
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
     assert(channels->numopen == 0);
     assert(channels->head == NULL);
-    if (channels->mutex != NULL) {
-        PyThread_free_lock(channels->mutex);
-        channels->mutex = NULL;
-    }
+    *channels = (_channels){0};
+    PyThread_release_lock(mutex);
+
+    *p_mutex = mutex;
 }
 
 static int64_t
@@ -2812,6 +2821,7 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
+    PyMutex mutex;
     int module_count;
     _channels channels;
 } _globals = {0};
@@ -2819,32 +2829,36 @@ static struct globals {
 static int
 _globals_init(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count >= 0);
     _globals.module_count++;
-    if (_globals.module_count > 1) {
-        // Already initialized.
-        return 0;
+    if (_globals.module_count == 1) {
+        // Called for the first time.
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            _globals.module_count--;
+            PyMutex_Unlock(&_globals.mutex);
+            return ERR_CHANNELS_MUTEX_INIT;
+        }
+        _channels_init(&_globals.channels, mutex);
     }
-
-    assert(_globals.channels.mutex == NULL);
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        return ERR_CHANNELS_MUTEX_INIT;
-    }
-    _channels_init(&_globals.channels, mutex);
+    PyMutex_Unlock(&_globals.mutex);
     return 0;
 }
 
 static void
 _globals_fini(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count > 0);
     _globals.module_count--;
-    if (_globals.module_count > 0) {
-        return;
+    if (_globals.module_count == 0) {
+        PyThread_type_lock mutex;
+        _channels_fini(&_globals.channels, &mutex);
+        assert(mutex != NULL);
+        PyThread_free_lock(mutex);
     }
-
-    _channels_fini(&_globals.channels);
+    PyMutex_Unlock(&_globals.mutex);
 }
 
 static _channels *
@@ -3482,7 +3496,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_channel_error(err, mod, -1)) {
         return -1;
     }
 

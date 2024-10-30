@@ -1003,6 +1003,8 @@ LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
+host_exec_prefix
+host_prefix
 MACHDEP
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
@@ -4104,6 +4106,29 @@ printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
+
+
+if test -z "$host_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_prefix=/ ;; #(
+  *) :
+    host_prefix='${prefix}'
+   ;;
+esac
+fi
+
+
+if test -z "$host_exec_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_exec_prefix=$host_prefix ;; #(
+  *) :
+    host_exec_prefix='${exec_prefix}'
+   ;;
+esac
+fi
+
 
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
@@ -7323,6 +7348,9 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
 printf "%s\n" "$EXEEXT" >&6; }
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+ac_exeext=$EXEEXT
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 
@@ -7755,61 +7783,6 @@ else
 fi
 
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bigint" >&5
-printf %s "checking for node --experimental-wasm-bigint... " >&6; }
-if test ${ac_cv_tool_node_wasm_bigint+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bigint" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bigint" >&6; }
-      if test "x$ac_cv_tool_node_wasm_bigint" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-bigint"
-
-fi
-
-      if test "x$enable_wasm_pthreads" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-threads"
-        # no longer available in Node 16
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bulk-memory" >&5
-printf %s "checking for node --experimental-wasm-bulk-memory... " >&6; }
-if test ${ac_cv_tool_node_wasm_bulk_memory+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bulk_memory" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bulk_memory" >&6; }
-        if test "x$ac_cv_tool_node_wasm_bulk_memory" = xyes
-then :
-
-          as_fn_append HOSTRUNNER " --experimental-wasm-bulk-memory"
-
-fi
-
-fi
-
       if test "x$host_cpu" = xwasm64
 then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
@@ -9575,6 +9548,7 @@ fi
 then :
   wasm_debug=yes
 fi
+        as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
         as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -24123,18 +24097,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest$EXEEXT >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest$EXEEXT >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -24144,7 +24126,8 @@ fi
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
 printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }

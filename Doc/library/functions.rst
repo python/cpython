@@ -594,6 +594,11 @@ are always available.  They are listed here in alphabetical order.
    :returns: The result of the evaluated expression.
    :raises: Syntax errors are reported as exceptions.
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
@@ -649,6 +654,11 @@ are always available.  They are listed here in alphabetical order.
 .. index:: pair: built-in function; exec
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
+
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -2031,6 +2041,10 @@ are always available.  They are listed here in alphabetical order.
    For practical suggestions on how to design cooperative classes using
    :func:`super`, see `guide to using super()
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
+
+   .. versionchanged:: 3.14
+     :class:`super` objects are now :mod:`pickleable <pickle>` and
+      :mod:`copyable <copy>`.
 
 
 .. _func-tuple:

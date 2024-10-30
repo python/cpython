@@ -379,6 +379,25 @@ then
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
+dnl For cross compilation, we distinguish between "prefix" (where we install the
+dnl files) and "host_prefix" (where we expect to find the files at runtime)
+
+if test -z "$host_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_prefix=/],
+    [host_prefix='${prefix}']
+  )
+fi
+AC_SUBST([host_prefix])
+
+if test -z "$host_exec_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_exec_prefix=$host_prefix],
+    [host_exec_prefix='${exec_prefix}']
+  )
+fi
+AC_SUBST([host_exec_prefix])
+
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
@@ -1339,6 +1358,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])
@@ -1619,34 +1641,6 @@ then
     [Emscripten/node*], [
       AC_PATH_TOOL([NODE], [node], [node])
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-      ])
-      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
-      ])
-
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
-        # no longer available in Node 16
-        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-        ])
-        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
-          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
-        ])
-      ])
-
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
@@ -2421,6 +2415,7 @@ AS_CASE([$ac_sys_system],
       ],
       [node*], [
         AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"])
         AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
         AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
