@@ -1244,7 +1244,7 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
             return ERROR;
         }
         Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
-        Py_XDECREF(docstring);
+        Py_DECREF(docstring);
         RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
 

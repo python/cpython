@@ -1538,7 +1538,7 @@ Other bits in :attr:`~codeobject.co_flags` are reserved for internal use.
 
 If a code object represents a function and has a docstring,
 the first item in :attr:`~codeobject.co_consts` is
-the documentation string of the function.
+the docstring of the function.
 
 Methods on code objects
 ~~~~~~~~~~~~~~~~~~~~~~~
