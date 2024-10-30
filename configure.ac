@@ -7619,12 +7619,11 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
-  [Emscripten|WASI], [
+  [Emscripten], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
-    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
-    dnl resource functions (get/setrusage) are stubs, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -7643,33 +7642,50 @@ AS_CASE([$ac_sys_system],
       [resource],
       [syslog],
     )
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser*], [
-        dnl These modules are not particularly useful in browsers.
-        PY_STDLIB_MOD_SET_NA(
-          [fcntl],
-          [readline],
-          [termios],
-        )
-      ],
-      [Emscripten/node*], [],
-      [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
-        dnl Test modules that must be compiled as shared libraries are not supported
-        dnl (see Modules/Setup.stdlib.in).
-        PY_STDLIB_MOD_SET_NA(
-          [_ctypes_test],
-          [_testexternalinspection],
-          [_testimportmultiple],
-          [_testmultiphase],
-          [_testsinglephase],
-          [fcntl],
-          [mmap],
-          [termios],
-          [xxlimited],
-          [xxlimited_35],
-        )
-      ]
+    dnl fcntl, readline, and termios are not particularly useful in browsers.
+    PY_STDLIB_MOD_SET_NA(
+      [fcntl],
+      [readline],
+      [termios],
+    )
+  ],
+  [WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
+    PY_STDLIB_MOD_SET_NA(
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_interpreters],
+      [_interpchannels],
+      [_interpqueues],
+      [grp],
+      [pwd],
+      [resource],
+      [syslog],
+    )
+    dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+    dnl Test modules that must be compiled as shared libraries are not supported
+    dnl (see Modules/Setup.stdlib.in).
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes_test],
+      [_testexternalinspection],
+      [_testimportmultiple],
+      [_testmultiphase],
+      [_testsinglephase],
+      [fcntl],
+      [mmap],
+      [termios],
+      [xxlimited],
+      [xxlimited_35],
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
