@@ -5373,7 +5373,7 @@ class TestSignatureBind(unittest.TestCase):
         # Issue #19611: getcallargs should work with comprehensions
         def make_set():
             return set(z * z for z in range(5))
-        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_code = make_set.__code__.co_consts[0]
         gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))

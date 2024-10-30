@@ -1536,9 +1536,9 @@ Other bits in :attr:`~codeobject.co_flags` are reserved for internal use.
 
 .. index:: single: documentation string
 
-If a code object represents a function, the first item in
-:attr:`~codeobject.co_consts` is
-the documentation string of the function, or ``None`` if undefined.
+If a code object represents a function and has a docstring,
+the first item in :attr:`~codeobject.co_consts` is
+the docstring of the function.
 
 Methods on code objects
 ~~~~~~~~~~~~~~~~~~~~~~~
