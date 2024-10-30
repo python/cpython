@@ -1,0 +1,15 @@
+Improve support for ``file:`` URIs in :mod:`urllib.request`:
+
+* :func:`~urllib.request.pathname2url` accepts a *include_scheme*
+  argument, which defaults to false. When set to true, a complete URL
+  with a ``file:`` prefix is returned.
+* :func:`~urllib.request.url2pathname` discards a ``file:`` prefix if given.
+* On Windows, :func:`~urllib.request.pathname2url` generates URIs that
+  begin with two slashes (rather than four) when given a UNC path.
+* On non-Windows platforms, :func:`~urllib.request.pathname2url` generates
+  URIs that begin with three slashes (rather than one) when given an
+  absolute path. :func:`~urllib.request.url2pathname` performs the opposite
+  transformation, so ``file:///etc/hosts`` becomes ``/etc/hosts``.
+* On non-Windows platforms, :func:`~urllib.request.url2pathname` raises
+  :exc:`urllib.error.URLError` if the URI includes a non-local authority,
+  like ``file://other-machine/etc/hosts``.
