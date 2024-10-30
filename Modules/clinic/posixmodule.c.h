@@ -4475,7 +4475,8 @@ os_sched_getscheduler(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     pid_t pid;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_PID ":sched_getscheduler", &pid)) {
+    pid = PyLong_AsPid(arg);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_sched_getscheduler_impl(module, pid);
@@ -4573,10 +4574,18 @@ os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int policy;
     PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO:sched_setscheduler",
-        &pid, &policy, &param_obj)) {
+    if (!_PyArg_CheckPositional("sched_setscheduler", nargs, 3, 3)) {
         goto exit;
     }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    policy = PyLong_AsInt(args[1]);
+    if (policy == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    param_obj = args[2];
     return_value = os_sched_setscheduler_impl(module, pid, policy, param_obj);
 
 exit:
@@ -4608,7 +4617,8 @@ os_sched_getparam(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     pid_t pid;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_PID ":sched_getparam", &pid)) {
+    pid = PyLong_AsPid(arg);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_sched_getparam_impl(module, pid);
@@ -4643,10 +4653,14 @@ os_sched_setparam(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pid;
     PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O:sched_setparam",
-        &pid, &param_obj)) {
+    if (!_PyArg_CheckPositional("sched_setparam", nargs, 2, 2)) {
         goto exit;
     }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    param_obj = args[1];
     return_value = os_sched_setparam_impl(module, pid, param_obj);
 
 exit:
@@ -4678,7 +4692,8 @@ os_sched_rr_get_interval(PyObject *module, PyObject *arg)
     pid_t pid;
     double _return_value;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_PID ":sched_rr_get_interval", &pid)) {
+    pid = PyLong_AsPid(arg);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_sched_rr_get_interval_impl(module, pid);
@@ -4738,10 +4753,14 @@ os_sched_setaffinity(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pid;
     PyObject *mask;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O:sched_setaffinity",
-        &pid, &mask)) {
+    if (!_PyArg_CheckPositional("sched_setaffinity", nargs, 2, 2)) {
         goto exit;
     }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    mask = args[1];
     return_value = os_sched_setaffinity_impl(module, pid, mask);
 
 exit:
@@ -4772,7 +4791,8 @@ os_sched_getaffinity(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     pid_t pid;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_PID ":sched_getaffinity", &pid)) {
+    pid = PyLong_AsPid(arg);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_sched_getaffinity_impl(module, pid);
@@ -5371,14 +5391,19 @@ os_getpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static const char * const _keywords[] = {"pid", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" _Py_PARSE_PID ":getpgid",
+        .fname = "getpgid",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
+    PyObject *argsbuf[1];
     pid_t pid;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &pid)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_getpgid_impl(module, pid);
@@ -5523,9 +5548,24 @@ os_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pid;
     Py_ssize_t signal;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "n:kill",
-        &pid, &signal)) {
+    if (!_PyArg_CheckPositional("kill", nargs, 2, 2)) {
         goto exit;
+    }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        signal = ival;
     }
     return_value = os_kill_impl(module, pid, signal);
 
@@ -5556,8 +5596,15 @@ os_killpg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pgid;
     int signal;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "i:killpg",
-        &pgid, &signal)) {
+    if (!_PyArg_CheckPositional("killpg", nargs, 2, 2)) {
+        goto exit;
+    }
+    pgid = PyLong_AsPid(args[0]);
+    if (pgid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    signal = PyLong_AsInt(args[1]);
+    if (signal == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_killpg_impl(module, pgid, signal);
@@ -5920,15 +5967,24 @@ os_wait4(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     static const char * const _keywords[] = {"pid", "options", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" _Py_PARSE_PID "i:wait4",
+        .fname = "wait4",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
+    PyObject *argsbuf[2];
     pid_t pid;
     int options;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &pid, &options)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    options = PyLong_AsInt(args[1]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_wait4_impl(module, pid, options);
@@ -5972,8 +6028,18 @@ os_waitid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     id_t id;
     int options;
 
-    if (!_PyArg_ParseStack(args, nargs, "i" _Py_PARSE_PID "i:waitid",
-        &idtype, &id, &options)) {
+    if (!_PyArg_CheckPositional("waitid", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!idtype_t_converter(args[0], &idtype)) {
+        goto exit;
+    }
+    id = (id_t)PyLong_AsPid(args[1]);
+    if (id == (id_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    options = PyLong_AsInt(args[2]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_waitid_impl(module, idtype, id, options);
@@ -6010,8 +6076,15 @@ os_waitpid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pid;
     int options;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "i:waitpid",
-        &pid, &options)) {
+    if (!_PyArg_CheckPositional("waitpid", nargs, 2, 2)) {
+        goto exit;
+    }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    options = PyLong_AsInt(args[1]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_waitpid_impl(module, pid, options);
@@ -6048,8 +6121,15 @@ os_waitpid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     intptr_t pid;
     int options;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_INTPTR "i:waitpid",
-        &pid, &options)) {
+    if (!_PyArg_CheckPositional("waitpid", nargs, 2, 2)) {
+        goto exit;
+    }
+    pid = (intptr_t)PyLong_AsVoidPtr(args[0]);
+    if (!pid && PyErr_Occurred()) {
+        goto exit;
+    }
+    options = PyLong_AsInt(args[1]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_waitpid_impl(module, pid, options);
@@ -6127,17 +6207,30 @@ os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static const char * const _keywords[] = {"pid", "flags", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" _Py_PARSE_PID "|O&:pidfd_open",
+        .fname = "pidfd_open",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     pid_t pid;
     unsigned int flags = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &pid, _PyLong_UnsignedInt_Converter, &flags)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[1], &flags)) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_pidfd_open_impl(module, pid, flags);
 
 exit:
@@ -6887,7 +6980,8 @@ os_getsid(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     pid_t pid;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_PID ":getsid", &pid)) {
+    pid = PyLong_AsPid(arg);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_getsid_impl(module, pid);
@@ -6941,8 +7035,15 @@ os_setpgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     pid_t pid;
     pid_t pgrp;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "" _Py_PARSE_PID ":setpgid",
-        &pid, &pgrp)) {
+    if (!_PyArg_CheckPositional("setpgid", nargs, 2, 2)) {
+        goto exit;
+    }
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    pgrp = PyLong_AsPid(args[1]);
+    if (pgrp == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_setpgid_impl(module, pid, pgrp);
@@ -7006,8 +7107,15 @@ os_tcsetpgrp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     pid_t pgid;
 
-    if (!_PyArg_ParseStack(args, nargs, "i" _Py_PARSE_PID ":tcsetpgrp",
-        &fd, &pgid)) {
+    if (!_PyArg_CheckPositional("tcsetpgrp", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    pgid = PyLong_AsPid(args[1]);
+    if (pgid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = os_tcsetpgrp_impl(module, fd, pgid);
@@ -11389,7 +11497,8 @@ os_get_handle_inheritable(PyObject *module, PyObject *arg)
     intptr_t handle;
     int _return_value;
 
-    if (!PyArg_Parse(arg, "" _Py_PARSE_INTPTR ":get_handle_inheritable", &handle)) {
+    handle = (intptr_t)PyLong_AsVoidPtr(arg);
+    if (!handle && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = os_get_handle_inheritable_impl(module, handle);
@@ -11426,8 +11535,15 @@ os_set_handle_inheritable(PyObject *module, PyObject *const *args, Py_ssize_t na
     intptr_t handle;
     int inheritable;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_INTPTR "p:set_handle_inheritable",
-        &handle, &inheritable)) {
+    if (!_PyArg_CheckPositional("set_handle_inheritable", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = (intptr_t)PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    inheritable = PyObject_IsTrue(args[1]);
+    if (inheritable < 0) {
         goto exit;
     }
     return_value = os_set_handle_inheritable_impl(module, handle, inheritable);
@@ -12968,4 +13084,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=38665a563e345d52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1da32369b7d9fd4b input=a9049054013a1b77]*/
