@@ -76,6 +76,26 @@
             break;
         }
 
+        case _LOAD_CONST_IMMORTAL: {
+            _Py_UopsPESlot value;
+            MATERIALIZE_INST();
+            value = sym_new_not_null(ctx);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT: {
+            _Py_UopsPESlot value;
+            MATERIALIZE_INST();
+            value = sym_new_not_null(ctx);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _STORE_FAST: {
             _Py_UopsPESlot value;
             value = stack_pointer[-1];
