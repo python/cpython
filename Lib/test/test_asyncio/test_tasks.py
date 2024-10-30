@@ -2702,13 +2702,9 @@ class BaseTaskTests:
         task = asyncio.Task.__new__(asyncio.Task)
 
         for _ in range(5):
-            try:
+            with self.assertRaisesRegex(RuntimeError, 'break'):
                 task.__init__(coro, loop=loop, context=obj, name=Break())
-            except Exception as e:
-                # exception should only come from Break.__str__ as it's used to
-                # avoid having to do too much setup for this test
-                self.assertIs(type(e), RuntimeError)
-                self.assertEqual(e.args[0], "break")
+
         coro.close()
         del task
 
