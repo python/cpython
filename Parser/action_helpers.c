@@ -1697,8 +1697,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
 
 stmt_ty
 _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * names, int level,
-                  int lineno, int col_offset, int end_lineno, int end_col_offset,
-                  PyArena *arena) {
+                  			   int lineno, int col_offset, int end_lineno, int end_col_offset,
+                      		   PyArena *arena) {
     if (PyUnicode_CompareWithASCIIString(module, "__future__") == 0) {
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(names); i++) {
             alias_ty alias = asdl_seq_GET(names, i);
