@@ -55,16 +55,11 @@ def pathname2url(p):
     if p[:4] == '\\\\?\\':
         p = p[4:]
         if p[:4].upper() == 'UNC\\':
-            p = '\\' + p[4:]
+            p = '\\\\' + p[4:]
         elif p[1:2] != ':':
             raise OSError('Bad path: ' + p)
     if not ':' in p:
         # No drive specifier, just convert slashes and quote the name
-        if p[:2] == '\\\\':
-        # path is something like \\host\path\on\remote\host
-        # convert this to ////host/path/on/remote/host
-        # (notice doubling of slashes at the start of the path)
-            p = '\\\\' + p
         components = p.split('\\')
         return urllib.parse.quote('/'.join(components))
     comp = p.split(':', maxsplit=2)

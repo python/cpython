@@ -151,16 +151,17 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets
 # list of CO_* constants. It is also used by pretty_flags to
 # turn the co_flags field into a human readable list.
 COMPILER_FLAG_NAMES = {
-     1: "OPTIMIZED",
-     2: "NEWLOCALS",
-     4: "VARARGS",
-     8: "VARKEYWORDS",
-    16: "NESTED",
-    32: "GENERATOR",
-    64: "NOFREE",
-   128: "COROUTINE",
-   256: "ITERABLE_COROUTINE",
-   512: "ASYNC_GENERATOR",
+            1: "OPTIMIZED",
+            2: "NEWLOCALS",
+            4: "VARARGS",
+            8: "VARKEYWORDS",
+           16: "NESTED",
+           32: "GENERATOR",
+           64: "NOFREE",
+          128: "COROUTINE",
+          256: "ITERABLE_COROUTINE",
+          512: "ASYNC_GENERATOR",
+    0x4000000: "HAS_DOCSTRING",
 }
 
 def pretty_flags(flags):
