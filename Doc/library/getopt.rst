@@ -152,7 +152,7 @@ and more informative help and error messages by using the :mod:`optparse` module
        opts, args = parser.parse_args()
        process(args, output=opts.output, verbose=opts.verbose)
 
-A roughtly equivalent command line interface could also be produced by using
+A roughly equivalent command line interface could also be produced by using
 the :mod:`argparse` module::
 
    import argparse
