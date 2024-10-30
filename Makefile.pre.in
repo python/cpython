@@ -2104,6 +2104,12 @@ cleantest: all
 # Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
+	$(TESTRUNNER) --fast-ci -u-gui --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+
+# Run a basic set of regression tests inside the CI.
+# This excludes some tests that are particularly resource-intensive.
+# Similar to test, but also runs GUI tests.
+ci: all
 	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
