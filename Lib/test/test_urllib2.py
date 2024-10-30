@@ -824,7 +824,7 @@ class HandlerTests(unittest.TestCase):
             "file://localhost%s" % urlpath,
             "file://%s" % urlpath,
             ]
-        if os.name == 'nt':
+        if os.name != 'nt':
             urls.append("file://%s%s" % (socket.gethostbyname('localhost'), urlpath))
             try:
                 localaddr = socket.gethostbyname(socket.gethostname())

@@ -169,10 +169,11 @@ The :mod:`urllib.request` module defines the following functions:
    Convert the percent-encoded *url* to a local pathname.
 
    .. versionchanged:: 3.14
-      Supports :rfc:`8089`-compliant file URLs. Raises :exc:`URLError` if a
-      scheme other than ``file:`` is used. If the URL uses a non-local
-      authority, then on Windows a UNC path is returned, and on other
-      platforms a :exc:`URLError` exception is raised.
+      Supports :rfc:`8089`-compliant file URLs. Raises
+      :exc:`~urllib.error.URLError` if a scheme other than ``file:`` is used.
+      If the URL uses a non-local authority, then on Windows a UNC path is
+      returned, and on other platforms a :exc:`~urllib.error.URLError`
+      exception is raised.
 
 
 .. function:: getproxies()
