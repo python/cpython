@@ -2009,32 +2009,6 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
 #endif
 
 static PyObject *
-suppress_immortalization(PyObject *self, PyObject *value)
-{
-#ifdef Py_GIL_DISABLED
-    int suppress = PyObject_IsTrue(value);
-    if (suppress < 0) {
-        return NULL;
-    }
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    // Subtract two to suppress immortalization (so that 1 -> -1)
-    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
-#endif
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
-#else
-    Py_RETURN_FALSE;
-#endif
-}
-
-static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -2181,8 +2155,6 @@ static PyMethodDef module_functions[] = {
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
 #endif
-    {"suppress_immortalization", suppress_immortalization, METH_O},
-    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif

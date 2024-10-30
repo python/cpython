@@ -194,6 +194,10 @@ Other language changes
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
 
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
 
 New modules
 ===========
@@ -326,6 +330,10 @@ inspect
   If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
+* Add function :func:`inspect.ispackage` to determine whether an object is a
+  :term:`package` or not.
+  (Contributed by Zhikang Yan in :gh:`125634`.)
+
 
 json
 ----
@@ -456,10 +464,15 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing the undocumented keyword argument *prefix_chars* to
-  :meth:`~argparse.ArgumentParser.add_argument_group` is now
-  deprecated.
-  (Contributed by Savannah Ostrowski in :gh:`125563`.)
+
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+    (Contributed by Savannah Ostrowski in :gh:`125563`.)
+  * Deprecated the :class:`argparse.FileType` type converter.
+    Anything with resource management should be done downstream after the
+    arguments are parsed.
+    (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
@@ -472,12 +485,6 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
-
-* :mod:`argparse`:
-  Deprecated the :class:`argparse.FileType` type converter.
-  Anything with resource management should be done downstream after the
-  arguments are parsed.
-  (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`multiprocessing` and :mod:`concurrent.futures`:
   The default start method (see :ref:`multiprocessing-start-methods`) changed
@@ -776,6 +783,9 @@ New features
   test if two strings are equal.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
+
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
 
 Porting to Python 3.14
 ----------------------

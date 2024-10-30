@@ -457,7 +457,7 @@ do { \
 
 // Initialize warmup counters. This cannot fail.
 void
-_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable)
+_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts, int enable)
 {
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;
@@ -470,10 +470,12 @@ _PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable)
         adaptive_counter = initial_unreachable_backoff_counter();
     }
     int opcode = 0;
+    int oparg = 0;
     /* The last code unit cannot have a cache, so we don't need to check it */
     for (Py_ssize_t i = 0; i < size-1; i++) {
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
+        oparg = (oparg << 8) | instructions[i].op.arg;
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
@@ -491,6 +493,18 @@ _PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable)
                     break;
             }
             i += caches;
+        }
+        else if (opcode == LOAD_CONST) {
+            /* We can't do this in the bytecode compiler as
+             * marshalling can intern strings and make them immortal. */
+
+            PyObject *obj = PyTuple_GET_ITEM(consts, oparg);
+            if (_Py_IsImmortal(obj)) {
+                instructions[i].op.code = LOAD_CONST_IMMORTAL;
+            }
+        }
+        if (opcode != EXTENDED_ARG) {
+            oparg = 0;
         }
     }
     #endif /* ENABLE_SPECIALIZATION_FT */

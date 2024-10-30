@@ -113,14 +113,8 @@ should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
     // The free-threaded build interns (and immortalizes) all string constants
-    // unless we've disabled immortalizing objects that use deferred reference
-    // counting.
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int(&interp->gc.immortalize) < 0) {
-        return 1;
-    }
-#endif
-
+    return 1;
+#else
     // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
@@ -134,6 +128,7 @@ should_intern_string(PyObject *o)
             return 0;
     }
     return 1;
+#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -242,13 +237,10 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string constants in the free-threaded build, but only if
-        // we are also immortalizing objects that use deferred reference
-        // counting.
-        PyThreadState *tstate = PyThreadState_GET();
+        // Intern non-string constants in the free-threaded build
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
         if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) &&
-            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
+            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
@@ -454,7 +446,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable);
+_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts, int enable);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -538,9 +530,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
     _PyCode_InitCounters(_PyCode_CODE(co), Py_SIZE(co),
+                         co->co_consts,
                          interp->config.tlbc_enabled);
 #else
-    _PyCode_InitCounters(_PyCode_CODE(co), Py_SIZE(co), 1);
+    _PyCode_InitCounters(_PyCode_CODE(co), Py_SIZE(co), co->co_consts, 1);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -2758,7 +2751,7 @@ copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
-    _PyCode_InitCounters(dst, code_len, 1);
+    _PyCode_InitCounters(dst, code_len, co->co_consts, 1);
 }
 
 static Py_ssize_t
