@@ -1,3 +1,3 @@
 Relocated objects such as ``tuple``, ``bytes`` and ``unicode`` objects are
 properly tracked by :mod:`tracemalloc` and its associated hooks. Patch by
-Pablo Galindo
+Pablo Galindo.
