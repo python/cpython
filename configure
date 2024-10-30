@@ -15037,8 +15037,15 @@ if test ${ac_cv_ffi_complex_double_supported+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_save_cc="$CC"
-CC="$CC -lffi"
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
@@ -15080,7 +15087,13 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
