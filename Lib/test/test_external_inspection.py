@@ -29,7 +29,7 @@ class TestGetStackTrace(unittest.TestCase):
     def test_remote_stack_trace(self):
         # Spawn a process with some realistic Python code
         script = textwrap.dedent("""\
-            import time, sys, os
+            import time, sys
             def bar():
                 for x in range(100):
                     if x == 50:
@@ -82,9 +82,7 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent("""\
             import asyncio
             import time
-            import os
             import sys
-            import test.test_asyncio.test_stack as ts
 
             def c5():
                 fifo_path = sys.argv[1]
@@ -155,9 +153,7 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent("""\
             import asyncio
             import time
-            import os
             import sys
-            import test.test_asyncio.test_stack as ts
 
             async def gen_nested_call():
                 fifo_path = sys.argv[1]
@@ -211,9 +207,7 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent("""\
             import asyncio
             import time
-            import os
             import sys
-            import test.test_asyncio.test_stack as ts
 
             async def deep():
                 await asyncio.sleep(0)
