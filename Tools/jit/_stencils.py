@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+import sys
 import typing
 
 import _schema
@@ -132,8 +133,18 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self) -> typing.Self | None:
+    def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
+        instruction_a = int.from_bytes(
+            body[self.offset : self.offset + 4], byteorder=sys.byteorder
+        )
+        instruction_b = int.from_bytes(
+            body[other.offset : other.offset + 4], byteorder=sys.byteorder
+        )
+        reg_a = instruction_a & 0b11111
+        reg_b1 = instruction_b & 0b11111
+        reg_b2 = (instruction_b >> 5) & 0b11111
+
         if (
             self.offset + 4 == other.offset
             and self.value == other.value
@@ -141,6 +152,7 @@ class Hole:
             and self.addend == other.addend
             and self.func == "patch_aarch64_21rx"
             and other.func == "patch_aarch64_12x"
+            and reg_a == reg_b1 == reg_b2
         ):
             # These can *only* be properly relaxed when they appear together and
             # patch the same value:
