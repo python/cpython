@@ -1154,6 +1154,8 @@ make ci
 
 This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
 
+.. versionadded:: 3.14
+
 
 make buildbottest
 ^^^^^^^^^^^^^^^^^
