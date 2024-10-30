@@ -359,7 +359,7 @@ create an interpreter with its own GIL:
    /* The new interpreter is now active in the current thread. */
 
 For further examples how to use the C-API for sub-interpreters with a
-per-interpreter GIL, see ``Modules/_xxsubinterpretersmodule.c``.
+per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
 
 (Contributed by Eric Snow in :gh:`104210`, etc.)
 
