@@ -132,7 +132,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 # Avoid recursion.
                 # (See test_creating_pointer_in_dunder_new_2)
                 if isinstance(self, p_meta):
-                    return self
+                    return
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
                 ctypes._pointer_type_cache[self] = p
 
