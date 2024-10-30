@@ -1780,7 +1780,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
-        is_using_jit = "-D_Py_JIT" in (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')
+        is_using_jit = "_Py_JIT" in (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')
         if is_using_jit:
             stderr = "<sys>:0: RuntimeWarning: JIT deactivated as perf profiling support is active"
         else:
