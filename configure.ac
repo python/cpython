@@ -379,6 +379,25 @@ then
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
+dnl For cross compilation, we distinguish between "prefix" (where we install the
+dnl files) and "host_prefix" (where we expect to find the files at runtime)
+
+if test -z "$host_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_prefix=/],
+    [host_prefix='${prefix}']
+  )
+fi
+AC_SUBST([host_prefix])
+
+if test -z "$host_exec_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_exec_prefix=$host_prefix],
+    [host_exec_prefix='${exec_prefix}']
+  )
+fi
+AC_SUBST([host_exec_prefix])
+
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
@@ -1339,6 +1358,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])
@@ -1619,34 +1641,6 @@ then
     [Emscripten/node*], [
       AC_PATH_TOOL([NODE], [node], [node])
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-      ])
-      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
-      ])
-
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
-        # no longer available in Node 16
-        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-        ])
-        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
-          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
-        ])
-      ])
-
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
@@ -2421,6 +2415,7 @@ AS_CASE([$ac_sys_system],
       ],
       [node*], [
         AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"])
         AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
         AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -4095,8 +4090,10 @@ AS_VAR_IF([have_libffi], [yes], [
 # See https://github.com/python/cpython/issues/125206 for more details.
 #
 AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
-[ac_save_cc="$CC"
-CC="$CC -lffi"
+[WITH_SAVE_ENV([
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 #include <ffi.h>
@@ -4123,7 +4120,7 @@ int main(void)
 ]])], [ac_cv_ffi_complex_double_supported=yes],
 [ac_cv_ffi_complex_double_supported=no],
 [ac_cv_ffi_complex_double_supported=no])
-CC="$ac_save_cc"])
+])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
     AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
@@ -5314,10 +5311,13 @@ AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
 dnl check for true
 AC_CHECK_PROGS([TRUE], [true], [/bin/true])
 
-dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
+dnl On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
 AC_CHECK_LIB([c], [inet_aton], [$ac_cv_prog_TRUE],
-  AC_CHECK_LIB([resolv], [inet_aton])
+  AC_CHECK_LIB([resolv], [inet_aton], [SOCKET_LIBS="-lresolv"])
+)
+AC_CHECK_LIB([c], [hstrerror], [$ac_cv_prog_TRUE],
+  AC_CHECK_LIB([resolv], [hstrerror], [SOCKET_LIBS="-lresolv"])
 )
 
 # On Tru64, chflags seems to be present, but calling it will
@@ -7792,7 +7792,7 @@ PY_STDLIB_MOD([mmap],
 PY_STDLIB_MOD([_socket],
   [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
                     -a "$ac_cv_header_sys_types_h" = "yes"
-                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
+                    -a "$ac_cv_header_netinet_in_h" = "yes"]), [], [$SOCKET_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [],

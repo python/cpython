@@ -194,6 +194,10 @@ Other language changes
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
 
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
 
 New modules
 ===========
@@ -326,6 +330,10 @@ inspect
   If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
+* Add function :func:`inspect.ispackage` to determine whether an object is a
+  :term:`package` or not.
+  (Contributed by Zhikang Yan in :gh:`125634`.)
+
 
 json
 ----
@@ -416,10 +424,28 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.
+
+
 unicodedata
 -----------
 
 * The Unicode database has been updated to Unicode 16.0.0.
+
+
+unittest
+--------
+
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -438,10 +464,15 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing the undocumented keyword argument *prefix_chars* to
-  :meth:`~argparse.ArgumentParser.add_argument_group` is now
-  deprecated.
-  (Contributed by Savannah Ostrowski in :gh:`125563`.)
+
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+    (Contributed by Savannah Ostrowski in :gh:`125563`.)
+  * Deprecated the :class:`argparse.FileType` type converter.
+    Anything with resource management should be done downstream after the
+    arguments are parsed.
+    (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
@@ -752,6 +783,9 @@ New features
   test if two strings are equal.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
+
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
 
 Porting to Python 3.14
 ----------------------
