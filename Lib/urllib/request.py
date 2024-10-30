@@ -1643,9 +1643,16 @@ def pathname2url(path, include_scheme=False):
         path = path.replace('\\', '/')
     drive, root, tail = os.path.splitroot(path)
     if drive:
+        # Handle special UNC prefixes
+        if drive[:4] == '//?/':
+            drive = drive[4:]
+            if drive[:4].upper() == 'UNC/':
+                drive = '//' + drive[4:]
+        # DOS drives are preceded by three slashes
         if drive[1:2] == ':':
             prefix += '///'
     elif root:
+        # Rooted paths are preceded by two slashes
         prefix += '//'
     tail = quote(tail)
     return prefix + drive + root + tail

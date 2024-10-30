@@ -1523,8 +1523,8 @@ class Pathname_Tests(unittest.TestCase):
     def test_pathname2url_win(self):
         # Test special prefixes are correctly handled in pathname2url()
         fn = urllib.request.pathname2url
-        self.assertEqual(fn('\\\\?\\C:\\dir'), '//?/C:/dir')
-        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//?/unc/server/share/dir')
+        self.assertEqual(fn('\\\\?\\C:\\dir'), '///C:/dir')
+        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
         self.assertEqual(fn("C:"), '///C:')
         # Path root is meaningful and should be preserved.
         self.assertEqual(fn("C:\\"), '///C:/')
