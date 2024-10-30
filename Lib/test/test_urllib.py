@@ -1526,15 +1526,17 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\?\\C:\\dir'), '//?/C:/dir')
         self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//?/unc/server/share/dir')
         self.assertEqual(fn("C:"), '///C:')
+        # Path root is meaningful and should be preserved.
         self.assertEqual(fn("C:\\"), '///C:/')
         self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
         self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
         self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
-        # Long drive letter
+        # Long drive letter: treat as relative path, like ntpath.isabs()/splitroot()
         self.assertEqual(fn("XX:\\"), "XX%3A/")
-        # No drive letter
+        # No drive letter: use empty authority
         self.assertEqual(fn("\\folder\\test\\"), '///folder/test/')
+        # UNC paths: UNC server becomes URL authority
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
         self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
@@ -1551,6 +1553,7 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_pathname2url_posix(self):
         fn = urllib.request.pathname2url
+        # Absolute paths: use zero-length authority.
         self.assertEqual(fn('/'), '///')
         self.assertEqual(fn('/a/b.c'), '///a/b.c')
         self.assertEqual(fn('/a/b%#c'), '///a/b%25%23c')
@@ -1568,19 +1571,19 @@ class Pathname_Tests(unittest.TestCase):
         # No DOS drive
         self.assertEqual(fn("///C/test/"), '\\C\\test\\')
         self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
-        # DOS drive paths
+        # DOS drive paths: see RFC 8089 (D.2.)
         self.assertEqual(fn('file:C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
-        # Non-ASCII drive letter
+        # Non-ASCII drive letter: treat as real DOS drive, like ntpath.isabs()/splitroot()
         self.assertEqual(fn("///\u00e8|/"), "\u00e8:\\")
-        # UNC paths
+        # UNC paths: see RFC 8089 (E.3.)
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('/////server/path/to/file'), '\\\\server\\path\\to\\file')
-        # Localhost paths
+        # Localhost paths: see RFC 8989 (2.)
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
         # Round-tripping
@@ -1595,7 +1598,9 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
+        # URI from a machine called 'foo': should raise URLError
         self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
+        # URI with empty or local authority: discard authority section
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
