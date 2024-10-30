@@ -108,33 +108,21 @@ pylong_getsign(PyObject *module, PyObject *arg)
 static PyObject *
 pylong_ispositive(PyObject *module, PyObject *arg)
 {
-    int s = PyLong_IsPositive(arg);
-    if (s == -1) {
-        return NULL;
-    }
-    return PyLong_FromLong(s);
+    RETURN_INT(PyLong_IsPositive(arg));
 }
 
 
 static PyObject *
 pylong_isnegative(PyObject *module, PyObject *arg)
 {
-    int s = PyLong_IsNegative(arg);
-    if (s == -1) {
-        return NULL;
-    }
-    return PyLong_FromLong(s);
+    RETURN_INT(PyLong_IsNegative(arg));
 }
 
 
 static PyObject *
 pylong_iszero(PyObject *module, PyObject *arg)
 {
-    int s = PyLong_IsZero(arg);
-    if (s == -1) {
-        return NULL;
-    }
-    return PyLong_FromLong(s);
+    RETURN_INT(PyLong_IsZero(arg));
 }
 
 
