@@ -107,6 +107,7 @@ control of the formatting.
    single: string; interpolated literal
    single: f-string
    single: fstring
+
 .. _tut-f-strings:
 
 Formatted String Literals
