@@ -739,6 +739,9 @@
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
 
+/* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
+#undef HAVE_LINUX_NETFILTER_IPV4_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -1681,6 +1684,9 @@
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
+
+/* Defined if _Complex C type can be used with libffi. */
+#undef Py_FFI_SUPPORT_C_COMPLEX
 
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED

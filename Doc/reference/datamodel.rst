@@ -865,6 +865,8 @@ Instances of arbitrary classes can be made callable by defining a
 :meth:`~object.__call__` method in their class.
 
 
+.. _module-objects:
+
 Modules
 -------
 
@@ -890,57 +892,243 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
 
 .. index::
    single: __name__ (module attribute)
-   single: __doc__ (module attribute)
+   single: __spec__ (module attribute)
+   single: __package__ (module attribute)
+   single: __loader__ (module attribute)
+   single: __path__ (module attribute)
    single: __file__ (module attribute)
+   single: __cached__ (module attribute)
+   single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
    pair: module; namespace
 
-Predefined (writable) attributes:
+.. _import-mod-attrs:
 
-   :attr:`__name__`
-      The module's name.
+Import-related attributes on module objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   :attr:`__doc__`
-      The module's documentation string, or ``None`` if
-      unavailable.
+Module objects have the following attributes that relate to the
+:ref:`import system <importsystem>`. When a module is created using the machinery associated
+with the import system, these attributes are filled in based on the module's
+:term:`spec <module spec>`, before the :term:`loader` executes and loads the
+module.
 
-   :attr:`__file__`
-      The pathname of the file from which the
-      module was loaded, if it was loaded from a file.
-      The :attr:`__file__`
-      attribute may be missing for certain types of modules, such as C modules
-      that are statically linked into the interpreter.  For extension modules
-      loaded dynamically from a shared library, it's the pathname of the shared
-      library file.
+To create a module dynamically rather than using the import system,
+it's recommended to use :func:`importlib.util.module_from_spec`,
+which will set the various import-controlled attributes to appropriate values.
+It's also possible to use the :class:`types.ModuleType` constructor to create
+modules directly, but this technique is more error-prone, as most attributes
+must be manually set on the module object after it has been created when using
+this approach.
 
-   :attr:`~object.__annotations__`
-      A dictionary containing
-      :term:`variable annotations <variable annotation>` collected during
-      module body execution.  For best practices on working
-      with :attr:`!__annotations__`, see :mod:`annotationlib`.
+.. caution::
 
-      .. versionchanged:: 3.14
-         Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
-         See :pep:`649`.
+   With the exception of :attr:`~module.__name__`, it is **strongly**
+   recommended that you rely on :attr:`~module.__spec__` and its attributes
+   instead of any of the other individual attributes listed in this subsection.
+   Note that updating an attribute on :attr:`!__spec__` will not update the
+   corresponding attribute on the module itself:
 
-   :attr:`~object.__annotate__`
-      The :term:`annotate function` for this module, or ``None``
-      if the module has no annotations. See :attr:`object.__annotate__`.
+   .. doctest::
 
-      .. versionadded:: 3.14
+     >>> import typing
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'typing')
+     >>> typing.__spec__.name = 'spelling'
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'spelling')
+     >>> typing.__name__ = 'keyboard_smashing'
+     >>> typing.__name__, typing.__spec__.name
+     ('keyboard_smashing', 'spelling')
+
+.. attribute:: module.__name__
+
+   The name used to uniquely identify the module in the import system.
+   For a directly executed module, this will be set to ``"__main__"``.
+
+   This attribute must be set to the fully qualified name of the module.
+   It is expected to match the value of
+   :attr:`module.__spec__.name <importlib.machinery.ModuleSpec.name>`.
+
+.. attribute:: module.__spec__
+
+   A record of the module's import-system-related state.
+
+   Set to the :class:`module spec <importlib.machinery.ModuleSpec>` that was
+   used when importing the module. See :ref:`module-specs` for more details.
+
+   .. versionadded:: 3.4
+
+.. attribute:: module.__package__
+
+   The :term:`package` a module belongs to.
+
+   If the module is top-level (that is, not a part of any specific package)
+   then the attribute should be set to ``''`` (the empty string). Otherwise,
+   it should be set to the name of the module's package (which can be equal to
+   :attr:`module.__name__` if the module itself is a package). See :pep:`366`
+   for further details.
+
+   This attribute is used instead of :attr:`~module.__name__` to calculate
+   explicit relative imports for main modules. It defaults to ``None`` for
+   modules created dynamically using the :class:`types.ModuleType` constructor;
+   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
+   is set to a :class:`str`.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+   instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
+   as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
+   path is deprecated.
+
+   .. versionchanged:: 3.4
+      This attribute now defaults to ``None`` for modules created dynamically
+      using the :class:`types.ModuleType` constructor.
+      Previously the attribute was optional.
+
+   .. versionchanged:: 3.6
+      The value of :attr:`!__package__` is expected to be the same as
+      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
+      :attr:`__package__` is now only used as a fallback during import
+      resolution if :attr:`!__spec__.parent` is not defined.
+
+   .. versionchanged:: 3.10
+      :exc:`ImportWarning` is raised if an import resolution falls back to
+      :attr:`!__package__` instead of
+      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
+
+   .. versionchanged:: 3.12
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
+      falling back to :attr:`!__package__` during import resolution.
+
+   .. deprecated-removed:: 3.13 3.15
+      :attr:`!__package__` will cease to be set or taken into consideration
+      by the import system or standard library.
+
+.. attribute:: module.__loader__
+
+   The :term:`loader` object that the import machinery used to load the module.
+
+   This attribute is mostly useful for introspection, but can be used for
+   additional loader-specific functionality, for example getting data
+   associated with a loader.
+
+   :attr:`!__loader__` defaults to ``None`` for modules created dynamically
+   using the :class:`types.ModuleType` constructor;
+   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
+   is set to a :term:`loader` object.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.loader <importlib.machinery.ModuleSpec.loader>`
+   instead of :attr:`!module.__loader__`.
+
+   .. versionchanged:: 3.4
+      This attribute now defaults to ``None`` for modules created dynamically
+      using the :class:`types.ModuleType` constructor.
+      Previously the attribute was optional.
+
+   .. deprecated-removed:: 3.12 3.14
+      Setting :attr:`!__loader__` on a module while failing to set
+      :attr:`!__spec__.loader` is deprecated. In Python 3.14,
+      :attr:`!__loader__` will cease to be set or taken into consideration by
+      the import system or the standard library.
+
+.. attribute:: module.__path__
+
+   A (possibly empty) :term:`sequence` of strings enumerating the locations
+   where the package's submodules will be found. Non-package modules should
+   not have a :attr:`!__path__` attribute. See :ref:`package-path-rules` for
+   more details.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.submodule_search_locations <importlib.machinery.ModuleSpec.submodule_search_locations>`
+   instead of :attr:`!module.__path__`.
+
+.. attribute:: module.__file__
+.. attribute:: module.__cached__
+
+   :attr:`!__file__` and :attr:`!__cached__` are both optional attributes that
+   may or may not be set. Both attributes should be a :class:`str` when they
+   are available.
+
+   :attr:`!__file__` indicates the pathname of the file from which the module
+   was loaded (if loaded from a file), or the pathname of the shared library
+   file for extension modules loaded dynamically from a shared library.
+   It might be missing for certain types of modules, such as C modules that are
+   statically linked into the interpreter, and the
+   :ref:`import system <importsystem>` may opt to leave it unset if it
+   has no semantic meaning (for example, a module loaded from a database).
+
+   If :attr:`!__file__` is set then the :attr:`!__cached__` attribute might
+   also be set,  which is the path to any compiled version of
+   the code (for example, a byte-compiled file). The file does not need to exist
+   to set this attribute; the path can simply point to where the
+   compiled file *would* exist (see :pep:`3147`).
+
+   Note that :attr:`!__cached__` may be set even if :attr:`!__file__` is not
+   set.  However, that scenario is quite atypical.  Ultimately, the
+   :term:`loader` is what makes use of the module spec provided by the
+   :term:`finder` (from which :attr:`!__file__` and :attr:`!__cached__` are
+   derived).  So if a loader can load from a cached module but otherwise does
+   not load from a file, that atypical scenario may be appropriate.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.cached <importlib.machinery.ModuleSpec.cached>`
+   instead of :attr:`!module.__cached__`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Setting :attr:`!__cached__` on a module while failing to set
+      :attr:`!__spec__.cached` is deprecated. In Python 3.15,
+      :attr:`!__cached__` will cease to be set or taken into consideration by
+      the import system or standard library.
+
+Other writable attributes on module objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As well as the import-related attributes listed above, module objects also have
+the following writable attributes:
+
+.. attribute:: module.__doc__
+
+   The module's documentation string, or ``None`` if unavailable.
+   See also: :attr:`__doc__ attributes <definition.__doc__>`.
+
+.. attribute:: module.__annotations__
+
+   A dictionary containing :term:`variable annotations <variable annotation>`
+   collected during module body execution.  For best practices on working with
+   :attr:`!__annotations__`, see :mod:`annotationlib`.
+
+   .. versionchanged:: 3.14
+      Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+      See :pep:`649`.
+
+.. attribute:: module.__annotate__
+
+   The :term:`annotate function` for this module, or ``None`` if the module has
+   no annotations. See also: :attr:`~object.__annotate__` attributes.
+
+   .. versionadded:: 3.14
+
+Module dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+Module objects also have the following special read-only attribute:
 
 .. index:: single: __dict__ (module attribute)
+.. attribute:: module.__dict__
 
-Special read-only attribute: :attr:`~object.__dict__` is the module's
-namespace as a dictionary object.
+   The module's namespace as a dictionary object. Uniquely among the attributes
+   listed here, :attr:`!__dict__` cannot be accessed as a global variable from
+   within a module; it can only be accessed as an attribute on module objects.
 
-.. impl-detail::
+   .. impl-detail::
 
-   Because of the way CPython clears module dictionaries, the module
-   dictionary will be cleared when the module falls out of scope even if the
-   dictionary still has live references.  To avoid this, copy the dictionary
-   or keep the module around while using its dictionary directly.
+      Because of the way CPython clears module dictionaries, the module
+      dictionary will be cleared when the module falls out of scope even if the
+      dictionary still has live references.  To avoid this, copy the dictionary
+      or keep the module around while using its dictionary directly.
 
 
 .. _class-attrs-and-methods:
@@ -3146,12 +3334,13 @@ left undefined.
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
-   (swapped) operands.  These functions are only called if the left operand does
-   not support the corresponding operation [#]_ and the operands are of different
-   types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
-   an instance of a class that has an :meth:`__rsub__` method,
-   ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   :data:`NotImplemented`.
+   (swapped) operands.  These functions are only called if the operands
+   are of different types, when the left operand does not support the corresponding
+   operation [#]_, or the right operand's class is derived from the left operand's
+   class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
+   an instance of a class that has an :meth:`__rsub__` method, ``type(y).__rsub__(y, x)``
+   is called if ``type(x).__sub__(x, y)`` returns :data:`NotImplemented` or ``type(y)``
+   is a subclass of ``type(x)``. [#]_
 
    .. index:: pair: built-in function; pow
 
@@ -3165,7 +3354,6 @@ left undefined.
       for the operation, this method will be called before the left operand's
       non-reflected method. This behavior allows subclasses to override their
       ancestors' operations.
-
 
 .. method:: object.__iadd__(self, other)
             object.__isub__(self, other)
@@ -3693,7 +3881,10 @@ An example of an asynchronous context manager class::
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
 
-.. [#] For operands of the same type, it is assumed that if the non-reflected
-   method -- such as :meth:`~object.__add__` -- fails then the overall
-   operation is not
-   supported, which is why the reflected method is not called.
+.. [#] For operands of the same type, it is assumed that if the non-reflected method
+   (such as :meth:`~object.__add__`) fails then the operation is not supported, which is why the
+   reflected method is not called.
+
+.. [#] If the right operand's type is a subclass of the left operand's type, the
+   reflected method having precedence allows subclasses to override their ancestors'
+   operations.
