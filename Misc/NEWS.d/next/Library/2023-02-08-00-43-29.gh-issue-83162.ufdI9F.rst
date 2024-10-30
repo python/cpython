@@ -1,3 +1,0 @@
-Renamed :exc:`!re.error` to :exc:`PatternError` for clarity, and kept
-:exc:`!re.error` for backward compatibility. Patch by Matthias Bussonnier and
-Adam Chhina.

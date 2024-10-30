@@ -140,13 +140,10 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        if (PyDict_GetItemRef(mkw, &_Py_ID(metaclass), &meta) < 0) {
+        if (PyDict_Pop(mkw, &_Py_ID(metaclass), &meta) < 0) {
             goto error;
         }
         if (meta != NULL) {
-            if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
-                goto error;
-            }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
         }
@@ -478,7 +475,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 PyDoc_STRVAR(breakpoint_doc,
-"breakpoint(*args, **kws)\n\
+"breakpoint($module, /, *args, **kws)\n\
 --\n\
 \n\
 Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
@@ -703,17 +700,34 @@ builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
 /*[clinic input]
 chr as builtin_chr
 
-    i: int
+    i: object
     /
 
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_chr_impl(PyObject *module, int i)
-/*[clinic end generated code: output=c733afcd200afcb7 input=3f604ef45a70750d]*/
+builtin_chr(PyObject *module, PyObject *i)
+/*[clinic end generated code: output=d34f25b8035a9b10 input=f919867f0ba2f496]*/
 {
-    return PyUnicode_FromOrdinal(i);
+    int overflow;
+    long v = PyLong_AsLongAndOverflow(i, &overflow);
+    if (v == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (overflow) {
+        v = overflow < 0 ? INT_MIN : INT_MAX;
+        /* Allow PyUnicode_FromOrdinal() to raise an exception */
+    }
+#if SIZEOF_INT < SIZEOF_LONG
+    else if (v < INT_MIN) {
+        v = INT_MIN;
+    }
+    else if (v > INT_MAX) {
+        v = INT_MAX;
+    }
+#endif
+    return PyUnicode_FromOrdinal(v);
 }
 
 
@@ -852,7 +866,19 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
+#ifdef Py_GIL_DISABLED
+    // Disable immortalization of code constants for explicit
+    // compile() calls to get consistent frozen outputs between the default
+    // and free-threaded builds.
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    tstate->suppress_co_const_immortalization++;
+#endif
+
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
+#ifdef Py_GIL_DISABLED
+    tstate->suppress_co_const_immortalization--;
+#endif
 
     Py_XDECREF(source_copy);
     goto finally;
@@ -911,9 +937,9 @@ builtin_divmod_impl(PyObject *module, PyObject *x, PyObject *y)
 eval as builtin_eval
 
     source: object
+    /
     globals: object = None
     locals: object = None
-    /
 
 Evaluate the given source in the context of globals and locals.
 
@@ -927,7 +953,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=0a0824aa70093116 input=11ee718a8640e527]*/
+/*[clinic end generated code: output=0a0824aa70093116 input=7c7bce5299a89062]*/
 {
     PyObject *result = NULL, *source_copy;
     const char *str;
@@ -997,7 +1023,16 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
             str++;
 
         (void)PyEval_MergeCompilerFlags(&cf);
+#ifdef Py_GIL_DISABLED
+        // Don't immortalize code constants for explicit eval() calls
+        // to avoid memory leaks.
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+        tstate->suppress_co_const_immortalization++;
+#endif
         result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+#ifdef Py_GIL_DISABLED
+        tstate->suppress_co_const_immortalization--;
+#endif
         Py_XDECREF(source_copy);
     }
 
@@ -1010,9 +1045,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
 exec as builtin_exec
 
     source: object
+    /
     globals: object = None
     locals: object = None
-    /
     *
     closure: object(c_default="NULL") = None
 
@@ -1030,7 +1065,7 @@ when source is a code object requiring exactly that many cellvars.
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
+/*[clinic end generated code: output=7579eb4e7646743d input=25e989b6d87a3a21]*/
 {
     PyObject *v;
 
@@ -1448,7 +1483,7 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(function, /, *iterables)\n\
+"map(function, iterable, /, *iterables)\n\
 --\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
@@ -1689,16 +1724,16 @@ anext as builtin_anext
     default: object = NULL
     /
 
-async anext(aiterator[, default])
+Return the next item from the async iterator.
 
-Return the next item from the async iterator.  If default is given and the async
-iterator is exhausted, it is returned instead of raising StopAsyncIteration.
+If default is given and the async iterator is exhausted,
+it is returned instead of raising StopAsyncIteration.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=8f63f4f78590bb4c]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=2900e4a370d39550]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -2382,11 +2417,6 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 {
     PyObject *round, *result;
 
-    if (!_PyType_IsReady(Py_TYPE(number))) {
-        if (PyType_Ready(Py_TYPE(number)) < 0)
-            return NULL;
-    }
-
     round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
     if (round == NULL) {
         if (!PyErr_Occurred())
@@ -2494,6 +2524,49 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 
+/* Improved Kahan–Babuška algorithm by Arnold Neumaier
+   Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+   zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+   54: 39-51. https://doi.org/10.1002/zamm.19740540106
+   https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
+ */
+
+typedef struct {
+    double hi;     /* high-order bits for a running sum */
+    double lo;     /* a running compensation for lost low-order bits */
+} CompensatedSum;
+
+static inline CompensatedSum
+cs_from_double(double x)
+{
+    return (CompensatedSum) {x};
+}
+
+static inline CompensatedSum
+cs_add(CompensatedSum total, double x)
+{
+    double t = total.hi + x;
+    if (fabs(total.hi) >= fabs(x)) {
+        total.lo += (total.hi - t) + x;
+    }
+    else {
+        total.lo += (x - t) + total.hi;
+    }
+    return (CompensatedSum) {t, total.lo};
+}
+
+static inline double
+cs_to_double(CompensatedSum total)
+{
+    /* Avoid losing the sign on a negative result,
+       and don't let adding the compensation convert
+       an infinite or overflowed sum to a NaN. */
+    if (total.lo && isfinite(total.lo)) {
+        return total.hi + total.lo;
+    }
+    return total.hi;
+}
+
 /*[clinic input]
 sum as builtin_sum
 
@@ -2579,8 +2652,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
-                    (i_result >= 0 ? (b <= LONG_MAX - i_result)
-                                   : (b >= LONG_MIN - i_result)))
+                    (i_result >= 0 ? (b <= PY_SSIZE_T_MAX - i_result)
+                                   : (b >= PY_SSIZE_T_MIN - i_result)))
                 {
                     i_result += b;
                     Py_DECREF(item);
@@ -2606,8 +2679,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (PyFloat_CheckExact(result)) {
-        double f_result = PyFloat_AS_DOUBLE(result);
-        double c = 0.0;
+        CompensatedSum re_sum = cs_from_double(PyFloat_AS_DOUBLE(result));
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2615,45 +2687,88 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                /* Avoid losing the sign on a negative result,
-                   and don't let adding the compensation convert
-                   an infinite or overflowed sum to a NaN. */
-                if (c && Py_IS_FINITE(c)) {
-                    f_result += c;
-                }
-                return PyFloat_FromDouble(f_result);
+                return PyFloat_FromDouble(cs_to_double(re_sum));
             }
             if (PyFloat_CheckExact(item)) {
-                // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
-                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
-                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
-                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
-                double x = PyFloat_AS_DOUBLE(item);
-                double t = f_result + x;
-                if (fabs(f_result) >= fabs(x)) {
-                    c += (f_result - t) + x;
-                } else {
-                    c += (x - t) + f_result;
-                }
-                f_result = t;
+                re_sum = cs_add(re_sum, PyFloat_AS_DOUBLE(item));
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
             if (PyLong_Check(item)) {
-                long value;
-                int overflow;
-                value = PyLong_AsLongAndOverflow(item, &overflow);
-                if (!overflow) {
-                    f_result += (double)value;
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
                     Py_DECREF(item);
                     continue;
                 }
+                else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
+                }
             }
-            if (c && Py_IS_FINITE(c)) {
-                f_result += c;
+            result = PyFloat_FromDouble(cs_to_double(re_sum));
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
             }
-            result = PyFloat_FromDouble(f_result);
+            temp = PyNumber_Add(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+
+    if (PyComplex_CheckExact(result)) {
+        Py_complex z = PyComplex_AsCComplex(result);
+        CompensatedSum re_sum = cs_from_double(z.real);
+        CompensatedSum im_sum = cs_from_double(z.imag);
+        Py_SETREF(result, NULL);
+        while (result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyComplex_FromDoubles(cs_to_double(re_sum),
+                                             cs_to_double(im_sum));
+            }
+            if (PyComplex_CheckExact(item)) {
+                z = PyComplex_AsCComplex(item);
+                re_sum = cs_add(re_sum, z.real);
+                im_sum = cs_add(im_sum, z.imag);
+                Py_DECREF(item);
+                continue;
+            }
+            if (PyLong_Check(item)) {
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
+                    im_sum.hi += 0.0;
+                    Py_DECREF(item);
+                    continue;
+                }
+                else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
+                }
+            }
+            if (PyFloat_Check(item)) {
+                double value = PyFloat_AS_DOUBLE(item);
+                re_sum = cs_add(re_sum, value);
+                im_sum.hi += 0.0;
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
+                continue;
+            }
+            result = PyComplex_FromDoubles(cs_to_double(re_sum),
+                                           cs_to_double(im_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
@@ -2864,7 +2979,8 @@ zip_next(zipobject *lz)
 
     if (tuplesize == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
@@ -3115,6 +3231,9 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     dict = PyModule_GetDict(mod);
 
 #ifdef Py_TRACE_REFS

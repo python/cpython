@@ -1,5 +1,5 @@
-:mod:`urllib.request` --- Extensible library for opening URLs
-=============================================================
+:mod:`!urllib.request` --- Extensible library for opening URLs
+==============================================================
 
 .. module:: urllib.request
    :synopsis: Extensible library for opening URLs.
@@ -78,7 +78,7 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`UnknownHandler` to ensure this never happens).
 
    In addition, if proxy settings are detected (for example, when a ``*_proxy``
-   environment variable like :envvar:`http_proxy` is set),
+   environment variable like :envvar:`!http_proxy` is set),
    :class:`ProxyHandler` is default installed and makes sure the requests are
    handled through the proxy.
 
@@ -97,11 +97,9 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.
 
-   .. versionchanged:: 3.2
       HTTPS virtual hosts are now supported if possible (that is, if
       :const:`ssl.HAS_SNI` is true).
 
-   .. versionadded:: 3.2
       *data* can be an iterable object.
 
    .. versionchanged:: 3.3
@@ -113,11 +111,11 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.10
       HTTPS connection now send an ALPN extension with protocol indicator
       ``http/1.1`` when no *context* is given. Custom *context* should set
-      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocols`.
 
-    .. versionchanged:: 3.13
-       Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
-       parameter instead.
+   .. versionchanged:: 3.13
+      Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
+      parameter instead.
 
 
 .. function:: install_opener(opener)
@@ -220,7 +218,7 @@ The following classes are provided:
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*
-   is not None, ``Content-Type: application/x-www-form-urlencoded`` will
+   is not ``None``, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
    The next two arguments are only of interest for correct handling
@@ -243,7 +241,7 @@ The following classes are provided:
 
    *method* should be a string that indicates the HTTP request method that
    will be used (e.g. ``'HEAD'``).  If provided, its value is stored in the
-   :attr:`~Request.method` attribute and is used by :meth:`get_method()`.
+   :attr:`~Request.method` attribute and is used by :meth:`get_method`.
    The default is ``'GET'`` if *data* is ``None`` or ``'POST'`` otherwise.
    Subclasses may indicate a different default method by setting the
    :attr:`~Request.method` attribute in the class itself.
@@ -618,25 +616,25 @@ OpenerDirector Objects
    the actual HTTP code, for example :meth:`http_error_404` would handle HTTP
    404 errors.
 
-   * :meth:`<protocol>_open` --- signal that the handler knows how to open *protocol*
+   * :meth:`!<protocol>_open` --- signal that the handler knows how to open *protocol*
      URLs.
 
      See |protocol_open|_ for more information.
 
-   * :meth:`http_error_\<type\>` --- signal that the handler knows how to handle HTTP
+   * :meth:`!http_error_\<type\>` --- signal that the handler knows how to handle HTTP
      errors with HTTP error code *type*.
 
      See |http_error_nnn|_ for more information.
 
-   * :meth:`<protocol>_error` --- signal that the handler knows how to handle errors
+   * :meth:`!<protocol>_error` --- signal that the handler knows how to handle errors
      from (non-\ ``http``) *protocol*.
 
-   * :meth:`<protocol>_request` --- signal that the handler knows how to pre-process
+   * :meth:`!<protocol>_request` --- signal that the handler knows how to pre-process
      *protocol* requests.
 
      See |protocol_request|_ for more information.
 
-   * :meth:`<protocol>_response` --- signal that the handler knows how to
+   * :meth:`!<protocol>_response` --- signal that the handler knows how to
      post-process *protocol* responses.
 
      See |protocol_response|_ for more information.
@@ -663,7 +661,7 @@ OpenerDirector Objects
    Handle an error of the given protocol.  This will call the registered error
    handlers for the given protocol with the given arguments (which are protocol
    specific).  The HTTP protocol is a special case which uses the HTTP response
-   code to determine the specific error handler; refer to the :meth:`http_error_\<type\>`
+   code to determine the specific error handler; refer to the :meth:`!http_error_\<type\>`
    methods of the handler classes.
 
    Return values and exceptions raised are the same as those of :func:`urlopen`.
@@ -673,25 +671,25 @@ OpenerDirector objects open URLs in three stages:
 The order in which these methods are called within each stage is determined by
 sorting the handler instances.
 
-#. Every handler with a method named like :meth:`<protocol>_request` has that
+#. Every handler with a method named like :meth:`!<protocol>_request` has that
    method called to pre-process the request.
 
-#. Handlers with a method named like :meth:`<protocol>_open` are called to handle
+#. Handlers with a method named like :meth:`!<protocol>_open` are called to handle
    the request. This stage ends when a handler either returns a non-\ :const:`None`
    value (ie. a response), or raises an exception (usually
    :exc:`~urllib.error.URLError`).  Exceptions are allowed to propagate.
 
    In fact, the above algorithm is first tried for methods named
-   :meth:`default_open`.  If all such methods return :const:`None`, the algorithm
-   is repeated for methods named like :meth:`<protocol>_open`.  If all such methods
+   :meth:`~BaseHandler.default_open`.  If all such methods return :const:`None`, the algorithm
+   is repeated for methods named like :meth:`!<protocol>_open`.  If all such methods
    return :const:`None`, the algorithm is repeated for methods named
-   :meth:`unknown_open`.
+   :meth:`~BaseHandler.unknown_open`.
 
    Note that the implementation of these methods may involve calls of the parent
    :class:`OpenerDirector` instance's :meth:`~OpenerDirector.open` and
    :meth:`~OpenerDirector.error` methods.
 
-#. Every handler with a method named like :meth:`<protocol>_response` has that
+#. Every handler with a method named like :meth:`!<protocol>_response` has that
    method called to post-process the response.
 
 
@@ -740,7 +738,7 @@ The following attribute and methods should only be used by classes derived from
    the return value of the :meth:`~OpenerDirector.open` method of :class:`OpenerDirector`, or ``None``.
    It should raise :exc:`~urllib.error.URLError`, unless a truly exceptional
    thing happens (for example, :exc:`MemoryError` should not be mapped to
-   :exc:`URLError`).
+   :exc:`~urllib.error.URLError`).
 
    This method will be called before any protocol-specific open method.
 
@@ -753,7 +751,7 @@ The following attribute and methods should only be used by classes derived from
    define it if they want to handle URLs with the given protocol.
 
    This method, if defined, will be called by the parent :class:`OpenerDirector`.
-   Return values should be the same as for  :meth:`default_open`.
+   Return values should be the same as for  :meth:`~BaseHandler.default_open`.
 
 
 .. method:: BaseHandler.unknown_open(req)
@@ -793,7 +791,7 @@ The following attribute and methods should only be used by classes derived from
    Subclasses should override this method to handle specific HTTP errors.
 
    Arguments, return values and exceptions raised should be the same as for
-   :meth:`http_error_default`.
+   :meth:`~BaseHandler.http_error_default`.
 
 
 .. _protocol_request:
@@ -833,7 +831,7 @@ HTTPRedirectHandler Objects
    is the case, :exc:`~urllib.error.HTTPError` is raised.  See :rfc:`2616` for
    details of the precise meanings of the various redirection codes.
 
-   An :class:`HTTPError` exception raised as a security consideration if the
+   An :exc:`~urllib.error.HTTPError` exception raised as a security consideration if the
    HTTPRedirectHandler is presented with a redirected URL which is not an HTTP,
    HTTPS or FTP URL.
 
@@ -910,7 +908,7 @@ ProxyHandler Objects
 .. method:: ProxyHandler.<protocol>_open(request)
    :noindex:
 
-   The :class:`ProxyHandler` will have a method :meth:`<protocol>_open` for every
+   The :class:`ProxyHandler` will have a method :meth:`!<protocol>_open` for every
    *protocol* which has a proxy in the *proxies* dictionary given in the
    constructor.  The method will modify requests to go through the proxy, by
    calling ``request.set_proxy()``, and call the next handler in the chain to
@@ -1094,7 +1092,7 @@ FileHandler Objects
 
    .. versionchanged:: 3.2
       This method is applicable only for local hostnames.  When a remote
-      hostname is given, an :exc:`~urllib.error.URLError` is raised.
+      hostname is given, a :exc:`~urllib.error.URLError` is raised.
 
 
 .. _data-handler-objects:
@@ -1109,7 +1107,7 @@ DataHandler Objects
    ignores white spaces in base64 encoded data URLs so the URL may be wrapped
    in whatever source file it comes from. But even though some browsers don't
    mind about a missing padding at the end of a base64 encoded data URL, this
-   implementation will raise an :exc:`ValueError` in that case.
+   implementation will raise a :exc:`ValueError` in that case.
 
 
 .. _ftp-handler-objects:
@@ -1166,7 +1164,7 @@ HTTPErrorProcessor Objects
    For 200 error codes, the response object is returned immediately.
 
    For non-200 error codes, this simply passes the job on to the
-   :meth:`http_error_\<type\>` handler methods, via :meth:`OpenerDirector.error`.
+   :meth:`!http_error_\<type\>` handler methods, via :meth:`OpenerDirector.error`.
    Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
 
@@ -1273,7 +1271,7 @@ Use of Basic HTTP Authentication::
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
 variables named ``<scheme>_proxy``, where ``<scheme>`` is the URL scheme
-involved.  For example, the :envvar:`http_proxy` environment variable is read to
+involved.  For example, the :envvar:`!http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
@@ -1368,7 +1366,7 @@ some point in the future.
    points to a local file, the object will not be copied unless filename is supplied.
    Return a tuple ``(filename, headers)`` where *filename* is the
    local file name under which the object can be found, and *headers* is whatever
-   the :meth:`info` method of the object returned by :func:`urlopen` returned (for
+   the :meth:`!info` method of the object returned by :func:`urlopen` returned (for
    a remote object). Exceptions are the same as for :func:`urlopen`.
 
    The second argument, if present, specifies the file location to copy to (if
@@ -1393,7 +1391,7 @@ some point in the future.
    :mimetype:`application/x-www-form-urlencoded` format; see the
    :func:`urllib.parse.urlencode` function.
 
-   :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
+   :func:`urlretrieve` will raise :exc:`~urllib.error.ContentTooShortError` when it detects that
    the amount of data available  was less than the expected amount (which is the
    size reported by a  *Content-Length* header). This can occur, for example, when
    the  download is interrupted.
@@ -1402,8 +1400,8 @@ some point in the future.
    urlretrieve reads more data, but if less data is available,  it raises the
    exception.
 
-   You can still retrieve the downloaded data in this case, it is stored  in the
-   :attr:`content` attribute of the exception instance.
+   You can still retrieve the downloaded data in this case, it is stored in the
+   :attr:`!content` attribute of the exception instance.
 
    If no *Content-Length* header was supplied, urlretrieve can not check the size
    of the data it has downloaded, and just returns it.  In this case you just have
@@ -1497,7 +1495,7 @@ some point in the future.
    authentication is performed.  For the 30x response codes, recursion is bounded
    by the value of the *maxtries* attribute, which defaults to 10.
 
-   For all other response codes, the method :meth:`http_error_default` is called
+   For all other response codes, the method :meth:`~BaseHandler.http_error_default` is called
    which you can override in subclasses to handle the error appropriately.
 
    .. note::

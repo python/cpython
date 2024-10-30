@@ -15,6 +15,7 @@ this type and there is exactly one in existence.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -57,6 +58,11 @@ static PyMethodDef ellipsis_methods[] = {
     {NULL, NULL}
 };
 
+PyDoc_STRVAR(ellipsis_doc,
+"ellipsis()\n"
+"--\n\n"
+"The type of the Ellipsis singleton.");
+
 PyTypeObject PyEllipsis_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ellipsis",                         /* tp_name */
@@ -78,7 +84,7 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    0,                                  /* tp_doc */
+    ellipsis_doc,                       /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -103,16 +109,6 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-
-void _PySlice_Fini(PyInterpreterState *interp)
-{
-    PySliceObject *obj = interp->slice_cache;
-    if (obj != NULL) {
-        interp->slice_cache = NULL;
-        PyObject_GC_Del(obj);
-    }
-}
-
 /* start, stop, and step are python objects with None indicating no
    index is present.
 */
@@ -121,15 +117,8 @@ static PySliceObject *
 _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PySliceObject *obj;
-    if (interp->slice_cache != NULL) {
-        obj = interp->slice_cache;
-        interp->slice_cache = NULL;
-        _Py_NewReference((PyObject *)obj);
-    }
-    else {
+    PySliceObject *obj = _Py_FREELIST_POP(PySliceObject, slices);
+    if (obj == NULL) {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
         if (obj == NULL) {
             goto error;
@@ -354,17 +343,11 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyObject_GC_UNTRACK(r);
+    PyObject_GC_UnTrack(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    if (interp->slice_cache == NULL) {
-        interp->slice_cache = r;
-    }
-    else {
-        PyObject_GC_Del(r);
-    }
+    _Py_FREELIST_FREE(slices, r, PyObject_GC_Del);
 }
 
 static PyObject *

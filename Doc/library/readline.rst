@@ -1,11 +1,11 @@
-:mod:`readline` --- GNU readline interface
-==========================================
+:mod:`!readline` --- GNU readline interface
+===========================================
 
 .. module:: readline
    :platform: Unix
    :synopsis: GNU readline support for Python.
 
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -23,6 +23,8 @@ Readline keybindings may be configured via an initialization file, typically
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. note::
 
@@ -42,6 +44,10 @@ Readline library in general.
 
     python:bind -v
     python:bind ^I rl_complete
+
+  Also note that different libraries may use different history file formats.
+  When switching the underlying library, existing history files may become
+  unusable.
 
 .. data:: backend
 

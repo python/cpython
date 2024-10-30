@@ -1,5 +1,5 @@
-:mod:`ssl` --- TLS/SSL wrapper for socket objects
-=================================================
+:mod:`!ssl` --- TLS/SSL wrapper for socket objects
+==================================================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
@@ -151,6 +151,12 @@ purposes.
    variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
    enables key logging.
 
+   The default settings for this context include
+   :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
+   These make the underlying OpenSSL implementation behave more like
+   a conforming implementation of :rfc:`5280`, in exchange for a small
+   amount of incompatibility with older X.509 certificates.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
@@ -171,6 +177,15 @@ purposes.
 
          ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
          ctx.options &= ~ssl.OP_NO_SSLv3
+
+   .. note::
+      This context enables :data:`VERIFY_X509_STRICT` by default, which
+      may reject pre-:rfc:`5280` or malformed certificates that the
+      underlying OpenSSL implementation otherwise would accept. While disabling
+      this is not recommended, you can do so using::
+
+         ctx = ssl.create_default_context()
+         ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
    .. versionadded:: 3.4
 
@@ -193,6 +208,11 @@ purposes.
       The context now uses :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
       :data:`PROTOCOL_TLS`.
+
+   .. versionchanged:: 3.13
+
+      The context now uses :data:`VERIFY_X509_PARTIAL_CHAIN` and
+      :data:`VERIFY_X509_STRICT` in its default verify flags.
 
 
 Exceptions
@@ -737,11 +757,11 @@ Constants
    When Python has been compiled against an older version of OpenSSL, the
    flag defaults to *0*.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6.3
 
    .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
-      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
+      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15 and
+      3.6.3 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_NO_RENEGOTIATION
 
@@ -761,7 +781,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -769,7 +789,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -1029,25 +1049,25 @@ SSL Sockets
 
    SSL sockets provide the following methods of :ref:`socket-objects`:
 
-   - :meth:`~socket.socket.accept()`
-   - :meth:`~socket.socket.bind()`
-   - :meth:`~socket.socket.close()`
-   - :meth:`~socket.socket.connect()`
-   - :meth:`~socket.socket.detach()`
-   - :meth:`~socket.socket.fileno()`
-   - :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
-   - :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
-   - :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
-     :meth:`~socket.socket.setblocking()`
-   - :meth:`~socket.socket.listen()`
-   - :meth:`~socket.socket.makefile()`
-   - :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+   - :meth:`~socket.socket.accept`
+   - :meth:`~socket.socket.bind`
+   - :meth:`~socket.socket.close`
+   - :meth:`~socket.socket.connect`
+   - :meth:`~socket.socket.detach`
+   - :meth:`~socket.socket.fileno`
+   - :meth:`~socket.socket.getpeername`, :meth:`~socket.socket.getsockname`
+   - :meth:`~socket.socket.getsockopt`, :meth:`~socket.socket.setsockopt`
+   - :meth:`~socket.socket.gettimeout`, :meth:`~socket.socket.settimeout`,
+     :meth:`~socket.socket.setblocking`
+   - :meth:`~socket.socket.listen`
+   - :meth:`~socket.socket.makefile`
+   - :meth:`~socket.socket.recv`, :meth:`~socket.socket.recv_into`
      (but passing a non-zero ``flags`` argument is not allowed)
-   - :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+   - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
-     for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
-   - :meth:`~socket.socket.shutdown()`
+   - :meth:`~socket.socket.sendfile` (but :mod:`os.sendfile` will be used
+     for plain-text sockets only, else :meth:`~socket.socket.send` will be used)
+   - :meth:`~socket.socket.shutdown`
 
    However, since the SSL (and TLS) protocol has its own framing atop
    of TCP, the SSL sockets abstraction can, in certain respects, diverge from
@@ -1452,6 +1472,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -1533,7 +1566,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_load_verify_locations.html>`_.
+   <https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1608,7 +1641,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
+   <https://docs.openssl.org/master/man1/ciphers/>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1709,7 +1742,7 @@ to speed up repeated connections from the same clients.
    IDN-encoded internationalized domain name, the *server_name_callback*
    receives a decoded U-label (``"pythön.org"``).
 
-   If there is an decoding error on the server name, the TLS connection will
+   If there is a decoding error on the server name, the TLS connection will
    terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 
@@ -1790,6 +1823,9 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
+   :meth:`SSLContext.wrap_bio`.
+
    .. versionchanged:: 3.5
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
@@ -1797,7 +1833,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
-    .. versionchanged:: 3.7
+   .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
@@ -1838,7 +1874,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://docs.openssl.org/1.1.1/man3/SSL_CTX_sess_number/>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -1975,13 +2011,13 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.10
 
-      The flag had no effect with OpenSSL before version 1.1.1k. Python 3.8.9,
+      The flag had no effect with OpenSSL before version 1.1.1l. Python 3.8.9,
       3.9.3, and 3.10 include workarounds for previous versions.
 
 .. attribute:: SSLContext.security_level
 
    An integer representing the `security level
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   <https://docs.openssl.org/master/man3/SSL_CTX_get_security_level/>`_
    for the context. This attribute is read-only.
 
    .. versionadded:: 3.10
@@ -2574,12 +2610,8 @@ provided.
      :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
      available.
 
-   - There is no module-level ``wrap_bio()`` call like there is for
-     :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
-     via an :class:`SSLContext`.
-
    .. versionchanged:: 3.7
-      :class:`SSLObject` instances must to created with
+      :class:`SSLObject` instances must be created with
       :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
       create instances directly. This was never documented or officially
       supported.
@@ -2678,7 +2710,7 @@ Verifying certificates
 
 When calling the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
-peer, it can be insecure, especially in client mode where most of time you
+peer, it can be insecure, especially in client mode where most of the time you
 would like to ensure the authenticity of the server you're talking to.
 Therefore, when in client mode, it is highly recommended to use
 :const:`CERT_REQUIRED`.  However, it is in itself not sufficient; you also
@@ -2727,7 +2759,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://docs.openssl.org/1.1.1/man1/ciphers/#cipher-list-format>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.

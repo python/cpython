@@ -19,6 +19,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
@@ -195,6 +196,45 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
+    def test_addsitedir_dotfile(self):
+        pth_file = PthFile('.dotfile')
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
+    def test_addsitedir_hidden_flags(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            st = os.stat(pth_file.file_path)
+            os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
+    @support.requires_subprocess()
+    def test_addsitedir_hidden_file_attribute(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            subprocess.check_call(['attrib', '+H', pth_file.file_path])
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
     def test__getuserbase(self):
@@ -288,13 +328,13 @@ class HelperFunctionsTests(unittest.TestCase):
             if sys.platlibdir != "lib":
                 self.assertEqual(len(dirs), 2)
                 wanted = os.path.join('xoxo', sys.platlibdir,
-                                      'python%d.%d' % sys.version_info[:2],
+                                      f'python{sysconfig._get_python_version_abi()}',
                                       'site-packages')
                 self.assertEqual(dirs[0], wanted)
             else:
                 self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
-                                  'python%d.%d' % sys.version_info[:2],
+                                  f'python{sysconfig._get_python_version_abi()}',
                                   'site-packages')
             self.assertEqual(dirs[-1], wanted)
         else:
@@ -473,7 +513,7 @@ class ImportSideEffectTests(unittest.TestCase):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
             try:
-                import sitecustomize
+                import sitecustomize  # noqa: F401
             except ImportError:
                 pass
             else:

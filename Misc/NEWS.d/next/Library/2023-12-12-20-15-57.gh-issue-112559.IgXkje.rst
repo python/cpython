@@ -1,3 +1,0 @@
-:func:`signal.signal` and :func:`signal.getsignal` no longer call ``repr`` on
-callable handlers. :func:`asyncio.run` and :meth:`asyncio.Runner.run` no longer
-call ``repr`` on the task results. Patch by Yilei Yang.

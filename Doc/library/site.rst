@@ -1,5 +1,5 @@
-:mod:`site` --- Site-specific configuration hook
-================================================
+:mod:`!site` --- Site-specific configuration hook
+=================================================
 
 .. module:: site
    :synopsis: Module responsible for site-specific configuration.
@@ -15,8 +15,9 @@ import can be suppressed using the interpreter's :option:`-S` option.
 
 .. index:: triple: module; search; path
 
-Importing this module will append site-specific paths to the module search path
-and add a few builtins, unless :option:`-S` was used.  In that case, this module
+Importing this module normally appends site-specific paths to the module search path
+and adds :ref:`callables <site-consts>`, including :func:`help` to the built-in
+namespace. However, Python startup option :option:`-S` blocks this and this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
 additions, call the :func:`main` function.
@@ -32,13 +33,21 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
+:file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
+optional suffix "t" indicates the :term:`free threading` build, and is
+appended if ``"t"`` is present in the :attr:`sys.abiflags` constant.)
+For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
 
 .. versionchanged:: 3.5
    Support for the "site-python" directory has been removed.
+
+.. versionchanged:: 3.13
+   On Unix, :term:`Free threading <free threading>` Python installations are
+   identified by the "t" suffix in the version-specific directory name, such as
+   :file:`lib/python3.13t/`.
 
 If a file named "pyvenv.cfg" exists one directory above sys.executable,
 sys.prefix and sys.exec_prefix are set to that directory and
@@ -73,6 +82,10 @@ with ``import`` (followed by space or tab) are executed.
    actual import, if and when it happens.
    Limiting a code chunk to a single line is a deliberate measure
    to discourage putting anything more complex here.
+
+.. versionchanged:: 3.13
+   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
+   :term:`locale encoding` if it fails.
 
 .. index::
    single: package
@@ -184,11 +197,12 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
+   :file:`~/.local/lib/python{X.Y}[t]/site-packages` for UNIX and non-framework
    macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
-   on Windows.  This directory is a site directory, which means that
-   :file:`.pth` files in it will be processed.
+   on Windows.  The optional "t" indicates the free-threaded build.  This
+   directory is a site directory, which means that :file:`.pth` files in it
+   will be processed.
 
 
 .. data:: USER_BASE

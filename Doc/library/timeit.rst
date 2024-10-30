@@ -1,5 +1,5 @@
-:mod:`timeit` --- Measure execution time of small code snippets
-===============================================================
+:mod:`!timeit` --- Measure execution time of small code snippets
+================================================================
 
 .. module:: timeit
    :synopsis: Measure the execution time of small code snippets.

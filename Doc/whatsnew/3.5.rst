@@ -423,8 +423,8 @@ are declared in the annotations::
         return 'Hello ' + name
 
 While these annotations are available at runtime through the usual
-:attr:`__annotations__` attribute, *no automatic type checking happens at
-runtime*.  Instead, it is assumed that a separate off-line type checker
+:attr:`~object.__annotations__` attribute, *no automatic type checking happens
+at runtime*.  Instead, it is assumed that a separate off-line type checker
 (e.g. `mypy <https://mypy-lang.org>`_) will be used for on-demand
 source code analysis.
 
@@ -951,7 +951,7 @@ New :class:`~collections.abc.Awaitable`, :class:`~collections.abc.Coroutine`,
 (Contributed by Yury Selivanov in :issue:`24184`.)
 
 For earlier Python versions, a backport of the new ABCs is available in an
-external `PyPI package <https://pypi.org/project/backports_abc>`_.
+external :pypi:`PyPI package <backports_abc>`.
 
 
 compileall
@@ -1667,7 +1667,7 @@ Both the :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *decode_data* keyword argument to determine if the ``DATA`` portion of
 the SMTP transaction is decoded using the ``"utf-8"`` codec or is instead
 provided to the
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 method as a byte string.  The default is ``True`` for backward compatibility
 reasons, but will change to ``False`` in Python 3.6.  If *decode_data* is set
 to ``False``, the ``process_message`` method must be prepared to accept keyword
@@ -1677,14 +1677,14 @@ arguments.
 The :class:`!SMTPServer` class now advertises the ``8BITMIME`` extension
 (:rfc:`6152`) if *decode_data* has been set ``True``.  If the client
 specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 via the *mail_options* keyword.
 (Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
 
 The :class:`!SMTPServer` class now also supports the ``SMTPUTF8``
 extension (:rfc:`6531`: Internationalized Email).  If the client specified
 ``SMTPUTF8 BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
-:meth:`!SMTPServer.process_message()`
+:meth:`!SMTPServer.process_message`
 via the *mail_options* keyword.  It is the responsibility of the
 ``process_message`` method to correctly handle the ``SMTPUTF8`` data.
 (Contributed by Milan Oberkirch in :issue:`21725`.)
@@ -1935,8 +1935,8 @@ specifying the namespace in which the code will be running.
 tkinter
 -------
 
-The :mod:`tkinter._fix` module used for setting up the Tcl/Tk environment
-on Windows has been replaced by a private function in the :mod:`_tkinter`
+The :mod:`!tkinter._fix` module used for setting up the Tcl/Tk environment
+on Windows has been replaced by a private function in the :mod:`!_tkinter`
 module which makes no permanent changes to environment variables.
 (Contributed by Zachary Ware in :issue:`20035`.)
 
@@ -2405,7 +2405,7 @@ Changes in the Python API
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
   details.
 
-* The :meth:`ssl.SSLSocket.send()` method now raises either
+* The :meth:`ssl.SSLSocket.send` method now raises either
   :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError`
   on a non-blocking socket if the operation would block.  Previously,
   it would return ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
@@ -2418,7 +2418,7 @@ Changes in the Python API
   (Contributed by Victor Stinner in :issue:`21205`.)
 
 * The deprecated "strict" mode and argument of :class:`~html.parser.HTMLParser`,
-  :meth:`HTMLParser.error`, and the :exc:`HTMLParserError` exception have been
+  :meth:`!HTMLParser.error`, and the :exc:`!HTMLParserError` exception have been
   removed.  (Contributed by Ezio Melotti in :issue:`15114`.)
   The *convert_charrefs* argument of :class:`~html.parser.HTMLParser` is
   now ``True`` by default.  (Contributed by Berker Peksag in :issue:`21047`.)
@@ -2526,9 +2526,9 @@ Changes in the C API
   to format the :func:`repr` of the object.
   (Contributed by Serhiy Storchaka in :issue:`22453`.)
 
-* Because the lack of the :attr:`__module__` attribute breaks pickling and
+* Because the lack of the :attr:`~type.__module__` attribute breaks pickling and
   introspection, a deprecation warning is now raised for builtin types without
-  the :attr:`__module__` attribute.  This would be an AttributeError in
+  the :attr:`~type.__module__` attribute.  This will be an :exc:`AttributeError` in
   the future.
   (Contributed by Serhiy Storchaka in :issue:`20204`.)
 

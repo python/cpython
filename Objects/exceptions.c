@@ -78,6 +78,40 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+
+static PyObject *
+BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
+                         size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *type = _PyType_CAST(type_obj);
+    if (!_PyArg_NoKwnames(type->tp_name, kwnames)) {
+        return NULL;
+    }
+
+    PyBaseExceptionObject *self;
+    self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    // The dict is created on the fly in PyObject_GenericSetAttr()
+    self->dict = NULL;
+    self->notes = NULL;
+    self->traceback = NULL;
+    self->cause = NULL;
+    self->context = NULL;
+    self->suppress_context = 0;
+
+    self->args = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    if (!self->args) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+
 static int
 BaseException_clear(PyBaseExceptionObject *self)
 {
@@ -120,7 +154,7 @@ BaseException_str(PyBaseExceptionObject *self)
 {
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     case 1:
         return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
@@ -486,6 +520,7 @@ static PyTypeObject _PyExc_BaseException = {
     (initproc)BaseException_init, /* tp_init */
     0,                          /* tp_alloc */
     BaseException_new,          /* tp_new */
+    .tp_vectorcall = BaseException_vectorcall,
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
 from the previous implementation and also allowing Python objects to be used
@@ -510,10 +545,10 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
-#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+#define MiddlingExtendsExceptionEx(EXCBASE, EXCNAME, PYEXCNAME, EXCSTORE, EXCDOC) \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
-    # EXCNAME, \
+    # PYEXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
     0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
@@ -522,8 +557,12 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
     (initproc)EXCSTORE ## _init, 0, 0, \
-}; \
-PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
+};
+
+#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
+    static MiddlingExtendsExceptionEx( \
+        EXCBASE, EXCNAME, EXCNAME, EXCSTORE, EXCDOC); \
+    PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
@@ -2177,6 +2216,10 @@ SimpleExtendsException(PyExc_Exception, RuntimeError,
 SimpleExtendsException(PyExc_RuntimeError, RecursionError,
                        "Recursion limit exceeded.");
 
+// PythonFinalizationError extends RuntimeError
+SimpleExtendsException(PyExc_RuntimeError, PythonFinalizationError,
+                       "Operation blocked during Python finalization.");
+
 /*
  *    NotImplementedError extends RuntimeError
  */
@@ -2566,6 +2609,11 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
                          "Improper mixture of spaces and tabs.");
 
+/*
+ *    IncompleteInputError extends SyntaxError
+ */
+MiddlingExtendsExceptionEx(PyExc_SyntaxError, IncompleteInputError, _IncompleteInputError,
+                           SyntaxError, "incomplete input.");
 
 /*
  *    LookupError extends Exception
@@ -2946,46 +2994,55 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeEncodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
 
-    if (!uself->object)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
-    reason_str = PyObject_Str(uself->reason);
-    if (reason_str == NULL)
+    reason_str = PyObject_Str(exc->reason);
+    if (reason_str == NULL) {
         goto done;
-    encoding_str = PyObject_Str(uself->encoding);
-    if (encoding_str == NULL)
+    }
+    encoding_str = PyObject_Str(exc->encoding);
+    if (encoding_str == NULL) {
         goto done;
+    }
 
-    if (uself->start < PyUnicode_GET_LENGTH(uself->object) && uself->end == uself->start+1) {
-        Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
+
+    if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
+        Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
         const char *fmt;
-        if (badchar <= 0xff)
+        if (badchar <= 0xff) {
             fmt = "'%U' codec can't encode character '\\x%02x' in position %zd: %U";
-        else if (badchar <= 0xffff)
+        }
+        else if (badchar <= 0xffff) {
             fmt = "'%U' codec can't encode character '\\u%04x' in position %zd: %U";
-        else
+        }
+        else {
             fmt = "'%U' codec can't encode character '\\U%08x' in position %zd: %U";
+        }
         result = PyUnicode_FromFormat(
             fmt,
             encoding_str,
             (int)badchar,
-            uself->start,
+            start,
             reason_str);
     }
     else {
         result = PyUnicode_FromFormat(
             "'%U' codec can't encode characters in position %zd-%zd: %U",
             encoding_str,
-            uself->start,
-            uself->end-1,
+            start,
+            end - 1,
             reason_str);
     }
 done:
@@ -3059,41 +3116,46 @@ error:
 static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
 
-    if (!uself->object)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
-    reason_str = PyObject_Str(uself->reason);
-    if (reason_str == NULL)
+    reason_str = PyObject_Str(exc->reason);
+    if (reason_str == NULL) {
         goto done;
-    encoding_str = PyObject_Str(uself->encoding);
-    if (encoding_str == NULL)
+    }
+    encoding_str = PyObject_Str(exc->encoding);
+    if (encoding_str == NULL) {
         goto done;
+    }
 
-    if (uself->start < PyBytes_GET_SIZE(uself->object) && uself->end == uself->start+1) {
-        int byte = (int)(PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
+    Py_ssize_t len = PyBytes_GET_SIZE(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
+
+    if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
+        int badbyte = (int)(PyBytes_AS_STRING(exc->object)[start] & 0xff);
         result = PyUnicode_FromFormat(
             "'%U' codec can't decode byte 0x%02x in position %zd: %U",
             encoding_str,
-            byte,
-            uself->start,
+            badbyte,
+            start,
             reason_str);
     }
     else {
         result = PyUnicode_FromFormat(
             "'%U' codec can't decode bytes in position %zd-%zd: %U",
             encoding_str,
-            uself->start,
-            uself->end-1,
-            reason_str
-            );
+            start,
+            end - 1,
+            reason_str);
     }
 done:
     Py_XDECREF(reason_str);
@@ -3156,42 +3218,49 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
 static PyObject *
 UnicodeTranslateError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
 
-    if (!uself->object)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
 
     /* Get reason as a string, which it might not be if it's been
        modified after we were constructed. */
-    reason_str = PyObject_Str(uself->reason);
-    if (reason_str == NULL)
+    reason_str = PyObject_Str(exc->reason);
+    if (reason_str == NULL) {
         goto done;
+    }
 
-    if (uself->start < PyUnicode_GET_LENGTH(uself->object) && uself->end == uself->start+1) {
-        Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
+
+    if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
+        Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
         const char *fmt;
-        if (badchar <= 0xff)
+        if (badchar <= 0xff) {
             fmt = "can't translate character '\\x%02x' in position %zd: %U";
-        else if (badchar <= 0xffff)
+        }
+        else if (badchar <= 0xffff) {
             fmt = "can't translate character '\\u%04x' in position %zd: %U";
-        else
+        }
+        else {
             fmt = "can't translate character '\\U%08x' in position %zd: %U";
+        }
         result = PyUnicode_FromFormat(
             fmt,
             (int)badchar,
-            uself->start,
-            reason_str
-        );
-    } else {
+            start,
+            reason_str);
+    }
+    else {
         result = PyUnicode_FromFormat(
             "can't translate characters in position %zd-%zd: %U",
-            uself->start,
-            uself->end-1,
-            reason_str
-            );
+            start,
+            end - 1,
+            reason_str);
     }
 done:
     Py_XDECREF(reason_str);
@@ -3239,7 +3308,7 @@ SimpleExtendsException(PyExc_Exception, ArithmeticError,
  *    FloatingPointError extends ArithmeticError
  */
 SimpleExtendsException(PyExc_ArithmeticError, FloatingPointError,
-                       "Floating point operation failed.");
+                       "Floating-point operation failed.");
 
 
 /*
@@ -3339,8 +3408,9 @@ _PyErr_NoMemory(PyThreadState *tstate)
 }
 
 static void
-MemoryError_dealloc(PyBaseExceptionObject *self)
+MemoryError_dealloc(PyObject *obj)
 {
+    PyBaseExceptionObject *self = (PyBaseExceptionObject *)obj;
     _PyObject_GC_UNTRACK(self);
 
     BaseException_clear(self);
@@ -3399,7 +3469,7 @@ PyTypeObject _PyExc_MemoryError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
-    0, (destructor)MemoryError_dealloc, 0, 0, 0, 0, 0, 0, 0,
+    0, MemoryError_dealloc, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Out of memory."), (traverseproc)BaseException_traverse,
@@ -3534,7 +3604,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #undef EOPNOTSUPP
 #undef EPROTONOSUPPORT
 #undef EPROTOTYPE
-#undef ETIMEDOUT
 #undef EWOULDBLOCK
 
 #if defined(WSAEALREADY) && !defined(EALREADY)
@@ -3554,9 +3623,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
 #define ESHUTDOWN WSAESHUTDOWN
-#endif
-#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 #if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
 #define EWOULDBLOCK WSAEWOULDBLOCK
@@ -3635,10 +3701,12 @@ static struct static_exception static_exceptions[] = {
 
     // Level 4: Other subclasses
     ITEM(IndentationError), // base: SyntaxError(Exception)
+    {&_PyExc_IncompleteInputError, "_IncompleteInputError"}, // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
     ITEM(NotImplementedError),  // base: RuntimeError(Exception)
+    ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
     ITEM(RecursionError),  // base: RuntimeError(Exception)
     ITEM(UnboundLocalError), // base: NameError(Exception)
     ITEM(UnicodeError),  // base: ValueError(Exception)
@@ -3668,6 +3736,11 @@ _PyExc_InitTypes(PyInterpreterState *interp)
         if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
+        if (exc->tp_new == BaseException_new
+            && exc->tp_init == (initproc)BaseException_init)
+        {
+            exc->tp_vectorcall = BaseException_vectorcall;
+        }
     }
     return 0;
 }
@@ -3678,7 +3751,7 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(interp, exc);
+        _PyStaticType_FiniBuiltin(interp, exc);
     }
 }
 
@@ -3741,6 +3814,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef WSAETIMEDOUT
+    ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
+#endif
 
     return _PyStatus_OK();
 

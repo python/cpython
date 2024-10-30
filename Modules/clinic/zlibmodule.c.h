@@ -637,7 +637,7 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Compress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -662,7 +662,7 @@ zlib_Compress___copy___impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Compress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
@@ -735,7 +735,7 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Decompress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -760,7 +760,7 @@ zlib_Decompress___copy___impl(compobject *self, PyTypeObject *cls);
 static PyObject *
 zlib_Decompress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
@@ -1098,4 +1098,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=6dd97dc851c39031 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bb840fb6af43dd4 input=a9049054013a1b77]*/

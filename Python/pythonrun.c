@@ -13,6 +13,7 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
@@ -22,7 +23,7 @@
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF
@@ -83,22 +84,17 @@ _PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
     return res;
 }
 
-
-/* Parse input from a file and execute it */
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
 {
-    PyObject *filename_obj;
+    PyObject *filename_obj = NULL;
     if (filename != NULL) {
         filename_obj = PyUnicode_DecodeFSDefault(filename);
         if (filename_obj == NULL) {
             PyErr_Print();
             return -1;
         }
-    }
-    else {
-        filename_obj = NULL;
     }
     int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
@@ -285,11 +281,42 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyObject *main_dict = PyModule_GetDict(main_module);  // borrowed ref
 
     PyObject *res = run_mod(mod, filename, main_dict, main_dict, flags, arena, interactive_src, 1);
+    Py_INCREF(interactive_src);
     _PyArena_Free(arena);
     Py_DECREF(main_module);
     if (res == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        if (PyType_IsSubtype(Py_TYPE(exc),
+                             (PyTypeObject *) PyExc_SyntaxError))
+        {
+            /* fix "text" attribute */
+            assert(interactive_src != NULL);
+            PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
+            if (xs == NULL) {
+                goto error;
+            }
+            PyObject *exc_lineno = PyObject_GetAttr(exc, &_Py_ID(lineno));
+            if (exc_lineno == NULL) {
+                Py_DECREF(xs);
+                goto error;
+            }
+            int n = PyLong_AsInt(exc_lineno);
+            Py_DECREF(exc_lineno);
+            if (n <= 0 || n > PyList_GET_SIZE(xs)) {
+                Py_DECREF(xs);
+                goto error;
+            }
+            PyObject *line = PyList_GET_ITEM(xs, n - 1);
+            PyObject_SetAttr(exc, &_Py_ID(text), line);
+            Py_DECREF(xs);
+        }
+error:
+        Py_DECREF(interactive_src);
+        _PyErr_SetRaisedException(tstate, exc);
         return -1;
     }
+    Py_DECREF(interactive_src);
     Py_DECREF(res);
 
     flush_io();
@@ -455,7 +482,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         v = run_pyc_file(pyc_fp, dict, dict, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
-        if (PyUnicode_CompareWithASCIIString(filename, "<stdin>") != 0 &&
+        if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
             ret = -1;
@@ -475,11 +502,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 
   done:
     if (set_file_name) {
-        if (PyDict_DelItemString(dict, "__file__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+            PyErr_Print();
         }
-        if (PyDict_DelItemString(dict, "__cached__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
+            PyErr_Print();
         }
     }
     Py_XDECREF(main_module);
@@ -537,6 +564,30 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
     return _PyRun_SimpleStringFlagsWithName(command, NULL, flags);
 }
 
+static int
+parse_exit_code(PyObject *code, int *exitcode_p)
+{
+    if (PyLong_Check(code)) {
+        // gh-125842: Use a long long to avoid an overflow error when `long`
+        // is 32-bit. We still truncate the result to an int.
+        int exitcode = (int)PyLong_AsLongLong(code);
+        if (exitcode == -1 && PyErr_Occurred()) {
+            // On overflow or other error, clear the exception and use -1
+            // as the exit code to match historical Python behavior.
+            PyErr_Clear();
+            *exitcode_p = -1;
+            return 1;
+        }
+        *exitcode_p = exitcode;
+        return 1;
+    }
+    else if (code == Py_None) {
+        *exitcode_p = 0;
+        return 1;
+    }
+    return 0;
+}
+
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
@@ -553,50 +604,40 @@ _Py_HandleSystemExit(int *exitcode_p)
 
     fflush(stdout);
 
-    int exitcode = 0;
-
     PyObject *exc = PyErr_GetRaisedException();
-    if (exc == NULL) {
-        goto done;
-    }
-    assert(PyExceptionInstance_Check(exc));
+    assert(exc != NULL && PyExceptionInstance_Check(exc));
 
-    /* The error code should be in the `code' attribute. */
     PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
-    if (code) {
-        Py_SETREF(exc, code);
-        if (exc == Py_None) {
-            goto done;
-        }
+    if (code == NULL) {
+        // If the exception has no 'code' attribute, print the exception below
+        PyErr_Clear();
     }
-    /* If we failed to dig out the 'code' attribute,
-     * just let the else clause below print the error.
-     */
-
-    if (PyLong_Check(exc)) {
-        exitcode = (int)PyLong_AsLong(exc);
+    else if (parse_exit_code(code, exitcode_p)) {
+        Py_DECREF(code);
+        Py_CLEAR(exc);
+        return 1;
     }
     else {
-        PyThreadState *tstate = _PyThreadState_GET();
-        PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-        /* We clear the exception here to avoid triggering the assertion
-         * in PyObject_Str that ensures it won't silently lose exception
-         * details.
-         */
-        PyErr_Clear();
-        if (sys_stderr != NULL && sys_stderr != Py_None) {
-            PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW);
-        } else {
-            PyObject_Print(exc, stderr, Py_PRINT_RAW);
-            fflush(stderr);
-        }
-        PySys_WriteStderr("\n");
-        exitcode = 1;
+        // If code is not an int or None, print it below
+        Py_SETREF(exc, code);
     }
 
-done:
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    if (sys_stderr != NULL && sys_stderr != Py_None) {
+        if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+    }
+    else {
+        if (PyObject_Print(exc, stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+        fflush(stderr);
+    }
+    PySys_WriteStderr("\n");
     Py_CLEAR(exc);
-    *exitcode_p = exitcode;
+    *exitcode_p = 1;
     return 1;
 }
 
@@ -1278,16 +1319,19 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL) {
-        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-        if (has_builtins < 0) {
+    if (!globals || !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+        return NULL;
+    }
+    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+    if (has_builtins < 0) {
+        return NULL;
+    }
+    if (!has_builtins) {
+        if (PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
-        }
-        if (!has_builtins) {
-            if (PyDict_SetItemString(globals, "__builtins__",
-                                     tstate->interp->builtins) < 0) {
-                return NULL;
-            }
         }
     }
 

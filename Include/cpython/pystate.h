@@ -56,17 +56,17 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-struct _py_trashcan {
-    int delete_nesting;
-    PyObject *delete_later;
-};
-
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
     PyThreadState *prev;
     PyThreadState *next;
     PyInterpreterState *interp;
+
+    /* The global instrumentation version in high bits, plus flags indicating
+       when to break out of the interpreter loop in lower bits. See details in
+       pycore_ceval.h. */
+    uintptr_t eval_breaker;
 
     struct {
         /* Has been initialized to a safe state.
@@ -83,6 +83,8 @@ struct _ts {
         unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
+        /* Currently holds the GIL. */
+        unsigned int holds_gil:1;
 
         /* various stages of finalization */
         unsigned int finalizing:1;
@@ -90,19 +92,20 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :24;
+        unsigned int :23;
     } _status;
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
 #  define _PyThreadState_WHENCE_UNKNOWN 0
-#  define _PyThreadState_WHENCE_INTERP 1
-#  define _PyThreadState_WHENCE_THREADING 2
-#  define _PyThreadState_WHENCE_GILSTATE 3
-#  define _PyThreadState_WHENCE_EXEC 4
+#  define _PyThreadState_WHENCE_INIT 1
+#  define _PyThreadState_WHENCE_FINI 2
+#  define _PyThreadState_WHENCE_THREADING 3
+#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_EXEC 5
 #endif
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
        See Include/internal/pycore_pystate.h for more details. */
     int state;
 
@@ -147,7 +150,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    struct _py_trashcan trash;
+    PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
@@ -155,32 +158,6 @@ struct _ts {
      * default build, this field is always zero.
      */
     uintptr_t critical_section;
-
-    /* Called when a thread state is deleted normally, but not when it
-     * is destroyed after fork().
-     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
-     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
-     * from the tstate chain.  That happens at the end of a thread's life,
-     * in pystate.c.
-     * The obvious way doesn't quite work:  create a lock which the tstate
-     * unlinking code releases, and have Thread.join() wait to acquire that
-     * lock.  The problem is that we _are_ at the end of the thread's life:
-     * if the thread holds the last reference to the lock, decref'ing the
-     * lock will delete the lock, and that may trigger arbitrary Python code
-     * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
-     * So instead of holding the lock directly, the tstate holds a weakref to
-     * the lock:  that's the value of on_delete_data below.  Decref'ing a
-     * weakref is harmless.
-     * on_delete points to _threadmodule.c's static release_sentinel() function.
-     * After the tstate is unlinked, release_sentinel is called with the
-     * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
-     * the indirectly held lock.
-     */
-    void (*on_delete)(void *);
-    void *on_delete_data;
 
     int coroutine_origin_tracking_depth;
 
@@ -212,22 +189,47 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
+    PyObject *previous_executor;
+
+    uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
 };
 
 #ifdef Py_DEBUG
    // A debug build is likely built with low optimization level which implies
    // higher stack memory usage than a release build: use a lower limit.
 #  define Py_C_RECURSION_LIMIT 500
-#elif defined(__wasi__)
-   // WASI has limited call stack. Python's recursion limit depends on code
-   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   // recursions, sometimes less. 500 is a more conservative limit.
-#  define Py_C_RECURSION_LIMIT 500
 #elif defined(__s390x__)
-#  define Py_C_RECURSION_LIMIT 1200
+#  define Py_C_RECURSION_LIMIT 800
+#elif defined(_WIN32) && defined(_M_ARM64)
+#  define Py_C_RECURSION_LIMIT 1000
+#elif defined(_WIN32)
+#  define Py_C_RECURSION_LIMIT 3000
+#elif defined(__ANDROID__)
+   // On an ARM64 emulator, API level 34 was OK with 10000, but API level 21
+   // crashed in test_compiler_recursion_limit.
+#  define Py_C_RECURSION_LIMIT 3000
+#elif defined(_Py_ADDRESS_SANITIZER)
+#  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__wasi__)
+   // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
+#  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 8000
+#  define Py_C_RECURSION_LIMIT 10000
 #endif
 
 

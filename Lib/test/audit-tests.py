@@ -487,7 +487,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog
@@ -548,6 +554,28 @@ def test_sys_monitoring_register_callback():
 
     sys.addaudithook(hook)
     sys.monitoring.register_callback(1, 1, None)
+
+
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
+def test_assert_unicode():
+    import sys
+    sys.addaudithook(lambda *args: None)
+    try:
+        sys.audit(9)
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-:mod:`importlib.resources.abc` -- Abstract base classes for resources
----------------------------------------------------------------------
+:mod:`!importlib.resources.abc` -- Abstract base classes for resources
+----------------------------------------------------------------------
 
 .. module:: importlib.resources.abc
     :synopsis: Abstract base classes for resources
@@ -22,7 +22,7 @@
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
@@ -103,19 +103,41 @@
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directory.
+       Return ``True`` if self is a directory.
 
     .. abstractmethod:: is_file()
 
-       Return True if self is a file.
+       Return ``True`` if self is a file.
 
-    .. abstractmethod:: joinpath(child)
+    .. abstractmethod:: joinpath(*pathsegments)
 
-       Return Traversable child in self.
+       Traverse directories according to *pathsegments* and return
+       the result as :class:`!Traversable`.
+
+       Each *pathsegments* argument may contain multiple names separated by
+       forward slashes (``/``, ``posixpath.sep`` ).
+       For example, the following are equivalent::
+
+           files.joinpath('subdir', 'subsuddir', 'file.txt')
+           files.joinpath('subdir/subsuddir/file.txt')
+
+       Note that some :class:`!Traversable` implementations
+       might not be updated to the latest version of the protocol.
+       For compatibility with such implementations, provide a single argument
+       without path separators to each call to ``joinpath``. For example::
+
+           files.joinpath('subdir').joinpath('subsubdir').joinpath('file.txt')
+
+       .. versionchanged:: 3.11
+
+          ``joinpath`` accepts multiple *pathsegments*, and these segments
+          may contain forward slashes as path separators.
+          Previously, only a single *child* argument was accepted.
 
     .. abstractmethod:: __truediv__(child)
 
        Return Traversable child in self.
+       Equivalent to ``joinpath(child)``.
 
     .. abstractmethod:: open(mode='r', *args, **kwargs)
 

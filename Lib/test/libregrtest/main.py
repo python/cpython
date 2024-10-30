@@ -7,8 +7,7 @@ import sysconfig
 import time
 import trace
 
-from test import support
-from test.support import os_helper, MS_WINDOWS
+from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -19,6 +18,7 @@ from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
+from .tsan import setup_tsan_tests
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
@@ -57,6 +57,7 @@ class Regrtest:
         self.quiet: bool = ns.quiet
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
+        self.tsan: bool = ns.tsan
 
         # Test results
         self.results: TestResults = TestResults()
@@ -73,6 +74,7 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+        self.want_bisect: bool = ns.bisect
 
         self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
         self.want_add_python_opts: bool = (_add_python_opts
@@ -86,12 +88,13 @@ class Regrtest:
         self.cmdline_args: TestList = ns.args
 
         # Workers
-        if ns.use_mp is None:
-            num_workers = 0  # run sequentially
+        self.single_process: bool = ns.single_process
+        if self.single_process or ns.use_mp is None:
+            num_workers = 0   # run sequentially in a single process
         elif ns.use_mp <= 0:
-            num_workers = -1  # use the number of CPUs
+            num_workers = -1  # run in parallel, use the number of CPUs
         else:
-            num_workers = ns.use_mp
+            num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
         self.worker_json: StrJSON | None = ns.worker_json
 
@@ -183,6 +186,9 @@ class Regrtest:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
 
+        if self.tsan:
+            setup_tsan_tests(self.cmdline_args)
+
         exclude_tests = set()
         if self.exclude:
             for arg in self.cmdline_args:
@@ -230,7 +236,7 @@ class Regrtest:
 
     def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
-        if self.num_workers == 0:
+        if self.num_workers == 0 and not self.single_process:
             # Always run tests in fresh processes to have more deterministic
             # initial state. Don't re-run tests in parallel but limit to a
             # single worker process to have side effects (on the system load
@@ -240,7 +246,6 @@ class Regrtest:
         tests, match_tests_dict = self.results.prepare_rerun()
 
         # Re-run failed tests
-        self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(
             tests=tests,
             rerun=True,
@@ -250,7 +255,15 @@ class Regrtest:
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
         self.logger.set_tests(runtests)
-        self._run_tests_mp(runtests, self.num_workers)
+
+        msg = f"Re-running {len(tests)} failed tests in verbose mode"
+        if not self.single_process:
+            msg = f"{msg} in subprocesses"
+            self.log(msg)
+            self._run_tests_mp(runtests, self.num_workers)
+        else:
+            self.log(msg)
+            self.run_tests_sequentially(runtests)
         return runtests
 
     def rerun_failed_tests(self, runtests: RunTests):
@@ -272,6 +285,55 @@ class Regrtest:
             printlist(self.results.bad)
 
         self.display_result(rerun_runtests)
+
+    def _run_bisect(self, runtests: RunTests, test: str, progress: str) -> bool:
+        print()
+        title = f"Bisect {test}"
+        if progress:
+            title = f"{title} ({progress})"
+        print(title)
+        print("#" * len(title))
+        print()
+
+        cmd = runtests.create_python_cmd()
+        cmd.extend([
+            "-u", "-m", "test.bisect_cmd",
+            # Limit to 25 iterations (instead of 100) to not abuse CI resources
+            "--max-iter", "25",
+            "-v",
+            # runtests.match_tests is not used (yet) for bisect_cmd -i arg
+        ])
+        cmd.extend(runtests.bisect_cmd_args())
+        cmd.append(test)
+        print("+", shlex.join(cmd), flush=True)
+
+        flush_std_streams()
+
+        import subprocess
+        proc = subprocess.run(cmd, timeout=runtests.timeout)
+        exitcode = proc.returncode
+
+        title = f"{title}: exit code {exitcode}"
+        print(title)
+        print("#" * len(title))
+        print(flush=True)
+
+        if exitcode:
+            print(f"Bisect failed with exit code {exitcode}")
+            return False
+
+        return True
+
+    def run_bisect(self, runtests: RunTests) -> None:
+        tests, _ = self.results.prepare_rerun(clear=False)
+
+        for index, name in enumerate(tests, 1):
+            if len(tests) > 1:
+                progress = f"{index}/{len(tests)}"
+            else:
+                progress = ""
+            if not self._run_bisect(runtests, name, progress):
+                return
 
     def display_result(self, runtests):
         # If running the test suite for PGO then no one cares about results.
@@ -295,9 +357,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
-            # Mypy doesn't know about this attribute yet,
-            # but it will do soon: https://github.com/python/typeshed/pull/11091
-            result.covered_lines = list(tracer.counts)  # type: ignore[attr-defined]
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 
@@ -318,7 +378,7 @@ class Regrtest:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        msg = f"Run {tests} sequentially"
+        msg = f"Run {tests} sequentially in a single process"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
@@ -461,8 +521,8 @@ class Regrtest:
 
         setup_process()
 
-        if self.hunt_refleak and not self.num_workers:
-            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+        if (runtests.hunt_refleak is not None) and (not self.num_workers):
+            # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
         else:
             # WindowsLoadTracker is only needed on Windows
@@ -481,6 +541,9 @@ class Regrtest:
 
             if self.want_rerun and self.results.need_rerun():
                 self.rerun_failed_tests(runtests)
+
+            if self.want_bisect and self.results.need_rerun():
+                self.run_bisect(runtests)
         finally:
             if use_load_tracker:
                 self.logger.stop_load_tracker()
@@ -527,6 +590,7 @@ class Regrtest:
                 '_PYTHON_PROJECT_BASE',
                 '_PYTHON_HOST_PLATFORM',
                 '_PYTHON_SYSCONFIGDATA_NAME',
+                "_PYTHON_SYSCONFIGDATA_PATH",
                 'PYTHONPATH'
             }
             old_environ = os.environ
@@ -540,7 +604,7 @@ class Regrtest:
             keep_environ = True
 
         if cross_compile and hostrunner:
-            if self.num_workers == 0:
+            if self.num_workers == 0 and not self.single_process:
                 # For now use only two cores for cross-compiled builds;
                 # hostrunner can be expensive.
                 regrtest_opts.extend(['-j', '2'])

@@ -16,7 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
-import functools
+import errno
 import heapq
 import itertools
 import os
@@ -44,6 +44,7 @@ from . import protocols
 from . import sslproto
 from . import staggered
 from . import tasks
+from . import timeouts
 from . import transports
 from . import trsock
 from .log import logger
@@ -277,7 +278,9 @@ class Server(events.AbstractServer):
                  ssl_handshake_timeout, ssl_shutdown_timeout=None):
         self._loop = loop
         self._sockets = sockets
-        self._active_count = 0
+        # Weak references so we don't break Transport's ability to
+        # detect abandoned transports
+        self._clients = weakref.WeakSet()
         self._waiters = []
         self._protocol_factory = protocol_factory
         self._backlog = backlog
@@ -290,14 +293,13 @@ class Server(events.AbstractServer):
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
 
-    def _attach(self):
+    def _attach(self, transport):
         assert self._sockets is not None
-        self._active_count += 1
+        self._clients.add(transport)
 
-    def _detach(self):
-        assert self._active_count > 0
-        self._active_count -= 1
-        if self._active_count == 0 and self._sockets is None:
+    def _detach(self, transport):
+        self._clients.discard(transport)
+        if len(self._clients) == 0 and self._sockets is None:
             self._wakeup()
 
     def _wakeup(self):
@@ -346,8 +348,16 @@ class Server(events.AbstractServer):
             self._serving_forever_fut.cancel()
             self._serving_forever_fut = None
 
-        if self._active_count == 0:
+        if len(self._clients) == 0:
             self._wakeup()
+
+    def close_clients(self):
+        for transport in self._clients.copy():
+            transport.close()
+
+    def abort_clients(self):
+        for transport in self._clients.copy():
+            transport.abort()
 
     async def start_serving(self):
         self._start_serving()
@@ -597,23 +607,24 @@ class BaseEventLoop(events.AbstractEventLoop):
         thread = threading.Thread(target=self._do_shutdown, args=(future,))
         thread.start()
         try:
-            await future
-        finally:
-            thread.join(timeout)
-
-        if thread.is_alive():
+            async with timeouts.timeout(timeout):
+                await future
+        except TimeoutError:
             warnings.warn("The executor did not finishing joining "
-                             f"its threads within {timeout} seconds.",
-                             RuntimeWarning, stacklevel=2)
+                          f"its threads within {timeout} seconds.",
+                          RuntimeWarning, stacklevel=2)
             self._default_executor.shutdown(wait=False)
+        else:
+            thread.join()
 
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
             if not self.is_closed():
-                self.call_soon_threadsafe(future.set_result, None)
+                self.call_soon_threadsafe(futures._set_result_unless_cancelled,
+                                          future, None)
         except Exception as ex:
-            if not self.is_closed():
+            if not self.is_closed() and not future.cancelled():
                 self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
@@ -825,7 +836,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):
@@ -1016,8 +1027,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as exc:
                         msg = (
                             f'error while attempting to bind on '
-                            f'address {laddr!r}: '
-                            f'{exc.strerror.lower()}'
+                            f'address {laddr!r}: {str(exc).lower()}'
                         )
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
@@ -1129,11 +1139,18 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError:
                         continue
             else:  # using happy eyeballs
-                sock, _, _ = await staggered.staggered_race(
-                    (functools.partial(self._connect_sock,
-                                       exceptions, addrinfo, laddr_infos)
-                     for addrinfo in infos),
-                    happy_eyeballs_delay, loop=self)
+                sock = (await staggered.staggered_race(
+                    (
+                        # can't use functools.partial as it keeps a reference
+                        # to exceptions
+                        lambda addrinfo=addrinfo: self._connect_sock(
+                            exceptions, addrinfo, laddr_infos
+                        )
+                        for addrinfo in infos
+                    ),
+                    happy_eyeballs_delay,
+                    loop=self,
+                ))[0]  # can't use sock, _, _ as it keeks a reference to exceptions
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
@@ -1339,9 +1356,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if sock.type != socket.SOCK_DGRAM:
+            if sock.type == socket.SOCK_STREAM:
                 raise ValueError(
-                    f'A UDP Socket was expected, got {sock!r}')
+                    f'A datagram socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_port or allow_broadcast):
@@ -1585,9 +1602,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                     try:
                         sock.bind(sa)
                     except OSError as err:
-                        raise OSError(err.errno, 'error while attempting '
-                                      'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower())) from None
+                        msg = ('error while attempting '
+                               'to bind on address %r: %s'
+                               % (sa, str(err).lower()))
+                        if err.errno == errno.EADDRNOTAVAIL:
+                            # Assume the family is not enabled (bpo-30945)
+                            sockets.pop()
+                            sock.close()
+                            if self._debug:
+                                logger.warning(msg)
+                            continue
+                        raise OSError(err.errno, msg) from None
+
+                if not sockets:
+                    raise OSError('could not bind on any address out of %r'
+                                  % ([info[4] for info in infos],))
+
                 completed = True
             finally:
                 if not completed:

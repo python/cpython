@@ -1,5 +1,5 @@
-:mod:`sys.monitoring` --- Execution event monitoring
-====================================================
+:mod:`!sys.monitoring` --- Execution event monitoring
+=====================================================
 
 .. module:: sys.monitoring
    :synopsis: Access and control event monitoring
@@ -50,16 +50,14 @@ Registering and using tools
    *tool_id* must be in the range 0 to 5 inclusive.
    Raises a :exc:`ValueError` if *tool_id* is in use.
 
+.. function:: clear_tool_id(tool_id: int, /) -> None
+
+   Unregister all events and callback functions associated with *tool_id*.
+
 .. function:: free_tool_id(tool_id: int, /) -> None
 
    Should be called once a tool no longer requires *tool_id*.
-
-.. note::
-
-   :func:`free_tool_id` will not disable global or local events associated
-   with *tool_id*, nor will it unregister any callback functions. This
-   function is only intended to be used to notify the VM that the
-   particular *tool_id* is no longer in use.
+   Will call :func:`clear_tool_id` before releasing *tool_id*.
 
 .. function:: get_tool(tool_id: int, /) -> str | None
 
@@ -75,9 +73,6 @@ following IDs are pre-defined to make co-operation of tools easier::
   sys.monitoring.PROFILER_ID = 2
   sys.monitoring.OPTIMIZER_ID = 5
 
-There is no obligation to set an ID, nor is there anything preventing a tool
-from using an ID even it is already in use.
-However, tools are encouraged to use a unique ID and respect other tools.
 
 Events
 ------
@@ -163,7 +158,7 @@ events, use the expression ``PY_RETURN | PY_START``.
 
 .. monitoring-event:: NO_EVENTS
 
-    An alias for ``0`` so users can do explict comparisions like::
+    An alias for ``0`` so users can do explicit comparisons like::
 
       if get_events(DEBUGGER_ID) == NO_EVENTS:
           ...
@@ -229,6 +224,10 @@ To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
 :monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
 
+Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
+event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
+when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
+performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
 
 Turning events on and off
 -------------------------
@@ -258,7 +257,10 @@ No events are active by default.
 Per code object events
 ''''''''''''''''''''''
 
-Events can also be controlled on a per code object basis.
+Events can also be controlled on a per code object basis. The functions
+defined below which accept a :class:`types.CodeType` should be prepared
+to accept a look-alike object from functions which are not defined
+in Python (see :ref:`c-api-monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
