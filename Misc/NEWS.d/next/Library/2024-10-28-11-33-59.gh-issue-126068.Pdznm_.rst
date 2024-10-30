@@ -1,4 +1,4 @@
 Fix exceptions in the :mod:`argparse` module so that only error messages for
-:exc:`ArgumentError` and :exc:`ArgumentTypeError` are now translated. 
-:exc:`ArgumentError` is now only used for command line errors, not for logical 
+ArgumentError and ArgumentTypeError are now translated.
+ArgumentError is now only used for command line errors, not for logical
 errors in the program.
