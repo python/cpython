@@ -134,7 +134,7 @@ This module defines the following functions:
       The keyword-only parameter *aware_datetime* has been added.
 
    .. versionchanged:: 3.14
-      The parameter *compact* has been added.
+      The keyword-only parameter *compact* has been added.
 
 
 .. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False, compact=False)
