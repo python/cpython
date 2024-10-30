@@ -34,6 +34,7 @@ with test_tools.imports_under_tool("cases_generator"):
     from stack import Local, Stack
     import tier1_generator
     import optimizer_generator
+    import partial_evaluator_generator
 
 
 def handle_stderr():
@@ -1431,6 +1432,9 @@ class TestGeneratedCases(unittest.TestCase):
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):
+
+    generator = None
+
     def setUp(self) -> None:
         super().setUp()
         self.maxDiff = None
@@ -1466,7 +1470,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             temp_input.flush()
 
         with handle_stderr():
-            optimizer_generator.generate_tier2_abstract_from_files(
+            assert self.generator is not None
+            self.generator.generate_tier2_abstract_from_files(
                 [self.temp_input_filename, self.temp_input2_filename],
                 self.temp_output_filename
             )
@@ -1480,6 +1485,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         actual = "".join(lines)
         self.assertEqual(actual.strip(), expected.strip())
 
+
+class TestGeneratedOptimizerCases(TestGeneratedAbstractCases):
+    generator = optimizer_generator
     def test_overridden_abstract(self):
         input = """
         pure op(OP, (--)) {
@@ -1578,6 +1586,167 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         with self.assertRaisesRegex(AssertionError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
+
+
+class TestGeneratedPECases(TestGeneratedAbstractCases):
+    generator = partial_evaluator_generator
+
+    def test_overridden_abstract(self):
+        input = """
+        pure op(OP, (--)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        pure op(OP, (--)) {
+            eggs();
+        }
+        """
+        output = """
+        case OP: {
+            eggs();
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_overridden_abstract_args(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            out = SPAM(arg1);
+        }
+        op(OP2, (arg1 -- out)) {
+            out = EGGS(arg1);
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- out)) {
+            out = EGGS(arg1);
+        }
+        """
+        output = """
+        case OP: {
+            _Py_UopsPESlot arg1;
+            _Py_UopsPESlot out;
+            arg1 = stack_pointer[-1];
+            arg1 = stack_pointer[-1];
+            out = EGGS(arg1);
+            stack_pointer[-1] = out;
+            break;
+        }
+
+        case OP2: {
+            _Py_UopsPESlot arg1;
+            _Py_UopsPESlot out;
+            MATERIALIZE_INST();
+            arg1 = stack_pointer[-1];
+            materialize(&arg1);
+            out = sym_new_not_null(ctx);
+            stack_pointer[-1] = out;
+            break;
+        }
+       """
+        self.run_cases_test(input, input2, output)
+
+    def test_no_overridden_case(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            out = SPAM(arg1);
+        }
+
+        pure op(OP2, (arg1 -- out)) {
+        }
+
+        """
+        input2 = """
+        pure op(OP2, (arg1 -- out)) {
+            out = NULL;
+        }
+        """
+        output = """
+        case OP: {
+            _Py_UopsPESlot arg1;
+            _Py_UopsPESlot out;
+            MATERIALIZE_INST();
+            arg1 = stack_pointer[-1];
+            materialize(&arg1);
+            out = sym_new_not_null(ctx);
+            stack_pointer[-1] = out;
+            break;
+        }
+
+        case OP2: {
+            _Py_UopsPESlot arg1;
+            _Py_UopsPESlot out;
+            arg1 = stack_pointer[-1];
+            out = NULL;
+            stack_pointer[-1] = out;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_missing_override_failure(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        pure op(OTHER, (arg1 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+            self.run_cases_test(input, input2, output)
+
+
+    def test_validate_inputs(self):
+        input = """
+        pure op(OP, (arg1 --)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        // Non-matching input!
+        pure op(OP, (arg1, arg2 --)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(AssertionError, "input length don't match"):
+            self.run_cases_test(input, input2, output)
+
+    def test_materialize_inputs(self):
+        input = """
+        pure op(OP2, (arg1, arg2, arg3[oparg] --)) {
+        }
+        """
+        input2 = """
+        pure op(OP2, (arg1, arg2, arg3[oparg] --)) {
+            MATERIALIZE_INPUTS();
+        }
+        """
+        output = """
+        case OP2: {
+            _Py_UopsPESlot *arg3;
+            _Py_UopsPESlot arg2;
+            _Py_UopsPESlot arg1;
+            arg3 = &stack_pointer[-2 - oparg];
+            arg2 = stack_pointer[-2];
+            arg1 = stack_pointer[-1];
+            materialize(&arg1);
+            materialize(&arg2);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&arg3[_i]);
+            }
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
 
 
 if __name__ == "__main__":

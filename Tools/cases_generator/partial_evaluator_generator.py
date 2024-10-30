@@ -29,6 +29,10 @@ DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
 
 def validate_uop(override: Uop, uop: Uop) -> None:
+    if len(override.stack.inputs) != len(uop.stack.inputs):
+        assert False, f"Uop {uop.name} input length don't match."
+    if len(override.stack.outputs) != len(uop.stack.outputs):
+        assert False, f"Uop {uop.name} output length don't match."
     for override_input, uop_input in zip(override.stack.inputs, uop.stack.inputs):
         if override_input.name != uop_input.name:
             assert False, f"Uop {uop.name} input names don't match."
