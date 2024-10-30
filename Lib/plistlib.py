@@ -650,7 +650,6 @@ class _BinaryPlistWriter (object):
         self._sort_keys = sort_keys
         self._skipkeys = skipkeys
         self._aware_datetime = aware_datetime
-        self._compact = compact
 
     def write(self, value):
 
