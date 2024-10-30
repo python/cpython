@@ -6,8 +6,10 @@ import inspect
 import io
 import operator
 import os
+import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import tempfile
@@ -15,7 +17,16 @@ import unittest
 import argparse
 import warnings
 
-from test.support import os_helper, captured_stderr
+from enum import StrEnum
+from pathlib import Path
+from test.support import REPO_ROOT
+from test.support import TEST_HOME_DIR
+from test.support import captured_stderr
+from test.support import import_helper
+from test.support import os_helper
+from test.support import requires_subprocess
+from test.support import script_helper
+from test.test_tools import skip_if_missing
 from unittest import mock
 
 
@@ -1020,6 +1031,34 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_parse_enum_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_help_message_contains_enum_choices(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        self.assertIn('[--color {red,green,blue}]', parser.format_usage())
+        self.assertIn('  --color {red,green,blue}', parser.format_help())
+
+    def test_invalid_enum_value_raises_error(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2486,7 +2525,7 @@ class TestAddSubparsers(TestCase):
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from foo, bar\)\n$"
         )
 
     def test_optional_subparsers(self):
@@ -2946,6 +2985,35 @@ class TestParentParsers(TestCase):
 
     def test_wrong_type_parents(self):
         self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
+
+    def test_mutex_groups_parents(self):
+        parent = ErrorRaisingArgumentParser(add_help=False)
+        g = parent.add_argument_group(title='g', description='gd')
+        g.add_argument('-w')
+        g.add_argument('-x')
+        m = g.add_mutually_exclusive_group()
+        m.add_argument('-y')
+        m.add_argument('-z')
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=[parent])
+
+        self.assertRaises(ArgumentParserError, parser.parse_args,
+            ['-y', 'Y', '-z', 'Z'])
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [-w W] [-x X] [-y Y | -z Z]
+
+            options:
+              -h, --help  show this help message and exit
+
+            g:
+              gd
+
+              -w W
+              -x X
+              -y Y
+              -z Z
+        '''))
 
 # ==============================
 # Mutually exclusive group tests
@@ -6199,12 +6267,23 @@ class TestIntermixedArgs(TestCase):
         # cannot parse the '1,2,3'
         self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
         self.assertEqual(["2", "3"], extras)
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual([], extras)
 
+        # unknown optionals go into extras
+        argv = 'cmd --foo x --error 1 2 --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
         argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
         args, extras = parser.parse_known_intermixed_args(argv)
-        # unknown optionals go into extras
-        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
-        self.assertEqual(['--error', '2', '3'], extras)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
+        argv = 'cmd --foo x 1 2 --error --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
 
         # restores attributes that were temporarily changed
         self.assertIsNone(parser.usage)
@@ -6223,37 +6302,48 @@ class TestIntermixedArgs(TestCase):
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
 
-    def test_exclusive(self):
-        # mutually exclusive group; intermixed works fine
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive(self):
+        # required mutually exclusive group; intermixed works fine
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         parser.add_argument('badger', nargs='*', default='X', help='BADGER')
+        args = parser.parse_intermixed_args('--foo 1 2'.split())
+        self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
-        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam is required',
+                parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
-    def test_exclusive_incompatible(self):
-        # mutually exclusive group including positional - fail
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive_with_positional(self):
+        # required mutually exclusive group with positional argument
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
-        self.assertRaises(TypeError, parser.parse_intermixed_args, [])
+        args = parser.parse_intermixed_args(['--foo'])
+        self.assertEqual(NS(foo=True, spam=None, badger='X'), args)
+        args = parser.parse_intermixed_args(['a', 'b'])
+        self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam badger is required',
+                parser.parse_intermixed_args, [])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['--foo', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['a', '--foo', 'b'])
         self.assertEqual(group.required, True)
 
     def test_invalid_args(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
 
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        parser.add_argument('--foo', nargs="*")
-        parser.add_argument('foo')
-        with self.assertWarns(UserWarning):
-            parser.parse_intermixed_args(['hello', '--foo'])
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
@@ -6272,7 +6362,7 @@ class TestIntermixedMessageContentError(TestCase):
         with self.assertRaises(ArgumentParserError) as cm:
             parser.parse_intermixed_args([])
         msg = str(cm.exception)
-        self.assertNotRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_pos')
         self.assertRegex(msg, 'req_opt')
 
 # ==========================
@@ -6651,15 +6741,75 @@ class TestExitOnError(TestCase):
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
         self.parser.add_argument('--fooble', action='store_true')
+        self.parser.add_argument('--foogle')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               "ambiguous option: --foob could match --foobaz, --fooble",
-                               self.parser.parse_args, ['--foob'])
+                "ambiguous option: --foob could match --foobaz, --fooble",
+            self.parser.parse_args, ['--foob'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob', '1', '--foogle', '2'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1', '--foogle', '2'])
 
     def test_os_error(self):
         self.parser.add_argument('file')
         self.assertRaisesRegex(argparse.ArgumentError,
                                "No such file or directory: 'no-such-file'",
                                self.parser.parse_args, ['@no-such-file'])
+
+
+# =================
+# Translation tests
+# =================
+
+pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
+snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
+
+msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
+msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
+
+
+@requires_subprocess()
+class TestTranslations(unittest.TestCase):
+
+    def test_translations(self):
+        # Test messages extracted from the argparse module against a snapshot
+        skip_if_missing('i18n')
+        res = generate_po_file(stdout_only=False)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(res.stderr, '')
+        msgids = extract_msgids(res.stdout)
+        snapshot = snapshot_path.read_text().splitlines()
+        self.assertListEqual(msgids, snapshot)
+
+
+def generate_po_file(*, stdout_only=True):
+    res = subprocess.run([sys.executable, pygettext,
+                          '--no-location', '-o', '-', argparse.__file__],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if stdout_only:
+        return res.stdout
+    return res
+
+
+def extract_msgids(po):
+    msgids = []
+    for msgid in msgid_pattern.findall(po):
+        msgid_string = ''.join(msgid_string_pattern.findall(msgid))
+        msgid_string = msgid_string.replace(r'\"', '"')
+        if msgid_string:
+            msgids.append(msgid_string)
+    return sorted(msgids)
+
+
+def update_translation_snapshots():
+    contents = generate_po_file()
+    msgids = extract_msgids(contents)
+    snapshot_path.write_text('\n'.join(msgids))
 
 
 def tearDownModule():
@@ -6669,4 +6819,8 @@ def tearDownModule():
 
 
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots()
+        sys.exit(0)
     unittest.main()

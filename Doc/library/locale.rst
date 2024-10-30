@@ -311,8 +311,9 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ALT_DIGITS
 
-      Get a representation of up to 100 values used to represent the values
-      0 to 99.
+      Get a string consisting of up to 100 semicolon-separated symbols used
+      to represent the values 0 to 99 in a locale-specific way.
+      In most locales this is an empty string.
 
 
 .. function:: getdefaultlocale([envvars])

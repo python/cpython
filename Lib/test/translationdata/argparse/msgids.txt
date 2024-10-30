@@ -1,0 +1,40 @@
+ (default: %(default)s)
+%(heading)s:
+%(prog)s: error: %(message)s\n
+%(prog)s: warning: %(message)s\n
+%r is not callable
+'required' is an invalid argument for positionals
+.__call__() not defined
+ambiguous option: %(option)s could match %(matches)s
+argument "-" with mode %r
+argument %(argument_name)s: %(message)s
+argument '%(argument_name)s' is deprecated
+can't open '%(filename)s': %(error)s
+cannot have multiple subparser arguments
+cannot merge actions - two groups are named %r
+command '%(parser_name)s' is deprecated
+conflicting subparser alias: %s
+conflicting subparser: %s
+dest= is required for options like %r
+expected at least one argument
+expected at most one argument
+expected one argument
+ignored explicit argument %r
+invalid %(type)s value: %(value)r
+invalid choice: %(value)r (choose from %(choices)s)
+invalid conflict_resolution value: %r
+invalid option string %(option)r: must start with a character %(prefix_chars)r
+mutually exclusive arguments must be optional
+not allowed with argument %s
+one of the arguments %s is required
+option '%(option)s' is deprecated
+options
+positional arguments
+show program's version number and exit
+show this help message and exit
+subcommands
+the following arguments are required: %s
+unexpected option string: %s
+unknown parser %(parser_name)r (choices: %(choices)s)
+unrecognized arguments: %s
+usage: 

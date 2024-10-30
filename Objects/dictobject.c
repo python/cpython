@@ -4625,8 +4625,8 @@ PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
-If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
+"D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.\n\
+If E is present and has a .keys() method, then does:  for k in E.keys(): D[k] = E[k]\n\
 If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
 In either case, this is followed by: for k in F:  D[k] = F[k]");
 
@@ -6825,15 +6825,24 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     PyObject *old_value = values->values[ix];
+    if (old_value == NULL && value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        Py_TYPE(obj)->tp_name, name);
+        return -1;
+    }
+
+    if (dict) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
+                                   value == NULL ? PyDict_EVENT_DELETED :
+                                   PyDict_EVENT_MODIFIED);
+        _PyDict_NotifyEvent(interp, event, dict, name, value);
+    }
+
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
 
     if (old_value == NULL) {
-        if (value == NULL) {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         Py_TYPE(obj)->tp_name, name);
-            return -1;
-        }
         _PyDictValues_AddToInsertionOrder(values, ix);
         if (dict) {
             assert(dict->ma_values == values);
