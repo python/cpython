@@ -672,9 +672,7 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
-    // Insert None into consts to prevent an annotation
-    // appearing to be a docstring
-    _PyCompile_AddConst(c, Py_None);
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -1600,9 +1598,8 @@ codegen_typealias_body(compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST_NEW(c, loc, defaults);
     RETURN_IF_ERROR(
         codegen_setup_annotations_scope(c, LOC(s), s, name));
-    /* Make None the first constant, so the evaluate function can't have a
-        docstring. */
-    RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
+
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
@@ -1898,9 +1895,7 @@ codegen_lambda(compiler *c, expr_ty e)
         codegen_enter_scope(c, &_Py_STR(anon_lambda), COMPILE_SCOPE_LAMBDA,
                             (void *)e, e->lineno, NULL, &umd));
 
-    /* Make None the first constant, so the lambda can't have a
-       docstring. */
-    RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
 
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {
