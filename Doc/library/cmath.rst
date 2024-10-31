@@ -227,7 +227,7 @@ Classification functions
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be a nonnegative value.
+   within about 9 decimal digits.  *rel_tol* must be greater than zero.
 
    *abs_tol* is the absolute tolerance; it must be at least ``0.0``.
    When comparing to ``0.0``, the default tolerance values means that only
