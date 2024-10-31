@@ -6,9 +6,9 @@ It also provides some help for examining source code and class layout.
 
 Here are some of the useful functions provided by this module:
 
-    ismodule(), isclass(), ismethod(), isfunction(), isgeneratorfunction(),
-        isgenerator(), istraceback(), isframe(), iscode(), isbuiltin(),
-        isroutine() - check object types
+    ismodule(), isclass(), ismethod(), ispackage(), isfunction(),
+        isgeneratorfunction(), isgenerator(), istraceback(), isframe(),
+        iscode(), isbuiltin(), isroutine() - check object types
     getmembers() - get members of an object that satisfy a given condition
 
     getfile(), getsourcefile(), getsource() - find an object's source code
@@ -56,6 +56,7 @@ __all__ = [
     "CO_OPTIMIZED",
     "CO_VARARGS",
     "CO_VARKEYWORDS",
+    "CO_HAS_DOCSTRING",
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
@@ -128,6 +129,7 @@ __all__ = [
     "ismethoddescriptor",
     "ismethodwrapper",
     "ismodule",
+    "ispackage",
     "isroutine",
     "istraceback",
     "markcoroutinefunction",
@@ -185,6 +187,10 @@ def isclass(object):
 def ismethod(object):
     """Return true if the object is an instance method."""
     return isinstance(object, types.MethodType)
+
+def ispackage(object):
+    """Return true if the object is a package."""
+    return ismodule(object) and hasattr(object, "__path__")
 
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
@@ -404,6 +410,7 @@ def iscode(object):
         co_flags            bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
                             | 16=nested | 32=generator | 64=nofree | 128=coroutine
                             | 256=iterable_coroutine | 512=async_generator
+                            | 0x4000000=has_docstring
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
