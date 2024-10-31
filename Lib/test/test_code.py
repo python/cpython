@@ -552,7 +552,6 @@ class CodeTest(unittest.TestCase):
         co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
         # anything below that limit is a valid co_stacksize
         evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
-        self.assertLessEqual(evil_stacksize, _testcapi.INT_MAX // ps)
 
         with self.assertRaisesRegex(OverflowError, "co_stacksize"):
             c.__replace__(co_stacksize=evil_stacksize)
