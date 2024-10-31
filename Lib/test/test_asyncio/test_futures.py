@@ -14,7 +14,6 @@ from asyncio import futures
 import warnings
 from test.test_asyncio import utils as test_utils
 from test import support
-from test.support import ReachableCode
 
 
 def tearDownModule():
@@ -31,6 +30,13 @@ def first_cb():
 
 def last_cb():
     pass
+
+
+class ReachableCode(Exception):
+    """Exception to raise to indicate that some code was reached.
+
+    Use this exception if using mocks is not a good alternative.
+    """
 
 
 class SimpleEvilEventLoop(asyncio.base_events.BaseEventLoop):
