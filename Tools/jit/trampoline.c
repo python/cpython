@@ -4,11 +4,10 @@
 #include "pycore_frame.h"
 #include "pycore_jit.h"
 
-// This is where the calling convention changes, on platforms that require it.
-// The actual change is patched in while the JIT compiler is being built, in
-// Tools/jit/_targets.py. On other platforms, this function compiles to nothing.
+#include "jit.h"
+
 _Py_CODEUNIT *
-_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
+_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // This is subtle. The actual trace will return to us once it exits, so we
     // need to make sure that we stay alive until then. If our trace side-exits
@@ -19,7 +18,7 @@ _ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *ts
     Py_INCREF(executor);
     // Note that this is *not* a tail call:
     PyAPI_DATA(void) _JIT_CONTINUE;
-    _Py_CODEUNIT *target = ((jit_func)&_JIT_CONTINUE)(frame, stack_pointer, tstate);
+    _Py_CODEUNIT *target = ((jit_func_preserve_none)&_JIT_CONTINUE)(frame, stack_pointer, tstate);
     Py_SETREF(tstate->previous_executor, executor);
     return target;
 }
