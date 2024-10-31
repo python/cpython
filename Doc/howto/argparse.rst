@@ -15,7 +15,7 @@ recommended command-line parsing module in the Python standard library.
 
    There are two other modules that fulfill the same task, namely
    :mod:`getopt` (an equivalent for ``getopt()`` from the C
-   language) and the deprecated :mod:`optparse`.
+   language) and the lower level :mod:`optparse` module.
    Note also that :mod:`argparse` is based on :mod:`optparse`,
    and therefore very similar in terms of usage.
 

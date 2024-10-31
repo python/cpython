@@ -16,7 +16,7 @@
    While :mod:`argparse` is the recommended standard library module for
    *implementing* command line applications, authors of third party
    command line argument processing libraries may find that the
-   simpler :mod:`optparse` module serves as a better foundation for
+   lower level :mod:`optparse` module serves as a better foundation for
    that use case.
 
 --------------

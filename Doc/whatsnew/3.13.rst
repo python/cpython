@@ -1655,8 +1655,8 @@ optparse
   While :mod:`argparse` remains preferred for new projects that
   aren't using a third party command line argument processing
   library, there are aspects of the way ``argparse`` works that
-  means ``optparse`` may provide a better foundation for *writing*
-  argument processing libraries.
+  means the lower level ``optparse`` module may provide a better
+  foundation for *writing* argument processing libraries.
   (Contributed by Alyssa Coghlan in :gh:`126225`.)
 
 
