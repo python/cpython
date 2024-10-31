@@ -447,7 +447,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
      */
     int max_stacksize = (int)(INT_MAX / sizeof(PyObject *))
                         - FRAME_SPECIALS_SIZE
-                        - PyTuple_GET_SIZE(con->localsplusnames);
+                        - (int)PyTuple_GET_SIZE(con->localsplusnames);
     if (con->stacksize >= max_stacksize) {
         PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
         return -1;
