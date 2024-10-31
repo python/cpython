@@ -71,11 +71,7 @@ _sysconfig_config_vars_impl(PyObject *module)
     if (Py_JIT_ENABLED == 1) {
         py_jit_enabled = _PyLong_GetOne();
     } else {
-        py_jit_enabled = PyUnicode_FromString("interpreter");
-        if (py_jit_enabled == NULL) {
-            Py_DECREF(config);
-            return NULL;
-        }
+        py_jit_enabled = PyLong_FromInt(2);
     }
 #else
     PyObject *py_jit_enabled = _PyLong_GetZero();

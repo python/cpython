@@ -1837,12 +1837,12 @@ case $enable_experimental_jit in
   interpreter)
     jit_flags="";
     tier2_flags="-D_Py_TIER2=4";
-    AC_DEFINE([Py_JIT_ENABLED], ["interpreter"], [Define to interpreter if you want to build an interpreter with enabled tier 2 interpreter])
+    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 2 if you want to build an interpreter with enabled tier 2 interpreter])
     ;;
   interpreter-off)
     jit_flags="";
     tier2_flags="-D_Py_TIER2=6";
-    AC_DEFINE([Py_JIT_ENABLED], ["interpreter"], [Define to interpreter if you want to build an interpreter with enabled tier 2 interpreter])  # Secret option
+    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 2 if you want to build an interpreter with enabled tier 2 interpreter])  # Secret option
     ;;
   *) AC_MSG_ERROR(
       [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
