@@ -266,7 +266,7 @@ class Morsel(dict):
         "samesite" : "SameSite",
     }
 
-    _reserved_defaults = {key: "" for key in _reserved}
+    _reserved_defaults = dict.fromkeys(_reserved, "")
 
     _flags = {'secure', 'httponly'}
 
