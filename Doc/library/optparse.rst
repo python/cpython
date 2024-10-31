@@ -21,7 +21,7 @@
      the ability to disable the interleaving feature completely)
    * the application requires additional control over the incremental parsing
      of command line elements (while ``argparse`` does support this, the
-     exact way it will work in practice is sometimes unpredictable)
+     exact way it works in practice is undesirable for some use cases)
    * the application requires additional control over the handling of options
      which accept parameter values that may start with ``-`` (such as delegated
      options to be passed to invoked subprocesses).
