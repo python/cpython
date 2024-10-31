@@ -1534,9 +1534,10 @@ PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 static PyObject *
 map_setstate(mapobject *lz, PyObject *state)
 {
-    // For now we keep things strict, rather than using PyObject_IsTrue().
-    int strict = state == Py_True;
-    lz->strict = strict;
+    int strict = PyObject_IsTrue(state);
+    if (strict < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
