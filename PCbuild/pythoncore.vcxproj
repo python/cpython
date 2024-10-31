@@ -708,7 +708,7 @@
     <PropertyGroup Condition="$(UseJIT) == 'true'">
       <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_JIT_ENABLED 1 */', '#define Py_JIT_ENABLED 1'))</PyConfigHText>
     </PropertyGroup>
-    <PropertyGroup Condition="$(UseTIER2) == 'true'">
+    <PropertyGroup Condition="$(UseTIER2) == '4' Or $(UseTIER2) == '6'">
       <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_JIT_ENABLED 1 */', '#define Py_JIT_ENABLED "interpreter"'))</PyConfigHText>
     </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
