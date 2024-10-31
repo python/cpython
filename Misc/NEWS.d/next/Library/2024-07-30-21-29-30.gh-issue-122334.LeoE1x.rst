@@ -1,1 +1,0 @@
-Fix crash when importing :mod:`ssl` after the main interpreter restarts.

@@ -150,7 +150,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
-    SPEC(perf_profiling, BOOL, READ_ONLY, NO_SYS),
+    SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
     SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
     SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -1714,20 +1714,24 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 static PyStatus
 config_read_gil(PyConfig *config, size_t len, wchar_t first_char)
 {
-#ifdef Py_GIL_DISABLED
     if (len == 1 && first_char == L'0') {
+#ifdef Py_GIL_DISABLED
         config->enable_gil = _PyConfig_GIL_DISABLE;
+#else
+        return _PyStatus_ERR("Disabling the GIL is not supported by this build");
+#endif
     }
     else if (len == 1 && first_char == L'1') {
+#ifdef Py_GIL_DISABLED
         config->enable_gil = _PyConfig_GIL_ENABLE;
+#else
+        return _PyStatus_OK();
+#endif
     }
     else {
         return _PyStatus_ERR("PYTHON_GIL / -X gil must be \"0\" or \"1\"");
     }
     return _PyStatus_OK();
-#else
-    return _PyStatus_ERR("PYTHON_GIL / -X gil are not supported by this build");
-#endif
 }
 
 static PyStatus
@@ -3453,6 +3457,9 @@ PyInitConfig_Create(void)
 void
 PyInitConfig_Free(PyInitConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
     free(config->err_msg);
     free(config);
 }

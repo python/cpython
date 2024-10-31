@@ -28,7 +28,7 @@
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 PyThreadState *_PyOS_ReadlineTState = NULL;
 
-static PyThread_type_lock _PyOS_ReadlineLock = NULL;
+static PyMutex _PyOS_ReadlineLock;
 
 int (*PyOS_InputHook)(void) = NULL;
 
@@ -373,33 +373,21 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     size_t len;
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyOS_ReadlineTState == tstate) {
+    if (_Py_atomic_load_ptr_relaxed(&_PyOS_ReadlineTState) == tstate) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
     }
 
-
+    // GH-123321: We need to acquire the lock before setting
+    // _PyOS_ReadlineTState, otherwise the variable may be nullified by a
+    // different thread.
+    Py_BEGIN_ALLOW_THREADS
+    PyMutex_Lock(&_PyOS_ReadlineLock);
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, tstate);
     if (PyOS_ReadlineFunctionPointer == NULL) {
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
     }
-
-    if (_PyOS_ReadlineLock == NULL) {
-        _PyOS_ReadlineLock = PyThread_allocate_lock();
-        if (_PyOS_ReadlineLock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "can't allocate lock");
-            return NULL;
-        }
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-
-    // GH-123321: We need to acquire the lock before setting
-    // _PyOS_ReadlineTState and after the release of the GIL, otherwise
-    // the variable may be nullified by a different thread or a deadlock
-    // may occur if the GIL is taken in any sub-function.
-    PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
-    _PyOS_ReadlineTState = tstate;
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -426,9 +414,8 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     // gh-123321: Must set the variable and then release the lock before
     // taking the GIL. Otherwise a deadlock or segfault may occur.
-    _PyOS_ReadlineTState = NULL;
-    PyThread_release_lock(_PyOS_ReadlineLock);
-
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, NULL);
+    PyMutex_Unlock(&_PyOS_ReadlineLock);
     Py_END_ALLOW_THREADS
 
     if (rv == NULL)
