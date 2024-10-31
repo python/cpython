@@ -1239,10 +1239,12 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     RETURN_IF_ERROR(
         codegen_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
     assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
     if (docstring) {
+        assert(ste->ste_has_docstring);
         first_instr = 1;
         docstring = _PyCompile_CleanDoc(docstring);
         if (docstring == NULL) {
@@ -1256,7 +1258,6 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
-    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
     if (add_stopiteration_handler) {
         /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
