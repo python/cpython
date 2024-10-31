@@ -75,7 +75,6 @@ typedef struct {
     PyObject *sw_arg;
 } TaskStepMethWrapper;
 
-
 #define Future_CheckExact(state, obj) Py_IS_TYPE(obj, state->FutureType)
 #define Task_CheckExact(state, obj) Py_IS_TYPE(obj, state->TaskType)
 
@@ -113,6 +112,11 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
     uint64_t task_awaited_by_is_set;
     uint64_t task_coro;
   } asyncio_task_object;
+  struct _asyncio_thread_state {
+    uint64_t size;
+    uint64_t asyncio_running_loop;
+    uint64_t asyncio_running_task;
+  } asyncio_thread_state;
 } Py_AsyncioModuleDebugOffsets;
 
 GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets AsyncioDebug)
@@ -123,6 +127,11 @@ GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets AsyncioDebug)
            .task_is_task = offsetof(TaskObj, task_is_task),
            .task_awaited_by_is_set = offsetof(TaskObj, task_awaited_by_is_set),
            .task_coro = offsetof(TaskObj, task_coro),
+       },
+       .asyncio_thread_state = {
+           .size = sizeof(_PyThreadStateImpl),
+           .asyncio_running_loop = offsetof(_PyThreadStateImpl, asyncio_running_loop),
+           .asyncio_running_task = offsetof(_PyThreadStateImpl, asyncio_running_task),
        }};
 
 /* State of the _asyncio module */
@@ -219,7 +228,6 @@ typedef struct {
         TaskObj tail;
         TaskObj *head;
     } asyncio_tasks;
-
 } asyncio_state;
 
 static inline asyncio_state *
@@ -268,9 +276,6 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
 static void
 clear_task_coro(TaskObj *task)
 {
-    if (task->task_coro != NULL && PyCoro_CheckExact(task->task_coro)) {
-        _PyCoro_SetTask(task->task_coro, NULL);
-    }
     Py_CLEAR(task->task_coro);
 }
 
@@ -279,9 +284,6 @@ static void
 set_task_coro(TaskObj *task, PyObject *coro)
 {
     assert(coro != NULL);
-    if (PyCoro_CheckExact(coro)) {
-        _PyCoro_SetTask(coro, (PyObject *)task);
-    }
     Py_INCREF(coro);
     Py_XSETREF(task->task_coro, coro);
 }
@@ -2160,7 +2162,10 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         Py_DECREF(item);
         return -1;
     }
-    Py_DECREF(item);
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    assert(ts->asyncio_running_task == NULL);
+    ts->asyncio_running_task = item;  // strong ref
     return 0;
 }
 
@@ -2185,7 +2190,6 @@ leave_task_predicate(PyObject *item, void *task)
 
 static int
 leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
-/*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
     int res = _PyDict_DelItemIf(state->current_tasks, loop,
                                 leave_task_predicate, task);
@@ -2193,6 +2197,9 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
         // task was not found
         return err_leave_task(Py_None, task);
     }
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    Py_CLEAR(ts->asyncio_running_task);
     return res;
 }
 
@@ -3960,7 +3967,9 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
-
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    Py_CLEAR(ts->asyncio_running_loop);
+    Py_CLEAR(ts->asyncio_running_task);
     return 0;
 }
 
@@ -3989,7 +3998,6 @@ module_init(asyncio_state *state)
     if (state->iscoroutine_typecache == NULL) {
         goto fail;
     }
-
 
     state->context_kwname = Py_BuildValue("(s)", "context");
     if (state->context_kwname == NULL) {

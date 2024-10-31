@@ -203,7 +203,6 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t gi_name;
         uint64_t gi_iframe;
-        uint64_t gi_task;
         uint64_t gi_frame_state;
     } gen_object;
 } _Py_DebugOffsets;
@@ -324,7 +323,6 @@ typedef struct _Py_DebugOffsets {
         .size = sizeof(PyGenObject), \
         .gi_name = offsetof(PyGenObject, gi_name), \
         .gi_iframe = offsetof(PyGenObject, gi_iframe), \
-        .gi_task = offsetof(PyGenObject, gi_task), \
         .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
     }, \
 }

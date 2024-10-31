@@ -60,14 +60,19 @@
 #endif
 
 struct _Py_AsyncioModuleDebugOffsets {
-    struct _asyncio_task_object {
-        uint64_t size;
-        uint64_t task_name;
-        uint64_t task_awaited_by;
-        uint64_t task_is_task;
-        uint64_t task_awaited_by_is_set;
-        uint64_t task_coro;
-    } asyncio_task_object;
+  struct _asyncio_task_object {
+    uint64_t size;
+    uint64_t task_name;
+    uint64_t task_awaited_by;
+    uint64_t task_is_task;
+    uint64_t task_awaited_by_is_set;
+    uint64_t task_coro;
+  } asyncio_task_object;
+  struct _asyncio_thread_state {
+    uint64_t size;
+    uint64_t asyncio_running_loop;
+    uint64_t asyncio_running_task;
+  } asyncio_thread_state;
 };
 
 #if defined(__APPLE__) && TARGET_OS_OSX
@@ -1145,12 +1150,10 @@ parse_async_frame_object(
     PyObject* result,
     struct _Py_DebugOffsets* offsets,
     uintptr_t address,
-    uintptr_t* task,
-    uintptr_t* previous_frame
+    uintptr_t* previous_frame,
+    uintptr_t* code_object
 ) {
     int err;
-
-    *task = (uintptr_t)NULL;
 
     ssize_t bytes_read = read_memory(
         pid,
@@ -1170,35 +1173,34 @@ parse_async_frame_object(
     }
 
     if (owner == FRAME_OWNED_BY_CSTACK) {
-        return 0;
+        return 0;  // C frame
     }
 
-    if (owner == FRAME_OWNED_BY_GENERATOR) {
-        err = read_py_ptr(
-            pid,
-            address - offsets->gen_object.gi_iframe + offsets->gen_object.gi_task,
-            task);
-        if (err) {
-            return -1;
-        }
+    if (owner != FRAME_OWNED_BY_GENERATOR
+        && owner != FRAME_OWNED_BY_THREAD) {
+        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n", owner);
+        return -1;
     }
 
-    uintptr_t address_of_code_object;
     err = read_py_ptr(
         pid,
         address + offsets->interpreter_frame.executable,
-        &address_of_code_object
+        code_object
     );
     if (err) {
         return -1;
     }
 
-    if ((void*)address_of_code_object == NULL) {
+    if ((void*)*code_object == NULL) {
         return 0;
     }
 
-    return parse_code_object(
-        pid, result, offsets, address_of_code_object, previous_frame);
+    if (parse_code_object(
+        pid, result, offsets, *code_object, previous_frame)) {
+        return -1;
+    }
+
+    return 1;
 }
 
 static int
@@ -1294,6 +1296,77 @@ find_running_frame(
     return 0;
 }
 
+static int
+find_running_task(
+    int pid,
+    uintptr_t runtime_start_address,
+    _Py_DebugOffsets *local_debug_offsets,
+    struct _Py_AsyncioModuleDebugOffsets *async_offsets,
+    uintptr_t *running_task_addr
+) {
+    *running_task_addr = (uintptr_t)NULL;
+
+    off_t interpreter_state_list_head =
+        local_debug_offsets->runtime_state.interpreters_head;
+
+    uintptr_t address_of_interpreter_state;
+    int bytes_read = read_memory(
+            pid,
+            runtime_start_address + interpreter_state_list_head,
+            sizeof(void*),
+            &address_of_interpreter_state);
+    if (bytes_read == -1) {
+        return -1;
+    }
+
+    if (address_of_interpreter_state == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "No interpreter state found");
+        return -1;
+    }
+
+    uintptr_t address_of_thread;
+    bytes_read = read_memory(
+            pid,
+            address_of_interpreter_state +
+                local_debug_offsets->interpreter_state.threads_head,
+            sizeof(void*),
+            &address_of_thread);
+    if (bytes_read == -1) {
+        return -1;
+    }
+
+    uintptr_t address_of_running_loop;
+    // No Python frames are available for us (can happen at tear-down).
+    if ((void*)address_of_thread == NULL) {
+        return 0;
+    }
+
+    bytes_read = read_py_ptr(
+        pid,
+        address_of_thread
+        + async_offsets->asyncio_thread_state.asyncio_running_loop,
+        &address_of_running_loop);
+    if (bytes_read == -1) {
+        return -1;
+    }
+
+    // no asyncio loop is now running
+    if ((void*)address_of_running_loop == NULL) {
+        return 0;
+    }
+
+    int err = read_ptr(
+        pid,
+        address_of_thread
+        + async_offsets->asyncio_thread_state.asyncio_running_task,
+        running_task_addr);
+    if (err) {
+        return -1;
+    }
+
+    return 0;
+}
+
 static PyObject*
 get_stack_trace(PyObject* self, PyObject* args)
 {
@@ -1369,14 +1442,6 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    uintptr_t address_of_current_frame;
-    if (find_running_frame(
-        pid, runtime_start_address, &local_debug_offsets,
-        &address_of_current_frame)
-    ) {
-        return NULL;
-    }
-
     PyObject* result = PyList_New(1);
     if (result == NULL) {
         return NULL;
@@ -1391,53 +1456,104 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    uintptr_t root_task_addr = (uintptr_t)NULL;
+    uintptr_t running_task_addr = (uintptr_t)NULL;
+    if (find_running_task(
+        pid, runtime_start_address, &local_debug_offsets, &local_async_debug,
+        &running_task_addr)
+    ) {
+        goto result_err;
+    }
+
+    if ((void*)running_task_addr == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "No running task found");
+        goto result_err;
+    }
+
+    uintptr_t running_coro_addr;
+    if (read_py_ptr(
+        pid,
+        running_task_addr + local_async_debug.asyncio_task_object.task_coro,
+        &running_coro_addr
+    )) {
+        goto result_err;
+    }
+
+    if ((void*)running_coro_addr == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Running task coro is NULL");
+        goto result_err;
+    }
+
+    // note: genobject's gi_iframe is an embedded struct so the address to the offset
+    // leads directly to its first field: f_executable
+    uintptr_t address_of_running_task_code_obj;
+    if (read_py_ptr(
+        pid,
+        running_coro_addr + local_debug_offsets.gen_object.gi_iframe,
+        &address_of_running_task_code_obj
+    )) {
+        goto result_err;
+    }
+
+    if ((void*)address_of_running_task_code_obj == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Running task code object is NULL");
+        goto result_err;
+    }
+
+    uintptr_t address_of_current_frame;
+    if (find_running_frame(
+        pid, runtime_start_address, &local_debug_offsets,
+        &address_of_current_frame)
+    ) {
+        goto result_err;
+    }
+
+    uintptr_t address_of_code_object;
     while ((void*)address_of_current_frame != NULL) {
-        int err = parse_async_frame_object(
+        int res = parse_async_frame_object(
             pid,
             calls,
             &local_debug_offsets,
             address_of_current_frame,
-            &root_task_addr,
-            &address_of_current_frame
+            &address_of_current_frame,
+            &address_of_code_object
         );
-        if (err) {
+
+        if (res < 0) {
             goto result_err;
         }
 
-        if ((void*)root_task_addr != NULL) {
+        if (address_of_code_object == address_of_running_task_code_obj) {
             break;
         }
     }
 
-    if ((void*)root_task_addr != NULL) {
-        PyObject *tn = parse_task_name(
-            pid, &local_debug_offsets, &local_async_debug, root_task_addr);
-        if (tn == NULL) {
-            goto result_err;
-        }
-        if (PyList_Append(result, tn)) {
-            Py_DECREF(tn);
-            goto result_err;
-        }
+    PyObject *tn = parse_task_name(
+        pid, &local_debug_offsets, &local_async_debug, running_task_addr);
+    if (tn == NULL) {
+        goto result_err;
+    }
+    if (PyList_Append(result, tn)) {
         Py_DECREF(tn);
+        goto result_err;
+    }
+    Py_DECREF(tn);
 
-        PyObject* awaited_by = PyList_New(0);
-        if (awaited_by == NULL) {
-            goto result_err;
-        }
-        if (PyList_Append(result, awaited_by)) {
-            Py_DECREF(awaited_by);
-            goto result_err;
-        }
-
-        if (parse_task_awaited_by(
-            pid, &local_debug_offsets, &local_async_debug, root_task_addr, awaited_by)
-        ) {
-            goto result_err;
-        }
+    PyObject* awaited_by = PyList_New(0);
+    if (awaited_by == NULL) {
+        goto result_err;
+    }
+    if (PyList_Append(result, awaited_by)) {
+        Py_DECREF(awaited_by);
+        goto result_err;
     }
 
+    Py_DECREF(awaited_by);
+
+    if (parse_task_awaited_by(
+        pid, &local_debug_offsets, &local_async_debug, running_task_addr, awaited_by)
+    ) {
+        goto result_err;
+    }
 
     return result;
 

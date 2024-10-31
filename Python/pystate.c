@@ -1468,6 +1468,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->dict_global_version = 0;
 
     _tstate->asyncio_running_loop = NULL;
+    _tstate->asyncio_running_task = NULL;
 
     tstate->delete_later = NULL;
 
@@ -1667,6 +1668,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->threading_local_sentinel);
 
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
