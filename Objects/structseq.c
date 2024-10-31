@@ -266,83 +266,66 @@ static PyObject *
 structseq_repr(PyStructSequence *obj)
 {
     PyTypeObject *typ = Py_TYPE(obj);
-    _PyUnicodeWriter writer;
 
-    /* Write "typename(" */
-    PyObject *type_name = PyUnicode_DecodeUTF8(typ->tp_name,
-                                               strlen(typ->tp_name),
-                                               NULL);
-    if (type_name == NULL) {
+    // count 5 characters per item: "x=1, "
+    Py_ssize_t type_name_len = strlen(typ->tp_name);
+    Py_ssize_t prealloc = (type_name_len + 1
+                           + VISIBLE_SIZE(obj) * 5 + 1);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
         return NULL;
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-    /* count 5 characters per item: "x=1, " */
-    writer.min_length = (PyUnicode_GET_LENGTH(type_name) + 1
-                         + VISIBLE_SIZE(obj) * 5 + 1);
-
-    if (_PyUnicodeWriter_WriteStr(&writer, type_name) < 0) {
-        Py_DECREF(type_name);
+    // Write "typename("
+    if (PyUnicodeWriter_WriteUTF8(writer, typ->tp_name, type_name_len) < 0) {
         goto error;
     }
-    Py_DECREF(type_name);
-
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i=0; i < VISIBLE_SIZE(obj); i++) {
         if (i > 0) {
-            /* Write ", " */
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            // Write ", "
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
 
-        /* Write "name=repr" */
+        // Write name
         const char *name_utf8 = typ->tp_members[i].name;
         if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
+            PyErr_Format(PyExc_SystemError,
+                         "In structseq_repr(), member %zd name is NULL"
                          " for type %.500s", i, typ->tp_name);
             goto error;
         }
-
-        PyObject *name = PyUnicode_DecodeUTF8(name_utf8, strlen(name_utf8), NULL);
-        if (name == NULL) {
-            goto error;
-        }
-        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
-            Py_DECREF(name);
-            goto error;
-        }
-        Py_DECREF(name);
-
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, name_utf8, -1) < 0) {
             goto error;
         }
 
+        // Write "=" + repr(value)
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+            goto error;
+        }
         PyObject *value = PyStructSequence_GetItem((PyObject*)obj, i);
         assert(value != NULL);
-        PyObject *repr = PyObject_Repr(value);
-        if (repr == NULL) {
+        if (PyUnicodeWriter_WriteRepr(writer, value) < 0) {
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, repr) < 0) {
-            Py_DECREF(repr);
-            goto error;
-        }
-        Py_DECREF(repr);
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
 
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -725,7 +708,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
     assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    assert(_Py_IsImmortalLoose(type));
+    assert(_Py_IsImmortal(type));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
