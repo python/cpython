@@ -255,8 +255,8 @@ Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
-**/*Android*                  @mhsmith
-**/*android*                  @mhsmith
+**/*Android*                  @mhsmith @freakboy3742
+**/*android*                  @mhsmith @freakboy3742
 
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
@@ -267,7 +267,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-/Tools/wasm/                  @brettcannon
+/Tools/wasm/                  @brettcannon @freakboy3742
 
 # SBOM
 /Misc/externals.spdx.json     @sethmlarson
