@@ -7,7 +7,6 @@ import unittest
 import unittest.mock as mock
 import _testcapi
 from test.support import import_helper
-from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
