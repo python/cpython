@@ -102,6 +102,12 @@ WIN32 is still required for the locale module.
 /* #define Py_GIL_DISABLED 1 */
 #endif
 
+/* Define to 1 if you want to enable the JIT */
+/* Define to "interpreter" if you want to enable tier 2 interpreter */
+#ifndef Py_JIT_ENABLED
+/* #define Py_JIT_ENABLED 1*/
+#endif
+
 /* Compiler specific defines */
 
 /* ------------------------------------------------------------------------*/
