@@ -1,0 +1,2 @@
+Fixed :exc:`SystemError` upon calling :func:`!_interpreters.create` without
+an invalid unicode character.
