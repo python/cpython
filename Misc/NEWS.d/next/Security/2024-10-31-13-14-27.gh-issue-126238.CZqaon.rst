@@ -1,1 +1,1 @@
-Fix a possible ``NULL`` pointer dereference in :c:func:`!_PyCompile_LookupArg`.
+Fix a possible crash internally when compiling.
