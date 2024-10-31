@@ -17,7 +17,7 @@ The :mod:`getopt` module is a parser for command line options whose API is
 designed to be familiar to users of the C :c:func:`!getopt` function. Users who
 are unfamiliar with the C :c:func:`!getopt` function or who would like to write
 less code and get better help and error messages should consider using the
-:mod:`optparse` or :mod:`argparse` module instead.
+:mod:`optparse` or :mod:`argparse` modules instead.
 
 This module provides two functions and an
 exception:
