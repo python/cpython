@@ -18,7 +18,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
+   Copyright (c) 2004 Python Software Foundation.
    All rights reserved.
 */
 
