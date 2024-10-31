@@ -1648,6 +1648,18 @@ opcode
   (Contributed by Irit Katriel in :gh:`105481`.)
 
 
+optparse
+--------
+
+* This module is no longer considered :term:`soft deprecated`.
+  While :mod:`argparse` remains preferred for new projects that
+  aren't using a third party command line argument processing
+  library, there are aspects of the way ``argparse`` works that
+  means ``optparse`` may provide a better foundation for *writing*
+  argument processing libraries.
+  (Contributed by Alyssa Coghlan in :gh:`126225`.)
+
+
 pathlib
 -------
 
@@ -1786,14 +1798,6 @@ New Deprecations
   * Deprecate the :attr:`!HAVE_ARGUMENT` separator.
     Check membership in :data:`~dis.hasarg` instead.
     (Contributed by Irit Katriel in :gh:`109319`.)
-
-* :mod:`getopt` and :mod:`optparse`:
-
-  * Both modules are now :term:`soft deprecated`,
-    with :mod:`argparse` preferred for new projects.
-    This is a new soft-deprecation for the :mod:`!getopt` module,
-    whereas the :mod:`!optparse` module was already *de facto* soft deprecated.
-    (Contributed by Victor Stinner in :gh:`106535`.)
 
 * :mod:`gettext`:
 

@@ -7,11 +7,6 @@
 
 **Source code:** :source:`Lib/getopt.py`
 
-.. deprecated:: 3.13
-   The :mod:`getopt` module is :term:`soft deprecated` and will not be
-   developed further; development will continue with the :mod:`argparse`
-   module.
-
 .. note::
 
    The :mod:`getopt` module is a parser for command line options whose API is

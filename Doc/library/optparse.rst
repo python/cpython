@@ -10,10 +10,38 @@
 
 **Source code:** :source:`Lib/optparse.py`
 
-.. deprecated:: 3.2
-   The :mod:`optparse` module is :term:`soft deprecated` and will not be
-   developed further; development will continue with the :mod:`argparse`
-   module.
+.. note::
+
+   :mod:`argparse` (rather than this module) is the recommended standard
+   library module for implementing command line applications unless one
+   of the following caveats applies:
+
+   * the application requires additional control over the way options and
+     positional parameters are interleaved on the command line (including
+     the ability to disable the interleaving feature completely)
+   * the application requires additional control over the incremental parsing
+     of command line elements (while ``argparse`` does support this, the
+     exact way it will work in practice is sometimes unpredictable)
+   * the application requires additional control over the handling of options
+     which accept parameter values that may start with ``-`` (such as delegated
+     options to be passed to invoked subprocesses).
+
+   These ``argparse`` caveats also mean that :mod:`optparse` is likely to
+   provide a better foundation for library authors *writing* third party
+   command line argument processing libraries.
+
+.. seealso::
+
+    The :pypi:`"click" package <click>` is an ``optparse`` based third party
+    argument processing library which allows command line applications to be
+    developed as a set of appropriately decorated command implementation
+    functions.
+
+.. seealso::
+
+    The :pypi:`"Typer" package <click>` is a ``click`` based third party
+    argument processing library which allows the use of annotated Python
+    type hints to define an application's command line interface.
 
 --------------
 
