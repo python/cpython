@@ -621,39 +621,42 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
    See C11's Annex G, sections G.5.1 and G.5.2.
  */
 
-#define COMPLEX_BINOP(name, func)                             \
-    static PyObject *                                         \
-    complex_##name(PyObject *v, PyObject *w)                  \
-    {                                                         \
-        Py_complex a;                                         \
-        errno = 0;                                            \
-        if (PyComplex_Check(w)) {                             \
-            Py_complex b = ((PyComplexObject *)(w))->cval;    \
-            if (PyComplex_Check(v)) {                         \
-                a = ((PyComplexObject *)(v))->cval;           \
-                a = _Py_c_##func(a, b);                       \
-            }                                                 \
-            else if (real_to_double(&v, &a.real) < 0) {       \
-                return v;                                     \
-            }                                                 \
-            else {                                            \
-                a = _Py_rc_##func(a.real, b);                 \
-            }                                                 \
-        }                                                     \
-        else {                                                \
-            a = ((PyComplexObject *)(v))->cval;               \
-            double b;                                         \
-            if (real_to_double(&w, &b) < 0) {                 \
-                return w;                                     \
-            }                                                 \
-            a = _Py_cr_##func(a, b);                          \
-        }                                                     \
-        if (errno == EDOM) {                                  \
-            PyErr_SetString(PyExc_ZeroDivisionError,          \
-                            "division by zero");              \
-            return NULL;                                      \
-        }                                                     \
-        return PyComplex_FromCComplex(a);                     \
+#define COMPLEX_BINOP(NAME, FUNC)                           \
+    static PyObject *                                       \
+    complex_##NAME(PyObject *v, PyObject *w)                \
+    {                                                       \
+        Py_complex a;                                       \
+        errno = 0;                                          \
+        if (PyComplex_Check(w)) {                           \
+            Py_complex b = ((PyComplexObject *)w)->cval;    \
+            if (PyComplex_Check(v)) {                       \
+                a = ((PyComplexObject *)(v))->cval;         \
+                a = _Py_c_##FUNC(a, b);                     \
+            }                                               \
+            else if (real_to_double(&v, &a.real) < 0) {     \
+                return v;                                   \
+            }                                               \
+            else {                                          \
+                a = _Py_rc_##FUNC(a.real, b);               \
+            }                                               \
+        }                                                   \
+        else if (!PyComplex_Check(v)) {                     \
+            Py_RETURN_NOTIMPLEMENTED;                       \
+        }                                                   \
+        else {                                              \
+            a = ((PyComplexObject *)v)->cval;               \
+            double b;                                       \
+            if (real_to_double(&w, &b) < 0) {               \
+                return w;                                   \
+            }                                               \
+            a = _Py_cr_##FUNC(a, b);                        \
+        }                                                   \
+        if (errno == EDOM) {                                \
+            PyErr_SetString(PyExc_ZeroDivisionError,        \
+                            "division by zero");            \
+            return NULL;                                    \
+        }                                                   \
+        return PyComplex_FromCComplex(a);                   \
    }
 
 COMPLEX_BINOP(add, sum)
