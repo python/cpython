@@ -614,8 +614,8 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
    converted to floats.  We have the following rules (up to variants with changed
    order of operands):
 
-       complex(x, y) + complex(u, v) = complex(x + u, y + v)
-       float(x) + complex(u, v) = complex(x + u, v)
+       complex(a, b) + complex(c, d) = complex(a + c, b + d)
+       float(a) + complex(b, c) = complex(a + b, c)
 
    Similar rules are implemented for subtraction, multiplication and division.
    See C11's Annex G, sections G.5.1 and G.5.2.
