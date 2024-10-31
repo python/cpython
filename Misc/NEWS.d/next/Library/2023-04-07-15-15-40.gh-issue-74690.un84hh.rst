@@ -1,8 +1,0 @@
-The performance of :func:`isinstance` checks against
-:func:`runtime-checkable protocols <typing.runtime_checkable>` has been
-considerably improved for protocols that only have a few members. To achieve
-this improvement, several internal implementation details of the
-:mod:`typing` module have been refactored, including
-``typing._ProtocolMeta.__instancecheck__``,
-``typing._is_callable_members_only``, and ``typing._get_protocol_attrs``.
-Patches by Alex Waygood.

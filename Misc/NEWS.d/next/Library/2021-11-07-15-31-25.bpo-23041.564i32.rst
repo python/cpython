@@ -1,2 +1,0 @@
-Add :data:`~csv.QUOTE_STRINGS` and :data:`~csv.QUOTE_NOTNULL` to the suite
-of :mod:`csv` module quoting styles.

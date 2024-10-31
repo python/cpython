@@ -207,10 +207,6 @@
 
 .. data:: OP
 
-.. data:: AWAIT
-
-.. data:: ASYNC
-
 .. data:: TYPE_IGNORE
 
 .. data:: TYPE_COMMENT
@@ -222,6 +218,10 @@
 .. data:: FSTRING_MIDDLE
 
 .. data:: FSTRING_END
+
+.. data:: COMMENT
+
+.. data:: NL
 
 .. data:: ERRORTOKEN
 

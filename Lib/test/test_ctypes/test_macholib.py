@@ -1,7 +1,3 @@
-import os
-import sys
-import unittest
-
 # Bob Ippolito:
 #
 # Ok.. the code to find the filename for __getattr__ should look
@@ -31,9 +27,14 @@ import unittest
 #
 # -bob
 
+import os
+import sys
+import unittest
+
 from ctypes.macholib.dyld import dyld_find
 from ctypes.macholib.dylib import dylib_info
 from ctypes.macholib.framework import framework_info
+
 
 def find_lib(name):
     possible = ['lib'+name+'.dylib', name+'.dylib', name+'.framework/'+name]
@@ -105,6 +106,7 @@ class MachOTest(unittest.TestCase):
                          d('P', 'F.framework/Versions/A/F', 'F', 'A'))
         self.assertEqual(framework_info('P/F.framework/Versions/A/F_debug'),
                          d('P', 'F.framework/Versions/A/F_debug', 'F', 'A', 'debug'))
+
 
 if __name__ == "__main__":
     unittest.main()

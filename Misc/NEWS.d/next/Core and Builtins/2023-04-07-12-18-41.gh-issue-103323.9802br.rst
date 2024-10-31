@@ -1,3 +1,0 @@
-We've replaced our use of ``_PyRuntime.tstate_current`` with a thread-local
-variable.  This is a fairly low-level implementation detail, and there
-should be no change in behavior.

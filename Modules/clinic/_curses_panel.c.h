@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_curses_panel_panel_bottom__doc__,
 "bottom($self, /)\n"
@@ -23,7 +22,7 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_bottom(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "bottom() takes no arguments");
         return NULL;
     }
@@ -47,7 +46,7 @@ _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_hide(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "hide() takes no arguments");
         return NULL;
     }
@@ -69,7 +68,7 @@ _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_show(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "show() takes no arguments");
         return NULL;
     }
@@ -91,7 +90,7 @@ _curses_panel_panel_top_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 static PyObject *
 _curses_panel_panel_top(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "top() takes no arguments");
         return NULL;
     }
@@ -190,11 +189,11 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
     if (!args) {
         goto exit;
     }
-    y = _PyLong_AsInt(args[0]);
+    y = PyLong_AsInt(args[0]);
     if (y == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    x = _PyLong_AsInt(args[1]);
+    x = PyLong_AsInt(args[1]);
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -331,7 +330,7 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
 static PyObject *
 _curses_panel_panel_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "userptr() takes no arguments");
         return NULL;
     }
@@ -422,4 +421,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=8d0533681891523c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18dc5571174c7189 input=a9049054013a1b77]*/

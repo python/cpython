@@ -66,6 +66,4 @@ def ast_dump(
 
     if all(cls.__name__ != "AST" for cls in node.__class__.__mro__):
         raise TypeError("expected AST, got %r" % node.__class__.__name__)
-    if indent is not None and not isinstance(indent, str):
-        indent = " " * indent
     return _format(node)[0]

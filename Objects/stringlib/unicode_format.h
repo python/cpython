@@ -2,6 +2,7 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 
 /************************************************************************/
@@ -72,7 +73,7 @@ Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
     if (str->str == NULL) {
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return SubString_new_object(str);
 }
@@ -530,7 +531,7 @@ render_field(PyObject *fieldobj, SubString *format_spec, _PyUnicodeWriter *write
                                                      format_spec->start,
                                                      format_spec->end);
         else
-            format_spec_object = PyUnicode_New(0, 0);
+            format_spec_object = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (format_spec_object == NULL)
             goto done;
 
@@ -820,7 +821,7 @@ output_markup(SubString *field_name, SubString *format_spec,
 
     if (conversion != '\0') {
         tmp = do_conversion(fieldobj, conversion);
-        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
+        if (tmp == NULL)
             goto done;
 
         /* do the assignment, transferring ownership: fieldobj = tmp */
@@ -832,7 +833,7 @@ output_markup(SubString *field_name, SubString *format_spec,
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
-        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
+        if (tmp == NULL)
             goto done;
 
         /* note that in the case we're expanding the format string,
@@ -948,10 +949,6 @@ do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
     int recursion_depth = 2;
 
     AutoNumber auto_number;
-
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
-
     AutoNumber_Init(&auto_number);
     SubString_init(&input, self, 0, PyUnicode_GET_LENGTH(self));
     return build_string(&input, args, kwargs, recursion_depth, &auto_number);
@@ -1110,9 +1107,6 @@ formatter_parser(PyObject *ignored, PyObject *self)
         return NULL;
     }
 
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
-
     it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
     if (it == NULL)
         return NULL;
@@ -1251,9 +1245,6 @@ formatter_field_name_split(PyObject *ignored, PyObject *self)
         PyErr_Format(PyExc_TypeError, "expected str, got %s", Py_TYPE(self)->tp_name);
         return NULL;
     }
-
-    if (PyUnicode_READY(self) == -1)
-        return NULL;
 
     it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
     if (it == NULL)

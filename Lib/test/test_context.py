@@ -6,10 +6,11 @@ import random
 import time
 import unittest
 import weakref
+from test import support
 from test.support import threading_helper
 
 try:
-    from _testcapi import hamt
+    from _testinternalcapi import hamt
 except ImportError:
     hamt = None
 
@@ -58,6 +59,14 @@ class ContextTest(unittest.TestCase):
         self.assertNotIn(' used ', repr(t))
         c.reset(t)
         self.assertIn(' used ', repr(t))
+
+    @isolated_context
+    def test_token_repr_1(self):
+        c = contextvars.ContextVar('a')
+        tok = c.set(1)
+        self.assertRegex(repr(tok),
+                         r"^<Token var=<ContextVar name='a' "
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
@@ -431,7 +440,7 @@ class EqError(Exception):
     pass
 
 
-@unittest.skipIf(hamt is None, '_testcapi lacks "hamt()" function')
+@unittest.skipIf(hamt is None, '_testinternalcapi.hamt() not available')
 class HamtTest(unittest.TestCase):
 
     def test_hashkey_helper_1(self):
@@ -570,6 +579,7 @@ class HamtTest(unittest.TestCase):
 
         self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647
