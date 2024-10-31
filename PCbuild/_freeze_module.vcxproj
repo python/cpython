@@ -449,6 +449,12 @@
     <PropertyGroup Condition="$(DisableGil) == 'true'">
       <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
     </PropertyGroup>
+    <PropertyGroup Condition="$(UseJIT) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_JIT_ENABLED', '#define Py_JIT_ENABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(UseTIER2) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_JIT_ENABLED', '#define Py_JIT_ENABLED "interpreter"'))</PyConfigHText>
+    </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
     <WriteLinesToFile File="$(IntDir)pyconfig.h"
                       Lines="$(PyConfigHText)"
