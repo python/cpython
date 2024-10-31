@@ -1538,6 +1538,7 @@ map_setstate(mapobject *lz, PyObject *state)
     if (strict < 0) {
         return NULL;
     }
+    lz->strict = strict;
     Py_RETURN_NONE;
 }
 
