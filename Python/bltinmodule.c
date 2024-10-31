@@ -1542,7 +1542,7 @@ map_setstate(mapobject *lz, PyObject *state)
 
 static PyMethodDef map_methods[] = {
     {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)map_setstate, METH_O, setstate_doc},
+    {"__setstate__", _PyCFunction_CAST(map_setstate), METH_O, setstate_doc},
     {NULL,           NULL}           /* sentinel */
 };
 

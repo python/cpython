@@ -175,8 +175,8 @@ Improved Error Messages
 Other Language Changes
 ======================
 
-* The :func:`map` function now has an optional *strict* flag like
-  :func:`zip`, used to require that all the iterables have an equal length.
+* The :func:`map` built-in now has an optional keyword-only *strict* flag
+  like :func:`zip` to check that all the iterables are of equal length.
   (Contributed by Wannes Boeykens in :gh:`119793`.)
 
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions

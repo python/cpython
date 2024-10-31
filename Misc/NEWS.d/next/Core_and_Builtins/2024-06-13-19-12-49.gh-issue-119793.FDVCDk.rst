@@ -1,3 +1,3 @@
 The :func:`map` function now has an optional *strict* flag like
 :func:`zip`, used to require that all the iterables have an equal length.
-Contributed by Wannes Boeykens.
+Patch by Wannes Boeykens.
