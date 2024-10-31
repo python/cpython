@@ -1,5 +1,6 @@
 /* Built-in functions */
 
+#include <stdbool.h>
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
@@ -1303,7 +1304,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *iters;
     PyObject *func;
-    int strict;
+    bool strict;
 } mapobject;
 
 static PyObject *
@@ -1312,7 +1313,7 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it, *iters, *func;
     mapobject *lz;
     Py_ssize_t numargs, i;
-    int strict = 0;
+    bool strict = false;
 
     if (kwds) {
         PyObject *empty = PyTuple_New(0);
@@ -1403,7 +1404,7 @@ map_vectorcall(PyObject *type, PyObject * const*args,
     }
     lz->iters = iters;
     lz->func = Py_NewRef(args[0]);
-    lz->strict = 0;
+    lz->strict = false;
 
     return (PyObject *)lz;
 }
@@ -2950,7 +2951,7 @@ typedef struct {
     Py_ssize_t tuplesize;
     PyObject *ittuple;     /* tuple of iterators */
     PyObject *result;
-    int strict;
+    bool strict;
 } zipobject;
 
 static PyObject *
@@ -2961,7 +2962,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     Py_ssize_t tuplesize;
-    int strict = 0;
+    bool strict = false;
 
     if (kwds) {
         PyObject *empty = PyTuple_New(0);
