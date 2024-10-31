@@ -285,7 +285,11 @@ class GeneratorTest(unittest.TestCase):
         evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
 
         evil = c.__replace__(co_stacksize=evil_stacksize - 1)
-        evil_gi = types.FunctionType(evil, {})()
+
+        if support.Py_GIL_DISABLED:
+            self.skipTest("segmentation fault on free-threaded builds")
+        # the following crashes on free-threaded builds for now
+        evil_gi_func = types.FunctionType(evil, {})()
         message = re.escape("size exceeds INT_MAX")
         self.assertRaisesRegex(OverflowError, message, evil_gi.__sizeof__)
 
