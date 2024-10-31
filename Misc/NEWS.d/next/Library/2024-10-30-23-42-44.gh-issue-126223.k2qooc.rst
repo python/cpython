@@ -1,2 +1,2 @@
-Fixed :exc:`SystemError` upon calling :func:`!_interpreters.create` without
+Fixed :exc:`SystemError` upon calling :func:`!_interpreters.create` with
 an invalid unicode character.
