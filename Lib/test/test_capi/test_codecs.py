@@ -881,6 +881,8 @@ class CAPICodecErrors(unittest.TestCase):
         """Indicate whether a Unicode exception may crash the interpreter
         when used by a built-in codecs error handler.
 
+        Until gh-123378 is fixed, we skip the tests for these exceptions.
+
         This should only be used by "do_test_codec_errors_handler".
         """
         message, start, end = exc.object, exc.start, exc.end
