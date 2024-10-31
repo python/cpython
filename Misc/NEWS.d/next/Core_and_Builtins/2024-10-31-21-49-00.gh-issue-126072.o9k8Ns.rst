@@ -1,0 +1,2 @@
+Set ``ste_has_docstring`` for ``class`` and ``module`` in corresponding
+symbol table entry.

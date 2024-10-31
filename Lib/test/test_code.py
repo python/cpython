@@ -181,6 +181,7 @@ consts: ("'hello'", "'world'")
 
 >>> class class_with_docstring:
 ...     '''This is a docstring for class'''
+...     '''This line is not docstring'''
 ...     pass
 
 >>> print(class_with_docstring.__doc__)
