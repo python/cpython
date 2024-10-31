@@ -630,7 +630,7 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
         if (PyComplex_Check(w)) {                           \
             Py_complex b = ((PyComplexObject *)w)->cval;    \
             if (PyComplex_Check(v)) {                       \
-                a = ((PyComplexObject *)(v))->cval;         \
+                a = ((PyComplexObject *)v)->cval;           \
                 a = _Py_c_##FUNC(a, b);                     \
             }                                               \
             else if (real_to_double(&v, &a.real) < 0) {     \
