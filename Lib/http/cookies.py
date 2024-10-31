@@ -275,7 +275,7 @@ class Morsel(dict):
         self._key = self._value = self._coded_value = None
 
         # Set default attributes
-        self |= self._reserved_defaults
+        dict.update(self, self._reserved_defaults)
 
     @property
     def key(self):
