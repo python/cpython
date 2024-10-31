@@ -178,6 +178,19 @@ freevars: ()
 nlocals: 3
 flags: 3
 consts: ("'hello'", "'world'")
+
+>>> class class_with_docstring:
+...     '''This is a docstring for class'''
+...     pass
+
+>>> print(class_with_docstring.__doc__)
+This is a docstring for class
+
+>>> class class_without_docstring:
+...     pass
+
+>>> print(class_without_docstring.__doc__)
+None
 """
 
 import copy
