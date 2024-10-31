@@ -402,11 +402,11 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
         }
     }
     else if (PyUnicode_Check(configobj)) {
-        const char *utf8 = PyUnicode_AsUTF8(configobj);
-        if (utf8 == NULL) {
+        const char *utf8name = PyUnicode_AsUTF8(configobj);
+        if (utf8name == NULL) {
             return -1;
         }
-        if (init_named_config(config, utf8) < 0) {
+        if (init_named_config(config, utf8name) < 0) {
             return -1;
         }
     }
