@@ -1432,12 +1432,12 @@ class TestGeneratedCases(unittest.TestCase):
     def test_escaping_call_next_to_cmacro(self):
         input = """
         inst(OP, (--)) {
-        #ifdef Py_GIL_DISABLED
-        escaping_call();
-        #else
-        another_escaping_call();
-        #endif
-        yet_another_escaping_call();
+            #ifdef Py_GIL_DISABLED
+            escaping_call();
+            #else
+            another_escaping_call();
+            #endif
+            yet_another_escaping_call();
         }
         """
         output = """
