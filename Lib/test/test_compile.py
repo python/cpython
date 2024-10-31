@@ -342,6 +342,10 @@ class TestSpecifics(unittest.TestCase):
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
+    def test_lambda_consts(self):
+        l = lambda: "this is the only const"
+        self.assertEqual(len(l.__code__.co_consts), 1)
+
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'
         self.assertRaises(SyntaxError, compile, code, 'tmp', 'exec')
@@ -790,10 +794,10 @@ class TestSpecifics(unittest.TestCase):
         # Merge constants in tuple or frozenset
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
-        self.assertIs(f1.__code__.co_consts[1],
-                      f2.__code__.co_consts[1][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[1])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f2.__code__.co_consts[0][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[0])),
+                      f2.__code__.co_consts[0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
