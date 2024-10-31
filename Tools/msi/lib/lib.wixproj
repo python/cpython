@@ -15,7 +15,7 @@
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
     <ItemGroup>
-        <ExcludeFolders Include="Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo" />
+        <ExcludeFolders Include="Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo;Lib\turtle.py" />
         <InstallFiles Include="$(PySourcePath)Lib\**\*"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;
                                $(PySourcePath)Lib\**\*.pyo;
