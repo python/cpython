@@ -1536,9 +1536,6 @@ map_setstate(mapobject *lz, PyObject *state)
 {
     // For now we keep things strict, rather than using PyObject_IsTrue().
     int strict = state == Py_True;
-    if (strict < 0) {
-        return NULL;
-    }
     lz->strict = strict;
     Py_RETURN_NONE;
 }
