@@ -298,7 +298,9 @@ General Options
    .. versionadded:: 3.13
 
 .. option:: --enable-experimental-jit
+
    Enables :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+
    Possible values:
       * ``no`` - build interpreter without JIT.
       * ``yes`` - build interpreter with JIT.
