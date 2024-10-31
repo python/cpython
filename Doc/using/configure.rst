@@ -297,6 +297,23 @@ General Options
 
    .. versionadded:: 3.13
 
+.. option:: --enable-experimental-jit
+   Enables :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+   Possible values:
+      * ``no`` - build interpreter without JIT.
+      * ``yes`` - build interpreter with JIT.
+      * ``yes-off`` - build interpreter with JIT but disable it by default.
+      * ``interpreter`` - build interpreter without JIT, but with enabled tier 2 interpreter.
+
+   Defines the ``Py_JIT_ENABLED`` macro, with possible values:
+      * ``0`` - interpreter was built without JIT.
+      * ``1`` - interpreter was built with JIT.
+      * ``2`` - interpreter was built without JIT, but with enabled tier 2 interpreter.
+
+      .. versionadded:: next
+
+   .. versionadded:: 3.13
+
 .. option:: PKG_CONFIG
 
    Path to ``pkg-config`` utility.
