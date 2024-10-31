@@ -24,14 +24,14 @@ def url2pathname(url):
             # convert this to \\host\path\on\remote\host
             # (notice halving of slashes at the start of the path)
             url = url[2:]
-        return urllib.parse.unquote(url.replace('/', '\\'))
+        return urllib.parse.unquote(url).replace('/', '\\')
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
     drive = comp[0][-1].upper()
-    tail = comp[1].replace('/', '\\')
-    path = drive + ':' + urllib.parse.unquote(tail)
+    tail = urllib.parse.unquote(comp[1])
+    path = drive + ':' + tail.replace('/', '\\')
     return path
 
 def pathname2url(p):
