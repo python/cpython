@@ -229,8 +229,9 @@ Classification functions
    tolerance is ``1e-09``, which assures that the two values are the same
    within about 9 decimal digits.  *rel_tol* must be greater than zero.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
+   *abs_tol* is the minimum absolute tolerance; it must be at least 0.0. When
+   comparing to 0.0, the default *abs_tol* of 0.0 means that only 0.0 is close
+   to 0.0. Pass a larger tolerance to allow for floating point inaccuracies.
 
    If no errors occur, the result will be:
    ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
