@@ -28,7 +28,7 @@ will also issue errors when users give the program invalid arguments.
 .. note::
    Fine details of the command-line interface built with using the
    :mod:`!argparse` module differ from common Unix and Linux programs.
-   If you want to implement more compatible interface, consider using
+   If you want to implement a more compatible interface, consider using
    the :mod:`optparse` or :mod:`getopt` modules.
 
 The :mod:`!argparse` module's support for command-line interfaces is built
