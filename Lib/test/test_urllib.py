@@ -1587,6 +1587,9 @@ class Pathname_Tests(unittest.TestCase):
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
+        # Percent-encoded forward slashes are preserved for backwards compatibility
+        self.assertEqual(fn('C:/foo%2fbar'), 'C:\\foo/bar')
+        self.assertEqual(fn('//server/share/foo%2fbar'), '\\\\server\\share\\foo/bar')
         # Round-tripping
         paths = ['C:',
                  r'\\\C\test\\',
