@@ -437,17 +437,16 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         return -1;
     }
     /*
-     * Ensure that the framesize will not overflow.
+     * The framesize = stacksize + nlocalsplus + FRAME_SPECIALS_SIZE is used
+     * as framesize * sizeof(PyObject *) and assumed to be < INT_MAX. Thus,
+     * we need to dynamically limit the value of stacksize.
      *
-     * There are various places in the code where the size of the object
-     * is assumed to be at most INT_MAX / sizeof(PyObject *). Since this
-     * size is the framesize, we need to guarantee that there will not
-     * be an overflow on "framesize * sizeof(PyObject *) + CONSTANT".
+     * See https://github.com/python/cpython/issues/126119 for details.
      */
-    int nlocalsplus = PyTuple_GET_SIZE(con->localsplusnames);
-    if ((size_t)con->stacksize
-        >= (INT_MAX - FRAME_SPECIALS_SIZE - nlocalsplus) / sizeof(PyObject *))
-    {
+    int max_stacksize = (int)(INT_MAX / sizeof(PyObject *))
+                        - FRAME_SPECIALS_SIZE
+                        - PyTuple_GET_SIZE(con->localsplusnames);
+    if (con->stacksize >= max_stacksize) {
         PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
         return -1;
     }

@@ -901,6 +901,21 @@ def check_sizeof(test, o, size):
             % (type(o), result, size)
     test.assertEqual(result, size, msg)
 
+
+def get_frame_specials_size():
+    """Compute the C defined constant FRAME_SPECIALS_SIZE in codeobject.c."""
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
+
+    c = (lambda: ...).__code__
+    # co_framesize = co_stacksize + co_nlocalsplus + FRAME_SPECIALS_SIZE
+    co_framesize = _testinternalcapi.get_co_framesize(c)
+    co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
+    return co_framesize - c.co_stacksize - co_nlocalsplus
+
+
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
 # correctly resetting it afterwards.

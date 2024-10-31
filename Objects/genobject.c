@@ -817,17 +817,24 @@ static PyMemberDef gen_memberlist[] = {
 static PyObject *
 gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res = offsetof(PyGenObject, gi_iframe)
-                     + offsetof(_PyInterpreterFrame, localsplus);
+    Py_ssize_t base = offsetof(PyGenObject, gi_iframe)
+                      + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = _PyGen_GetCode(gen);
     int nslots = _PyFrame_NumSlotsForCodeObject(code);
     assert(nslots >= 0);
     // By construction, 0 <= nslots < code->co_framesize <= INT_MAX.
     // It should not be possible to have nslots >= PY_SSIZE_T_MAX
     // even if PY_SSIZE_T_MAX < INT_MAX because code->co_framesize
-    // is checked in _PyCode_Validate().
-    assert((size_t)nslots < (INT_MAX - res) / sizeof(PyObject *));
-    return PyLong_FromSsize_t(res + nslots * sizeof(PyObject *));
+    // is checked in _PyCode_Validate(). However, it is possible
+    // to make base + nslots * sizeof(PyObject *) >= INT_MAX since
+    // 'base' is not yet known when creating code objects.
+    //
+    // See https://github.com/python/cpython/issues/126119 for details.
+    if (nslots >= (int)((INT_MAX - base) / sizeof(PyObject *))) {
+        PyErr_SetString(PyExc_OverflowError, "size exceeds INT_MAX");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(base + nslots * sizeof(PyObject *));
 }
 
 PyDoc_STRVAR(sizeof__doc__,

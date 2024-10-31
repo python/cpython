@@ -535,6 +535,7 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(code1, code2)
         sys.settrace(None)
 
+    @unittest.skipUnless(ctypes, "requires ctypes")
     @unittest.skipUnless(_testcapi, "requires _testcapi")
     @unittest.skipUnless(_testinternalcapi, "requires _testinternalcapi")
     def test_co_framesize_overflow(self):
@@ -545,28 +546,17 @@ class CodeTest(unittest.TestCase):
             return x
 
         c = foo.__code__
-        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
-        # co_framesize = co_stacksize + co_nlocalsplus + FRAME_SPECIALS_SIZE
-        co_framesize = _testinternalcapi.get_co_framesize(c)
-        FRAME_SPECIALS_SIZE = co_framesize - c.co_stacksize - co_nlocalsplus
 
+        fss = support.get_frame_specials_size()
         ps = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
-        smallest_evil_co_stacksize = (
-            (_testcapi.INT_MAX - co_nlocalsplus - FRAME_SPECIALS_SIZE) // ps
-        )
+        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
+        # anything below that limit is a valid co_stacksize
+        evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
+        self.assertLessEqual(evil_stacksize, _testcapi.INT_MAX // ps)
 
-        for evil_co_stacksize in [
-            _testcapi.INT_MAX,
-            _testcapi.INT_MAX // ps,
-            smallest_evil_co_stacksize,
-        ]:
-            with (
-                self.subTest(evil_co_stacksize),
-                self.assertRaisesRegex(OverflowError, "co_stacksize")
-            ):
-                c.__replace__(co_stacksize=evil_co_stacksize)
-
-        c.__replace__(co_stacksize=smallest_evil_co_stacksize - 1)
+        with self.assertRaisesRegex(OverflowError, "co_stacksize"):
+            c.__replace__(co_stacksize=evil_stacksize)
+        c.__replace__(co_stacksize=evil_stacksize - 1)
 
 
 def isinterned(s):
