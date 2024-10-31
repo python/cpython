@@ -16,6 +16,7 @@ Here's an overview:
    optparse.rst
    getopt.rst
    getpass.rst
+   fileinput.rst
    curses.rst
    curses.ascii.rst
    curses.panel.rst
