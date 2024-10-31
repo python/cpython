@@ -24,6 +24,7 @@ def url2pathname(url):
             # convert this to \\host\path\on\remote\host
             # (notice halving of slashes at the start of the path)
             url = url[2:]
+        # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
