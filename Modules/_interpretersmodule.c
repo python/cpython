@@ -407,7 +407,7 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
         {
             return -1;
         }
-        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+        if (init_named_config(config, utf8) < 0) {
             return -1;
         }
     }
