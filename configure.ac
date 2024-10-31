@@ -1827,22 +1827,22 @@ case $enable_experimental_jit in
   yes)
     jit_flags="-D_Py_JIT";
     tier2_flags="-D_Py_TIER2=1";
-    AC_DEFINE([Py_JIT_ENABLED], [1], [Define to 1 if you want to build an interpreter with JIT])
+    AC_DEFINE([Py_JIT_ENABLED], [1], [Define to 1 if you want to build an interpreter with JIT, or define to 2 if you want to enable tier 2 interpreter])
     ;;
   yes-off)
     jit_flags="-D_Py_JIT";
     tier2_flags="-D_Py_TIER2=3";
-    AC_DEFINE([Py_JIT_ENABLED], [1], [Define to 1 if you want to build an interpreter with JIT])
+    AC_DEFINE([Py_JIT_ENABLED], [1], [Define to 1 if you want to build an interpreter with JIT, or define to 2 if you want to enable tier 2 interpreter])
     ;;
   interpreter)
     jit_flags="";
     tier2_flags="-D_Py_TIER2=4";
-    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 2 if you want to build an interpreter with enabled tier 2 interpreter])
+    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 1 if you want to build an interpreter with JIT, or define to 2 if you want to enable tier 2 interpreter])
     ;;
   interpreter-off)
     jit_flags="";
     tier2_flags="-D_Py_TIER2=6";
-    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 2 if you want to build an interpreter with enabled tier 2 interpreter])  # Secret option
+    AC_DEFINE([Py_JIT_ENABLED], [2], [Define to 1 if you want to build an interpreter with JIT, or define to 2 if you want to enable tier 2 interpreter])  # Secret option
     ;;
   *) AC_MSG_ERROR(
       [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;

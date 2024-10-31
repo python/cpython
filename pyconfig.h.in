@@ -1695,8 +1695,8 @@
 /* Defined if _Complex C type is available. */
 #undef Py_HAVE_C_COMPLEX
 
-/* Define to 1 if you want to build an interpreter with JIT, or define to 2
- * if you want to enable tier 2 interpreter */
+/* Define to 1 if you want to build an interpreter with JIT, or define to 2 if
+   you want to enable tier 2 interpreter */
 #undef Py_JIT_ENABLED
 
 /* Define if year with century should be normalized for strftime. */
