@@ -30,9 +30,8 @@ def url2pathname(url):
         error = 'Bad URL: ' + url
         raise OSError(error)
     drive = comp[0][-1].upper()
-    tail = urllib.parse.unquote(comp[1])
-    path = drive + ':' + tail.replace('/', '\\')
-    return path
+    tail = urllib.parse.unquote(comp[1]).replace('/', '\\')
+    return drive + ':' + tail
 
 def pathname2url(p):
     """OS-specific conversion from a file system path to a relative URL
@@ -59,6 +58,5 @@ def pathname2url(p):
         raise OSError(error)
 
     drive = urllib.parse.quote(comp[0].upper())
-    tail = comp[1].replace('\\', '/')
-    path = '///' + drive + ':' + urllib.parse.quote(tail)
-    return path
+    tail = urllib.parse.quote(comp[1].replace('\\', '/'))
+    return '///' + drive + ':' + tail
