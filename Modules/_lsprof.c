@@ -610,15 +610,15 @@ setBuiltins(ProfilerObject *pObj, int nvalue)
 _lsprof.Profiler._pystart_callback
 
     code: object
-    obj: object
+    instruction_offset: object
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
-                                        PyObject *obj)
-/*[clinic end generated code: output=f6b04ac9658deb04 input=2a8a6a7b163e253d]*/
+                                        PyObject *instruction_offset)
+/*[clinic end generated code: output=5fec8b7ad5ed25e8 input=b166e6953c579cda]*/
 {
     ptrace_enter_call((PyObject*)self, (void *)code, code);
 
@@ -629,7 +629,7 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
 _lsprof.Profiler._pyreturn_callback
 
     code: object
-    obj: object
+    instruction_offset: object
     retval: object
     /
 
@@ -637,9 +637,10 @@ _lsprof.Profiler._pyreturn_callback
 
 static PyObject *
 _lsprof_Profiler__pyreturn_callback_impl(ProfilerObject *self,
-                                         PyObject *code, PyObject *obj,
+                                         PyObject *code,
+                                         PyObject *instruction_offset,
                                          PyObject *retval)
-/*[clinic end generated code: output=dc0488deec84f7fc input=203c2cf434ae6ceb]*/
+/*[clinic end generated code: output=9e2f6fc1b882c51e input=667ffaeb2fa6fd1f]*/
 {
     ptrace_leave_call((PyObject*)self, (void *)code);
 
@@ -677,7 +678,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
 _lsprof.Profiler._ccall_callback
 
     code: object
-    obj: object
+    instruction_offset: object
     callable: object
     self_arg: object
     /
@@ -686,9 +687,9 @@ _lsprof.Profiler._ccall_callback
 
 static PyObject *
 _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self, PyObject *code,
-                                      PyObject *obj, PyObject *callable,
-                                      PyObject *self_arg)
-/*[clinic end generated code: output=8d50bf59970d2a7e input=9b1560dce1c1a3c8]*/
+                                      PyObject *instruction_offset,
+                                      PyObject *callable, PyObject *self_arg)
+/*[clinic end generated code: output=152db83cabd18cad input=0e66687cfb95c001]*/
 {
     if (self->flags & POF_BUILTINS) {
         PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
@@ -707,7 +708,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self, PyObject *code,
 _lsprof.Profiler._creturn_callback
 
     code: object
-    obj: object
+    instruction_offset: object
     callable: object
     self_arg: object
     /
@@ -716,9 +717,10 @@ _lsprof.Profiler._creturn_callback
 
 static PyObject *
 _lsprof_Profiler__creturn_callback_impl(ProfilerObject *self, PyObject *code,
-                                        PyObject *obj, PyObject *callable,
+                                        PyObject *instruction_offset,
+                                        PyObject *callable,
                                         PyObject *self_arg)
-/*[clinic end generated code: output=4c1f245bd3804b9a input=83e727bf01749202]*/
+/*[clinic end generated code: output=1e886dde8fed8fb0 input=b18afe023746923a]*/
 {
     if (self->flags & POF_BUILTINS) {
         PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
