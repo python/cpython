@@ -4,8 +4,8 @@
 Command Line Interface Libraries
 ********************************
 
-The modules described in this chapter provide interfaces that assist with
-implementing command line and terminal interfaces for applications.
+The modules described in this chapter assist with implementing
+command line and terminal interfaces for applications.
 
 Here's an overview:
 
