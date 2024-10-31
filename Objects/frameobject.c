@@ -1806,6 +1806,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t base = offsetof(PyFrameObject, _f_frame_data)
                       + offsetof(_PyInterpreterFrame, localsplus);
+    assert(base <= INT_MAX);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     int nslots = _PyFrame_NumSlotsForCodeObject(code);
     assert(nslots >= 0);

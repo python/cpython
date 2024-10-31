@@ -819,6 +819,7 @@ gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t base = offsetof(PyGenObject, gi_iframe)
                       + offsetof(_PyInterpreterFrame, localsplus);
+    assert(base <= INT_MAX);
     PyCodeObject *code = _PyGen_GetCode(gen);
     int nslots = _PyFrame_NumSlotsForCodeObject(code);
     assert(nslots >= 0);

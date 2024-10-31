@@ -445,10 +445,9 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
      *
      * See https://github.com/python/cpython/issues/126119 for details.
      */
-    int max_stacksize = (int)(INT_MAX / sizeof(PyObject *))
-                        - FRAME_SPECIALS_SIZE
-                        - (int)PyTuple_GET_SIZE(con->localsplusnames);
-    if (con->stacksize >= max_stacksize) {
+    int ub = (int)(INT_MAX / sizeof(PyObject *)) - FRAME_SPECIALS_SIZE;
+    Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(con->localsplusnames);
+    if (nlocalsplus >= (Py_ssize_t)ub || con->stacksize >= (int)ub - nlocalsplus) {
         PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
         return -1;
     }
