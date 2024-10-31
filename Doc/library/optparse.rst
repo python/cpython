@@ -46,10 +46,11 @@
 --------------
 
 :mod:`optparse` is a more convenient, flexible, and powerful library for parsing
-command-line options than the old :mod:`getopt` module.  :mod:`optparse` uses a
-more declarative style of command-line parsing: you create an instance of
-:class:`OptionParser`, populate it with options, and parse the command
-line. :mod:`optparse` allows users to specify options in the conventional
+command-line options than the minimalist :mod:`getopt` module.
+:mod:`optparse` uses a more declarative style of command-line parsing:
+you create an instance of :class:`OptionParser`,
+populate it with options, and parse the command line.
+:mod:`optparse` allows users to specify options in the conventional
 GNU/POSIX syntax, and additionally generates usage and help messages for you.
 
 Here's an example of using :mod:`optparse` in a simple script::

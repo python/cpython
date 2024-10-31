@@ -139,13 +139,25 @@ In a script, typical usage is something like this::
                output = a
            else:
                assert False, "unhandled option"
-       # ...
+       process(args, output=output, verbose=verbose)
 
    if __name__ == "__main__":
        main()
 
 Note that an equivalent command line interface could be produced with less code
-and more informative help and error messages by using the :mod:`argparse` module::
+and more informative help and error messages by using the :mod:`optparse` module::
+
+   import optparse
+
+   if __name__ == '__main__':
+       parser = optparse.OptionParser()
+       parser.add_option('-o', '--output')
+       parser.add_option('-v', dest='verbose', action='store_true')
+       opts, args = parser.parse_args()
+       process(args, output=opts.output, verbose=opts.verbose)
+
+An equivalent command line interface for this simple case can also be produced
+by using the :mod:`argparse` module::
 
    import argparse
 
@@ -157,8 +169,15 @@ and more informative help and error messages by using the :mod:`argparse` module
        # ... do something with args.output ...
        # ... do something with args.verbose ..
 
+In more complex cases (such as options which accept values), the behaviour
+of the ``argparse`` version may diverge from that of the ``getopt`` and
+``optparse`` versions due to the way ``argparse`` handles parameter
+values that start with ``-``.
+
 .. seealso::
 
-   Module :mod:`argparse`
-      Alternative command line option and argument parsing library.
+   Module :mod:`optparse`
+      More object-oriented command line option parsing.
 
+   Module :mod:`argparse`
+      More opinionated command line option and argument parsing library.
