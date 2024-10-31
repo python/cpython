@@ -1,2 +1,2 @@
-Fixed :exc:`SystemError` upon calling :func:`!_interpreters.create` with
-an invalid unicode character.
+Raise a :exc:`UnicodeEncodeError` instead of a :exc:`SystemError` upon
+calling :func:`!_interpreters.create` with an invalid Unicode character.
