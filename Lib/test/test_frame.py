@@ -1,5 +1,6 @@
 import copy
 import operator
+import platform
 import re
 import sys
 import textwrap
@@ -236,9 +237,14 @@ class FrameAttrsTest(unittest.TestCase):
         evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
         # an evil code with a valid (but very large) stack size
         evil_code = f.f_code.replace(co_stacksize=evil_stacksize - 1)
-        frame = _testcapi.frame_new(evil_code, globals(), locals())
-        message = re.escape("size exceeds INT_MAX")
-        self.assertRaisesRegex(OverflowError, message, frame.__sizeof__)
+
+        if sys.maxsize == 2147483647:  # 32-bit machine
+            with self.assertRaises(MemoryError):
+                frame = _testcapi.frame_new(evil_code, globals(), locals())
+        else:
+            frame = _testcapi.frame_new(evil_code, globals(), locals())
+            message = re.escape("size exceeds INT_MAX")
+            self.assertRaisesRegex(OverflowError, message, frame.__sizeof__)
 
 
 class ReprTest(unittest.TestCase):

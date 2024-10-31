@@ -288,10 +288,14 @@ class GeneratorTest(unittest.TestCase):
 
         if support.Py_GIL_DISABLED:
             self.skipTest("segmentation fault on free-threaded builds")
-        # the following crashes on free-threaded builds for now
-        evil_gi_func = types.FunctionType(evil, {})()
-        message = re.escape("size exceeds INT_MAX")
-        self.assertRaisesRegex(OverflowError, message, evil_gi.__sizeof__)
+        elif sys.maxsize == 2147483647:  # 32-bit machine
+            with self.assertRaises(MemoryError):
+                evil_gi = types.FunctionType(evil, {})()
+        else:
+            # the following crashes on free-threaded builds for now
+            evil_gi = types.FunctionType(evil, {})()
+            message = re.escape("size exceeds INT_MAX")
+            self.assertRaisesRegex(OverflowError, message, evil_gi.__sizeof__)
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):

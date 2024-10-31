@@ -439,7 +439,9 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     /*
      * The framesize = stacksize + nlocalsplus + FRAME_SPECIALS_SIZE is used
      * as framesize * sizeof(PyObject *) and assumed to be < INT_MAX. Thus,
-     * we need to dynamically limit the value of stacksize.
+     * we need to dynamically limit the value of stacksize. Note that this
+     * usually prevents crashes due to assertions but a MemoryError may still
+     * be triggered later.
      *
      * See https://github.com/python/cpython/issues/126119 for details.
      */
