@@ -229,7 +229,7 @@ Classification functions
    tolerance is ``1e-09``, which assures that the two values are the same
    within about 9 decimal digits.  *rel_tol* must be greater than zero.
 
-   *abs_tol* is the absolute tolerance; it must be at least ``0.0``.
+   *abs_tol* is the absolute tolerance; it must be nonnegative.
    When comparing to ``0.0``, the default tolerance values means that only
    ``0.0`` is close to ``0.0``.  Pass an appropriate absolute tolerance to
    compare with ``0.0``.
