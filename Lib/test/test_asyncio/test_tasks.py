@@ -2689,6 +2689,28 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_proper_refcounts(self):
+        # see: https://github.com/python/cpython/issues/126083
+        class Break:
+            def __str__(self):
+                raise RuntimeError("break")
+
+        obj = object()
+        initial_refcount = sys.getrefcount(obj)
+
+        coro = coroutine_function()
+        loop = asyncio.new_event_loop()
+        task = asyncio.Task.__new__(asyncio.Task)
+
+        for _ in range(5):
+            with self.assertRaisesRegex(RuntimeError, 'break'):
+                task.__init__(coro, loop=loop, context=obj, name=Break())
+
+        coro.close()
+        del task
+
+        self.assertEqual(sys.getrefcount(obj), initial_refcount)
+
     def test_use_after_free_on_task_call_step_soon_with_ridiculous_setup(self):
         # Special thanks to Nico-Posada for the original PoC.
         # see: https://github.com/python/cpython/issues/126080
