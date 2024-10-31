@@ -26,7 +26,7 @@ module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
 .. note::
-   Fine details of the command-line interface built with using the
+   The finer details of the command-line interface built with the
    :mod:`!argparse` module differ from common Unix and Linux programs.
    If you want to implement a more compatible interface, consider using
    the :mod:`optparse` or :mod:`getopt` modules.
