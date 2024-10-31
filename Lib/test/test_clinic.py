@@ -3381,8 +3381,8 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_varpos(self):
         # fn(*args)
         fn = ac_tester.varpos
-        self.assertEqual(fn(), ())
-        self.assertEqual(fn(1, 2), (1, 2))
+        self.assertEqual(fn(), ((),))
+        self.assertEqual(fn(1, 2), ((1, 2),))
 
     def test_posonly_varpos(self):
         # fn(a, b, /, *args)
