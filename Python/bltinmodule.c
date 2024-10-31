@@ -1428,7 +1428,7 @@ map_traverse(mapobject *lz, visitproc visit, void *arg)
 static PyObject *
 map_next(mapobject *lz)
 {
-    Py_ssize_t i; // Needed for error reporting
+    Py_ssize_t i;
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
     PyObject *result = NULL;
@@ -1506,7 +1506,7 @@ check:
         // Argument i is exhausted. So far so good...
     }
     // All arguments are exhausted. Success!
-    goto exit; // Cleanup
+    goto exit;
 }
 
 static PyObject *
