@@ -15037,8 +15037,15 @@ if test ${ac_cv_ffi_complex_double_supported+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_save_cc="$CC"
-CC="$CC -lffi"
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
@@ -15080,7 +15087,13 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
@@ -20465,10 +20478,89 @@ fi
 printf "%s\n" "$ac_cv_lib_resolv_inet_aton" >&6; }
 if test "x$ac_cv_lib_resolv_inet_aton" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBRESOLV 1" >>confdefs.h
+  SOCKET_LIBS="-lresolv"
+fi
 
-  LIBS="-lresolv $LIBS"
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lc" >&5
+printf %s "checking for hstrerror in -lc... " >&6; }
+if test ${ac_cv_lib_c_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_c_hstrerror=yes
+else $as_nop
+  ac_cv_lib_c_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_c_hstrerror" >&6; }
+if test "x$ac_cv_lib_c_hstrerror" = xyes
+then :
+  $ac_cv_prog_TRUE
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lresolv" >&5
+printf %s "checking for hstrerror in -lresolv... " >&6; }
+if test ${ac_cv_lib_resolv_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lresolv  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_resolv_hstrerror=yes
+else $as_nop
+  ac_cv_lib_resolv_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_resolv_hstrerror" >&6; }
+if test "x$ac_cv_lib_resolv_hstrerror" = xyes
+then :
+  SOCKET_LIBS="-lresolv"
 fi
 
 
@@ -29162,7 +29254,7 @@ case $ac_sys_system in #(
 
     py_cv_module__scproxy=n/a
  ;; #(
-  Emscripten|WASI) :
+  Emscripten) :
 
 
 
@@ -29184,9 +29276,6 @@ case $ac_sys_system in #(
     py_cv_module_syslog=n/a
     py_cv_module_=n/a
 
-    case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-
 
 
     py_cv_module_fcntl=n/a
@@ -29194,10 +29283,28 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 
-       ;; #(
-  Emscripten/node*) :
-     ;; #(
-  WASI/*) :
+   ;; #(
+  WASI) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__interpreters=n/a
+    py_cv_module__interpchannels=n/a
+    py_cv_module__interpqueues=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
 
 
 
@@ -29213,11 +29320,6 @@ case $ac_sys_system in #(
     py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
-
-     ;; #(
-  *) :
-     ;;
-esac
    ;; #(
   *) :
 
@@ -29975,7 +30077,7 @@ fi
 then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET_LDFLAGS=$SOCKET_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__socket" = yes; then
