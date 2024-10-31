@@ -23,8 +23,9 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows 8.1 and newer. If you require Windows 7
-support, please install Python 3.8.
+Python |version| supports Windows 10 and newer. If you require Windows 7
+support, please install Python 3.8. If you require Windows 8.1 support,
+please install Python 3.12.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -837,8 +838,8 @@ The short form of the argument (``-3``) only ever selects from core Python
 releases, and not other distributions. However, the longer form (``-V:3``) will
 select from any.
 
-The Company is matched on the full string, case-insenitive. The Tag is matched
-oneither the full string, or a prefix, provided the next character is a dot or a
+The Company is matched on the full string, case-insensitive. The Tag is matched
+on either the full string, or a prefix, provided the next character is a dot or a
 hyphen. This allows ``-V:3.1`` to match ``3.1-32``, but not ``3.10``. Tags are
 sorted using numerical ordering (``3.10`` is newer than ``3.1``), but are
 compared using text (``-V:3.01`` does not match ``3.1``).

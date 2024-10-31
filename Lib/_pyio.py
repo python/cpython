@@ -238,7 +238,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     result = raw
     try:
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        if buffering == 1 or buffering < 0 and raw._isatty_open_only():
             buffering = -1
             line_buffering = True
         if buffering < 0:
@@ -1792,6 +1792,21 @@ class FileIO(RawIOBase):
     def isatty(self):
         """True if the file is connected to a TTY device."""
         self._checkClosed()
+        return os.isatty(self._fd)
+
+    def _isatty_open_only(self):
+        """Checks whether the file is a TTY using an open-only optimization.
+
+        TTYs are always character devices. If the interpreter knows a file is
+        not a character device when it would call ``isatty``, can skip that
+        call. Inside ``open()``  there is a fresh stat result that contains that
+        information. Use the stat result to skip a system call. Outside of that
+        context TOCTOU issues (the fd could be arbitrarily modified by
+        surrounding code).
+        """
+        if (self._stat_atopen is not None
+            and not stat.S_ISCHR(self._stat_atopen.st_mode)):
+            return False
         return os.isatty(self._fd)
 
     @property

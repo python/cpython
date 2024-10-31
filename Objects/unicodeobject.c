@@ -46,6 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()
@@ -261,7 +262,6 @@ _PyUnicode_InternedSize_Immortal(void)
 }
 
 static Py_hash_t unicode_hash(PyObject *);
-static int unicode_compare_eq(PyObject *, PyObject *);
 
 static Py_uhash_t
 hashtable_unicode_hash(const void *key)
@@ -275,7 +275,7 @@ hashtable_unicode_compare(const void *key1, const void *key2)
     PyObject *obj1 = (PyObject *)key1;
     PyObject *obj2 = (PyObject *)key2;
     if (obj1 != NULL && obj2 != NULL) {
-        return unicode_compare_eq(obj1, obj2);
+        return unicode_eq(obj1, obj2);
     }
     else {
         return obj1 == obj2;
@@ -10995,26 +10995,6 @@ unicode_compare(PyObject *str1, PyObject *str2)
 #undef COMPARE
 }
 
-static int
-unicode_compare_eq(PyObject *str1, PyObject *str2)
-{
-    int kind;
-    const void *data1, *data2;
-    Py_ssize_t len;
-    int cmp;
-
-    len = PyUnicode_GET_LENGTH(str1);
-    if (PyUnicode_GET_LENGTH(str2) != len)
-        return 0;
-    kind = PyUnicode_KIND(str1);
-    if (PyUnicode_KIND(str2) != kind)
-        return 0;
-    data1 = PyUnicode_DATA(str1);
-    data2 = PyUnicode_DATA(str2);
-
-    cmp = memcmp(data1, data2, len * kind);
-    return (cmp == 0);
-}
 
 int
 _PyUnicode_Equal(PyObject *str1, PyObject *str2)
@@ -11024,7 +11004,25 @@ _PyUnicode_Equal(PyObject *str1, PyObject *str2)
     if (str1 == str2) {
         return 1;
     }
-    return unicode_compare_eq(str1, str2);
+    return unicode_eq(str1, str2);
+}
+
+
+int
+PyUnicode_Equal(PyObject *str1, PyObject *str2)
+{
+    if (!PyUnicode_Check(str1)) {
+        PyErr_Format(PyExc_TypeError,
+                     "first argument must be str, not %T", str1);
+        return -1;
+    }
+    if (!PyUnicode_Check(str2)) {
+        PyErr_Format(PyExc_TypeError,
+                     "second argument must be str, not %T", str2);
+        return -1;
+    }
+
+    return _PyUnicode_Equal(str1, str2);
 }
 
 
@@ -11222,7 +11220,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
         return 0;
     }
 
-    return unicode_compare_eq(left, right_uni);
+    return unicode_eq(left, right_uni);
 }
 
 PyObject *
@@ -11250,7 +11248,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         }
     }
     else if (op == Py_EQ || op == Py_NE) {
-        result = unicode_compare_eq(left, right);
+        result = unicode_eq(left, right);
         result ^= (op == Py_NE);
         return PyBool_FromLong(result);
     }
@@ -11258,12 +11256,6 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         result = unicode_compare(left, right);
         Py_RETURN_RICHCOMPARE(result, 0, op);
     }
-}
-
-int
-_PyUnicode_EQ(PyObject *aa, PyObject *bb)
-{
-    return unicode_eq(aa, bb);
 }
 
 int
@@ -13445,9 +13437,13 @@ PyUnicodeWriter_Create(Py_ssize_t length)
     }
 
     const size_t size = sizeof(_PyUnicodeWriter);
-    PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+    PyUnicodeWriter *pub_writer;
+    pub_writer = _Py_FREELIST_POP_MEM(unicode_writers);
     if (pub_writer == NULL) {
-        return (PyUnicodeWriter *)PyErr_NoMemory();
+        pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+        if (pub_writer == NULL) {
+            return (PyUnicodeWriter *)PyErr_NoMemory();
+        }
     }
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
 
@@ -13464,8 +13460,11 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 
 void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
     _PyUnicodeWriter_Dealloc((_PyUnicodeWriter*)writer);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
 }
 
 
@@ -13641,6 +13640,10 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *str = PyObject_Str(obj);
     if (str == NULL) {
         return -1;
@@ -13655,6 +13658,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *repr = PyObject_Repr(obj);
     if (repr == NULL) {
         return -1;
@@ -13879,7 +13886,7 @@ PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 {
     PyObject *str = _PyUnicodeWriter_Finish((_PyUnicodeWriter*)writer);
     assert(((_PyUnicodeWriter*)writer)->buffer == NULL);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
     return str;
 }
 

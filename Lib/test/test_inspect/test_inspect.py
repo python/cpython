@@ -1,3 +1,4 @@
+from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
 import collections
@@ -22,7 +23,6 @@ import time
 import types
 import tempfile
 import textwrap
-from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -35,7 +35,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper, suppress_immortalization
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -46,11 +46,12 @@ from test import support
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_deferred_annotations
 
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
-# isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
+# isbuiltin, isroutine, isgenerator, ispackage, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
 # getclasstree, getargvalues, formatargvalues, currentframe,
 # stack, trace, ismethoddescriptor, isdatadescriptor, ismethodwrapper
@@ -104,7 +105,7 @@ unsorted_keyword_only_parameters = 'throw out the baby with_ the_ bathwater'.spl
 class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
-                      inspect.ismodule, inspect.istraceback,
+                      inspect.ismodule, inspect.istraceback, inspect.ispackage,
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
                       inspect.isasyncgen, inspect.isasyncgenfunction,
@@ -120,7 +121,10 @@ class IsTestBase(unittest.TestCase):
                predicate == inspect.iscoroutinefunction) and \
                other == inspect.isfunction:
                 continue
-            self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
+            if predicate == inspect.ispackage and other == inspect.ismodule:
+                self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+            else:
+                self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
         support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
@@ -200,7 +204,17 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(int))
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
+    def test_ispackage(self):
+        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'importlib')
+        self.assertFalse(inspect.ispackage(inspect))
+        self.assertFalse(inspect.ispackage(mod))
+        self.assertFalse(inspect.ispackage(':)'))
 
+        class FakePackage:
+            __path__ = None
+
+        self.assertFalse(inspect.ispackage(FakePackage()))
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
@@ -770,7 +784,6 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
-    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -2575,7 +2588,6 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
-    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -4622,6 +4634,18 @@ class TestSignatureObject(unittest.TestCase):
             expected_multiline,
         )
 
+    def test_signature_format_unquote(self):
+        def func(x: 'int') -> 'str': ...
+
+        self.assertEqual(
+            inspect.signature(func).format(),
+            "(x: 'int') -> 'str'"
+        )
+        self.assertEqual(
+            inspect.signature(func).format(quote_annotation_strings=False),
+            "(x: int) -> str"
+        )
+
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
             pass
@@ -4854,6 +4878,26 @@ class TestSignatureObject(unittest.TestCase):
                             par('b', PORK, annotation=tuple),
                         )))
 
+    def test_signature_annotation_format(self):
+        ida = inspect_deferred_annotations
+        sig = inspect.Signature
+        par = inspect.Parameter
+        PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func=signature_func):
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.STRING),
+                    sig([par("x", PORK, annotation="undefined")])
+                )
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.FORWARDREF),
+                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                )
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f, annotation_format=Format.VALUE)
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f)
+
     def test_signature_none_annotation(self):
         class funclike:
             # Has to be callable, and have correct
@@ -4878,38 +4922,6 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(signature_func = signature_func):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
-
-    def test_signature_as_str(self):
-        self.maxDiff = None
-        class S:
-            __signature__ = '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-    def test_signature_as_callable(self):
-        # __signature__ should be either a staticmethod or a bound classmethod
-        class S:
-            @classmethod
-            def __signature__(cls):
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-        class S:
-            @staticmethod
-            def __signature__():
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
 
     def test_signature_on_derived_classes(self):
         # gh-105080: Make sure that signatures are consistent on derived classes
@@ -5361,7 +5373,7 @@ class TestSignatureBind(unittest.TestCase):
         # Issue #19611: getcallargs should work with comprehensions
         def make_set():
             return set(z * z for z in range(5))
-        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_code = make_set.__code__.co_consts[0]
         gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
