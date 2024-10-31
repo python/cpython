@@ -1657,7 +1657,7 @@ optparse
   library, there are aspects of the way ``argparse`` works that
   mean the lower level ``optparse`` module may provide a better
   foundation for *writing* argument processing libraries.
-  (Contributed by Alyssa Coghlan in :gh:`126225`.)
+  (Contributed by Alyssa Coghlan in :gh:`126180`.)
 
 
 pathlib
