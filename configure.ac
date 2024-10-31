@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -379,10 +379,29 @@ then
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
+dnl For cross compilation, we distinguish between "prefix" (where we install the
+dnl files) and "host_prefix" (where we expect to find the files at runtime)
+
+if test -z "$host_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_prefix=/],
+    [host_prefix='${prefix}']
+  )
+fi
+AC_SUBST([host_prefix])
+
+if test -z "$host_exec_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_exec_prefix=$host_prefix],
+    [host_exec_prefix='${exec_prefix}']
+  )
+fi
+AC_SUBST([host_exec_prefix])
+
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -418,9 +437,9 @@ if test -z "$CPP"; then
 fi
 if test -z "$CXX"; then
 	case "$host" in
-		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
-		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
-		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -710,8 +729,6 @@ AC_ARG_WITH(
         Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
       esac
@@ -719,8 +736,6 @@ AC_ARG_WITH(
       ;;
     *)
       APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
       AC_MSG_RESULT([applying custom app store compliance patch])
       ;;
     esac
@@ -729,29 +744,16 @@ AC_ARG_WITH(
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
-        ;;
       *)
-        # No app compliance patching on any other platform
+        # No default app compliance patching on any other platform
         APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([not patching for app store compliance])
         ;;
     esac
 ])
 AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
 
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
@@ -774,8 +776,10 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		AC_MSG_CHECKING([iOS deployment target])
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		AC_MSG_RESULT([$IPHONEOS_DEPLOYMENT_TARGET])
 
 		case "$host_cpu" in
 			aarch64)
@@ -1354,6 +1358,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])
@@ -1634,38 +1641,10 @@ then
     [Emscripten/node*], [
       AC_PATH_TOOL([NODE], [node], [node])
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-      ])
-      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
-      ])
-
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
-        # no longer available in Node 16
-        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-        ])
-        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
-          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
-        ])
-      ])
-
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
     [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
@@ -1739,7 +1718,9 @@ fi
 
 # For calculating the .so ABI tag.
 AC_SUBST([ABIFLAGS])
+AC_SUBST([ABI_THREAD])
 ABIFLAGS=""
+ABI_THREAD=""
 
 # Check for --disable-gil
 # --disable-gil
@@ -1756,6 +1737,7 @@ then
             [Define if you want to disable the GIL])
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
+  ABI_THREAD="t"
 fi
 
 # Check for --with-pydebug
@@ -1789,6 +1771,10 @@ then
             [Define if you want to enable tracing references for debugging purpose])
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  AC_MSG_ERROR([--disable-gil cannot be used with --with-trace-refs])
+fi
 
 # Check for --enable-pystats
 AC_MSG_CHECKING([for --enable-pystats])
@@ -2429,6 +2415,7 @@ AS_CASE([$ac_sys_system],
       ],
       [node*], [
         AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
+        AS_VAR_APPEND([LDFLAGS_NODIST], [" --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"])
         AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
         AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -2511,8 +2498,33 @@ AS_VAR_IF([with_strict_overflow], [yes],
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
-AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+
+AC_MSG_CHECKING([for --enable-safety])
+AC_ARG_ENABLE([safety],
+  [AS_HELP_STRING([--enable-safety], [enable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([disable_safety], [yes], [enable_safety=no], [enable_safety=yes])], [enable_safety=no])
+AC_MSG_RESULT([$enable_safety])
+
+if test "$enable_safety" = "yes"
+then
+  AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wimplicit-fallthrough], [CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"], [AC_MSG_WARN([-Wimplicit-fallthrough not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Werror=format-security], [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"], [AC_MSG_WARN([-Werror=format-security not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wbidi-chars=any], [CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"], [AC_MSG_WARN([-Wbidi-chars=any not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS_NODIST="$CFLAGS_NODIST -Wall"], [AC_MSG_WARN([-Wall not supported])], [-Werror])
+fi
+
+AC_MSG_CHECKING([for --enable-slower-safety])
+AC_ARG_ENABLE([slower-safety],
+  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
+  [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
+AC_MSG_RESULT([$enable_slower_safety])
+
+if test "$enable_slower_safety" = "yes"
+then
+  AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
+fi
 
 case $GCC in
 yes)
@@ -2996,7 +3008,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/random.h linux/soundcard.h \
+  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -3531,7 +3543,7 @@ then
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-			dnl not iplemented yet
+			dnl not implemented yet
 		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
@@ -3704,7 +3716,7 @@ esac
 AC_MSG_RESULT([$SHLIBS])
 
 dnl perf trampoline is Linux specific and requires an arch-specific
-dnl trampoline in asssembly.
+dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
@@ -3784,6 +3796,13 @@ AS_VAR_IF([have_uuid], [missing], [
     ])
   ])
 ])
+
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  AC_DEFINE([HAVE_UUID_H], [0])
+fi
 
 AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
@@ -4064,6 +4083,48 @@ AS_VAR_IF([have_libffi], [yes], [
     PY_CHECK_FUNC([ffi_closure_alloc], [@%:@include <ffi.h>])
   ])
 ])
+
+# Check for libffi with real complex double support.
+# This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+# but real support was provided only in libffi v3.3.0.
+# See https://github.com/python/cpython/issues/125206 for more details.
+#
+AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
+[WITH_SAVE_ENV([
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <complex.h>
+#include <ffi.h>
+int z_is_expected(double complex z)
+{
+    const double complex expected = CMPLX(1.25, -0.5);
+    return z == expected;
+}
+int main(void)
+{
+    double complex z = 1.25 - 0.5 * I;
+    ffi_type *args[1] = {&ffi_type_complex_double};
+    void *values[1] = {&z};
+    ffi_cif cif;
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+        &ffi_type_sint, args) != FFI_OK)
+    {
+        return 2;
+    }
+    ffi_arg rc;
+    ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
+    return !rc;
+}
+]])], [ac_cv_ffi_complex_double_supported=yes],
+[ac_cv_ffi_complex_double_supported=no],
+[ac_cv_ffi_complex_double_supported=no])
+])])
+if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
+    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+              [Defined if _Complex C type can be used with libffi.])
+fi
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING([for --with-system-libmpdec])
@@ -4953,24 +5014,6 @@ then
 fi
 AC_MSG_RESULT([$with_pymalloc])
 
-# Check whether objects such as float, tuple and dict are using
-# freelists to optimization memory allocation.
-AC_MSG_CHECKING([for --with-freelists])
-AC_ARG_WITH(
-  [freelists],
-  [AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)])])
-
-if test -z "$with_freelists"
-then
-    with_freelists="yes"
-fi
-if test "$with_freelists" != "no"
-then
-    AC_DEFINE([WITH_FREELISTS], [1],
-     [Define if you want to compile in object freelists optimization])
-fi
-AC_MSG_RESULT([$with_freelists])
-
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])
 AC_ARG_WITH(
@@ -5268,10 +5311,13 @@ AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
 dnl check for true
 AC_CHECK_PROGS([TRUE], [true], [/bin/true])
 
-dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
+dnl On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
 AC_CHECK_LIB([c], [inet_aton], [$ac_cv_prog_TRUE],
-  AC_CHECK_LIB([resolv], [inet_aton])
+  AC_CHECK_LIB([resolv], [inet_aton], [SOCKET_LIBS="-lresolv"])
+)
+AC_CHECK_LIB([c], [hstrerror], [$ac_cv_prog_TRUE],
+  AC_CHECK_LIB([resolv], [hstrerror], [SOCKET_LIBS="-lresolv"])
 )
 
 # On Tru64, chflags seems to be present, but calling it will
@@ -5916,7 +5962,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
   AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
@@ -6215,16 +6261,19 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
-# Configure the flags and dependencies used when compiling shared modules
+# Configure the flags and dependencies used when compiling shared modules.
+# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+# systems (e.g. Meson) to decide whether to link extension modules against
+# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
-AC_SUBST([MODULE_LDFLAGS])
+AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-MODULE_LDFLAGS=''
+LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+  LIBPYTHON="\$(BLDLIBRARY)"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -6234,11 +6283,11 @@ fi
 
 
 AC_SUBST([BINLIBDEST])
-BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
 
 
 # Check for --with-platlibdir
-# /usr/$LIDIRNAME/python$VERSION
+# /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
 PLATLIBDIR="lib"
 AC_MSG_CHECKING([for --with-platlibdir])
@@ -6257,7 +6306,7 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
@@ -6267,9 +6316,9 @@ fi],
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST([LIBPL])
 
@@ -6689,6 +6738,34 @@ if test "$ac_cv_normalize_century" = yes
 then
   AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
   [Define if year with century should be normalized for strftime.])
+fi
+
+AC_CACHE_CHECK([whether C99-specific strftime specifiers are supported], [ac_cv_strftime_c99_support], [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char full_date[11];
+  struct tm date = {
+    .tm_year = 0,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
+    return 0;
+  }
+  return 1;
+}
+]])],
+[ac_cv_strftime_c99_support=yes],
+[ac_cv_strftime_c99_support=no],
+[ac_cv_strftime_c99_support=no])])
+if test "$ac_cv_strftime_c99_support" = yes
+then
+  AC_DEFINE([Py_STRFTIME_C99_SUPPORT], [1],
+  [Define if C99-specific strftime specifiers are supported.])
 fi
 
 dnl check for ncursesw/ncurses and panelw/panel
@@ -7394,8 +7471,6 @@ AC_DEFINE([PY_SSL_DEFAULT_CIPHERS], [1])
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
-)
 AC_MSG_CHECKING([for --with-builtin-hashlib-hashes])
 AC_ARG_WITH(
   [builtin-hashlib-hashes],
@@ -7412,7 +7487,8 @@ AC_ARG_WITH(
 
 AC_MSG_RESULT([$with_builtin_hashlib_hashes])
 AC_DEFINE_UNQUOTED([PY_BUILTIN_HASHLIB_HASHES],
-  ["$with_builtin_hashlib_hashes"])
+                   ["$with_builtin_hashlib_hashes"],
+                   [enabled builtin hash modules])
 
 as_save_IFS=$IFS
 IFS=,
@@ -7426,15 +7502,6 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
     )
 done
 IFS=$as_save_IFS
-
-dnl libb2 for blake2. _blake2 module falls back to vendored copy.
-AS_VAR_IF([with_builtin_blake2], [yes], [
-  PKG_CHECK_MODULES([LIBB2], [libb2], [
-    have_libb2=yes
-    AC_DEFINE([HAVE_LIBB2], [1],
-              [Define to 1 if you want to build _blake2 module with libb2])
-  ], [have_libb2=no])
-])
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
@@ -7470,7 +7537,7 @@ CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
 AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
                [ac_cv_libatomic_needed],
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 // pyatomic.h needs uint64_t and Py_ssize_t types
 #include <stdint.h>  // int64_t, intptr_t
 #ifdef HAVE_SYS_TYPES_H
@@ -7507,9 +7574,8 @@ int main()
     return 0; // all good
 }
 ]])],
-  [ac_cv_libatomic_needed=no],  dnl build succeeded
-  [ac_cv_libatomic_needed=yes], dnl build failed
-  [ac_cv_libatomic_needed=no])  dnl cross compilation
+  [ac_cv_libatomic_needed=no],  dnl build and link succeeded
+  [ac_cv_libatomic_needed=yes]) dnl build and link failed
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
@@ -7556,12 +7622,11 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
-  [Emscripten|WASI], [
+  [Emscripten], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
-    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
-    dnl resource functions (get/setrusage) are stubs, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -7580,33 +7645,50 @@ AS_CASE([$ac_sys_system],
       [resource],
       [syslog],
     )
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser*], [
-        dnl These modules are not particularly useful in browsers.
-        PY_STDLIB_MOD_SET_NA(
-          [fcntl],
-          [readline],
-          [termios],
-        )
-      ],
-      [Emscripten/node*], [],
-      [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
-        dnl Test modules that must be compiled as shared libraries are not supported
-        dnl (see Modules/Setup.stdlib.in).
-        PY_STDLIB_MOD_SET_NA(
-          [_ctypes_test],
-          [_testexternalinspection],
-          [_testimportmultiple],
-          [_testmultiphase],
-          [_testsinglephase],
-          [fcntl],
-          [mmap],
-          [termios],
-          [xxlimited],
-          [xxlimited_35],
-        )
-      ]
+    dnl fcntl, readline, and termios are not particularly useful in browsers.
+    PY_STDLIB_MOD_SET_NA(
+      [fcntl],
+      [readline],
+      [termios],
+    )
+  ],
+  [WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
+    PY_STDLIB_MOD_SET_NA(
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_interpreters],
+      [_interpchannels],
+      [_interpqueues],
+      [grp],
+      [pwd],
+      [resource],
+      [syslog],
+    )
+    dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+    dnl Test modules that must be compiled as shared libraries are not supported
+    dnl (see Modules/Setup.stdlib.in).
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes_test],
+      [_testexternalinspection],
+      [_testimportmultiple],
+      [_testmultiphase],
+      [_testsinglephase],
+      [fcntl],
+      [mmap],
+      [termios],
+      [xxlimited],
+      [xxlimited_35],
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -7689,7 +7771,6 @@ PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])
-PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
@@ -7727,7 +7808,7 @@ PY_STDLIB_MOD([mmap],
 PY_STDLIB_MOD([_socket],
   [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
                     -a "$ac_cv_header_sys_types_h" = "yes"
-                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
+                    -a "$ac_cv_header_netinet_in_h" = "yes"]), [], [$SOCKET_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [],
@@ -7757,19 +7838,75 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5],
-  [test "$with_builtin_md5" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha1],
-  [test "$with_builtin_sha1" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha2],
-  [test "$with_builtin_sha2" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2],
-  [test "$with_builtin_blake2" = yes], [],
-  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+case "$ac_sys_system" in
+  Linux*)
+    if test "$ac_cv_func_explicit_bzero" = "no"; then
+      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+    fi
+  ;;
+esac
+AC_SUBST([LIBHACL_CFLAGS])
+
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+  dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
+  AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+    [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
+
+    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+
+    # macOS universal2 builds *support* the -msse etc flags because they're
+    # available on x86_64. However, performance of the HACL SIMD128 implementation
+    # isn't great, so it's disabled on ARM64.
+    AC_MSG_CHECKING([for HACL* SIMD128 implementation])
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+      AC_MSG_RESULT([universal2])
+    else
+      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+      AC_MSG_RESULT([standard])
+    fi
+
+  ], [], [-Werror])
+fi
+AC_SUBST([LIBHACL_SIMD128_FLAGS])
+AC_SUBST([LIBHACL_SIMD128_OBJS])
+
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+#
+# Although AVX support is not guaranteed on Android
+# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
+# runtime CPUID check.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+  AX_CHECK_COMPILE_FLAG([-mavx2],[
+    [LIBHACL_SIMD256_FLAGS="-mavx2"]
+    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+
+    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+    # available on x86_64; but the HACL SIMD256 build then fails because the
+    # implementation requires symbols that aren't available on ARM64. Use a
+    # wrapped implementation if we're building for universal2.
+    AC_MSG_CHECKING([for HACL* SIMD256 implementation])
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+      AC_MSG_RESULT([universal2])
+    else
+      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+      AC_MSG_RESULT([standard])
+    fi
+  ], [], [-Werror])
+fi
+AC_SUBST([LIBHACL_SIMD256_FLAGS])
+AC_SUBST([LIBHACL_SIMD256_OBJS])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],

@@ -205,9 +205,9 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Mark Dickinson; :issue:`4707`.)
 
-* Python now uses David Gay's algorithm for finding the shortest floating
-  point representation that doesn't change its value.  This should help
-  mitigate some of the confusion surrounding binary floating point
+* Python now uses David Gay's algorithm for finding the shortest floating-point
+  representation that doesn't change its value.  This should help
+  mitigate some of the confusion surrounding binary floating-point
   numbers.
 
   The significance is easily seen with a number like ``1.1`` which does not
@@ -215,7 +215,7 @@ Some smaller changes made to the core Python language are:
   equivalent, an expression like ``float('1.1')`` evaluates to the nearest
   representable value which is ``0x1.199999999999ap+0`` in hex or
   ``1.100000000000000088817841970012523233890533447265625`` in decimal. That
-  nearest value was and still is used in subsequent floating point
+  nearest value was and still is used in subsequent floating-point
   calculations.
 
   What is new is how the number gets displayed.  Formerly, Python used a
@@ -224,7 +224,7 @@ Some smaller changes made to the core Python language are:
   using 17 digits was that it relied on IEEE-754 guarantees to assure that
   ``eval(repr(1.1))`` would round-trip exactly to its original value.  The
   disadvantage is that many people found the output to be confusing (mistaking
-  intrinsic limitations of binary floating point representation as being a
+  intrinsic limitations of binary floating-point representation as being a
   problem with Python itself).
 
   The new algorithm for ``repr(1.1)`` is smarter and returns ``'1.1'``.
@@ -236,8 +236,8 @@ Some smaller changes made to the core Python language are:
   it does not change the underlying values.  So, it is still the case that
   ``1.1 + 2.2 != 3.3`` even though the representations may suggest otherwise.
 
-  The new algorithm depends on certain features in the underlying floating
-  point implementation.  If the required features are not found, the old
+  The new algorithm depends on certain features in the underlying floating-point
+  implementation.  If the required features are not found, the old
   algorithm will continue to be used.  Also, the text pickle protocols
   assure cross-platform portability by using the old algorithm.
 
@@ -550,7 +550,7 @@ Porting to Python 3.1
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
-* The new floating point string representations can break existing doctests.
+* The new floating-point string representations can break existing doctests.
   For example::
 
     def e():

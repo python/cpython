@@ -915,8 +915,8 @@ class DSLParser:
                  f"invalid parameter declaration (**kwargs?): {line!r}")
 
         if function_args.vararg:
-            if any(p.is_vararg() for p in self.function.parameters.values()):
-                fail("Too many var args")
+            self.check_previous_star()
+            self.check_remaining_star()
             is_vararg = True
             parameter = function_args.vararg
         else:
@@ -1124,6 +1124,9 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
+        if is_vararg:
+            self.keyword_only = True
+
     @staticmethod
     def parse_converter(
         annotation: ast.expr | None
@@ -1165,8 +1168,6 @@ class DSLParser:
         the marker will take effect (None means it is already in effect).
         """
         if version is None:
-            if self.keyword_only:
-                fail(f"Function {function.name!r} uses '*' more than once.")
             self.check_previous_star()
             self.check_remaining_star()
             self.keyword_only = True
@@ -1456,6 +1457,7 @@ class DSLParser:
 
                 if p.is_vararg():
                     p_lines.append("*")
+                    added_star = True
 
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
@@ -1565,7 +1567,8 @@ class DSLParser:
 
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
-                if p.kind == inspect.Parameter.KEYWORD_ONLY:
+                if (p.kind == inspect.Parameter.KEYWORD_ONLY or
+                    p.kind == inspect.Parameter.VAR_POSITIONAL):
                     return
             elif self.deprecated_positional:
                 if p.deprecated_positional == self.deprecated_positional:
@@ -1575,12 +1578,11 @@ class DSLParser:
         fail(f"Function {self.function.name!r} specifies {symbol!r} "
              f"without following parameters.", line_number=lineno)
 
-    def check_previous_star(self, lineno: int | None = None) -> None:
+    def check_previous_star(self) -> None:
         assert isinstance(self.function, Function)
 
-        for p in self.function.parameters.values():
-            if p.kind == inspect.Parameter.VAR_POSITIONAL:
-                fail(f"Function {self.function.name!r} uses '*' more than once.")
+        if self.keyword_only:
+            fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:

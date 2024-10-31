@@ -433,7 +433,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
                 # Give a nice message for common mistakes.
                 # To cover tricky cases (like "\n") we also generate C asserts.
                 raise ValueError(
-                    'do not use &_PyID or &_Py_STR for one-character latin-1 '
+                    'do not use &_Py_ID or &_Py_STR for one-character latin-1 '
                     + f'strings, use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name
@@ -442,7 +442,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     overlap = identifiers & set(strings.keys())
     if overlap:
         raise ValueError(
-            'do not use both _PyID and _Py_DECLARE_STR for the same string: '
+            'do not use both _Py_ID and _Py_DECLARE_STR for the same string: '
             + repr(overlap))
     return identifiers, strings
 
