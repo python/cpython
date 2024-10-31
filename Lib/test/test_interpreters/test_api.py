@@ -54,6 +54,10 @@ class CreateTests(TestBase):
         self.assertIsInstance(interp, interpreters.Interpreter)
         self.assertIn(interp, interpreters.list_all())
 
+        # GH-126221: Passing an invalid unicode character used to cause a SystemError
+        with self.assertRaises(UnicodeEncodeError):
+            _interpreters.create('\udc80')
+
     def test_in_thread(self):
         lock = threading.Lock()
         interp = None
