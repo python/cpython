@@ -46,11 +46,6 @@ or on combining URL components into a URL string.
    The delimiters as shown above are not part of the result, except for a
    leading slash in the path component, which is retained if present.
 
-   Additionally, the netloc property is broken down into these additional
-   attributes added to the returned object: username, password, hostname, and
-   port.
-
-   % escapes are not decoded.
 
    For example:
 
@@ -308,11 +303,6 @@ or on combining URL components into a URL string.
    or query component, and :attr:`fragment` is set to the empty string in
    the return value.
 
-   This is similar to :func:`urlparse`, but does not split the params from the
-   URL. This should generally be used instead of :func:`urlparse` if the more
-   recent URL syntax allowing parameters to be applied to each segment of the
-   *path* portion of the URL (see :rfc:`2396`) is wanted.  A separate function
-   is needed to separate the path segments and parameters.
    This function returns a 5-item :term:`named tuple`::
 
       (addressing scheme, network location, path, query, fragment identifier).
