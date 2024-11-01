@@ -938,11 +938,11 @@ _functools.reduce
     function as func: object
     iterable as seq: object
     /
-    initial as result: object(c_default="NULL") = _functools._initial_missing
+    initial as result: object = NULL
 
-Apply a function of two arguments cumulatively to an iterable, from left to right.
+Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
-This efficiently reduces the iterable to a single value.  If initial is present,
+This effectively reduces the iterable to a single value.  If initial is present,
 it is placed before the items of the iterable in the calculation, and serves as
 a default when the iterable is empty.
 
@@ -953,7 +953,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=968b8e45b819c0da]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
 {
     PyObject *args, *it;
 
