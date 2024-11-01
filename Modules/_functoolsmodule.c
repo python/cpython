@@ -947,7 +947,7 @@ it is placed before the items of the iterable in the calculation, and serves as
 a default when the iterable is empty.
 
 For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
-calculates ((((1 + 2) + 3) + 4) + 5).")
+calculates ((((1 + 2) + 3) + 4) + 5).
 [clinic start generated code]*/
 
 static PyObject *
