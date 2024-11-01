@@ -245,8 +245,13 @@ process and user.
 .. function:: reload_environ()
 
    Update :data:`os.environ` and :data:`os.environb` with changes to the
-   environment made by :func:`os.putenv`, by :func:`os.unsetenv`, or made
-   outside Python in the same process.
+   current process environment made by :func:`os.putenv`, by
+   :func:`os.unsetenv`, or made outside Python in the same process.
+
+   This function is not thread safe. Calling it while the environment is
+   modified in other thread has undefined behavior. Reading from
+   :data:`os.environ` or calling :func:`os.getenv` during reloading can return
+   empty result.
 
    .. versionadded:: 3.14
 
