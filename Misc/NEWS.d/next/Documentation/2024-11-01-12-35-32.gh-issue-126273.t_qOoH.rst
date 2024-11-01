@@ -1,1 +1,1 @@
-Added docstrings to certain xml.etree methods.
+Added docstrings to certain :class:`xml.etree.ElementTree` methods.
