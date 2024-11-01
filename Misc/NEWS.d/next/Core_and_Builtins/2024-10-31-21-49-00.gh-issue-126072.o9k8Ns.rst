@@ -1,2 +1,2 @@
-Set ``ste_has_docstring`` for ``class`` and ``module`` in corresponding
-symbol table entry.
+Following :gh:`126101`, for :ref:`codeobjects` like lambda, annotation and type alias,
+we no longer  add ``None`` to its :attr:`~codeobject.co_consts`.
