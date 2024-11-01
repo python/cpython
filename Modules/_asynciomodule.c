@@ -2968,12 +2968,13 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             PyObject *r;
             int is_true;
 
-            // Beware: task->task_cancel_msg may be mutated and deleted
-            // prematurely in an evil `__getattribute__` function before being sent to `cancel`
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
             // See https://github.com/python/cpython/issues/126138
-            PyObject* task_cancel_msg = Py_NewRef(task->task_cancel_msg);
-            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                task_cancel_msg);
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
+            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel), task_cancel_msg);
             Py_DECREF(task_cancel_msg);
 
             if (r == NULL) {
@@ -3068,12 +3069,13 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             PyObject *r;
             int is_true;
 
-            // Beware: task->task_cancel_msg may be mutated and deleted
-            // prematurely in an evil `__getattribute__` function before being sent to `cancel`
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
             // See https://github.com/python/cpython/issues/126138
-            PyObject* task_cancel_msg = Py_NewRef(task->task_cancel_msg);
-            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                task_cancel_msg);
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
+            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel), task_cancel_msg);
             Py_DECREF(task_cancel_msg);
 
             if (r == NULL) {
