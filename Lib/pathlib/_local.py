@@ -647,6 +647,12 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
+    def _join_dir_entry(self, dir_entry):
+        path_str = dir_entry.name if str(self) == '.' else dir_entry.path
+        path = self.with_segments(path_str)
+        path._str = path_str
+        return path
+
     def scandir(self):
         """Yield os.DirEntry objects of the directory contents.
 
@@ -654,19 +660,6 @@ class Path(PathBase, PurePath):
         special entries '.' and '..' are not included.
         """
         return os.scandir(self)
-
-    def iterdir(self):
-        """Yield path objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        root_dir = str(self)
-        with os.scandir(root_dir) as scandir_it:
-            paths = [entry.path for entry in scandir_it]
-        if root_dir == '.':
-            paths = map(self._remove_leading_dot, paths)
-        return map(self._from_parsed_string, paths)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
