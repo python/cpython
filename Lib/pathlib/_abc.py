@@ -106,13 +106,20 @@ class CopierBase:
         self.preserve_metadata = preserve_metadata
 
     @classmethod
-    def ensure_different_files(cls, source, target):
+    def ensure_different_files(cls, source, target, dir_entry=None):
         """Raise OSError(EINVAL) if both paths refer to the same file."""
         try:
-            if not target.samefile(source):
-                return
+            target_st = target.stat()
+            try:
+                source_st = dir_entry.stat()
+            except AttributeError:
+                source_st = source.stat()
         except (OSError, ValueError):
             return
+        if source_st.st_ino != target_st.st_ino:
+            return  # Different inode
+        if source_st.st_dev != target_st.st_dev:
+            return  # Different device
         err = OSError(EINVAL, "Source and target are the same file")
         err.filename = str(source)
         err.filename2 = str(target)
@@ -172,7 +179,7 @@ class CopierBase:
 
     def copy_file(self, source, target, metadata_keys, dir_entry=None):
         """Copy the given file to the given target."""
-        self.ensure_different_files(source, target)
+        self.ensure_different_files(source, target, dir_entry)
         if metadata_keys:
             metadata = source._read_metadata(metadata_keys, dir_entry=dir_entry)
         else:
