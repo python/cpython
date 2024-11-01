@@ -2120,7 +2120,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
             return -1;
         }
     } else {
-        self->task_context = Py_NewRef(context);
+        Py_XSETREF(self->task_context, Py_NewRef(context));
     }
 
     Py_CLEAR(self->task_fut_waiter);
@@ -2963,8 +2963,15 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: task->task_cancel_msg may be mutated and deleted
+            // prematurely in an evil `__getattribute__` function before being sent to `cancel`
+            // See https://github.com/python/cpython/issues/126138
+            PyObject* task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
@@ -3056,8 +3063,15 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: task->task_cancel_msg may be mutated and deleted
+            // prematurely in an evil `__getattribute__` function before being sent to `cancel`
+            // See https://github.com/python/cpython/issues/126138
+            PyObject* task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
