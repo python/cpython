@@ -331,6 +331,24 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
+        _Py_UopsSymbol *res;
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+            PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
+        else {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        }
+        // _STORE_FAST:
+        GETLOCAL(this_instr->operand) = res;
+    }
+
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
@@ -424,6 +442,17 @@ dummy_func(void) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
         REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
+    op(_LOAD_CONST_IMMORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
+    op(_LOAD_SMALL_INT, (-- value)) {
+        PyObject *val = PyLong_FromLong(this_instr->oparg);
         value = sym_new_const(ctx, val);
     }
 

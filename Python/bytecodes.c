@@ -255,8 +255,24 @@ dummy_func(
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
         }
 
+        family(LOAD_CONST, 0) = {
+            LOAD_CONST_IMMORTAL,
+        };
+
         pure inst(LOAD_CONST, (-- value)) {
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+        }
+
+        inst(LOAD_CONST_IMMORTAL, (-- value)) {
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            assert(_Py_IsImmortal(obj));
+            value = PyStackRef_FromPyObjectImmortal(obj);
+        }
+
+        replicate(4) inst(LOAD_SMALL_INT, (-- value)) {
+            assert(oparg < _PY_NSMALLPOSINTS);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
@@ -843,7 +859,7 @@ dummy_func(
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             INPUTS_DEAD();
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            frame->return_offset = INSTRUCTION_SIZE;
         }
 
         macro(BINARY_SUBSCR_GETITEM) =
@@ -974,13 +990,14 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return PyStackRef_AsPyObjectSteal(retval);
+            PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+            SYNC_SP(); /* Not strictly necessary, but prevents warnings */
+            return result;
         }
 
-        // The stack effect here is ambiguous.
-        // We definitely pop the return value off the stack on entry.
-        // We also push it onto the stack on exit, but that's a
-        // different frame, and it's accounted for by _PUSH_FRAME.
+        // The stack effect here is a bit misleading.
+        // retval is popped from the stack, but res
+        // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -1008,15 +1025,6 @@ dummy_func(
         }
 
         macro(INSTRUMENTED_RETURN_VALUE) =
-            _RETURN_VALUE_EVENT +
-            RETURN_VALUE;
-
-        macro(RETURN_CONST) =
-            LOAD_CONST +
-            RETURN_VALUE;
-
-        macro(INSTRUMENTED_RETURN_CONST) =
-            LOAD_CONST +
             _RETURN_VALUE_EVENT +
             RETURN_VALUE;
 
@@ -1103,8 +1111,8 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(next_instr - this_instr + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
+                assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
                 assert(gen_frame->previous == NULL);
                 gen_frame->previous = frame;
                 DISPATCH_INLINED(gen_frame);
@@ -1149,8 +1157,8 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(1 + INLINE_CACHE_ENTRIES_SEND + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
             gen_frame->previous = frame;
         }
 
@@ -1874,7 +1882,7 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1, unused, unused, unused -- unused, unused if (oparg & 1))) {
+        inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1 -- )) {
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -2257,7 +2265,7 @@ dummy_func(
             new_frame->localsplus[0] = owner;
             DEAD(owner);
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            frame->return_offset = INSTRUCTION_SIZE;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2303,17 +2311,16 @@ dummy_func(
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
-            PyObject *old_value;
             DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name);
+            PyObject *old_value = ep->me_value;
+            DEOPT_IF(old_value == NULL);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
-            old_value = ep->me_value;
-            PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
@@ -3055,7 +3062,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             gen_frame->previous = frame;
             // oparg is the return offset from the next instruction.
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
         }
 
         macro(FOR_ITER_GEN) =
@@ -3334,7 +3341,7 @@ dummy_func(
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
                 }
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4198,8 +4205,8 @@ dummy_func(
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
                 }
-                assert(next_instr - this_instr == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL_KW;
+                assert(INSTRUCTION_SIZE == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4465,7 +4472,7 @@ dummy_func(
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
-                    assert(next_instr - this_instr == 1);
+                    assert(INSTRUCTION_SIZE == 1);
                     frame->return_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
