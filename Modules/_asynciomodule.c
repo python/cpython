@@ -2120,7 +2120,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
             return -1;
         }
     } else {
-        self->task_context = Py_NewRef(context);
+        Py_XSETREF(self->task_context, Py_NewRef(context));
     }
 
     Py_CLEAR(self->task_fut_waiter);
@@ -2738,7 +2738,11 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
+    // Beware: An evil call_soon could alter task_context.
+    // See: https://github.com/python/cpython/issues/126080.
+    PyObject *task_context = Py_NewRef(task->task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
+    Py_DECREF(task_context);
     Py_DECREF(cb);
     return ret;
 }

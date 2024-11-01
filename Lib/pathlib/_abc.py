@@ -639,13 +639,23 @@ class PathBase(PurePathBase):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
+    def scandir(self):
+        """Yield os.DirEntry objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('scandir()'))
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
+        with self.scandir() as entries:
+            names = [entry.name for entry in entries]
+        return map(self.joinpath, names)
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
