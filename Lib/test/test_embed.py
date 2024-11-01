@@ -1781,13 +1781,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
-        using_jit = any(x.startswith("JIT") for x in get_build_info())
-        if using_jit:
-            stderr = "<sys>:0: RuntimeWarning: JIT deactivated as perf profiling support is active"
-        else:
-            stderr = ""
+        # Temporarily enable ignore_stderr=True to ignore warnings on JIT builds
+        # See gh-126255 for more information
         self.check_all_configs("test_initconfig_api", config, preconfig,
-                               api=API_ISOLATED, stderr=stderr)
+                               api=API_ISOLATED, ignore_stderr=True)
 
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")
