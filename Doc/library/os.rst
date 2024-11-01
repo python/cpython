@@ -222,6 +222,10 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. seealso::
+
+      The :func:`~os.reload_environ` function.
+
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
