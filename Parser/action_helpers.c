@@ -1587,69 +1587,99 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
 }
 
-expr_ty
-_PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
-                             int lineno, int col_offset, int end_lineno,
-                             int end_col_offset, PyArena *arena)
+static expr_ty
+_build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
+                        int col_offset, int end_lineno, int end_col_offset,
+                        PyArena *arena)
 {
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    int f_string_found = 0;
-    int unicode_string_found = 0;
-    int bytes_found = 0;
+    PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
-    Py_ssize_t i = 0;
-    Py_ssize_t n_flattened_elements = 0;
-    for (i = 0; i < len; i++) {
+    /* Bytes literals never get a kind, but just for consistency
+        since they are represented as Constant nodes, we'll mirror
+        the same behavior as unicode strings for determining the
+        kind. */
+    PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+    for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        switch(elem->kind) {
-            case Constant_kind:
-                if (PyBytes_CheckExact(elem->v.Constant.value)) {
-                    bytes_found = 1;
-                } else {
-                    unicode_string_found = 1;
-                }
-                n_flattened_elements++;
-                break;
-            case JoinedStr_kind:
-                n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
-                f_string_found = 1;
-                break;
-            default:
-                n_flattened_elements++;
-                f_string_found = 1;
-                break;
-        }
+        PyBytes_Concat(&res, elem->v.Constant.value);
     }
+    if (!res || _PyArena_AddPyObject(arena, res) < 0) {
+        Py_XDECREF(res);
+        return NULL;
+    }
+    return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+}
 
-    if ((unicode_string_found || f_string_found) && bytes_found) {
-        RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
+static expr_ty
+_build_concatenated_unicode(Parser *p, asdl_expr_seq *strings, int lineno,
+                        int col_offset, int end_lineno, int end_col_offset,
+                        PyArena *arena)
+{
+    Py_ssize_t len = asdl_seq_LEN(strings);
+    assert(len > 1);
+
+    expr_ty first = asdl_seq_GET(strings, 0);
+
+    /* When a string is getting concatenated, the kind of the string
+        is determined by the first string in the concatenation
+        sequence.
+
+        u"abc" "def" -> u"abcdef"
+        "abc" u"abc" ->  "abcabc" */
+    PyObject *kind = first->v.Constant.kind;
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
         return NULL;
     }
 
-    if (bytes_found) {
-        PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty current_elem = asdl_seq_GET(strings, i);
+        assert(current_elem->kind == Constant_kind);
 
-        /* Bytes literals never get a kind, but just for consistency
-           since they are represented as Constant nodes, we'll mirror
-           the same behavior as unicode strings for determining the
-           kind. */
-        PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
-        for (i = 0; i < len; i++) {
-            expr_ty elem = asdl_seq_GET(strings, i);
-            PyBytes_Concat(&res, elem->v.Constant.value);
-        }
-        if (!res || _PyArena_AddPyObject(arena, res) < 0) {
-            Py_XDECREF(res);
+        if (PyUnicodeWriter_WriteStr(writer,
+                                     current_elem->v.Constant.value)) {
+            PyUnicodeWriter_Discard(writer);
             return NULL;
         }
-        return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
     }
 
-    if (!f_string_found && len == 1) {
-        return asdl_seq_GET(strings, 0);
+    PyObject *final = PyUnicodeWriter_Finish(writer);
+    if (final == NULL) {
+        return NULL;
     }
+    if (_PyArena_AddPyObject(p->arena, final) < 0) {
+        Py_DECREF(final);
+        return NULL;
+    }
+    return _PyAST_Constant(final, kind, lineno, col_offset,
+                           end_lineno, end_col_offset, arena);
+}
+
+static expr_ty
+_build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
+                               int lineno, int col_offset, int end_lineno,
+                               int end_col_offset, PyArena *arena)
+{
+    Py_ssize_t len = asdl_seq_LEN(strings);
+    assert(len > 0);
+
+    Py_ssize_t n_flattened_elements = 0;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        switch(elem->kind) {
+            case JoinedStr_kind:
+                n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
+                break;
+            default:
+                n_flattened_elements++;
+                break;
+        }
+    }
+
 
     asdl_expr_seq* flattened = _Py_asdl_expr_seq_new(n_flattened_elements, p->arena);
     if (flattened == NULL) {
@@ -1658,12 +1688,11 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
 
     /* build flattened list */
     Py_ssize_t current_pos = 0;
-    Py_ssize_t j = 0;
-    for (i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
         switch(elem->kind) {
             case JoinedStr_kind:
-                for (j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
+                for (Py_ssize_t j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
                     expr_ty subvalue = asdl_seq_GET(elem->v.JoinedStr.values, j);
                     if (subvalue == NULL) {
                         return NULL;
@@ -1680,13 +1709,13 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     /* calculate folded element count */
     Py_ssize_t n_elements = 0;
     int prev_is_constant = 0;
-    for (i = 0; i < n_flattened_elements; i++) {
+    for (Py_ssize_t i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
 
         /* The concatenation of a FormattedValue and an empty Constant should
            lead to the FormattedValue itself. Thus, we will not take any empty
            constants into account, just as in `_PyPegen_joined_str` */
-        if (f_string_found && elem->kind == Constant_kind &&
+        if (elem->kind == Constant_kind &&
             PyUnicode_CheckExact(elem->v.Constant.value) &&
             PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0)
             continue;
@@ -1704,7 +1733,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
 
     /* build folded list */
     current_pos = 0;
-    for (i = 0; i < n_flattened_elements; i++) {
+    for (Py_ssize_t i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
 
         /* if the current elem and the following are constants,
@@ -1727,6 +1756,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                     return NULL;
                 }
                 expr_ty last_elem = elem;
+                Py_ssize_t j;
                 for (j = i; j < n_flattened_elements; j++) {
                     expr_ty current_elem = asdl_seq_GET(flattened, j);
                     if (current_elem->kind == Constant_kind) {
@@ -1760,8 +1790,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
             }
 
             /* Drop all empty contanst strings */
-            if (f_string_found &&
-                PyUnicode_CheckExact(elem->v.Constant.value) &&
+            if (PyUnicode_CheckExact(elem->v.Constant.value) &&
                 PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0) {
                 continue;
             }
@@ -1770,13 +1799,127 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         asdl_seq_SET(values, current_pos++, elem);
     }
 
-    if (!f_string_found) {
-        assert(n_elements == 1);
-        expr_ty elem = asdl_seq_GET(values, 0);
-        assert(elem->kind == Constant_kind);
-        return elem;
-    }
-
     assert(current_pos == n_elements);
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+}
+
+static expr_ty
+_build_concatenated_template_str(Parser *p, asdl_expr_seq *strings,
+                               int lineno, int col_offset, int end_lineno,
+                               int end_col_offset, PyArena *arena)
+{
+    Py_ssize_t len = asdl_seq_LEN(strings);
+    assert(len > 0);
+
+    Py_ssize_t n_flattened_elements = 0;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        switch(elem->kind) {
+            case TemplateStr_kind:
+                n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
+                break;
+            default:
+                n_flattened_elements++;
+                break;
+        }
+    }
+
+
+    asdl_expr_seq* flattened = _Py_asdl_expr_seq_new(n_flattened_elements, p->arena);
+    if (flattened == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t pos = 0;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+
+        switch (elem->kind) {
+            case TemplateStr_kind:
+                for (Py_ssize_t j = 0; j < asdl_seq_LEN(elem->v.TemplateStr.values); j++) {
+                    expr_ty subitem = asdl_seq_GET(elem->v.TemplateStr.values, j);
+                    asdl_seq_SET(flattened, pos++, subitem);
+                }
+                break;
+            case JoinedStr_kind: {
+                expr_ty joined_str = _build_concatenated_joined_str(p,
+                    elem->v.JoinedStr.values, lineno, col_offset,
+                    end_lineno, end_col_offset, arena);
+                asdl_seq_SET(flattened, pos++, joined_str);
+                break;
+            }
+            default:
+                asdl_seq_SET(flattened, pos++, elem);
+                break;
+        }
+    }
+
+    return _PyAST_TemplateStr(flattened, lineno, col_offset, end_lineno,
+        end_col_offset, arena);
+}
+
+expr_ty
+_PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
+                             int lineno, int col_offset, int end_lineno,
+                             int end_col_offset, PyArena *arena)
+{
+    Py_ssize_t len = asdl_seq_LEN(strings);
+    assert(len > 0);
+
+    int t_string_found = 0;
+    int f_string_found = 0;
+    int unicode_string_found = 0;
+    int bytes_found = 0;
+
+    Py_ssize_t i = 0;
+    for (i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        switch(elem->kind) {
+            case Constant_kind:
+                if (PyBytes_CheckExact(elem->v.Constant.value)) {
+                    bytes_found = 1;
+                } else {
+                    unicode_string_found = 1;
+                }
+                break;
+            case JoinedStr_kind:
+                f_string_found = 1;
+                break;
+            case TemplateStr_kind:
+                t_string_found = 1;
+                break;
+            default:
+                f_string_found = 1;
+                break;
+        }
+    }
+
+    // Cannot mix unicode and bytes
+    if ((unicode_string_found || f_string_found || t_string_found) && bytes_found) {
+        RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
+        return NULL;
+    }
+
+    // If it's only bytes or only unicode string, do a simple concat
+    if (!f_string_found && !t_string_found) {
+        if (len == 1) {
+            return asdl_seq_GET(strings, 0);
+        }
+        else if (bytes_found) {
+            return _build_concatenated_bytes(p, strings, lineno, col_offset,
+                end_lineno, end_col_offset, arena);
+        }
+        else {
+            return _build_concatenated_unicode(p, strings, lineno, col_offset,
+                end_lineno, end_col_offset, arena);
+        }
+    }
+
+    if (t_string_found) {
+        return _build_concatenated_template_str(p, strings, lineno,
+            col_offset, end_lineno, end_col_offset, arena);
+    }
+
+    return _build_concatenated_joined_str(p, strings, lineno,
+        col_offset, end_lineno, end_col_offset, arena);
 }

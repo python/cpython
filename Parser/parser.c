@@ -8198,7 +8198,7 @@ literal_pattern_rule(Parser *p)
 // literal_expr:
 //     | signed_number !('+' | '-')
 //     | complex_number
-//     | &(STRING | FSTRING_START) strings
+//     | &(STRING | FSTRING_START | TSTRING_START) strings
 //     | 'None'
 //     | 'True'
 //     | 'False'
@@ -8263,12 +8263,12 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "complex_number"));
     }
-    { // &(STRING | FSTRING_START) strings
+    { // &(STRING | FSTRING_START | TSTRING_START) strings
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START) strings"));
+        D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
         expr_ty strings_var;
         if (
             _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_43_rule, p)
@@ -8276,13 +8276,13 @@ literal_expr_rule(Parser *p)
             (strings_var = strings_rule(p))  // strings
         )
         {
-            D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START) strings"));
+            D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
             _res = strings_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START) strings"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
     }
     { // 'None'
         if (p->error_indicator) {
@@ -14450,8 +14450,7 @@ slice_rule(Parser *p)
 //     | 'True'
 //     | 'False'
 //     | 'None'
-//     | &(STRING | FSTRING_START) strings
-//     | &TSTRING_START tstring
+//     | &(STRING | FSTRING_START | TSTRING_START) strings
 //     | NUMBER
 //     | &'(' (tuple | group | genexp)
 //     | &'[' (list | listcomp)
@@ -14596,12 +14595,12 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
     }
-    { // &(STRING | FSTRING_START) strings
+    { // &(STRING | FSTRING_START | TSTRING_START) strings
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START) strings"));
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
         expr_ty strings_var;
         if (
             _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_43_rule, p)
@@ -14609,34 +14608,13 @@ atom_rule(Parser *p)
             (strings_var = strings_rule(p))  // strings
         )
         {
-            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START) strings"));
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
             _res = strings_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START) strings"));
-    }
-    { // &TSTRING_START tstring
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&TSTRING_START tstring"));
-        expr_ty tstring_var;
-        if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, TSTRING_START)  // token=TSTRING_START
-            &&
-            (tstring_var = tstring_rule(p))  // tstring
-        )
-        {
-            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&TSTRING_START tstring"));
-            _res = tstring_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&TSTRING_START tstring"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
     }
     { // NUMBER
         if (p->error_indicator) {
@@ -16410,7 +16388,7 @@ string_rule(Parser *p)
     return _res;
 }
 
-// strings: ((fstring | string))+
+// strings: ((fstring | string | tstring))+
 static expr_ty
 strings_rule(Parser *p)
 {
@@ -16436,18 +16414,18 @@ strings_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // ((fstring | string))+
+    { // ((fstring | string | tstring))+
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> strings[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((fstring | string))+"));
+        D(fprintf(stderr, "%*c> strings[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((fstring | string | tstring))+"));
         asdl_expr_seq* a;
         if (
-            (a = (asdl_expr_seq*)_loop1_80_rule(p))  // ((fstring | string))+
+            (a = (asdl_expr_seq*)_loop1_80_rule(p))  // ((fstring | string | tstring))+
         )
         {
-            D(fprintf(stderr, "%*c+ strings[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((fstring | string))+"));
+            D(fprintf(stderr, "%*c+ strings[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((fstring | string | tstring))+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -16467,7 +16445,7 @@ strings_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s strings[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((fstring | string))+"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((fstring | string | tstring))+"));
     }
     _res = NULL;
   done:
@@ -28354,7 +28332,7 @@ _tmp_42_rule(Parser *p)
     return _res;
 }
 
-// _tmp_43: STRING | FSTRING_START
+// _tmp_43: STRING | FSTRING_START | TSTRING_START
 static void *
 _tmp_43_rule(Parser *p)
 {
@@ -28404,6 +28382,25 @@ _tmp_43_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_43[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FSTRING_START"));
+    }
+    { // TSTRING_START
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> _tmp_43[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "TSTRING_START"));
+        Token * tstring_start_var;
+        if (
+            (tstring_start_var = _PyPegen_expect_token(p, TSTRING_START))  // token='TSTRING_START'
+        )
+        {
+            D(fprintf(stderr, "%*c+ _tmp_43[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "TSTRING_START"));
+            _res = tstring_start_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s _tmp_43[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "TSTRING_START"));
     }
     _res = NULL;
   done:
@@ -30715,7 +30712,7 @@ _loop0_79_rule(Parser *p)
     return _seq;
 }
 
-// _loop1_80: (fstring | string)
+// _loop1_80: (fstring | string | tstring)
 static asdl_seq *
 _loop1_80_rule(Parser *p)
 {
@@ -30737,15 +30734,15 @@ _loop1_80_rule(Parser *p)
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
-    { // (fstring | string)
+    { // (fstring | string | tstring)
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop1_80[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(fstring | string)"));
+        D(fprintf(stderr, "%*c> _loop1_80[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(fstring | string | tstring)"));
         void *_tmp_158_var;
         while (
-            (_tmp_158_var = _tmp_158_rule(p))  // fstring | string
+            (_tmp_158_var = _tmp_158_rule(p))  // fstring | string | tstring
         )
         {
             _res = _tmp_158_var;
@@ -30766,7 +30763,7 @@ _loop1_80_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_80[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(fstring | string)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(fstring | string | tstring)"));
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -35418,7 +35415,7 @@ _tmp_157_rule(Parser *p)
     return _res;
 }
 
-// _tmp_158: fstring | string
+// _tmp_158: fstring | string | tstring
 static void *
 _tmp_158_rule(Parser *p)
 {
@@ -35468,6 +35465,25 @@ _tmp_158_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_158[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "string"));
+    }
+    { // tstring
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> _tmp_158[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "tstring"));
+        expr_ty tstring_var;
+        if (
+            (tstring_var = tstring_rule(p))  // tstring
+        )
+        {
+            D(fprintf(stderr, "%*c+ _tmp_158[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "tstring"));
+            _res = tstring_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s _tmp_158[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring"));
     }
     _res = NULL;
   done:

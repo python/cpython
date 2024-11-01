@@ -500,7 +500,7 @@ literal_pattern[pattern_ty]:
 literal_expr[expr_ty]:
     | signed_number !('+' | '-')
     | complex_number
-    | &(STRING|FSTRING_START) strings
+    | &(STRING|FSTRING_START|TSTRING_START) strings
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
@@ -840,8 +840,7 @@ atom[expr_ty]:
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
-    | &(STRING|FSTRING_START) strings
-    | &TSTRING_START tstring
+    | &(STRING|FSTRING_START|TSTRING_START) strings
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
@@ -939,7 +938,7 @@ tstring[expr_ty] (memo):
     | a=TSTRING_START b=tstring_middle* c=FSTRING_END { _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
-strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
+strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string|tstring)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
