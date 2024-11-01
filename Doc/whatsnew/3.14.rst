@@ -812,6 +812,10 @@ Porting to Python 3.14
 Deprecated
 ----------
 
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
+
 * Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
   and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
