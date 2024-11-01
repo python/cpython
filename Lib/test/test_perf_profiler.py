@@ -210,14 +210,14 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf")
                 sys.activate_stack_trampoline("perf")
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
     def test_sys_api_with_invalid_trampoline(self):
         code = """if 1:
                 import sys
                 sys.activate_stack_trampoline("invalid")
                 """
-        rc, out, err = assert_python_failure("-c", code)
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="0")
         self.assertIn("invalid backend: invalid", err.decode())
 
     def test_sys_api_get_status(self):
@@ -228,7 +228,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.deactivate_stack_trampoline()
                 assert sys.is_stack_trampoline_active() is False
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
 
 def is_unwinding_reliable_with_frame_pointers():
