@@ -1,1 +1,1 @@
-Deprecated :attr:`!socket.SocketType` from the :mod:`socket`.
+Deprecated :attr:`!socket.SocketType`.
