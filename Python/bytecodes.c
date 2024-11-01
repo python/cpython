@@ -2108,7 +2108,7 @@ dummy_func(
 
         op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            DEOPT_IF(!PyModule_CheckExact(owner_o));
+            DEOPT_IF(_PyModule_HasSpecializedGetAttr(owner_o));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != dict_version);
