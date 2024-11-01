@@ -142,7 +142,7 @@ class CopierBase:
         if self.preserve_metadata:
             metadata_keys = source._readable_metadata & target._writable_metadata
         else:
-            metadata_keys = frozenset()
+            metadata_keys = None
         if not self.follow_symlinks and source.is_symlink():
             self.copy_symlink(source, target, metadata_keys)
         elif source.is_dir():
@@ -152,7 +152,10 @@ class CopierBase:
 
     def copy_dir(self, source, target, metadata_keys, dir_entry=None):
         """Copy the given directory to the given target."""
-        metadata = source._read_metadata(metadata_keys, dir_entry=dir_entry)
+        if metadata_keys:
+            metadata = source._read_metadata(metadata_keys, dir_entry=dir_entry)
+        else:
+            metadata = None
         with source.scandir() as entries:
             target.mkdir(exist_ok=self.dirs_exist_ok)
             for entry in entries:
@@ -164,12 +167,16 @@ class CopierBase:
                     self.copy_dir(src, dst, metadata_keys, entry)
                 else:
                     self.copy_file(src, dst, metadata_keys, entry)
-            target._write_metadata(metadata)
+            if metadata:
+                target._write_metadata(metadata)
 
     def copy_file(self, source, target, metadata_keys, dir_entry=None):
         """Copy the given file to the given target."""
         self.ensure_different_files(source, target)
-        metadata = source._read_metadata(metadata_keys, dir_entry=dir_entry)
+        if metadata_keys:
+            metadata = source._read_metadata(metadata_keys, dir_entry=dir_entry)
+        else:
+            metadata = None
         with source.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -181,14 +188,19 @@ class CopierBase:
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
-            target._write_metadata(metadata)
+            if metadata:
+                target._write_metadata(metadata)
 
     def copy_symlink(self, source, target, metadata_keys, dir_entry=None):
         """Copy the given symlink to the given target."""
-        metadata = source._read_metadata(
-            metadata_keys, follow_symlinks=False, dir_entry=dir_entry)
+        if metadata_keys:
+            metadata = source._read_metadata(
+                metadata_keys, follow_symlinks=False, dir_entry=dir_entry)
+        else:
+            metadata = None
         target.symlink_to(source.readlink())
-        target._write_metadata(metadata, follow_symlinks=False)
+        if metadata:
+            target._write_metadata(metadata, follow_symlinks=False)
 
 
 class PathGlobber(_GlobberBase):
@@ -893,16 +905,12 @@ class PathBase(PurePathBase):
         """
         Returns path metadata as a dict with string keys.
         """
-        if not metadata_keys:
-            return {}
         raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
 
     def _write_metadata(self, metadata, *, follow_symlinks=True):
         """
         Sets path metadata from the given dict with string keys.
         """
-        if not metadata:
-            return
         raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
     def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
