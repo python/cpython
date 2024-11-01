@@ -787,8 +787,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
             source_st = source.joinpath(subpath).stat()
             target_st = target.joinpath(subpath).stat()
-            self.assertLessEqual(source_st.st_atime, target_st.st_atime)
-            self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
+            # The modification times may be truncated in the new file.
+            self.assertLessEqual(source_st.st_atime, target_st.st_atime + 1)
+            self.assertLessEqual(source_st.st_mtime, target_st.st_mtime + 1)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
             if hasattr(source_st, 'st_flags'):
                 self.assertEqual(source_st.st_flags, target_st.st_flags)
