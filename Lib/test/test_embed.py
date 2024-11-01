@@ -1,5 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
@@ -1780,8 +1781,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
+        using_jit = any(x.startswith("JIT") for x in get_build_info())
+        if using_jit:
+            stderr = "<sys>:0: RuntimeWarning: JIT deactivated as perf profiling support is active"
+        else:
+            stderr = ""
         self.check_all_configs("test_initconfig_api", config, preconfig,
-                               api=API_ISOLATED)
+                               api=API_ISOLATED, stderr=stderr)
 
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")
