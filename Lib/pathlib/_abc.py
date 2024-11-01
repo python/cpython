@@ -705,16 +705,18 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                for child in path.iterdir():
-                    try:
-                        if child.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
-                        filenames.append(child.name)
+                with path.scandir() as entries:
+                    for entry in entries:
+                        name = entry.name
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks):
+                                if not top_down:
+                                    paths.append(path.joinpath(name))
+                                dirnames.append(name)
+                            else:
+                                filenames.append(name)
+                        except OSError:
+                            filenames.append(name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
