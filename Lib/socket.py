@@ -68,8 +68,8 @@ __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
 __all__.extend(os._get_exports_list(_socket))
 
 def __getattr__(name):
-    import warnings
     if name == "SocketType":
+        import warnings
         warnings.warn(f"{name} is deprecated", DeprecationWarning)
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
