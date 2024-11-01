@@ -16,7 +16,7 @@ PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "Add *subelement* to the end of this element.\n"
 "\n"
 "The new element will appear in document order after the last existing\n"
-"subelement (or directly after the text, if it's the first subelement),\n"
+"subelement (or directly after the text, if it\'s the first subelement),\n"
 "but before the end tag for this element.");
 
 #define _ELEMENTTREE_ELEMENT_APPEND_METHODDEF    \
@@ -931,6 +931,30 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_elementtree_TreeBuilder___init____doc__,
+"TreeBuilder(element_factory=None, *, comment_factory=None,\n"
+"            pi_factory=None, insert_comments=False, insert_pis=False)\n"
+"--\n"
+"\n"
+"Generic element structure builder.\n"
+"\n"
+"This builder converts a sequence of start, data, and end method\n"
+"calls to a well-formed element structure.\n"
+"\n"
+"You can use this class to build an element structure using a custom XML\n"
+"parser, or a parser for some other XML-like format.\n"
+"\n"
+"*element_factory* is an optional element factory which is called\n"
+"to create new Element instances, as necessary.\n"
+"\n"
+"*comment_factory* is a factory to create comments to be used instead of\n"
+"the standard factory.  If *insert_comments* is false (the default),\n"
+"comments will not be inserted into the tree.\n"
+"\n"
+"*pi_factory* is a factory to create processing instructions to be used\n"
+"instead of the standard factory.  If *insert_pis* is false (the default),\n"
+"processing instructions will not be inserted into the tree.");
+
 static int
 _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory,
@@ -1097,7 +1121,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_pi__doc__,
 "Create a processing instruction using the pi_factory.\n"
 "\n"
 "*target* is the target name of the processing instruction.\n"
-"*text* is the data of the processing instruction, or ''.");
+"*text* is the data of the processing instruction, or \'\'.");
 
 #define _ELEMENTTREE_TREEBUILDER_PI_METHODDEF    \
     {"pi", _PyCFunction_CAST(_elementtree_TreeBuilder_pi), METH_FASTCALL, _elementtree_TreeBuilder_pi__doc__},
@@ -1183,6 +1207,17 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(_elementtree_XMLParser___init____doc__,
+"XMLParser(*, target=None, encoding=None)\n"
+"--\n"
+"\n"
+"Element structure builder for XML source data based on the expat parser.\n"
+"\n"
+"*target* is an optional target object which defaults to an instance of the\n"
+"standard TreeBuilder class, *encoding* is an optional encoding string\n"
+"which if given, overrides the encoding specified in the XML file:\n"
+"http://www.iana.org/assignments/character-sets");
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
@@ -1348,4 +1383,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bd28eba33d9c1f25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1abf1a477eeaf1a input=a9049054013a1b77]*/
