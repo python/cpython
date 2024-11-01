@@ -78,10 +78,16 @@ class _Copier(CopierBase):
     if os.name == 'nt':
         def copy_symlink(self, source, target, metadata_keys, dir_entry=None):
             """Copy the given symlink to the given target."""
-            metadata = source._read_metadata(
-                metadata_keys, follow_symlinks=False, dir_entry=dir_entry)
-            target.symlink_to(source.readlink(), (dir_entry or source).is_dir())
-            target._write_metadata(metadata, follow_symlinks=False)
+            if metadata_keys:
+                metadata = source._read_metadata(
+                    metadata_keys, follow_symlinks=False, dir_entry=dir_entry)
+            else:
+                metadata = None
+            symlink_target = source.readlink()
+            symlink_is_directory = (dir_entry or source).is_dir()
+            target.symlink_to(symlink_target, symlink_is_directory)
+            if metadata:
+                target._write_metadata(metadata, follow_symlinks=False)
 
 
 class PurePath(PurePathBase):
