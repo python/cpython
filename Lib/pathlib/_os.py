@@ -174,40 +174,34 @@ if hasattr(os, 'listxattr'):
 file_metadata_keys = frozenset(file_metadata_keys)
 
 
-def read_file_metadata(path, keys=None, *, follow_symlinks=True):
+def read_file_metadata(path, metadata_keys, *, follow_symlinks=True, dir_entry=None):
     """
     Returns local path metadata as a dict with string keys.
     """
-    if keys is None:
-        keys = file_metadata_keys
-    assert keys.issubset(file_metadata_keys)
-    result = {}
-    for key in keys:
-        if key == 'xattrs':
-            try:
-                result['xattrs'] = [
-                    (attr, os.getxattr(path, attr, follow_symlinks=follow_symlinks))
-                    for attr in os.listxattr(path, follow_symlinks=follow_symlinks)]
-            except OSError as err:
-                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-            continue
-        st = os.stat(path, follow_symlinks=follow_symlinks)
-        if key == 'mode':
-            result['mode'] = stat.S_IMODE(st.st_mode)
-        elif key == 'times_ns':
-            result['times_ns'] = st.st_atime_ns, st.st_mtime_ns
-        elif key == 'flags':
-            result['flags'] = st.st_flags
-    return result
+    metadata = {}
+    if 'mode' in metadata_keys or 'times_ns' in metadata_keys or 'flags' in metadata_keys:
+        st = (dir_entry or path).stat(follow_symlinks=follow_symlinks)
+        if 'mode' in metadata_keys:
+            metadata['mode'] = stat.S_IMODE(st.st_mode)
+        if 'times_ns' in metadata_keys:
+            metadata['times_ns'] = st.st_atime_ns, st.st_mtime_ns
+        if 'flags' in metadata_keys:
+            metadata['flags'] = st.st_flags
+    if 'xattrs' in metadata_keys:
+        try:
+            metadata['xattrs'] = [
+                (attr, os.getxattr(path, attr, follow_symlinks=follow_symlinks))
+                for attr in os.listxattr(path, follow_symlinks=follow_symlinks)]
+        except OSError as err:
+            if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                raise
+    return metadata
 
 
 def write_file_metadata(path, metadata, *, follow_symlinks=True):
     """
     Sets local path metadata from the given dict with string keys.
     """
-    assert frozenset(metadata.keys()).issubset(file_metadata_keys)
-
     def _nop(*args, ns=None, follow_symlinks=None):
         pass
 

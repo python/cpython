@@ -1949,7 +1949,7 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             # Add some symlinks
             source.joinpath('linkC').symlink_to('fileC')
-            source.joinpath('linkD').symlink_to('dirD')
+            source.joinpath('linkD').symlink_to('dirD', target_is_directory=True)
 
         # Perform the copy
         target = base / 'copyC'

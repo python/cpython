@@ -19,7 +19,7 @@ except ImportError:
 
 from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
                          write_file_metadata)
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase, CopierBase
 
 
 __all__ = [
@@ -55,6 +55,33 @@ class _PathParents(Sequence):
 
     def __repr__(self):
         return "<{}.parents>".format(type(self._path).__name__)
+
+
+class _Copier(CopierBase):
+    """Copier class that uses fast OS copy routine where possible, and ensures
+    symlinks' target_is_directory argument is properly set on Windows.
+    """
+    __slots__ = ()
+
+    if copyfile:
+        def copy_file(self, source, target, metadata_keys, dir_entry=None):
+            """Copy the given file to the given target."""
+            try:
+                source = os.fspath(source)
+            except TypeError:
+                if not isinstance(source, PathBase):
+                    raise
+                CopierBase.copy_file(self, source, target, metadata_keys, dir_entry)
+            else:
+                copyfile(source, os.fspath(target))
+
+    if os.name == 'nt':
+        def copy_symlink(self, source, target, metadata_keys, dir_entry=None):
+            """Copy the given symlink to the given target."""
+            metadata = source._read_metadata(
+                metadata_keys, follow_symlinks=False, dir_entry=dir_entry)
+            target.symlink_to(source.readlink(), (dir_entry or source).is_dir())
+            target._write_metadata(metadata, follow_symlinks=False)
 
 
 class PurePath(PurePathBase):
@@ -512,6 +539,11 @@ class Path(PathBase, PurePath):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
+    _copier = _Copier
+    _readable_metadata = file_metadata_keys
+    _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
     as_uri = PurePath.as_uri
 
     @classmethod
@@ -789,24 +821,6 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
-    _readable_metadata = _writable_metadata = file_metadata_keys
-    _read_metadata = read_file_metadata
-    _write_metadata = write_file_metadata
-
-    if copyfile:
-        def _copy_file(self, target):
-            """
-            Copy the contents of this file to the given target.
-            """
-            try:
-                target = os.fspath(target)
-            except TypeError:
-                if not isinstance(target, PathBase):
-                    raise
-                PathBase._copy_file(self, target)
-            else:
-                copyfile(os.fspath(self), target)
-
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
@@ -868,14 +882,6 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
-
-    if os.name == 'nt':
-        def _symlink_to_target_of(self, link):
-            """
-            Make this path a symlink with the same target as the given link.
-            This is used by copy().
-            """
-            self.symlink_to(link.readlink(), link.is_dir())
 
     if hasattr(os, "link"):
         def hardlink_to(self, target):
