@@ -1633,8 +1633,10 @@ class DummyPathTest(DummyPurePathTest):
             p.joinpath('linkA').symlink_to('fileA')
             p.joinpath('brokenLink').symlink_to('non-existing')
             p.joinpath('linkB').symlink_to('dirB', target_is_directory=True)
-            p.joinpath('dirA', 'linkC').symlink_to(parser.join('..', 'dirB'))
-            p.joinpath('dirB', 'linkD').symlink_to(parser.join('..', 'dirB'))
+            p.joinpath('dirA', 'linkC').symlink_to(
+                parser.join('..', 'dirB'), target_is_directory=True)
+            p.joinpath('dirB', 'linkD').symlink_to(
+                parser.join('..', 'dirB'), target_is_directory=True)
             p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
 
     def tearDown(self):
@@ -2479,7 +2481,7 @@ class DummyPathTest(DummyPurePathTest):
             if i % 2:
                 link.symlink_to(P(self.base, "dirE", "nonexistent"))
             else:
-                link.symlink_to(P(self.base, "dirC"))
+                link.symlink_to(P(self.base, "dirC"), target_is_directory=True)
 
         self.assertEqual(len(set(base.glob("*"))), 100)
         self.assertEqual(len(set(base.glob("*/"))), 50)
@@ -2967,7 +2969,7 @@ class DummyPathTest(DummyPurePathTest):
                 f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
 
         if self.can_symlink:
-            self.link_path.symlink_to(t2_path)
+            self.link_path.symlink_to(t2_path, target_is_directory=True)
             broken_link_path.symlink_to('broken')
             broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
             self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
