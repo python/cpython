@@ -67,6 +67,12 @@ __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
            "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
+def __getattr__(name):
+    import warnings
+    if name == "SocketType":
+        warnings.warn(f"{name} is deprecated", DeprecationWarning)
+        return _socket.socket
+
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
 # nicer string representations.
 # Note that _socket only knows about the integer values. The public interface
