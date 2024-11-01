@@ -30,7 +30,7 @@ class CProfileTest(ProfileTest):
 
             self.assertEqual(cm.unraisable.exc_type, TypeError)
 
-    def test_crash_on_no_args(self):
+    def test_crash_with_not_enough_args(self):
         # gh-126220
         import _lsprof
 
