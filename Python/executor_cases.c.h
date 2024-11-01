@@ -2593,7 +2593,7 @@
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)CURRENT_OPERAND();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            if (!PyModule_CheckExact(owner_o)) {
+            if (_PyModule_HasSpecializedGetAttr(owner_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
