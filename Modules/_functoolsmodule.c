@@ -1795,12 +1795,6 @@ _functools_exec(PyObject *module)
     // lru_list_elem is used only in _lru_cache_wrapper.
     // So we don't expose it in module namespace.
 
-    if (PyModule_Add(module, "_initial_missing",
-                     PyObject_New(PyObject, &PyBaseObject_Type)) < 0)
-    {
-        return -1;
-    }
-
     return 0;
 }
 
