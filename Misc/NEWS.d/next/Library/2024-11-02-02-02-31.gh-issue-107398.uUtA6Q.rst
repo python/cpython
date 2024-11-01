@@ -1,0 +1,2 @@
+Fix tarfile stream mode exception when process the file with extra header
+data.
