@@ -105,4 +105,4 @@ jobs:
       run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make test
+      run: xvfb-run make ci
