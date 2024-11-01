@@ -7,8 +7,8 @@
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _Py_float_freelist
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
@@ -25,16 +25,6 @@ class float "PyObject *" "&PyFloat_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd0003f68f144284]*/
 
 #include "clinic/floatobject.c.h"
-
-#ifdef WITH_FREELISTS
-static struct _Py_float_freelist *
-get_float_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    assert(freelists != NULL);
-    return &freelists->floats;
-}
-#endif
 
 
 double
@@ -132,27 +122,52 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyFloatObject *op;
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
-    op = float_freelist->items;
-    if (op != NULL) {
-        float_freelist->items = (PyFloatObject *) Py_TYPE(op);
-        float_freelist->numfree--;
-        OBJECT_STAT_INC(from_freelist);
-    }
-    else
-#endif
-    {
+    PyFloatObject *op = _Py_FREELIST_POP(PyFloatObject, floats);
+    if (op == NULL) {
         op = PyObject_Malloc(sizeof(PyFloatObject));
         if (!op) {
             return PyErr_NoMemory();
         }
+        _PyObject_Init((PyObject*)op, &PyFloat_Type);
     }
-    _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
+
+#ifdef Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyStackRef_CLOSE(left);
+    PyStackRef_CLOSE(right);
+    return PyFloat_FromDouble(value);
+}
+
+#else // Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+    if (Py_REFCNT(left_o) == 1) {
+        ((PyFloatObject *)left_o)->ob_fval = value;
+        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
+        return left_o;
+    }
+    else if (Py_REFCNT(right_o) == 1)  {
+        ((PyFloatObject *)right_o)->ob_fval = value;
+        _Py_DECREF_NO_DEALLOC(left_o);
+        return right_o;
+    }
+    else {
+        PyObject *result = PyFloat_FromDouble(value);
+        _Py_DECREF_NO_DEALLOC(left_o);
+        _Py_DECREF_NO_DEALLOC(right_o);
+        return result;
+    }
+}
+
+#endif // Py_GIL_DISABLED
 
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
@@ -248,35 +263,17 @@ void
 _PyFloat_ExactDealloc(PyObject *obj)
 {
     assert(PyFloat_CheckExact(obj));
-    PyFloatObject *op = (PyFloatObject *)obj;
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
-    if (float_freelist->numfree >= PyFloat_MAXFREELIST || float_freelist->numfree < 0) {
-        PyObject_Free(op);
-        return;
-    }
-    float_freelist->numfree++;
-    Py_SET_TYPE(op, (PyTypeObject *)float_freelist->items);
-    float_freelist->items = op;
-    OBJECT_STAT_INC(to_freelist);
-#else
-    PyObject_Free(op);
-#endif
+    _Py_FREELIST_FREE(floats, obj, PyObject_Free);
 }
 
 static void
 float_dealloc(PyObject *op)
 {
     assert(PyFloat_Check(op));
-#ifdef WITH_FREELISTS
-    if (PyFloat_CheckExact(op)) {
+    if (PyFloat_CheckExact(op))
         _PyFloat_ExactDealloc(op);
-    }
     else
-#endif
-    {
         Py_TYPE(op)->tp_free(op);
-    }
 }
 
 double
@@ -432,7 +429,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
         int wsign = _PyLong_Sign(w);
-        size_t nbits;
         int exponent;
 
         if (vsign != wsign) {
@@ -445,20 +441,22 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* The signs are the same. */
         /* Convert w to a double if it fits.  In particular, 0 fits. */
-        nbits = _PyLong_NumBits(w);
-        if (nbits == (size_t)-1 && PyErr_Occurred()) {
-            /* This long is so large that size_t isn't big enough
-             * to hold the # of bits.  Replace with little doubles
+        int64_t nbits64 = _PyLong_NumBits(w);
+        assert(nbits64 >= 0);
+        assert(!PyErr_Occurred());
+        if (nbits64 > DBL_MAX_EXP) {
+            /* This Python integer is larger than any finite C double.
+             * Replace with little doubles
              * that give the same outcome -- w is so large that
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            PyErr_Clear();
             i = (double)vsign;
             assert(wsign != 0);
             j = wsign * 2.0;
             goto Compare;
         }
+        int nbits = (int)nbits64;
         if (nbits <= 48) {
             j = PyLong_AsDouble(w);
             /* It's impossible that <= 48 bits overflowed. */
@@ -482,12 +480,12 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         /* exponent is the # of bits in v before the radix point;
          * we know that nbits (the # of bits in w) > 48 at this point
          */
-        if (exponent < 0 || (size_t)exponent < nbits) {
+        if (exponent < nbits) {
             i = 1.0;
             j = 2.0;
             goto Compare;
         }
-        if ((size_t)exponent > nbits) {
+        if (exponent > nbits) {
             i = 2.0;
             j = 1.0;
             goto Compare;
@@ -1602,12 +1600,12 @@ float.__new__ as float_new
     x: object(c_default="NULL") = 0
     /
 
-Convert a string or number to a floating point number, if possible.
+Convert a string or number to a floating-point number, if possible.
 [clinic start generated code]*/
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=55909f888aa0c8a6]*/
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
@@ -1733,13 +1731,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'unknown', 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating point numbers used by the
+little-endian' best describes the format of floating-point numbers used by the
 C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=d5a52600f835ad67]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
 {
     float_format_type r;
 
@@ -1926,7 +1924,7 @@ _init_global_state(void)
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
-       floating point formats by peering at the bits of some
+       floating-point formats by peering at the bits of some
        carefully chosen values.  If it looks like we are on an
        IEEE platform, the float packing/unpacking routines can
        just copy bits, if not they resort to arithmetic & shifts
@@ -1995,27 +1993,6 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 }
 
 void
-_PyFloat_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *state = &freelists->floats;
-    PyFloatObject *f = state->items;
-    while (f != NULL) {
-        PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
-        PyObject_Free(f);
-        f = next;
-    }
-    state->items = NULL;
-    if (is_finalization) {
-        state->numfree = -1;
-    }
-    else {
-        state->numfree = 0;
-    }
-#endif
-}
-
-void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
     _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
@@ -2025,12 +2002,10 @@ _PyFloat_FiniType(PyInterpreterState *interp)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
-    struct _Py_float_freelist *float_freelist = get_float_freelist();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
-                           float_freelist->numfree, sizeof(PyFloatObject));
-#endif
+                           _Py_FREELIST_SIZE(floats),
+                           sizeof(PyFloatObject));
 }
 
 
@@ -2415,7 +2390,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+            return sign ? -Py_INFINITY : Py_INFINITY;
         }
         else {
             /* NaN */

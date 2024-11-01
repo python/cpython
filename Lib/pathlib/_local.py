@@ -17,9 +17,9 @@ try:
 except ImportError:
     grp = None
 
-from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
-                  read_file_metadata, write_file_metadata)
-from ._abc import PurePathBase, PathBase
+from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
+                         write_file_metadata)
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
@@ -119,9 +119,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -272,8 +272,7 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
     @property
     def _raw_path(self):
@@ -616,6 +615,14 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
+    def scandir(self):
+        """Yield os.DirEntry objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        return os.scandir(self)
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -787,25 +794,18 @@ class Path(PathBase, PurePath):
     _write_metadata = write_file_metadata
 
     if copyfile:
-        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
+        def _copy_file(self, target):
             """
-            Copy the contents of this file to the given target. If this file is a
-            symlink and follow_symlinks is false, a symlink will be created at the
-            target.
+            Copy the contents of this file to the given target.
             """
             try:
                 target = os.fspath(target)
             except TypeError:
                 if not isinstance(target, PathBase):
                     raise
+                PathBase._copy_file(self, target)
             else:
-                try:
-                    copyfile(os.fspath(self), target, follow_symlinks)
-                    return
-                except UnsupportedOperation:
-                    pass  # Fall through to generic code.
-            PathBase.copy(self, target, follow_symlinks=follow_symlinks,
-                          preserve_metadata=preserve_metadata)
+                copyfile(os.fspath(self), target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
@@ -829,6 +829,11 @@ class Path(PathBase, PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+
+    def _rmtree(self):
+        # Lazy import to improve module import time
+        import shutil
+        shutil.rmtree(self)
 
     def rename(self, target):
         """
@@ -863,6 +868,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
+
+    if os.name == 'nt':
+        def _symlink_to_target_of(self, link):
+            """
+            Make this path a symlink with the same target as the given link.
+            This is used by copy().
+            """
+            self.symlink_to(link.readlink(), link.is_dir())
 
     if hasattr(os, "link"):
         def hardlink_to(self, target):

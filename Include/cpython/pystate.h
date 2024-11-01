@@ -68,8 +68,6 @@ struct _ts {
        pycore_ceval.h. */
     uintptr_t eval_breaker;
 
-    PyObject *asyncio_running_loop; // Strong reference
-
     struct {
         /* Has been initialized to a safe state.
 
@@ -194,6 +192,14 @@ struct _ts {
     PyObject *previous_executor;
 
     uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
 };
 
 #ifdef Py_DEBUG
@@ -212,8 +218,14 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_RECURSION_LIMIT 4000
 #elif defined(__wasi__)
    // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
 #  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py

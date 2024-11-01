@@ -54,6 +54,12 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
+/* HACL* library can compile SIMD128 implementations */
+#undef HACL_CAN_COMPILE_SIMD128
+
+/* HACL* library can compile SIMD256 implementations */
+#undef HACL_CAN_COMPILE_SIMD256
+
 /* Define if you have the 'accept' function. */
 #undef HAVE_ACCEPT
 
@@ -670,9 +676,6 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you want to build _blake2 module with libb2 */
-#undef HAVE_LIBB2
-
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -687,9 +690,6 @@
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
-
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-#undef HAVE_LIBRESOLV
 
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
@@ -735,6 +735,9 @@
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
+#undef HAVE_LINUX_NETFILTER_IPV4_H
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
@@ -1679,6 +1682,9 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
+/* Defined if _Complex C type can be used with libffi. */
+#undef Py_FFI_SUPPORT_C_COMPLEX
+
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED
 
@@ -1697,6 +1703,9 @@
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
+
+/* Define if C99-specific strftime specifiers are supported. */
+#undef Py_STRFTIME_C99_SUPPORT
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
@@ -1894,9 +1903,6 @@
 
 /* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
-
-/* Define if you want to compile in object freelists optimization */
-#undef WITH_FREELISTS
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
