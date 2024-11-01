@@ -1311,6 +1311,8 @@ init_interp_main(PyThreadState *tstate)
         }
         if (enabled) {
 #ifdef _Py_JIT
+            // perf profiler works fine with tier 2 interpreter, so
+            // only checking for a "real JIT".
             if (config->perf_profiling > 0) {
                 (void)PyErr_WarnEx(
                     PyExc_RuntimeWarning,
