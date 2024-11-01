@@ -469,10 +469,11 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    jit_state state = {};
+    jit_state state = {0};
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
