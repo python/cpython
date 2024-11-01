@@ -224,7 +224,7 @@ process and user.
 
    .. seealso::
 
-      The :func:`~os.reload_environ` function.
+      The :func:`os.reload_environ` function.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
@@ -252,12 +252,12 @@ process and user.
    current process environment made by :func:`os.putenv`, by
    :func:`os.unsetenv`, or made outside Python in the same process.
 
-   This function is not thread safe. Calling it while the environment is
-   modified in other thread has undefined behavior. Reading from
-   :data:`os.environ` or calling :func:`os.getenv` during reloading can return
-   empty result.
+   This function is not thread-safe. Calling it while the environment is
+   being modified in an other thread is an undefined behavior. Reading from
+   :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
+   while reloading, may return an empty result.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. function:: chdir(path)
