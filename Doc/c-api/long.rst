@@ -573,24 +573,22 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: int PyLong_IsPositive(PyObject *obj)
 
-   Check if the integer object *obj* is strictly positive.
+   Check if the integer object *obj* is positive.
 
-   On success, return ``1`` if *obj* is positive, and ``0`` otherwise.
-
-   On failure, return ``-1`` with an exception set.  This function always succeeds
-   if *obj* is a :c:type:`PyLongObject` or its subtype.
+   If *obj* is an instance of :c:type:`PyLongObject` or it's subtype,
+   return ``1`` when it's positive and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
 
    .. versionadded:: next
 
 
 .. c:function:: int PyLong_IsNegative(PyObject *obj)
 
-   Check if the integer object *obj* is strictly negative.
+   Check if the integer object *obj* is negative.
 
-   On success, return ``1`` if *obj* is negative, and ``0`` otherwise.
-
-   On failure, return ``-1`` with an exception set.  This function always succeeds
-   if *obj* is a :c:type:`PyLongObject` or its subtype.
+   If *obj* is an instance of :c:type:`PyLongObject` or it's subtype,
+   return ``1`` when it's positive and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
 
    .. versionadded:: next
 
