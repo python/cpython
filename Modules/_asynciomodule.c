@@ -2974,7 +2974,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             //
             // See https://github.com/python/cpython/issues/126138
             PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
-            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel), task_cancel_msg);
+            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
+                                          task_cancel_msg);
             Py_DECREF(task_cancel_msg);
 
             if (r == NULL) {
@@ -3075,7 +3076,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             //
             // See https://github.com/python/cpython/issues/126138
             PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
-            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel), task_cancel_msg);
+            r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
+                                          task_cancel_msg);
             Py_DECREF(task_cancel_msg);
 
             if (r == NULL) {
