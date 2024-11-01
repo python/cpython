@@ -94,24 +94,12 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        """Emulates os.scandir(), which returns an object that can be used as
-        a context manager. This method is called by walk() and glob().
-        """
-        import contextlib
-        return contextlib.nullcontext(path.iterdir())
+    scandir = operator.methodcaller('scandir')
 
     @staticmethod
     def concat_path(path, text):
         """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir()."""
-        return entry
 
 
 class PurePathBase:
