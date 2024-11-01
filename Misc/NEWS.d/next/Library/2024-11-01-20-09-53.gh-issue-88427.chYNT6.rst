@@ -1,1 +1,1 @@
-Deprecated :attr:`!socket.SocketType`.
+:attr:`!socket.SocketType` is deprecated. Use :class:`socket.socket` in type annotations instead.
