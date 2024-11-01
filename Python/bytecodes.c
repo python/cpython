@@ -1746,7 +1746,7 @@ dummy_func(
             template = PyStackRef_FromPyObjectSteal(template_o);
         }
 
-        inst(BUILD_TEMPLATE_FROM_LIST, (list -- template)) {
+        inst(BUILD_TEMPLATE_LIST, (list -- template)) {
             PyObject *template_o = _PyTemplate_FromListStackRef(list);
             DECREF_INPUTS();
             ERROR_IF(template_o == NULL, error);

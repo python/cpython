@@ -15,7 +15,7 @@ extern "C" {
 #define BINARY_SUBSCR                            2
 #define BINARY_OP_INPLACE_ADD_UNICODE            3
 #define BUILD_INTERPOLATION                      4
-#define BUILD_TEMPLATE_FROM_LIST                 5
+#define BUILD_TEMPLATE_LIST                      5
 #define CHECK_EG_MATCH                           6
 #define CHECK_EXC_MATCH                          7
 #define CLEANUP_THROW                            8

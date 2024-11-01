@@ -3857,7 +3857,7 @@ codegen_template_str(compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.TemplateStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
-        ADDOP(c, loc, BUILD_TEMPLATE_FROM_LIST);
+        ADDOP(c, loc, BUILD_TEMPLATE_LIST);
     }
     else {
         VISIT_SEQ(c, expr, e->v.TemplateStr.values);

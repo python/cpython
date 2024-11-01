@@ -2077,7 +2077,7 @@
             break;
         }
 
-        case _BUILD_TEMPLATE_FROM_LIST: {
+        case _BUILD_TEMPLATE_LIST: {
             _PyStackRef list;
             _PyStackRef template;
             list = stack_pointer[-1];

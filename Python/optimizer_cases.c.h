@@ -955,7 +955,7 @@
             break;
         }
 
-        case _BUILD_TEMPLATE_FROM_LIST: {
+        case _BUILD_TEMPLATE_LIST: {
             _Py_UopsSymbol *template;
             template = sym_new_not_null(ctx);
             stack_pointer[-1] = template;

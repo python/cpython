@@ -856,7 +856,7 @@
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(pieces[_i]);
                 }
-                if (true) {
+                {
                     stack_pointer += -oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     goto error;
@@ -881,10 +881,10 @@
             DISPATCH();
         }
 
-        TARGET(BUILD_TEMPLATE_FROM_LIST) {
+        TARGET(BUILD_TEMPLATE_LIST) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
-            INSTRUCTION_STATS(BUILD_TEMPLATE_FROM_LIST);
+            INSTRUCTION_STATS(BUILD_TEMPLATE_LIST);
             _PyStackRef list;
             _PyStackRef template;
             list = stack_pointer[-1];
