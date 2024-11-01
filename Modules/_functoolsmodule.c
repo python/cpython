@@ -953,7 +953,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=cadc408bded707d1]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=d233c2670cba7f66]*/
 {
     PyObject *args, *it;
 

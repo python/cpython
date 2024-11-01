@@ -78,7 +78,7 @@ PyDoc_STRVAR(_functools_reduce__doc__,
 "a default when the iterable is empty.\n"
 "\n"
 "For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])\n"
-"calculates ((((1 + 2) + 3) + 4) + 5).\")");
+"calculates ((((1 + 2) + 3) + 4) + 5).");
 
 #define _FUNCTOOLS_REDUCE_METHODDEF    \
     {"reduce", _PyCFunction_CAST(_functools_reduce), METH_FASTCALL, _functools_reduce__doc__},
@@ -158,4 +158,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=9cf40255d4e89c27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=214d6c6307cfcd91 input=a9049054013a1b77]*/
