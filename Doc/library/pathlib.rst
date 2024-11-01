@@ -1289,6 +1289,35 @@ Reading directories
    raised.
 
 
+.. method:: Path.scandir()
+
+   When the path points to a directory, return an iterator of
+   :class:`os.DirEntry` objects corresponding to entries in the directory. The
+   returned iterator supports the :term:`context manager` protocol. It is
+   implemented using :func:`os.scandir` and gives the same guarantees.
+
+   Using :meth:`~Path.scandir` instead of :meth:`~Path.iterdir` can
+   significantly increase the performance of code that also needs file type or
+   file attribute information, because :class:`os.DirEntry` objects expose
+   this information if the operating system provides it when scanning a
+   directory.
+
+   The following example displays the names of subdirectories. The
+   ``entry.is_dir()`` check will generally not make an additional system call::
+
+      >>> p = Path('docs')
+      >>> with p.scandir() as entries:
+      ...     for entry in entries:
+      ...         if entry.is_dir():
+      ...             entry.name
+      ...
+      '_templates'
+      '_build'
+      '_static'
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    Glob the given relative *pattern* in the directory represented by this path,

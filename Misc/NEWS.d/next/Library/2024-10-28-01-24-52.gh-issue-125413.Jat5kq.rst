@@ -1,0 +1,3 @@
+Add :meth:`pathlib.Path.scandir` method to efficiently fetch directory
+children and their file attributes. This is a trivial wrapper of
+:func:`os.scandir`.
