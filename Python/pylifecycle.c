@@ -1316,7 +1316,7 @@ init_interp_main(PyThreadState *tstate)
                     PyExc_RuntimeWarning,
                     "JIT deactivated as perf profiling support is active",
                     0);
-            } else 
+            } else
 #endif
             {
                 PyObject *opt = _PyOptimizer_NewUOpOptimizer();
