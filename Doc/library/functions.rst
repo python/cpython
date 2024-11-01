@@ -1199,7 +1199,7 @@ are always available.  They are listed here in alphabetical order.
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
    shortest iterable is exhausted.  If *strict* is ``True`` and one of the
-   arguments is exhausted before the others, a :exc:`ValueError` is raised. For
+   iterables is exhausted before the others, a :exc:`ValueError` is raised. For
    cases where the function inputs are already arranged into argument tuples,
    see :func:`itertools.starmap`.
 
