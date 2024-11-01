@@ -1951,7 +1951,7 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             # Add some symlinks
             source.joinpath('linkC').symlink_to('fileC')
-            source.joinpath('linkD').symlink_to('dirD')
+            source.joinpath('linkD').symlink_to('dirD', target_is_directory=True)
 
         # Perform the copy
         target = base / 'copyC'
@@ -2969,7 +2969,7 @@ class DummyPathTest(DummyPurePathTest):
                 f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
 
         if self.can_symlink:
-            self.link_path.symlink_to(t2_path)
+            self.link_path.symlink_to(t2_path, target_is_directory=True)
             broken_link_path.symlink_to('broken')
             broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
             self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
