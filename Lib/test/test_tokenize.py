@@ -228,7 +228,7 @@ def k(x):
     """)
 
     def test_float(self):
-        # Floating point numbers
+        # Floating-point numbers
         self.check_tokenize("x = 3.14159", """\
     NAME       'x'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)
@@ -1919,6 +1919,26 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip(r"f'\\\\N{{'")
         self.check_roundtrip(r"f'\\\\\\N{{'")
         self.check_roundtrip(r"f'\\\\\\\\N{{'")
+
+        self.check_roundtrip(r"f'\n{{foo}}'")
+        self.check_roundtrip(r"f'\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\\n{{foo}}'")
+
+        self.check_roundtrip(r"f'\t{{foo}}'")
+        self.check_roundtrip(r"f'\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\{{foo}}'")
+        self.check_roundtrip(r"f'\\{{foo}}'")
+        self.check_roundtrip(r"rf'\\\{{foo}}'")
+        self.check_roundtrip(r"f'\\\\{{foo}}'")
         cases = [
     """
 if 1:

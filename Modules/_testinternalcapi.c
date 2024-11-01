@@ -681,13 +681,13 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    if (PyFunction_Check(f->f_funcobj)) {
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list, func->func_name);
         if (res < 0) {
             return NULL;
         }
@@ -991,13 +991,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewCounter();
+    return _PyOptimizer_NewCounter();
 }
 
 static PyObject *
 new_uop_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewUOpOptimizer();
+    return _PyOptimizer_NewUOpOptimizer();
 }
 
 static PyObject *
@@ -1006,7 +1006,7 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1017,7 +1017,7 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *opt = NULL;
 #ifdef _Py_TIER2
-    opt = (PyObject *)PyUnstable_GetOptimizer();
+    opt = (PyObject *)_Py_GetOptimizer();
 #endif
     if (opt == NULL) {
         Py_RETURN_NONE;
@@ -1853,7 +1853,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 {
     struct triple {
         long input;
-        size_t nbits;
+        uint64_t nbits;
         int sign;
     } testcases[] = {{0, 0, 0},
                      {1L, 1, 1},
@@ -1873,7 +1873,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     size_t i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
+        uint64_t nbits;
         int sign;
         PyObject *plong;
 
@@ -1966,32 +1966,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyObject *
-suppress_immortalization(PyObject *self, PyObject *value)
-{
-#ifdef Py_GIL_DISABLED
-    int suppress = PyObject_IsTrue(value);
-    if (suppress < 0) {
-        return NULL;
-    }
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    // Subtract two to suppress immortalization (so that 1 -> -1)
-    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
-#endif
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
-#else
-    Py_RETURN_FALSE;
-#endif
-}
-
-static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -2032,6 +2006,20 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     // It must never have been called in the main interprer
     assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
     return Py_NewRef(spam);
+}
+
+
+static PyObject *
+get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _PyStaticType_GetBuiltins();
+}
+
+
+static PyObject *
+identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _PyType_GetSlotWrapperNames();
 }
 
 
@@ -2123,12 +2111,12 @@ static PyMethodDef module_functions[] = {
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
-    {"suppress_immortalization", suppress_immortalization, METH_O},
-    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
+    {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -145,7 +145,7 @@ def runtest_refleak(test_name, test_func,
             # Use an internal-only keyword argument that mypy doesn't know yet
             _only_immortal=True)  # type: ignore[call-arg]
         alloc_after = getallocatedblocks() - interned_immortal_after
-        rc_after = gettotalrefcount() - interned_immortal_after * 2
+        rc_after = gettotalrefcount()
         fd_after = fd_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -246,9 +246,13 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            for ref in abcs.get(obj, set()):
-                if ref() is not None:
-                    obj.register(ref())
+            refs = abcs.get(obj, None)
+            if refs is not None:
+                obj._abc_registry_clear()
+                for ref in refs:
+                    subclass = ref()
+                    if subclass is not None:
+                        obj.register(subclass)
             obj._abc_caches_clear()
 
     # Clear caches

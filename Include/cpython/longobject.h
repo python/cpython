@@ -2,6 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
+#define _PyLong_CAST(op) \
+    (assert(PyLong_Check(op)), _Py_CAST(PyLongObject*, (op)))
+
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
 #define Py_ASNATIVEBYTES_DEFAULTS -1
@@ -10,6 +13,7 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 #define Py_ASNATIVEBYTES_NATIVE_ENDIAN 3
 #define Py_ASNATIVEBYTES_UNSIGNED_BUFFER 4
 #define Py_ASNATIVEBYTES_REJECT_NEGATIVE 8
+#define Py_ASNATIVEBYTES_ALLOW_INDEX 16
 
 /* PyLong_AsNativeBytes: Copy the integer value to a native variable.
    buffer points to the first byte of the variable.
@@ -20,8 +24,10 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
    * 2 - native endian
    * 4 - unsigned destination (e.g. don't reject copying 255 into one byte)
    * 8 - raise an exception for negative inputs
-   If flags is -1 (all bits set), native endian is used and value truncation
-   behaves most like C (allows negative inputs and allow MSB set).
+   * 16 - call __index__ on non-int types
+   If flags is -1 (all bits set), native endian is used, value truncation
+   behaves most like C (allows negative inputs and allow MSB set), and non-int
+   objects will raise a TypeError.
    Big endian mode will write the most significant byte into the address
    directly referenced by buffer; little endian will write the least significant
    byte into that address.
@@ -68,10 +74,9 @@ PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
    absolute value of a long.  For example, this returns 1 for 1 and -1, 2
    for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
    v must not be NULL, and must be a normalized long.
-   (size_t)-1 is returned and OverflowError set if the true result doesn't
-   fit in a size_t.
+   Always successful.
 */
-PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+PyAPI_FUNC(int64_t) _PyLong_NumBits(PyObject *v);
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
    base 256, and return a Python int with the same numeric value.
