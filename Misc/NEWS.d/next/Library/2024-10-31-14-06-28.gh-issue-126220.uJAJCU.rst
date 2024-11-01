@@ -1,0 +1,2 @@
+Fix crash of ``cProfile.Profile`` and ``_lsprof.Profiler`` when their
+callbacks were directly called with 0 arguments.
