@@ -2112,6 +2112,11 @@ test: all
 ci: all
 	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+# like 'test' but use the fancy runner if possible.
+.PHONY: fancytest
+fancytest: all
+	$(TESTRUNNER) --progress_reporter=detect --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
