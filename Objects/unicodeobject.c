@@ -5021,7 +5021,7 @@ ctz(size_t v)
 static size_t
 load_unaligned(const unsigned char *p, size_t size)
 {
-    assert(0 <= size && size <= SIZEOF_SIZE_T);
+    assert(size <= SIZEOF_SIZE_T);
     union {
         size_t s;
         unsigned char b[SIZEOF_SIZE_T];
