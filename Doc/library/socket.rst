@@ -909,7 +909,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    This is a Python type object that represents the socket object type. It is the
    same as ``type(socket(...))``.
 
-   .. deprecated:: 3.14
+   .. deprecated:: next
       If type annotation is required, use :class:`~socket.socket`.
 
 
