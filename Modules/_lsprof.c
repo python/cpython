@@ -940,11 +940,11 @@ _lsprof.Profiler.__init__
     subcalls: bool = True
     builtins: bool = True
 
-Builds a profiler object using the specified timer function.
+Build a profiler object using the specified timer function.
 
 The default timer is a fast built-in one based on real time.
-For custom timer functions returning integers, timeunit can
-be a float specifying a scale (i.e. how long each integer unit
+For custom timer functions returning integers, 'timeunit' can
+be a float specifying a scale (that is, how long each integer unit
 is, in seconds).
 [clinic start generated code]*/
 
