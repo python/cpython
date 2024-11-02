@@ -1,5 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
@@ -168,7 +169,8 @@ class EmbeddingTestsMixin:
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose > 1:
+            if support.verbose > 2:
+                # 5 lines per pass is super-spammy, so limit that to -vvv
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
@@ -279,6 +281,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
@@ -296,6 +302,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
         out, err = self.run_embedded_interpreter(
                         "test_pre_initialization_sys_options", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
@@ -379,6 +389,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
+                        # LOAD_CONST_IMMORTAL is "specialized", but is
+                        # inserted during quickening.
+                        and opname != "LOAD_CONST_IMMORTAL"
                     ):
                         return True
                 return False
@@ -416,7 +429,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
-    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support
@@ -561,7 +573,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'cpu_count': -1,
         'faulthandler': False,
         'tracemalloc': 0,
-        'perf_profiling': False,
+        'perf_profiling': 0,
         'import_time': False,
         'code_debug_ranges': True,
         'show_ref_count': False,
@@ -653,7 +665,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         use_hash_seed=False,
         faulthandler=False,
         tracemalloc=False,
-        perf_profiling=False,
+        perf_profiling=0,
         pathconfig_warnings=False,
     )
     if MS_WINDOWS:
@@ -967,7 +979,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 123,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'show_ref_count': True,
@@ -1032,7 +1044,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1052,6 +1064,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': True,
             'int_max_str_digits': 4567,
+            'perf_profiling': 1,
         }
         if Py_STATS:
             config['_pystats'] = 1
@@ -1067,7 +1080,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1087,6 +1100,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': True,
             'int_max_str_digits': 4567,
+            'perf_profiling': 1,
         }
         if Py_STATS:
             config['_pystats'] = True
@@ -1764,17 +1778,22 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'xoptions': {'faulthandler': True},
             'hash_seed': 10,
             'use_hash_seed': True,
+            'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
-        config['faulthandler'] = 0
+        # Temporarily enable ignore_stderr=True to ignore warnings on JIT builds
+        # See gh-126255 for more information
         self.check_all_configs("test_initconfig_api", config, preconfig,
-                               api=API_ISOLATED)
+                               api=API_ISOLATED, ignore_stderr=True)
 
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")
 
     def test_initconfig_exit(self):
         self.run_embedded_interpreter("test_initconfig_exit")
+
+    def test_initconfig_module(self):
+        self.run_embedded_interpreter("test_initconfig_module")
 
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
@@ -1970,7 +1989,11 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipUnless(support.Py_DEBUG,
                          '-X presite requires a Python debug build')
     def test_presite(self):
-        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        cmd = [
+            sys.executable,
+            "-I", "-X", "presite=test._test_embed_structseq",
+            "-c", "print('unique-python-message')",
+        ]
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -1979,9 +2002,8 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0)
         out = proc.stdout.strip()
-        self.assertIn("10 times sub", out)
-        self.assertIn("CPU seconds", out)
-        self.assertIn("cmd", out)
+        self.assertIn("Tests passed", out)
+        self.assertIn("unique-python-message", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):

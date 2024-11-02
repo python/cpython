@@ -1200,6 +1200,24 @@ class StreamTests(test_utils.TestCase):
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
 
+    def test_open_connection_happy_eyeball_refcycles(self):
+        port = socket_helper.find_unused_port()
+        async def main():
+            exc = None
+            try:
+                await asyncio.open_connection(
+                    host="localhost",
+                    port=port,
+                    happy_eyeballs_delay=0.25,
+                )
+            except* OSError as excs:
+                # can't use assertRaises because that clears frames
+                exc = excs.exceptions[0]
+            self.assertIsNotNone(exc)
+            self.assertListEqual(gc.get_referrers(exc), [main_coro])
+        main_coro = main()
+        asyncio.run(main_coro)
+
 
 if __name__ == '__main__':
     unittest.main()
