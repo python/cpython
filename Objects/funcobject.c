@@ -2,7 +2,7 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -112,8 +112,10 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
         Py_XDECREF(module);
         return NULL;
     }
-    op->func_globals = Py_NewRef(constr->fc_globals);
-    op->func_builtins = Py_NewRef(constr->fc_builtins);
+    _Py_INCREF_DICT(constr->fc_globals);
+    op->func_globals = constr->fc_globals;
+    _Py_INCREF_BUILTINS(constr->fc_builtins);
+    op->func_builtins = constr->fc_builtins;
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
     _Py_INCREF_CODE((PyCodeObject *)constr->fc_code);
@@ -143,9 +145,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 {
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    Py_INCREF(globals);
-
-    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_INCREF_DICT(globals);
 
     PyCodeObject *code_obj = (PyCodeObject *)code;
     _Py_INCREF_CODE(code_obj);
@@ -162,7 +162,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *consts = code_obj->co_consts;
     assert(PyTuple_Check(consts));
     PyObject *doc;
-    if (PyTuple_Size(consts) >= 1) {
+    if (code_obj->co_flags & CO_HAS_DOCSTRING) {
+        assert(PyTuple_Size(consts) >= 1);
         doc = PyTuple_GetItem(consts, 0);
         if (!PyUnicode_Check(doc)) {
             doc = Py_None;
@@ -180,11 +181,10 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
         goto error;
     }
 
-    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         goto error;
     }
-    Py_INCREF(builtins);
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {
@@ -1057,8 +1057,16 @@ func_clear(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
     func_clear_version(_PyInterpreterState_GET(), op);
-    Py_CLEAR(op->func_globals);
-    Py_CLEAR(op->func_builtins);
+    PyObject *globals = op->func_globals;
+    op->func_globals = NULL;
+    if (globals != NULL) {
+        _Py_DECREF_DICT(globals);
+    }
+    PyObject *builtins = op->func_builtins;
+    op->func_builtins = NULL;
+    if (builtins != NULL) {
+        _Py_DECREF_BUILTINS(builtins);
+    }
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
@@ -1220,30 +1228,43 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 // Used for wrapping __annotations__ and __annotate__ on classmethod
 // and staticmethod objects.
 static PyObject *
-descriptor_get_wrapped_attribute(PyObject *wrapped, PyObject *dict, PyObject *name)
+descriptor_get_wrapped_attribute(PyObject *wrapped, PyObject *obj, PyObject *name)
 {
+    PyObject *dict = PyObject_GenericGetDict(obj, NULL);
+    if (dict == NULL) {
+        return NULL;
+    }
     PyObject *res;
     if (PyDict_GetItemRef(dict, name, &res) < 0) {
+        Py_DECREF(dict);
         return NULL;
     }
     if (res != NULL) {
+        Py_DECREF(dict);
         return res;
     }
     res = PyObject_GetAttr(wrapped, name);
     if (res == NULL) {
+        Py_DECREF(dict);
         return NULL;
     }
     if (PyDict_SetItem(dict, name, res) < 0) {
+        Py_DECREF(dict);
         Py_DECREF(res);
         return NULL;
     }
+    Py_DECREF(dict);
     return res;
 }
 
 static int
-descriptor_set_wrapped_attribute(PyObject *dict, PyObject *name, PyObject *value,
+descriptor_set_wrapped_attribute(PyObject *oobj, PyObject *name, PyObject *value,
                                  char *type_name)
 {
+    PyObject *dict = PyObject_GenericGetDict(oobj, NULL);
+    if (dict == NULL) {
+        return -1;
+    }
     if (value == NULL) {
         if (PyDict_DelItem(dict, name) < 0) {
             if (PyErr_ExceptionMatches(PyExc_KeyError)) {
@@ -1251,14 +1272,19 @@ descriptor_set_wrapped_attribute(PyObject *dict, PyObject *name, PyObject *value
                 PyErr_Format(PyExc_AttributeError,
                              "'%.200s' object has no attribute '%U'",
                              type_name, name);
+                Py_DECREF(dict);
+                return -1;
             }
             else {
+                Py_DECREF(dict);
                 return -1;
             }
         }
+        Py_DECREF(dict);
         return 0;
     }
     else {
+        Py_DECREF(dict);
         return PyDict_SetItem(dict, name, value);
     }
 }
@@ -1380,28 +1406,26 @@ static PyObject *
 cm_get___annotations__(PyObject *self, void *closure)
 {
     classmethod *cm = _PyClassMethod_CAST(self);
-    return descriptor_get_wrapped_attribute(cm->cm_callable, cm->cm_dict, &_Py_ID(__annotations__));
+    return descriptor_get_wrapped_attribute(cm->cm_callable, self, &_Py_ID(__annotations__));
 }
 
 static int
 cm_set___annotations__(PyObject *self, PyObject *value, void *closure)
 {
-    classmethod *cm = _PyClassMethod_CAST(self);
-    return descriptor_set_wrapped_attribute(cm->cm_dict, &_Py_ID(__annotations__), value, "classmethod");
+    return descriptor_set_wrapped_attribute(self, &_Py_ID(__annotations__), value, "classmethod");
 }
 
 static PyObject *
 cm_get___annotate__(PyObject *self, void *closure)
 {
     classmethod *cm = _PyClassMethod_CAST(self);
-    return descriptor_get_wrapped_attribute(cm->cm_callable, cm->cm_dict, &_Py_ID(__annotate__));
+    return descriptor_get_wrapped_attribute(cm->cm_callable, self, &_Py_ID(__annotate__));
 }
 
 static int
 cm_set___annotate__(PyObject *self, PyObject *value, void *closure)
 {
-    classmethod *cm = _PyClassMethod_CAST(self);
-    return descriptor_set_wrapped_attribute(cm->cm_dict, &_Py_ID(__annotate__), value, "classmethod");
+    return descriptor_set_wrapped_attribute(self, &_Py_ID(__annotate__), value, "classmethod");
 }
 
 
@@ -1615,28 +1639,26 @@ static PyObject *
 sm_get___annotations__(PyObject *self, void *closure)
 {
     staticmethod *sm = _PyStaticMethod_CAST(self);
-    return descriptor_get_wrapped_attribute(sm->sm_callable, sm->sm_dict, &_Py_ID(__annotations__));
+    return descriptor_get_wrapped_attribute(sm->sm_callable, self, &_Py_ID(__annotations__));
 }
 
 static int
 sm_set___annotations__(PyObject *self, PyObject *value, void *closure)
 {
-    staticmethod *sm = _PyStaticMethod_CAST(self);
-    return descriptor_set_wrapped_attribute(sm->sm_dict, &_Py_ID(__annotations__), value, "staticmethod");
+    return descriptor_set_wrapped_attribute(self, &_Py_ID(__annotations__), value, "staticmethod");
 }
 
 static PyObject *
 sm_get___annotate__(PyObject *self, void *closure)
 {
     staticmethod *sm = _PyStaticMethod_CAST(self);
-    return descriptor_get_wrapped_attribute(sm->sm_callable, sm->sm_dict, &_Py_ID(__annotate__));
+    return descriptor_get_wrapped_attribute(sm->sm_callable, self, &_Py_ID(__annotate__));
 }
 
 static int
 sm_set___annotate__(PyObject *self, PyObject *value, void *closure)
 {
-    staticmethod *sm = _PyStaticMethod_CAST(self);
-    return descriptor_set_wrapped_attribute(sm->sm_dict, &_Py_ID(__annotate__), value, "staticmethod");
+    return descriptor_set_wrapped_attribute(self, &_Py_ID(__annotate__), value, "staticmethod");
 }
 
 static PyGetSetDef sm_getsetlist[] = {

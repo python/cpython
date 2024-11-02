@@ -7,8 +7,10 @@ import io
 import operator
 import os
 import py_compile
+import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import tempfile
@@ -17,10 +19,15 @@ import argparse
 import warnings
 
 from enum import StrEnum
+from pathlib import Path
+from test.support import REPO_ROOT
+from test.support import TEST_HOME_DIR
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import script_helper
+from test.test_tools import skip_if_missing
 from unittest import mock
 
 
@@ -1773,27 +1780,43 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
 # Type conversion tests
 # =====================
 
+def FileType(*args, **kwargs):
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', 'FileType is deprecated',
+                                PendingDeprecationWarning, __name__)
+        return argparse.FileType(*args, **kwargs)
+
+
+class TestFileTypeDeprecation(TestCase):
+
+    def test(self):
+        with self.assertWarns(PendingDeprecationWarning) as cm:
+            argparse.FileType()
+        self.assertIn('FileType is deprecated', str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
+
+
 class TestFileTypeRepr(TestCase):
 
     def test_r(self):
-        type = argparse.FileType('r')
+        type = FileType('r')
         self.assertEqual("FileType('r')", repr(type))
 
     def test_wb_1(self):
-        type = argparse.FileType('wb', 1)
+        type = FileType('wb', 1)
         self.assertEqual("FileType('wb', 1)", repr(type))
 
     def test_r_latin(self):
-        type = argparse.FileType('r', encoding='latin_1')
+        type = FileType('r', encoding='latin_1')
         self.assertEqual("FileType('r', encoding='latin_1')", repr(type))
 
     def test_w_big5_ignore(self):
-        type = argparse.FileType('w', encoding='big5', errors='ignore')
+        type = FileType('w', encoding='big5', errors='ignore')
         self.assertEqual("FileType('w', encoding='big5', errors='ignore')",
                          repr(type))
 
     def test_r_1_replace(self):
-        type = argparse.FileType('r', 1, errors='replace')
+        type = FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
 
@@ -1847,7 +1870,6 @@ class RFile(object):
             text = text.decode('ascii')
         return self.name == other.name == text
 
-
 class TestFileTypeR(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for reading files"""
 
@@ -1860,8 +1882,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         self.create_readonly_file('readonly')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType()),
-        Sig('spam', type=argparse.FileType('r')),
+        Sig('-x', type=FileType()),
+        Sig('spam', type=FileType('r')),
     ]
     failures = ['-x', '', 'non-existent-file.txt']
     successes = [
@@ -1881,7 +1903,7 @@ class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
         file.close()
 
     argument_signatures = [
-        Sig('-c', type=argparse.FileType('r'), default='no-file.txt'),
+        Sig('-c', type=FileType('r'), default='no-file.txt'),
     ]
     # should provoke no such file error
     failures = ['']
@@ -1900,8 +1922,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
                 file.write(file_name)
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('rb')),
-        Sig('spam', type=argparse.FileType('rb')),
+        Sig('-x', type=FileType('rb')),
+        Sig('spam', type=FileType('rb')),
     ]
     failures = ['-x', '']
     successes = [
@@ -1939,8 +1961,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         self.create_writable_file('writable')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('w')),
-        Sig('spam', type=argparse.FileType('w')),
+        Sig('-x', type=FileType('w')),
+        Sig('spam', type=FileType('w')),
     ]
     failures = ['-x', '', 'readonly']
     successes = [
@@ -1962,8 +1984,8 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
         self.create_writable_file('writable')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('x')),
-        Sig('spam', type=argparse.FileType('x')),
+        Sig('-x', type=FileType('x')),
+        Sig('spam', type=FileType('x')),
     ]
     failures = ['-x', '', 'readonly', 'writable']
     successes = [
@@ -1977,8 +1999,8 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('wb')),
-        Sig('spam', type=argparse.FileType('wb')),
+        Sig('-x', type=FileType('wb')),
+        Sig('spam', type=FileType('wb')),
     ]
     failures = ['-x', '']
     successes = [
@@ -1994,8 +2016,8 @@ class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('xb')),
-        Sig('spam', type=argparse.FileType('xb')),
+        Sig('-x', type=FileType('xb')),
+        Sig('spam', type=FileType('xb')),
     ]
     successes = [
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
@@ -2007,7 +2029,7 @@ class TestFileTypeOpenArgs(TestCase):
     """Test that open (the builtin) is correctly called"""
 
     def test_open_args(self):
-        FT = argparse.FileType
+        FT = FileType
         cases = [
             (FT('rb'), ('rb', -1, None, None)),
             (FT('w', 1), ('w', 1, None, None)),
@@ -2022,7 +2044,7 @@ class TestFileTypeOpenArgs(TestCase):
 
     def test_invalid_file_type(self):
         with self.assertRaises(ValueError):
-            argparse.FileType('b')('-test')
+            FileType('b')('-test')
 
 
 class TestFileTypeMissingInitialization(TestCase):
@@ -2033,7 +2055,7 @@ class TestFileTypeMissingInitialization(TestCase):
 
     def test(self):
         parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('-x', type=argparse.FileType)
 
         self.assertEqual(
@@ -2355,11 +2377,24 @@ class TestInvalidAction(TestCase):
         self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
 
     def test_modified_invalid_action(self):
-        parser = ErrorRaisingArgumentParser()
+        parser = argparse.ArgumentParser(exit_on_error=False)
         action = parser.add_argument('--foo')
         # Someone got crazy and did this
         action.type = 1
-        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+        self.assertRaisesRegex(TypeError, '1 is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        action.type = ()
+        self.assertRaisesRegex(TypeError, r'\(\) is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        # It is impossible to distinguish a TypeError raised due to a mismatch
+        # of the required function arguments from a TypeError raised for an incorrect
+        # argument value, and using the heavy inspection machinery is not worthwhile
+        # as it does not reliably work in all cases.
+        # Therefore, a generic ArgumentError is raised to handle this logical error.
+        action.type = pow
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "argument --foo: invalid pow value: 'bar'",
+                               parser.parse_args, ['--foo', 'bar'])
 
 
 # ================
@@ -2396,7 +2431,7 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertRaisesRegex(argparse.ArgumentError,
+        self.assertRaisesRegex(ValueError,
                                'cannot have multiple subparser arguments',
                                parser.add_subparsers)
 
@@ -5512,20 +5547,27 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
-        self.assertValueError('--')
-        self.assertValueError('---')
+        self.assertTypeError('-', errmsg='dest= is required')
+        self.assertTypeError('--', errmsg='dest= is required')
+        self.assertTypeError('---', errmsg='dest= is required')
 
     def test_invalid_prefix(self):
-        self.assertValueError('--foo', '+foo')
+        self.assertValueError('--foo', '+foo',
+                              errmsg='must start with a character')
 
     def test_invalid_type(self):
-        self.assertValueError('--foo', type='int')
-        self.assertValueError('--foo', type=(int, float))
+        self.assertTypeError('--foo', type='int',
+                             errmsg="'int' is not callable")
+        self.assertTypeError('--foo', type=(int, float),
+                             errmsg='is not callable')
 
     def test_invalid_action(self):
-        self.assertValueError('-x', action='foo')
-        self.assertValueError('foo', action='baz')
-        self.assertValueError('--foo', action=('store', 'append'))
+        self.assertValueError('-x', action='foo',
+                              errmsg='unknown action')
+        self.assertValueError('foo', action='baz',
+                              errmsg='unknown action')
+        self.assertValueError('--foo', action=('store', 'append'),
+                              errmsg='unknown action')
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
@@ -5540,7 +5582,7 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('bar', dest='baz')
         self.assertIn('dest supplied twice for positional argument,'
                       ' did you mean metavar?',
@@ -5711,14 +5753,18 @@ class TestConflictHandling(TestCase):
         parser = argparse.ArgumentParser()
         sp = parser.add_subparsers()
         sp.add_parser('fullname', aliases=['alias'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'fullname')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'alias')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['fullname'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['alias'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: fullname',
+                               sp.add_parser, 'fullname')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: alias',
+                               sp.add_parser, 'alias')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: fullname',
+                               sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: alias',
+                               sp.add_parser, 'other', aliases=['alias'])
 
 
 # =============================
@@ -6412,12 +6458,23 @@ class TestIntermixedArgs(TestCase):
         # cannot parse the '1,2,3'
         self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
         self.assertEqual(["2", "3"], extras)
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual([], extras)
 
+        # unknown optionals go into extras
+        argv = 'cmd --foo x --error 1 2 --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
         argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
         args, extras = parser.parse_known_intermixed_args(argv)
-        # unknown optionals go into extras
-        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
-        self.assertEqual(['--error', '2', '3'], extras)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
+        argv = 'cmd --foo x 1 2 --error --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
 
         # restores attributes that were temporarily changed
         self.assertIsNone(parser.usage)
@@ -6436,37 +6493,48 @@ class TestIntermixedArgs(TestCase):
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
 
-    def test_exclusive(self):
-        # mutually exclusive group; intermixed works fine
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive(self):
+        # required mutually exclusive group; intermixed works fine
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         parser.add_argument('badger', nargs='*', default='X', help='BADGER')
+        args = parser.parse_intermixed_args('--foo 1 2'.split())
+        self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
-        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam is required',
+                parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
-    def test_exclusive_incompatible(self):
-        # mutually exclusive group including positional - fail
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive_with_positional(self):
+        # required mutually exclusive group with positional argument
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
-        self.assertRaises(TypeError, parser.parse_intermixed_args, [])
+        args = parser.parse_intermixed_args(['--foo'])
+        self.assertEqual(NS(foo=True, spam=None, badger='X'), args)
+        args = parser.parse_intermixed_args(['a', 'b'])
+        self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam badger is required',
+                parser.parse_intermixed_args, [])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['--foo', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['a', '--foo', 'b'])
         self.assertEqual(group.required, True)
 
     def test_invalid_args(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
 
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        parser.add_argument('--foo', nargs="*")
-        parser.add_argument('foo')
-        with self.assertWarns(UserWarning):
-            parser.parse_intermixed_args(['hello', '--foo'])
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
@@ -6485,7 +6553,7 @@ class TestIntermixedMessageContentError(TestCase):
         with self.assertRaises(ArgumentParserError) as cm:
             parser.parse_intermixed_args([])
         msg = str(cm.exception)
-        self.assertNotRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_pos')
         self.assertRegex(msg, 'req_opt')
 
 # ==========================
@@ -6977,6 +7045,55 @@ class TestProgName(TestCase):
     def test_directory_in_zipfile_compiled(self):
         self.test_directory_in_zipfile(compiled=True)
 
+# =================
+# Translation tests
+# =================
+
+pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
+snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
+
+msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
+msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
+
+
+@requires_subprocess()
+class TestTranslations(unittest.TestCase):
+
+    def test_translations(self):
+        # Test messages extracted from the argparse module against a snapshot
+        skip_if_missing('i18n')
+        res = generate_po_file(stdout_only=False)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(res.stderr, '')
+        msgids = extract_msgids(res.stdout)
+        snapshot = snapshot_path.read_text().splitlines()
+        self.assertListEqual(msgids, snapshot)
+
+
+def generate_po_file(*, stdout_only=True):
+    res = subprocess.run([sys.executable, pygettext,
+                          '--no-location', '-o', '-', argparse.__file__],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if stdout_only:
+        return res.stdout
+    return res
+
+
+def extract_msgids(po):
+    msgids = []
+    for msgid in msgid_pattern.findall(po):
+        msgid_string = ''.join(msgid_string_pattern.findall(msgid))
+        msgid_string = msgid_string.replace(r'\"', '"')
+        if msgid_string:
+            msgids.append(msgid_string)
+    return sorted(msgids)
+
+
+def update_translation_snapshots():
+    contents = generate_po_file()
+    msgids = extract_msgids(contents)
+    snapshot_path.write_text('\n'.join(msgids))
+
 
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
@@ -6985,4 +7102,8 @@ def tearDownModule():
 
 
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots()
+        sys.exit(0)
     unittest.main()

@@ -190,6 +190,14 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* :class:`super` objects are now :mod:`pickleable <pickle>` and
+  :mod:`copyable <copy>`.
+  (Contributed by Serhiy Storchaka in :gh:`125767`.)
+
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
 
 New modules
 ===========
@@ -209,6 +217,11 @@ argparse
   :class:`argparse.ArgumentParser` now reflects the way the Python
   interpreter was instructed to find the ``__main__`` module code.
   (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
+
+* Introduced the optional *suggest_on_error* parameter to
+  :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
+  and subparser names if mistyped by the user.
+  (Contributed by Savannah Ostrowski in :gh:`124456`)
 
 ast
 ---
@@ -317,6 +330,10 @@ inspect
   If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
+* Add function :func:`inspect.ispackage` to determine whether an object is a
+  :term:`package` or not.
+  (Contributed by Zhikang Yan in :gh:`125634`.)
+
 
 json
 ----
@@ -363,6 +380,12 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
+* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
+  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
+  :func:`os.scandir` on a path object.
+
+  (Contributed by Barney Gale in :gh:`125413`.)
+
 
 pdb
 ---
@@ -407,10 +430,28 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.
+
+
 unicodedata
 -----------
 
 * The Unicode database has been updated to Unicode 16.0.0.
+
+
+unittest
+--------
+
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -429,10 +470,15 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing the undocumented keyword argument *prefix_chars* to
-  :meth:`~argparse.ArgumentParser.add_argument_group` is now
-  deprecated.
-  (Contributed by Savannah Ostrowski in :gh:`125563`.)
+
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+    (Contributed by Savannah Ostrowski in :gh:`125563`.)
+  * Deprecated the :class:`argparse.FileType` type converter.
+    Anything with resource management should be done downstream after the
+    arguments are parsed.
+    (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
@@ -574,6 +620,13 @@ pathlib
   :meth:`pathlib.PurePath.relative_to` and
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
+
+pkgutil
+-------
+
+* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Bénédikt Tran in :gh:`97850`.)
 
 pty
 ---
@@ -744,6 +797,9 @@ New features
   (Contributed by Victor Stinner in :gh:`124502`.)
 
 
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
 Porting to Python 3.14
 ----------------------
 
@@ -755,6 +811,10 @@ Porting to Python 3.14
 
 Deprecated
 ----------
+
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
   and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
