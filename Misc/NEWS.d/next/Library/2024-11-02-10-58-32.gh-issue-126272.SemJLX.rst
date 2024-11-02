@@ -1,0 +1,1 @@
+:exc:`NotImplementedError` error thrown when converting :func:`ctypes.pointer` to iterator.

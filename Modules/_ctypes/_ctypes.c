@@ -5477,11 +5477,20 @@ Pointer_bool(CDataObject *self)
     return (*(void **)self->b_ptr != NULL);
 }
 
+static PyObject *
+Pointer_iter(PyObject *myself)
+{
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Pointer object does not support iterator");
+    return NULL;
+}
+
 static PyType_Slot pycpointer_slots[] = {
     {Py_tp_doc, PyDoc_STR("XXX to be provided")},
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},
+    {Py_tp_iter, Pointer_iter},
     {Py_bf_getbuffer, PyCData_NewGetBuffer},
     {Py_nb_bool, Pointer_bool},
     {Py_mp_subscript, Pointer_subscript},

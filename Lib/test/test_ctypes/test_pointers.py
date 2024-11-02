@@ -48,6 +48,11 @@ class PointersTestCase(unittest.TestCase):
         # Pointer can't set contents: has no _type_
         self.assertRaises(TypeError, A, c_ulong(33))
 
+    def test_disable_iter(self):
+        self.assertRaises(NotImplementedError, list, pointer(c_int(123)))
+        self.assertRaises(NotImplementedError, set, pointer(c_int(123)))
+        self.assertRaises(NotImplementedError, tuple, pointer(c_int(123)))
+
     def test_pass_pointers(self):
         dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_p_p

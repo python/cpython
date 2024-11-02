@@ -870,6 +870,14 @@ invalid non-\ ``NULL`` pointers would crash Python)::
    ValueError: NULL pointer access
    >>>
 
+Converting pointer to iterator causes Python to crash::
+
+   >>> x = c_int32(54321)
+   >>> list(pointer(x))
+   Traceback (most recent call last):
+      ...
+   NotImplementedError: Pointer object does not support iterator
+
 
 .. _ctypes-type-conversions:
 
