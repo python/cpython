@@ -56,7 +56,7 @@ noted otherwise, all return values are floats.
 :func:`trunc(x) <trunc>`                              Integer part of *x*
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
-**Power and logarithmic functions**
+**Power, exponential and logarithmic functions**
 --------------------------------------------------------------------------------------------------
 :func:`cbrt(x) <cbrt>`                                Cube root of *x*
 :func:`exp(x) <exp>`                                  *e* raised to the power *x*
@@ -459,8 +459,8 @@ platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
 necessarily has no fractional bits.
 
 
-Power and logarithmic functions
--------------------------------
+Power, exponential and logarithmic functions
+--------------------------------------------
 
 .. function:: cbrt(x)
 
