@@ -95,7 +95,7 @@ noted otherwise, all return values are floats.
 :func:`sinh(x) <sinh>`                                Hyperbolic sine of *x*
 :func:`tanh(x) <tanh>`                                Hyperbolic tangent of *x*
 
-**Special functions**
+**Error and gamma functions**
 --------------------------------------------------------------------------------------------------
 :func:`erf(x) <erf>`                                  `Error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
 :func:`erfc(x) <erfc>`                                `Complementary error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
@@ -686,8 +686,8 @@ instead of circles.
    Return the hyperbolic tangent of *x*.
 
 
-Special functions
------------------
+Error and gamma functions
+-------------------------
 
 .. function:: erf(x)
 
