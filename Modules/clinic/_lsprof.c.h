@@ -303,23 +303,23 @@ _lsprof_Profiler_clear(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
     return _lsprof_Profiler_clear_impl(self);
 }
 
-PyDoc_STRVAR(_lsprof_Profiler___init____doc__,
+PyDoc_STRVAR(profile_init__doc__,
 "Profiler(timer=None, timeunit=0.0, subcalls=True, builtins=True)\n"
 "--\n"
 "\n"
-"Builds a profiler object using the specified timer function.\n"
+"Build a profiler object using the specified timer function.\n"
 "\n"
 "The default timer is a fast built-in one based on real time.\n"
-"For custom timer functions returning integers, timeunit can\n"
-"be a float specifying a scale (i.e. how long each integer unit\n"
+"For custom timer functions returning integers, \'timeunit\' can\n"
+"be a float specifying a scale (that is, how long each integer unit\n"
 "is, in seconds).");
 
 static int
-_lsprof_Profiler___init___impl(ProfilerObject *self, PyObject *timer,
-                               double timeunit, int subcalls, int builtins);
+profile_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
+                  int subcalls, int builtins);
 
 static int
-_lsprof_Profiler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+profile_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -398,9 +398,9 @@ _lsprof_Profiler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = _lsprof_Profiler___init___impl((ProfilerObject *)self, timer, timeunit, subcalls, builtins);
+    return_value = profile_init_impl((ProfilerObject *)self, timer, timeunit, subcalls, builtins);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c0861e64aeb19d43 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d1db1dcbb6b10d7 input=a9049054013a1b77]*/
