@@ -1082,10 +1082,20 @@ class GCTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(collected)
 
+    @support.requires_subprocess()
     def test_traverse_frozen_objects(self):
         # See GH-126312: Objects that were not frozen could traverse over
         # a frozen object on the free-threaded build, which would cause
         # a negative reference count.
+        import subprocess
+        import textwrap
+
+        # We have to run this in subprocess because
+        # freezing the GC alongside deferred reference counting
+        # causes a seperate bug, that needs to get addressed in another PR.
+        source = textwrap.dedent("""
+        import gc
+
         x = [1, 2, 3]
         gc.freeze()
         y = [x]
@@ -1093,6 +1103,10 @@ class GCTests(unittest.TestCase):
         del y
         gc.collect()
         gc.unfreeze()
+        """)
+        proc = subprocess.Popen([sys.executable, "-c", source])
+        proc.wait()
+        self.assertEqual(proc.returncode, 0)
 
 
 class IncrementalGCTests(unittest.TestCase):
