@@ -36,7 +36,7 @@ noted otherwise, all return values are floats.
 :func:`lcm(*integers) <lcm>`                          Least common multiple of the integer arguments
 :func:`perm(n, k) <perm>`                             Number of ways to choose *k* items from *n* items without repetition and with order
 
-**Basic floating point operations**
+**Floating point arithmetic**
 --------------------------------------------------------------------------------------------------
 :func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
 :func:`fabs(x) <fabs>`                                Absolute value of *x*
