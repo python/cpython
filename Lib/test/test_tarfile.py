@@ -859,6 +859,8 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
                                   "TarFile.extractfile() failed")
                     if not buf:
                         break
+
+    @unittest.skipIf(zlib is None, "requires zlib")
     def test_read_with_extra_header(self):
         with tarfile.open(tgzname_with_comment_extra_data_in_header,
                           mode="r|*") as _:
