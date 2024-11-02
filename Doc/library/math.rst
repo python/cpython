@@ -69,6 +69,11 @@ noted otherwise, all return values are floats.
 :func:`pow(x, y) <math.pow>`                          *x* raised to the power *y*
 :func:`sqrt(x) <sqrt>`                                Square root of *x*
 
+**Angular conversion**
+--------------------------------------------------------------------------------------------------
+:func:`degrees(x) <degrees>`                          Convert angle *x* from radians to degrees
+:func:`radians(x) <radians>`                          Convert angle *x* from degrees to radians
+
 **Trigonometric functions**
 --------------------------------------------------------------------------------------------------
 :func:`acos(x) <acos>`                                Arc cosine of *x*
@@ -80,11 +85,6 @@ noted otherwise, all return values are floats.
 :func:`hypot(*coordinates) <hypot>`                   Euclidean norm of an iterable of coordinates
 :func:`sin(x) <sin>`                                  Sine of *x*
 :func:`tan(x) <tan>`                                  Tangent of *x*
-
-**Angular conversion**
---------------------------------------------------------------------------------------------------
-:func:`degrees(x) <degrees>`                          Convert angle *x* from radians to degrees
-:func:`radians(x) <radians>`                          Convert angle *x* from degrees to radians
 
 **Hyperbolic functions**
 --------------------------------------------------------------------------------------------------
@@ -557,6 +557,19 @@ Power and logarithmic functions
    Return the square root of *x*.
 
 
+Angular conversion
+------------------
+
+.. function:: degrees(x)
+
+   Convert angle *x* from radians to degrees.
+
+
+.. function:: radians(x)
+
+   Convert angle *x* from degrees to radians.
+
+
 Trigonometric functions
 -----------------------
 
@@ -634,19 +647,6 @@ Trigonometric functions
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
-
-
-Angular conversion
-------------------
-
-.. function:: degrees(x)
-
-   Convert angle *x* from radians to degrees.
-
-
-.. function:: radians(x)
-
-   Convert angle *x* from degrees to radians.
 
 
 Hyperbolic functions
