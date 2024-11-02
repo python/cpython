@@ -241,7 +241,7 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 2)
+        # check('f{a + b + c}', 1, 2) # no more SyntexError, object{index}
         check('[file for str(file) in []\n]', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
