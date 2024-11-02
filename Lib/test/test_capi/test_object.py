@@ -136,6 +136,7 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
 
 class EnableDeferredRefcountingTest(unittest.TestCase):
     """Test PyUnstable_Object_EnableDeferredRefcount"""
+    @support.requires_resources("cpu")
     def test_enable_deferred_refcount(self):
         from threading import Thread
 
@@ -156,7 +157,9 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
             )
 
         silly_list = [1, 2, 3]
-        threads = [Thread(target=silly_func, args=(silly_list,)) for _ in range(5)]
+        threads = [
+            Thread(target=silly_func, args=(silly_list,)) for _ in range(5)
+        ]
 
         with threading_helper.catch_threading_exception() as cm:
             for t in threads:
