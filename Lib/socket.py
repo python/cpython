@@ -71,7 +71,7 @@ def __getattr__(name):
     if name == "SocketType":
         import warnings
         warnings.warn(f"{name} is deprecated", DeprecationWarning)
-        return _socket.SockType
+        return _socket.socket
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
 # nicer string representations.
