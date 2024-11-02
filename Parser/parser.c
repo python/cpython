@@ -18,17 +18,35 @@
 #endif
 
 
-#define _PyAST_From1(a, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__),         a, Load, __VA_ARGS__)
+// To mimic existing functions, some of these macros take EXTRA
+// as their last parameter. But this parameter is possibly lost
+// and replaced with the predefined macro EXTRA (e.g. in CNAME and SSCRIPT)
 
-#define _PyAST_Tuplize(a, ...)     _PyAST_Tuple(         !CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)),         Load, __VA_ARGS__)
+// builds a name/identifier, given a C string.
+#define PYTHON_NAME(name)     _PyAST_Name(Py_BuildValue("s", name), Load, EXTRA)
 
-#define _PyAST_Star1(a, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "STAR1"), Load, __VA_ARGS__),         a, Load, __VA_ARGS__)
+// builds name[index], as a traditional Python subscript.
+#define NAME_INDEX(name, index)     _PyAST_Subscript(PYTHON_NAME(name), index, Load, EXTRA)
 
-#define _PyAST_Slice1(a, b, c, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__),         _PyAST_Slice(a, b, c, __VA_ARGS__),         Load, __VA_ARGS__)
+// The quoted names must match those defined in Lib/index01.py
+#define FROM1(i) NAME_INDEX("FROM1", i)
+#define STAR1(i) NAME_INDEX("STAR1", i)
+#define CLOSED0(i) NAME_INDEX("CLOSED0", i) 
 
-#define _PyAST_ClosedSlice(a, b, c, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "CLOSED0"), Load, __VA_ARGS__),         _PyAST_Slice(a, b, c, __VA_ARGS__),         Load, __VA_ARGS__)
+// transforms a 1-based slice/index a into a 0-based slice/index
+#define _PyAST_From1(a, EXTRA) FROM1(a)
 
-#define _PyAST_ClosedSlice1(a, b, c, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "CLOSED0"), Load, __VA_ARGS__),         _PyAST_Subscript(             _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__),             _PyAST_Slice(a, b, c, __VA_ARGS__),             Load, __VA_ARGS__),         Load, __VA_ARGS__)
+// manages a star-expression in a 1-based slice, e.g. obj{*a}
+#define _PyAST_Star1(a, EXTRA)     _PyAST_Starred(STAR1(a), Load, EXTRA)
+
+// builds and converts a 1-based (semi-open) slice, i.e. inside braces
+#define _PyAST_Slice1(a, b, c, EXTRA)     FROM1(_PyAST_Slice(a, b, c, EXTRA))
+
+// builds and converts a 0-based closed slice, i.e. inside brackets
+#define _PyAST_ClosedSlice(a, b, c, EXTRA)     CLOSED0(_PyAST_Slice(a, b, c, EXTRA))
+
+// builds and converts a 1-based closed slice, i.e. inside braces
+#define _PyAST_ClosedSlice1(a, b, c, EXTRA)     CLOSED0(FROM1(_PyAST_Slice(a, b, c, EXTRA)))
 
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
@@ -15358,7 +15376,7 @@ starred_expression1_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_Starred ( _PyAST_Star1 ( a , EXTRA ) , Load , EXTRA );
+            _res = _PyAST_Star1 ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

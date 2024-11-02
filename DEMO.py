@@ -37,10 +37,11 @@ def tests():
         "a[::k]",
         "a[:]",
         "a[::]",
-        "a[i:j:]",
-        "a[i:j:k:]",
-        "a[:j:]",
-        "a[:j:k:]",
+        "a[:::]",
+        "a[i:j::]",
+        "a[i:j::k]",
+        "a[:j::]",
+        "a[:j::k]",
     ]
     test(*brackets)
     print()
