@@ -470,22 +470,22 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     size_t code_size = 0;
     size_t data_size = 0;
     jit_state state = {0};
-    group = &trampoline;
+    group = &shim;
     code_size += group->code_size;
     data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    combine_symbol_mask(group->shim_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         state.instruction_starts[i] = code_size;
         code_size += group->code_size;
         data_size += group->data_size;
-        combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+        combine_symbol_mask(group->shim_mask, state.trampolines.mask);
     }
     group = &stencil_groups[_FATAL_ERROR];
     code_size += group->code_size;
     data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    combine_symbol_mask(group->shim_mask, state.trampolines.mask);
     // Calculate the size of the trampolines required by the whole trace
     for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
         state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
@@ -507,12 +507,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
     state.trampolines.mem = memory + code_size + data_size;
-    // Compile the trampoline, which handles converting between the native
+    // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons). On platforms where
-    // we don't change calling conventions, the trampoline is empty and
+    // we don't change calling conventions, the shim is empty and
     // nothing is emitted here:
-    group = &trampoline;
+    group = &shim;
     group->emit(code, data, executor, NULL, &state);
     code += group->code_size;
     data += group->data_size;
@@ -536,7 +536,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + trampoline.code_size;
+    executor->jit_side_entry = memory + shim.code_size;
     executor->jit_size = total_size;
     return 0;
 }
