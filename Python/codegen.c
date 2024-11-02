@@ -4092,6 +4092,7 @@ codegen_call_helper(compiler *c, location loc,
    pushing/popping clashing locals on the stack. Generator expressions work
    by creating a nested function to perform the actual iteration.
    This means that the iteration variables don't leak into the current scope.
+   See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
