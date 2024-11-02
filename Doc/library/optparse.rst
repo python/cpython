@@ -12,8 +12,14 @@
 
 .. note::
 
-   :mod:`argparse` (rather than this module) is the recommended standard
-   library module for implementing command line applications unless one
+   This module is considered feature complete. Further functional enhancements for
+   command line parameter processing are provided either as third party modules on
+   PyPI, or else as features in the :mod:`argparse` module.
+
+.. note::
+
+   The higher level :mod:`argparse` (rather than this module) is the recommended
+   standard library module for implementing command line applications unless one
    of the following caveats applies:
 
    * the application requires additional control over the way options and
@@ -24,7 +30,10 @@
      exact way it works in practice is undesirable for some use cases)
    * the application requires additional control over the handling of options
      which accept parameter values that may start with ``-`` (such as delegated
-     options to be passed to invoked subprocesses).
+     options to be passed to invoked subprocesses)
+   * the application requires some other command line parameter processing
+     behavior which ``argparse`` does not support, but which can be implemented
+     in terms of the lower level interface offered by ``optparse``
 
    These ``argparse`` caveats also mean that :mod:`optparse` is likely to
    provide a better foundation for library authors *writing* third party
@@ -32,16 +41,13 @@
 
 .. seealso::
 
-    The :pypi:`"click" package <click>` is an ``optparse`` based third party
-    argument processing library which allows command line applications to be
-    developed as a set of appropriately decorated command implementation
-    functions.
+    :pypi:`click` is a third party argument processing library (originally
+    based on ``optparse``), which allows command line applications to be
+    developed as a set of decorated command implementation functions.
 
-.. seealso::
-
-    The :pypi:`"Typer" package <click>` is a ``click`` based third party
-    argument processing library which allows the use of annotated Python
-    type hints to define an application's command line interface.
+    Other third party libraries, such as :pypi:`typer` or :pypi:`msgspec-click`,
+    allow command line interfaces to be specified in ways that effectively
+    integrate with static checking of Python type annotations.
 
 --------------
 

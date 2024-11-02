@@ -9,11 +9,11 @@
 
 .. note::
 
-   The :mod:`getopt` module is a parser for command line options whose API is
-   designed to be familiar to users of the C :c:func:`!getopt` function. Users who
-   are unfamiliar with the C :c:func:`!getopt` function or who would like to write
-   less code and get better help and error messages should consider using the
-   :mod:`argparse` module instead.
+   This module is considered feature complete. A more object-oriented and
+   extensible alternative to this API is provided in the :mod:`optparse`
+   module. Further functional enhancements for command line parameter
+   processing are provided either as third party modules on PyPI,
+   or else as features in the :mod:`argparse` module.
 
 --------------
 
@@ -22,6 +22,12 @@ It supports the same conventions as the Unix :c:func:`!getopt` function (includi
 the special meanings of arguments of the form '``-``' and '``--``').  Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument.
+
+Users who are unfamiliar with the Unix :c:func:`!getopt` function should consider
+using the :mod:`argparse` module instead. Users who are familiar with the Unix
+:c:func:`!getopt` function, but would like to get equivalent behavior while
+writing less code and getting better help and error messages should consider
+using the :mod:`optparse` module.
 
 This module provides two functions and an
 exception:
@@ -150,29 +156,49 @@ and more informative help and error messages by using the :mod:`optparse` module
    import optparse
 
    if __name__ == '__main__':
-       parser = optparse.OptionParser()
-       parser.add_option('-o', '--output')
-       parser.add_option('-v', dest='verbose', action='store_true')
-       opts, args = parser.parse_args()
-       process(args, output=opts.output, verbose=opts.verbose)
+         parser = optparse.OptionParser()
+         parser.add_option('-o', '--output')
+         parser.add_option('-v', dest='verbose', action='store_true')
+         opts, args = parser.parse_args()
+         process(args, output=opts.output, verbose=opts.verbose)
 
-An equivalent command line interface for this simple case can also be produced
-by using the :mod:`argparse` module::
+A roughly equivalent command line interface for this case can also be
+produced by using the :mod:`argparse` module::
 
-   import argparse
+import argparse
 
-   if __name__ == '__main__':
-       parser = argparse.ArgumentParser()
-       parser.add_argument('-o', '--output')
-       parser.add_argument('-v', dest='verbose', action='store_true')
-       args = parser.parse_args()
-       # ... do something with args.output ...
-       # ... do something with args.verbose ..
+if __name__ == '__main__':
+      parser = argparse.ArgumentParser()
+      parser.add_argument('-o', '--output')
+      parser.add_argument('-v', dest='verbose', action='store_true')
+      parser.add_argument('rest', nargs='*')
+      args = parser.parse_args()
+      process(args.rest, output=args.output, verbose=args.verbose)
 
-In more complex cases (such as options which accept values), the behaviour
-of the ``argparse`` version may diverge from that of the ``getopt`` and
-``optparse`` versions due to the way ``argparse`` handles parameter
-values that start with ``-``.
+However, unlike the ``optparse`` example, this ``argparse`` example will
+handle some parameter combinations differently from the way the ``getopt``
+version would handle them. For example (amongst other differences):
+
+* supplying ``-o -v`` gives ``output="-v"`` and ``verbose=False``
+  for both ``getopt`` and ``optparse``,
+  but a usage error with ``argparse``
+  (complaining that no value has been supplied for ``-o/--output``,
+  since ``-v`` is interpreted as meaning the verbosity flag)
+* similarly, supplying ``-o --`` gives ``output="--"`` and ``args=()``
+  for both ``getopt`` and ``optparse``,
+  but a usage error with ``argparse``
+  (also complaining that no value has been supplied for ``-o/--output``,
+  since ``--`` is interpreted as terminating the option processing
+  and treating all remaining values as positional arguments)
+* supplying ``-o=foo`` gives ``output="=foo"``
+  for both ``getopt`` and ``optparse``,
+  but gives ``output="foo"`` with ``argparse``
+  (since ``=`` is special cased as an alternative separator for
+  option parameter values)
+
+Whether these differing behaviors in the ``argparse`` version are
+considered desirable or a problem will depend on the specific command line
+application use case.
 
 .. seealso::
 

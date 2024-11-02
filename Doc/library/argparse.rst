@@ -19,9 +19,11 @@
    lower level :mod:`optparse` module serves as a better foundation for
    that use case. ``optparse`` (or one of the third party libraries
    based on it) may also be worth considering for applications where
-   stricter adherence to common Unix and Linux command line interface
-   conventions around the handling of option parameter values that start
-   with ``-`` is desired.
+   ``argparse`` doesn't support behaviors that the application requires
+   (such as entirely disabling support for interspersed options and
+   positional arguments, or stricter adherence to common Unix and Linux
+   command line interface conventions related to the handling of option
+   parameter values that start with ``-``).
 
 --------------
 

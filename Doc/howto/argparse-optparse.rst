@@ -6,15 +6,8 @@
 Upgrading optparse code
 ==========================
 
-Originally, the :mod:`argparse` module had attempted to maintain compatibility
-with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
-transparently, particularly with the changes required to support
-``nargs=`` specifiers and better usage messages.  When most everything in
-:mod:`optparse` had either been copy-pasted over or monkey-patched, it no
-longer seemed practical to try to maintain the backwards compatibility.
-
-The :mod:`argparse` module improves on the :mod:`optparse`
-module in a number of ways including:
+The :mod:`argparse` module offers several higher level features not natively
+provided by the :mod:`optparse` module, including:
 
 * Handling positional arguments.
 * Supporting subcommands.
@@ -22,6 +15,13 @@ module in a number of ways including:
 * Handling zero-or-more and one-or-more style arguments.
 * Producing more informative usage messages.
 * Providing a much simpler interface for custom ``type`` and ``action``.
+
+Originally, the :mod:`argparse` module attempted to maintain compatibility
+with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
+transparently, particularly with the changes required to support
+``nargs=`` specifiers and better usage messages.  When most everything in
+:mod:`optparse` had either been copy-pasted over or monkey-patched, it no
+longer seemed practical to try to maintain the backwards compatibility.
 
 A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
