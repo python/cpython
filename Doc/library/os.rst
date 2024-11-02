@@ -248,7 +248,7 @@ process and user.
 
 .. function:: reload_environ()
 
-   The :data:`os.environ` and :data:`os.environb` mappings are a cache of 
+   The :data:`os.environ` and :data:`os.environb` mappings are a cache of
    environment variables at the time that Python started.
    As such, changes to the current process environment are not reflected
    if made outside Python, or by :func:`os.putenv` or :func:`os.unsetenv`.
