@@ -7431,9 +7431,6 @@ socket_exec(PyObject *m)
         goto error;
     }
     state->sock_type = (PyTypeObject *)sock_type;
-    if (PyModule_AddObjectRef(m, "SocketType", sock_type) < 0) {
-        goto error;
-    }
     if (PyModule_AddType(m, state->sock_type) < 0) {
         goto error;
     }
