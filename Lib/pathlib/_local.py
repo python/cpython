@@ -119,9 +119,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -614,6 +614,14 @@ class Path(PathBase, PurePath):
             if len(path_str) > anchor_len and path_str[-1] == sep:
                 path_str = path_str[:-1]
             yield path_str
+
+    def scandir(self):
+        """Yield os.DirEntry objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        return os.scandir(self)
 
     def iterdir(self):
         """Yield path objects of the directory contents.

@@ -3675,6 +3675,7 @@ features:
               os.remove(os.path.join(root, name))
           for name in dirs:
               os.rmdir(os.path.join(root, name))
+      os.rmdir(top)
 
    .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
 
@@ -4602,7 +4603,7 @@ written in Python, such as a mail server's external command delivery program.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
-   .. availability:: Linux >= 5.3
+   .. availability:: Linux >= 5.3, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
    .. data:: PIDFD_NONBLOCK
@@ -5579,7 +5580,7 @@ Miscellaneous System Information
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
    :func:`process_cpu_count` returns the overridden value *n*.
 
-   See also the :func:`sched_getaffinity` functions.
+   See also the :func:`sched_getaffinity` function.
 
    .. versionadded:: 3.13
 

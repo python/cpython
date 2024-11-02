@@ -35,7 +35,7 @@ extern "C" {
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeid.h"        // struct _Py_type_id_pool
+#include "pycore_uniqueid.h"      // struct _Py_unique_id_pool
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -102,9 +102,8 @@ struct _is {
     PyInterpreterState *next;
 
     int64_t id;
-    int64_t id_refcount;
+    Py_ssize_t id_refcount;
     int requires_idref;
-    PyThread_type_lock id_mutex;
 
 #define _PyInterpreterState_WHENCE_NOTSET -1
 #define _PyInterpreterState_WHENCE_UNKNOWN 0
@@ -221,7 +220,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
-    struct _Py_type_id_pool type_ids;
+    struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
@@ -261,7 +260,7 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-
+    size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -272,6 +271,7 @@ struct _is {
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
     PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
+    uintptr_t monitoring_tool_versions[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
@@ -317,8 +317,7 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
