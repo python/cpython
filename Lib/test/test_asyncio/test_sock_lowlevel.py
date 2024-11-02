@@ -555,11 +555,92 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return asyncio.SelectorEventLoop()
 
+
     class ProactorEventLoopTests(BaseSockTestsMixin,
                                  test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
+
+
+        async def _basetest_datagram_send_to_non_listening_address(self,
+                                                                   recvfrom):
+            # see:
+            #   https://github.com/python/cpython/issues/91227
+            #   https://github.com/python/cpython/issues/88906
+            #   https://bugs.python.org/issue47071
+            #   https://bugs.python.org/issue44743
+            # The Proactor event loop would fail to receive datagram messages
+            # after sending a message to an address that wasn't listening.
+
+            def create_socket():
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.setblocking(False)
+                sock.bind(('127.0.0.1', 0))
+                return sock
+
+            socket_1 = create_socket()
+            addr_1 = socket_1.getsockname()
+
+            socket_2 = create_socket()
+            addr_2 = socket_2.getsockname()
+
+            # creating and immediately closing this to try to get an address
+            # that is not listening
+            socket_3 = create_socket()
+            addr_3 = socket_3.getsockname()
+            socket_3.shutdown(socket.SHUT_RDWR)
+            socket_3.close()
+
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            socket_2_recv_task = self.loop.create_task(recvfrom(socket_2))
+            await asyncio.sleep(0)
+
+            await self.loop.sock_sendto(socket_1, b'a', addr_2)
+            self.assertEqual(await socket_2_recv_task, b'a')
+
+            await self.loop.sock_sendto(socket_2, b'b', addr_1)
+            self.assertEqual(await socket_1_recv_task, b'b')
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            await asyncio.sleep(0)
+
+            # this should send to an address that isn't listening
+            await self.loop.sock_sendto(socket_1, b'c', addr_3)
+            self.assertEqual(await socket_1_recv_task, b'')
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            await asyncio.sleep(0)
+
+            # socket 1 should still be able to receive messages after sending
+            # to an address that wasn't listening
+            socket_2.sendto(b'd', addr_1)
+            self.assertEqual(await socket_1_recv_task, b'd')
+
+            socket_1.shutdown(socket.SHUT_RDWR)
+            socket_1.close()
+            socket_2.shutdown(socket.SHUT_RDWR)
+            socket_2.close()
+
+
+        def test_datagram_send_to_non_listening_address_recvfrom(self):
+            async def recvfrom(socket):
+                data, _ = await self.loop.sock_recvfrom(socket, 4096)
+                return data
+
+            self.loop.run_until_complete(
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom))
+
+
+        def test_datagram_send_to_non_listening_address_recvfrom_into(self):
+            async def recvfrom_into(socket):
+                buf = bytearray(4096)
+                length, _ = await self.loop.sock_recvfrom_into(socket, buf,
+                                                               4096)
+                return buf[:length]
+
+            self.loop.run_until_complete(
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom_into))
 
 else:
     import selectors

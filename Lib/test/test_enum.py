@@ -447,7 +447,7 @@ class _EnumTests:
     def test_bad_new_super(self):
         with self.assertRaisesRegex(
                 TypeError,
-                'has no members defined',
+                'do not use .super...__new__;',
             ):
             class BadSuper(self.enum_type):
                 def __new__(cls, value):
@@ -1048,6 +1048,22 @@ class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
+    def test_none_member(self):
+        class FlagWithNoneMember(Flag):
+            A = 1
+            E = None
+
+        self.assertEqual(FlagWithNoneMember.A.value, 1)
+        self.assertIs(FlagWithNoneMember.E.value, None)
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with |"):
+            FlagWithNoneMember.A | FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with &"):
+            FlagWithNoneMember.E & FlagWithNoneMember.A
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with \^"):
+            FlagWithNoneMember.A ^ FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be inverted"):
+            ~FlagWithNoneMember.E
+
 
 class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
@@ -1479,6 +1495,27 @@ class TestSpecial(unittest.TestCase):
             spam = nonmember(SpamEnumIsInner)
         self.assertTrue(SpamEnum.spam is SpamEnumIsInner)
 
+    def test_using_members_as_nonmember(self):
+        class Example(Flag):
+            A = 1
+            B = 2
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
+        class Example(Flag):
+            A = auto()
+            B = auto()
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
     def test_nested_classes_in_enum_with_member(self):
         """Support locally-defined nested classes."""
         class Outer(Enum):
@@ -1850,6 +1887,25 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaises(TypeError):
             class Wrong(Enum, str):
                 NotHere = 'error before this point'
+
+    def test_raise_custom_error_on_creation(self):
+        class InvalidRgbColorError(ValueError):
+            def __init__(self, r, g, b):
+                self.r = r
+                self.g = g
+                self.b = b
+                super().__init__(f'({r}, {g}, {b}) is not a valid RGB color')
+
+        with self.assertRaises(InvalidRgbColorError):
+            class RgbColor(Enum):
+                RED = (255, 0, 0)
+                GREEN = (0, 255, 0)
+                BLUE = (0, 0, 255)
+                INVALID = (256, 0, 0)
+
+                def __init__(self, r, g, b):
+                    if not all(0 <= val <= 255 for val in (r, g, b)):
+                        raise InvalidRgbColorError(r, g, b)
 
     def test_intenum_transitivity(self):
         class number(IntEnum):
@@ -3393,6 +3449,43 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(Types(2), Types.NetList)
         self.assertIs(Types('nl'), Types.NetList)
 
+    def test_second_tuple_item_is_falsey(self):
+        class Cardinal(Enum):
+            RIGHT = (1, 0)
+            UP = (0, 1)
+            LEFT = (-1, 0)
+            DOWN = (0, -1)
+        self.assertIs(Cardinal(1, 0), Cardinal.RIGHT)
+        self.assertIs(Cardinal(-1, 0), Cardinal.LEFT)
+
+    def test_no_members(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Enum(7)
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Flag(7)
+
+    def test_empty_names(self):
+        for nothing in '', [], {}:
+            for e_type in None, int:
+                empty_enum = Enum('empty_enum', nothing, type=e_type)
+                self.assertEqual(len(empty_enum), 0)
+                self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
+
+    def test_nonhashable_matches_hashable(self):    # issue 125710
+        class Directions(Enum):
+            DOWN_ONLY = frozenset({"sc"})
+            UP_ONLY = frozenset({"cs"})
+            UNRESTRICTED = frozenset({"sc", "cs"})
+        self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -4017,6 +4110,8 @@ class OldTestIntFlag(unittest.TestCase):
 
     @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
+        self.assertEqual(repr(NoName.ONE), 'test_enum.ONE')
+        self.assertEqual(repr(NoName(0)), 'test_enum.NoName(0)')
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')
 
@@ -4851,22 +4946,22 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |
- |  __contains__(value) from enum.EnumType
+ |  __contains__(value)
  |      Return True if `value` is in `cls`.
  |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
  |
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |      Return the member matching `name`.
  |
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |      Return members in definition order.
  |
- |  __len__() from enum.EnumType
+ |  __len__()
  |      Return the number of members (no aliases)
  |
  |  ----------------------------------------------------------------------
@@ -4891,11 +4986,11 @@ class Color(enum.Enum)
  |
  |  Data and other attributes defined here:
  |
- |  YELLOW = <Color.YELLOW: 3>
+ |  CYAN = <Color.CYAN: 1>
  |
  |  MAGENTA = <Color.MAGENTA: 2>
  |
- |  CYAN = <Color.CYAN: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4905,7 +5000,18 @@ class Color(enum.Enum)
  |  value
  |
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
+ |
+ |  __contains__(value)
+ |
+ |  __getitem__(name)
+ |
+ |  __iter__()
+ |
+ |  __len__()
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from enum.EnumType:
  |
  |  __members__"""
 
@@ -5111,7 +5217,57 @@ class TestStdLib(unittest.TestCase):
         self.assertIn('python', Unhashable)
         self.assertEqual(Unhashable.name.value, 'python')
         self.assertEqual(Unhashable.name.name, 'name')
-        _test_simple_enum(Unhashable, Unhashable)
+        _test_simple_enum(CheckedUnhashable, Unhashable)
+        ##
+        class CheckedComplexStatus(IntEnum):
+            def __new__(cls, value, phrase, description=''):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.phrase = phrase
+                obj.description = description
+                return obj
+            CONTINUE = 100, 'Continue', 'Request received, please continue'
+            PROCESSING = 102, 'Processing'
+            EARLY_HINTS = 103, 'Early Hints'
+            SOME_HINTS = 103, 'Some Early Hints'
+        #
+        @_simple_enum(IntEnum)
+        class ComplexStatus:
+            def __new__(cls, value, phrase, description=''):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.phrase = phrase
+                obj.description = description
+                return obj
+            CONTINUE = 100, 'Continue', 'Request received, please continue'
+            PROCESSING = 102, 'Processing'
+            EARLY_HINTS = 103, 'Early Hints'
+            SOME_HINTS = 103, 'Some Early Hints'
+        _test_simple_enum(CheckedComplexStatus, ComplexStatus)
+        #
+        #
+        class CheckedComplexFlag(IntFlag):
+            def __new__(cls, value, label):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.label = label
+                return obj
+            SHIRT = 1, 'upper half'
+            VEST = 1, 'outer upper half'
+            PANTS = 2, 'lower half'
+        self.assertIs(CheckedComplexFlag.SHIRT, CheckedComplexFlag.VEST)
+        #
+        @_simple_enum(IntFlag)
+        class ComplexFlag:
+            def __new__(cls, value, label):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.label = label
+                return obj
+            SHIRT = 1, 'upper half'
+            VEST = 1, 'uppert half'
+            PANTS = 2, 'lower half'
+        _test_simple_enum(CheckedComplexFlag, ComplexFlag)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -5198,7 +5354,7 @@ class TestConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
-        # report the first lexigraphical name in that case.
+        # report the first lexicographical name in that case.
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert_int(self):

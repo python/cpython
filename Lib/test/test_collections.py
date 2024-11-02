@@ -1,5 +1,6 @@
 """Unit tests for collections.py."""
 
+import array
 import collections
 import copy
 import doctest
@@ -25,7 +26,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString, Buffer
+from collections.abc import Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -541,7 +542,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Dot(1)._replace(d=999), (999,))
         self.assertEqual(Dot(1)._fields, ('d',))
 
-        n = support.EXCEEDS_RECURSION_LIMIT
+        n = support.exceeds_recursion_limit()
         names = list(set(''.join([choice(string.ascii_letters)
                                   for j in range(10)]) for i in range(n)))
         n = len(names)
@@ -1934,28 +1935,6 @@ class TestCollectionABCs(ABCTestCase):
                         assert_index_same(
                             nativeseq, seqseq, (letter, start, stop))
 
-    def test_ByteString(self):
-        for sample in [bytes, bytearray]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertIsInstance(sample(), ByteString)
-            self.assertTrue(issubclass(sample, ByteString))
-        for sample in [str, list, tuple]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertNotIsInstance(sample(), ByteString)
-            self.assertFalse(issubclass(sample, ByteString))
-        with self.assertWarns(DeprecationWarning):
-            self.assertNotIsInstance(memoryview(b""), ByteString)
-        self.assertFalse(issubclass(memoryview, ByteString))
-        with self.assertWarns(DeprecationWarning):
-            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
-
-        with self.assertWarns(DeprecationWarning):
-            class X(ByteString): pass
-
-        with self.assertWarns(DeprecationWarning):
-            # No metaclass conflict
-            class Z(ByteString, Awaitable): pass
-
     def test_Buffer(self):
         for sample in [bytes, bytearray, memoryview]:
             self.assertIsInstance(sample(b"x"), Buffer)
@@ -1972,6 +1951,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [list, bytearray, deque]:
             self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
+        self.assertTrue(issubclass(array.array, MutableSequence))
         self.assertFalse(issubclass(str, MutableSequence))
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')

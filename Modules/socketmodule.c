@@ -109,6 +109,7 @@ Local naming conventions:
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
+#include "pycore_time.h"          // _PyTime_AsMilliseconds()
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -547,7 +548,7 @@ typedef struct _socket_state {
     PyObject *socket_gaierror;
 
     /* Default timeout for new sockets */
-    _PyTime_t defaulttimeout;
+    PyTime_t defaulttimeout;
 
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
@@ -772,13 +773,13 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 static int
-internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
+internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
                 int connect)
 {
     int n;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
-    _PyTime_t ms;
+    PyTime_t ms;
 #else
     fd_set fds, efds;
     struct timeval tv, *tvp;
@@ -888,10 +889,10 @@ sock_call_ex(PySocketSockObject *s,
              void *data,
              int connect,
              int *err,
-             _PyTime_t timeout)
+             PyTime_t timeout)
 {
     int has_timeout = (timeout > 0);
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     int deadline_initialized = 0;
     int res;
 
@@ -905,7 +906,7 @@ sock_call_ex(PySocketSockObject *s,
            runs asynchronously. */
         if (has_timeout || connect) {
             if (has_timeout) {
-                _PyTime_t interval;
+                PyTime_t interval;
 
                 if (deadline_initialized) {
                     /* recompute the timeout */
@@ -1053,8 +1054,8 @@ init_sockobject(socket_state *state, PySocketSockObject *s,
     else
 #endif
     {
-        s->sock_timeout = state->defaulttimeout;
-        if (state->defaulttimeout >= 0) {
+        s->sock_timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+        if (s->sock_timeout >= 0) {
             if (internal_setblocking(s, 0) == -1) {
                 return -1;
             }
@@ -1886,12 +1887,14 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
 #ifdef AF_DIVERT
     case AF_DIVERT:
-        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+        /* FreeBSD divert(4) sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
 #endif /* AF_DIVERT */
 
     case AF_INET:
@@ -2213,7 +2216,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
-        /* fall-through */
+            _Py_FALLTHROUGH;
 #endif
 #ifdef CAN_BCM
         case CAN_BCM:
@@ -2589,7 +2592,8 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+       _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
     case AF_INET:
@@ -3011,13 +3015,13 @@ Returns True if socket is in blocking mode, or False if it\n\
 is in non-blocking mode.");
 
 static int
-socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
+socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
 {
 #ifdef MS_WINDOWS
     struct timeval tv;
 #endif
 #ifndef HAVE_POLL
-    _PyTime_t ms;
+    PyTime_t ms;
 #endif
     int overflow = 0;
 
@@ -3060,7 +3064,7 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
 static PyObject *
 sock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
@@ -3112,7 +3116,7 @@ sock_gettimeout(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(s->sock_timeout);
+        double seconds = PyTime_AsSecondsDouble(s->sock_timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -3162,6 +3166,17 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            int dummy;
+            res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
+                           sizeof(flag), NULL, 0, &dummy, NULL, NULL);
+            if (res >= 0) {
+                s->quickack = flag;
+            }
+            goto done;
+        }
+#endif
         res = setsockopt(s->sock_fd, level, optname,
                          (char*)&flag, sizeof flag);
         goto done;
@@ -3248,6 +3263,11 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             return PyLong_FromUnsignedLong(vflag);
         }
 #endif
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            return PyLong_FromLong(s->quickack);
+        }
+#endif
         flagsize = sizeof flag;
         res = getsockopt(s->sock_fd, level, optname,
                          (void *)&flag, &flagsize);
@@ -3327,8 +3347,19 @@ sockets the address is a tuple (ifname, proto [,pkttype [,hatype [,addr]]])");
    Set the file descriptor to -1 so operations tried subsequently
    will surely fail. */
 
+/*[clinic input]
+@critical_section
+_socket.socket.close
+    self as s: self(type="PySocketSockObject *")
+
+close()
+
+Close the socket.  It cannot be used after this call.
+[clinic start generated code]*/
+
 static PyObject *
-sock_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
+_socket_socket_close_impl(PySocketSockObject *s)
+/*[clinic end generated code: output=038b2418e07f6f6c input=9839a261e05bcb97]*/
 {
     SOCKET_T fd;
     int res;
@@ -3352,11 +3383,6 @@ sock_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     }
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(sock_close_doc,
-"close()\n\
-\n\
-Close the socket.  It cannot be used after this call.");
 
 static PyObject *
 sock_detach(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
@@ -3395,6 +3421,18 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Common functionality for socket.connect and socket.connect_ex.
+ *
+ * If *raise* is set:
+ * - On success, return 0.
+ * - On any failure, return -1 with an exception set.
+ * If *raise* is zero:
+ * - On success, return 0.
+ * - On connect() failure, return errno (without an exception set)
+ * - On other error, return -1 with an exception set.
+ *
+ *   Note that -1 is a valid errno value on some systems.
+ */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3479,8 +3517,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -3510,8 +3550,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     return PyLong_FromLong((long) res);
 }
@@ -4382,8 +4423,8 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
-    _PyTime_t timeout = s->sock_timeout;
-    _PyTime_t deadline = 0;
+    PyTime_t timeout = s->sock_timeout;
+    PyTime_t deadline = 0;
     int deadline_initialized = 0;
     PyObject *res = NULL;
 
@@ -5114,8 +5155,7 @@ static PyMethodDef sock_methods[] = {
     {"bind",              (PyCFunction)sock_bind, METH_O,
                       bind_doc},
 #endif
-    {"close",             (PyCFunction)sock_close, METH_NOARGS,
-                      sock_close_doc},
+    _SOCKET_SOCKET_CLOSE_METHODDEF
 #ifdef HAVE_CONNECT
     {"connect",           (PyCFunction)sock_connect, METH_O,
                       connect_doc},
@@ -5307,6 +5347,9 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+#ifdef MS_WINDOWS
+        ((PySocketSockObject *)new)->quickack = 0;
+#endif
     }
     return new;
 }
@@ -5593,7 +5636,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
         return PyErr_SetFromWindowsErr(0);
 
     if (size == 0)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
@@ -6912,11 +6955,12 @@ static PyObject *
 socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     socket_state *state = get_module_state(self);
-    if (state->defaulttimeout < 0) {
+    PyTime_t timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+    if (timeout < 0) {
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(state->defaulttimeout);
+        double seconds = PyTime_AsSecondsDouble(timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6931,13 +6975,13 @@ When the socket module is first imported, the default is None.");
 static PyObject *
 socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
 
     socket_state *state = get_module_state(self);
-    state->defaulttimeout = timeout;
+    _Py_atomic_store_int64_relaxed(&state->defaulttimeout, timeout);
 
     Py_RETURN_NONE;
 }
@@ -7594,6 +7638,7 @@ socket_exec(PyObject *m)
     ADD_INT_CONST(m, "SO_VM_SOCKETS_BUFFER_MAX_SIZE", 2);
     ADD_INT_CONST(m, "VMADDR_CID_ANY", 0xffffffff);
     ADD_INT_CONST(m, "VMADDR_PORT_ANY", 0xffffffff);
+    ADD_INT_CONST(m, "VMADDR_CID_LOCAL", 1);
     ADD_INT_CONST(m, "VMADDR_CID_HOST", 2);
     ADD_INT_CONST(m, "VM_SOCKETS_INVALID_VERSION", 0xffffffff);
     ADD_INT_CONST(m, "IOCTL_VM_SOCKETS_GET_LOCAL_CID",  _IO(7, 0xb9));
@@ -7876,6 +7921,9 @@ socket_exec(PyObject *m)
 #ifdef  SO_OOBINLINE
     ADD_INT_MACRO(m, SO_OOBINLINE);
 #endif
+#ifdef  SO_ORIGINAL_DST
+    ADD_INT_MACRO(m, SO_ORIGINAL_DST);
+#endif
 #ifndef __GNU__
 #ifdef  SO_REUSEPORT
     ADD_INT_MACRO(m, SO_REUSEPORT);
@@ -7925,6 +7973,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  SO_BINDTODEVICE
     ADD_INT_MACRO(m, SO_BINDTODEVICE);
+#endif
+#ifdef  SO_BINDTOIFINDEX
+    ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
 #endif
 #ifdef  SO_PRIORITY
     ADD_INT_MACRO(m, SO_PRIORITY);
@@ -8406,14 +8457,23 @@ socket_exec(PyObject *m)
 #ifdef  IP_TTL
     ADD_INT_MACRO(m, IP_TTL);
 #endif
+#ifdef  IP_RECVERR
+    ADD_INT_MACRO(m, IP_RECVERR);
+#endif
 #ifdef  IP_RECVOPTS
     ADD_INT_MACRO(m, IP_RECVOPTS);
+#endif
+#ifdef  IP_RECVORIGDSTADDR
+    ADD_INT_MACRO(m, IP_RECVORIGDSTADDR);
 #endif
 #ifdef  IP_RECVRETOPTS
     ADD_INT_MACRO(m, IP_RECVRETOPTS);
 #endif
 #ifdef  IP_RECVTOS
     ADD_INT_MACRO(m, IP_RECVTOS);
+#endif
+#ifdef  IP_RECVTTL
+    ADD_INT_MACRO(m, IP_RECVTTL);
 #endif
 #ifdef  IP_RECVDSTADDR
     ADD_INT_MACRO(m, IP_RECVDSTADDR);
@@ -8518,6 +8578,9 @@ socket_exec(PyObject *m)
 #ifdef IPV6_RECVDSTOPTS
     ADD_INT_MACRO(m, IPV6_RECVDSTOPTS);
 #endif
+#ifdef IPV6_RECVERR
+    ADD_INT_MACRO(m, IPV6_RECVERR);
+#endif
 #ifdef IPV6_RECVHOPLIMIT
     ADD_INT_MACRO(m, IPV6_RECVHOPLIMIT);
 #endif
@@ -8592,6 +8655,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  TCP_CONNECTION_INFO
     ADD_INT_MACRO(m, TCP_CONNECTION_INFO);
+#endif
+#ifdef  SIO_TCP_SET_ACK_FREQUENCY
+#define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
 #endif
 #ifdef  TCP_QUICKACK
     ADD_INT_MACRO(m, TCP_QUICKACK);
@@ -8891,6 +8957,7 @@ error:
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

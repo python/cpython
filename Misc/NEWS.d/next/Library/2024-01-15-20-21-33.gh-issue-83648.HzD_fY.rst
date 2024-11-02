@@ -1,2 +1,0 @@
-Support deprecation of options, positional arguments and subcommands in
-:mod:`argparse`.

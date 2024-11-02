@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_unicodeobject.h" // _PyUnicodeWriter
 
 /* runtime lifecycle */
@@ -34,7 +33,7 @@ struct _Py_float_runtime_state {
 
 
 
-void _PyFloat_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyFloat_ExactDealloc(PyObject *op);
 
 
 extern void _PyFloat_DebugMallocStats(FILE* out);

@@ -98,7 +98,10 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
   if (mi_page_all_free(page)) {
     // no more used blocks, free the page.
     // note: this will free retired pages as well.
-    _mi_page_free(page, pq, collect >= MI_FORCE);
+    bool freed = _PyMem_mi_page_maybe_free(page, pq, collect >= MI_FORCE);
+    if (!freed && collect == MI_ABANDON) {
+      _mi_page_abandon(page, pq);
+    }
   }
   else if (collect == MI_ABANDON) {
     // still used blocks but the thread is done; abandon the page
@@ -152,6 +155,9 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 
   // collect retired pages
   _mi_heap_collect_retired(heap, force);
+
+  // free pages that were delayed with QSBR
+  _PyMem_mi_heap_collect_qsbr(heap);
 
   // collect all pages owned by this thread
   mi_heap_visit_pages(heap, &mi_heap_page_collect, &collect, NULL);
@@ -440,7 +446,7 @@ void mi_heap_delete(mi_heap_t* heap)
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
 
   if (!mi_heap_is_backing(heap)) {
-    // tranfer still used pages to the backing heap
+    // transfer still used pages to the backing heap
     mi_heap_absorb(heap->tld->heap_backing, heap);
   }
   else {

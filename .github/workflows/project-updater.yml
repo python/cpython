@@ -23,7 +23,7 @@ jobs:
           - { project: 32, label: sprint }
 
     steps:
-      - uses: actions/add-to-project@v0.1.0
+      - uses: actions/add-to-project@v1.0.0
         with:
           project-url: https://github.com/orgs/python/projects/${{ matrix.project }}
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}

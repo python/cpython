@@ -247,7 +247,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
     if (i >= 0)
-        ((char *)ap->ob_item)[i] = x;
+        ((unsigned char *)ap->ob_item)[i] = x;
     return 0;
 }
 
@@ -260,20 +260,32 @@ u_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PyObject *u;
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, not %T",
+                     v);
         return -1;
     }
 
-    Py_ssize_t len = PyUnicode_AsWideChar(u, NULL, 0);
+    Py_ssize_t len = PyUnicode_AsWideChar(v, NULL, 0);
     if (len != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be unicode character");
+        if (PyUnicode_GET_LENGTH(v) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "array item must be a unicode character, "
+                         "not a string of length %zd",
+                         PyUnicode_GET_LENGTH(v));
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "string %A cannot be converted to "
+                         "a single wchar_t character",
+                         v);
+        }
         return -1;
     }
 
     wchar_t w;
-    len = PyUnicode_AsWideChar(u, &w, 1);
+    len = PyUnicode_AsWideChar(v, &w, 1);
     assert(len == 1);
 
     if (i >= 0) {
@@ -291,19 +303,23 @@ w_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 w_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PyObject *u;
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, not %T",
+                     v);
         return -1;
     }
 
-    if (PyUnicode_GetLength(u) != 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be unicode character");
+    if (PyUnicode_GET_LENGTH(v) != 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, "
+                     "not a string of length %zd",
+                     PyUnicode_GET_LENGTH(v));
         return -1;
     }
 
     if (i >= 0) {
-        ((Py_UCS4 *)ap->ob_item)[i] = PyUnicode_READ_CHAR(u, 0);
+        ((Py_UCS4 *)ap->ob_item)[i] = PyUnicode_READ_CHAR(v, 0);
     }
     return 0;
 }
@@ -868,6 +884,21 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     return (PyObject *)np;
 }
 
+/*[clinic input]
+array.array.clear
+
+Remove all items from the array.
+[clinic start generated code]*/
+
+static PyObject *
+array_array_clear_impl(arrayobject *self)
+/*[clinic end generated code: output=5efe0417062210a9 input=5dffa30e94e717a4]*/
+{
+    if (array_resize(self, 0) == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 array.array.__copy__
@@ -2342,6 +2373,7 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_APPEND_METHODDEF
     ARRAY_ARRAY_BUFFER_INFO_METHODDEF
     ARRAY_ARRAY_BYTESWAP_METHODDEF
+    ARRAY_ARRAY_CLEAR_METHODDEF
     ARRAY_ARRAY___COPY___METHODDEF
     ARRAY_ARRAY_COUNT_METHODDEF
     ARRAY_ARRAY___DEEPCOPY___METHODDEF
@@ -2831,7 +2863,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
-an array of basic values: characters, integers, floating point\n\
+an array of basic values: characters, integers, floating-point\n\
 numbers.  Arrays are sequence types and behave very much like lists,\n\
 except that the type of objects stored in them is constrained.\n");
 
@@ -2859,8 +2891,8 @@ The following type codes are defined:\n\
     'L'         unsigned integer   4\n\
     'q'         signed integer     8 (see note)\n\
     'Q'         unsigned integer   8 (see note)\n\
-    'f'         floating point     4\n\
-    'd'         floating point     8\n\
+    'f'         floating-point     4\n\
+    'd'         floating-point     8\n\
 \n\
 NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
 narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
@@ -3204,6 +3236,7 @@ array_modexec(PyObject *m)
 static PyModuleDef_Slot arrayslots[] = {
     {Py_mod_exec, array_modexec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

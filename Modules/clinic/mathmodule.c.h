@@ -8,6 +8,64 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(math_gcd__doc__,
+"gcd($module, /, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+#define MATH_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
+
+static PyObject *
+math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gcd", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_gcd_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_lcm__doc__,
+"lcm($module, /, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
+
+#define MATH_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
+
+static PyObject *
+math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("lcm", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_lcm_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -34,9 +92,9 @@ PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
 "\n"
-"Return an accurate floating point sum of values in the iterable seq.\n"
+"Return an accurate floating-point sum of values in the iterable seq.\n"
 "\n"
-"Assumes IEEE-754 floating point arithmetic.");
+"Assumes IEEE-754 floating-point arithmetic.");
 
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
@@ -204,6 +262,67 @@ PyDoc_STRVAR(math_log10__doc__,
 #define MATH_LOG10_METHODDEF    \
     {"log10", (PyCFunction)math_log10, METH_O, math_log10__doc__},
 
+PyDoc_STRVAR(math_fma__doc__,
+"fma($module, x, y, z, /)\n"
+"--\n"
+"\n"
+"Fused multiply-add operation.\n"
+"\n"
+"Compute (x * y) + z with a single round.");
+
+#define MATH_FMA_METHODDEF    \
+    {"fma", _PyCFunction_CAST(math_fma), METH_FASTCALL, math_fma__doc__},
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z);
+
+static PyObject *
+math_fma(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double z;
+
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[2])) {
+        z = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        z = PyFloat_AsDouble(args[2]);
+        if (z == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_fma_impl(module, x, y, z);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fmod__doc__,
 "fmod($module, x, y, /)\n"
 "--\n"
@@ -285,6 +404,46 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     p = args[0];
     q = args[1];
     return_value = math_dist_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_hypot__doc__,
+"hypot($module, /, *coordinates)\n"
+"--\n"
+"\n"
+"Multidimensional Euclidean distance from the origin to a point.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum(x**2 for x in coordinates))\n"
+"\n"
+"For a two dimensional point (x, y), gives the hypotenuse\n"
+"using the Pythagorean theorem:  sqrt(x*x + y*y).\n"
+"\n"
+"For example, the hypotenuse of a 3/4/5 right triangle is:\n"
+"\n"
+"    >>> hypot(3.0, 4.0)\n"
+"    5.0");
+
+#define MATH_HYPOT_METHODDEF    \
+    {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
+
+static PyObject *
+math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("hypot", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_hypot_impl(module, nvararg, __clinic_args);
 
 exit:
     return return_value;
@@ -549,7 +708,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "isclose($module, /, a, b, *, rel_tol=1e-09, abs_tol=0.0)\n"
 "--\n"
 "\n"
-"Determine whether two floating point numbers are close in value.\n"
+"Determine whether two floating-point numbers are close in value.\n"
 "\n"
 "  rel_tol\n"
 "    maximum difference for being considered \"close\", relative to the\n"
@@ -587,7 +746,7 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -950,4 +1109,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b2eeaed8d8a76d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee0a2f6bd1220061 input=a9049054013a1b77]*/

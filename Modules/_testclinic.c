@@ -58,6 +58,20 @@ pack_arguments_newref(int argc, ...)
     return tuple;
 }
 
+static PyObject *
+pack_varargs_to_tuple(Py_ssize_t varargssize, PyObject *const *args)
+{
+    assert(!PyErr_Occurred());
+    PyObject *tuple = PyTuple_New(varargssize);
+    if (!tuple) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < varargssize; i++) {
+        PyTuple_SET_ITEM(tuple, i, Py_NewRef(args[i]));
+    }
+    return tuple;
+}
+
 /* Pack arguments to a tuple.
  * `wrapper` is function which converts primitive type to PyObject.
  * `arg_type` is type that arguments should be converted to before wrapped. */
@@ -963,7 +977,53 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 
 
 /*[clinic input]
-posonly_vararg
+varpos
+
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=b65096f423fb5dcc input=f87cd674145d394c]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result =  pack_arguments_newref(1, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+/*[clinic input]
+posonly_varpos
+
+    a: object
+    b: object
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
+                    Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=d10d43d86d117ab3 input=c9fd7895cfbaabba]*/
+{
+    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(3, a, b, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
+}
+
+
+/*[clinic input]
+posonly_poskw_varpos
 
     a: object
     /
@@ -973,33 +1033,16 @@ posonly_vararg
 [clinic start generated code]*/
 
 static PyObject *
-posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
-                    PyObject *args)
-/*[clinic end generated code: output=ee6713acda6b954e input=783427fe7ec2b67a]*/
+posonly_poskw_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
+                          PyObject *args)
+/*[clinic end generated code: output=bffdb7649941c939 input=b3d7a734e0625f68]*/
 {
     return pack_arguments_newref(3, a, b, args);
 }
 
 
 /*[clinic input]
-vararg_and_posonly
-
-    a: object
-    *args: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
-{
-    return pack_arguments_newref(2, a, args);
-}
-
-
-/*[clinic input]
-vararg
+poskw_varpos
 
     a: object
     *args: object
@@ -1007,15 +1050,15 @@ vararg
 [clinic start generated code]*/
 
 static PyObject *
-vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=91ab7a0efc52dd5e input=02c0f772d05f591e]*/
+poskw_varpos_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=2413ddfb5ef22794 input=a1dff12d00422484]*/
 {
     return pack_arguments_newref(2, a, args);
 }
 
 
 /*[clinic input]
-vararg_with_default
+poskw_varpos_kwonly_opt
 
     a: object
     *args: object
@@ -1024,9 +1067,9 @@ vararg_with_default
 [clinic start generated code]*/
 
 static PyObject *
-vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
-                         int b)
-/*[clinic end generated code: output=182c01035958ce92 input=68cafa6a79f89e36]*/
+poskw_varpos_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *args,
+                             int b)
+/*[clinic end generated code: output=f36d35ba6133463b input=1721d43dc5f6d856]*/
 {
     PyObject *obj_b = b ? Py_True : Py_False;
     return pack_arguments_newref(3, a, args, obj_b);
@@ -1034,18 +1077,56 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
 
 
 /*[clinic input]
-vararg_with_only_defaults
+poskw_varpos_kwonly_opt2
 
+    a: object
     *args: object
-    b: object = None
+    b: object = False
+    c: object = False
 
 [clinic start generated code]*/
 
 static PyObject *
-vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
-/*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
+poskw_varpos_kwonly_opt2_impl(PyObject *module, PyObject *a, PyObject *args,
+                              PyObject *b, PyObject *c)
+/*[clinic end generated code: output=846cef62c6c40463 input=bb4b8d1577a8a408]*/
+{
+    return pack_arguments_newref(4, a, args, b, c);
+}
+
+
+/*[clinic input]
+varpos_kwonly_opt
+
+    *args: object
+    b: object = False
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_kwonly_opt_impl(PyObject *module, PyObject *args, PyObject *b)
+/*[clinic end generated code: output=3b7bf98b091f5731 input=380fb00deec847e8]*/
 {
     return pack_arguments_newref(2, args, b);
+}
+
+
+/*[clinic input]
+varpos_kwonly_req_opt
+
+    *args: object
+    a: object
+    b: object = False
+    c: object = False
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_kwonly_req_opt_impl(PyObject *module, PyObject *args, PyObject *a,
+                           PyObject *b, PyObject *c)
+/*[clinic end generated code: output=165274e1fd037ae9 input=530794afd0690c22]*/
+{
+    return pack_arguments_newref(4, args, a, b, c);
 }
 
 
@@ -1096,15 +1177,15 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 gh_99233_refcount
 
     *args: object
-    /
 
 Proof-of-concept of GH-99233 refcount error bug.
 
 [clinic start generated code]*/
 
 static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=85f5fb47ac91a626]*/
+gh_99233_refcount_impl(PyObject *module, Py_ssize_t nargs,
+                       PyObject *const *args)
+/*[clinic end generated code: output=b570007e61e5c670 input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }
@@ -1219,21 +1300,71 @@ class _testclinic.TestClass "PyObject *" "PyObject"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
 
 /*[clinic input]
-_testclinic.TestClass.meth_method_no_params
+_testclinic.TestClass.get_defining_class
     cls: defining_class
-    /
 [clinic start generated code]*/
 
 static PyObject *
-_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
-                                                 PyTypeObject *cls)
-/*[clinic end generated code: output=c140f100080c2fc8 input=6bd34503d11c63c1]*/
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=94f9b0b5f7add930 input=537c59417471dee3]*/
 {
-    Py_RETURN_NONE;
+    return Py_NewRef(cls);
+}
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class_arg
+    cls: defining_class
+    arg: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg)
+/*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
+{
+    return PyTuple_Pack(2, cls, arg);
+}
+
+/*[clinic input]
+_testclinic.TestClass.defclass_varpos
+    cls: defining_class
+    *args: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_defclass_varpos_impl(PyObject *self, PyTypeObject *cls,
+                                           PyObject *args)
+/*[clinic end generated code: output=fad33f2d3a8d778d input=47071dcda393a7e1]*/
+{
+    return PyTuple_Pack(2, cls, args);
+}
+
+/*[clinic input]
+_testclinic.TestClass.defclass_posonly_varpos
+    cls: defining_class
+    a: object
+    b: object
+    /
+    *args: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
+                                                   PyTypeObject *cls,
+                                                   PyObject *a, PyObject *b,
+                                                   PyObject *args)
+/*[clinic end generated code: output=1740fcf48d230b07 input=40f2e56286d4a7ef]*/
+{
+    return pack_arguments_newref(4, cls, a, b, args);
 }
 
 static struct PyMethodDef test_class_methods[] = {
-    _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
+    _TESTCLINIC_TESTCLASS_DEFCLASS_VARPOS_METHODDEF
+    _TESTCLINIC_TESTCLASS_DEFCLASS_POSONLY_VARPOS_METHODDEF
     {NULL, NULL}
 };
 
@@ -1872,6 +2003,7 @@ static PyMethodDef tester_methods[] = {
     STR_CONVERTER_METHODDEF
     STR_CONVERTER_ENCODING_METHODDEF
     PY_BUFFER_CONVERTER_METHODDEF
+
     KEYWORDS_METHODDEF
     KEYWORDS_KWONLY_METHODDEF
     KEYWORDS_OPT_METHODDEF
@@ -1888,16 +2020,21 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
-    POSONLY_VARARG_METHODDEF
-    VARARG_AND_POSONLY_METHODDEF
-    VARARG_METHODDEF
-    VARARG_WITH_DEFAULT_METHODDEF
-    VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+
+    VARPOS_METHODDEF
+    POSONLY_VARPOS_METHODDEF
+    POSONLY_POSKW_VARPOS_METHODDEF
+    POSKW_VARPOS_METHODDEF
+    POSKW_VARPOS_KWONLY_OPT_METHODDEF
+    POSKW_VARPOS_KWONLY_OPT2_METHODDEF
+    VARPOS_KWONLY_OPT_METHODDEF
+    VARPOS_KWONLY_REQ_OPT_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
     NULL_OR_TUPLE_FOR_VARARGS_METHODDEF
+
     CLONE_F1_METHODDEF
     CLONE_F2_METHODDEF
     CLONE_WITH_CONV_F1_METHODDEF
@@ -1940,6 +2077,9 @@ PyInit__testclinic(void)
     if (m == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
     if (PyModule_AddType(m, &TestClass) < 0) {
         goto error;
     }

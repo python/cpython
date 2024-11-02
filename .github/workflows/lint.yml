@@ -23,4 +23,4 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1

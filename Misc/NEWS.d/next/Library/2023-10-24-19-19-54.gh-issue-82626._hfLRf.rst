@@ -1,2 +1,0 @@
-Many functions now emit a warning if a boolean value is passed as a file
-descriptor argument.

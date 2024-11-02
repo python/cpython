@@ -150,13 +150,20 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
                            wrapping is done.  Default is 78.
 
     mangle_from_        -- a flag that, when True escapes From_ lines in the
-                           body of the message by putting a `>' in front of
+                           body of the message by putting a '>' in front of
                            them. This is used when the message is being
-                           serialized by a generator. Default: True.
+                           serialized by a generator. Default: False.
 
     message_factory     -- the class to use to create new message objects.
                            If the value is None, the default is Message.
 
+    verify_generated_headers
+                        -- if true, the generator verifies that each header
+                           they are properly folded, so that a parser won't
+                           treat it as multiple headers, start-of-body, or
+                           part of another header.
+                           This is a check against custom Header & fold()
+                           implementations.
     """
 
     raise_on_defect = False
@@ -165,6 +172,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     max_line_length = 78
     mangle_from_ = False
     message_factory = None
+    verify_generated_headers = True
 
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.
