@@ -5068,12 +5068,19 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
 
     if (end - start >= SIZEOF_SIZE_T) {
         const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
+        if (p < p2) {
 #if HAVE_CTZ
-        size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
-        if (u) {
-            return p - start + (ctz(u) - 7) / 8;
+#if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+            // x86 and amd64 are little endian and can load unaligned memory.
+            size_t u = *(const size_t*)p & ASCII_CHAR_MASK;
+#else
+            size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
+#endif
+            if (u) {
+                return p - start + (ctz(u) - 7) / 8;
+            }
+            p = p2;
         }
-        p = p2;
 #else
         while (p < p2) {
             if (*p & 0x80) {
@@ -5098,6 +5105,7 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
         }
     }
 #if HAVE_CTZ
+    // we can not use *(const size_t*)p to avoid buffer overrun.
     size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
     if (u) {
         return p - start + (ctz(u) - 7) / 8;
