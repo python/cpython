@@ -1143,8 +1143,7 @@ star_target[expr_ty] (memo):
 
 target_with_star_atom[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
     | star_atom
 
 star_atom[expr_ty]:
@@ -1160,13 +1159,11 @@ single_target[expr_ty]:
 
 single_subscript_attribute_target[expr_ty]:
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
 
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=t_primary '[' b=slices0 ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
-    | a=t_primary '{' b=slices1 '}' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
+    | a=t_primary b=generalsubscript &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
     | a=t_primary b=genexp &t_lookahead {
         _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=t_primary '(' b=[arguments] ')' &t_lookahead {
@@ -1185,8 +1182,7 @@ del_targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.del_target+ [','] { a }
 
 del_target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
-    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 
 del_t_atom[expr_ty]:
