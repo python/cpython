@@ -1,0 +1,2 @@
+Fix crash when traversing an object frozen by the garbage collector on the
+free-threaded build.
