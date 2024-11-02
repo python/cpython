@@ -528,6 +528,8 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------
