@@ -511,7 +511,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                     b = obj.flush( sync )
                     c = obj.compress( data[3000:] )
                     d = obj.flush()
-                except:
+                except zlib.error:
                     print("Error for flush mode={}, level={}"
                           .format(sync, level))
                     raise
