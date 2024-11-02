@@ -8,6 +8,10 @@ Pending Removal in Python 3.16
 * :mod:`builtins`:
   ``~bool``, bitwise inversion on bool.
 
+* :mod:`socket`:
+  If type annotations are required, use :class:`~socket.socket` instead.
+  (Contributed by James Roy in :gh:`88427`.)
+
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
