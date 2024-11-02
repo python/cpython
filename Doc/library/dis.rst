@@ -1647,7 +1647,7 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 
