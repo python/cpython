@@ -186,7 +186,10 @@ Number-theoretic and representation functions
 
 .. function:: fmod(x, y)
 
-   Return ``fmod(x, y)``, as defined by the platform C library. Note that the
+   Return the remainder of division ``x / y``,
+   as defined by the platform C library function ``fmod(x, y)``.
+
+   Note that the
    Python expression ``x % y`` may not return the same result.  The intent of the C
    standard is that ``fmod(x, y)`` be exactly (mathematically; to infinite
    precision) equal to ``x - n*y`` for some integer *n* such that the result has
