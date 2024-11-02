@@ -55,7 +55,7 @@ the backing store is natively made of bytes (such as in the case of a file),
 encoding and decoding of data is made transparently as well as optional
 translation of platform-specific newline characters.
 
-The easiest way to create a text stream is with :meth:`open()`, optionally
+The easiest way to create a text stream is with :meth:`open`, optionally
 specifying an encoding::
 
    f = open("myfile.txt", "r", encoding="utf-8")
@@ -77,7 +77,7 @@ objects.  No encoding, decoding, or newline translation is performed.  This
 category of streams can be used for all kinds of non-text data, and also when
 manual control over the handling of text data is desired.
 
-The easiest way to create a binary stream is with :meth:`open()` with ``'b'`` in
+The easiest way to create a binary stream is with :meth:`open` with ``'b'`` in
 the mode string::
 
    f = open("myfile.jpg", "rb")
@@ -950,7 +950,7 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding()`.
+   encoded with.  It defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1182,7 +1182,7 @@ re-enter a buffered object which it is already accessing, a :exc:`RuntimeError`
 is raised.  Note this doesn't prohibit a different thread from entering the
 buffered object.
 
-The above implicitly extends to text files, since the :func:`open()` function
+The above implicitly extends to text files, since the :func:`open` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
-standard streams and therefore affects the built-in :func:`print()` function as
+standard streams and therefore affects the built-in :func:`print` function as
 well.

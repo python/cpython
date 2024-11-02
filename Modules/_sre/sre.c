@@ -1287,7 +1287,7 @@ pattern_subx(_sremodulestate* module_state,
     }
     else {
         if (state.isbytes)
-            item = _PyBytes_Join(joiner, list);
+            item = PyBytes_Join(joiner, list);
         else
             item = PyUnicode_Join(joiner, list);
         Py_DECREF(joiner);
@@ -2918,7 +2918,7 @@ expand_template(TemplateObject *self, MatchObject *match)
     }
     else {
         Py_SET_SIZE(list, count);
-        result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
+        result = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
     }
 
 cleanup:
@@ -2944,7 +2944,7 @@ pattern_hash(PatternObject *self)
         return -1;
     }
 
-    hash2 = _Py_HashBytes(self->code, sizeof(self->code[0]) * self->codesize);
+    hash2 = Py_HashBuffer(self->code, sizeof(self->code[0]) * self->codesize);
     hash ^= hash2;
 
     hash ^= self->flags;
