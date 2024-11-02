@@ -136,7 +136,7 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
 
 class EnableDeferredRefcountingTest(unittest.TestCase):
     """Test PyUnstable_Object_EnableDeferredRefcount"""
-    @support.requires_resources("cpu")
+    @support.requires_resource("cpu")
     def test_enable_deferred_refcount(self):
         from threading import Thread
 
