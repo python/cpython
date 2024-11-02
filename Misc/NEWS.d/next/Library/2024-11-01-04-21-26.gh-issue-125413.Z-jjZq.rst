@@ -1,2 +1,2 @@
-Speed up :meth:`pathlib.Path.copy` by making use of
+Speed up :meth:`Path.copy <pathlib.Path.copy>` by making use of
 :meth:`~pathlib.Path.scandir` internally.

@@ -100,7 +100,7 @@ class CopierBase:
     __slots__ = ('follow_symlinks', 'dirs_exist_ok', 'preserve_metadata')
 
     def __init__(self, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
+                 preserve_metadata=False):
         self.follow_symlinks = follow_symlinks
         self.dirs_exist_ok = dirs_exist_ok
         self.preserve_metadata = preserve_metadata
@@ -193,8 +193,7 @@ class CopierBase:
                     # Raise a less confusing exception.
                     raise FileNotFoundError(
                         f'Directory does not exist: {target}') from e
-                else:
-                    raise
+                raise
             if metadata:
                 target._write_metadata(metadata)
 
