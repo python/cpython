@@ -511,10 +511,9 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                     b = obj.flush( sync )
                     c = obj.compress( data[3000:] )
                     d = obj.flush()
-                    
                     self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
-                    data, ("Decompress failed: flush "
-                    "mode=%i, level=%i") % (sync, level))
+                                     data, ("Decompress failed: flush "
+                                    "mode=%i, level=%i") % (sync, level))
                     del obj
 
     @unittest.skipUnless(hasattr(zlib, 'Z_SYNC_FLUSH'),
