@@ -1660,7 +1660,7 @@ optparse
   for implementing command line applications which adhere more
   strictly than ``argparse`` does to various Unix command line
   processing conventions that originate in the behaviour of the
-  C :c:func:`getopt` function .
+  C :c:func:`!getopt` function .
   (Contributed by Alyssa Coghlan and Serhiy Storchaka in :gh:`126180`.)
 
 
