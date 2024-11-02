@@ -439,7 +439,10 @@ process_delayed_frees(PyInterpreterState *interp)
 static int
 visit_decref(PyObject *op, void *arg)
 {
-    if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
+    if (_PyObject_GC_IS_TRACKED(op)
+        && !_Py_IsImmortal(op)
+        && (op->ob_gc_bits & _PyGC_BITS_FROZEN) == 0
+    ) {
         // If update_refs hasn't reached this object yet, mark it
         // as (tentatively) unreachable and initialize ob_tid to zero.
         gc_maybe_init_refs(op);
