@@ -5373,7 +5373,7 @@ class TestSignatureBind(unittest.TestCase):
         # Issue #19611: getcallargs should work with comprehensions
         def make_set():
             return set(z * z for z in range(5))
-        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_code = make_set.__code__.co_consts[0]
         gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
@@ -5708,8 +5708,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        no_signature = {'reduce'}
-        self._test_module_has_signatures(functools, no_signature)
+        unsupported_signature = {"reduce"}
+        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
 
     def test_gc_module_has_signatures(self):
         import gc
