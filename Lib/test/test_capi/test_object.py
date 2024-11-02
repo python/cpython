@@ -177,6 +177,5 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
             self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
 
 
-
 if __name__ == "__main__":
     unittest.main()
