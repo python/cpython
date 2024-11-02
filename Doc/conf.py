@@ -11,16 +11,22 @@ import os
 import sys
 import time
 
+import sphinx
+
+# Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
+# Python specific content from Doc/Tools/extensions/pyspecific.py
 from pyspecific import SOURCE_URI
 
 # General configuration
 # ---------------------
 
+# Our custom Sphinx extensions are found in Doc/Tools/extensions/
 extensions = [
     'audit_events',
+    'availability',
     'c_annotations',
     'glossary_search',
     'lexers',
@@ -51,7 +57,7 @@ try:
 except ImportError:
     _tkinter = None
 # Treat warnings as errors, done here to prevent warnings in Sphinx code from
-# causing spurious test failures.
+# causing spurious CPython test failures.
 import warnings
 warnings.simplefilter('error')
 del warnings
@@ -61,7 +67,10 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
+if sphinx.version_info[:2] >= (8, 1):
+    copyright = "2001-%Y, Python Software Foundation"
+else:
+    copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
@@ -74,24 +83,26 @@ rst_epilog = f"""
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
 """
 
-# There are two options for replacing |today|: either, you set today to some
-# non-false value, then it is used:
+# There are two options for replacing |today|. Either, you set today to some
+# non-false value and use it.
 today = ''
-# Else, today_fmt is used as the format for a strftime call.
+# Or else, today_fmt is used as the format for a strftime call.
 today_fmt = '%B %d, %Y'
 
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '6.2.1'
+needs_sphinx = '7.2.6'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = False
+toc_object_entries = True
+# Hide parents to tidy up long entries in sidebar
+toc_object_entries_show_parents = 'hide'
 
 # Ignore any .rst files in the includes/ directory;
-# they're embedded in pages but not rendered individually.
+# they're embedded in pages but not rendered as individual pages.
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
@@ -132,6 +143,8 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int8_t'),
+    ('c:type', 'int16_t'),
     ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
@@ -141,6 +154,9 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint8_t'),
+    ('c:type', 'uint16_t'),
+    ('c:type', 'uint32_t'),
     ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
     ('c:type', 'uintptr_t'),
@@ -183,6 +199,7 @@ nitpick_ignore = [
     ('envvar', 'LC_TIME'),
     ('envvar', 'LINES'),
     ('envvar', 'LOGNAME'),
+    ('envvar', 'MANPAGER'),
     ('envvar', 'PAGER'),
     ('envvar', 'PATH'),
     ('envvar', 'PATHEXT'),
@@ -243,6 +260,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_OverflowError'),
     ('c:data', 'PyExc_PermissionError'),
     ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_PythonFinalizationError'),
     ('c:data', 'PyExc_RecursionError'),
     ('c:data', 'PyExc_ReferenceError'),
     ('c:data', 'PyExc_RuntimeError'),
@@ -310,13 +328,15 @@ root_doc = 'contents'
 # Allow translation of index directives
 gettext_additional_targets = [
     'index',
+    'literal-block',
 ]
 
 # Options for HTML output
 # -----------------------
 
-# Use our custom theme.
+# Use our custom theme: https://github.com/python/python-docs-theme
 html_theme = 'python_docs_theme'
+# Location of overrides for theme templates and static files
 html_theme_path = ['tools']
 html_theme_options = {
     'collapsiblesidebar': True,
@@ -353,12 +373,16 @@ html_context = {
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
-html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-html_last_updated_fmt = time.strftime(
-    '%b %d, %Y (%H:%M UTC)', time.gmtime(html_time)
-)
+html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
+if sphinx.version_info[:2] >= (8, 1):
+    html_last_updated_use_utc = True
+else:
+    html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+    html_last_updated_fmt = time.strftime(
+        html_last_updated_fmt, time.gmtime(html_time)
+    )
 
-# Path to find HTML templates.
+# Path to find HTML templates to override theme
 templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
@@ -406,8 +430,8 @@ latex_elements = {
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
-    # The paper size ('letter' or 'a4').
-    'papersize': 'a4',
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
 }
@@ -551,6 +575,10 @@ linkcheck_allowed_redirects = {
     # Language redirects
     r'https://toml.io': 'https://toml.io/en/',
     r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # pypi.org project name normalization (upper to lowercase, underscore to hyphen)
+    r'https://pypi.org/project/[A-Za-z\d_\-\.]+/': r'https://pypi.org/project/[a-z\d\-\.]+/',
+    # Discourse title name expansion (text changes when title is edited)
+    r'https://discuss\.python\.org/t/\d+': r'https://discuss\.python\.org/t/.*/\d+',
     # Other redirects
     r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
     r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
@@ -584,15 +612,23 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
-    "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
-    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }
 extlinks_detect_hardcoded_links = True
 
-# Options for c_annotations
-# -------------------------
+if sphinx.version_info[:2] < (8, 1):
+    # Sphinx 8.1 has in-built CVE and CWE roles.
+    extlinks |= {
+        "cve": (
+            "https://www.cve.org/CVERecord?id=CVE-%s",
+            "CVE-%s",
+        ),
+        "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    }
+
+# Options for c_annotations extension
+# -----------------------------------
 
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
