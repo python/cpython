@@ -1035,7 +1035,8 @@ class _Pickler:
 
         start = 0
         for batch in batched(items, self._BATCHSIZE):
-            if len(batch) != 1:
+            batch_len = len(batch)
+            if batch_len != 1:
                 write(MARK)
                 for i, x in enumerate(batch, start):
                     try:
@@ -1051,7 +1052,7 @@ class _Pickler:
                     exc.add_note(f'when serializing {_T(obj)} item {start}')
                     raise
                 write(APPEND)
-            start += len(batch)
+            start += batch_len
 
     def save_dict(self, obj):
         if self.bin:
