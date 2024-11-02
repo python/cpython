@@ -1083,8 +1083,8 @@ class GCTests(unittest.TestCase):
         self.assertTrue(collected)
 
     def test_traverse_frozen_objects(self):
-        # See GH-126312: Frozen objects would get
-        # traversed on the free-threaded build, and cause
+        # See GH-126312: Objects that were not frozen could traverse over
+        # a frozen object on the free-threaded build, which would cause
         # a negative reference count.
         gc.freeze()
         gc.is_finalized(lambda: None)
