@@ -60,7 +60,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
         "T_LONGLONG", "T_ULONGLONG", "T_CHAR",
         NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#LK";
+    static const char fmt[] = "|bbBhHiIlknfds#LKC";
     test_structmembers *ob;
     const char *s = NULL;
     Py_ssize_t string_len = 0;
@@ -135,7 +135,7 @@ static struct PyMemberDef test_members[] = {
     {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
     {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
     {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
-    {"T_CHAR", Py_T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
+    {"T_CHAR", T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
     {NULL}
 };
 

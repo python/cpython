@@ -80,8 +80,8 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyUnicode_FromString((char*)addr);
         break;
     case Py_T_CHAR: {
-        char value = FT_ATOMIC_LOAD_CHAR_RELAXED(*addr);
-        v = PyUnicode_FromStringAndSize(&value, 1);
+        char char_val = FT_ATOMIC_LOAD_CHAR_RELAXED(*addr);
+        v = PyUnicode_FromStringAndSize(&char_val, 1);
         break;
     }
     case _Py_T_OBJECT:
@@ -252,12 +252,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         }
         break;
     }
-    case Py_T_LONG:{
-        FT_ATOMIC_STORE_LONG_RELAXED(*(long*)addr, PyLong_AsLong(v));
-        if ((*(long*)addr == -1) && PyErr_Occurred())
+    case Py_T_LONG: {
+        const long long_val = PyLong_AsLong(v);
+        if ((long_val == -1) && PyErr_Occurred())
             return -1;
+        FT_ATOMIC_STORE_LONG_RELAXED(*(long*)addr, long_val);
         break;
-        }
+    }
     case Py_T_ULONG: {
         /* XXX: For compatibility, accept negative int values
            as well. */
@@ -284,13 +285,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         }
         break;
     }
-    case Py_T_PYSSIZET:{
-        FT_ATOMIC_STORE_SSIZE_RELAXED(*(Py_ssize_t*)addr, PyLong_AsSsize_t(v));
-        if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
-            && PyErr_Occurred())
-                        return -1;
+    case Py_T_PYSSIZET: {
+        const Py_ssize_t ssize_val = PyLong_AsSsize_t(v);
+        if ((ssize_val == (Py_ssize_t)-1) && PyErr_Occurred())
+            return -1;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(*(Py_ssize_t*)addr, ssize_val);
         break;
-        }
+    }
     case Py_T_FLOAT:{
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
@@ -298,11 +299,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         FT_ATOMIC_STORE_FLOAT_RELAXED(*(float*)addr, (float)double_val);
         break;
         }
-    case Py_T_DOUBLE:
-        FT_ATOMIC_STORE_DOUBLE_RELAXED(*(double*)addr, PyFloat_AsDouble(v));
-        if ((*(double*)addr == -1) && PyErr_Occurred())
+    case Py_T_DOUBLE: {
+        const double double_val = PyFloat_AsDouble(v);
+        if ((double_val == -1) && PyErr_Occurred())
             return -1;
+        FT_ATOMIC_STORE_DOUBLE_RELAXED(*(double *) addr, double_val);
         break;
+    }
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
         Py_BEGIN_CRITICAL_SECTION(obj);
@@ -329,9 +332,9 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     case Py_T_LONGLONG:{
         long long value = PyLong_AsLongLong(v);
-        FT_ATOMIC_STORE_LLONG_RELAXED(*(long long*)addr, value);
         if ((value == -1) && PyErr_Occurred())
             return -1;
+        FT_ATOMIC_STORE_LLONG_RELAXED(*(long long*)addr, value);
         break;
         }
     case Py_T_ULONGLONG: {
