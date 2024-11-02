@@ -17,6 +17,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
+#include "pycore_object_state.h"  // struct _reftracer_runtime_state
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type, _PyUOpOptimizer_Type, ...
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -169,6 +170,48 @@ _PyDebug_PrintTotalRefs(void) {
 
 #define REFCHAIN(interp) interp->object_state.refchain
 #define REFCHAIN_VALUE ((void*)(uintptr_t)1)
+
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
+    }
+    return 1;
+}
+
+static int
+refchain_init(PyInterpreterState *interp)
+{
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
+        return 0;
+    }
+    _Py_hashtable_allocator_t alloc = {
+        // Don't use default PyMem_Malloc() and PyMem_Free() which
+        // require the caller to hold the GIL.
+        .malloc = PyMem_RawMalloc,
+        .free = PyMem_RawFree,
+    };
+    REFCHAIN(interp) = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
+        NULL, NULL, &alloc);
+    if (REFCHAIN(interp) == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+refchain_fini(PyInterpreterState *interp)
+{
+    if (has_own_refchain(interp) && REFCHAIN(interp) != NULL) {
+        _Py_hashtable_destroy(REFCHAIN(interp));
+    }
+    REFCHAIN(interp) = NULL;
+}
 
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
@@ -816,7 +859,6 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
-#ifdef WITH_FREELISTS
 static void
 clear_freelist(struct _Py_freelist *freelist, int is_finalization,
                freefunc dofree)
@@ -841,12 +883,9 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-#endif
-
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
 {
-#ifdef WITH_FREELISTS
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     clear_freelist(&freelists->floats, is_finalization, free_object);
@@ -866,7 +905,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         // stacks during GC, so emptying the free-list is counterproductive.
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
-#endif
+    clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
 }
 
 /*
@@ -2194,16 +2233,7 @@ PyStatus
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
-    };
-    REFCHAIN(interp) = _Py_hashtable_new_full(
-        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
-        NULL, NULL, &alloc);
-    if (REFCHAIN(interp) == NULL) {
+    if (refchain_init(interp) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 #endif
@@ -2214,8 +2244,7 @@ void
 _PyObject_FiniState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_destroy(REFCHAIN(interp));
-    REFCHAIN(interp) = NULL;
+    refchain_fini(interp);
 #endif
 }
 
@@ -2376,6 +2405,14 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
         }
     }
 
+    // Cache __reduce__ from PyBaseObject_Type object
+    PyObject *baseobj_dict = _PyType_GetDict(&PyBaseObject_Type);
+    PyObject *baseobj_reduce = PyDict_GetItemWithError(baseobj_dict, &_Py_ID(__reduce__));
+    if (baseobj_reduce == NULL && PyErr_Occurred()) {
+        return _PyStatus_ERR("Can't get __reduce__ from base object");
+    }
+    _Py_INTERP_CACHED_OBJECT(interp, objreduce) = baseobj_reduce;
+
     // Must be after static types are initialized
     if (_Py_initialize_generic(interp) < 0) {
         return _PyStatus_ERR("Can't initialize generic types");
@@ -2457,7 +2494,7 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
 #else
-    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
 }
 
@@ -3073,7 +3110,17 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 
 // Py_TYPE() implementation for the stable ABI
 #undef Py_TYPE
-PyTypeObject* Py_TYPE(PyObject *ob)
+PyTypeObject*
+Py_TYPE(PyObject *ob)
 {
     return _Py_TYPE(ob);
+}
+
+
+// Py_REFCNT() implementation for the stable ABI
+#undef Py_REFCNT
+Py_ssize_t
+Py_REFCNT(PyObject *ob)
+{
+    return _Py_REFCNT(ob);
 }
