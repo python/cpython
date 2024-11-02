@@ -83,8 +83,8 @@ def strace_python(code, strace_flags, check=True):
             strace_returncode=-1,
             python_returncode=-1,
             event_bytes=f"error({reason},details={details}) = -1".encode('utf-8'),
-            stdout=res.out if res else "",
-            stderr=res.err if res else "")
+            stdout=res.out if res else b"",
+            stderr=res.err if res else b"")
 
     # Run strace, and get out the raw text
     try:
