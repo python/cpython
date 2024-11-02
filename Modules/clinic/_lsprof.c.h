@@ -303,7 +303,7 @@ _lsprof_Profiler_clear(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
     return _lsprof_Profiler_clear_impl(self);
 }
 
-PyDoc_STRVAR(profile_init__doc__,
+PyDoc_STRVAR(profiler_init__doc__,
 "Profiler(timer=None, timeunit=0.0, subcalls=True, builtins=True)\n"
 "--\n"
 "\n"
@@ -315,11 +315,11 @@ PyDoc_STRVAR(profile_init__doc__,
 "is, in seconds).");
 
 static int
-profile_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
-                  int subcalls, int builtins);
+profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
+                   int subcalls, int builtins);
 
 static int
-profile_init(PyObject *self, PyObject *args, PyObject *kwargs)
+profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -398,9 +398,9 @@ profile_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = profile_init_impl((ProfilerObject *)self, timer, timeunit, subcalls, builtins);
+    return_value = profiler_init_impl((ProfilerObject *)self, timer, timeunit, subcalls, builtins);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d1db1dcbb6b10d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3750676abdc066ae input=a9049054013a1b77]*/

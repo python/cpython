@@ -933,7 +933,7 @@ profiler_dealloc(ProfilerObject *op)
 }
 
 /*[clinic input]
-_lsprof.Profiler.__init__ as profile_init
+_lsprof.Profiler.__init__ as profiler_init
 
     timer: object(c_default='NULL') = None
     timeunit: double = 0.0
@@ -949,9 +949,9 @@ is, in seconds).
 [clinic start generated code]*/
 
 static int
-profile_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
-                  int subcalls, int builtins)
-/*[clinic end generated code: output=123b1ff3fc783e14 input=25202b9566e5441c]*/
+profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
+                   int subcalls, int builtins)
+/*[clinic end generated code: output=ac523803ec9f9df2 input=8285ca746f96a414]*/
 {
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0)
         return -1;
@@ -985,10 +985,10 @@ static PyMethodDef profiler_methods[] = {
 };
 
 static PyType_Slot _lsprof_profiler_type_spec_slots[] = {
-    {Py_tp_doc, (void *)profile_init__doc__},
+    {Py_tp_doc, (void *)profiler_init__doc__},
     {Py_tp_methods, profiler_methods},
     {Py_tp_dealloc, profiler_dealloc},
-    {Py_tp_init, profile_init},
+    {Py_tp_init, profiler_init},
     {Py_tp_traverse, profiler_traverse},
     {0, 0}
 };
