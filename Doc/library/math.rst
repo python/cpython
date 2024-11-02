@@ -167,7 +167,7 @@ Number-theoretic and representation functions
    within about 9 decimal digits.  *rel_tol* must be greater than zero.
 
    *abs_tol* is the absolute tolerance; it must be nonnegative.
-   When comparing to ``0.0``, the default tolerance values means that only
+   When comparing to ``0.0``, the relative tolerance value means
    ``0.0`` is close to ``0.0``.  Pass an appropriate absolute tolerance to
    compare with ``0.0``.
 
