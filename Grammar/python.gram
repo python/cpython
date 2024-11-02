@@ -864,35 +864,29 @@ primary[expr_ty]:
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
-    | a=primary b=generalsubscript { _PyAST_Subscript(a, b, Load, EXTRA) }
+    | a=primary b=slices { _PyAST_Subscript(a, b, Load, EXTRA) }
     | atom
 
-# general subscript, matching e.g. [slices] or [slices].{slices}.[slices]
-generalsubscript[expr_ty]:
-    | a=subscriptseparated { _PyAST_Tuple((asdl_expr_seq*)a, Load, EXTRA) }
+# general subscript, matching e.g. [someslices] or [someslices].{someslices}.[someslices]
+slices[expr_ty]:
+    # we need at list one dot separator, so two slices_seq
+    # otherwise object[index] whould be transformed into object[(index,)]
+    | a=slices_seq '.' b='.'.slices_seq+ {
+        _PyAST_Tuple((asdl_expr_seq *)_PyPegen_join_sequences(p, a, _PyPegen_seq_flatten(p, b)), Load, EXTRA) }
     | '[' a=slices0 ']' { a }
     | '{' a=slices1 '}' { a }
 
-# [slices] or {slices} as a sequence of slices, even if slices is actually a single slice
-subscriptasseq[asdl_seq*]:
+# [someslices] or {someslices} as a sequence of slices, even if someslices is actually a single slice
+slices_seq[asdl_seq*]:
     | '[' a=slices0seq ']' { a }
     | '{' a=slices1seq '}' { a }
-
-# matches [slices].{slices}...... but not [slices] alone
-subscriptseparated[asdl_seq*]:
-    | a=subscriptasseq '.' b=subscriptcontinued { _PyPegen_join_sequences(p, a, b)  }
-
-# matches [slices].{slices}...... and [slices] alone, as a slice sequence
-subscriptcontinued[asdl_seq*]:
-    | a=subscriptseparated { a }
-    | a=subscriptasseq { a }
 
 # original slices rule, renamed into slices0: contents matched inside brackets
 slices0[expr_ty]:
     | a=slice0 !',' { a }
     | a[asdl_expr_seq*]=','.(slice0 | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
-# 0-based slices as a sequence of slices, even if slices is actually a single slice
+# 0-based slices as a sequence of slices, even if there is actually a single slice
 slices0seq[asdl_seq*]:
     | a=slice0 !',' { _PyPegen_singleton_seq(p, a) }
     | a[asdl_seq*]=','.(slice0 | starred_expression)+ [','] { a }
@@ -908,7 +902,7 @@ slices1[expr_ty]:
     | a=slice1 !',' { a }
     | a[asdl_expr_seq*]=','.(slice1 | starred_expression1)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
-# 1-based slices as a sequence of slices, even if slices is actually a single slice
+# 1-based slices as a sequence of slices, even if there is actually a single slice
 slices1seq[asdl_seq*]:
     | a=slice1 !',' { _PyPegen_singleton_seq(p, a) }
     | a[asdl_seq*]=','.(slice1 | starred_expression1)+ [','] { a }
@@ -1144,7 +1138,7 @@ star_target[expr_ty] (memo):
 
 target_with_star_atom[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary b=slices !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
     | star_atom
 
 star_atom[expr_ty]:
@@ -1160,11 +1154,11 @@ single_target[expr_ty]:
 
 single_subscript_attribute_target[expr_ty]:
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary b=slices !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
 
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=t_primary b=generalsubscript &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
+    | a=t_primary b=slices &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
     | a=t_primary b=genexp &t_lookahead {
         _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=t_primary '(' b=[arguments] ')' &t_lookahead {
@@ -1183,7 +1177,7 @@ del_targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.del_target+ [','] { a }
 
 del_target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary b=generalsubscript !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary b=slices !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 
 del_t_atom[expr_ty]:
