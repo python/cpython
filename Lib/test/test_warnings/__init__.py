@@ -542,6 +542,7 @@ class WarnTests(BaseTest):
             ) as w:
                 warning_tests.outer("msg", skip_file_prefixes=(skipped,))
 
+            self.assertEqual(len(w), 1)
             self.assertNotEqual(w[-1].filename, skipped)
 
     def test_skip_file_prefixes_type_errors(self):
