@@ -3688,7 +3688,10 @@ static int
 _curses_napms_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
-    PyCursesInitialised;
+    if (initialised != TRUE) {
+        PyErr_SetString(PyCursesError, "must call initscr() first");
+        return -1;
+    }
 
     return napms(ms);
 }
