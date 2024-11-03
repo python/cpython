@@ -93,7 +93,7 @@ class Test_pygettext(unittest.TestCase):
         with temp_cwd(None) as cwd:
             with open(filename, 'w', encoding='utf-8') as fp:
                 fp.write(module_content)
-            assert_python_ok(self.script, '-D', filename)
+            assert_python_ok('-Xutf8', self.script, '-D', filename)
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
         return self.get_msgids(data)
@@ -103,7 +103,7 @@ class Test_pygettext(unittest.TestCase):
            http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
         """
         with temp_cwd(None) as cwd:
-            assert_python_ok(self.script)
+            assert_python_ok('-Xutf8', self.script)
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -130,7 +130,7 @@ class Test_pygettext(unittest.TestCase):
         """ Match the date format from xgettext for POT-Creation-Date """
         from datetime import datetime
         with temp_cwd(None) as cwd:
-            assert_python_ok(self.script)
+            assert_python_ok('-Xutf8', self.script)
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -352,8 +352,8 @@ class Test_pygettext(unittest.TestCase):
                 contents = input_file.read_text(encoding='utf-8')
                 with temp_cwd(None):
                     Path(input_file.name).write_text(contents)
-                    assert_python_ok(self.script, '--docstrings', input_file.name)
-                    output = Path('messages.pot').read_text()
+                    assert_python_ok('-Xutf8', self.script, '--docstrings', input_file.name)
+                    output = Path('messages.pot').read_text(encoding='utf-8')
 
                 expected = output_file.read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
@@ -378,7 +378,7 @@ class Test_pygettext(unittest.TestCase):
             pymod3.parent.mkdir()
             pymod3.write_text(f'_({text3!r})', encoding='utf-8')
 
-            assert_python_ok(self.script, sdir)
+            assert_python_ok('-Xutf8', self.script, sdir)
             data = Path('messages.pot').read_text(encoding='utf-8')
             self.assertIn(f'msgid "{text1}"', data)
             self.assertIn(f'msgid "{text2}"', data)
@@ -388,11 +388,11 @@ class Test_pygettext(unittest.TestCase):
 def update_POT_snapshots():
     for input_file in DATA_DIR.glob('*.py'):
         output_file = input_file.with_suffix('.pot')
-        contents = input_file.read_text(encoding='utf-8')
+        contents = input_file.read_bytes()
         with temp_cwd(None):
-            Path(input_file.name).write_text(contents)
-            assert_python_ok(Test_pygettext.script, '--docstrings', input_file.name)
-            output = Path('messages.pot').read_text()
+            Path(input_file.name).write_bytes(contents)
+            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings', input_file.name)
+            output = Path('messages.pot').read_text(encoding='utf-8')
 
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
