@@ -131,9 +131,9 @@ Summary
 :meth:`PurePath.full_match(pattern, case_sensitive) <PurePath.full_match>`                              Match against the provided glob-style pattern
 :meth:`PurePath.match(pattern, case_sensitive) <PurePath.match>`                                        Match against the provided non-recursive glob-style pattern
 :meth:`PurePath.relative_to(other, walk_up) <PurePath.relative_to>`                                     Version of this path relative to the *other* path
-:meth:`PurePath.with_name(name) <PurePath.with_name>`                                                   New path with the :attr:`Path.name` changed
-:meth:`PurePath.with_stem(stem) <PurePath.with_stem>`                                                   New path with the :attr:`Path.stem` changed
-:meth:`PurePath.with_suffix(suffix) <PurePath.with_suffix>`                                             New path with the :attr:`Path.suffix` changed
+:meth:`PurePath.with_name(name) <PurePath.with_name>`                                                   New path with the :attr:`PurePath.name` changed
+:meth:`PurePath.with_stem(stem) <PurePath.with_stem>`                                                   New path with the :attr:`PurePath.stem` changed
+:meth:`PurePath.with_suffix(suffix) <PurePath.with_suffix>`                                             New path with the :attr:`PurePath.suffix` changed
 :meth:`PurePath.with_segments(*pathsegments) <PurePath.with_segments>`                                  New path by combining the given *pathsegments*
 
 **Concrete paths**
