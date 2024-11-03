@@ -536,11 +536,13 @@ class WarnTests(BaseTest):
     def test_skip_file_prefixes_file_path(self):
         # see: gh-126209
         with warnings_state(self.module):
-            with original_warnings.catch_warnings(record=True,
-                    module=self.module) as w:
-                warning_tests.outer(
-                    "msg", skip_file_prefixes=(warning_tests.__file__, ))
-                self.assertNotEqual(w[-1].filename, warning_tests.__file__)
+            skipped = warning_tests.__file__
+            with original_warnings.catch_warnings(
+                record=True, module=self.module,
+            ) as w:
+                warning_tests.outer("msg", skip_file_prefixes=(skipped,))
+
+            self.assertNotEqual(w[-1].filename, skipped)
 
     def test_skip_file_prefixes_type_errors(self):
         with warnings_state(self.module):
