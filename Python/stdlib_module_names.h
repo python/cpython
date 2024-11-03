@@ -38,6 +38,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_gdbm",
 "_hashlib",
 "_heapq",
+"_hmac",
 "_imp",
 "_interpchannels",
 "_interpqueues",
