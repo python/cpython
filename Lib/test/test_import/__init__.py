@@ -370,10 +370,14 @@ class ImportTests(unittest.TestCase):
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
         if hasattr(_testcapi, "__file__"):
-            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            # The path on the exception is strictly the spec origin, not the
+            # module's __file__. For most cases, these are the same; but on
+            # iOS, the Framework relocation process results in the exception
+            # being raised from the spec location.
+            self.assertEqual(cm.exception.path, _testcapi.__spec__.origin)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|fwork|pyd)\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*(\.(so|pyd))?\)"
             )
         else:
             self.assertEqual(
@@ -1230,7 +1234,7 @@ class PycRewritingTests(unittest.TestCase):
 import sys
 code_filename = sys._getframe().f_code.co_filename
 module_filename = __file__
-constant = 1
+constant = 1000
 def func():
     pass
 func_filename = func.__code__.co_filename
@@ -1299,7 +1303,7 @@ func_filename = func.__code__.co_filename
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = importlib.import_module.__code__
-        pos = constants.index(1)
+        pos = constants.index(1000)
         constants[pos] = foreign_code
         code = code.replace(co_consts=tuple(constants))
         with open(self.compiled_name, "wb") as f:
