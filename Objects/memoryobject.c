@@ -3313,6 +3313,7 @@ memoryiter_new(PyObject *self, int reversed)
     assert(reversed == 0 || reversed == 1);
     assert(PyMemoryView_Check(self));
 
+    CHECK_RELEASED(self);
     PyMemoryViewObject *sequence = _PyMemoryView_CAST(self);
     const Py_buffer *view = &sequence->view;
     if (view->ndim == 0) {
