@@ -692,7 +692,7 @@ instead of circles.
 
 
 Special functions
--------------------------
+-----------------
 
 .. function:: erf(x)
 
