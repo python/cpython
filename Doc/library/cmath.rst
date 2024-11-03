@@ -229,7 +229,11 @@ Classification functions
    tolerance is ``1e-09``, which assures that the two values are the same
    within about 9 decimal digits.  *rel_tol* must be greater than zero.
 
-   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed as ``abs(x) <= rel_tol  * abs(x)``, which is false for any ``x`` and rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument to the call. 
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is false for any ``x`` and rel_tol
+   less than ``1.0``.  So add an appropriate positive abs_tol argument to the
+   call. 
 
    If no errors occur, the result will be:
    ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
