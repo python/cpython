@@ -3373,6 +3373,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
 
