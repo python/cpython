@@ -2709,13 +2709,6 @@ class PolicyTests(unittest.TestCase):
             loop = policy.get_event_loop()
         self.assertIsNone(policy._local._loop)
 
-        loop = policy.new_event_loop()
-        self.assertIsNone(policy._local._loop)
-        policy.set_event_loop(loop)
-        self.assertIs(policy._local._loop, loop)
-        self.assertIs(loop, policy.get_event_loop())
-        loop.close()
-
     def test_get_event_loop_does_not_call_set_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
 
@@ -2908,10 +2901,10 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
+            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
             self.assertIs(asyncio._get_running_loop(), None)

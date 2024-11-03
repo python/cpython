@@ -47,6 +47,9 @@ an event loop:
    call_soon or similar API), this function will always return the
    running event loop.
 
+   If there is no running event loop set, the function will return
+   the result of the ``get_event_loop_policy().get_event_loop()`` call.
+
    Because this function has rather complex behavior (especially
    when custom event loop policies are in use), using the
    :func:`get_running_loop` function is preferred to :func:`get_event_loop`
