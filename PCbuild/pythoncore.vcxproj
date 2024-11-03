@@ -433,6 +433,7 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_HMAC.c" />
     <ClCompile Include="..\Modules\_hacl\Lib_Memzero0.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
@@ -469,6 +470,7 @@
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
