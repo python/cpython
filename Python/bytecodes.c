@@ -2791,11 +2791,12 @@ dummy_func(
             }
             else {
                 /* `iterable` is not a generator. */
-                iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                PyObject *iter_o = PyObject_GetIter(iterable_o);
                 DEAD(iterable);
-                if (PyStackRef_IsNull(iter)) {
+                if (iter_o == NULL) {
                     ERROR_NO_POP();
                 }
+                iter = PyStackRef_FromPyObjectSteal(iter_o);
                 DECREF_INPUTS();
             }
         }
