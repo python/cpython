@@ -1,2 +1,2 @@
-Fix crash when traversing an object frozen by the garbage collector on the
+Fix crash during garbage collection on an object frozen by :func:`gc.freeze` on the
 free-threaded build.
