@@ -40,7 +40,7 @@ noted otherwise, all return values are floats.
 --------------------------------------------------------------------------------------------------
 :func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
 :func:`fabs(x) <fabs>`                                Absolute value of *x*
-:func:`floor (x)  <floor>`                            Floor of *x*, the largest integer less than or equal to *x*
+:func:`floor(x)  <floor>`                             Floor of *x*, the largest integer less than or equal to *x*
 :func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
