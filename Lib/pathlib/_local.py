@@ -276,7 +276,7 @@ class PurePath(PurePathBase):
 
     @classmethod
     def _parse_pattern(cls, pattern):
-        """Parse the a glob pattern to a list of parts. This is much like
+        """Parse a glob pattern to a list of parts. This is much like
         _parse_path, except:
 
         - Rather than normalizing and returning the drive and root, we raise
