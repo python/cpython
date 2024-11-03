@@ -184,8 +184,8 @@ Number-theoretic functions
    .. versionadded:: 3.8
 
 
-Basic floating point operations
--------------------------------
+Floating point arithmetic
+-------------------------
 
 .. function:: ceil(x)
 
