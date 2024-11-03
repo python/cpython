@@ -1,0 +1,1 @@
+Fix possible data race on iterables in :meth:`list.__init__` on the free-threaded build.
