@@ -170,7 +170,7 @@ Number-theoretic and representation functions
    nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
    as ``abs(x) <= rel_tol  * abs(x)``, which is false for any ``x`` and rel_tol
    less than ``1.0``.  So add an appropriate positive abs_tol argument to the
-   call. 
+   call.
 
    If no errors occur, the result will be:
    ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
