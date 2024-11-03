@@ -9,7 +9,8 @@ Pending Removal in Python 3.16
   ``~bool``, bitwise inversion on bool.
 
 * :mod:`socket`:
-  If type annotations are required, use :class:`~socket.socket` instead.
+  No longer use :class:`socket.SocketType` as a type annotation, If type
+  annotations are required, use :class:`socket.socket` instead.
   (Contributed by James Roy in :gh:`88427`.)
 
 * :mod:`symtable`:
