@@ -38,7 +38,8 @@ exception:
    be parsed, without the leading reference to the running program. Typically, this
    means ``sys.argv[1:]``. *shortopts* is the string of option letters that the
    script wants to recognize, with options that require an argument followed by a
-   colon (``':'``; i.e., the same format that Unix :c:func:`!getopt` uses).
+   colon (``':'``) and options that takes an optional argument followed by
+   two colons (``'::'``); i.e., the same format that Unix :c:func:`!getopt` uses.
 
    .. note::
 
@@ -49,8 +50,10 @@ exception:
    *longopts*, if specified, must be a list of strings with the names of the
    long options which should be supported.  The leading ``'--'`` characters
    should not be included in the option name.  Long options which require an
-   argument should be followed by an equal sign (``'='``).  Optional arguments
-   are not supported.  To accept only long options, *shortopts* should be an
+   argument should be followed by an equal sign (``'='``).
+   Long options which take an optional argument should be followed by
+   an equal sign and question mark (``'=?'``).
+   To accept only long options, *shortopts* should be an
    empty string.  Long options on the command line can be recognized so long as
    they provide a prefix of the option name that matches exactly one of the
    accepted options.  For example, if *longopts* is ``['foo', 'frob']``, the
@@ -66,6 +69,9 @@ exception:
    second element, or an empty string if the option has no argument.  The
    options occur in the list in the same order in which they were found, thus
    allowing multiple occurrences.  Long and short options may be mixed.
+
+   .. versionchanged:: 3.14
+      Optional arguments are supported.
 
 
 .. function:: gnu_getopt(args, shortopts, longopts=[])
@@ -117,6 +123,18 @@ Using long option names is equally easy:
    ...     'condition=', 'output-file=', 'testing'])
    >>> optlist
    [('--condition', 'foo'), ('--testing', ''), ('--output-file', 'abc.def'), ('-x', '')]
+   >>> args
+   ['a1', 'a2']
+
+Optional arguments should be specified explicitly:
+
+   >>> s = '-Con -C --color=off --color a1 a2'
+   >>> args = s.split()
+   >>> args
+   ['-Con', '-C', '--color=off', '--color', 'a1', 'a2']
+   >>> optlist, args = getopt.getopt(args, 'C::', ['color=?'])
+   >>> optlist
+   [('-C', 'on'), ('-C', ''), ('--color', 'off'), ('--color', '')]
    >>> args
    ['a1', 'a2']
 

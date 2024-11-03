@@ -27,7 +27,6 @@ option involved with the exception.
 # - allow the caller to specify ordering
 # - RETURN_IN_ORDER option
 # - GNU extension with '-' as first character of option string
-# - optional arguments, specified by double colons
 # - an option string with a W followed by semicolon should
 #   treat "-W foo" as "--foo"
 
@@ -153,7 +152,7 @@ def do_longs(opts, opt, longopts, args):
 
     has_arg, opt = long_has_args(opt, longopts)
     if has_arg:
-        if optarg is None:
+        if optarg is None and has_arg != '?':
             if not args:
                 raise GetoptError(_('option --%s requires argument') % opt, opt)
             optarg, args = args[0], args[1:]
@@ -174,6 +173,8 @@ def long_has_args(opt, longopts):
         return False, opt
     elif opt + '=' in possibilities:
         return True, opt
+    elif opt + '=?' in possibilities:
+        return '?', opt
     # No exact match, so better be unique.
     if len(possibilities) > 1:
         # XXX since possibilities contains all valid continuations, might be
@@ -181,6 +182,8 @@ def long_has_args(opt, longopts):
         raise GetoptError(_('option --%s not a unique prefix') % opt, opt)
     assert len(possibilities) == 1
     unique_match = possibilities[0]
+    if unique_match.endswith('=?'):
+        return '?', unique_match[:-2]
     has_arg = unique_match.endswith('=')
     if has_arg:
         unique_match = unique_match[:-1]
@@ -189,8 +192,9 @@ def long_has_args(opt, longopts):
 def do_shorts(opts, optstring, shortopts, args):
     while optstring != '':
         opt, optstring = optstring[0], optstring[1:]
-        if short_has_arg(opt, shortopts):
-            if optstring == '':
+        has_arg = short_has_arg(opt, shortopts)
+        if has_arg:
+            if optstring == '' and has_arg != '?':
                 if not args:
                     raise GetoptError(_('option -%s requires argument') % opt,
                                       opt)
@@ -204,7 +208,11 @@ def do_shorts(opts, optstring, shortopts, args):
 def short_has_arg(opt, shortopts):
     for i in range(len(shortopts)):
         if opt == shortopts[i] != ':':
-            return shortopts.startswith(':', i+1)
+            if not shortopts.startswith(':', i+1):
+                return False
+            if shortopts.startswith('::', i+1):
+                return '?'
+            return True
     raise GetoptError(_('option -%s not recognized') % opt, opt)
 
 if __name__ == '__main__':
