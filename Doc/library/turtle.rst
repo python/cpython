@@ -2002,6 +2002,7 @@ Animation control
       :skipif: _tkinter is None
 
       >>> with screen.no_animation():
+      ...     dist = 2
       ...     for i in range(200):
       ...         fd(dist)
       ...         rt(90)
