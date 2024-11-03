@@ -1,0 +1,1 @@
+:func:`asyncio.get_event_loop` now does not implicitly creates an event loop if not already created, instead it raises :exc:`RuntimeError`. Patch by Kumar Aditya.
