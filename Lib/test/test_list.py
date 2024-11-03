@@ -314,31 +314,41 @@ class ListTest(list_tests.CommonTest):
     @support.requires_resource("cpu")
     def test_list_init_thread_safety(self):
         # GH-126369: list.__init__() didn't lock iterables
-        from threading import Thread
+        from threading import Thread, Lock
+        import contextlib
 
         def my_generator():
             for i in range(100000):
                 yield i
 
-        def gen_to_list(gen):
-            list(gen)
 
-        target = my_generator()
-        # Note: it's intentional to throw out the exception here. Generators
-        # aren't thread safe, so who knows what will happen. Right now, it just spams
-        # a lot of ValueError's, but that might change if we decide to make generators
-        # thread safe in the future. We're just making sure it doesn't crash.
-        with threading_helper.catch_threading_exception():
-            ts = [Thread(target=gen_to_list, args=(my_generator(),)) for _ in range(10)]
+        lock = Lock()
+        amount = 0
+        thread_count = 10
+
+        def gen_to_list(gen):
+            # Note: it's intentional to throw out the exception here. Generators
+            # aren't thread safe, so who knows what will happen. Right now, it just spams
+            # a lot of ValueError's, but that might change if we decide to make generators
+            # thread safe in the future. We're just making sure it doesn't crash.
+            with contextlib.suppress(ValueError):
+                list(gen)
+
+            with lock:
+                nonlocal amount
+                amount += 1
+
+        with threading_helper.catch_threading_exception() as cm:
+            ts = [Thread(target=gen_to_list, args=(my_generator(),)) for _ in range(thread_count)]
             for t in ts:
                 t.start()
 
             for t in ts:
                 t.join()
 
-        # Make sure it exhausted the generator
-        with self.assertRaises(StopIteration):
-            next(target)
+            self.assertIsNone(cm.exc_value)
+
+        self.assertEqual(amount, thread_count)
 
 
 if __name__ == "__main__":
