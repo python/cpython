@@ -1362,9 +1362,9 @@ _list_extend(PyListObject *self, PyObject *iterable)
         Py_END_CRITICAL_SECTION2();
     }
     else {
-        Py_BEGIN_CRITICAL_SECTION(self);
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_iter_lock_held(self, iterable);
-        Py_END_CRITICAL_SECTION();
+        Py_END_CRITICAL_SECTION2();
     }
     return res;
 }
