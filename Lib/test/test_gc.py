@@ -1088,12 +1088,6 @@ class GCTests(unittest.TestCase):
         # a negative reference count.
         import textwrap
 
-        # We have to run this in subprocess because
-        # freezing the GC alongside deferred reference counting
-        # causes a seperate bug, that needs to get addressed in another PR.
-        source = textwrap.dedent("""
-        import gc
-
         x = [1, 2, 3]
         gc.freeze()
         y = [x]
@@ -1101,6 +1095,21 @@ class GCTests(unittest.TestCase):
         del y
         gc.collect()
         gc.unfreeze()
+
+        source = textwrap.dedent("""
+        import gc
+        import unittest
+
+
+        class Test(unittest.TestCase):
+            def test_something(self):
+                gc.freeze()
+                gc.collect()
+                gc.unfreeze()
+
+
+        if __name__ == "__main__":
+            unittest.main()
         """)
         assert_python_ok("-c", source)
 
