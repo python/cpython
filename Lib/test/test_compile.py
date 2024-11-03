@@ -344,8 +344,7 @@ class TestSpecifics(unittest.TestCase):
 
     def test_lambda_consts(self):
         l = lambda: "this is the only const"
-        self.assertEqual(len(l.__code__.co_consts), 1)
-        self.assertEqual(l.__code__.co_consts[0], "this is the only const")
+        self.assertEqual(l.__code__.co_consts, ("this is the only const",))
 
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'

@@ -435,7 +435,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     case Module_kind:
         seq = mod->v.Module.body;
         if (_PyAST_GetDocString(seq)) {
-            assert(st->st_cur);
             st->st_cur->ste_has_docstring = 1;
         }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
@@ -1915,7 +1914,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
 
         if (_PyAST_GetDocString(s->v.ClassDef.body)) {
-            assert(st->st_cur);
             st->st_cur->ste_has_docstring = 1;
         }
 

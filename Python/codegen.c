@@ -1243,8 +1243,8 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
     assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
-    if (docstring) {
-        assert(ste->ste_has_docstring);
+    if (ste->ste_has_docstring) {
+        assert(docstring);
         first_instr = 1;
         docstring = _PyCompile_CleanDoc(docstring);
         if (docstring == NULL) {
