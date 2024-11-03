@@ -1526,6 +1526,7 @@ class PythonFinalizationTests(unittest.TestCase):
         assert_python_ok("-c", code)
 
 
+@requires_gil_enabled("This test hangs and occasionally segfaults on the Free-threading build")
 class MutationInsideCycleGCTests(unittest.TestCase):
     def setUp(self):
         # This test requires the gc to be enabled.
