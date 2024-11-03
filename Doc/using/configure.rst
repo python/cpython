@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -56,7 +56,7 @@ Features and minimum versions required to build CPython:
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -702,7 +702,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`!sys.getobjects` function.
+   * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -1142,11 +1142,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest
