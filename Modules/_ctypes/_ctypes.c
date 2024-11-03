@@ -2425,7 +2425,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
         return NULL;
     }
     if (as_parameter) {
-        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
             return NULL;

@@ -409,12 +409,19 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state,
-            fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+        // Beware: An evil call_soon could alter fut_callback0 or fut_context0.
+        // Since we are anyway clearing them after the call, whether call_soon
+        // succeeds or not, the idea is to transfer ownership so that external
+        // code is not able to alter them during the call.
+        PyObject *fut_callback0 = fut->fut_callback0;
+        fut->fut_callback0 = NULL;
+        PyObject *fut_context0 = fut->fut_context0;
+        fut->fut_context0 = NULL;
 
-        Py_CLEAR(fut->fut_callback0);
-        Py_CLEAR(fut->fut_context0);
+        int ret = call_soon(state, fut->fut_loop, fut_callback0,
+                            (PyObject *)fut, fut_context0);
+        Py_CLEAR(fut_callback0);
+        Py_CLEAR(fut_context0);
         if (ret) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
@@ -1012,7 +1019,12 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
     ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
+        // Beware: An evil PyObject_RichCompareBool could free fut_callback0
+        // before a recursive call is made with that same arg. For details, see
+        // https://github.com/python/cpython/pull/125967#discussion_r1816593340.
+        PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
+        int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
+        Py_DECREF(fut_callback0);
         if (cmp == -1) {
             return NULL;
         }
@@ -2108,7 +2120,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
             return -1;
         }
     } else {
-        self->task_context = Py_NewRef(context);
+        Py_XSETREF(self->task_context, Py_NewRef(context));
     }
 
     Py_CLEAR(self->task_fut_waiter);
@@ -2726,7 +2738,11 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
+    // Beware: An evil call_soon could alter task_context.
+    // See: https://github.com/python/cpython/issues/126080.
+    PyObject *task_context = Py_NewRef(task->task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
+    Py_DECREF(task_context);
     Py_DECREF(cb);
     return ret;
 }
@@ -2951,8 +2967,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
@@ -3044,8 +3069,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
