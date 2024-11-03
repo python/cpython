@@ -132,6 +132,7 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
@@ -172,6 +173,11 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_FUTURE_ANNOTATIONS    0x1000000
 
 #define CO_NO_MONITORING_EVENTS 0x2000000
+
+/* Whether the code object has a docstring,
+   If so, it will be the first item in co_consts
+*/
+#define CO_HAS_DOCSTRING 0x4000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.

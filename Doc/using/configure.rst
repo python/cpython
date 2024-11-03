@@ -702,7 +702,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`!sys.getobjects` function.
+   * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -1142,11 +1142,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest

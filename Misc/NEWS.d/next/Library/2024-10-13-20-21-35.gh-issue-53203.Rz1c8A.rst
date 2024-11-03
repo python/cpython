@@ -1,2 +1,0 @@
-Fix :func:`time.strptime` for ``%c``, ``%x`` and ``%X`` formats in many
-locales that use non-ASCII digits, like Persian, Burmese, Odia and Shan.
