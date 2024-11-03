@@ -318,7 +318,7 @@ class ListTest(list_tests.CommonTest):
         import contextlib
 
         def my_generator():
-            for i in range(100000):
+            for i in range(1000000):
                 yield i
 
 
@@ -338,8 +338,9 @@ class ListTest(list_tests.CommonTest):
                 nonlocal amount
                 amount += 1
 
+        generator = my_generator()
         with threading_helper.catch_threading_exception() as cm:
-            ts = [Thread(target=gen_to_list, args=(my_generator(),)) for _ in range(thread_count)]
+            ts = [Thread(target=gen_to_list, args=(generator,)) for _ in range(thread_count)]
             for t in ts:
                 t.start()
 
