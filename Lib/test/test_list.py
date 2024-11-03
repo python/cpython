@@ -1,5 +1,7 @@
 import sys
 from test import list_tests
+from test import support
+from test.support import threading_helper
 from test.support import cpython_only
 import pickle
 import unittest
@@ -308,6 +310,36 @@ class ListTest(list_tests.CommonTest):
                 pass
             a.append(4)
             self.assertEqual(list(it), [])
+
+    @support.requires_resource("cpu")
+    def test_list_init_thread_safety(self):
+        # GH-126369: list.__init__() didn't lock iterables
+        from threading import Thread
+
+        def my_generator():
+            for i in range(100000):
+                yield i
+
+        def gen_to_list(gen):
+            list(gen)
+
+        target = my_generator()
+        # Note: it's intentional to throw out the exception here. Generators
+        # aren't thread safe, so who knows what will happen. Right now, it just spams
+        # a lot of ValueError's, but that might change if we decide to make generators
+        # thread safe in the future. We're just making sure it doesn't crash.
+        with threading_helper.catch_threading_exception():
+            ts = [Thread(target=gen_to_list, args=(my_generator(),)) for _ in range(10)]
+            for t in ts:
+                t.start()
+
+            for t in ts:
+                t.join()
+
+        # Make sure it exhausted the generator
+        with self.assertRaises(StopIteration):
+            next(target)
+
 
 if __name__ == "__main__":
     unittest.main()
