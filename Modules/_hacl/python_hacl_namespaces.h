@@ -209,10 +209,21 @@
 #define Hacl_Hash_SHA3_state_free python_hashlib_Hacl_Hash_SHA3_state_free
 #define Hacl_Hash_SHA3_state_malloc python_hashlib_Hacl_Hash_SHA3_state_malloc
 
+// HMAC-MD5
+#define Hacl_HMAC_compute_md5 python_hashlib_Hacl_HMAC_compute_md5
+// HMAC-SHA-1
 #define Hacl_HMAC_compute_sha1 python_hashlib_Hacl_HMAC_compute_sha1
+// HMAC-SHA-2
+#define Hacl_HMAC_compute_sha2_224 python_hashlib_Hacl_HMAC_compute_sha2_224
 #define Hacl_HMAC_compute_sha2_256 python_hashlib_Hacl_HMAC_compute_sha2_256
 #define Hacl_HMAC_compute_sha2_384 python_hashlib_Hacl_HMAC_compute_sha2_384
 #define Hacl_HMAC_compute_sha2_512 python_hashlib_Hacl_HMAC_compute_sha2_512
+// HMAC-SHA-3
+#define Hacl_HMAC_compute_sha3_224 python_hashlib_Hacl_HMAC_compute_sha3_224
+#define Hacl_HMAC_compute_sha3_256 python_hashlib_Hacl_HMAC_compute_sha3_256
+#define Hacl_HMAC_compute_sha3_384 python_hashlib_Hacl_HMAC_compute_sha3_384
+#define Hacl_HMAC_compute_sha3_512 python_hashlib_Hacl_HMAC_compute_sha3_512
+// HMAC-BLAKE
 #define Hacl_HMAC_compute_blake2s_32 python_hashlib_Hacl_HMAC_compute_blake2s_32
 #define Hacl_HMAC_compute_blake2b_32 python_hashlib_Hacl_HMAC_compute_blake2b_32
 
