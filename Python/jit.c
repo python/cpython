@@ -473,19 +473,19 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     group = &shim;
     code_size += group->code_size;
     data_size += group->data_size;
-    combine_symbol_mask(group->shim_mask, state.trampolines.mask);
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         state.instruction_starts[i] = code_size;
         code_size += group->code_size;
         data_size += group->data_size;
-        combine_symbol_mask(group->shim_mask, state.trampolines.mask);
+        combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     }
     group = &stencil_groups[_FATAL_ERROR];
     code_size += group->code_size;
     data_size += group->data_size;
-    combine_symbol_mask(group->shim_mask, state.trampolines.mask);
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     // Calculate the size of the trampolines required by the whole trace
     for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
         state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
@@ -509,9 +509,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     state.trampolines.mem = memory + code_size + data_size;
     // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons). On platforms where
-    // we don't change calling conventions, the shim is empty and
-    // nothing is emitted here:
+    // (which may be different for efficiency reasons).
     group = &shim;
     group->emit(code, data, executor, NULL, &state);
     code += group->code_size;

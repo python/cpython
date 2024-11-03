@@ -19,7 +19,7 @@ def _dump_footer(
     yield "        const _PyUOpInstruction *instruction, jit_state *state);"
     yield "    size_t code_size;"
     yield "    size_t data_size;"
-    yield "    symbol_mask shim_mask;"
+    yield "    symbol_mask trampoline_mask;"
     yield "} StencilGroup;"
     yield ""
     yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
