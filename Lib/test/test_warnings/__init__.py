@@ -534,6 +534,7 @@ class WarnTests(BaseTest):
                 self.assertIn("unittest", w[-1].filename)
 
     def test_skip_file_prefixes_file_path(self):
+        # see: gh-126209
         with warnings_state(self.module):
             with original_warnings.catch_warnings(record=True,
                     module=self.module) as w:
