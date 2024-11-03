@@ -815,6 +815,8 @@ pytime_as_timeval_struct(PyTime_t t, struct timeval *tv,
 #ifdef MS_WINDOWS
     // On Windows, timeval.tv_sec type is long
     res2 = _PyTime_AsCLong(tv_sec, &tv->tv_sec);
+#elif _UCRT
+    res2 = _PyTime_AsTime_t(tv_sec, (time_t *)&tv->tv_sec);
 #else
     res2 = _PyTime_AsTime_t(tv_sec, &tv->tv_sec);
 #endif

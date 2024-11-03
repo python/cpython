@@ -1,0 +1,2 @@
+Fix the type error when compiling :source:`Python/pytime.c` on the
+MSYS2/UCRT64.
