@@ -576,6 +576,11 @@ asyncio
 
   (Contributed by Kumar Aditya in :gh:`120804`.)
 
+* Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
+  It now raises a :exc:`RuntimeError` if there is no set event loop.
+  (Contributed by Kumar Aditya in :gh:`126353`.)
+
+
 collections.abc
 ---------------
 

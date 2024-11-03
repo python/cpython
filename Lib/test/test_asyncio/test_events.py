@@ -2701,6 +2701,33 @@ class PolicyTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, policy.set_event_loop, object())
         self.assertRaises(NotImplementedError, policy.new_event_loop)
 
+    def test_get_event_loop(self):
+        policy = asyncio.DefaultEventLoopPolicy()
+        self.assertIsNone(policy._local._loop)
+
+        with self.assertRaises(RuntimeError):
+            loop = policy.get_event_loop()
+        self.assertIsNone(policy._local._loop)
+
+        loop = policy.new_event_loop()
+        self.assertIsNone(policy._local._loop)
+        policy.set_event_loop(loop)
+        self.assertIs(policy._local._loop, loop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
+
+    def test_get_event_loop_does_not_call_set_event_loop(self):
+        policy = asyncio.DefaultEventLoopPolicy()
+
+        with mock.patch.object(
+                policy, "set_event_loop",
+                wraps=policy.set_event_loop) as m_set_event_loop:
+
+            with self.assertRaises(RuntimeError):
+                loop = policy.get_event_loop()
+
+            m_set_event_loop.assert_not_called()
+
     def test_get_event_loop_after_set_none(self):
         policy = asyncio.DefaultEventLoopPolicy()
         policy.set_event_loop(None)
@@ -2881,6 +2908,7 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
+            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
