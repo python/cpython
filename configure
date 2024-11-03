@@ -718,6 +718,8 @@ LIBHACL_SIMD256_FLAGS
 LIBHACL_SIMD128_OBJS
 LIBHACL_SIMD128_FLAGS
 LIBHACL_CFLAGS
+MODULE__HMAC_FALSE
+MODULE__HMAC_TRUE
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
@@ -1133,6 +1135,7 @@ with_openssl
 with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
+with_builtin_hashlib_hmac
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1955,6 +1958,9 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
                           builtin hash modules, md5, sha1, sha2, sha3 (with
                           shake), blake2
+  --with-builtin-hashlib-hmac
+                          use builtin HACL* HMAC when possible [default is
+                          yes]
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -29084,6 +29090,21 @@ esac
 done
 IFS=$as_save_IFS
 
+# builtin HACL* HMAC module
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hmac=yes,no" >&5
+printf %s "checking for --with-builtin-hashlib-hmac=yes,no... " >&6; }
+
+# Check whether --with-builtin-hashlib-hmac was given.
+if test ${with_builtin_hashlib_hmac+y}
+then :
+  withval=$with_builtin_hashlib_hmac; with_builtin_hashlib_hmac=$with_val
+else $as_nop
+  with_builtin_hashlib_hmac=yes
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hmac" >&5
+printf "%s\n" "$with_builtin_hashlib_hmac" >&6; }
+
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -30765,6 +30786,45 @@ fi
 printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
+printf %s "checking for stdlib extension module _hmac... " >&6; }
+        if test "$py_cv_module__hmac" != "n/a"
+then :
+
+    if test "$with_builtin_hashlib_hmac" = yes
+then :
+  if true
+then :
+  py_cv_module__hmac=yes
+else $as_nop
+  py_cv_module__hmac=missing
+fi
+else $as_nop
+  py_cv_module__hmac=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__HMAC_STATE=$py_cv_module__hmac$as_nl"
+  if test "x$py_cv_module__hmac" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__hmac" = yes; then
+  MODULE__HMAC_TRUE=
+  MODULE__HMAC_FALSE='#'
+else
+  MODULE__HMAC_TRUE='#'
+  MODULE__HMAC_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hmac" >&5
+printf "%s\n" "$py_cv_module__hmac" >&6; }
+
+
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in
   Linux*)
@@ -32404,6 +32464,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HMAC_TRUE}" && test -z "${MODULE__HMAC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HMAC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
