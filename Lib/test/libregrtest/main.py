@@ -123,7 +123,7 @@ class Regrtest:
             self.python_cmd = None
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
-        self.tmp_dir: StrPath | None = ns.tempdir
+        self._tmp_dir: StrPath | None = ns.tempdir
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -159,6 +159,8 @@ class Regrtest:
         self.logger.log(line)
 
     def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        if tests is None:
+            tests = []
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
@@ -461,6 +463,7 @@ class Regrtest:
         print()
         print("Total duration: %s" % format_duration(duration))
 
+        assert self.first_runtests, "self.first_runtests is None"
         self.results.display_summary(self.first_runtests, filtered)
 
         # Result
@@ -708,7 +711,12 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        self.tmp_dir = get_temp_dir(self.tmp_dir)
+        self._tmp_dir = get_temp_dir(self._tmp_dir)
+
+    @property
+    def tmp_dir(self) -> StrPath:
+        assert self._tmp_dir is not None, "self._tmp_dir is None"
+        return self._tmp_dir
 
     def main(self, tests: TestList | None = None) -> NoReturn:
         if self.want_add_python_opts:
