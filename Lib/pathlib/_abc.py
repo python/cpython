@@ -116,10 +116,6 @@ class PurePathBase:
         # the `__init__()` method.
         '_raw_paths',
 
-        # The `_str` slot stores the string representation of the path,
-        # computed when `__str__()` is called for the first time.
-        '_str',
-
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
@@ -145,25 +141,22 @@ class PurePathBase:
         """
         return type(self)(*pathsegments)
 
-    @property
-    def _raw_path(self):
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.parser.join(*paths)
-        return path
-
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        try:
-            return self._str
-        except AttributeError:
-            self._str = self._raw_path
-            return self._str
+        paths = self._raw_paths
+        if len(paths) == 1:
+            return paths[0]
+        elif paths:
+            # Join path segments from the initializer.
+            path = self.parser.join(*paths)
+            # Cache the joined path.
+            paths.clear()
+            paths.append(path)
+            return path
+        else:
+            paths.append('')
+            return ''
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)

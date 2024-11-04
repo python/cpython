@@ -77,6 +77,11 @@ class PurePath(PurePathBase):
         # tail are normalized.
         '_drv', '_root', '_tail_cached',
 
+        # The `_str` slot stores the string representation of the path,
+        # computed from the drive, root and tail when `__str__()` is called
+        # for the first time. It's used to implement `_str_normcase`
+        '_str',
+
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
         # accessed for the first time. It's used to implement `__eq__()`
@@ -296,7 +301,8 @@ class PurePath(PurePathBase):
         try:
             return self._drv
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._drv
 
     @property
@@ -305,7 +311,8 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._root
 
     @property
@@ -313,7 +320,8 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._tail_cached
 
     @property
