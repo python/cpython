@@ -230,6 +230,7 @@ print_gc_stats(FILE *out, GCStats *stats)
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
         fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
+        fprintf(out, "GC[%d] objects marked: %" PRIu64 "\n", i, stats[i].objects_marked);
         fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
     }
 }

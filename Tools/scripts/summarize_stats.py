@@ -1118,6 +1118,7 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
+                Count(gen["objects marked"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1127,7 +1128,7 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:", "Objects marked:"),
                 calc_gc_stats,
             )
         ],

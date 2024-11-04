@@ -1445,21 +1445,23 @@ gc_mark(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_init(&reachable);
     // Move all reachable objects into visited space.
     PyGC_Head *gc = AS_GC(tstate->interp->sysdict);
+    Py_ssize_t objects_marked = 0;
     if (gc_old_space(gc) != gcstate->visited_space) {
         gc_flip_old_space(gc);
         gc_list_move(gc, &reachable);
+        objects_marked++;
     }
     gc = AS_GC(tstate->interp->builtins);
     if (gc_old_space(gc) != gcstate->visited_space) {
         gc_flip_old_space(gc);
         gc_list_move(gc, &reachable);
+        objects_marked++;
     }
     // Move all objects on stacks to reachable
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(tstate->interp);
     HEAD_UNLOCK(runtime);
-    Py_ssize_t objects_marked = 0;
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
@@ -1503,8 +1505,14 @@ gc_mark(PyThreadState *tstate, struct gc_collection_stats *stats)
                         visit_add_to_container,
                         &arg);
     }
+    objects_marked += arg.size;
     validate_old(gcstate);
     gcstate->work_to_do -= objects_marked;
+#ifdef Py_STATS
+    if (_Py_stats) {
+        GC_STAT_ADD(1, objects_marked, objects_marked);
+    }
+#endif
     gcstate->phase = GC_PHASE_COLLECT;
 }
 
