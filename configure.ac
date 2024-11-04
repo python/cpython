@@ -7074,7 +7074,6 @@ done
 AC_SUBST([SRCDIRS])
 SRCDIRS="\
   Modules \
-  Modules/_blake2 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \

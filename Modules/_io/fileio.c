@@ -131,6 +131,8 @@ internal_close(fileio *self)
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     }
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = NULL;
     if (err < 0) {
         errno = save_errno;
         PyErr_SetFromErrno(PyExc_OSError);
@@ -268,8 +270,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */
-            if (internal_close(self) < 0)
+            if (internal_close(self) < 0) {
                 return -1;
+            }
         }
         else
             self->fd = -1;
@@ -523,10 +526,8 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         internal_close(self);
         _PyErr_ChainExceptions1(exc);
     }
-    if (self->stat_atopen != NULL) {
-        PyMem_Free(self->stat_atopen);
-        self->stat_atopen = NULL;
-    }
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = NULL;
 
  done:
 #ifdef MS_WINDOWS
