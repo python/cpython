@@ -26,6 +26,7 @@ extern "C" {
 #include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
@@ -222,6 +223,7 @@ struct _is {
     struct _brc_state brc;  // biased reference counting state
     struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
+    _PyIndexPool tlbc_indices;
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main

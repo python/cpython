@@ -42,6 +42,9 @@ typedef struct _PyThreadStateImpl {
         int is_finalized;
     } refcounts;
 
+    // Index to use to retrieve thread-local bytecode for this thread
+    int32_t tlbc_index;
+
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
 #endif
@@ -51,7 +54,6 @@ typedef struct _PyThreadStateImpl {
 #endif
 
 } _PyThreadStateImpl;
-
 
 #ifdef __cplusplus
 }
