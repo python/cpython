@@ -194,10 +194,12 @@ PyDoc_STRVAR(_lsprof_Profiler_enable__doc__,
 "\n"
 "Start collecting profiling information.\n"
 "\n"
-"If \'subcalls\' is True, also records for each function\n"
-"statistics separated according to its current caller.\n"
-"If \'builtins\' is True, records the time spent in\n"
-"built-in functions separately from their caller.");
+"  subcalls\n"
+"    If True, also records for each function\n"
+"    statistics separated according to its current caller.\n"
+"  builtins\n"
+"    If True, records the time spent in\n"
+"    built-in functions separately from their caller.");
 
 #define _LSPROF_PROFILER_ENABLE_METHODDEF    \
     {"enable", _PyCFunction_CAST(_lsprof_Profiler_enable), METH_FASTCALL|METH_KEYWORDS, _lsprof_Profiler_enable__doc__},
@@ -403,4 +405,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3750676abdc066ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b71f52bee9a7bb1 input=a9049054013a1b77]*/

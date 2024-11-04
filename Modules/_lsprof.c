@@ -755,20 +755,20 @@ static const struct {
 _lsprof.Profiler.enable
 
     subcalls: bool = True
+        If True, also records for each function
+        statistics separated according to its current caller.
+
     builtins: bool = True
+        If True, records the time spent in
+        built-in functions separately from their caller.
 
 Start collecting profiling information.
-
-If 'subcalls' is True, also records for each function
-statistics separated according to its current caller.
-If 'builtins' is True, records the time spent in
-built-in functions separately from their caller.
 [clinic start generated code]*/
 
 static PyObject *
 _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
                              int builtins)
-/*[clinic end generated code: output=1e747f9dc1edd571 input=0b6049b4e398781f]*/
+/*[clinic end generated code: output=1e747f9dc1edd571 input=9ab81405107ab7f1]*/
 {
     int all_events = 0;
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
@@ -953,8 +953,9 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
                    int subcalls, int builtins)
 /*[clinic end generated code: output=ac523803ec9f9df2 input=8285ca746f96a414]*/
 {
-    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0)
+    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return -1;
+    }
     self->externalTimerUnit = timeunit;
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
