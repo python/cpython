@@ -88,7 +88,6 @@ Objects/exceptions.c          @iritkatriel
 **/sha*                       @gpshead @tiran
 Modules/md5*                  @gpshead @tiran
 **/*blake*                    @gpshead @tiran
-Modules/_blake2/**            @gpshead @tiran
 Modules/_hacl/**              @gpshead
 
 # logging

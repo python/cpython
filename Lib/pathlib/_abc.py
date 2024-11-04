@@ -94,24 +94,12 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        """Emulates os.scandir(), which returns an object that can be used as
-        a context manager. This method is called by walk() and glob().
-        """
-        import contextlib
-        return contextlib.nullcontext(path.iterdir())
+    scandir = operator.methodcaller('scandir')
 
     @staticmethod
     def concat_path(path, text):
         """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir()."""
-        return entry
 
 
 class PurePathBase:
@@ -705,16 +693,18 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                for child in path.iterdir():
-                    try:
-                        if child.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
-                        filenames.append(child.name)
+                with path.scandir() as entries:
+                    for entry in entries:
+                        name = entry.name
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks):
+                                if not top_down:
+                                    paths.append(path.joinpath(name))
+                                dirnames.append(name)
+                            else:
+                                filenames.append(name)
+                        except OSError:
+                            filenames.append(name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)

@@ -621,6 +621,13 @@ pathlib
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
 
+pkgutil
+-------
+
+* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Bénédikt Tran in :gh:`97850`.)
+
 pty
 ---
 
@@ -804,6 +811,10 @@ Porting to Python 3.14
 
 Deprecated
 ----------
+
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
   and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
