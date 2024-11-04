@@ -57,12 +57,14 @@ def getopt(args, shortopts, longopts = []):
     running program.  Typically, this means "sys.argv[1:]".  shortopts
     is the string of option letters that the script wants to
     recognize, with options that require an argument followed by a
-    colon (i.e., the same format that Unix getopt() uses).  If
+    colon and options that accept an optional argument followed by
+    two colons (i.e., the same format that Unix getopt() uses).  If
     specified, longopts is a list of strings with the names of the
     long options which should be supported.  The leading '--'
     characters should not be included in the option name.  Options
     which require an argument should be followed by an equal sign
-    ('=').
+    ('=').  Options which acept an optional argument should be
+    followed by an equal sign and question mark ('=?').
 
     The return value consists of two elements: the first is a list of
     (option, value) pairs; the second is the list of program arguments
