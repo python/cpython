@@ -302,6 +302,12 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+enum _GCPhase {
+    GC_PHASE_DONE = 0,
+    GC_PHASE_MARK = 1,
+    GC_PHASE_COLLECT = 2
+};
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -329,6 +335,7 @@ struct _gc_runtime_state {
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
     int visited_space;
+    int phase;
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
