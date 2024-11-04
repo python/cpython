@@ -1460,7 +1460,7 @@ Special read-only attributes
 
        .. deprecated:: 3.12
           This attribute of code objects is deprecated, and may be removed in
-          Python 3.14.
+          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
