@@ -1,6 +1,5 @@
 import sys
 from test import list_tests
-from test import support
 from test.support import cpython_only
 import pickle
 import unittest
@@ -309,7 +308,6 @@ class ListTest(list_tests.CommonTest):
                 pass
             a.append(4)
             self.assertEqual(list(it), [])
-
 
 if __name__ == "__main__":
     unittest.main()
