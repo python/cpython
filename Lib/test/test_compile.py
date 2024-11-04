@@ -1384,53 +1384,90 @@ class TestSpecifics(unittest.TestCase):
                     actual += 1
             self.assertEqual(actual, expected)
 
-        def check_consts(func, typ, expected):
-            slice_consts = 0
+        def check_num_consts(func, typ, expected):
+            num_consts = 0
             consts = func.__code__.co_consts
             for instr in dis.Bytecode(func):
                 if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
-                    slice_consts += 1
-            self.assertEqual(slice_consts, expected)
+                    num_consts += 1
+            self.assertEqual(num_consts, expected)
+
+        def check_consts(func, typ, expected):
+            all_consts = set()
+            consts = func.__code__.co_consts
+            for instr in dis.Bytecode(func):
+                if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
+                    all_consts.add(consts[instr.oparg])
+            self.assertEqual(all_consts, expected)
 
         def load():
             return x[a:b] + x [a:] + x[:b] + x[:]
 
+        check_op_count(load, "BINARY_SLICE", 3)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_consts(load, slice, {slice(None, None, None)})
+
         def store():
             x[a:b] = y
-            x [a:] = y
+            x[a:] = y
             x[:b] = y
             x[:] = y
+
+        check_op_count(store, "STORE_SLICE", 3)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_consts(store, slice, {slice(None, None, None)})
 
         def long_slice():
             return x[a:b:c]
 
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_num_consts(long_slice, slice, 0)
+
         def aug():
             x[a:b] += y
+
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
+        check_num_consts(long_slice, slice, 0)
 
         def aug_const():
             x[1:2] += y
 
+        check_op_count(aug_const, "BINARY_SLICE", 0)
+        check_op_count(aug_const, "STORE_SLICE", 0)
+        check_consts(aug_const, slice, {slice(1, 2)})
+
         def compound_const_slice():
             x[1:2:3, 4:5:6] = y
 
-        check_op_count(load, "BINARY_SLICE", 3)
-        check_op_count(load, "BUILD_SLICE", 0)
-        check_consts(load, slice, 1)
-        check_op_count(store, "STORE_SLICE", 3)
-        check_op_count(store, "BUILD_SLICE", 0)
-        check_consts(store, slice, 1)
-        check_op_count(long_slice, "BUILD_SLICE", 1)
-        check_op_count(long_slice, "BINARY_SLICE", 0)
-        check_op_count(aug, "BINARY_SLICE", 1)
-        check_op_count(aug, "STORE_SLICE", 1)
-        check_op_count(aug, "BUILD_SLICE", 0)
-        check_op_count(aug_const, "BINARY_SLICE", 0)
-        check_op_count(aug_const, "STORE_SLICE", 0)
-        check_consts(aug_const, slice, 1)
         check_op_count(compound_const_slice, "BINARY_SLICE", 0)
         check_op_count(compound_const_slice, "BUILD_SLICE", 0)
-        check_consts(compound_const_slice, slice, 0)
-        check_consts(compound_const_slice, tuple, 1)
+        check_num_consts(compound_const_slice, slice, 0)
+        check_consts(compound_const_slice, tuple, {(slice(1, 2, 3), slice(4, 5, 6))})
+
+        def mutable_slice():
+            x[[]:] = y
+
+        check_num_consts(mutable_slice, slice, 0)
+
+        def different_but_equal():
+            x[:0] = y
+            x[:0.0] = y
+            x[:False] = y
+            x[:None] = y
+
+        check_consts(
+            different_but_equal,
+            slice,
+            {
+                slice(None, 0, None),
+                slice(None, 0.0, None),
+                slice(None, False, None),
+                slice(None, None, None)
+            }
+        )
 
     def test_compare_positions(self):
         for opname_prefix, op in [
