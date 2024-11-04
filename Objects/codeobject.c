@@ -2478,8 +2478,12 @@ _PyCode_ConstantKey(PyObject *op)
 
         PyObject *slice_key = PySlice_New(start_key, stop_key, step_key);
         if (slice_key == NULL) {
+            Py_DECREF(start_key);
+            Py_DECREF(stop_key);
+            Py_DECREF(step_key);
             return NULL;
         }
+
         key = PyTuple_Pack(2, slice_key, op);
         Py_DECREF(slice_key);
     }
