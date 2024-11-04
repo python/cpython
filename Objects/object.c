@@ -2540,8 +2540,7 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         // Someone beat us to it!
         return 0;
     }
-    Py_ssize_t shared = _Py_atomic_load_ssize(&op->ob_ref_shared);
-    _Py_atomic_store_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0) + shared);
+    _Py_atomic_add_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
     return 1;
 #else
     return 0;
