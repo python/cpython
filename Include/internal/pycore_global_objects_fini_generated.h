@@ -738,6 +738,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_abc_impl));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_abstract_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_active));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_add_pending_task));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_anonymous_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_argtypes_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_as_parameter_));
@@ -746,11 +747,13 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_bootstrap));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_check_retval_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_dealloc_warn));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_del_pending_task));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_feature_version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_field_types));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fields_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_finalizing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_find_and_load));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_finish_execution));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fix_up_module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_flags_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_get_sourcefile));

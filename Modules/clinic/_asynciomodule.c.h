@@ -481,6 +481,27 @@ _asyncio_Future__make_cancelled_error(FutureObj *self, PyObject *Py_UNUSED(ignor
     return _asyncio_Future__make_cancelled_error_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Future__finish_execution__doc__,
+"_finish_execution($self, /)\n"
+"--\n"
+"\n"
+"Ask the event loop to call all callbacks.\n"
+"\n"
+"The callbacks are scheduled to be called as soon as possible. Also\n"
+"clears the callback list.");
+
+#define _ASYNCIO_FUTURE__FINISH_EXECUTION_METHODDEF    \
+    {"_finish_execution", (PyCFunction)_asyncio_Future__finish_execution, METH_NOARGS, _asyncio_Future__finish_execution__doc__},
+
+static PyObject *
+_asyncio_Future__finish_execution_impl(FutureObj *self);
+
+static PyObject *
+_asyncio_Future__finish_execution(FutureObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Future__finish_execution_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
 "Task(coro, *, loop=None, name=None, context=None, eager_start=False)\n"
 "--\n"
@@ -939,6 +960,23 @@ PyDoc_STRVAR(_asyncio_Task_set_name__doc__,
 
 #define _ASYNCIO_TASK_SET_NAME_METHODDEF    \
     {"set_name", (PyCFunction)_asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
+
+PyDoc_STRVAR(_asyncio_Task__finish_execution__doc__,
+"_finish_execution($self, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK__FINISH_EXECUTION_METHODDEF    \
+    {"_finish_execution", (PyCFunction)_asyncio_Task__finish_execution, METH_NOARGS, _asyncio_Task__finish_execution__doc__},
+
+static PyObject *
+_asyncio_Task__finish_execution_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task__finish_execution(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task__finish_execution_impl(self);
+}
 
 PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "_get_running_loop($module, /)\n"
@@ -1547,4 +1585,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ffe9b71bc65888b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=295cbb5db45fd5a5 input=a9049054013a1b77]*/

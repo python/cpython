@@ -2283,6 +2283,17 @@ class BaseTaskTests:
         source_traceback = task._source_traceback
         task = None
 
+        # no more reference to kill_me() task in user code. The task
+        # should be kept alive as long as it is pending and we hold a
+        # reference to the event loop (#91887)
+        support.gc_collect()
+
+        self.assertEqual(len(self.all_tasks(loop=self.loop)), 1)
+        mock_handler.assert_not_called()
+
+        # remove strong reference held by the event loop
+        self.loop._pending_tasks.clear()
+
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 

@@ -736,6 +736,7 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
+    INIT_ID(_add_pending_task), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
     INIT_ID(_as_parameter_), \
@@ -744,11 +745,13 @@ extern "C" {
     INIT_ID(_bootstrap), \
     INIT_ID(_check_retval_), \
     INIT_ID(_dealloc_warn), \
+    INIT_ID(_del_pending_task), \
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
+    INIT_ID(_finish_execution), \
     INIT_ID(_fix_up_module), \
     INIT_ID(_flags_), \
     INIT_ID(_get_sourcefile), \
