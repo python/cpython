@@ -2529,12 +2529,13 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         return 0;
     }
 
-    if (_PyObject_HasDeferredRefcount(op)) {
-        // Nothing to do
+    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
+    if ((bits & _PyGC_BITS_DEFERRED) != 0)
+    {
+        // Nothing to do.
         return 0;
     }
 
-    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
     if (_Py_atomic_compare_exchange_uint8(&op->ob_gc_bits, &bits, bits | _PyGC_BITS_DEFERRED) == 0)
     {
         // Someone beat us to it!
