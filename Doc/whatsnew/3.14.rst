@@ -380,6 +380,12 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
+* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
+  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
+  :func:`os.scandir` on a path object.
+
+  (Contributed by Barney Gale in :gh:`125413`.)
+
 
 pdb
 ---
@@ -615,6 +621,13 @@ pathlib
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
 
+pkgutil
+-------
+
+* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Bénédikt Tran in :gh:`97850`.)
+
 pty
 ---
 
@@ -798,6 +811,10 @@ Porting to Python 3.14
 
 Deprecated
 ----------
+
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
   and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,

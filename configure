@@ -28091,7 +28091,6 @@ done
 
 SRCDIRS="\
   Modules \
-  Modules/_blake2 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
@@ -29254,7 +29253,7 @@ case $ac_sys_system in #(
 
     py_cv_module__scproxy=n/a
  ;; #(
-  Emscripten|WASI) :
+  Emscripten) :
 
 
 
@@ -29276,9 +29275,6 @@ case $ac_sys_system in #(
     py_cv_module_syslog=n/a
     py_cv_module_=n/a
 
-    case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-
 
 
     py_cv_module_fcntl=n/a
@@ -29286,10 +29282,28 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 
-       ;; #(
-  Emscripten/node*) :
-     ;; #(
-  WASI/*) :
+   ;; #(
+  WASI) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__interpreters=n/a
+    py_cv_module__interpchannels=n/a
+    py_cv_module__interpqueues=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
 
 
 
@@ -29305,11 +29319,6 @@ case $ac_sys_system in #(
     py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
-
-     ;; #(
-  *) :
-     ;;
-esac
    ;; #(
   *) :
 

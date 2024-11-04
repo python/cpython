@@ -905,7 +905,7 @@ coverage-report: regen-token regen-frozen
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --force --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
@@ -2547,6 +2547,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/namespace_test_pkg \
