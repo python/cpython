@@ -1,0 +1,3 @@
+Adds :opcode:`CHECK_ITERABLE` instruction. It checks that TOS is iterable or
+async iterable. Redundant ``GET_ITER`` and ``GET_AITER`` instructions are
+removed from generator expression code. Patch by Mikhail Efimov.

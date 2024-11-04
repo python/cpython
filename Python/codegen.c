@@ -223,14 +223,14 @@ static int codegen_sync_comprehension_generator(
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack);
+                                      int is_inlined);
 
 static int codegen_async_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack);
+                                      int is_inlined);
 
 static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
 static int codegen_match(compiler *, stmt_ty);
@@ -4109,18 +4109,18 @@ codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
                                 int depth,
                                 expr_ty elt, expr_ty val, int type,
-                                int iter_on_stack)
+                                int is_inlined)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_on_stack);
+            is_inlined);
     } else {
         return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_on_stack);
+            is_inlined);
     }
 }
 
@@ -4129,7 +4129,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
                                      expr_ty elt, expr_ty val, int type,
-                                     int iter_on_stack)
+                                     int is_inlined)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -4141,38 +4141,37 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (!iter_on_stack) {
-        if (gen_index == 0) {
+    if (gen_index == 0) {
+        if (!is_inlined) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
-        else {
-            /* Sub-iter - calculate on the fly */
-            /* Fast path for the temporary variable assignment idiom:
-                for y in [f(x)]
-            */
-            asdl_expr_seq *elts;
-            switch (gen->iter->kind) {
-                case List_kind:
-                    elts = gen->iter->v.List.elts;
-                    break;
-                case Tuple_kind:
-                    elts = gen->iter->v.Tuple.elts;
-                    break;
-                default:
-                    elts = NULL;
+    }
+    else {
+        /* Sub-iter - calculate on the fly */
+        /* Fast path for the temporary variable assignment idiom:
+            for y in [f(x)]
+        */
+        asdl_expr_seq *elts;
+        switch (gen->iter->kind) {
+            case List_kind:
+                elts = gen->iter->v.List.elts;
+                break;
+            case Tuple_kind:
+                elts = gen->iter->v.Tuple.elts;
+                break;
+            default:
+                elts = NULL;
+        }
+        if (asdl_seq_LEN(elts) == 1) {
+            expr_ty elt = asdl_seq_GET(elts, 0);
+            if (elt->kind != Starred_kind) {
+                VISIT(c, expr, elt);
+                start = NO_LABEL;
             }
-            if (asdl_seq_LEN(elts) == 1) {
-                expr_ty elt = asdl_seq_GET(elts, 0);
-                if (elt->kind != Starred_kind) {
-                    VISIT(c, expr, elt);
-                    start = NO_LABEL;
-                }
-            }
-            if (IS_JUMP_TARGET_LABEL(start)) {
-                VISIT(c, expr, gen->iter);
-                ADDOP(c, LOC(gen->iter), GET_ITER);
-            }
+        }
+        if (IS_JUMP_TARGET_LABEL(start)) {
+            VISIT(c, expr, gen->iter);
         }
     }
 
@@ -4195,7 +4194,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, 0));
+                                            elt, val, type, is_inlined));
     }
 
     location elt_loc = LOC(elt);
@@ -4254,7 +4253,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack)
+                                      int is_inlined)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
@@ -4263,19 +4262,20 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (!iter_on_stack) {
-        if (gen_index == 0) {
+    if (gen_index == 0) {
+        if (!is_inlined) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
         }
-        else {
-            /* Sub-iter - calculate on the fly */
-            VISIT(c, expr, gen->iter);
-            ADDOP(c, LOC(gen->iter), GET_AITER);
-        }
+    }
+    else {
+        /* Sub-iter - calculate on the fly */
+        VISIT(c, expr, gen->iter);
     }
 
+    ADDOP(c, loc, GET_AITER);
     USE_LABEL(c, start);
+
     /* Runtime will push a block here, so we need to account for that */
     RETURN_IF_ERROR(
         _PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
@@ -4299,7 +4299,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, 0));
+                                            elt, val, type, is_inlined));
     }
 
     location elt_loc = LOC(elt);
@@ -4484,19 +4484,6 @@ pop_inlined_comprehension_state(compiler *c, location loc,
     return SUCCESS;
 }
 
-static inline int
-codegen_comprehension_iter(compiler *c, comprehension_ty comp)
-{
-    VISIT(c, expr, comp->iter);
-    if (comp->is_async) {
-        ADDOP(c, LOC(comp->iter), GET_AITER);
-    }
-    else {
-        ADDOP(c, LOC(comp->iter), GET_ITER);
-    }
-    return SUCCESS;
-}
-
 static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
@@ -4516,9 +4503,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (codegen_comprehension_iter(c, outermost)) {
-            goto error;
-        }
+        VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
@@ -4571,6 +4556,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         return SUCCESS;
     }
 
+    /* Make closure and call instructions for not inlined case */
     if (type != COMP_GENEXP) {
         ADDOP(c, LOC(e), RETURN_VALUE);
     }
@@ -4592,9 +4578,9 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (codegen_comprehension_iter(c, outermost)) {
-        goto error;
-    }
+    VISIT(c, expr, outermost->iter);
+
+    ADDOP_I(c, loc, CHECK_ITERABLE, outermost->is_async);
 
     ADDOP_I(c, loc, CALL, 0);
 

@@ -5994,4 +5994,43 @@
             break;
         }
 
+        case _CHECK_ITERABLE: {
+            _PyStackRef iterable_st;
+            oparg = CURRENT_OPARG();
+            iterable_st = stack_pointer[-1];
+            PyObject *iterable = PyStackRef_AsPyObjectBorrow(iterable_st);
+            PyTypeObject *type = Py_TYPE(iterable);
+            if (oparg == 0) {
+                // Sync case, similar to GET_ITER
+                if (type->tp_iter == NULL) {
+                    if (!PySequence_Check(iterable)) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        PyErr_Format(PyExc_TypeError,
+                                     "'%.200s' object is not iterable",
+                                     type->tp_name);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        JUMP_TO_ERROR();
+                    }
+                }
+            } else {
+                if (oparg == 1) {
+                    // Async case, similar to GET_AITER
+                    unaryfunc getter = NULL;
+                    if (type->tp_as_async != NULL) {
+                        getter = type->tp_as_async->am_aiter;
+                    }
+                    if (getter == NULL) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        PyErr_Format(PyExc_TypeError,
+                                 "'async for' requires an object with "
+                                 "__aiter__ method, got %.100s",
+                                 type->tp_name);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        JUMP_TO_ERROR();
+                    }
+                }
+            }
+            break;
+        }
+
 #undef TIER_TWO

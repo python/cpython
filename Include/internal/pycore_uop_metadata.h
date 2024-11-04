@@ -291,6 +291,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DEOPT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
+    [_CHECK_ITERABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -356,6 +357,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_FUNCTION_VERSION_KW] = "_CHECK_FUNCTION_VERSION_KW",
     [_CHECK_IS_NOT_PY_CALLABLE] = "_CHECK_IS_NOT_PY_CALLABLE",
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = "_CHECK_IS_NOT_PY_CALLABLE_KW",
+    [_CHECK_ITERABLE] = "_CHECK_ITERABLE",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [_CHECK_METHOD_VERSION] = "_CHECK_METHOD_VERSION",
     [_CHECK_METHOD_VERSION_KW] = "_CHECK_METHOD_VERSION_KW",
@@ -1121,6 +1123,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return oparg;
         case _TIER2_RESUME_CHECK:
             return 0;
+        case _CHECK_ITERABLE:
+            return 1;
         default:
             return -1;
     }

@@ -2543,3 +2543,7 @@
             break;
         }
 
+        case _CHECK_ITERABLE: {
+            break;
+        }
+

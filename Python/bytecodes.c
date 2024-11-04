@@ -5027,6 +5027,35 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
+        inst(CHECK_ITERABLE, (iterable_st -- iterable_st)) {
+            PyObject *iterable = PyStackRef_AsPyObjectBorrow(iterable_st);
+            PyTypeObject *type = Py_TYPE(iterable);
+            if (oparg == 0) {
+                // Sync case, similar to GET_ITER
+                if (type->tp_iter == NULL) {
+                    if (!PySequence_Check(iterable)) {
+                        PyErr_Format(PyExc_TypeError,
+                            "'%.200s' object is not iterable",
+                            type->tp_name);
+                        ERROR_NO_POP();
+                    }
+                }
+            } else if (oparg == 1) {
+                // Async case, similar to GET_AITER
+                unaryfunc getter = NULL;
+                if (type->tp_as_async != NULL) {
+                    getter = type->tp_as_async->am_aiter;
+                }
+                if (getter == NULL) {
+                    PyErr_Format(PyExc_TypeError,
+                        "'async for' requires an object with "
+                        "__aiter__ method, got %.100s",
+                        type->tp_name);
+                    ERROR_NO_POP();
+                }
+            }
+        }
+
 // END BYTECODES //
 
     }

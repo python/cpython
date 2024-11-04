@@ -670,6 +670,14 @@ result back on the stack.
    .. versionadded:: 3.5
 
 
+.. opcode:: CHECK_ITERABLE (is_async)
+
+   Checks that ``STACK[-1]`` is iterable or async iterable, depending on
+   oparg value.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: TO_BOOL
 
    Implements ``STACK[-1] = bool(STACK[-1])``.
