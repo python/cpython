@@ -231,6 +231,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
             self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
+            self.assertEqual(mimetypes.guess_extension('audio/matroska'), '.mka')
             self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
             self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
             self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
@@ -241,6 +242,8 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
             self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
             self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
+            self.assertEqual(mimetypes.guess_extension('video/matroska'), '.mkv')
+            self.assertEqual(mimetypes.guess_extension('video/matroska-3d'), '.mk3d')
             self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
             self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
 

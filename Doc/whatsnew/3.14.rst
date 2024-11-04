@@ -352,6 +352,19 @@ json
   (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+mimetypes
+---------
+
+* Add :rfc:`9559` MIME types for Matroska audiovisual data container
+  structures, containing:
+
+  * audio with no video: ``audio/matroska`` (``.mka``)
+  * video: ``video/matroska`` (``.mkv``)
+  * stereoscopic video: ``video/matroska-3d`` (``.mk3d``)
+
+  (Contributed by Hugo van Kemenade in :gh:`89416`.)
+
+
 operator
 --------
 
