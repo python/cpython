@@ -60,7 +60,7 @@ an event loop:
    event loop.
 
    .. versionchanged:: 3.14
-      Raises a :exc:`RuntimeError` if there is no set event loop.
+      Raises a :exc:`RuntimeError` if there is no current event loop
 
 .. function:: set_event_loop(loop)
 
