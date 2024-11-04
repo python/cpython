@@ -974,7 +974,7 @@ The :mod:`socket` module also offers various network-related services:
       With default values of *family*, *type*, *proto* and/or *flags*,
       many systems will return a sorted list of all matching addresses,
       which should generally be tried in order until a connection succeeds
-      (possibly in parallel, for example using a `Happy Eyeballs`_ algorithm).
+      (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
       In these cases, limiting the *type* and/or *proto* can help eliminate
       unsuccessful or unusable connecton attempts.
 
