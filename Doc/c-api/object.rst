@@ -594,5 +594,8 @@ Object Protocol
    an object tracked by the garbage collector (see :func:`gc.is_tracked` and
    :c:func:`PyObject_GC_IsTracked`).
 
+   This function is intended to be used soon after *obj* is created,
+   by the code that creates it.
+
    .. versionadded:: next
 
