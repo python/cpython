@@ -270,7 +270,7 @@ class GeneratorTest(unittest.TestCase):
         loop()
 
     @support.requires_resource("cpu")
-    def test_list_init_thread_safety(self):
+    def test_generator_thread_safety(self):
         # GH-126369: generators were not thread safe
         from threading import Thread, Lock
         import contextlib
