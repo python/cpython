@@ -190,19 +190,21 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_FOR_ITER_GEN_FRAME, ( -- )) {
+    op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame)) {
         MATERIALIZE_INST();
+        gen_frame = (_Py_UopsPESlot){NULL, NULL};
         /* We are about to hit the end of the trace */
         ctx->done = true;
     }
 
-    op(_SEND_GEN_FRAME, ( -- )) {
+    op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
+        gen_frame = (_Py_UopsPESlot){NULL, NULL};
         MATERIALIZE_INST();
         // We are about to hit the end of the trace:
         ctx->done = true;
     }
 
-    op(_PUSH_FRAME, (new_frame -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame --)) {
         MATERIALIZE_INST();
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;

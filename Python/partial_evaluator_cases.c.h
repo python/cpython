@@ -826,11 +826,13 @@
             _Py_UopsPESlot v;
             _Py_UopsPESlot receiver;
             _Py_UopsPESlot gen_frame;
-            v = stack_pointer[0];
-            receiver = stack_pointer[1];
+            v = stack_pointer[-2];
+            receiver = stack_pointer[-1];
+            gen_frame = (_Py_UopsPESlot){NULL, NULL};
             MATERIALIZE_INST();
             // We are about to hit the end of the trace:
             ctx->done = true;
+            stack_pointer[-1] = gen_frame;
             break;
         }
 
@@ -2043,10 +2045,14 @@
         case _FOR_ITER_GEN_FRAME: {
             _Py_UopsPESlot iter;
             _Py_UopsPESlot gen_frame;
-            iter = stack_pointer[0];
+            iter = stack_pointer[-1];
             MATERIALIZE_INST();
+            gen_frame = (_Py_UopsPESlot){NULL, NULL};
             /* We are about to hit the end of the trace */
             ctx->done = true;
+            stack_pointer[0] = gen_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
