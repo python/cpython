@@ -236,7 +236,7 @@ static int symtable_analyze(struct symtable *st);
 static int symtable_enter_block(struct symtable *st, identifier name,
                                 _Py_block_ty block, void *ast, _Py_SourceLocation loc);
 static int symtable_exit_block(struct symtable *st);
-static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
+static int symtable_visit_stmt(struct symtable *st, stmt_ty s, int optimize);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
 static int symtable_visit_type_param(struct symtable *st, type_param_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
@@ -244,7 +244,7 @@ static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_dictcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_arguments(struct symtable *st, arguments_ty);
-static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
+static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty, int optimize);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
@@ -255,7 +255,7 @@ static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, stmt_ty, arguments_ty, expr_ty,
                                       struct _symtable_entry *parent_ste);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
-static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
+static int symtable_visit_match_case(struct symtable *st, match_case_ty m, int optimize);
 static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 static int symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_SourceLocation loc);
@@ -393,7 +393,7 @@ symtable_new(void)
 }
 
 struct symtable *
-_PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
+_PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future, int optimize)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
@@ -434,12 +434,12 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
-        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(seq)) {
+        if ((optimize < 2) && _PyAST_GetDocString(seq)) {
             st->st_cur->ste_has_docstring = 1;
         }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
             if (!symtable_visit_stmt(st,
-                        (stmt_ty)asdl_seq_GET(seq, i)))
+                        (stmt_ty)asdl_seq_GET(seq, i), optimize))
                 goto error;
         break;
     case Expression_kind:
@@ -450,7 +450,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         seq = mod->v.Interactive.body;
         for (i = 0; i < asdl_seq_LEN(seq); i++)
             if (!symtable_visit_stmt(st,
-                        (stmt_ty)asdl_seq_GET(seq, i)))
+                        (stmt_ty)asdl_seq_GET(seq, i), optimize))
                 goto error;
         break;
     case FunctionType_kind:
@@ -1706,6 +1706,17 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         } \
     } while(0)
 
+#define VISIT_SEQ_OPT(ST, TYPE, SEQ, OPT) \
+    do { \
+        Py_ssize_t i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt, (OPT))) \
+                return 0;                 \
+        } \
+    } while(0)
+
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
     do { \
         Py_ssize_t i; \
@@ -1814,7 +1825,7 @@ maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 }
 
 static int
-symtable_visit_stmt(struct symtable *st, stmt_ty s)
+symtable_visit_stmt(struct symtable *st, stmt_ty s, int optimize)
 {
     ENTER_RECURSIVE(st);
     switch (s->kind) {
@@ -1846,7 +1857,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
-        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.FunctionDef.body)) {
+        if ((optimize < 2) && _PyAST_GetDocString(s->v.FunctionDef.body)) {
             new_ste->ste_has_docstring = 1;
         }
 
@@ -1861,7 +1872,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         Py_DECREF(new_ste);
         VISIT(st, arguments, s->v.FunctionDef.args);
-        VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.FunctionDef.body, optimize);
         if (!symtable_exit_block(st))
             return 0;
         if (asdl_seq_LEN(s->v.FunctionDef.type_params) > 0) {
@@ -1913,11 +1924,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
 
-        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.ClassDef.body)) {
+        if ((optimize < 2) && _PyAST_GetDocString(s->v.ClassDef.body)) {
             st->st_cur->ste_has_docstring = 1;
         }
 
-        VISIT_SEQ(st, stmt, s->v.ClassDef.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.ClassDef.body, optimize);
         if (!symtable_exit_block(st))
             return 0;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
@@ -2022,26 +2033,26 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     case For_kind:
         VISIT(st, expr, s->v.For.target);
         VISIT(st, expr, s->v.For.iter);
-        VISIT_SEQ(st, stmt, s->v.For.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.For.body, optimize);
         if (s->v.For.orelse)
-            VISIT_SEQ(st, stmt, s->v.For.orelse);
+            VISIT_SEQ_OPT(st, stmt, s->v.For.orelse, optimize);
         break;
     case While_kind:
         VISIT(st, expr, s->v.While.test);
-        VISIT_SEQ(st, stmt, s->v.While.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.While.body, optimize);
         if (s->v.While.orelse)
-            VISIT_SEQ(st, stmt, s->v.While.orelse);
+            VISIT_SEQ_OPT(st, stmt, s->v.While.orelse, optimize);
         break;
     case If_kind:
         /* XXX if 0: and lookup_yield() hacks */
         VISIT(st, expr, s->v.If.test);
-        VISIT_SEQ(st, stmt, s->v.If.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.If.body, optimize);
         if (s->v.If.orelse)
-            VISIT_SEQ(st, stmt, s->v.If.orelse);
+            VISIT_SEQ_OPT(st, stmt, s->v.If.orelse, optimize);
         break;
     case Match_kind:
         VISIT(st, expr, s->v.Match.subject);
-        VISIT_SEQ(st, match_case, s->v.Match.cases);
+        VISIT_SEQ_OPT(st, match_case, s->v.Match.cases, optimize);
         break;
     case Raise_kind:
         if (s->v.Raise.exc) {
@@ -2052,16 +2063,16 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     case Try_kind:
-        VISIT_SEQ(st, stmt, s->v.Try.body);
-        VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
-        VISIT_SEQ(st, stmt, s->v.Try.orelse);
-        VISIT_SEQ(st, stmt, s->v.Try.finalbody);
+        VISIT_SEQ_OPT(st, stmt, s->v.Try.body, optimize);
+        VISIT_SEQ_OPT(st, excepthandler, s->v.Try.handlers, optimize);
+        VISIT_SEQ_OPT(st, stmt, s->v.Try.orelse, optimize);
+        VISIT_SEQ_OPT(st, stmt, s->v.Try.finalbody, optimize);
         break;
     case TryStar_kind:
-        VISIT_SEQ(st, stmt, s->v.TryStar.body);
-        VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
-        VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
-        VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
+        VISIT_SEQ_OPT(st, stmt, s->v.TryStar.body, optimize);
+        VISIT_SEQ_OPT(st, excepthandler, s->v.TryStar.handlers, optimize);
+        VISIT_SEQ_OPT(st, stmt, s->v.TryStar.orelse, optimize);
+        VISIT_SEQ_OPT(st, stmt, s->v.TryStar.finalbody, optimize);
         break;
     case Assert_kind:
         VISIT(st, expr, s->v.Assert.test);
@@ -2151,7 +2162,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case With_kind:
         VISIT_SEQ(st, withitem, s->v.With.items);
-        VISIT_SEQ(st, stmt, s->v.With.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.With.body, optimize);
         break;
     case AsyncFunctionDef_kind: {
         if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
@@ -2182,7 +2193,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
-        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+        if ((optimize < 2) && _PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
             new_ste->ste_has_docstring = 1;
         }
 
@@ -2199,7 +2210,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 
         st->st_cur->ste_coroutine = 1;
         VISIT(st, arguments, s->v.AsyncFunctionDef.args);
-        VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.AsyncFunctionDef.body, optimize);
         if (!symtable_exit_block(st))
             return 0;
         if (asdl_seq_LEN(s->v.AsyncFunctionDef.type_params) > 0) {
@@ -2214,7 +2225,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
-        VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.AsyncWith.body, optimize);
         break;
     case AsyncFor_kind:
         maybe_set_ste_coroutine_for_module(st, s);
@@ -2223,9 +2234,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         VISIT(st, expr, s->v.AsyncFor.target);
         VISIT(st, expr, s->v.AsyncFor.iter);
-        VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
+        VISIT_SEQ_OPT(st, stmt, s->v.AsyncFor.body, optimize);
         if (s->v.AsyncFor.orelse)
-            VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
+            VISIT_SEQ_OPT(st, stmt, s->v.AsyncFor.orelse, optimize);
         break;
     }
     LEAVE_RECURSIVE(st);
@@ -2808,14 +2819,14 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
 
 
 static int
-symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh)
+symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh, int optimize)
 {
     if (eh->v.ExceptHandler.type)
         VISIT(st, expr, eh->v.ExceptHandler.type);
     if (eh->v.ExceptHandler.name)
         if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL, LOCATION(eh)))
             return 0;
-    VISIT_SEQ(st, stmt, eh->v.ExceptHandler.body);
+    VISIT_SEQ_OPT(st, stmt, eh->v.ExceptHandler.body, optimize);
     return 1;
 }
 
@@ -2830,13 +2841,13 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
 }
 
 static int
-symtable_visit_match_case(struct symtable *st, match_case_ty m)
+symtable_visit_match_case(struct symtable *st, match_case_ty m, int optimize)
 {
     VISIT(st, pattern, m->pattern);
     if (m->guard) {
         VISIT(st, expr, m->guard);
     }
-    VISIT_SEQ(st, stmt, m->body);
+    VISIT_SEQ_OPT(st, stmt, m->body, optimize);
     return 1;
 }
 
@@ -3079,7 +3090,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         return NULL;
     }
     future.ff_features |= flags->cf_flags;
-    st = _PySymtable_Build(mod, filename, &future);
+    st = _PySymtable_Build(mod, filename, &future, _Py_GetConfig()->optimization_level);
     _PyArena_Free(arena);
     return st;
 }

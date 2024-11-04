@@ -141,7 +141,8 @@ extern int _PyST_IsFunctionLike(PySTEntryObject *);
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
     PyObject *filename,
-    _PyFutureFeatures *future);
+    _PyFutureFeatures *future,
+    int optimize);
 extern PySTEntryObject* _PySymtable_Lookup(struct symtable *, void *);
 extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject **);
 
