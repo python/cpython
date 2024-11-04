@@ -673,48 +673,10 @@ static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimize
     } \
 }
 
-
-static int
-stmt_seq_remove_item(asdl_stmt_seq *stmts, Py_ssize_t idx)
-{
-    if (idx >= asdl_seq_LEN(stmts)) {
-        return 0;
-    }
-    for (Py_ssize_t i = idx; i < asdl_seq_LEN(stmts) - 1; i++) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, i+1);
-        asdl_seq_SET(stmts, i, st);
-    }
-    stmts->size--;
-    return 1;
-}
-
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    int docstring = _PyAST_GetDocString(stmts) != NULL;
-    if (docstring && (state->optimize >= 2)) {
-        /* remove the docstring */
-        if (!stmt_seq_remove_item(stmts, 0)) {
-            return 0;
-        }
-        docstring = 0;
-    }
     CALL_SEQ(astfold_stmt, stmt, stmts);
-    if (!docstring && _PyAST_GetDocString(stmts) != NULL) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        asdl_expr_seq *values = _Py_asdl_expr_seq_new(1, ctx_);
-        if (!values) {
-            return 0;
-        }
-        asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = _PyAST_JoinedStr(values, st->lineno, st->col_offset,
-                                        st->end_lineno, st->end_col_offset,
-                                        ctx_);
-        if (!expr) {
-            return 0;
-        }
-        st->v.Expr.value = expr;
-    }
     return 1;
 }
 

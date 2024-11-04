@@ -434,7 +434,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
-        if (_PyAST_GetDocString(seq)) {
+        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(seq)) {
             st->st_cur->ste_has_docstring = 1;
         }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
@@ -1846,7 +1846,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
-        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.FunctionDef.body)) {
             new_ste->ste_has_docstring = 1;
         }
 
@@ -1913,7 +1913,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
 
-        if (_PyAST_GetDocString(s->v.ClassDef.body)) {
+        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.ClassDef.body)) {
             st->st_cur->ste_has_docstring = 1;
         }
 
@@ -2182,7 +2182,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
-        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+        if ((_Py_GetConfig()->optimization_level < 2) && _PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
             new_ste->ste_has_docstring = 1;
         }
 
