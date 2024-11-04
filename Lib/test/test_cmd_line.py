@@ -925,7 +925,7 @@ class CmdLineTest(unittest.TestCase):
                 self.assertEqual(proc.stderr, '')
 
     def test_python_asyncio_debug(self):
-        code = "import asyncio; print(asyncio.get_event_loop().get_debug())"
+        code = "import asyncio; print(asyncio.new_event_loop().get_debug())"
         rc, out, err = assert_python_ok('-c', code, PYTHONASYNCIODEBUG='1')
         self.assertIn(b'True', out)
 
