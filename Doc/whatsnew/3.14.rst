@@ -352,6 +352,18 @@ json
   (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+mimetypes
+---------
+
+* Add :rfc:`8081` MIME types for fonts:
+
+  * OpenType Layout (OTF) ``font/otf``
+  * TrueType: ``font/ttf``
+  * WOFF 1.0 ``font/woff``
+  * WOFF 2.0 ``font/woff2``
+
+  (Contributed by Sahil Prajapati and Hugo van Kemenade in :gh:`84852`.)
+
 operator
 --------
 

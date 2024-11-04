@@ -452,8 +452,6 @@ def _default_mime_types():
     # Make sure the entry with the preferred file extension for a particular mime type
     # appears before any others of the same mimetype.
     types_map = _types_map_default = {
-        '.woff'   : 'application/font-woff',
-        '.woff2'  : 'application/font-woff2',
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.json'   : 'application/json',
@@ -492,8 +490,6 @@ def _default_mime_types():
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
         '.dvi'    : 'application/x-dvi',
-        '.otf'    : 'application/x-font-opentype',
-        '.ttf'    : 'application/x-font-ttf',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
         '.h5'     : 'application/x-hdf5',
@@ -547,6 +543,10 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.otf'    : 'font/otf',
+        '.ttf'    : 'font/ttf',
+        '.woff'   : 'font/woff',
+        '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
