@@ -589,8 +589,8 @@ Object Protocol
    and ``0`` if deferred reference counting is not supported or if the hint was
    ignored by the runtime. This function is thread-safe, and cannot fail.
 
-   This function is a no-op on builds with the :term:`GIL` enabled, which do
-   not support deferred reference counting. This also no-ops if *obj* is not
+   This function does nothing on builds with the :term:`GIL` enabled, which do
+   not support deferred reference counting. This also does nothing if *obj* is not
    an object tracked by the garbage collector (see :func:`gc.is_tracked` and
    :c:func:`PyObject_GC_IsTracked`).
 
