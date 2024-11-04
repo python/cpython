@@ -479,7 +479,7 @@ def _default_mime_types():
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
-        '.eot'    : 'application/vnd.ms-font',
+        '.eot'    : 'application/vnd.ms-fontobject',
         '.ppt'    : 'application/vnd.ms-powerpoint',
         '.pot'    : 'application/vnd.ms-powerpoint',
         '.ppa'    : 'application/vnd.ms-powerpoint',

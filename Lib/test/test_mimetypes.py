@@ -227,7 +227,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
             self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
             self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-font'), '.eot')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-fontobject'), '.eot')
             self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
             self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')

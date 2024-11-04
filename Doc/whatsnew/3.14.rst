@@ -355,8 +355,9 @@ json
 mimetypes
 ---------
 
-* Add :rfc:`8081` MIME types for fonts:
+* Add MS and :rfc:`8081` MIME types for fonts:
 
+  * Embedded OpenType: ``application/vnd.ms-fontobject``
   * OpenType Layout (OTF) ``font/otf``
   * TrueType: ``font/ttf``
   * WOFF 1.0 ``font/woff``
