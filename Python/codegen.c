@@ -1243,10 +1243,10 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
             _PyCompile_ExitScope(c);
             return ERROR;
         }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        Py_DECREF(docstring);
+        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
-    Py_ssize_t idx = _PyCompile_AddConst(c, docstring ? docstring : Py_None);
-    Py_XDECREF(docstring);
-    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
@@ -4087,9 +4087,12 @@ codegen_call_helper(compiler *c, location loc,
     return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
 }
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is

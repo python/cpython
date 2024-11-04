@@ -906,7 +906,7 @@ coverage-report: regen-token regen-frozen
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --force --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
@@ -2116,6 +2116,12 @@ cleantest: all
 # Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
+	$(TESTRUNNER) --fast-ci -u-gui --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+
+# Run a basic set of regression tests inside the CI.
+# This excludes some tests that are particularly resource-intensive.
+# Similar to test, but also runs GUI tests.
+ci: all
 	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
@@ -2551,6 +2557,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/namespace_test_pkg \
