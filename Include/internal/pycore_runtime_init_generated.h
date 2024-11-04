@@ -1229,6 +1229,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
@@ -1246,8 +1247,10 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(timeout), \
+    INIT_ID(timer), \
     INIT_ID(times), \
     INIT_ID(timetuple), \
+    INIT_ID(timeunit), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
     INIT_ID(traceback), \
