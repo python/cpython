@@ -2467,12 +2467,15 @@ _PyCode_ConstantKey(PyObject *op)
         PyObject *stop = slice->stop;
         PyObject *stop_key = _PyCode_ConstantKey(stop);
         if (stop_key == NULL) {
+            Py_DECREF(start_key);
             return NULL;
         }
 
         PyObject *step = slice->step;
         PyObject *step_key = _PyCode_ConstantKey(step);
         if (step_key == NULL) {
+            Py_DECREF(start_key);
+            Py_DECREF(stop_key);
             return NULL;
         }
 
