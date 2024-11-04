@@ -2457,38 +2457,37 @@ _PyCode_ConstantKey(PyObject *op)
     }
     else if (PySlice_Check(op)) {
         PySliceObject *slice = (PySliceObject *)op;
+        PyObject *start_key = NULL;
+        PyObject *stop_key = NULL;
+        PyObject *step_key = NULL;
+        key = NULL;
 
-        PyObject *start = slice->start;
-        PyObject *start_key = _PyCode_ConstantKey(start);
+        start_key = _PyCode_ConstantKey(slice->start);
         if (start_key == NULL) {
-            return NULL;
+            goto slice_exit;
         }
 
-        PyObject *stop = slice->stop;
-        PyObject *stop_key = _PyCode_ConstantKey(stop);
+        stop_key = _PyCode_ConstantKey(slice->stop);
         if (stop_key == NULL) {
-            Py_DECREF(start_key);
-            return NULL;
+            goto slice_exit;
         }
 
-        PyObject *step = slice->step;
-        PyObject *step_key = _PyCode_ConstantKey(step);
+        step_key = _PyCode_ConstantKey(slice->step);
         if (step_key == NULL) {
-            Py_DECREF(start_key);
-            Py_DECREF(stop_key);
-            return NULL;
+            goto slice_exit;
         }
 
         PyObject *slice_key = PySlice_New(start_key, stop_key, step_key);
         if (slice_key == NULL) {
-            Py_DECREF(start_key);
-            Py_DECREF(stop_key);
-            Py_DECREF(step_key);
-            return NULL;
+            goto slice_exit;
         }
 
         key = PyTuple_Pack(2, slice_key, op);
         Py_DECREF(slice_key);
+    slice_exit:
+        Py_XDECREF(start_key);
+        Py_XDECREF(stop_key);
+        Py_XDECREF(step_key);
     }
     else {
         /* for other types, use the object identifier as a unique identifier
