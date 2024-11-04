@@ -2175,6 +2175,11 @@ sys__clear_internal_caches_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _Py_Executors_InvalidateAll(interp, 0);
 #endif
+#ifdef Py_GIL_DISABLED
+    if (_Py_ClearUnusedTLBC(_PyInterpreterState_GET()) < 0) {
+        return NULL;
+    }
+#endif
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2290,6 +2295,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 #ifdef _Py_JIT
     _PyOptimizerObject* optimizer = _Py_GetOptimizer();
     if (optimizer != NULL) {
+        Py_DECREF(optimizer);
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
