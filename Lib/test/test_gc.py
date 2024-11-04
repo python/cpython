@@ -1086,8 +1086,6 @@ class GCTests(unittest.TestCase):
         # See GH-126312: Objects that were not frozen could traverse over
         # a frozen object on the free-threaded build, which would cause
         # a negative reference count.
-        import textwrap
-
         x = [1, 2, 3]
         gc.freeze()
         y = [x]
