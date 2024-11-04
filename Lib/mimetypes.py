@@ -454,8 +454,6 @@ def _default_mime_types():
     types_map = _types_map_default = {
         '.woff'   : 'application/font-woff',
         '.woff2'  : 'application/font-woff2',
-        '.js'     : 'application/javascript',
-        '.mjs'    : 'application/javascript',
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.json'   : 'application/json',
