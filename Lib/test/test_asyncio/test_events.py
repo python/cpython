@@ -2907,10 +2907,11 @@ class GetEventLoopTestsMixin:
             asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
-            self.assertIs(asyncio._get_running_loop(), None)
 
             async def func():
                 self.assertIs(asyncio.get_event_loop(), loop)
+                self.assertIs(asyncio.get_running_loop(), loop)
+                self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
 
