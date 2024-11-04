@@ -51,7 +51,7 @@ exception:
    long options which should be supported.  The leading ``'--'`` characters
    should not be included in the option name.  Long options which require an
    argument should be followed by an equal sign (``'='``).
-   Long options which acept an optional argument should be followed by
+   Long options which accept an optional argument should be followed by
    an equal sign and question mark (``'=?'``).
    To accept only long options, *shortopts* should be an
    empty string.  Long options on the command line can be recognized so long as
