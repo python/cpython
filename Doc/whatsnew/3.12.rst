@@ -1338,8 +1338,8 @@ Deprecated
 
 * Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
   Python 3.10 via :pep:`626`,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12,
-  therefore it will be removed in 3.14.
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.15.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 .. include:: ../deprecations/pending-removal-in-3.13.rst
