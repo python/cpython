@@ -6,6 +6,8 @@ import doctest
 import unittest
 import weakref
 import inspect
+import textwrap
+import types
 
 from test import support
 
@@ -89,9 +91,12 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(gc.garbage, old_garbage)
 
     def test_lambda_generator(self):
-        # Issue #23192: Test that a lambda returning a generator behaves
+        # bpo-23192, gh-119897: Test that a lambda returning a generator behaves
         # like the equivalent function
         f = lambda: (yield 1)
+        self.assertIsInstance(f(), types.GeneratorType)
+        self.assertEqual(next(f()), 1)
+
         def g(): return (yield 1)
 
         # test 'yield from'
@@ -107,6 +112,27 @@ class FinalizationTest(unittest.TestCase):
             with self.assertRaises(StopIteration) as cm:
                 gen.send(2)
             self.assertEqual(cm.exception.value, 2)
+
+    def test_generator_resurrect(self):
+        # Test that a resurrected generator still has a valid gi_code
+        resurrected = []
+
+        # Resurrect a generator in a finalizer
+        exec(textwrap.dedent("""
+            def gen():
+                try:
+                    yield
+                except:
+                    resurrected.append(g)
+
+            g = gen()
+            next(g)
+        """), {"resurrected": resurrected})
+
+        support.gc_collect()
+
+        self.assertEqual(len(resurrected), 1)
+        self.assertIsInstance(resurrected[0].gi_code, types.CodeType)
 
 
 class GeneratorTest(unittest.TestCase):
@@ -241,6 +267,79 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
+
+
+class ModifyUnderlyingIterableTest(unittest.TestCase):
+    iterables = [
+        range(0),
+        range(20),
+        [1, 2, 3],
+        (2,),
+        {13, 48, 211},
+        frozenset((15, 8, 6)),
+        {1: 2, 3: 4},
+    ]
+
+    non_iterables = [
+        None,
+        42,
+        3.0,
+        2j,
+    ]
+
+    def genexpr(self):
+        return (x for x in range(10))
+
+    def genfunc(self):
+        def gen(it):
+            for x in it:
+                yield x
+        return gen(range(10))
+
+    def process_tests(self, get_generator):
+        for obj in self.iterables:
+            g_obj = get_generator(obj)
+            with self.subTest(g_obj=g_obj, obj=obj):
+                self.assertListEqual(list(g_obj), list(obj))
+
+            g_iter = get_generator(iter(obj))
+            with self.subTest(g_iter=g_iter, obj=obj):
+                self.assertListEqual(list(g_iter), list(obj))
+
+        err_regex = "'.*' object is not iterable"
+        for obj in self.non_iterables:
+            g_obj = get_generator(obj)
+            with self.subTest(g_obj=g_obj):
+                self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+
+    def test_modify_f_locals(self):
+        def modify_f_locals(g, local, obj):
+            g.gi_frame.f_locals[local] = obj
+            return g
+
+        def get_generator_genexpr(obj):
+            return modify_f_locals(self.genexpr(), '.0', obj)
+
+        def get_generator_genfunc(obj):
+            return modify_f_locals(self.genfunc(), 'it', obj)
+
+        self.process_tests(get_generator_genexpr)
+        self.process_tests(get_generator_genfunc)
+
+    def test_new_gen_from_gi_code(self):
+        def new_gen_from_gi_code(g, obj):
+            generator_func = types.FunctionType(g.gi_code, {})
+            return generator_func(obj)
+
+        def get_generator_genexpr(obj):
+            return new_gen_from_gi_code(self.genexpr(), obj)
+
+        def get_generator_genfunc(obj):
+            return new_gen_from_gi_code(self.genfunc(), obj)
+
+        self.process_tests(get_generator_genexpr)
+        self.process_tests(get_generator_genfunc)
+
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -531,6 +630,26 @@ class GeneratorCloseTest(unittest.TestCase):
         gen.send(None)
         with self.assertRaises(RuntimeError):
             gen.close()
+
+    def test_close_releases_frame_locals(self):
+        # See gh-118272
+
+        class Foo:
+            pass
+
+        f = Foo()
+        f_wr = weakref.ref(f)
+
+        def genfn():
+            a = f
+            yield
+
+        g = genfn()
+        next(g)
+        del f
+        g.close()
+        support.gc_collect()
+        self.assertIsNone(f_wr())
 
 
 class GeneratorThrowTest(unittest.TestCase):
@@ -887,7 +1006,7 @@ Specification: Generators and Exception Propagation
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
       File "<stdin>", line 2, in f
-    ZeroDivisionError: integer division or modulo by zero
+    ZeroDivisionError: division by zero
     >>> next(k)  # and the generator cannot be resumed
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
@@ -2222,6 +2341,16 @@ Check some syntax errors for yield expressions:
 Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
+
+>>> f=lambda: (yield from (1,2)), (yield from (3,4))
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield from' outside function
+
+>>> yield from [1,2]
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield from' outside function
 
 >>> def f(): x = yield = y
 Traceback (most recent call last):

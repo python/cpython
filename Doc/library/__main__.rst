@@ -1,5 +1,5 @@
-:mod:`__main__` --- Top-level code environment
-==============================================
+:mod:`!__main__` --- Top-level code environment
+===============================================
 
 .. module:: __main__
    :synopsis: The environment where top-level code is run. Covers command-line
@@ -227,7 +227,7 @@ students::
     import sys
     from .student import search_students
 
-    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    student_name = sys.argv[1] if len(sys.argv) >= 2 else ''
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
@@ -251,9 +251,9 @@ attribute will include the package's path if imported::
     >>> asyncio.__main__.__name__
     'asyncio.__main__'
 
-This won't work for ``__main__.py`` files in the root directory of a .zip file
-though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
-one mentioned below are preferred.
+This won't work for ``__main__.py`` files in the root directory of a
+``.zip`` file though.  Hence, for consistency, a minimal ``__main__.py``
+without a ``__name__`` check is preferred.
 
 .. seealso::
 

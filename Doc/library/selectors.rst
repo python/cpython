@@ -1,5 +1,5 @@
-:mod:`selectors` --- High-level I/O multiplexing
-================================================
+:mod:`!selectors` --- High-level I/O multiplexing
+=================================================
 
 .. module:: selectors
    :synopsis: High-level I/O multiplexing.
@@ -21,7 +21,7 @@ It defines a :class:`BaseSelector` abstract base class, along with several
 concrete implementations (:class:`KqueueSelector`, :class:`EpollSelector`...),
 that can be used to wait for I/O readiness notification on multiple file
 objects. In the following, "file object" refers to any object with a
-:meth:`fileno()` method, or a raw file descriptor. See :term:`file object`.
+:meth:`~io.IOBase.fileno` method, or a raw file descriptor. See :term:`file object`.
 
 :class:`DefaultSelector` is an alias to the most efficient implementation
 available on the current platform: this should be the default choice for most

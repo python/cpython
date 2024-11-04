@@ -575,15 +575,15 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`~object.__enter__` and :meth:`~object.__exit__`
 methods.
 
-The object's :meth:`__enter__` is called before *with-block* is executed and
+The object's :meth:`~object.__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -609,7 +609,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
@@ -652,10 +652,10 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`~object.__enter__` and :meth:`~object.__exit__`
   methods.
 
-* The context manager's :meth:`__enter__` method is called.  The value returned
+* The context manager's :meth:`~object.__enter__` method is called.  The value returned
   is assigned to *VAR*.  If no ``'as VAR'`` clause is present, the value is simply
   discarded.
 
@@ -669,7 +669,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -703,7 +703,7 @@ rolled back if there's an exception. Here's the basic interface for
        def rollback (self):
            "Rolls back current transaction"
 
-The :meth:`__enter__` method is pretty easy, having only to start a new
+The :meth:`~object.__enter__` method is pretty easy, having only to start a new
 transaction.  For this application the resulting cursor object would be a useful
 result, so the method will return it.  The user can then add ``as cursor`` to
 their ':keyword:`with`' statement to bind the cursor to a variable name. ::
@@ -715,7 +715,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -748,10 +748,10 @@ are useful for writing objects for use with the ':keyword:`with`' statement.
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
-:meth:`__enter__` method, and the value yielded will be the method's return
+:meth:`~object.__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
 :keyword:`!as` clause, if any.  The code after the :keyword:`yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`!yield` statement.
 
 Our database example from the previous section could be written  using this
@@ -1167,10 +1167,10 @@ marked in the following list.
 
 * It's now illegal to mix iterating over a file  with ``for line in file`` and
   calling  the file object's :meth:`read`/:meth:`readline`/:meth:`readlines`
-  methods.  Iteration uses an internal buffer and the  :meth:`read\*` methods
+  methods.  Iteration uses an internal buffer and the  :meth:`!read\*` methods
   don't use that buffer.   Instead they would return the data following the
   buffer, causing the data to appear out of order.  Mixing iteration and these
-  methods will now trigger a :exc:`ValueError` from the :meth:`read\*` method.
+  methods will now trigger a :exc:`ValueError` from the :meth:`!read\*` method.
   (Implemented by Thomas Wouters.)
 
   .. Patch 1397960
@@ -1347,7 +1347,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`input` function to allow opening files in binary or :term:`universal
   newlines` mode.  Another new parameter, *openhook*, lets you use a function
   other than :func:`open`  to open the input files.  Once you're iterating over
-  the set of files, the :class:`FileInput` object's new :meth:`fileno` returns
+  the set of files, the :class:`FileInput` object's new :meth:`~fileinput.fileno` returns
   the file descriptor for the currently opened file. (Contributed by Georg
   Brandl.)
 
@@ -1478,8 +1478,8 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch 790710
 
-* The :mod:`pickle` and :mod:`cPickle` modules no longer accept a return value
-  of ``None`` from the :meth:`__reduce__` method; the method must return a tuple
+* The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a return value
+  of ``None`` from the :meth:`~object.__reduce__` method; the method must return a tuple
   of arguments instead.  The ability to return ``None`` was deprecated in Python
   2.4, so this completes the removal of the feature.
 
@@ -1519,7 +1519,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #1472854
 
-* The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now have a
+* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now have a
   :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
   :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
@@ -1650,9 +1650,9 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #754022
 
-* The :mod:`xmlrpclib` module now supports returning  :class:`~datetime.datetime` objects
-  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
-  function or the :class:`Unmarshaller` class to enable this feature. (Contributed
+* The :mod:`xmlrpclib <xmlrpc.client>` module now supports returning  :class:`~datetime.datetime` objects
+  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`~xmlrpc.client.loads`
+  function or the :class:`!Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)
 
   .. Patch 1120353
@@ -1680,7 +1680,7 @@ The ctypes package
 
 The :mod:`ctypes` package, written by Thomas Heller, has been added  to the
 standard library.  :mod:`ctypes` lets you call arbitrary functions  in shared
-libraries or DLLs.  Long-time users may remember the :mod:`dl` module, which
+libraries or DLLs.  Long-time users may remember the :mod:`!dl` module, which
 provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
@@ -1724,7 +1724,7 @@ attribute of the function object to  change this::
 :mod:`ctypes` also provides a wrapper for Python's C API  as the
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
-calling into the interpreter's code.   There's a :class:`py_object()` type
+calling into the interpreter's code.   There's a :class:`~ctypes.py_object` type
 constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
@@ -1734,7 +1734,7 @@ constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
              ctypes.py_object("abc"),  ctypes.py_object(1))
    # d is now {'abc', 1}.
 
-Don't forget to use :class:`py_object()`; if it's omitted you end  up with a
+Don't forget to use :func:`~ctypes.py_object`; if it's omitted you end  up with a
 segmentation fault.
 
 :mod:`ctypes` has been around for a while, but people still write  and
@@ -1877,12 +1877,12 @@ The hashlib package
 -------------------
 
 A new :mod:`hashlib` module, written by Gregory P. Smith,  has been added to
-replace the :mod:`md5` and :mod:`sha` modules.  :mod:`hashlib` adds support for
+replace the :mod:`!md5` and :mod:`!sha` modules.  :mod:`hashlib` adds support for
 additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512). When
 available, the module uses OpenSSL for fast platform optimized implementations
 of algorithms.
 
-The old :mod:`md5` and :mod:`sha` modules still exist as wrappers around hashlib
+The old :mod:`!md5` and :mod:`!sha` modules still exist as wrappers around hashlib
 to preserve backwards compatibility.  The new module's interface is very close
 to that of the old modules, but not identical. The most significant difference
 is that the constructor functions for creating new hashing objects are named
@@ -2253,12 +2253,12 @@ code:
   appeared.  In Python 2.5, the argument must be exactly one %char specifier with
   no surrounding text.
 
-* Library: The :mod:`pickle` and :mod:`cPickle` modules no longer accept a
-  return value of ``None`` from the :meth:`__reduce__` method; the method must
+* Library: The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a
+  return value of ``None`` from the :meth:`~object.__reduce__` method; the method must
   return a tuple of arguments instead.  The modules also no longer accept the
   deprecated *bin* keyword parameter.
 
-* Library: The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now
+* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
   have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
   limited set of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path

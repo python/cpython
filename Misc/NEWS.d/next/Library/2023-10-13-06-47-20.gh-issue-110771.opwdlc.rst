@@ -1,1 +1,0 @@
-Expose the setup and cleanup portions of ``asyncio.run_forever()`` as the standalone methods ``asyncio.run_forever_setup()`` and ``asyncio.run_forever_cleanup()``. This allows for tighter integration with GUI event loops.

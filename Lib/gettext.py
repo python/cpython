@@ -648,7 +648,7 @@ def npgettext(context, msgid1, msgid2, n):
 #    import gettext
 #    cat = gettext.Catalog(PACKAGE, localedir=LOCALEDIR)
 #    _ = cat.gettext
-#    print _('Hello World')
+#    print(_('Hello World'))
 
 # The resulting catalog object currently don't support access through a
 # dictionary API, which was supported (but apparently unused) in GNOME

@@ -9,15 +9,17 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_long.h"          // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyNone_Type
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_bytesobject.h"       // _PyBytesWriter
+#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_object.h"            // _PyNone_Type
+#include "pycore_pyerrors.h"          // _PyErr_FormatNote
+#include "pycore_pystate.h"           // _PyThreadState_GET()
+#include "pycore_runtime.h"           // _Py_ID()
+#include "pycore_setobject.h"         // _PySet_NextEntry()
+#include "pycore_sysmodule.h"         // _PySys_GetAttr()
 
 #include <stdlib.h>               // strtol()
 
@@ -39,7 +41,7 @@ class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" ""
    already includes it. */
 enum {
     HIGHEST_PROTOCOL = 5,
-    DEFAULT_PROTOCOL = 4
+    DEFAULT_PROTOCOL = 5
 };
 
 #ifdef MS_WINDOWS
@@ -399,64 +401,6 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 
 /*************************************************************************/
 
-/* Retrieve and deconstruct a method for avoiding a reference cycle
-   (pickler -> bound method of pickler -> pickler) */
-static int
-init_method_ref(PyObject *self, PyObject *name,
-                PyObject **method_func, PyObject **method_self)
-{
-    PyObject *func, *func2;
-    int ret;
-
-    /* *method_func and *method_self should be consistent.  All refcount decrements
-       should be occurred after setting *method_self and *method_func. */
-    ret = PyObject_GetOptionalAttr(self, name, &func);
-    if (func == NULL) {
-        *method_self = NULL;
-        Py_CLEAR(*method_func);
-        return ret;
-    }
-
-    if (PyMethod_Check(func) && PyMethod_GET_SELF(func) == self) {
-        /* Deconstruct a bound Python method */
-        *method_self = self; /* borrowed */
-        func2 = PyMethod_GET_FUNCTION(func);
-        Py_XSETREF(*method_func, Py_NewRef(func2));
-        Py_DECREF(func);
-        return 0;
-    }
-    else {
-        *method_self = NULL;
-        Py_XSETREF(*method_func, func);
-        return 0;
-    }
-}
-
-/* Bind a method if it was deconstructed */
-static PyObject *
-reconstruct_method(PyObject *func, PyObject *self)
-{
-    if (self) {
-        return PyMethod_New(func, self);
-    }
-    else {
-        return Py_NewRef(func);
-    }
-}
-
-static PyObject *
-call_method(PyObject *func, PyObject *self, PyObject *obj)
-{
-    if (self) {
-        return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
-    }
-    else {
-        return PyObject_CallOneArg(func, obj);
-    }
-}
-
-/*************************************************************************/
-
 /* Internal data type used as the unpickling stack. */
 typedef struct {
     PyObject_VAR_HEAD
@@ -668,9 +612,7 @@ typedef struct PicklerObject {
     PyMemoTable *memo;          /* Memo table, keep track of the seen
                                    objects to support self-referential objects
                                    pickling. */
-    PyObject *pers_func;        /* persistent_id() method, can be NULL */
-    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
-                                   is an unbound method, NULL otherwise */
+    PyObject *persistent_id;    /* persistent_id() method, can be NULL */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
     PyObject *reducer_override; /* hook for invoking user-defined callbacks
                                    instead of save_global when pickling
@@ -712,9 +654,7 @@ typedef struct UnpicklerObject {
     size_t memo_size;       /* Capacity of the memo array */
     size_t memo_len;        /* Number of objects in the memo */
 
-    PyObject *pers_func;        /* persistent_load() method, can be NULL. */
-    PyObject *pers_func_self;   /* borrowed reference to self if pers_func
-                                   is an unbound method, NULL otherwise */
+    PyObject *persistent_load;  /* persistent_load() method, can be NULL. */
 
     Py_buffer buffer;
     char *input_buffer;
@@ -1167,8 +1107,7 @@ _Pickler_New(PickleState *st)
     }
 
     self->memo = memo;
-    self->pers_func = NULL;
-    self->pers_func_self = NULL;
+    self->persistent_id = NULL;
     self->dispatch_table = NULL;
     self->reducer_override = NULL;
     self->write = NULL;
@@ -1662,8 +1601,7 @@ _Unpickler_New(PyObject *module)
     self->memo = memo;
     self->memo_size = MEMO_SIZE;
     self->memo_len = 0;
-    self->pers_func = NULL;
-    self->pers_func_self = NULL;
+    self->persistent_load = NULL;
     memset(&self->buffer, 0, sizeof(Py_buffer));
     self->input_buffer = NULL;
     self->input_line = NULL;
@@ -1866,78 +1804,51 @@ memo_put(PickleState *st, PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-get_dotted_path(PyObject *obj, PyObject *name)
+get_dotted_path(PyObject *name)
 {
-    PyObject *dotted_path;
+    return PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
+}
+
+static int
+check_dotted_path(PickleState *st, PyObject *obj, PyObject *dotted_path)
+{
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
-    if (dotted_path == NULL)
-        return NULL;
     n = PyList_GET_SIZE(dotted_path);
     assert(n >= 1);
     for (i = 0; i < n; i++) {
         PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
         if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
-            if (obj == NULL)
-                PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local object %R", name);
-            else
-                PyErr_Format(PyExc_AttributeError,
-                             "Can't pickle local attribute %R on %R", name, obj);
-            Py_DECREF(dotted_path);
-            return NULL;
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle local object %R", obj);
+            return -1;
         }
     }
-    return dotted_path;
+    return 0;
 }
 
 static PyObject *
-get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
+getattribute(PyObject *obj, PyObject *names, int raises)
 {
     Py_ssize_t i, n;
-    PyObject *parent = NULL;
 
     assert(PyList_CheckExact(names));
     Py_INCREF(obj);
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        Py_XSETREF(parent, obj);
-        (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        PyObject *parent = obj;
+        if (raises) {
+            obj = PyObject_GetAttr(parent, name);
+        }
+        else {
+            (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        }
+        Py_DECREF(parent);
         if (obj == NULL) {
-            Py_DECREF(parent);
             return NULL;
         }
     }
-    if (pparent != NULL)
-        *pparent = parent;
-    else
-        Py_XDECREF(parent);
     return obj;
-}
-
-
-static PyObject *
-getattribute(PyObject *obj, PyObject *name, int allow_qualname)
-{
-    PyObject *dotted_path, *attr;
-
-    if (allow_qualname) {
-        dotted_path = get_dotted_path(obj, name);
-        if (dotted_path == NULL)
-            return NULL;
-        attr = get_deep_attribute(obj, dotted_path, NULL);
-        Py_DECREF(dotted_path);
-    }
-    else {
-        (void)PyObject_GetOptionalAttr(obj, name, &attr);
-    }
-    if (attr == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_AttributeError,
-                     "Can't get attribute %R on %R", name, obj);
-    }
-    return attr;
 }
 
 static int
@@ -1952,7 +1863,7 @@ _checkmodule(PyObject *module_name, PyObject *module,
         return -1;
     }
 
-    PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+    PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
         return -1;
     }
@@ -1965,73 +1876,125 @@ _checkmodule(PyObject *module_name, PyObject *module,
 }
 
 static PyObject *
-whichmodule(PyObject *global, PyObject *dotted_path)
+whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *dotted_path)
 {
     PyObject *module_name;
     PyObject *module = NULL;
     Py_ssize_t i;
     PyObject *modules;
 
+    if (check_dotted_path(st, global, dotted_path) < 0) {
+        return NULL;
+    }
     if (PyObject_GetOptionalAttr(global, &_Py_ID(__module__), &module_name) < 0) {
         return NULL;
     }
-    if (module_name) {
+    if (module_name == NULL || module_name == Py_None) {
         /* In some rare cases (e.g., bound methods of extension types),
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
-        if (module_name != Py_None)
-            return module_name;
         Py_CLEAR(module_name);
-    }
-    assert(module_name == NULL);
-
-    /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
-        return NULL;
-    }
-    if (PyDict_CheckExact(modules)) {
-        i = 0;
-        while (PyDict_Next(modules, &i, &module_name, &module)) {
-            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
-                return Py_NewRef(module_name);
-            }
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-        }
-    }
-    else {
-        PyObject *iterator = PyObject_GetIter(modules);
-        if (iterator == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+        if (modules == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
             return NULL;
         }
-        while ((module_name = PyIter_Next(iterator))) {
-            module = PyObject_GetItem(modules, module_name);
-            if (module == NULL) {
-                Py_DECREF(module_name);
-                Py_DECREF(iterator);
-                return NULL;
-            }
-            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+        if (PyDict_CheckExact(modules)) {
+            i = 0;
+            while (PyDict_Next(modules, &i, &module_name, &module)) {
+                Py_INCREF(module_name);
+                Py_INCREF(module);
+                if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                    Py_DECREF(module);
+                    return module_name;
+                }
                 Py_DECREF(module);
-                Py_DECREF(iterator);
-                return module_name;
-            }
-            Py_DECREF(module);
-            Py_DECREF(module_name);
-            if (PyErr_Occurred()) {
-                Py_DECREF(iterator);
-                return NULL;
+                Py_DECREF(module_name);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
             }
         }
-        Py_DECREF(iterator);
+        else {
+            PyObject *iterator = PyObject_GetIter(modules);
+            if (iterator == NULL) {
+                return NULL;
+            }
+            while ((module_name = PyIter_Next(iterator))) {
+                module = PyObject_GetItem(modules, module_name);
+                if (module == NULL) {
+                    Py_DECREF(module_name);
+                    Py_DECREF(iterator);
+                    return NULL;
+                }
+                if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                    Py_DECREF(module);
+                    Py_DECREF(iterator);
+                    return module_name;
+                }
+                Py_DECREF(module);
+                Py_DECREF(module_name);
+                if (PyErr_Occurred()) {
+                    Py_DECREF(iterator);
+                    return NULL;
+                }
+            }
+            Py_DECREF(iterator);
+        }
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* If no module is found, use __main__. */
+        module_name = Py_NewRef(&_Py_ID(__main__));
     }
 
-    /* If no module is found, use __main__. */
-    return &_Py_ID(__main__);
+    /* XXX: Change to use the import C API directly with level=0 to disallow
+       relative imports.
+
+       XXX: PyImport_ImportModuleLevel could be used. However, this bypasses
+       builtins.__import__. Therefore, _pickle, unlike pickle.py, will ignore
+       custom import functions (IMHO, this would be a nice security
+       feature). The import C API would need to be extended to support the
+       extra parameters of __import__ to fix that. */
+    module = PyImport_Import(module_name);
+    if (module == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_ImportError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle %R: %S", global, exc);
+            _PyErr_ChainExceptions1(exc);
+        }
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    PyObject *actual = getattribute(module, dotted_path, 1);
+    Py_DECREF(module);
+    if (actual == NULL) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(st->PicklingError,
+                         "Can't pickle %R: it's not found as %S.%S",
+                         global, module_name, global_name);
+            _PyErr_ChainExceptions1(exc);
+        }
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    if (actual != global) {
+        Py_DECREF(actual);
+        PyErr_Format(st->PicklingError,
+                     "Can't pickle %R: it's not the same object as %S.%S",
+                     global, module_name, global_name);
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    Py_DECREF(actual);
+    return module_name;
 }
 
 /* fast_save_enter() and fast_save_leave() are guards against recursive
@@ -2183,7 +2146,7 @@ save_long(PicklerObject *self, PyObject *obj)
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
-        size_t nbits;
+        int64_t nbits;
         size_t nbytes;
         unsigned char *pdata;
         char header[5];
@@ -2198,8 +2161,8 @@ save_long(PicklerObject *self, PyObject *obj)
             return 0;
         }
         nbits = _PyLong_NumBits(obj);
-        if (nbits == (size_t)-1 && PyErr_Occurred())
-            goto error;
+        assert(nbits >= 0);
+        assert(!PyErr_Occurred());
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
          * are any leftover bits, then we clearly need another
@@ -2214,7 +2177,7 @@ save_long(PicklerObject *self, PyObject *obj)
          * for in advance, though, so we always grab an extra
          * byte at the start, and cut it back later if possible.
          */
-        nbytes = (nbits >> 3) + 1;
+        nbytes = (size_t)((nbits >> 3) + 1);
         if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
                             "int too large to pickle");
@@ -2226,7 +2189,8 @@ save_long(PicklerObject *self, PyObject *obj)
         pdata = (unsigned char *)PyBytes_AS_STRING(repr);
         i = _PyLong_AsByteArray((PyLongObject *)obj,
                                 pdata, nbytes,
-                                1 /* little endian */ , 1 /* signed */ );
+                                1 /* little endian */ , 1 /* signed */ ,
+                                1 /* with exceptions */);
         if (i < 0)
             goto error;
         /* If the int is negative, this may be a byte more than
@@ -2570,7 +2534,7 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
 {
     if (self->proto < 5) {
         PyErr_SetString(st->PicklingError,
-                        "PickleBuffer can only pickled with protocol >= 5");
+                        "PickleBuffer can only be pickled with protocol >= 5");
         return -1;
     }
     const Py_buffer* view = PyPickleBuffer_GetBuffer(obj);
@@ -2801,8 +2765,10 @@ store_tuple_elements(PickleState *state, PicklerObject *self, PyObject *t,
 
         if (element == NULL)
             return -1;
-        if (save(state, self, element, 0) < 0)
+        if (save(state, self, element, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %zd", t, i);
             return -1;
+        }
     }
 
     return 0;
@@ -2921,11 +2887,12 @@ save_tuple(PickleState *state, PicklerObject *self, PyObject *obj)
  * Returns 0 on success, <0 on error.
  */
 static int
-batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
+batch_list(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *origobj)
 {
     PyObject *obj = NULL;
     PyObject *firstitem = NULL;
     int i, n;
+    Py_ssize_t total = 0;
 
     const char mark_op = MARK;
     const char append_op = APPEND;
@@ -2940,7 +2907,7 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
 
     if (self->proto == 0) {
         /* APPENDS isn't available; do one at a time. */
-        for (;;) {
+        for (;; total++) {
             obj = PyIter_Next(iter);
             if (obj == NULL) {
                 if (PyErr_Occurred())
@@ -2949,8 +2916,10 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
             }
             i = save(state, self, obj, 0);
             Py_DECREF(obj);
-            if (i < 0)
+            if (i < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 return -1;
+            }
             if (_Pickler_Write(self, &append_op, 1) < 0)
                 return -1;
         }
@@ -2976,8 +2945,10 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
                 goto error;
 
             /* Only one item to write */
-            if (save(state, self, firstitem, 0) < 0)
+            if (save(state, self, firstitem, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 goto error;
+            }
             if (_Pickler_Write(self, &append_op, 1) < 0)
                 goto error;
             Py_CLEAR(firstitem);
@@ -2990,16 +2961,22 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             goto error;
 
-        if (save(state, self, firstitem, 0) < 0)
+        if (save(state, self, firstitem, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
             goto error;
+        }
         Py_CLEAR(firstitem);
+        total++;
         n = 1;
 
         /* Fetch and save up to BATCHSIZE items */
         while (obj) {
-            if (save(state, self, obj, 0) < 0)
+            if (save(state, self, obj, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", origobj, total);
                 goto error;
+            }
             Py_CLEAR(obj);
+            total++;
             n += 1;
 
             if (n == BATCHSIZE)
@@ -3055,8 +3032,10 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         Py_INCREF(item);
         int err = save(state, self, item, 0);
         Py_DECREF(item);
-        if (err < 0)
+        if (err < 0) {
+            _PyErr_FormatNote("when serializing %T item 0", obj);
             return -1;
+        }
         if (_Pickler_Write(self, &append_op, 1) < 0)
             return -1;
         return 0;
@@ -3073,8 +3052,10 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             Py_INCREF(item);
             int err = save(state, self, item, 0);
             Py_DECREF(item);
-            if (err < 0)
+            if (err < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
                 return -1;
+            }
             total++;
             if (++this_batch == BATCHSIZE)
                 break;
@@ -3134,7 +3115,7 @@ save_list(PickleState *state, PicklerObject *self, PyObject *obj)
                 Py_DECREF(iter);
                 goto error;
             }
-            status = batch_list(state, self, iter);
+            status = batch_list(state, self, iter, obj);
             _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
@@ -3162,7 +3143,7 @@ save_list(PickleState *state, PicklerObject *self, PyObject *obj)
  * ugly to bear.
  */
 static int
-batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
+batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *origobj)
 {
     PyObject *obj = NULL;
     PyObject *firstitem = NULL;
@@ -3186,11 +3167,17 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
             if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 2) {
                 PyErr_SetString(PyExc_TypeError, "dict items "
                                 "iterator must return 2-tuples");
+                Py_DECREF(obj);
                 return -1;
             }
             i = save(state, self, PyTuple_GET_ITEM(obj, 0), 0);
-            if (i >= 0)
+            if (i >= 0) {
                 i = save(state, self, PyTuple_GET_ITEM(obj, 1), 0);
+                if (i < 0) {
+                    _PyErr_FormatNote("when serializing %T item %R",
+                                      origobj, PyTuple_GET_ITEM(obj, 0));
+                }
+            }
             Py_DECREF(obj);
             if (i < 0)
                 return -1;
@@ -3226,8 +3213,11 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
             /* Only one item to write */
             if (save(state, self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
                 goto error;
-            if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+            if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R",
+                                  origobj, PyTuple_GET_ITEM(firstitem, 0));
                 goto error;
+            }
             if (_Pickler_Write(self, &setitem_op, 1) < 0)
                 goto error;
             Py_CLEAR(firstitem);
@@ -3242,8 +3232,11 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
 
         if (save(state, self, PyTuple_GET_ITEM(firstitem, 0), 0) < 0)
             goto error;
-        if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0)
+        if (save(state, self, PyTuple_GET_ITEM(firstitem, 1), 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %R",
+                              origobj, PyTuple_GET_ITEM(firstitem, 0));
             goto error;
+        }
         Py_CLEAR(firstitem);
         n = 1;
 
@@ -3254,9 +3247,13 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter)
                     "iterator must return 2-tuples");
                 goto error;
             }
-            if (save(state, self, PyTuple_GET_ITEM(obj, 0), 0) < 0 ||
-                save(state, self, PyTuple_GET_ITEM(obj, 1), 0) < 0)
+            if (save(state, self, PyTuple_GET_ITEM(obj, 0), 0) < 0)
                 goto error;
+            if (save(state, self, PyTuple_GET_ITEM(obj, 1), 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R",
+                                  origobj, PyTuple_GET_ITEM(obj, 0));
+                goto error;
+            }
             Py_CLEAR(obj);
             n += 1;
 
@@ -3317,6 +3314,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             goto error;
         }
         if (save(state, self, value, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T item %R", obj, key);
             goto error;
         }
         Py_CLEAR(key);
@@ -3338,6 +3336,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
                 goto error;
             }
             if (save(state, self, value, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R", obj, key);
                 goto error;
             }
             Py_CLEAR(key);
@@ -3412,7 +3411,7 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
                 Py_DECREF(iter);
                 goto error;
             }
-            status = batch_dict(state, self, iter);
+            status = batch_dict(state, self, iter, obj);
             _Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
@@ -3476,14 +3475,22 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
-            int err = save(state, self, item, 0);
+
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        while (_PySet_NextEntryRef(obj, &ppos, &item, &hash)) {
+            err = save(state, self, item, 0);
             Py_CLEAR(item);
-            if (err < 0)
-                return -1;
+            if (err < 0) {
+                _PyErr_FormatNote("when serializing %T element", obj);
+                break;
+            }
             if (++i == BATCHSIZE)
                 break;
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            return -1;
         }
         if (_Pickler_Write(self, &additems_op, 1) < 0)
             return -1;
@@ -3549,6 +3556,7 @@ save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
             break;
         }
         if (save(state, self, item, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T element", obj);
             Py_DECREF(item);
             Py_DECREF(iter);
             return -1;
@@ -3646,11 +3654,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
 {
     PyObject *global_name = NULL;
     PyObject *module_name = NULL;
-    PyObject *module = NULL;
-    PyObject *parent = NULL;
     PyObject *dotted_path = NULL;
-    PyObject *lastname = NULL;
-    PyObject *cls;
     int status = 0;
 
     const char global_op = GLOBAL;
@@ -3668,46 +3672,12 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         }
     }
 
-    dotted_path = get_dotted_path(module, global_name);
+    dotted_path = get_dotted_path(global_name);
     if (dotted_path == NULL)
         goto error;
-    module_name = whichmodule(obj, dotted_path);
+    module_name = whichmodule(st, obj, global_name, dotted_path);
     if (module_name == NULL)
         goto error;
-
-    /* XXX: Change to use the import C API directly with level=0 to disallow
-       relative imports.
-
-       XXX: PyImport_ImportModuleLevel could be used. However, this bypasses
-       builtins.__import__. Therefore, _pickle, unlike pickle.py, will ignore
-       custom import functions (IMHO, this would be a nice security
-       feature). The import C API would need to be extended to support the
-       extra parameters of __import__ to fix that. */
-    module = PyImport_Import(module_name);
-    if (module == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: import of module %R failed",
-                     obj, module_name);
-        goto error;
-    }
-    lastname = Py_NewRef(PyList_GET_ITEM(dotted_path,
-                         PyList_GET_SIZE(dotted_path) - 1));
-    cls = get_deep_attribute(module, dotted_path, &parent);
-    Py_CLEAR(dotted_path);
-    if (cls == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: attribute lookup %S on %S failed",
-                     obj, global_name, module_name);
-        goto error;
-    }
-    if (cls != obj) {
-        Py_DECREF(cls);
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: it's not the same object as %S.%S",
-                     obj, module_name, global_name);
-        goto error;
-    }
-    Py_DECREF(cls);
 
     if (self->proto >= 2) {
         /* See whether this is in the extension registry, and if
@@ -3723,34 +3693,24 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         if (extension_key == NULL) {
             goto error;
         }
-        code_obj = PyDict_GetItemWithError(st->extension_registry,
-                                           extension_key);
+        if (PyDict_GetItemRef(st->extension_registry, extension_key, &code_obj) < 0) {
+            Py_DECREF(extension_key);
+            goto error;
+        }
         Py_DECREF(extension_key);
-        /* The object is not registered in the extension registry.
-           This is the most likely code path. */
         if (code_obj == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
+            /* The object is not registered in the extension registry.
+               This is the most likely code path. */
             goto gen_global;
         }
 
-        /* XXX: pickle.py doesn't check neither the type, nor the range
-           of the value returned by the extension_registry. It should for
-           consistency. */
-
-        /* Verify code_obj has the right type and value. */
-        if (!PyLong_Check(code_obj)) {
-            PyErr_Format(st->PicklingError,
-                         "Can't pickle %R: extension code %R isn't an integer",
-                         obj, code_obj);
-            goto error;
-        }
-        code = PyLong_AS_LONG(code_obj);
+        code = PyLong_AsLong(code_obj);
+        Py_DECREF(code_obj);
         if (code <= 0 || code > 0x7fffffffL) {
+            /* Should never happen in normal circumstances, since the type and
+               the value of the code are checked in copyreg.add_extension(). */
             if (!PyErr_Occurred())
-                PyErr_Format(st->PicklingError, "Can't pickle %R: extension "
-                             "code %ld is out of range", obj, code);
+                PyErr_Format(PyExc_RuntimeError, "extension code %ld is out of range", code);
             goto error;
         }
 
@@ -3780,9 +3740,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     }
     else {
   gen_global:
-        if (parent == module) {
-            Py_SETREF(global_name, Py_NewRef(lastname));
-        }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
 
@@ -3794,20 +3751,30 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             if (_Pickler_Write(self, &stack_global_op, 1) < 0)
                 goto error;
         }
-        else if (parent != module) {
-            PyObject *reduce_value = Py_BuildValue("(O(OO))",
-                                        st->getattr, parent, lastname);
-            if (reduce_value == NULL)
-                goto error;
-            status = save_reduce(st, self, reduce_value, NULL);
-            Py_DECREF(reduce_value);
-            if (status < 0)
-                goto error;
-        }
         else {
             /* Generate a normal global opcode if we are using a pickle
                protocol < 4, or if the object is not registered in the
-               extension registry. */
+               extension registry.
+
+               Objects with multi-part __qualname__ are represented as
+               getattr(getattr(..., attrname1), attrname2). */
+            const char mark_op = MARK;
+            const char tupletwo_op = (self->proto < 2) ? TUPLE : TUPLE2;
+            const char reduce_op = REDUCE;
+            Py_ssize_t i;
+            if (dotted_path) {
+                if (PyList_GET_SIZE(dotted_path) > 1) {
+                    Py_SETREF(global_name, Py_NewRef(PyList_GET_ITEM(dotted_path, 0)));
+                }
+                for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                    if (save(st, self, st->getattr, 0) < 0 ||
+                        (self->proto < 2 && _Pickler_Write(self, &mark_op, 1) < 0))
+                    {
+                        goto error;
+                    }
+                }
+            }
+
             PyObject *encoded;
             PyObject *(*unicode_encoder)(PyObject *);
 
@@ -3835,11 +3802,14 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             }
             encoded = unicode_encoder(module_name);
             if (encoded == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    PyObject *exc = PyErr_GetRaisedException();
                     PyErr_Format(st->PicklingError,
-                                 "can't pickle module identifier '%S' using "
+                                 "can't pickle module identifier %R using "
                                  "pickle protocol %i",
                                  module_name, self->proto);
+                    _PyErr_ChainExceptions1(exc);
+                }
                 goto error;
             }
             if (_Pickler_Write(self, PyBytes_AS_STRING(encoded),
@@ -3854,11 +3824,14 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             /* Save the name of the module. */
             encoded = unicode_encoder(global_name);
             if (encoded == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    PyObject *exc = PyErr_GetRaisedException();
                     PyErr_Format(st->PicklingError,
-                                 "can't pickle global identifier '%S' using "
+                                 "can't pickle global identifier %R using "
                                  "pickle protocol %i",
                                  global_name, self->proto);
+                    _PyErr_ChainExceptions1(exc);
+                }
                 goto error;
             }
             if (_Pickler_Write(self, PyBytes_AS_STRING(encoded),
@@ -3869,6 +3842,17 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             Py_DECREF(encoded);
             if (_Pickler_Write(self, "\n", 1) < 0)
                 goto error;
+
+            if (dotted_path) {
+                for (i = 1; i < PyList_GET_SIZE(dotted_path); i++) {
+                    if (save(st, self, PyList_GET_ITEM(dotted_path, i), 0) < 0 ||
+                        _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+                        _Pickler_Write(self, &reduce_op, 1) < 0)
+                    {
+                        goto error;
+                    }
+                }
+            }
         }
         /* Memoize the object. */
         if (memo_put(st, self, obj) < 0)
@@ -3881,10 +3865,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     }
     Py_XDECREF(module_name);
     Py_XDECREF(global_name);
-    Py_XDECREF(module);
-    Py_XDECREF(parent);
     Py_XDECREF(dotted_path);
-    Py_XDECREF(lastname);
 
     return status;
 }
@@ -3929,7 +3910,7 @@ save_pers(PickleState *state, PicklerObject *self, PyObject *obj)
     const char persid_op = PERSID;
     const char binpersid_op = BINPERSID;
 
-    pid = call_method(self->pers_func, self->pers_func_self, obj);
+    pid = PyObject_CallOneArg(self->persistent_id, obj);
     if (pid == NULL)
         return -1;
 
@@ -4011,8 +3992,9 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
     size = PyTuple_Size(args);
     if (size < 2 || size > 6) {
-        PyErr_SetString(st->PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 through 6 elements");
+        PyErr_SetString(st->PicklingError,
+                        "tuple returned by __reduce__ "
+                        "must contain 2 through 6 elements");
         return -1;
     }
 
@@ -4022,13 +4004,15 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         return -1;
 
     if (!PyCallable_Check(callable)) {
-        PyErr_SetString(st->PicklingError, "first item of the tuple "
-                        "returned by __reduce__ must be callable");
+        PyErr_Format(st->PicklingError,
+                     "first item of the tuple returned by __reduce__ "
+                     "must be callable, not %T", callable);
         return -1;
     }
     if (!PyTuple_Check(argtup)) {
-        PyErr_SetString(st->PicklingError, "second item of the tuple "
-                        "returned by __reduce__ must be a tuple");
+        PyErr_Format(st->PicklingError,
+                     "second item of the tuple returned by __reduce__ "
+                     "must be a tuple, not %T", argtup);
         return -1;
     }
 
@@ -4038,27 +4022,27 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
     if (listitems == Py_None)
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
-        PyErr_Format(st->PicklingError, "fourth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(listitems)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "fourth item of the tuple returned by __reduce__ "
+                     "must be an iterator, not %T", listitems);
         return -1;
     }
 
     if (dictitems == Py_None)
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
-        PyErr_Format(st->PicklingError, "fifth element of the tuple "
-                     "returned by __reduce__ must be an iterator, not %s",
-                     Py_TYPE(dictitems)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "fifth item of the tuple returned by __reduce__ "
+                     "must be an iterator, not %T", dictitems);
         return -1;
     }
 
     if (state_setter == Py_None)
         state_setter = NULL;
     else if (!PyCallable_Check(state_setter)) {
-        PyErr_Format(st->PicklingError, "sixth element of the tuple "
-                     "returned by __reduce__ must be a function, not %s",
-                     Py_TYPE(state_setter)->tp_name);
+        PyErr_Format(st->PicklingError,
+                     "sixth item of the tuple returned by __reduce__ "
+                     "must be callable, not %T", state_setter);
         return -1;
     }
 
@@ -4084,38 +4068,45 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         if (PyTuple_GET_SIZE(argtup) != 3) {
             PyErr_Format(st->PicklingError,
-                         "length of the NEWOBJ_EX argument tuple must be "
-                         "exactly 3, not %zd", PyTuple_GET_SIZE(argtup));
+                         "__newobj_ex__ expected 3 arguments, got %zd",
+                         PyTuple_GET_SIZE(argtup));
             return -1;
         }
 
         cls = PyTuple_GET_ITEM(argtup, 0);
         if (!PyType_Check(cls)) {
             PyErr_Format(st->PicklingError,
-                         "first item from NEWOBJ_EX argument tuple must "
-                         "be a class, not %.200s", Py_TYPE(cls)->tp_name);
+                         "first argument to __newobj_ex__() "
+                         "must be a class, not %T", cls);
             return -1;
         }
         args = PyTuple_GET_ITEM(argtup, 1);
         if (!PyTuple_Check(args)) {
             PyErr_Format(st->PicklingError,
-                         "second item from NEWOBJ_EX argument tuple must "
-                         "be a tuple, not %.200s", Py_TYPE(args)->tp_name);
+                         "second argument to __newobj_ex__() "
+                         "must be a tuple, not %T", args);
             return -1;
         }
         kwargs = PyTuple_GET_ITEM(argtup, 2);
         if (!PyDict_Check(kwargs)) {
             PyErr_Format(st->PicklingError,
-                         "third item from NEWOBJ_EX argument tuple must "
-                         "be a dict, not %.200s", Py_TYPE(kwargs)->tp_name);
+                         "third argument to __newobj_ex__() "
+                         "must be a dict, not %T", kwargs);
             return -1;
         }
 
         if (self->proto >= 4) {
-            if (save(st, self, cls, 0) < 0 ||
-                save(st, self, args, 0) < 0 ||
-                save(st, self, kwargs, 0) < 0 ||
-                _Pickler_Write(self, &newobj_ex_op, 1) < 0) {
+            if (save(st, self, cls, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T class", obj);
+                return -1;
+            }
+            if (save(st, self, args, 0) < 0 ||
+                save(st, self, kwargs, 0) < 0)
+            {
+                _PyErr_FormatNote("when serializing %T __new__ arguments", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &newobj_ex_op, 1) < 0) {
                 return -1;
             }
         }
@@ -4152,14 +4143,18 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             }
 
             if (save(st, self, callable, 0) < 0 ||
-                save(st, self, newargs, 0) < 0 ||
-                _Pickler_Write(self, &reduce_op, 1) < 0) {
+                save(st, self, newargs, 0) < 0)
+            {
+                _PyErr_FormatNote("when serializing %T reconstructor", obj);
                 Py_DECREF(newargs);
                 Py_DECREF(callable);
                 return -1;
             }
             Py_DECREF(newargs);
             Py_DECREF(callable);
+            if (_Pickler_Write(self, &reduce_op, 1) < 0) {
+                return -1;
+            }
         }
     }
     else if (use_newobj) {
@@ -4170,14 +4165,17 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         /* Sanity checks. */
         if (PyTuple_GET_SIZE(argtup) < 1) {
-            PyErr_SetString(st->PicklingError, "__newobj__ arglist is empty");
+            PyErr_Format(st->PicklingError,
+                         "__newobj__ expected at least 1 argument, got %zd",
+                         PyTuple_GET_SIZE(argtup));
             return -1;
         }
 
         cls = PyTuple_GET_ITEM(argtup, 0);
         if (!PyType_Check(cls)) {
-            PyErr_SetString(st->PicklingError, "args[0] from "
-                            "__newobj__ args is not a type");
+            PyErr_Format(st->PicklingError,
+                         "first argument to __newobj__() "
+                         "must be a class, not %T", cls);
             return -1;
         }
 
@@ -4186,13 +4184,14 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             if (obj_class == NULL) {
                 return -1;
             }
-            p = obj_class != cls;
-            Py_DECREF(obj_class);
-            if (p) {
-                PyErr_SetString(st->PicklingError, "args[0] from "
-                                "__newobj__ args has the wrong class");
+            if (obj_class != cls) {
+                PyErr_Format(st->PicklingError,
+                             "first argument to __newobj__() "
+                             "must be %R, not %R", obj_class, cls);
+                Py_DECREF(obj_class);
                 return -1;
             }
+            Py_DECREF(obj_class);
         }
         /* XXX: These calls save() are prone to infinite recursion. Imagine
            what happen if the value returned by the __reduce__() method of
@@ -4223,6 +4222,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         /* Save the class and its __new__ arguments. */
         if (save(st, self, cls, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T class", obj);
             return -1;
         }
 
@@ -4232,18 +4232,27 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
         p = save(st, self, newargtup, 0);
         Py_DECREF(newargtup);
-        if (p < 0)
+        if (p < 0) {
+            _PyErr_FormatNote("when serializing %T __new__ arguments", obj);
             return -1;
+        }
 
         /* Add NEWOBJ opcode. */
         if (_Pickler_Write(self, &newobj_op, 1) < 0)
             return -1;
     }
     else { /* Not using NEWOBJ. */
-        if (save(st, self, callable, 0) < 0 ||
-            save(st, self, argtup, 0) < 0 ||
-            _Pickler_Write(self, &reduce_op, 1) < 0)
+        if (save(st, self, callable, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T reconstructor", obj);
             return -1;
+        }
+        if (save(st, self, argtup, 0) < 0) {
+            _PyErr_FormatNote("when serializing %T reconstructor arguments", obj);
+            return -1;
+        }
+        if (_Pickler_Write(self, &reduce_op, 1) < 0) {
+            return -1;
+        }
     }
 
     /* obj can be NULL when save_reduce() is used directly. A NULL obj means
@@ -4268,16 +4277,19 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             return -1;
     }
 
-    if (listitems && batch_list(st, self, listitems) < 0)
+    if (listitems && batch_list(st, self, listitems, obj) < 0)
         return -1;
 
-    if (dictitems && batch_dict(st, self, dictitems) < 0)
+    if (dictitems && batch_dict(st, self, dictitems, obj) < 0)
         return -1;
 
     if (state) {
         if (state_setter == NULL) {
-            if (save(st, self, state, 0) < 0 ||
-                _Pickler_Write(self, &build_op, 1) < 0)
+            if (save(st, self, state, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &build_op, 1) < 0)
                 return -1;
         }
         else {
@@ -4293,9 +4305,18 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
 
             const char tupletwo_op = TUPLE2;
             const char pop_op = POP;
-            if (save(st, self, state_setter, 0) < 0 ||
-                save(st, self, obj, 0) < 0 || save(st, self, state, 0) < 0 ||
-                _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+            if (save(st, self, state_setter, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state setter", obj);
+                return -1;
+            }
+            if (save(st, self, obj, 0) < 0) {
+                return -1;
+            }
+            if (save(st, self, state, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T state", obj);
+                return -1;
+            }
+            if (_Pickler_Write(self, &tupletwo_op, 1) < 0 ||
                 _Pickler_Write(self, &reduce_op, 1) < 0 ||
                 _Pickler_Write(self, &pop_op, 1) < 0)
                 return -1;
@@ -4317,7 +4338,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
 
     /* The extra pers_save argument is necessary to avoid calling save_pers()
        on its returned object. */
-    if (!pers_save && self->pers_func) {
+    if (!pers_save && self->persistent_id) {
         /* save_pers() returns:
             -1   to signal an error;
              0   if it did nothing successfully;
@@ -4485,8 +4506,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
             }
             else {
                 PyErr_Format(st->PicklingError,
-                             "can't pickle '%.200s' object: %R",
-                             type->tp_name, obj);
+                             "Can't pickle %T object", obj);
                 goto error;
             }
         }
@@ -4502,12 +4522,16 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     }
 
     if (!PyTuple_Check(reduce_value)) {
-        PyErr_SetString(st->PicklingError,
-                        "__reduce__ must return a string or tuple");
+        PyErr_Format(st->PicklingError,
+                     "__reduce__ must return a string or tuple, not %T", reduce_value);
+        _PyErr_FormatNote("when serializing %T object", obj);
         goto error;
     }
 
     status = save_reduce(st, self, reduce_value, obj);
+    if (status < 0) {
+        _PyErr_FormatNote("when serializing %T object", obj);
+    }
 
     if (0) {
   error:
@@ -4522,6 +4546,12 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     return status;
 }
 
+static PyObject *
+persistent_id(PyObject *self, PyObject *obj)
+{
+    Py_RETURN_NONE;
+}
+
 static int
 dump(PickleState *state, PicklerObject *self, PyObject *obj)
 {
@@ -4529,17 +4559,25 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     int status = -1;
     PyObject *tmp;
 
+    /* Cache the persistent_id method. */
+    tmp = PyObject_GetAttr((PyObject *)self, &_Py_ID(persistent_id));
+    if (tmp == NULL) {
+        goto error;
+    }
+    if (PyCFunction_Check(tmp) &&
+        PyCFunction_GET_SELF(tmp) == (PyObject *)self &&
+        PyCFunction_GET_FUNCTION(tmp) == persistent_id)
+    {
+        Py_CLEAR(tmp);
+    }
+    Py_XSETREF(self->persistent_id, tmp);
+
+    /* Cache the reducer_override method, if it exists. */
     if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(reducer_override),
                              &tmp) < 0) {
-      goto error;
+        goto error;
     }
-    /* Cache the reducer_override method, if it exists. */
-    if (tmp != NULL) {
-        Py_XSETREF(self->reducer_override, tmp);
-    }
-    else {
-        Py_CLEAR(self->reducer_override);
-    }
+    Py_XSETREF(self->reducer_override, tmp);
 
     if (self->proto >= 2) {
         char header[2];
@@ -4565,11 +4603,12 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     self->framing = 0;
 
     /* Break the reference cycle we generated at the beginning this function
-     * call when setting the reducer_override attribute of the Pickler instance
-     * to a bound method of the same instance. This is important as the Pickler
-     * instance holds a reference to each object it has pickled (through its
-     * memo): thus, these objects won't be garbage-collected as long as the
-     * Pickler itself is not collected. */
+     * call when setting the persistent_id and the reducer_override attributes
+     * of the Pickler instance to a bound method of the same instance.
+     * This is important as the Pickler instance holds a reference to each
+     * object it has pickled (through its memo): thus, these objects won't
+     * be garbage-collected as long as the Pickler itself is not collected. */
+    Py_CLEAR(self->persistent_id);
     Py_CLEAR(self->reducer_override);
     return status;
 }
@@ -4662,6 +4701,8 @@ _pickle_Pickler___sizeof___impl(PicklerObject *self)
 }
 
 static struct PyMethodDef Pickler_methods[] = {
+    {"persistent_id", persistent_id, METH_O,
+        PyDoc_STR("persistent_id($self, obj, /)\n--\n\n")},
     _PICKLE_PICKLER_DUMP_METHODDEF
     _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
     _PICKLE_PICKLER___SIZEOF___METHODDEF
@@ -4673,7 +4714,7 @@ Pickler_clear(PicklerObject *self)
 {
     Py_CLEAR(self->output_buffer);
     Py_CLEAR(self->write);
-    Py_CLEAR(self->pers_func);
+    Py_CLEAR(self->persistent_id);
     Py_CLEAR(self->dispatch_table);
     Py_CLEAR(self->fast_memo);
     Py_CLEAR(self->reducer_override);
@@ -4702,11 +4743,19 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->write);
-    Py_VISIT(self->pers_func);
+    Py_VISIT(self->persistent_id);
     Py_VISIT(self->dispatch_table);
     Py_VISIT(self->fast_memo);
     Py_VISIT(self->reducer_override);
     Py_VISIT(self->buffer_callback);
+    PyMemoTable *memo = self->memo;
+    if (memo && memo->mt_table) {
+        Py_ssize_t i = memo->mt_allocated;
+        while (--i >= 0) {
+            Py_VISIT(memo->mt_table[i].me_key);
+        }
+    }
+
     return 0;
 }
 
@@ -4724,7 +4773,7 @@ This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -4757,7 +4806,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=a7c969699bf5dad3]*/
+/*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
 {
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
@@ -4791,11 +4840,6 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_nesting = 0;
     self->fast_memo = NULL;
 
-    if (init_method_ref((PyObject *)self, &_Py_ID(persistent_id),
-                        &self->pers_func, &self->pers_func_self) < 0)
-    {
-        return -1;
-    }
     if (self->dispatch_table != NULL) {
         return 0;
     }
@@ -5044,36 +5088,6 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
     return -1;
 }
 
-static PyObject *
-Pickler_get_persid(PicklerObject *self, void *Py_UNUSED(ignored))
-{
-    if (self->pers_func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "persistent_id");
-        return NULL;
-    }
-    return reconstruct_method(self->pers_func, self->pers_func_self);
-}
-
-static int
-Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
-{
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "attribute deletion is not supported");
-        return -1;
-    }
-    if (!PyCallable_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "persistent_id must be a callable taking one argument");
-        return -1;
-    }
-
-    self->pers_func_self = NULL;
-    Py_XSETREF(self->pers_func, Py_NewRef(value));
-
-    return 0;
-}
-
 static PyMemberDef Pickler_members[] = {
     {"bin", Py_T_INT, offsetof(PicklerObject, bin)},
     {"fast", Py_T_INT, offsetof(PicklerObject, fast)},
@@ -5084,8 +5098,6 @@ static PyMemberDef Pickler_members[] = {
 static PyGetSetDef Pickler_getsets[] = {
     {"memo",          (getter)Pickler_get_memo,
                       (setter)Pickler_set_memo},
-    {"persistent_id", (getter)Pickler_get_persid,
-                      (setter)Pickler_set_persid},
     {NULL}
 };
 
@@ -6048,36 +6060,28 @@ load_persid(PickleState *st, UnpicklerObject *self)
     Py_ssize_t len;
     char *s;
 
-    if (self->pers_func) {
-        if ((len = _Unpickler_Readline(st, self, &s)) < 0)
-            return -1;
-        if (len < 1)
-            return bad_readline(st);
+    if ((len = _Unpickler_Readline(st, self, &s)) < 0)
+        return -1;
+    if (len < 1)
+        return bad_readline(st);
 
-        pid = PyUnicode_DecodeASCII(s, len - 1, "strict");
-        if (pid == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-                PyErr_SetString(st->UnpicklingError,
-                                "persistent IDs in protocol 0 must be "
-                                "ASCII strings");
-            }
-            return -1;
+    pid = PyUnicode_DecodeASCII(s, len - 1, "strict");
+    if (pid == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+            PyErr_SetString(st->UnpicklingError,
+                            "persistent IDs in protocol 0 must be "
+                            "ASCII strings");
         }
-
-        obj = call_method(self->pers_func, self->pers_func_self, pid);
-        Py_DECREF(pid);
-        if (obj == NULL)
-            return -1;
-
-        PDATA_PUSH(self->stack, obj, -1);
-        return 0;
-    }
-    else {
-        PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered, "
-                        "but no persistent_load function was specified.");
         return -1;
     }
+
+    obj = PyObject_CallOneArg(self->persistent_load, pid);
+    Py_DECREF(pid);
+    if (obj == NULL)
+        return -1;
+
+    PDATA_PUSH(self->stack, obj, -1);
+    return 0;
 }
 
 static int
@@ -6085,25 +6089,17 @@ load_binpersid(PickleState *st, UnpicklerObject *self)
 {
     PyObject *pid, *obj;
 
-    if (self->pers_func) {
-        PDATA_POP(st, self->stack, pid);
-        if (pid == NULL)
-            return -1;
-
-        obj = call_method(self->pers_func, self->pers_func_self, pid);
-        Py_DECREF(pid);
-        if (obj == NULL)
-            return -1;
-
-        PDATA_PUSH(self->stack, obj, -1);
-        return 0;
-    }
-    else {
-        PyErr_SetString(st->UnpicklingError,
-                        "A load persistent id instruction was encountered, "
-                        "but no persistent_load function was specified.");
+    PDATA_POP(st, self->stack, pid);
+    if (pid == NULL)
         return -1;
-    }
+
+    obj = PyObject_CallOneArg(self->persistent_load, pid);
+    Py_DECREF(pid);
+    if (obj == NULL)
+        return -1;
+
+    PDATA_PUSH(self->stack, obj, -1);
+    return 0;
 }
 
 static int
@@ -6609,11 +6605,13 @@ load_additems(PickleState *state, UnpicklerObject *self)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SET_SIZE(self->stack, mark);
+                Py_DECREF(add_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SET_SIZE(self->stack, mark);
+        Py_DECREF(add_func);
     }
 
     return 0;
@@ -6689,8 +6687,10 @@ load_build(PickleState *st, UnpicklerObject *self)
             /* normally the keys for instance attributes are
                interned.  we should try to do that here. */
             Py_INCREF(d_key);
-            if (PyUnicode_CheckExact(d_key))
-                PyUnicode_InternInPlace(&d_key);
+            if (PyUnicode_CheckExact(d_key)) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &d_key);
+            }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
                 goto error;
@@ -6829,6 +6829,7 @@ static PyObject *
 load(PickleState *st, UnpicklerObject *self)
 {
     PyObject *value = NULL;
+    PyObject *tmp;
     char *s = NULL;
 
     self->num_marks = 0;
@@ -6837,6 +6838,13 @@ load(PickleState *st, UnpicklerObject *self)
     self->proto = 0;
     if (Py_SIZE(self->stack))
         Pdata_clear(self->stack, 0);
+
+    /* Cache the persistent_load method. */
+    tmp = PyObject_GetAttr((PyObject *)self, &_Py_ID(persistent_load));
+    if (tmp == NULL) {
+        goto error;
+    }
+    Py_XSETREF(self->persistent_load, tmp);
 
     /* Convenient macros for the dispatch while-switch loop just below. */
 #define OP(opcode, load_func) \
@@ -6850,7 +6858,7 @@ load(PickleState *st, UnpicklerObject *self)
             if (PyErr_ExceptionMatches(st->UnpicklingError)) {
                 PyErr_Format(PyExc_EOFError, "Ran out of input");
             }
-            return NULL;
+            goto error;
         }
 
         switch ((enum opcode)s[0]) {
@@ -6936,7 +6944,7 @@ load(PickleState *st, UnpicklerObject *self)
                     PyErr_Format(st->UnpicklingError,
                                  "invalid load key, '\\x%02x'.", c);
                 }
-                return NULL;
+                goto error;
             }
         }
 
@@ -6944,14 +6952,41 @@ load(PickleState *st, UnpicklerObject *self)
     }
 
     if (PyErr_Occurred()) {
-        return NULL;
+        goto error;
     }
 
     if (_Unpickler_SkipConsumed(self) < 0)
-        return NULL;
+        goto error;
 
+    Py_CLEAR(self->persistent_load);
     PDATA_POP(st, self->stack, value);
     return value;
+
+error:
+    Py_CLEAR(self->persistent_load);
+    return NULL;
+}
+
+/*[clinic input]
+
+_pickle.Unpickler.persistent_load
+
+    cls: defining_class
+    pid: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_pickle_Unpickler_persistent_load_impl(UnpicklerObject *self,
+                                       PyTypeObject *cls, PyObject *pid)
+/*[clinic end generated code: output=9f4706f1330cb14d input=2f9554fae051276e]*/
+{
+    PickleState *st = _Pickle_GetStateByClass(cls);
+    PyErr_SetString(st->UnpicklingError,
+                    "A load persistent id instruction was encountered, "
+                    "but no persistent_load function was specified.");
+    return NULL;
 }
 
 /*[clinic input]
@@ -7089,7 +7124,26 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
     if (module == NULL) {
         return NULL;
     }
-    global = getattribute(module, global_name, self->proto >= 4);
+    if (self->proto >= 4) {
+        PyObject *dotted_path = get_dotted_path(global_name);
+        if (dotted_path == NULL) {
+            Py_DECREF(module);
+            return NULL;
+        }
+        global = getattribute(module, dotted_path, 1);
+        assert(global != NULL || PyErr_Occurred());
+        if (global == NULL && PyList_GET_SIZE(dotted_path) > 1) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(PyExc_AttributeError,
+                         "Can't resolve path %R on module %R",
+                         global_name, module_name);
+            _PyErr_ChainExceptions1(exc);
+        }
+        Py_DECREF(dotted_path);
+    }
+    else {
+        global = PyObject_GetAttr(module, global_name);
+    }
     Py_DECREF(module);
     return global;
 }
@@ -7120,6 +7174,7 @@ _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
 }
 
 static struct PyMethodDef Unpickler_methods[] = {
+    _PICKLE_UNPICKLER_PERSISTENT_LOAD_METHODDEF
     _PICKLE_UNPICKLER_LOAD_METHODDEF
     _PICKLE_UNPICKLER_FIND_CLASS_METHODDEF
     _PICKLE_UNPICKLER___SIZEOF___METHODDEF
@@ -7134,7 +7189,7 @@ Unpickler_clear(UnpicklerObject *self)
     Py_CLEAR(self->read);
     Py_CLEAR(self->peek);
     Py_CLEAR(self->stack);
-    Py_CLEAR(self->pers_func);
+    Py_CLEAR(self->persistent_load);
     Py_CLEAR(self->buffers);
     if (self->buffer.buf != NULL) {
         PyBuffer_Release(&self->buffer);
@@ -7173,8 +7228,15 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->read);
     Py_VISIT(self->peek);
     Py_VISIT(self->stack);
-    Py_VISIT(self->pers_func);
+    Py_VISIT(self->persistent_load);
     Py_VISIT(self->buffers);
+    PyObject **memo = self->memo;
+    if (memo) {
+        Py_ssize_t i = self->memo_size;
+        while (--i >= 0) {
+            Py_VISIT(memo[i]);
+        }
+    }
     return 0;
 }
 
@@ -7231,12 +7293,6 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
 
     self->fix_imports = fix_imports;
-
-    if (init_method_ref((PyObject *)self, &_Py_ID(persistent_load),
-                        &self->pers_func, &self->pers_func_self) < 0)
-    {
-        return -1;
-    }
 
     PyTypeObject *tp = Py_TYPE(self);
     PickleState *state = _Pickle_FindStateByType(tp);
@@ -7506,41 +7562,8 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
     return -1;
 }
 
-static PyObject *
-Unpickler_get_persload(UnpicklerObject *self, void *Py_UNUSED(ignored))
-{
-    if (self->pers_func == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "persistent_load");
-        return NULL;
-    }
-    return reconstruct_method(self->pers_func, self->pers_func_self);
-}
-
-static int
-Unpickler_set_persload(UnpicklerObject *self, PyObject *value, void *Py_UNUSED(ignored))
-{
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "attribute deletion is not supported");
-        return -1;
-    }
-    if (!PyCallable_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "persistent_load must be a callable taking "
-                        "one argument");
-        return -1;
-    }
-
-    self->pers_func_self = NULL;
-    Py_XSETREF(self->pers_func, Py_NewRef(value));
-
-    return 0;
-}
-
 static PyGetSetDef Unpickler_getsets[] = {
     {"memo", (getter)Unpickler_get_memo, (setter)Unpickler_set_memo},
-    {"persistent_load", (getter)Unpickler_get_persload,
-                        (setter)Unpickler_set_persload},
     {NULL}
 };
 
@@ -7584,7 +7607,7 @@ be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7610,7 +7633,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
+/*[clinic end generated code: output=706186dba996490c input=b89ce8d0e911fd46]*/
 {
     PickleState *state = _Pickle_GetState(module);
     PicklerObject *pickler = _Pickler_New(state);
@@ -7655,7 +7678,7 @@ Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
 protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
-protocol is 4. It was introduced in Python 3.4, and is incompatible
+protocol is 5. It was introduced in Python 3.8, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7675,7 +7698,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=139fc546886c63ac]*/
 {
     PyObject *result;
     PickleState *state = _Pickle_GetState(module);
@@ -7943,6 +7966,7 @@ _pickle_exec(PyObject *m)
 static PyModuleDef_Slot pickle_slots[] = {
     {Py_mod_exec, _pickle_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

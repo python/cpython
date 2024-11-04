@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(monitoring_use_tool_id__doc__,
 "use_tool_id($module, tool_id, name, /)\n"
 "--\n"
@@ -29,6 +31,33 @@ monitoring_use_tool_id(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     name = args[1];
     return_value = monitoring_use_tool_id_impl(module, tool_id, name);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(monitoring_clear_tool_id__doc__,
+"clear_tool_id($module, tool_id, /)\n"
+"--\n"
+"\n");
+
+#define MONITORING_CLEAR_TOOL_ID_METHODDEF    \
+    {"clear_tool_id", (PyCFunction)monitoring_clear_tool_id, METH_O, monitoring_clear_tool_id__doc__},
+
+static PyObject *
+monitoring_clear_tool_id_impl(PyObject *module, int tool_id);
+
+static PyObject *
+monitoring_clear_tool_id(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int tool_id;
+
+    tool_id = PyLong_AsInt(arg);
+    if (tool_id == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = monitoring_clear_tool_id_impl(module, tool_id);
 
 exit:
     return return_value;
@@ -302,4 +331,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=46f449b18195f976 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f81876c6aba9be8 input=a9049054013a1b77]*/

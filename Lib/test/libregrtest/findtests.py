@@ -1,11 +1,13 @@
 import os
 import sys
 import unittest
+from collections.abc import Container
 
 from test import support
 
+from .filter import match_test, set_match_tests
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    StrPath, TestName, TestTuple, TestList, TestFilter,
     abs_module_name, count, printlist)
 
 
@@ -18,9 +20,11 @@ from .utils import (
 SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
+    "test_doctests",
     "test_future_stmt",
     "test_gdb",
     "test_inspect",
+    "test_pydoc",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
@@ -31,7 +35,7 @@ def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(*, testdir: StrPath | None = None, exclude=(),
+def findtests(*, testdir: StrPath | None = None, exclude: Container[str] = (),
               split_test_dirs: set[TestName] = SPLITTESTDIRS,
               base_mod: str = "") -> TestList:
     """Return a list of all applicable test modules."""
@@ -57,8 +61,9 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
     return sorted(tests)
 
 
-def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
-                        split_test_dirs=SPLITTESTDIRS):
+def split_test_packages(tests, *, testdir: StrPath | None = None,
+                        exclude: Container[str] = (),
+                        split_test_dirs=SPLITTESTDIRS) -> list[TestName]:
     testdir = findtestdir(testdir)
     splitted = []
     for name in tests:
@@ -72,22 +77,21 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
     return splitted
 
 
-def _list_cases(suite):
+def _list_cases(suite: unittest.TestSuite) -> None:
     for test in suite:
-        if isinstance(test, unittest.loader._FailedTest):
+        if isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
             continue
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            if support.match_test(test):
+            if match_test(test):
                 print(test.id())
 
 def list_cases(tests: TestTuple, *,
-               match_tests: FilterTuple | None = None,
-               ignore_tests: FilterTuple | None = None,
-               test_dir: StrPath | None = None):
+               match_tests: TestFilter | None = None,
+               test_dir: StrPath | None = None) -> None:
     support.verbose = False
-    support.set_match_tests(match_tests, ignore_tests)
+    set_match_tests(match_tests)
 
     skipped = []
     for test_name in tests:

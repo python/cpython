@@ -59,6 +59,10 @@ tok_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
+            if ((unsigned int) tok->col_offset >= (unsigned int) INT_MAX) {
+                tok->done = E_COLUMNOVERFLOW;
+                return EOF;
+            }
             tok->col_offset++;
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
@@ -112,13 +116,56 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!tok_mode->f_string_debug || token->metadata) {
         return 0;
     }
+    PyObject *res = NULL;
 
-    PyObject *res = PyUnicode_DecodeUTF8(
-        tok_mode->last_expr_buffer,
-        tok_mode->last_expr_size - tok_mode->last_expr_end,
-        NULL
-    );
-    if (!res) {
+    // Check if there is a # character in the expression
+    int hash_detected = 0;
+    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
+        if (tok_mode->last_expr_buffer[i] == '#') {
+            hash_detected = 1;
+            break;
+        }
+    }
+
+    if (hash_detected) {
+        Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
+        char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
+        if (!result) {
+            return -1;
+        }
+
+        Py_ssize_t i = 0;
+        Py_ssize_t j = 0;
+
+        for (i = 0, j = 0; i < input_length; i++) {
+            if (tok_mode->last_expr_buffer[i] == '#') {
+                // Skip characters until newline or end of string
+                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                    if (tok_mode->last_expr_buffer[i] == '\n') {
+                        result[j++] = tok_mode->last_expr_buffer[i];
+                        break;
+                    }
+                    i++;
+                }
+            } else {
+                result[j++] = tok_mode->last_expr_buffer[i];
+            }
+        }
+
+        result[j] = '\0';  // Null-terminate the result string
+        res = PyUnicode_DecodeUTF8(result, j, NULL);
+        PyMem_Free(result);
+    } else {
+        res = PyUnicode_DecodeUTF8(
+            tok_mode->last_expr_buffer,
+            tok_mode->last_expr_size - tok_mode->last_expr_end,
+            NULL
+        );
+
+    }
+
+
+   if (!res) {
         return -1;
     }
     token->metadata = res;
@@ -837,7 +884,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             {
-                /* Accept floating point numbers. */
+                /* Accept floating-point numbers. */
                 if (c == '.') {
                     c = tok_nextc(tok);
         fraction:
@@ -942,6 +989,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
+        the_current_tok->in_format_spec = 0;
         the_current_tok->f_string_debug = 0;
 
         switch (*tok->start) {
@@ -968,6 +1016,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
         int end_quote_size = 0;
+        int has_escaped_quote = 0;
 
         /* Nodes of type STRING, especially multi line strings
            must be handled differently in order to get both
@@ -1033,8 +1082,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 else {
-                    _PyTokenizer_syntaxerror(tok, "unterminated string literal (detected at"
-                                     " line %d)", start);
+                    if (has_escaped_quote) {
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "unterminated string literal (detected at line %d); "
+                            "perhaps you escaped the end quote?",
+                            start
+                        );
+                    } else {
+                        _PyTokenizer_syntaxerror(
+                            tok, "unterminated string literal (detected at line %d)", start
+                        );
+                    }
                     if (c != '\n') {
                         tok->done = E_EOLS;
                     }
@@ -1048,6 +1107,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 end_quote_size = 0;
                 if (c == '\\') {
                     c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == quote) {  /* but record whether the escaped char was a quote */
+                        has_escaped_quote = 1;
+                    }
                     if (c == '\r') {
                         c = tok_nextc(tok);
                     }
@@ -1076,15 +1138,20 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
-        if (cursor == 0 && !_PyLexer_update_fstring_expr(tok, c)) {
+        int in_format_spec = current_tok->in_format_spec;
+         int cursor_in_format_with_debug =
+             cursor == 1 && (current_tok->f_string_debug || in_format_spec);
+         int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
+        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
-        if (cursor == 0 && c != '{' && set_fstring_expr(tok, token, c)) {
+        if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
         if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
             current_tok->kind = TOK_FSTRING_MODE;
+            current_tok->in_format_spec = 1;
             p_start = tok->start;
             p_end = tok->cur;
             return MAKE_TOKEN(_PyToken_OneChar(c));
@@ -1171,9 +1238,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         if (INSIDE_FSTRING(tok)) {
             current_tok->curly_bracket_depth--;
+            if (current_tok->curly_bracket_depth < 0) {
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+            }
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
+                current_tok->in_format_spec = 0;
                 current_tok->f_string_debug = 0;
             }
         }
@@ -1256,11 +1327,11 @@ f_string_middle:
     tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
-        if (tok->done == E_ERROR) {
+        if (tok->done == E_ERROR || tok->done == E_DECODE) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
         int in_format_spec = (
-                current_tok->last_expr_end != -1
+                current_tok->in_format_spec
                 &&
                 INSIDE_FSTRING_EXPR(current_tok)
         );
@@ -1276,6 +1347,7 @@ f_string_middle:
             if (in_format_spec && c == '\n') {
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
                 return MAKE_TOKEN(FSTRING_MIDDLE);
@@ -1294,9 +1366,13 @@ f_string_middle:
             tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                _PyTokenizer_syntaxerror(tok,
                                     "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start));
+                                    " (detected at line %d)", start);
+                if (c != '\n') {
+                    tok->done = E_EOFS;
+                }
+                return MAKE_TOKEN(ERRORTOKEN);
             }
             else {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
@@ -1313,6 +1389,9 @@ f_string_middle:
         }
 
         if (c == '{') {
+            if (!_PyLexer_update_fstring_expr(tok, c)) {
+                return MAKE_TOKEN(ENDMARKER);
+            }
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
@@ -1322,6 +1401,7 @@ f_string_middle:
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
                 }
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
             } else {
@@ -1341,13 +1421,15 @@ f_string_middle:
             // scanning (indicated by the end of the expression being set) and we are not at the top level
             // of the bracket stack (-1 is the top level). Since format specifiers can't legally use double
             // brackets, we can bypass it here.
-            if (peek == '}' && !in_format_spec) {
+            int cursor = current_tok->curly_bracket_depth;
+            if (peek == '}' && !in_format_spec && cursor == 0) {
                 p_start = tok->start;
                 p_end = tok->cur - 1;
             } else {
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
             }

@@ -1,5 +1,5 @@
-:mod:`string` --- Common string operations
-==========================================
+:mod:`!string` --- Common string operations
+===========================================
 
 .. module:: string
    :synopsis: Common string operations.
@@ -208,13 +208,13 @@ The grammar for a replacement field is as follows:
 
 .. productionlist:: format-string
    replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
-   field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-   arg_name: [`identifier` | `digit`+]
-   attribute_name: `identifier`
-   element_index: `digit`+ | `index_string`
+   field_name: `arg_name` ("." `attribute_name` | "[" `element_index` "]")*
+   arg_name: [`~python-grammar:identifier` | `~python-grammar:digit`+]
+   attribute_name: `~python-grammar:identifier`
+   element_index: `~python-grammar:digit`+ | `index_string`
    index_string: <any source character except "]"> +
    conversion: "r" | "s" | "a"
-   format_spec: <described in the next section>
+   format_spec: `format-spec:format_spec`
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
@@ -316,9 +316,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `digit`+
+   width: `~python-grammar:digit`+
    grouping_option: "_" | ","
-   precision: `digit`+
+   precision: `~python-grammar:digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
@@ -350,8 +350,9 @@ The meaning of the various alignment options is as follows:
 | ``'='`` | Forces the padding to be placed after the sign (if any)  |
 |         | but before the digits.  This is used for printing fields |
 |         | in the form '+000000120'. This alignment option is only  |
-|         | valid for numeric types.  It becomes the default for     |
-|         | numbers when '0' immediately precedes the field width.   |
+|         | valid for numeric types, excluding :class:`complex`.     |
+|         | It becomes the default for numbers when '0' immediately  |
+|         | precedes the field width.                                |
 +---------+----------------------------------------------------------+
 | ``'^'`` | Forces the field to be centered within the available     |
 |         | space.                                                   |
@@ -418,7 +419,7 @@ instead.
 .. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits.  For other presentation types, specifying this option is an
@@ -432,9 +433,9 @@ including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
-(``'0'``) character enables
-sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
-character of ``'0'`` with an *alignment* type of ``'='``.
+(``'0'``) character enables sign-aware zero-padding for numeric types,
+excluding :class:`complex`.  This is equivalent to a *fill* character of
+``'0'`` with an *alignment* type of ``'='``.
 
 .. versionchanged:: 3.10
    Preceding the *width* field by ``'0'`` no longer affects the default
@@ -491,9 +492,9 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
 
 In addition to the above presentation types, integers can be formatted
-with the floating point presentation types listed below (except
+with the floating-point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
-integer to a floating point number before formatting.
+integer to a floating-point number before formatting.
 
 The available presentation types for :class:`float` and
 :class:`~decimal.Decimal` values are:
@@ -509,9 +510,8 @@ The available presentation types for :class:`float` and
    |         | significant digits. With no precision given, uses a      |
    |         | precision of ``6`` digits after the decimal point for    |
    |         | :class:`float`, and shows all coefficient digits         |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -522,9 +522,8 @@ The available presentation types for :class:`float` and
    |         | precision given, uses a precision of ``6`` digits after  |
    |         | the decimal point for :class:`float`, and uses a         |
    |         | precision large enough to show all coefficient digits    |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
@@ -574,11 +573,13 @@ The available presentation types for :class:`float` and
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   | None    | For :class:`float` this is like the ``'g'`` type, except |
    |         | that when fixed-point notation is used to format the     |
    |         | result, it always includes at least one digit past the   |
-   |         | decimal point. The precision used is as large as needed  |
-   |         | to represent the given value faithfully.                 |
+   |         | decimal point, and switches to the scientific notation   |
+   |         | when ``exp >= p - 1``.  When the precision is not        |
+   |         | specified, the latter will be as large as needed to      |
+   |         | represent the given value faithfully.                    |
    |         |                                                          |
    |         | For :class:`~decimal.Decimal`, this is the same as       |
    |         | either ``'g'`` or ``'G'`` depending on the value of      |
@@ -587,6 +588,20 @@ The available presentation types for :class:`float` and
    |         | The overall effect is to match the output of :func:`str` |
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
+
+The result should be correctly rounded to a given precision ``p`` of digits
+after the decimal point.  The rounding mode for :class:`float` matches that
+of the :func:`round` builtin.  For :class:`~decimal.Decimal`, the rounding
+mode of the current :ref:`context <decimal-context>` will be used.
+
+The available presentation types for :class:`complex` are the same as those for
+:class:`float` (``'%'`` is not allowed).  Both the real and imaginary components
+of a complex number are formatted as floating-point numbers, according to the
+specified presentation type.  They are separated by the mandatory sign of the
+imaginary part, the latter being terminated by a ``j`` suffix.  If the presentation
+type is missing, the result will match the output of :func:`str` (complex numbers with
+a non-zero real part are also surrounded by parentheses), possibly altered by
+other format modifiers.
 
 
 .. _formatexamples:

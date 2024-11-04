@@ -10,7 +10,6 @@
 #include "pycore_atexit.h"        // export _Py_AtExit()
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
 /* ===================================================================== */
@@ -137,7 +136,8 @@ atexit_callfuncs(struct atexit_state *state)
         PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            _PyErr_WriteUnraisableMsg("in atexit callback", the_func);
+            PyErr_FormatUnraisable(
+                "Exception ignored in atexit callback %R", the_func);
         }
         else {
             Py_DECREF(res);
@@ -164,7 +164,8 @@ _PyAtExit_Call(PyInterpreterState *interp)
 
 
 PyDoc_STRVAR(atexit_register__doc__,
-"register(func, *args, **kwargs) -> func\n\
+"register($module, func, /, *args, **kwargs)\n\
+--\n\
 \n\
 Register a function to be executed upon normal program termination\n\
 \n\
@@ -221,7 +222,8 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
-"_run_exitfuncs() -> None\n\
+"_run_exitfuncs($module, /)\n\
+--\n\
 \n\
 Run all registered exit functions.\n\
 \n\
@@ -236,7 +238,8 @@ atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_clear__doc__,
-"_clear() -> None\n\
+"_clear($module, /)\n\
+--\n\
 \n\
 Clear the list of previously registered exit functions.");
 
@@ -248,7 +251,8 @@ atexit_clear(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_ncallbacks__doc__,
-"_ncallbacks() -> int\n\
+"_ncallbacks($module, /)\n\
+--\n\
 \n\
 Return the number of registered exit functions.");
 
@@ -260,7 +264,8 @@ atexit_ncallbacks(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
-"unregister(func) -> None\n\
+"unregister($module, func, /)\n\
+--\n\
 \n\
 Unregister an exit function which was previously registered using\n\
 atexit.register\n\
@@ -317,6 +322,7 @@ Two public functions, register and unregister, are defined.\n\
 
 static PyModuleDef_Slot atexitmodule_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

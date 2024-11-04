@@ -4,9 +4,10 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "append($self, subelement, /)\n"
@@ -86,7 +87,7 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element___copy__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
@@ -643,7 +644,7 @@ _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element_itertext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "itertext() takes no arguments");
         return NULL;
     }
@@ -1168,6 +1169,23 @@ _elementtree_XMLParser_close(XMLParserObject *self, PyObject *Py_UNUSED(ignored)
     return _elementtree_XMLParser_close_impl(self);
 }
 
+PyDoc_STRVAR(_elementtree_XMLParser_flush__doc__,
+"flush($self, /)\n"
+"--\n"
+"\n");
+
+#define _ELEMENTTREE_XMLPARSER_FLUSH_METHODDEF    \
+    {"flush", (PyCFunction)_elementtree_XMLParser_flush, METH_NOARGS, _elementtree_XMLParser_flush__doc__},
+
+static PyObject *
+_elementtree_XMLParser_flush_impl(XMLParserObject *self);
+
+static PyObject *
+_elementtree_XMLParser_flush(XMLParserObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_XMLParser_flush_impl(self);
+}
+
 PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
 "feed($self, data, /)\n"
 "--\n"
@@ -1218,4 +1236,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20d1869da79a43d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd28eba33d9c1f25 input=a9049054013a1b77]*/

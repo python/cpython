@@ -1,5 +1,5 @@
-:mod:`collections` --- Container datatypes
-==========================================
+:mod:`!collections` --- Container datatypes
+===========================================
 
 .. module:: collections
     :synopsis: Container datatypes
@@ -99,7 +99,7 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
-    Note, the iteration order of a :class:`ChainMap()` is determined by
+    Note, the iteration order of a :class:`ChainMap` is determined by
     scanning the mappings last to first::
 
         >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
@@ -134,7 +134,7 @@ The class can be used to simulate nested scopes and is useful in templating.
      :attr:`~collections.ChainMap.parents` property.
 
    * The `Nested Contexts recipe
-     <https://code.activestate.com/recipes/577434/>`_ has options to control
+     <https://code.activestate.com/recipes/577434-nested-contexts-a-chain-of-mapping-objects/>`_ has options to control
      whether writes and other mutations apply only to the first mapping or to
      any mapping in the chain.
 
@@ -343,7 +343,7 @@ superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
 All of those tests treat missing elements as having zero counts so that
 ``Counter(a=1) == Counter(a=1, b=0)`` returns true.
 
-.. versionadded:: 3.10
+.. versionchanged:: 3.10
    Rich comparison operations were added.
 
 .. versionchanged:: 3.10
@@ -458,10 +458,10 @@ or subtracting from an empty counter.
     Deques are a generalization of stacks and queues (the name is pronounced "deck"
     and is short for "double-ended queue").  Deques support thread-safe, memory
     efficient appends and pops from either side of the deque with approximately the
-    same O(1) performance in either direction.
+    same *O*\ (1) performance in either direction.
 
     Though :class:`list` objects support similar operations, they are optimized for
-    fast fixed-length operations and incur O(n) memory movement costs for
+    fast fixed-length operations and incur *O*\ (*n*) memory movement costs for
     ``pop(0)`` and ``insert(0, v)`` operations which change both the size and
     position of the underlying data representation.
 
@@ -585,7 +585,7 @@ or subtracting from an empty counter.
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
 the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
-the first element.  Indexed access is O(1) at both ends but slows to O(n) in
+the first element.  Indexed access is *O*\ (1) at both ends but slows to *O*\ (*n*) in
 the middle.  For fast random access, use lists instead.
 
 Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
@@ -743,12 +743,12 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         If calling :attr:`default_factory` raises an exception this exception is
         propagated unchanged.
 
-        This method is called by the :meth:`__getitem__` method of the
+        This method is called by the :meth:`~object.__getitem__` method of the
         :class:`dict` class when the requested key is not found; whatever it
-        returns or raises is then returned or raised by :meth:`__getitem__`.
+        returns or raises is then returned or raised by :meth:`~object.__getitem__`.
 
         Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`__getitem__`. This means that :meth:`get` will, like normal
+        :meth:`~object.__getitem__`. This means that :meth:`get` will, like normal
         dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
 
@@ -874,8 +874,8 @@ they add the ability to access fields by name instead of position index.
     ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
     ``1``, and ``z`` will default to ``2``.
 
-    If *module* is defined, the ``__module__`` attribute of the named tuple is
-    set to that value.
+    If *module* is defined, the :attr:`~type.__module__` attribute of the
+    named tuple is set to that value.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
@@ -980,6 +980,10 @@ field names, the method and attribute names start with an underscore.
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
     Named tuples are also supported by generic function :func:`copy.replace`.
+
+    .. versionchanged:: 3.13
+       Raise :exc:`TypeError` instead of :exc:`ValueError` for invalid
+       keyword arguments.
 
 .. attribute:: somenamedtuple._fields
 
@@ -1165,8 +1169,11 @@ Some differences from :class:`dict` still remain:
 In addition to the usual mapping methods, ordered dictionaries also support
 reverse iteration using :func:`reversed`.
 
+.. _collections_OrderedDict__eq__:
+
 Equality tests between :class:`OrderedDict` objects are order-sensitive
-and are implemented as ``list(od1.items())==list(od2.items())``.
+and are roughly equivalent to ``list(od1.items())==list(od2.items())``.
+
 Equality tests between :class:`OrderedDict` objects and other
 :class:`~collections.abc.Mapping` objects are order-insensitive like regular
 dictionaries.  This allows :class:`OrderedDict` objects to be substituted
@@ -1182,7 +1189,7 @@ anywhere a regular dictionary is used.
    method.
 
 .. versionchanged:: 3.9
-    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+   Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
 
 
 :class:`OrderedDict` Examples and Recipes
