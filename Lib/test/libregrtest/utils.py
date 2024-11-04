@@ -58,7 +58,7 @@ FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
 
-def format_duration(seconds):
+def format_duration(seconds: float) -> str:
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
     minutes, seconds = divmod(seconds, 60)
@@ -92,7 +92,7 @@ def strip_py_suffix(names: list[str] | None) -> None:
             names[idx] = basename
 
 
-def plural(n, singular, plural=None):
+def plural(n: int, singular: str, plural: str | None = None) -> str:
     if n == 1:
         return singular
     elif plural is not None:
@@ -101,7 +101,7 @@ def plural(n, singular, plural=None):
         return singular + 's'
 
 
-def count(n, word):
+def count(n: int, word: str) -> str:
     if n == 1:
         return f"{n} {word}"
     else:
@@ -123,14 +123,14 @@ def printlist(x, width=70, indent=4, file=None):
           file=file)
 
 
-def print_warning(msg):
+def print_warning(msg: str) -> None:
     support.print_warning(msg)
 
 
-orig_unraisablehook = None
+orig_unraisablehook: Callable[..., None] | None = None
 
 
-def regrtest_unraisable_hook(unraisable):
+def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
     support.environment_altered = True
     support.print_warning("Unraisable exception")
@@ -138,22 +138,23 @@ def regrtest_unraisable_hook(unraisable):
     try:
         support.flush_std_streams()
         sys.stderr = support.print_warning.orig_stderr
+        assert orig_unraisablehook is not None, "orig_unraisablehook not set"
         orig_unraisablehook(unraisable)
         sys.stderr.flush()
     finally:
         sys.stderr = old_stderr
 
 
-def setup_unraisable_hook():
+def setup_unraisable_hook() -> None:
     global orig_unraisablehook
     orig_unraisablehook = sys.unraisablehook
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook = None
+orig_threading_excepthook: Callable[..., None] | None = None
 
 
-def regrtest_threading_excepthook(args):
+def regrtest_threading_excepthook(args) -> None:
     global orig_threading_excepthook
     support.environment_altered = True
     support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
@@ -161,13 +162,14 @@ def regrtest_threading_excepthook(args):
     try:
         support.flush_std_streams()
         sys.stderr = support.print_warning.orig_stderr
+        assert orig_threading_excepthook is not None, "orig_threading_excepthook not set"
         orig_threading_excepthook(args)
         sys.stderr.flush()
     finally:
         sys.stderr = old_stderr
 
 
-def setup_threading_excepthook():
+def setup_threading_excepthook() -> None:
     global orig_threading_excepthook
     import threading
     orig_threading_excepthook = threading.excepthook
@@ -476,7 +478,7 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     return os.path.abspath(tmp_dir)
 
 
-def fix_umask():
+def fix_umask() -> None:
     if support.is_emscripten:
         # Emscripten has default umask 0o777, which breaks some tests.
         # see https://github.com/emscripten-core/emscripten/issues/17269
@@ -572,7 +574,8 @@ _TEST_LIFECYCLE_HOOKS = frozenset((
     'setUpModule', 'tearDownModule',
 ))
 
-def normalize_test_name(test_full_name, *, is_error=False):
+def normalize_test_name(test_full_name: str, *,
+                        is_error: bool = False) -> str | None:
     short_name = test_full_name.split(" ")[0]
     if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
         if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
@@ -593,7 +596,7 @@ def normalize_test_name(test_full_name, *, is_error=False):
     return short_name
 
 
-def adjust_rlimit_nofile():
+def adjust_rlimit_nofile() -> None:
     """
     On macOS the default fd limit (RLIMIT_NOFILE) is sometimes too low (256)
     for our test suite to succeed. Raise it to something more reasonable. 1024
@@ -619,17 +622,17 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def get_host_runner():
+def get_host_runner() -> str:
     if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
         hostrunner = sysconfig.get_config_var("HOSTRUNNER")
     return hostrunner
 
 
-def is_cross_compiled():
+def is_cross_compiled() -> bool:
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: Iterable[str]):
+def format_resources(use_resources: Iterable[str]) -> str:
     use_resources = set(use_resources)
     all_resources = set(ALL_RESOURCES)
 
@@ -654,7 +657,7 @@ def format_resources(use_resources: Iterable[str]):
 
 
 def display_header(use_resources: tuple[str, ...],
-                   python_cmd: tuple[str, ...] | None):
+                   python_cmd: tuple[str, ...] | None) -> None:
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
@@ -732,7 +735,7 @@ def display_header(use_resources: tuple[str, ...],
     print(flush=True)
 
 
-def cleanup_temp_dir(tmp_dir: StrPath):
+def cleanup_temp_dir(tmp_dir: StrPath) -> None:
     import glob
 
     path = os.path.join(glob.escape(tmp_dir), TMP_PREFIX + '*')
@@ -763,5 +766,5 @@ def _sanitize_xml_replace(regs):
     return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
                    for ch in text)
 
-def sanitize_xml(text):
+def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)

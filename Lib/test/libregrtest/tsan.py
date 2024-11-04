@@ -28,6 +28,6 @@ TSAN_TESTS = [
 ]
 
 
-def setup_tsan_tests(cmdline_args):
+def setup_tsan_tests(cmdline_args) -> None:
     if not cmdline_args:
         cmdline_args[:] = TSAN_TESTS[:]
