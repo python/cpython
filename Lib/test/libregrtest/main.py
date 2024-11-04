@@ -463,7 +463,9 @@ class Regrtest:
         print()
         print("Total duration: %s" % format_duration(duration))
 
-        assert self.first_runtests, "self.first_runtests is None"
+        assert self.first_runtests, (
+            "Should never call `display_summary()` before calling `_run_test()`"
+        )
         self.results.display_summary(self.first_runtests, filtered)
 
         # Result
@@ -715,7 +717,9 @@ class Regrtest:
 
     @property
     def tmp_dir(self) -> StrPath:
-        assert self._tmp_dir is not None, "self._tmp_dir is None"
+        assert self._tmp_dir is not None, (
+            "Should never use `.tmp_dir` before calling `.main()`"
+        )
         return self._tmp_dir
 
     def main(self, tests: TestList | None = None) -> NoReturn:
