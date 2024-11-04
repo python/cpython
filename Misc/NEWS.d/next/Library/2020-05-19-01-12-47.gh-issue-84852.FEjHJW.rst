@@ -1,0 +1,1 @@
+Add missing mimetypes for fonts
