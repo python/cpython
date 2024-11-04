@@ -10,6 +10,7 @@ import textwrap
 import types
 
 from test import support
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -267,6 +268,47 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
+
+    @support.requires_resource("cpu")
+    def test_list_init_thread_safety(self):
+        # GH-126369: generators were not thread safe
+        from threading import Thread, Lock
+        import contextlib
+
+        def my_generator():
+            for i in range(1000000):
+                yield i
+
+
+        lock = Lock()
+        amount = 0
+        thread_count = 10
+
+        def gen_to_list(gen):
+            # Note: it's intentional to throw out the exception here. Generators
+            # aren't thread safe, so who knows what will happen. Right now, it just spams
+            # a lot of ValueError's, but that might change if we decide to make generators
+            # thread safe in the future. We're just making sure it doesn't crash.
+            with contextlib.suppress(ValueError):
+                list(gen)
+
+            with lock:
+                nonlocal amount
+                amount += 1
+
+        generator = my_generator()
+        with threading_helper.catch_threading_exception() as cm:
+            ts = [Thread(target=gen_to_list, args=(generator,)) for _ in range(thread_count)]
+            for t in ts:
+                t.start()
+
+            for t in ts:
+                t.join()
+
+            self.assertIsNone(cm.exc_value)
+
+        self.assertEqual(amount, thread_count)
+
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):
