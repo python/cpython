@@ -3662,7 +3662,7 @@ def r(format_unit: str,
             kwargs['accept'] = accept
         if zeroes:
             kwargs['zeroes'] = True
-        added_f = functools.partial(str_converter, **kwargs)
+        added_f = functools.partial(str_converter, **kwargs)  # type: ignore[arg-type]
         legacy_converters[format_unit] = added_f
 
     d = str_converter_argument_map
