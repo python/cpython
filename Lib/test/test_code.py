@@ -868,6 +868,33 @@ class CodeLocationTest(unittest.TestCase):
             3 * [(42, 42, None, None)],
         )
 
+    @cpython_only
+    def test_docstring_under_o2(self):
+        code = textwrap.dedent('''
+            def has_docstring(x, y):
+                """This is a first-line doc string"""
+                """This is a second-line doc string"""
+                a = x + y
+                b = x - y
+                return a, b
+
+
+            def no_docstring(x):
+                def g(y):
+                    return x + y
+                return g
+
+
+            async def async_func():
+                """asynf function doc string"""
+                pass
+
+
+            for func in [has_docstring, no_docstring(4), async_func]:
+                assert(func.__doc__ is None)
+            ''')
+
+        rc, out, err = assert_python_ok('-OO', '-c', code)
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
