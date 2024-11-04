@@ -263,7 +263,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     sys._clear_internal_caches()
 
 
-def warm_caches():
+def warm_caches() -> None:
     # char cache
     s = bytes(range(256))
     for i in range(256):
