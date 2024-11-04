@@ -313,7 +313,7 @@ functools
 getopt
 ------
 
-* Add support of options with optional arguments.
+* Add support for options with optional arguments.
   (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
 http

@@ -38,7 +38,7 @@ exception:
    be parsed, without the leading reference to the running program. Typically, this
    means ``sys.argv[1:]``. *shortopts* is the string of option letters that the
    script wants to recognize, with options that require an argument followed by a
-   colon (``':'``) and options that takes an optional argument followed by
+   colon (``':'``) and options that accept an optional argument followed by
    two colons (``'::'``); i.e., the same format that Unix :c:func:`!getopt` uses.
 
    .. note::
