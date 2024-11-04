@@ -303,9 +303,8 @@ struct gc_generation_stats {
 };
 
 enum _GCPhase {
-    GC_PHASE_DONE = 0,
-    GC_PHASE_MARK = 1,
-    GC_PHASE_COLLECT = 2
+    GC_PHASE_MARK = 0,
+    GC_PHASE_COLLECT = 1
 };
 
 struct _gc_runtime_state {

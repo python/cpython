@@ -132,6 +132,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
+            .phase = 0, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
