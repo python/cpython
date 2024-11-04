@@ -68,10 +68,6 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
-
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -80,11 +76,6 @@ class PurePath(PurePathBase):
         # separators (i.e. it is a list of strings), and that the root and
         # tail are normalized.
         '_drv', '_root', '_tail_cached',
-
-        # The `_str` slot stores the string representation of the path,
-        # computed from the drive, root and tail when `__str__()` is called
-        # for the first time. It's used to implement `_str_normcase`
-        '_str',
 
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
@@ -298,18 +289,6 @@ class PurePath(PurePathBase):
             # GH-65238: preserve trailing slash in glob patterns.
             parts.append('')
         return parts
-
-    @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.parser.join(*paths)
-        return path
 
     @property
     def drive(self):
