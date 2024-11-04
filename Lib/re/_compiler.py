@@ -28,11 +28,7 @@ _REPEATING_CODES = {
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
 
-class _CompileData:
-    __slots__ = ('code', 'repeat_count')
-    def __init__(self):
-        self.code = []
-        self.repeat_count = 0
+_CHARSET_ALL = [(NEGATE, None)]
 
 def _combine_flags(flags, add_flags, del_flags,
                    TYPE_FLAGS=_parser.TYPE_FLAGS):
@@ -40,9 +36,8 @@ def _combine_flags(flags, add_flags, del_flags,
         flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
 
-def _compile(data, pattern, flags):
+def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
-    code = data.code
     emit = code.append
     _len = len
     LITERAL_CODES = _LITERAL_CODES
@@ -91,31 +86,34 @@ def _compile(data, pattern, flags):
                     code[skip] = _len(code) - skip
         elif op is IN:
             charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
-            if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
-                emit(IN_LOC_IGNORE)
-            elif not hascased:
-                emit(IN)
-            elif not fixes:  # ascii
-                emit(IN_IGNORE)
+            if not charset:
+                emit(FAILURE)
+            elif charset == _CHARSET_ALL:
+                emit(ANY_ALL)
             else:
-                emit(IN_UNI_IGNORE)
-            skip = _len(code); emit(0)
-            _compile_charset(charset, flags, code)
-            code[skip] = _len(code) - skip
+                if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+                    emit(IN_LOC_IGNORE)
+                elif not hascased:
+                    emit(IN)
+                elif not fixes:  # ascii
+                    emit(IN_IGNORE)
+                else:
+                    emit(IN_UNI_IGNORE)
+                skip = _len(code); emit(0)
+                _compile_charset(charset, flags, code)
+                code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
                 emit(ANY_ALL)
             else:
                 emit(ANY)
         elif op in REPEATING_CODES:
-            if flags & SRE_FLAG_TEMPLATE:
-                raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
             else:
@@ -123,11 +121,7 @@ def _compile(data, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                # now op is in (MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT)
-                if op != POSSESSIVE_REPEAT:
-                    emit(data.repeat_count)
-                    data.repeat_count += 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
                 emit(REPEATING_CODES[op][1])
         elif op is SUBPATTERN:
@@ -136,7 +130,7 @@ def _compile(data, pattern, flags):
                 emit(MARK)
                 emit((group-1)*2)
             # _compile_info(code, p, _combine_flags(flags, add_flags, del_flags))
-            _compile(data, p, _combine_flags(flags, add_flags, del_flags))
+            _compile(code, p, _combine_flags(flags, add_flags, del_flags))
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
@@ -148,7 +142,7 @@ def _compile(data, pattern, flags):
             # pop their stack if they reach it
             emit(ATOMIC_GROUP)
             skip = _len(code); emit(0)
-            _compile(data, av, flags)
+            _compile(code, av, flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op in SUCCESS_CODES:
@@ -160,10 +154,12 @@ def _compile(data, pattern, flags):
                 emit(0) # look ahead
             else:
                 lo, hi = av[1].getwidth()
+                if lo > MAXCODE:
+                    raise error("looks too much behind")
                 if lo != hi:
-                    raise error("look-behind requires fixed-width pattern")
+                    raise PatternError("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
-            _compile(data, av[1], flags)
+            _compile(code, av[1], flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op is AT:
@@ -182,7 +178,7 @@ def _compile(data, pattern, flags):
             for av in av[1]:
                 skip = _len(code); emit(0)
                 # _compile_info(code, av, flags)
-                _compile(data, av, flags)
+                _compile(code, av, flags)
                 emit(JUMP)
                 tailappend(_len(code)); emit(0)
                 code[skip] = _len(code) - skip
@@ -210,17 +206,17 @@ def _compile(data, pattern, flags):
             emit(op)
             emit(av[0]-1)
             skipyes = _len(code); emit(0)
-            _compile(data, av[1], flags)
+            _compile(code, av[1], flags)
             if av[2]:
                 emit(JUMP)
                 skipno = _len(code); emit(0)
                 code[skipyes] = _len(code) - skipyes + 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skipno] = _len(code) - skipno
             else:
                 code[skipyes] = _len(code) - skipyes + 1
         else:
-            raise error("internal: unsupported operand type %r" % (op,))
+            raise PatternError(f"internal: unsupported operand type {op!r}")
 
 def _compile_charset(charset, flags, code):
     # compile charset subprogram
@@ -246,7 +242,7 @@ def _compile_charset(charset, flags, code):
             else:
                 emit(av)
         else:
-            raise error("internal: unsupported set operator %r" % (op,))
+            raise PatternError(f"internal: unsupported set operator {op!r}")
     emit(FAILURE)
 
 def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
@@ -288,6 +284,10 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                             charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
+                elif op is CATEGORY and tail and (CATEGORY, CH_NEGATE[av]) in tail:
+                    # Optimize [\s\S] etc.
+                    out = [] if out else _CHARSET_ALL
+                    return out, False
                 else:
                     tail.append((op, av))
             except IndexError:
@@ -530,13 +530,18 @@ def _compile_info(code, pattern, flags):
     # look for a literal prefix
     prefix = []
     prefix_skip = 0
-    charset = [] # not used
+    charset = None # not used
     if not (flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE):
         # look for literal prefix
         prefix, prefix_skip, got_all = _get_literal_prefix(pattern, flags)
         # if no prefix, look for charset prefix
         if not prefix:
             charset = _get_charset_prefix(pattern, flags)
+            if charset:
+                charset, hascased = _optimize_charset(charset)
+                assert not hascased
+                if charset == _CHARSET_ALL:
+                    charset = None
 ##     if prefix:
 ##         print("*** PREFIX", prefix, prefix_skip)
 ##     if charset:
@@ -560,7 +565,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    emit(min(hi, MAXCODE))
+    emit(hi)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
@@ -571,8 +576,6 @@ def _compile_info(code, pattern, flags):
         # generate overlap table
         code.extend(_generate_overlap_table(prefix))
     elif charset:
-        charset, hascased = _optimize_charset(charset)
-        assert not hascased
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 
@@ -582,17 +585,17 @@ def isstring(obj):
 def _code(p, flags):
 
     flags = p.state.flags | flags
-    data = _CompileData()
+    code = []
 
     # compile info block
-    _compile_info(data.code, p, flags)
+    _compile_info(code, p, flags)
 
     # compile the pattern
-    _compile(data, p.data, flags)
+    _compile(code, p.data, flags)
 
-    data.code.append(SUCCESS)
+    code.append(SUCCESS)
 
-    return data
+    return code
 
 def _hex_code(code):
     return '[%s]' % ', '.join('%#0*x' % (_sre.CODESIZE*2+2, x) for x in code)
@@ -693,20 +696,13 @@ def dis(code):
                     else:
                         print_(FAILURE)
                 i += 1
-            elif op in (REPEAT_ONE, MIN_REPEAT_ONE,
+            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
                         POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
                 print_(op, skip, min, max, to=i+skip)
                 dis_(i+3, i+skip)
-                i += skip
-            elif op is REPEAT:
-                skip, min, max, repeat_index = code[i: i+4]
-                if max == MAXREPEAT:
-                    max = 'MAXREPEAT'
-                print_(op, skip, min, max, repeat_index, to=i+skip)
-                dis_(i+4, i+skip)
                 i += skip
             elif op is GROUPREF_EXISTS:
                 arg, skip = code[i: i+2]
@@ -762,11 +758,11 @@ def compile(p, flags=0):
     else:
         pattern = None
 
-    data = _code(p, flags)
+    code = _code(p, flags)
 
     if flags & SRE_FLAG_DEBUG:
         print()
-        dis(data.code)
+        dis(code)
 
     # map in either direction
     groupindex = p.state.groupdict
@@ -775,6 +771,7 @@ def compile(p, flags=0):
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags | p.state.flags, data.code,
-        p.state.groups-1, groupindex, tuple(indexgroup),
-        data.repeat_count)
+        pattern, flags | p.state.flags, code,
+        p.state.groups-1,
+        groupindex, tuple(indexgroup)
+        )

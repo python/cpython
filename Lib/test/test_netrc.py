@@ -1,5 +1,5 @@
 import netrc, os, unittest, sys, textwrap
-from test.support import os_helper, run_unittest
+from test.support import os_helper
 
 try:
     import pwd
@@ -272,6 +272,7 @@ class NetrcTestCase(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipIf(pwd is None, 'security check requires pwd module')
+    @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
@@ -307,8 +308,6 @@ class NetrcTestCase(unittest.TestCase):
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
 
-def test_main():
-    run_unittest(NetrcTestCase)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -2,6 +2,11 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -35,7 +40,7 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
         return NULL;
     }
@@ -59,8 +64,19 @@ static PyObject *
 _dbm_dbm_get(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:get", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#|O:get",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = Py_None;
@@ -94,8 +110,19 @@ static PyObject *
 _dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:setdefault", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#|O:setdefault",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = NULL;
@@ -108,6 +135,28 @@ _dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, P
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(_dbm_dbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _DBM_DBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_dbm_dbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_clear__doc__},
+
+static PyObject *
+_dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_dbm_dbm_clear(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        return NULL;
+    }
+    return _dbm_dbm_clear_impl(self, cls);
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -162,7 +211,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -172,4 +221,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5798278a05032d0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7d9a87d80a64278 input=a9049054013a1b77]*/

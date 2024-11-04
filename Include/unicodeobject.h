@@ -1,8 +1,6 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>               // va_list
-
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,
@@ -55,8 +53,6 @@ Copyright (c) Corporation for National Research Initiatives.
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * -------------------------------------------------------------------- */
 
-#include <ctype.h>
-
 /* === Internal API ======================================================= */
 
 /* --- Internal Unicode Format -------------------------------------------- */
@@ -93,10 +89,6 @@ Copyright (c) Corporation for National Research Initiatives.
 # endif
 #endif
 
-#ifdef HAVE_WCHAR_H
-#  include <wchar.h>
-#endif
-
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 typedef uint32_t Py_UCS4;
@@ -113,7 +105,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE((op), &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -626,7 +618,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 /* --- ASCII Codecs -------------------------------------------------------
 
-   Only 7-bit ASCII data is excepted. All other codes generate errors.
+   Only 7-bit ASCII data is expected. All other codes generate errors.
 
 */
 
@@ -964,6 +956,19 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */
     );
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+/* Compare a Unicode object with UTF-8 encoded C string.
+   Return 1 if they are equal, or 0 otherwise.
+   This function does not raise exceptions. */
+
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyUnicode_Equal(PyObject *str1, PyObject *str2);
+#endif
 
 /* Rich compare two strings and return one of the following:
 

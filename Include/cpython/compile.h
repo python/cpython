@@ -19,9 +19,10 @@
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
 #define PyCF_ALLOW_INCOMPLETE_INPUT 0x4000
+#define PyCF_OPTIMIZED_AST (0x8000 | PyCF_ONLY_AST)
 #define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
                            PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT | \
-                           PyCF_ALLOW_INCOMPLETE_INPUT)
+                           PyCF_ALLOW_INCOMPLETE_INPUT | PyCF_OPTIMIZED_AST)
 
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
@@ -32,11 +33,6 @@ typedef struct {
     (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 
 /* Future feature support */
-
-typedef struct {
-    int ff_features;      /* flags set by future statements */
-    int ff_lineno;        /* line number of last future statement */
-} PyFutureFeatures;
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 #define FUTURE_GENERATORS "generators"

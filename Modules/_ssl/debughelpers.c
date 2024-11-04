@@ -15,7 +15,6 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
     PyGILState_STATE threadstate;
     PyObject *res = NULL;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
-    PyObject *ssl_socket = NULL;  /* ssl.SSLSocket or ssl.SSLObject */
     int msg_type;
 
     threadstate = PyGILState_Ensure();
@@ -27,13 +26,14 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         return;
     }
 
+    PyObject *ssl_socket;  /* ssl.SSLSocket or ssl.SSLObject */
     if (ssl_obj->owner)
-        ssl_socket = PyWeakref_GetObject(ssl_obj->owner);
+        PyWeakref_GetRef(ssl_obj->owner, &ssl_socket);
     else if (ssl_obj->Socket)
-        ssl_socket = PyWeakref_GetObject(ssl_obj->Socket);
+        PyWeakref_GetRef(ssl_obj->Socket, &ssl_socket);
     else
-        ssl_socket = (PyObject *)ssl_obj;
-    Py_INCREF(ssl_socket);
+        ssl_socket = (PyObject *)Py_NewRef(ssl_obj);
+    assert(ssl_socket != NULL);  // PyWeakref_GetRef() can return NULL
 
     /* assume that OpenSSL verifies all payload and buf len is of sufficient
        length */
@@ -74,7 +74,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         buf, len
     );
     if (res == NULL) {
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     } else {
         Py_DECREF(res);
     }
@@ -87,8 +87,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 static PyObject *
 _PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
     if (self->msg_cb != NULL) {
-        Py_INCREF(self->msg_cb);
-        return self->msg_cb;
+        return Py_NewRef(self->msg_cb);
     } else {
         Py_RETURN_NONE;
     }
@@ -107,8 +106,7 @@ _PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
                             "not a callable object");
             return -1;
         }
-        Py_INCREF(arg);
-        self->msg_cb = arg;
+        self->msg_cb = Py_NewRef(arg);
         SSL_CTX_set_msg_callback(self->ctx, _PySSL_msg_callback);
     }
     return 0;
@@ -120,31 +118,22 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
     PyGILState_STATE threadstate;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
     int res, e;
-    static PyThread_type_lock *lock = NULL;
 
     threadstate = PyGILState_Ensure();
 
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
+    PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
+    assert(lock != NULL);
     if (ssl_obj->ctx->keylog_bio == NULL) {
         return;
     }
-
-    /* Allocate a static lock to synchronize writes to keylog file.
+    /*
      * The lock is neither released on exit nor on fork(). The lock is
      * also shared between all SSLContexts although contexts may write to
      * their own files. IMHO that's good enough for a non-performance
      * critical debug helper.
      */
-    if (lock == NULL) {
-        lock = PyThread_allocate_lock();
-        if (lock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-            PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value,
-                        &ssl_obj->exc_tb);
-            return;
-        }
-    }
 
     PySSL_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(lock, 1);
@@ -158,7 +147,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
         errno = e;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
                                              ssl_obj->ctx->keylog_filename);
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     }
     PyGILState_Release(threadstate);
 }
@@ -166,8 +155,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
 static PyObject *
 _PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
     if (self->keylog_filename != NULL) {
-        Py_INCREF(self->keylog_filename);
-        return self->keylog_filename;
+        return Py_NewRef(self->keylog_filename);
     } else {
         Py_RETURN_NONE;
     }
@@ -203,8 +191,7 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
                         "Can't malloc memory for keylog file");
         return -1;
     }
-    Py_INCREF(arg);
-    self->keylog_filename = arg;
+    self->keylog_filename = Py_NewRef(arg);
 
     /* Write a header for seekable, empty files (this excludes pipes). */
     PySSL_BEGIN_ALLOW_THREADS

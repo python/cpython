@@ -1,0 +1,2 @@
+Improve the performance of :mod:`tarfile` when writing files, by caching user names
+and group names.
