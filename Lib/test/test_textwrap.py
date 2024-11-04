@@ -640,6 +640,78 @@ How *do* you spell that odd word, anyways?
                         max_lines=4)
 
 
+class LongWordWithHyphensTestCase(BaseTestCase):
+    def setUp(self):
+        self.wrapper = TextWrapper()
+        self.text1 = '''\
+We used enyzme 2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate synthase.
+'''
+        self.text2 = '''\
+1234567890-1234567890--this_is_a_very_long_option_indeed-good-bye"
+'''
+
+    def test_break_long_words_on_hyphen(self):
+        expected = ['We used enyzme 2-succinyl-6-hydroxy-2,4-',
+                    'cyclohexadiene-1-carboxylate synthase.']
+        self.check_wrap(self.text1, 50, expected)
+
+        expected = ['We used', 'enyzme 2-', 'succinyl-', '6-hydroxy-', '2,4-',
+                    'cyclohexad', 'iene-1-', 'carboxylat', 'e', 'synthase.']
+        self.check_wrap(self.text1, 10, expected)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+    def test_break_long_words_not_on_hyphen(self):
+        expected = ['We used enyzme 2-succinyl-6-hydroxy-2,4-cyclohexad',
+                    'iene-1-carboxylate synthase.']
+        self.check_wrap(self.text1, 50, expected, break_on_hyphens=False)
+
+        expected = ['We used', 'enyzme 2-s', 'uccinyl-6-', 'hydroxy-2,',
+                    '4-cyclohex', 'adiene-1-c', 'arboxylate', 'synthase.']
+        self.check_wrap(self.text1, 10, expected, break_on_hyphens=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+    def test_break_on_hyphen_but_not_long_words(self):
+        expected = ['We used enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+
+        self.check_wrap(self.text1, 50, expected, break_long_words=False)
+
+        expected = ['We used', 'enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 10, expected, break_long_words=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+
+    def test_do_not_break_long_words_or_on_hyphens(self):
+        expected = ['We used enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 50, expected,
+                        break_long_words=False,
+                        break_on_hyphens=False)
+
+        expected = ['We used', 'enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 10, expected,
+                        break_long_words=False,
+                        break_on_hyphens=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
 class IndentTestCases(BaseTestCase):
 
     # called before each test method

@@ -1,2 +1,0 @@
-Update :mod:`nntplib` to merge :class:`nntplib.NNTP` and
-:class:`nntplib._NNTPBase`. Patch by Dong-hee Na.

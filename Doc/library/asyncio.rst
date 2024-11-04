@@ -1,5 +1,5 @@
-:mod:`asyncio` --- Asynchronous I/O
-===================================
+:mod:`!asyncio` --- Asynchronous I/O
+====================================
 
 .. module:: asyncio
    :synopsis: Asynchronous I/O.
@@ -17,7 +17,6 @@
            await asyncio.sleep(1)
            print('... World!')
 
-       # Python 3.7+
        asyncio.run(main())
 
 asyncio is a library to write **concurrent** code using
@@ -47,9 +46,9 @@ Additionally, there are **low-level** APIs for
 *library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
-  provide asynchronous APIs for :meth:`networking <loop.create_server>`,
-  running :meth:`subprocesses <loop.subprocess_exec>`,
-  handling :meth:`OS signals <loop.add_signal_handler>`, etc;
+  provide asynchronous APIs for :ref:`networking <loop_create_server>`,
+  running :ref:`subprocesses <loop_subprocess_exec>`,
+  handling :ref:`OS signals <loop_add_signal_handler>`, etc;
 
 * implement efficient protocols using
   :ref:`transports <asyncio-transports-protocols>`;
@@ -57,6 +56,32 @@ Additionally, there are **low-level** APIs for
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
+.. include:: ../includes/wasm-notavail.rst
+
+.. _asyncio-cli:
+
+.. rubric:: asyncio REPL
+
+You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
+
+.. code-block:: pycon
+
+   $ python -m asyncio
+   asyncio REPL ...
+   Use "await" directly instead of "asyncio.run()".
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> import asyncio
+   >>> await asyncio.sleep(10, result='hello')
+   'hello'
+
+.. audit-event:: cpython.run_stdin "" ""
+
+.. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+   Emits audit events.
+
+.. versionchanged:: 3.13
+   Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+   also executed. Emits audit events.
 
 .. We use the "rubric" directive here to avoid creating
    the "Reference" subsection in the TOC.
@@ -67,6 +92,7 @@ Additionally, there are **low-level** APIs for
    :caption: High-level APIs
    :maxdepth: 1
 
+   asyncio-runner.rst
    asyncio-task.rst
    asyncio-stream.rst
    asyncio-sync.rst
@@ -83,6 +109,7 @@ Additionally, there are **low-level** APIs for
    asyncio-protocol.rst
    asyncio-policy.rst
    asyncio-platforms.rst
+   asyncio-extending.rst
 
 .. toctree::
    :caption: Guides and Tutorials

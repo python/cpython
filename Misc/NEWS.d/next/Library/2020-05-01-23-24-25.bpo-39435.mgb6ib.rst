@@ -1,1 +1,0 @@
-The first argument of :func:`pickle.loads` is now positional-only.

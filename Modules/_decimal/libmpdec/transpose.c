@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,15 +27,17 @@
 
 
 #include "mpdecimal.h"
+
+#include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <assert.h>
+
 #include "bits.h"
 #include "constants.h"
-#include "typearith.h"
 #include "transpose.h"
+#include "typearith.h"
 
 
 #define BUFSIZE 4096
@@ -272,5 +274,3 @@ transpose_pow2(mpd_uint_t *matrix, mpd_size_t rows, mpd_size_t cols)
 
     return 1;
 }
-
-

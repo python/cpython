@@ -93,6 +93,8 @@ def _return_true(f):
 
 
 def rglob(root, patterns, condition=None):
+    if not os.path.isdir(root):
+        return
     if isinstance(patterns, tuple):
         for p in patterns:
             yield from _rglob(root, p, condition or _return_true)

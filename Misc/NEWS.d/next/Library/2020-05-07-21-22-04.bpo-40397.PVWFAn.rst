@@ -1,2 +1,0 @@
-Removed attributes ``__args__`` and ``__parameters__`` from special generic
-aliases like ``typing.List`` (not subscripted).

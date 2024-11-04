@@ -1,2 +1,0 @@
-When a :class:`asyncio.Task` is cancelled, the exception traceback
-now chains all the way back to where the task was first interrupted.

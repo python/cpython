@@ -1,2 +1,0 @@
-New :c:func:`PyFrame_GetCode` function: return a borrowed reference to the
-frame code.

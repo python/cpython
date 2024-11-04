@@ -29,29 +29,58 @@ __all__ = ['ensure_running', 'register', 'unregister']
 _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
+def cleanup_noop(name):
+    raise RuntimeError('noop should never be registered or cleaned up')
+
 _CLEANUP_FUNCS = {
-    'noop': lambda: None,
+    'noop': cleanup_noop,
+    'dummy': lambda name: None,  # Dummy resource used in tests
 }
 
 if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
 
+    # Use sem_unlink() to clean up named semaphores.
+    #
+    # sem_unlink() may be missing if the Python build process detected the
+    # absence of POSIX named semaphores. In that case, no named semaphores were
+    # ever opened, so no cleanup would be necessary.
+    if hasattr(_multiprocessing, 'sem_unlink'):
+        _CLEANUP_FUNCS.update({
+            'semaphore': _multiprocessing.sem_unlink,
+        })
     _CLEANUP_FUNCS.update({
-        'semaphore': _multiprocessing.sem_unlink,
         'shared_memory': _posixshmem.shm_unlink,
     })
+
+
+class ReentrantCallError(RuntimeError):
+    pass
 
 
 class ResourceTracker(object):
 
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._fd = None
         self._pid = None
+        self._exitcode = None
+
+    def _reentrant_call_error(self):
+        # gh-109629: this happens if an explicit call to the ResourceTracker
+        # gets interrupted by a garbage collection, invoking a finalizer (*)
+        # that itself calls back into ResourceTracker.
+        #   (*) for example the SemLock finalizer
+        raise ReentrantCallError(
+            "Reentrant call into the multiprocessing resource tracker")
 
     def _stop(self):
         with self._lock:
+            # This should not happen (_stop() isn't called by a finalizer)
+            # but we check for it anyway.
+            if self._lock._recursion_count() > 1:
+                return self._reentrant_call_error()
             if self._fd is None:
                 # not running
                 return
@@ -60,8 +89,15 @@ class ResourceTracker(object):
             os.close(self._fd)
             self._fd = None
 
-            os.waitpid(self._pid, 0)
+            _, status = os.waitpid(self._pid, 0)
+
             self._pid = None
+
+            try:
+                self._exitcode = os.waitstatus_to_exitcode(status)
+            except ValueError:
+                # os.waitstatus_to_exitcode may raise an exception for invalid values
+                self._exitcode = None
 
     def getfd(self):
         self.ensure_running()
@@ -73,6 +109,9 @@ class ResourceTracker(object):
         This can be run from any process.  Usually a child process will use
         the resource created by its parent.'''
         with self._lock:
+            if self._lock._recursion_count() > 1:
+                # The code below is certainly not reentrant-safe, so bail out
+                return self._reentrant_call_error()
             if self._fd is not None:
                 # resource tracker was launched before, is it still running?
                 if self._check_alive():
@@ -92,6 +131,7 @@ class ResourceTracker(object):
                     pass
                 self._fd = None
                 self._pid = None
+                self._exitcode = None
 
                 warnings.warn('resource_tracker: process died unexpectedly, '
                               'relaunching.  Some resources might leak.')
@@ -151,12 +191,22 @@ class ResourceTracker(object):
         self._send('UNREGISTER', name, rtype)
 
     def _send(self, cmd, name, rtype):
-        self.ensure_running()
+        try:
+            self.ensure_running()
+        except ReentrantCallError:
+            # The code below might or might not work, depending on whether
+            # the resource tracker was already running and still alive.
+            # Better warn the user.
+            # (XXX is warnings.warn itself reentrant-safe? :-)
+            warnings.warn(
+                f"ResourceTracker called reentrantly for resource cleanup, "
+                f"which is unsupported. "
+                f"The {rtype} object {name!r} might leak.")
         msg = '{0}:{1}:{2}\n'.format(cmd, name, rtype).encode('ascii')
-        if len(name) > 512:
+        if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
-            raise ValueError('name too long')
+            raise ValueError('msg too long')
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
@@ -167,6 +217,7 @@ ensure_running = _resource_tracker.ensure_running
 register = _resource_tracker.register
 unregister = _resource_tracker.unregister
 getfd = _resource_tracker.getfd
+
 
 def main(fd):
     '''Run resource tracker.'''
@@ -183,6 +234,8 @@ def main(fd):
             pass
 
     cache = {rtype: set() for rtype in _CLEANUP_FUNCS.keys()}
+    exit_code = 0
+
     try:
         # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
@@ -204,6 +257,7 @@ def main(fd):
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:
+                    exit_code = 3
                     try:
                         sys.excepthook(*sys.exc_info())
                     except:
@@ -213,9 +267,17 @@ def main(fd):
         for rtype, rtype_cache in cache.items():
             if rtype_cache:
                 try:
-                    warnings.warn('resource_tracker: There appear to be %d '
-                                  'leaked %s objects to clean up at shutdown' %
-                                  (len(rtype_cache), rtype))
+                    exit_code = 1
+                    if rtype == 'dummy':
+                        # The test 'dummy' resource is expected to leak.
+                        # We skip the warning (and *only* the warning) for it.
+                        pass
+                    else:
+                        warnings.warn(
+                            f'resource_tracker: There appear to be '
+                            f'{len(rtype_cache)} leaked {rtype} objects to '
+                            f'clean up at shutdown: {rtype_cache}'
+                        )
                 except Exception:
                     pass
             for name in rtype_cache:
@@ -226,6 +288,9 @@ def main(fd):
                     try:
                         _CLEANUP_FUNCS[rtype](name)
                     except Exception as e:
+                        exit_code = 2
                         warnings.warn('resource_tracker: %r: %s' % (name, e))
                 finally:
                     pass
+
+        sys.exit(exit_code)

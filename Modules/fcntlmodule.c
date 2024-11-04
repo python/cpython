@@ -1,18 +1,25 @@
-
 /* fcntl module */
 
-#define PY_SSIZE_T_CLEAN
+// Need limited C API version 3.13 for PyLong_AsInt()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
 
+#include <errno.h>                // EINTR
+#include <fcntl.h>                // fcntl()
+#include <string.h>               // memcpy()
+#include <sys/ioctl.h>            // ioctl()
 #ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
+#  include <sys/file.h>           // flock()
 #endif
-
-#include <sys/ioctl.h>
-#include <fcntl.h>
+#ifdef HAVE_LINUX_FS_H
+#  include <linux/fs.h>
+#endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>
+#  include <stropts.h>            // I_FLUSHBAND
 #endif
 
 /*[clinic input]
@@ -20,24 +27,12 @@ module fcntl
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=124b58387c158179]*/
 
-static int
-conv_descriptor(PyObject *object, int *target)
-{
-    int fd = PyObject_AsFileDescriptor(object);
-
-    if (fd < 0)
-        return 0;
-    *target = fd;
-    return 1;
-}
-
-/* Must come after conv_descriptor definition. */
 #include "clinic/fcntlmodule.c.h"
 
 /*[clinic input]
 fcntl.fcntl
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     cmd as code: int
     arg: object(c_default='NULL') = 0
     /
@@ -57,7 +52,7 @@ corresponding to the return value of the fcntl call in the C code.
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
-/*[clinic end generated code: output=888fc93b51c295bd input=8cefbe59b29efbe2]*/
+/*[clinic end generated code: output=888fc93b51c295bd input=7955340198e5f334]*/
 {
     unsigned int int_arg = 0;
     int ret;
@@ -116,8 +111,8 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 /*[clinic input]
 fcntl.ioctl
 
-    fd: object(type='int', converter='conv_descriptor')
-    request as code: unsigned_int(bitwise=True)
+    fd: fildes
+    request as code: unsigned_long(bitwise=True)
     arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
@@ -153,9 +148,9 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=ede70c433cccbbb2]*/
+/*[clinic end generated code: output=3d8eb6828666cea1 input=cee70f6a27311e58]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -175,7 +170,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     Py_ssize_t len;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-    if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
+    if (PySys_Audit("fcntl.ioctl", "ikO", fd, code,
                     ob_arg ? ob_arg : Py_None) < 0) {
         return NULL;
     }
@@ -220,11 +215,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
             }
-            PyBuffer_Release(&pstr); /* No further access to str below this point */
             if (ret < 0) {
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
+            PyBuffer_Release(&pstr);
             if (mutate_arg) {
                 return PyLong_FromLong(ret);
             }
@@ -249,8 +245,8 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             ret = ioctl(fd, code, buf);
             Py_END_ALLOW_THREADS
             if (ret < 0) {
-                PyBuffer_Release(&pstr);
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
             PyBuffer_Release(&pstr);
@@ -280,7 +276,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
 /*[clinic input]
 fcntl.flock
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     operation as code: int
     /
 
@@ -292,7 +288,7 @@ function is emulated using fcntl()).
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code)
-/*[clinic end generated code: output=84059e2b37d2fc64 input=b70a0a41ca22a8a0]*/
+/*[clinic end generated code: output=84059e2b37d2fc64 input=0bfc00f795953452]*/
 {
     int ret;
     int async_err = 0;
@@ -346,7 +342,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 /*[clinic input]
 fcntl.lockf
 
-    fd: object(type='int', converter='conv_descriptor')
+    fd: fildes
     cmd as code: int
     len as lenobj: object(c_default='NULL') = 0
     start as startobj: object(c_default='NULL') = 0
@@ -380,7 +376,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=3a5dc01b04371f1a]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=5480479fc63a04b8]*/
 {
     int ret;
     int async_err = 0;
@@ -577,12 +573,89 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SHLCK)) return -1;
 #endif
 
+/* Linux specifics */
+#ifdef F_SETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_SETPIPE_SZ)) return -1;
+#endif
+#ifdef F_GETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+#endif
+
+/* On Android, FICLONE is blocked by SELinux. */
+#ifndef __ANDROID__
+#ifdef FICLONE
+    if (PyModule_AddIntMacro(m, FICLONE)) return -1;
+#endif
+#ifdef FICLONERANGE
+    if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
+#endif
+#endif
+
+#ifdef F_GETOWN_EX
+    // since Linux 2.6.32
+    if (PyModule_AddIntMacro(m, F_GETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_SETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_TID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PGRP)) return -1;
+#endif
+#ifdef F_GET_RW_HINT
+    // since Linux 4.13
+    if (PyModule_AddIntMacro(m, F_GET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_GET_FILE_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_FILE_RW_HINT)) return -1;
+#ifndef RWH_WRITE_LIFE_NOT_SET  // typo in Linux < 5.5
+# define RWH_WRITE_LIFE_NOT_SET RWF_WRITE_LIFE_NOT_SET
+#endif
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NOT_SET)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NONE)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_SHORT)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_MEDIUM)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_LONG)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_EXTREME)) return -1;
+#endif
+
 /* OS X specifics */
 #ifdef F_FULLFSYNC
     if (PyModule_AddIntMacro(m, F_FULLFSYNC)) return -1;
 #endif
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+#endif
+
+/* FreeBSD specifics */
+#ifdef F_DUP2FD
+    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+#endif
+#ifdef F_DUP2FD_CLOEXEC
+    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+#endif
+#ifdef F_READAHEAD
+    if (PyModule_AddIntMacro(m, F_READAHEAD)) return -1;
+#endif
+#ifdef F_RDAHEAD
+    if (PyModule_AddIntMacro(m, F_RDAHEAD)) return -1;
+#endif
+#ifdef F_ISUNIONSTACK
+    if (PyModule_AddIntMacro(m, F_ISUNIONSTACK)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
+#endif
+
+/* NetBSD specifics */
+#ifdef F_CLOSEM
+    if (PyModule_AddIntMacro(m, F_CLOSEM)) return -1;
+#endif
+#ifdef F_MAXFD
+    if (PyModule_AddIntMacro(m, F_MAXFD)) return -1;
+#endif
+#ifdef F_GETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_GETNOSIGPIPE)) return -1;
+#endif
+#ifdef F_SETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_SETNOSIGPIPE)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
@@ -658,38 +731,40 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
+#ifdef F_SEAL_FUTURE_WRITE
+    if (PyModule_AddIntMacro(m, F_SEAL_FUTURE_WRITE)) return -1;
+#endif
 #endif
     return 0;
 }
 
+static int
+fcntl_exec(PyObject *module)
+{
+    if (all_ins(module) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot fcntl_slots[] = {
+    {Py_mod_exec, fcntl_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
 
 static struct PyModuleDef fcntlmodule = {
     PyModuleDef_HEAD_INIT,
-    "fcntl",
-    module_doc,
-    -1,
-    fcntl_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "fcntl",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = fcntl_methods,
+    .m_slots = fcntl_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_fcntl(void)
 {
-    PyObject *m;
-
-    /* Create the module and add the functions and documentation */
-    m = PyModule_Create(&fcntlmodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Add some symbolic constants to the module */
-    if (all_ins(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&fcntlmodule);
 }

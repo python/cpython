@@ -9,6 +9,9 @@ import io
 import unittest
 from unittest.mock import patch
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import warnings_helper
 import os
 try:
     import ssl
@@ -16,10 +19,13 @@ except ImportError:
     ssl = None
 import sys
 import tempfile
-from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 def hexescape(char):
@@ -50,7 +56,7 @@ def urlopen(url, data=None, proxies=None):
 
 
 def FancyURLopener():
-    with support.check_warnings(
+    with warnings_helper.check_warnings(
             ('FancyURLopener style of invoking requests is deprecated.',
             DeprecationWarning)):
         return urllib.request.FancyURLopener()
@@ -145,18 +151,19 @@ class urlopen_FileTests(unittest.TestCase):
         # Create a temp file to use for testing
         self.text = bytes("test_urllib: %s\n" % self.__class__.__name__,
                           "ascii")
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             f.write(self.text)
         finally:
             f.close()
-        self.pathname = support.TESTFN
-        self.returned_obj = urlopen("file:%s" % self.pathname)
+        self.pathname = os_helper.TESTFN
+        self.quoted_pathname = urllib.parse.quote(self.pathname)
+        self.returned_obj = urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
         """Shut down the open object"""
         self.returned_obj.close()
-        os.remove(support.TESTFN)
+        os.remove(os_helper.TESTFN)
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -198,7 +205,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.assertIsInstance(self.returned_obj.headers, email.message.Message)
 
     def test_url(self):
-        self.assertEqual(self.returned_obj.url, self.pathname)
+        self.assertEqual(self.returned_obj.url, self.quoted_pathname)
 
     def test_status(self):
         self.assertIsNone(self.returned_obj.status)
@@ -207,7 +214,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.assertIsInstance(self.returned_obj.info(), email.message.Message)
 
     def test_geturl(self):
-        self.assertEqual(self.returned_obj.geturl(), self.pathname)
+        self.assertEqual(self.returned_obj.geturl(), self.quoted_pathname)
 
     def test_getcode(self):
         self.assertIsNone(self.returned_obj.getcode())
@@ -229,16 +236,11 @@ class ProxyTests(unittest.TestCase):
 
     def setUp(self):
         # Records changes to env vars
-        self.env = support.EnvironmentVarGuard()
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         # Delete all proxy related env vars
         for k in list(os.environ):
             if 'proxy' in k.lower():
                 self.env.unset(k)
-
-    def tearDown(self):
-        # Restore all proxy related env vars
-        self.env.__exit__()
-        del self.env
 
     def test_getproxies_environment_keep_no_proxies(self):
         self.env.set('NO_PROXY', 'localhost')
@@ -591,17 +593,8 @@ Connection: close
             self.unfakehttp()
 
     def test_URLopener_deprecation(self):
-        with support.check_warnings(('',DeprecationWarning)):
+        with warnings_helper.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
-
-    @unittest.skipUnless(ssl, "ssl module required")
-    def test_cafile_and_context(self):
-        context = ssl.create_default_context()
-        with support.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(ValueError):
-                urllib.request.urlopen(
-                    "https://localhost", cafile="/nonexistent/path", context=context
-                )
 
 
 class urlopen_DataTests(unittest.TestCase):
@@ -698,10 +691,10 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.tempFiles = []
 
         # Create a temporary file.
-        self.registerFileForCleanUp(support.TESTFN)
+        self.registerFileForCleanUp(os_helper.TESTFN)
         self.text = b'testing urllib.urlretrieve'
         try:
-            FILE = open(support.TESTFN, 'wb')
+            FILE = open(os_helper.TESTFN, 'wb')
             FILE.write(self.text)
             FILE.close()
         finally:
@@ -744,18 +737,18 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_basic(self):
         # Make sure that a local file just gets its own location returned and
         # a headers value is returned.
-        result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
-        self.assertEqual(result[0], support.TESTFN)
+        result = urllib.request.urlretrieve("file:%s" % os_helper.TESTFN)
+        self.assertEqual(result[0], os_helper.TESTFN)
         self.assertIsInstance(result[1], email.message.Message,
                               "did not get an email.message.Message instance "
                               "as second returned value")
 
     def test_copy(self):
         # Test that setting the filename argument works.
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % os_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         result = urllib.request.urlretrieve(self.constructLocalFileUrl(
-            support.TESTFN), second_temp)
+            os_helper.TESTFN), second_temp)
         self.assertEqual(second_temp, result[0])
         self.assertTrue(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
@@ -776,10 +769,10 @@ class urlretrieve_FileTests(unittest.TestCase):
             self.assertIsInstance(file_size, int)
             self.assertEqual(block_count, count_holder[0])
             count_holder[0] = count_holder[0] + 1
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % os_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         urllib.request.urlretrieve(
-            self.constructLocalFileUrl(support.TESTFN),
+            self.constructLocalFileUrl(os_helper.TESTFN),
             second_temp, hooktester)
 
     def test_reporthook_0_bytes(self):
@@ -789,7 +782,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile()
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 1)
         self.assertEqual(report[0][2], 0)
 
@@ -802,7 +795,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 5)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
         self.assertEqual(report[0][2], 5)
         self.assertEqual(report[1][2], 5)
@@ -816,7 +809,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 8193)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 3)
         self.assertEqual(report[0][2], 8193)
         self.assertEqual(report[0][1], 8192)
@@ -1101,6 +1094,8 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(result.count('%'), 1,
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
+
+    def test_unquote_rejects_none_and_tuple(self):
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
 
@@ -1524,21 +1519,86 @@ class Pathname_Tests(unittest.TestCase):
                          (expect, result))
 
     @unittest.skipUnless(sys.platform == 'win32',
-                         'test specific to the urllib.url2path function.')
-    def test_ntpath(self):
-        given = ('/C:/', '///C:/', '/C|//')
-        expect = 'C:\\'
-        for url in given:
-            result = urllib.request.url2pathname(url)
-            self.assertEqual(expect, result,
-                             'urllib.request..url2pathname() failed; %s != %s' %
-                             (expect, result))
-        given = '///C|/path'
-        expect = 'C:\\path'
-        result = urllib.request.url2pathname(given)
-        self.assertEqual(expect, result,
-                         'urllib.request.url2pathname() failed; %s != %s' %
-                         (expect, result))
+                         'test specific to Windows pathnames.')
+    def test_pathname2url_win(self):
+        # Test special prefixes are correctly handled in pathname2url()
+        fn = urllib.request.pathname2url
+        self.assertEqual(fn('\\\\?\\C:\\dir'), '///C:/dir')
+        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
+        self.assertEqual(fn("C:"), '///C:')
+        self.assertEqual(fn("C:\\"), '///C:')
+        self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
+        self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
+        self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
+        # Long drive letter
+        self.assertRaises(IOError, fn, "XX:\\")
+        # No drive letter
+        self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
+        self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
+        self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
+        self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
+        self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
+        # Round-tripping
+        urls = ['///C:',
+                '///folder/test/',
+                '///C:/foo/bar/spam.foo']
+        for url in urls:
+            self.assertEqual(fn(urllib.request.url2pathname(url)), url)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to POSIX pathnames')
+    def test_pathname2url_posix(self):
+        fn = urllib.request.pathname2url
+        self.assertEqual(fn('/'), '/')
+        self.assertEqual(fn('/a/b.c'), '/a/b.c')
+        self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to Windows pathnames.')
+    def test_url2pathname_win(self):
+        fn = urllib.request.url2pathname
+        self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn("///C|"), 'C:')
+        self.assertEqual(fn("///C:"), 'C:')
+        self.assertEqual(fn('///C:/'), 'C:\\')
+        self.assertEqual(fn('/C|//'), 'C:\\')
+        self.assertEqual(fn('///C|/path'), 'C:\\path')
+        # No DOS drive
+        self.assertEqual(fn("///C/test/"), '\\\\\\C\\test\\')
+        self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
+        # DOS drive paths
+        self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
+        # Non-ASCII drive letter
+        self.assertRaises(IOError, fn, "///\u00e8|/")
+        # UNC paths
+        self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('/////server/path/to/file'), '\\\\\\server\\path\\to\\file')
+        # Localhost paths
+        self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
+        # Round-tripping
+        paths = ['C:',
+                 r'\\\C\test\\',
+                 r'C:\foo\bar\spam.foo']
+        for path in paths:
+            self.assertEqual(fn(urllib.request.pathname2url(path)), path)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to POSIX pathnames')
+    def test_url2pathname_posix(self):
+        fn = urllib.request.url2pathname
+        self.assertEqual(fn('/foo/bar'), '/foo/bar')
+        self.assertEqual(fn('//foo/bar'), '//foo/bar')
+        self.assertEqual(fn('///foo/bar'), '///foo/bar')
+        self.assertEqual(fn('////foo/bar'), '////foo/bar')
+        self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
@@ -1555,7 +1615,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
         class DummyURLopener(urllib.request.URLopener):
             def open_spam(self, url):
                 return url
-        with support.check_warnings(
+        with warnings_helper.check_warnings(
                 ('DummyURLopener style of invoking requests is deprecated.',
                 DeprecationWarning)):
             self.assertEqual(DummyURLopener().open(
@@ -1566,9 +1626,9 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
                 "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_file(self):
-        with support.temp_dir() as tmpdir:
+        with os_helper.temp_dir() as tmpdir:
             fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
             os.close(fd)
             fileurl = "file:" + urllib.request.pathname2url(tmpfile)
@@ -1576,7 +1636,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             # Some buildbots have TEMP folder that uses a lowercase drive letter.
             self.assertEqual(os.path.normcase(filename), os.path.normcase(tmpfile))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
         url = "http://www.python.org/file.txt"
         self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
@@ -1584,7 +1644,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
         filename, _ = urllib.request.URLopener().retrieve(url)
         self.assertEqual(os.path.splitext(filename)[1], ".txt")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_local_file_open(self):
         # bpo-35907, CVE-2019-9948: urllib must reject local_file:// scheme
         class DummyURLopener(urllib.request.URLopener):
@@ -1621,61 +1681,6 @@ class RequestTests(unittest.TestCase):
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
 
-
-class URL2PathNameTests(unittest.TestCase):
-
-    def test_converting_drive_letter(self):
-        self.assertEqual(url2pathname("///C|"), 'C:')
-        self.assertEqual(url2pathname("///C:"), 'C:')
-        self.assertEqual(url2pathname("///C|/"), 'C:\\')
-
-    def test_converting_when_no_drive_letter(self):
-        # cannot end a raw string in \
-        self.assertEqual(url2pathname("///C/test/"), r'\\\C\test' '\\')
-        self.assertEqual(url2pathname("////C/test/"), r'\\C\test' '\\')
-
-    def test_simple_compare(self):
-        self.assertEqual(url2pathname("///C|/foo/bar/spam.foo"),
-                         r'C:\foo\bar\spam.foo')
-
-    def test_non_ascii_drive_letter(self):
-        self.assertRaises(IOError, url2pathname, "///\u00e8|/")
-
-    def test_roundtrip_url2pathname(self):
-        list_of_paths = ['C:',
-                         r'\\\C\test\\',
-                         r'C:\foo\bar\spam.foo'
-                         ]
-        for path in list_of_paths:
-            self.assertEqual(url2pathname(pathname2url(path)), path)
-
-class PathName2URLTests(unittest.TestCase):
-
-    def test_converting_drive_letter(self):
-        self.assertEqual(pathname2url("C:"), '///C:')
-        self.assertEqual(pathname2url("C:\\"), '///C:')
-
-    def test_converting_when_no_drive_letter(self):
-        self.assertEqual(pathname2url(r"\\\folder\test" "\\"),
-                         '/////folder/test/')
-        self.assertEqual(pathname2url(r"\\folder\test" "\\"),
-                         '////folder/test/')
-        self.assertEqual(pathname2url(r"\folder\test" "\\"),
-                         '/folder/test/')
-
-    def test_simple_compare(self):
-        self.assertEqual(pathname2url(r'C:\foo\bar\spam.foo'),
-                         "///C:/foo/bar/spam.foo" )
-
-    def test_long_drive_letter(self):
-        self.assertRaises(IOError, pathname2url, "XX:\\")
-
-    def test_roundtrip_pathname2url(self):
-        list_of_paths = ['///C:',
-                         '/////folder/test/',
-                         '///C:/foo/bar/spam.foo']
-        for path in list_of_paths:
-            self.assertEqual(pathname2url(url2pathname(path)), path)
 
 if __name__ == '__main__':
     unittest.main()

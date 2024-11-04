@@ -1,1 +1,0 @@
-Revert changes to :func:`inspect.getdoc`.

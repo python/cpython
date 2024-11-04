@@ -1,10 +1,11 @@
 # Simple test suite for http/cookies.py
 
 import copy
-from test.support import run_unittest, run_doctest
 import unittest
+import doctest
 from http import cookies
 import pickle
+from test import support
 
 
 class CookieTests(unittest.TestCase):
@@ -57,6 +58,43 @@ class CookieTests(unittest.TestCase):
             self.assertEqual(C.output(sep='\n'), case['output'])
             for k, v in sorted(case['dict'].items()):
                 self.assertEqual(C[k].value, v)
+
+    def test_unquote(self):
+        cases = [
+            (r'a="b=\""', 'b="'),
+            (r'a="b=\\"', 'b=\\'),
+            (r'a="b=\="', 'b=='),
+            (r'a="b=\n"', 'b=n'),
+            (r'a="b=\042"', 'b="'),
+            (r'a="b=\134"', 'b=\\'),
+            (r'a="b=\377"', 'b=\xff'),
+            (r'a="b=\400"', 'b=400'),
+            (r'a="b=\42"', 'b=42'),
+            (r'a="b=\\042"', 'b=\\042'),
+            (r'a="b=\\134"', 'b=\\134'),
+            (r'a="b=\\\""', 'b=\\"'),
+            (r'a="b=\\\042"', 'b=\\"'),
+            (r'a="b=\134\""', 'b=\\"'),
+            (r'a="b=\134\042"', 'b=\\"'),
+        ]
+        for encoded, decoded in cases:
+            with self.subTest(encoded):
+                C = cookies.SimpleCookie()
+                C.load(encoded)
+                self.assertEqual(C['a'].value, decoded)
+
+    @support.requires_resource('cpu')
+    def test_unquote_large(self):
+        n = 10**6
+        for encoded in r'\\', r'\134':
+            with self.subTest(encoded):
+                data = 'a="b=' + encoded*n + ';"'
+                C = cookies.SimpleCookie()
+                C.load(data)
+                value = C['a'].value
+                self.assertEqual(value[:3], 'b=\\')
+                self.assertEqual(value[-2:], '\\;')
+                self.assertEqual(len(value), n + 3)
 
     def test_load(self):
         C = cookies.SimpleCookie()
@@ -479,9 +517,11 @@ class MorselTests(unittest.TestCase):
                 r'Set-Cookie: key=coded_val; '
                 r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+')
 
-def test_main():
-    run_unittest(CookieTests, MorselTests)
-    run_doctest(cookies)
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(cookies))
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

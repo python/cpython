@@ -1,2 +1,0 @@
-Fix a race condition in concurrent.futures._ThreadWakeup: access to
-_ThreadWakeup is now protected with the shutdown lock.

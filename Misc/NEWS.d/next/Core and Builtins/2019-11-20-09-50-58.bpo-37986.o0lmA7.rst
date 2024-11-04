@@ -1,2 +1,0 @@
-Improve performance of :c:func:`PyLong_FromDouble` for values that fit into
-:c:type:`long`.

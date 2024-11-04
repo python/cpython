@@ -1,1 +1,0 @@
-:func:`platform.win32_ver` now produces correct *ptype* strings instead of empty strings.

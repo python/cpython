@@ -1,2 +1,0 @@
-Correctly generate annotations where parentheses are omitted but required
-(e.g: ``Type[(str, int, *other))]``.

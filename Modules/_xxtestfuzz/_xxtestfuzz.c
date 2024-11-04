@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -29,13 +28,18 @@ static PyMethodDef module_methods[] = {
     {NULL},
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static struct PyModuleDef _fuzzmodule = {
         PyModuleDef_HEAD_INIT,
         "_fuzz",
         NULL,
         0,
         module_methods,
-        NULL,
+        module_slots,
         NULL,
         NULL,
         NULL
@@ -44,5 +48,5 @@ static struct PyModuleDef _fuzzmodule = {
 PyMODINIT_FUNC
 PyInit__xxtestfuzz(void)
 {
-    return PyModule_Create(&_fuzzmodule);
+    return PyModuleDef_Init(&_fuzzmodule);
 }
