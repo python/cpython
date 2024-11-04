@@ -34,6 +34,11 @@ class HoleValue(enum.Enum):
     # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
     OPERAND_HI = enum.auto()
     OPERAND_LO = enum.auto()
+    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND):
+    OPERAND1 = enum.auto()
+    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
+    OPERAND1_HI = enum.auto()
+    OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
     # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
@@ -102,6 +107,9 @@ _HOLE_EXPRS = {
     HoleValue.OPERAND: "instruction->operand",
     HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
     HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.OPERAND1: "instruction->operand1",
+    HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
+    HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
     HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",

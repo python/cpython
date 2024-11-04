@@ -29,6 +29,9 @@
 #undef CURRENT_OPERAND
 #define CURRENT_OPERAND() (_operand)
 
+#undef CURRENT_OPERAND1
+#define CURRENT_OPERAND1() (_operand1)
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     do {                         \
@@ -105,6 +108,14 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
     PATCH_VALUE(uint32_t, _operand_hi, _JIT_OPERAND_HI)
     PATCH_VALUE(uint32_t, _operand_lo, _JIT_OPERAND_LO)
     uint64_t _operand = ((uint64_t)_operand_hi << 32) | _operand_lo;
+#endif
+#if SIZEOF_VOID_P == 8
+    PATCH_VALUE(uint64_t, _operand1, _JIT_OPERAND1)
+#else
+    assert(SIZEOF_VOID_P == 4);
+    PATCH_VALUE(uint32_t, _operand1_hi, _JIT_OPERAND1_HI)
+    PATCH_VALUE(uint32_t, _operand1_lo, _JIT_OPERAND1_LO)
+    uint64_t _operand1 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
 #endif
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
 

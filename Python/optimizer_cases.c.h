@@ -1755,9 +1755,8 @@
             (void)self_or_null;
             if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
                 assert(PyFunction_Check(sym_get_const(callable)));
-                if (func_version == (uint16_t)func_version) {
-                    REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, func_version, (uintptr_t)sym_get_const(callable));
-                }
+                REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                this_instr->operand1 = (uintptr_t)sym_get_const(callable);
             }
             sym_set_type(callable, &PyFunction_Type);
             break;

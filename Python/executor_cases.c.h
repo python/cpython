@@ -3972,9 +3972,8 @@
         }
 
         case _CHECK_FUNCTION_VERSION_INLINE: {
-            oparg = CURRENT_OPARG();
-            PyObject *callable_o = (PyObject *)CURRENT_OPERAND();
-            uint16_t func_version = oparg;
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            PyObject *callable_o = (PyObject *)CURRENT_OPERAND1();
             assert(PyFunction_Check(callable_o));
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             if (func->func_version != func_version) {

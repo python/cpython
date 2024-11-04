@@ -3442,8 +3442,7 @@ dummy_func(
             EXIT_IF(func->func_version != func_version);
         }
 
-        tier2 op(_CHECK_FUNCTION_VERSION_INLINE, (callable_o/4 --)) {
-            uint16_t func_version = oparg;
+        tier2 op(_CHECK_FUNCTION_VERSION_INLINE, (func_version/2, callable_o/4 --)) {
             assert(PyFunction_Check(callable_o));
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             EXIT_IF(func->func_version != func_version);
