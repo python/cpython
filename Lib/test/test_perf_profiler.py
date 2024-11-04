@@ -23,15 +23,6 @@ if support.check_sanitizer(address=True, memory=True, ub=True):
     raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
 
 
-def is_jit_build():
-    cflags = (sysconfig.get_config_var("PY_CORE_CFLAGS") or '')
-    return "_Py_JIT" in cflags
-
-
-if is_jit_build():
-    raise unittest.SkipTest("Perf support is not available in JIT builds")
-
-
 def supports_trampoline_profiling():
     perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
     if not perf_trampoline:
@@ -71,11 +62,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -139,11 +132,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -188,11 +183,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -213,14 +210,14 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf")
                 sys.activate_stack_trampoline("perf")
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
     def test_sys_api_with_invalid_trampoline(self):
         code = """if 1:
                 import sys
                 sys.activate_stack_trampoline("invalid")
                 """
-        rc, out, err = assert_python_failure("-c", code)
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="0")
         self.assertIn("invalid backend: invalid", err.decode())
 
     def test_sys_api_get_status(self):
@@ -231,7 +228,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.deactivate_stack_trampoline()
                 assert sys.is_stack_trampoline_active() is False
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
 
 def is_unwinding_reliable_with_frame_pointers():
@@ -269,8 +266,9 @@ def perf_command_works():
                 "-c",
                 'print("hello")',
             )
+            env = {**os.environ, "PYTHON_JIT": "0"}
             stdout = subprocess.check_output(
-                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT
+                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT, env=env
             )
         except (subprocess.SubprocessError, OSError):
             return False
@@ -282,11 +280,10 @@ def perf_command_works():
 
 
 def run_perf(cwd, *args, use_jit=False, **env_vars):
+    env = os.environ.copy()
     if env_vars:
-        env = os.environ.copy()
         env.update(env_vars)
-    else:
-        env = None
+    env["PYTHON_JIT"] = "0"
     output_file = cwd + "/perf_output.perf"
     if not use_jit:
         base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
@@ -455,11 +452,13 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 universal_newlines=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 

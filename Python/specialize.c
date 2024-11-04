@@ -442,11 +442,13 @@ _PyCode_Quicken(PyCodeObject *code)
 {
     #if ENABLE_SPECIALIZATION
     int opcode = 0;
+    int oparg = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     /* The last code unit cannot have a cache, so we don't need to check it */
     for (int i = 0; i < Py_SIZE(code)-1; i++) {
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
+        oparg = (oparg << 8) | instructions[i].op.arg;
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
@@ -464,6 +466,18 @@ _PyCode_Quicken(PyCodeObject *code)
                     break;
             }
             i += caches;
+        }
+        else if (opcode == LOAD_CONST) {
+            /* We can't do this in the bytecode compiler as
+             * marshalling can intern strings and make them immortal. */
+
+            PyObject *obj = PyTuple_GET_ITEM(code->co_consts, oparg);
+            if (_Py_IsImmortal(obj)) {
+                instructions[i].op.code = LOAD_CONST_IMMORTAL;
+            }
+        }
+        if (opcode != EXTENDED_ARG) {
+            oparg = 0;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */
@@ -1599,7 +1613,7 @@ function_get_version(PyObject *o, int opcode)
     assert(Py_IS_TYPE(o, &PyFunction_Type));
     PyFunctionObject *func = (PyFunctionObject *)o;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return 0;
     }
@@ -1692,7 +1706,7 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0) {
+        if (!_PyFunction_IsVersionValid(version)) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
@@ -1977,7 +1991,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         argcount = code->co_argcount;
     }
     int version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
@@ -2009,7 +2023,7 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     int version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
