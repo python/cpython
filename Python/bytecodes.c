@@ -197,7 +197,7 @@ dummy_func(
                 _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                 ERROR_IF(bytecode == NULL, error);
-                int off = (int)(this_instr - _PyFrame_GetBytecode(frame));
+                ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                 frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                 frame->instr_ptr = bytecode + off;
                 // Make sure this_instr gets reset correctley for any uops that
