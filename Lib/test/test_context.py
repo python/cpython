@@ -355,6 +355,11 @@ class ContextTest(unittest.TestCase):
         ctx = contextvars.Context()
         self.assertIsInstance(ctx, collections.abc.Mapping)
 
+        mapping_methods = ("__getitem__", "__iter__", "__len__", "__contains__", "keys",
+                           "items", "values", "get", "__eq__", "__ne__")
+        for name in mapping_methods:
+            self.assertIn(name, dir(ctx))
+
     @isolated_context
     @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
