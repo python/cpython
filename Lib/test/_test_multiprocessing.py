@@ -2336,6 +2336,15 @@ class _TestContainers(BaseTestCase):
         a = self.list()
         self.assertIsInstance(a, collections.abc.MutableSequence)
 
+        mutable_sequence_methods = (
+            '__contains__', '__delitem__', '__getitem__', '__iadd__',
+            '__iter__', '__len__', '__reversed__', '__setitem__', 'append',
+            'clear', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
+            'reverse',
+        )
+        for name in mutable_sequence_methods:
+            self.assertTrue(callable(getattr(a, name)))
+
     def test_list_iter(self):
         a = self.list(list(range(10)))
         it = iter(a)
@@ -2379,6 +2388,14 @@ class _TestContainers(BaseTestCase):
     def test_dict_isinstance(self):
         a = self.dict()
         self.assertIsInstance(a, collections.abc.MutableMapping)
+
+        mutable_mapping_methods = (
+            '__contains__', '__delitem__', '__eq__', '__getitem__', '__iter__',
+            '__len__', '__ne__', '__setitem__', 'clear', 'get', 'items',
+            'keys', 'pop', 'popitem', 'setdefault', 'update', 'values',
+        )
+        for name in mutable_mapping_methods:
+            self.assertTrue(callable(getattr(a, name)))
 
     def test_dict_iter(self):
         d = self.dict()
