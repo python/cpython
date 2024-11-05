@@ -64,7 +64,7 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
 
 static void xid_lookup_init(_PyXIData_lookup_t *);
 static void xid_lookup_fini(_PyXIData_lookup_t *);
-static xidatafunc lookup_getdata(PyInterpreterState *, PyObject *);
+static xidatafunc lookup_getdata(_PyXIData_lookup_context_t *, PyObject *);
 #include "crossinterp_data_lookup.h"
 
 
@@ -198,9 +198,9 @@ _check_xidata(PyThreadState *tstate, _PyXIData_t *data)
 }
 
 static inline void
-_set_xid_lookup_failure(_PyXI_state_t *state, PyObject *obj, const char *msg)
+_set_xid_lookup_failure(dlcontext_t *ctx, PyObject *obj, const char *msg)
 {
-    PyObject *exctype = state->exceptions.PyExc_NotShareableError;
+    PyObject *exctype = ctx->PyExc_NotShareableError;
     assert(exctype != NULL);
     if (msg != NULL) {
         assert(obj == NULL);
@@ -217,14 +217,12 @@ _set_xid_lookup_failure(_PyXI_state_t *state, PyObject *obj, const char *msg)
 }
 
 int
-_PyObject_CheckXIData(PyObject *obj)
+_PyObject_CheckXIData(_PyXIData_lookup_context_t *ctx, PyObject *obj)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXI_state_t *state = _PyXI_GET_STATE(interp);
-    xidatafunc getdata = lookup_getdata(interp, obj);
+    xidatafunc getdata = lookup_getdata(ctx, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(state, obj, NULL);
+            _set_xid_lookup_failure(ctx, obj, NULL);
         }
         return -1;
     }
@@ -232,11 +230,11 @@ _PyObject_CheckXIData(PyObject *obj)
 }
 
 int
-_PyObject_GetXIData(PyObject *obj, _PyXIData_t *data)
+_PyObject_GetXIData(_PyXIData_lookup_context_t *ctx,
+                    PyObject *obj, _PyXIData_t *data)
 {
     PyThreadState *tstate = PyThreadState_Get();
     PyInterpreterState *interp = tstate->interp;
-    _PyXI_state_t *state = _PyXI_GET_STATE(interp);
 
     // Reset data before re-populating.
     *data = (_PyXIData_t){0};
@@ -244,11 +242,11 @@ _PyObject_GetXIData(PyObject *obj, _PyXIData_t *data)
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
-    xidatafunc getdata = lookup_getdata(interp, obj);
+    xidatafunc getdata = lookup_getdata(ctx, obj);
     if (getdata == NULL) {
         Py_DECREF(obj);
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(state, obj, NULL);
+            _set_xid_lookup_failure(ctx, obj, NULL);
         }
         return -1;
     }
@@ -965,7 +963,8 @@ _PyXI_ClearExcInfo(_PyXI_excinfo *info)
 static int
 _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 {
-    _PyXI_state_t *state;
+    dlcontext_t ctx;
+
     assert(!PyErr_Occurred());
     switch (code) {
     case _PyXI_ERR_NO_ERROR: _Py_FALLTHROUGH;
@@ -996,8 +995,10 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
                         "failed to apply namespace to __main__");
         break;
     case _PyXI_ERR_NOT_SHAREABLE:
-        state = _PyXI_GET_STATE(interp);
-        _set_xid_lookup_failure(state, NULL, NULL);
+        if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+            return -1;
+        }
+        _set_xid_lookup_failure(&ctx, NULL, NULL);
         break;
     default:
 #ifdef Py_DEBUG
@@ -1059,8 +1060,11 @@ _PyXI_ApplyError(_PyXI_error *error)
     }
     else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
-        _PyXI_state_t *state = _PyXI_GET_STATE(error->interp);
-        _set_xid_lookup_failure(state, NULL, error->uncaught.msg);
+        dlcontext_t ctx;
+        if (_PyXIData_GetLookupContext(error->interp, &ctx) < 0) {
+            return NULL;
+        }
+        _set_xid_lookup_failure(&ctx, NULL, error->uncaught.msg);
     }
     else {
         // Raise an exception corresponding to the code.
@@ -1147,7 +1151,12 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         PyErr_NoMemory();
         return -1;
     }
-    if (_PyObject_GetXIData(value, item->data) != 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    dlcontext_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+    if (_PyObject_GetXIData(&ctx, value, item->data) != 0) {
         PyMem_RawFree(item->data);
         item->data = NULL;
         // The caller may want to propagate PyExc_NotShareableError
@@ -1605,9 +1614,13 @@ _propagate_not_shareable_error(_PyXI_session *session)
         return;
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXI_state_t *state = _PyXI_GET_STATE(interp);
-    assert(state->exceptions.PyExc_NotShareableError != NULL);
-    if (PyErr_ExceptionMatches(state->exceptions.PyExc_NotShareableError)) {
+    dlcontext_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        PyErr_FormatUnraisable(
+                "Exception ignored while propagating not shareable error");
+        return;
+    }
+    if (PyErr_ExceptionMatches(ctx.PyExc_NotShareableError)) {
         // We want to propagate the exception directly.
         session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
         session->error_override = &session->_error_override;

@@ -100,9 +100,26 @@ typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
 typedef struct _xid_lookup_state _PyXIData_lookup_t;
 
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(PyObject *);
-PyAPI_FUNC(int) _PyObject_CheckXIData(PyObject *);
-PyAPI_FUNC(int) _PyObject_GetXIData(PyObject *, _PyXIData_t *);
+typedef struct {
+    _PyXIData_lookup_t *global;
+    _PyXIData_lookup_t *local;
+    PyObject *PyExc_NotShareableError;
+} _PyXIData_lookup_context_t;
+
+PyAPI_FUNC(int) _PyXIData_GetLookupContext(
+        PyInterpreterState *,
+        _PyXIData_lookup_context_t *);
+
+PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_CheckXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_GetXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *,
+        _PyXIData_t *);
 
 
 /* using cross-interpreter data */
