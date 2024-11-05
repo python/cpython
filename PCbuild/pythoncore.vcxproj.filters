@@ -609,6 +609,9 @@
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_crossinterp_data_registry.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_debug_offsets.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
