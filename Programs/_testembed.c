@@ -311,13 +311,35 @@ static int test_pre_initialization_api(void)
     _Py_EMBED_PREINIT_CHECK("Checking Py_SetProgramName\n");
     Py_SetProgramName(program);
 
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized pre-initialization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: initialized before initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     Py_Initialize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking Py_IsInitialized post-initialization\n");
+    if (!Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: not initialized after initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.executable:', sys.executable)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.executable:', sys.executable); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized post-finalization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: still initialized after finalization!\n");
+        return 1;
+    }
 
     _Py_EMBED_PREINIT_CHECK("Freeing memory allocated by Py_DecodeLocale\n");
     PyMem_RawFree(program);
@@ -364,12 +386,15 @@ static int test_pre_initialization_sys_options(void)
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_InitializeFromConfig();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.warnoptions:', sys.warnoptions); "
-                       "print('sys._xoptions:', sys._xoptions); "
-                       "warnings = sys.modules['warnings']; "
-                       "latest_filters = [f[0] for f in warnings.filters[:3]]; "
-                       "print('warnings.filters[:3]:', latest_filters)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.warnoptions:', sys.warnoptions); "
+        "print('sys._xoptions:', sys._xoptions); "
+        "warnings = sys.modules['warnings']; "
+        "latest_filters = [f[0] for f in warnings.filters[:3]]; "
+        "print('warnings.filters[:3]:', latest_filters); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
 
@@ -810,6 +835,7 @@ static void set_most_env_vars(void)
 #ifdef Py_STATS
     putenv("PYTHONSTATS=1");
 #endif
+    putenv("PYTHONPERFSUPPORT=1");
 }
 
 
@@ -1844,6 +1870,10 @@ static int test_initconfig_api(void)
         goto error;
     }
 
+    if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
+        goto error;
+    }
+
     // Set a UTF-8 string (program_name)
     if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
         goto error;
@@ -1866,16 +1896,19 @@ static int test_initconfig_api(void)
         goto error;
     }
     PyInitConfig_Free(config);
+    PyInitConfig_Free(NULL);
 
     dump_config();
     Py_Finalize();
     return 0;
 
-    const char *err_msg;
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
@@ -2019,11 +2052,13 @@ static int test_initconfig_module(void)
     Py_Finalize();
     return 0;
 
-    const char *err_msg;
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 

@@ -1067,32 +1067,31 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(st, self, length);
 }
 
+static int
+_structunion_setattro(PyObject *self, PyObject *key, PyObject *value, int is_struct)
+{
+    /* XXX Should we disallow deleting _fields_? */
+    if (PyUnicode_Check(key)
+            && _PyUnicode_EqualToASCIIString(key, "_fields_"))
+    {
+        if (PyCStructUnionType_update_stginfo(self, value, is_struct) < 0) {
+            return -1;
+        }
+    }
+
+    return PyType_Type.tp_setattro(self, key, value);
+}
 
 static int
 PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (value && PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 1);
-    return 0;
+    return _structunion_setattro(self, key, value, 1);
 }
-
 
 static int
 UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 0);
-    return 0;
+    return _structunion_setattro(self, key, value, 0);
 }
 
 static PyType_Slot pycstruct_type_slots[] = {
@@ -1748,7 +1747,7 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
 #else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
@@ -2426,7 +2425,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
         return NULL;
     }
     if (as_parameter) {
-        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
             return NULL;
@@ -4733,7 +4732,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -4757,7 +4756,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -5419,7 +5418,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
@@ -5439,7 +5438,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);

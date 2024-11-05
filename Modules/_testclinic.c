@@ -58,6 +58,20 @@ pack_arguments_newref(int argc, ...)
     return tuple;
 }
 
+static PyObject *
+pack_varargs_to_tuple(Py_ssize_t varargssize, PyObject *const *args)
+{
+    assert(!PyErr_Occurred());
+    PyObject *tuple = PyTuple_New(varargssize);
+    if (!tuple) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < varargssize; i++) {
+        PyTuple_SET_ITEM(tuple, i, Py_NewRef(args[i]));
+    }
+    return tuple;
+}
+
 /* Pack arguments to a tuple.
  * `wrapper` is function which converts primitive type to PyObject.
  * `arg_type` is type that arguments should be converted to before wrapped. */
@@ -970,10 +984,16 @@ varpos
 [clinic start generated code]*/
 
 static PyObject *
-varpos_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=7b0b9545872bdca4 input=f87cd674145d394c]*/
+varpos_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=b65096f423fb5dcc input=f87cd674145d394c]*/
 {
-    return Py_NewRef(args);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result =  pack_arguments_newref(1, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -989,10 +1009,16 @@ posonly_varpos
 
 static PyObject *
 posonly_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
-                    PyObject *args)
-/*[clinic end generated code: output=5dae5eb2a0d623cd input=c9fd7895cfbaabba]*/
+                    Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=d10d43d86d117ab3 input=c9fd7895cfbaabba]*/
 {
-    return pack_arguments_newref(3, a, b, args);
+    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
+    if (!vararg_tuple) {
+        return NULL;
+    }
+    PyObject *result = pack_arguments_newref(3, a, b, vararg_tuple);
+    Py_DECREF(vararg_tuple);
+    return result;
 }
 
 
@@ -1157,8 +1183,9 @@ Proof-of-concept of GH-99233 refcount error bug.
 [clinic start generated code]*/
 
 static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=eecfdc2092d90dc3]*/
+gh_99233_refcount_impl(PyObject *module, Py_ssize_t nargs,
+                       PyObject *const *args)
+/*[clinic end generated code: output=b570007e61e5c670 input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }

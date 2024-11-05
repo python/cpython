@@ -1248,18 +1248,23 @@ PyConfig
 
    .. c:member:: int perf_profiling
 
-      Enable compatibility mode with the perf profiler?
+      Enable the Linux ``perf`` profiler support?
 
-      If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
-      for more information.
+      If equals to ``1``, enable support for the Linux ``perf`` profiler.
 
-      Set by :option:`-X perf <-X>` command-line option and by the
-      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
-      with stack pointers and :option:`-X perf_jit <-X>` command-line option
-      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
-      support with DWARF JIT information.
+      If equals to ``2``, enable support for the Linux ``perf`` profiler with
+      DWARF JIT support.
+
+      Set to ``1`` by :option:`-X perf <-X>` command-line option and the
+      :envvar:`PYTHONPERFSUPPORT` environment variable.
+
+      Set to ``2`` by the :option:`-X perf_jit <-X>` command-line option and
+      the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable.
 
       Default: ``-1``.
+
+      .. seealso::
+         See :ref:`perf_profiling` for more information.
 
       .. versionadded:: 3.12
 
@@ -1351,14 +1356,13 @@ the :option:`-X` command line option.
    The ``show_alloc_count`` field has been removed.
 
 
+.. _init-from-config:
+
 Initialization with PyConfig
 ----------------------------
 
-Function to initialize Python:
-
-.. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
-
-   Initialize Python from *config* configuration.
+Initializing the interpreter from a populated configuration struct is handled
+by calling :c:func:`Py_InitializeFromConfig`.
 
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
@@ -1617,6 +1621,8 @@ Create Config
 
    Free memory of the initialization configuration *config*.
 
+   If *config* is ``NULL``, no operation is performed.
+
 
 Error Handling
 --------------
@@ -1819,35 +1825,19 @@ return ``-1`` on error:
         PyInitConfig_Free(config);
         return 0;
 
-        // Display the error message
-        const char *err_msg;
     error:
-        (void)PyInitConfig_GetError(config, &err_msg);
-        printf("PYTHON INIT ERROR: %s\n", err_msg);
-        PyInitConfig_Free(config);
+        {
+            // Display the error message
+            // This uncommon braces style is used, because you cannot make
+            // goto targets point to variable declarations.
+            const char *err_msg;
+            (void)PyInitConfig_GetError(config, &err_msg);
+            printf("PYTHON INIT ERROR: %s\n", err_msg);
+            PyInitConfig_Free(config);
 
-        return -1;
+            return -1;
+        }
     }
-
-
-Py_RunMain()
-============
-
-.. c:function:: int Py_RunMain(void)
-
-   Execute the command (:c:member:`PyConfig.run_command`), the script
-   (:c:member:`PyConfig.run_filename`) or the module
-   (:c:member:`PyConfig.run_module`) specified on the command line or in the
-   configuration.
-
-   By default and when if :option:`-i` option is used, run the REPL.
-
-   Finally, finalizes Python and returns an exit status that can be passed to
-   the ``exit()`` function.
-
-See :ref:`Python Configuration <init-python-config>` for an example of
-customized Python always running in isolated mode using
-:c:func:`Py_RunMain`.
 
 
 Runtime Python configuration API

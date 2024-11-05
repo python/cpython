@@ -1,1 +1,0 @@
-Limit the reading size in the :class:`multiprocessing.connection.Connection` class to 64 KiB to prevent memory overallocation and unnecessary memory management system calls.
