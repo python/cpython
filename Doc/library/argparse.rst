@@ -1813,6 +1813,10 @@ Sub-commands
    .. versionchanged:: 3.7
       New *required* keyword-only parameter.
 
+   .. versionchanged:: 3.14
+      Subparser's *prog* is no longer affected by a custom usage message in
+      the main parser.
+
 
 FileType objects
 ^^^^^^^^^^^^^^^^
