@@ -1123,7 +1123,7 @@ CPython bytecode changes
 * Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
   Vladimir Matveev in :gh:`103497`.)
 
-* Add the :opcode:`RETURN_CONST` instruction. (Contributed by Wenyang Wang in :gh:`101632`.)
+* Add the ``RETURN_CONST`` instruction. (Contributed by Wenyang Wang in :gh:`101632`.)
 
 Demos and Tools
 ===============
@@ -1229,7 +1229,7 @@ Deprecated
   your code *requires* ``'fork'``.  See :ref:`contexts and start methods
   <multiprocessing-start-methods>`.
 
-* :mod:`pkgutil`: :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader`
   are deprecated and will be removed in Python 3.14;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
@@ -1327,8 +1327,8 @@ Deprecated
 
 * Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
   Python 3.10 via :pep:`626`,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12,
-  therefore it will be removed in 3.14.
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.15.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 .. include:: ../deprecations/pending-removal-in-3.13.rst
