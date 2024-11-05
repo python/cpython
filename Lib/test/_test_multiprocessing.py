@@ -2346,7 +2346,8 @@ class _TestContainers(BaseTestCase):
             'reverse',
         )
         for name in mutable_sequence_methods:
-            self.assertTrue(callable(getattr(a, name)))
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(a, name)))
 
     def test_list_iter(self):
         a = self.list(list(range(10)))
@@ -2398,7 +2399,8 @@ class _TestContainers(BaseTestCase):
             'keys', 'pop', 'popitem', 'setdefault', 'update', 'values',
         )
         for name in mutable_mapping_methods:
-            self.assertTrue(callable(getattr(a, name)))
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(a, name)))
 
     def test_dict_iter(self):
         d = self.dict()
