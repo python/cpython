@@ -141,6 +141,12 @@ _PyThreadState_GET(void)
 #endif
 }
 
+static inline int
+_PyThreadState_IsAttached(PyThreadState *tstate)
+{
+    return (_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
+}
+
 // Attaches the current thread to the interpreter.
 //
 // This may block while acquiring the GIL (if the GIL is enabled) or while
