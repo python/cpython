@@ -9,6 +9,10 @@
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 
 
+#define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
+#define _PyXI_GET_STATE(interp) (&(interp)->xi)
+
+
 /**************/
 /* exceptions */
 /**************/
@@ -62,8 +66,8 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
    alternative would be to add a tp_* slot for a class's
    xidatafunc. It would be simpler and more efficient. */
 
-static void xid_lookup_init(PyInterpreterState *);
-static void xid_lookup_fini(PyInterpreterState *);
+static void xid_lookup_init(_PyXIData_lookup_t *);
+static void xid_lookup_fini(_PyXIData_lookup_t *);
 static xidatafunc lookup_getdata(PyInterpreterState *, PyObject *);
 #include "crossinterp_data_lookup.h"
 
@@ -1773,7 +1777,10 @@ PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
     // Initialize the XID lookup state (e.g. registry).
-    xid_lookup_init(interp);
+    if (_Py_IsMainInterpreter(interp)) {
+        xid_lookup_init(&_PyXI_GET_GLOBAL_STATE(interp)->data_lookup);
+    }
+    xid_lookup_init(&_PyXI_GET_STATE(interp)->data_lookup);
 
     // Initialize exceptions (heap types).
     if (_init_not_shareable_error_type(interp) < 0) {
@@ -1793,7 +1800,10 @@ _PyXI_Fini(PyInterpreterState *interp)
     _fini_not_shareable_error_type(interp);
 
     // Finalize the XID lookup state (e.g. registry).
-    xid_lookup_fini(interp);
+    xid_lookup_fini(&_PyXI_GET_STATE(interp)->data_lookup);
+    if (_Py_IsMainInterpreter(interp)) {
+        xid_lookup_fini(&_PyXI_GET_GLOBAL_STATE(interp)->data_lookup);
+    }
 }
 
 PyStatus

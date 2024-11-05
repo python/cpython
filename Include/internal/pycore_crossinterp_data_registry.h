@@ -29,3 +29,8 @@ struct _xidregistry {
 
 PyAPI_FUNC(int) _PyXIData_RegisterClass(PyTypeObject *, xidatafunc);
 PyAPI_FUNC(int) _PyXIData_UnregisterClass(PyTypeObject *);
+
+struct _xid_lookup_state {
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry registry;
+};

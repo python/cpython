@@ -6,8 +6,24 @@ typedef struct _xidregitem dlregitem_t;
 
 
 // forward
-
+static void _xidregistry_init(dlregistry_t *);
+static void _xidregistry_fini(dlregistry_t *);
 static xidatafunc _lookup_getdata_from_registry(PyInterpreterState *, PyObject *);
+
+
+/* used in crossinterp.c */
+
+static void
+xid_lookup_init(_PyXIData_lookup_t *state)
+{
+    _xidregistry_init(&state->registry);
+}
+
+static void
+xid_lookup_fini(_PyXIData_lookup_t *state)
+{
+    _xidregistry_fini(&state->registry);
+}
 
 static xidatafunc
 lookup_getdata(PyInterpreterState *interp, PyObject *obj)
@@ -17,6 +33,9 @@ lookup_getdata(PyInterpreterState *interp, PyObject *obj)
       tp_* slot. */
     return _lookup_getdata_from_registry(interp, obj);
 }
+
+
+/* exported API */
 
 xidatafunc
 _PyXIData_Lookup(PyObject *obj)
@@ -67,27 +86,6 @@ _xidregistry_fini(dlregistry_t *registry)
     _xidregistry_clear(registry);
 }
 
-static inline struct _xidregistry * _get_global_xidregistry(_PyRuntimeState *);
-static inline struct _xidregistry * _get_xidregistry(PyInterpreterState *);
-
-static void
-xid_lookup_init(PyInterpreterState *interp)
-{
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_init(_get_global_xidregistry(interp->runtime));
-    }
-    _xidregistry_init(_get_xidregistry(interp));
-}
-
-static void
-xid_lookup_fini(PyInterpreterState *interp)
-{
-    _xidregistry_fini(_get_xidregistry(interp));
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_fini(_get_global_xidregistry(interp->runtime));
-    }
-}
-
 
 /* registry thread safety */
 
@@ -114,13 +112,13 @@ _xidregistry_unlock(dlregistry_t *registry)
 static inline dlregistry_t *
 _get_global_xidregistry(_PyRuntimeState *runtime)
 {
-    return &runtime->xi.registry;
+    return &runtime->xi.data_lookup.registry;
 }
 
 static inline dlregistry_t *
 _get_xidregistry(PyInterpreterState *interp)
 {
-    return &interp->xi.registry;
+    return &interp->xi.data_lookup.registry;
 }
 
 static inline dlregistry_t *

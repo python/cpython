@@ -97,6 +97,8 @@ PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 
 typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
+typedef struct _xid_lookup_state _PyXIData_lookup_t;
+
 PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(PyObject *);
 PyAPI_FUNC(int) _PyObject_CheckXIData(PyObject *);
 PyAPI_FUNC(int) _PyObject_GetXIData(PyObject *, _PyXIData_t *);
@@ -154,14 +156,12 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 
 struct _xi_runtime_state {
     // builtin types
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry registry;
+    _PyXIData_lookup_t data_lookup;
 };
 
 struct _xi_state {
     // heap types
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry registry;
+    _PyXIData_lookup_t data_lookup;
 
     // heap types
     PyObject *PyExc_NotShareableError;
@@ -169,7 +169,6 @@ struct _xi_state {
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
-
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
 
