@@ -39,14 +39,14 @@ extern int _Py_CallInInterpreterAndRawFree(
 /* cross-interpreter data */
 /**************************/
 
-typedef struct _xid _PyXIData_t;
+typedef struct _xidata _PyXIData_t;
 typedef PyObject *(*xid_newobjfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
 // _PyXIData_t is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
-struct _xid {
+struct _xidata {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetXIData).  It will be NULL if the
     // new_object func (below) encodes the data.
