@@ -155,10 +155,10 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 /* runtime state & lifecycle */
 /*****************************/
 
-struct _xi_runtime_state {
+typedef struct {
     // builtin types
     _PyXIData_lookup_t data_lookup;
-};
+} _PyXI_global_state_t;
 
 struct _xi_state {
     // heap types
