@@ -1,3 +1,7 @@
-Add :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno`
-attributes to :exc:`TOMLDecodeError`. Deprecate instatiating
-:exc:`TOMLDecodeError` with free-form arguments.
+Add :attr:`tomllib.TOMLDecodeError.msg`,
+:attr:`tomllib.TOMLDecodeError.doc`,
+:attr:`tomllib.TOMLDecodeError.pos`,
+:attr:`tomllib.TOMLDecodeError.lineno` and
+:attr:`tomllib.TOMLDecodeError.colno`
+attributes to :exc:`tomllib.TOMLDecodeError`.
+Deprecate instantiating :exc:`tomllib.TOMLDecodeError` with free-form arguments.
