@@ -175,6 +175,10 @@ Improved error messages
 Other language changes
 ======================
 
+* The :func:`map` built-in now has an optional keyword-only *strict* flag
+  like :func:`zip` to check that all the iterables are of equal length.
+  (Contributed by Wannes Boeykens in :gh:`119793`.)
+
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions
   is now detected even if the code is optimized away by the :option:`-O`
   command-line option. For example, ``python -O -c 'assert await 1'``
@@ -361,9 +365,10 @@ operator
 os
 --
 
-* Add the :data:`os.environ.refresh() <os.environ>` method to update
-  :data:`os.environ` with changes to the environment made by :func:`os.putenv`,
-  by :func:`os.unsetenv`, or made outside Python in the same process.
+* Add the :func:`os.reload_environ` function to update :data:`os.environ` and
+  :data:`os.environb` with changes to the environment made by
+  :func:`os.putenv`, by :func:`os.unsetenv`, or made outside Python in the
+  same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
 
@@ -575,6 +580,11 @@ asyncio
   * :class:`!asyncio.ThreadedChildWatcher`
 
   (Contributed by Kumar Aditya in :gh:`120804`.)
+
+* Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
+  It now raises a :exc:`RuntimeError` if there is no current event loop.
+  (Contributed by Kumar Aditya in :gh:`126353`.)
+
 
 collections.abc
 ---------------

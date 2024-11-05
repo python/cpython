@@ -2175,6 +2175,11 @@ sys__clear_internal_caches_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _Py_Executors_InvalidateAll(interp, 0);
 #endif
+#ifdef Py_GIL_DISABLED
+    if (_Py_ClearUnusedTLBC(_PyInterpreterState_GET()) < 0) {
+        return NULL;
+    }
+#endif
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
