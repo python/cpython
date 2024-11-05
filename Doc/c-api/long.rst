@@ -575,7 +575,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Check if the integer object *obj* is positive.
 
-   If *obj* is an instance of :c:type:`PyLongObject` or it's subtype,
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
    return ``1`` when it's positive and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
@@ -586,7 +586,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Check if the integer object *obj* is negative.
 
-   If *obj* is an instance of :c:type:`PyLongObject` or it's subtype,
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
    return ``1`` when it's negative and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
@@ -597,7 +597,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Check if the integer object *obj* is zero.
 
-   If *obj* is an instance of :c:type:`PyLongObject` or it's subtype,
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
    return ``1`` when it's zero and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
