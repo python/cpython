@@ -54,7 +54,7 @@ struct _xid {
     // is non-NULL only if the data remains bound to the object in some
     // way, such that the object must be "released" (via a decref) when
     // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
+    // likely a registered "xidatafunc", is responsible for
     // ensuring it owns the reference (i.e. incref).
     PyObject *obj;
     // interp is the ID of the owning interpreter of the original
@@ -114,9 +114,9 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
         (DATA)->free = (FUNC); \
     } while (0)
 // Additionally, some shareable types are essentially light wrappers
-// around other shareable types.  The crossinterpdatafunc of the wrapper
+// around other shareable types.  The xidatafunc of the wrapper
 // can often be implemented by calling the wrapped object's
-// crossinterpdatafunc and then changing the "new_object" function.
+// xidatafunc and then changing the "new_object" function.
 // We have _PyCrossInterpreterData_SET_NEW_OBJECT() here for that,
 // but might be better to have a function like
 // _PyCrossInterpreterData_AdaptToWrapper() instead.
@@ -139,10 +139,9 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyXIData_t *);
 
 // For now we use a global registry of shareable classes.  An
 // alternative would be to add a tp_* slot for a class's
-// crossinterpdatafunc. It would be simpler and more efficient.
+// xidatafunc. It would be simpler and more efficient.
 
-typedef int (*crossinterpdatafunc)(PyThreadState *tstate, PyObject *,
-                                   _PyXIData_t *);
+typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
 struct _xidregitem;
 
@@ -154,7 +153,7 @@ struct _xidregitem {
     /* This is NULL for builtin types. */
     PyObject *weakref;
     size_t refcount;
-    crossinterpdatafunc getdata;
+    xidatafunc getdata;
 };
 
 struct _xidregistry {
@@ -164,9 +163,9 @@ struct _xidregistry {
     struct _xidregitem *head;
 };
 
-PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, xidatafunc);
 PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+PyAPI_FUNC(xidatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 
 /*****************************/

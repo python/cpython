@@ -1,8 +1,7 @@
 
-static crossinterpdatafunc _lookup_getdata_from_registry(
-                                            PyInterpreterState *, PyObject *);
+static xidatafunc _lookup_getdata_from_registry(PyInterpreterState *, PyObject *);
 
-static crossinterpdatafunc
+static xidatafunc
 lookup_getdata(PyInterpreterState *interp, PyObject *obj)
 {
    /* Cross-interpreter objects are looked up by exact match on the class.
@@ -11,7 +10,7 @@ lookup_getdata(PyInterpreterState *interp, PyObject *obj)
     return _lookup_getdata_from_registry(interp, obj);
 }
 
-crossinterpdatafunc
+xidatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -20,12 +19,12 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
 
 
 /***********************************************/
-/* a registry of {type -> crossinterpdatafunc} */
+/* a registry of {type -> xidatafunc} */
 /***********************************************/
 
 /* For now we use a global registry of shareable classes.  An
    alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient.  */
+   xidatafunc. It would be simpler and more efficient.  */
 
 
 /* registry lifecycle */
@@ -155,7 +154,7 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
     return NULL;
 }
 
-static crossinterpdatafunc
+static xidatafunc
 _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
@@ -164,7 +163,7 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
     _xidregistry_lock(xidregistry);
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
-    crossinterpdatafunc func = matched != NULL ? matched->getdata : NULL;
+    xidatafunc func = matched != NULL ? matched->getdata : NULL;
 
     _xidregistry_unlock(xidregistry);
     return func;
@@ -175,7 +174,7 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 
 static int
 _xidregistry_add_type(struct _xidregistry *xidregistry,
-                      PyTypeObject *cls, crossinterpdatafunc getdata)
+                      PyTypeObject *cls, xidatafunc getdata)
 {
     struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
     if (newhead == NULL) {
@@ -238,8 +237,7 @@ _xidregistry_clear(struct _xidregistry *xidregistry)
 }
 
 int
-_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
-                                      crossinterpdatafunc getdata)
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");

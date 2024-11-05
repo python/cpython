@@ -57,15 +57,15 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
 /* cross-interpreter data */
 /**************************/
 
-/* registry of {type -> crossinterpdatafunc} */
+/* registry of {type -> xidatafunc} */
 
 /* For now we use a global registry of shareable classes.  An
    alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
+   xidatafunc. It would be simpler and more efficient. */
 
 static void xid_lookup_init(PyInterpreterState *);
 static void xid_lookup_fini(PyInterpreterState *);
-static crossinterpdatafunc lookup_getdata(PyInterpreterState *, PyObject *);
+static xidatafunc lookup_getdata(PyInterpreterState *, PyObject *);
 #include "crossinterp_data_lookup.h"
 
 
@@ -222,7 +222,7 @@ int
 _PyObject_CheckCrossInterpreterData(PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    crossinterpdatafunc getdata = lookup_getdata(interp, obj);
+    xidatafunc getdata = lookup_getdata(interp, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
             _set_xid_lookup_failure(interp, obj, NULL);
@@ -244,7 +244,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyXIData_t *data)
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
-    crossinterpdatafunc getdata = lookup_getdata(interp, obj);
+    xidatafunc getdata = lookup_getdata(interp, obj);
     if (getdata == NULL) {
         Py_DECREF(obj);
         if (!PyErr_Occurred()) {
