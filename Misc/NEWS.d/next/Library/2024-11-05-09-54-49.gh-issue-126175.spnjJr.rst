@@ -1,0 +1,3 @@
+Add :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno`
+attributes to :exc:`TOMLDecodeError`. Deprecate instatiating
+:exc:`TOMLDecodeError` with free-form arguments.
