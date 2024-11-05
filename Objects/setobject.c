@@ -1060,13 +1060,13 @@ Update the set, adding elements from all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=34f6371704974c8a input=df4fe486e38cd337]*/
+set_update_impl(PySetObject *so, Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=050e2a21f8d7d16a input=df4fe486e38cd337]*/
 {
     Py_ssize_t i;
 
-    for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
-        PyObject *other = PyTuple_GET_ITEM(args, i);
+    for (i = 0; i < nargs; i++) {
+        PyObject *other = args[i];
         if (set_update_internal(so, other))
             return NULL;
     }
@@ -1289,8 +1289,8 @@ Return a new set with elements from the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_union_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2c83d05a446a1477 input=ddf088706e9577b2]*/
+set_union_impl(PySetObject *so, Py_ssize_t nargs, PyObject *const *args)
+/*[clinic end generated code: output=f68ec24d5c19d404 input=ddf088706e9577b2]*/
 {
     PySetObject *result;
     PyObject *other;
@@ -1300,8 +1300,8 @@ set_union_impl(PySetObject *so, PyObject *args)
     if (result == NULL)
         return NULL;
 
-    for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
-        other = PyTuple_GET_ITEM(args, i);
+    for (i = 0; i < nargs; i++) {
+        other = args[i];
         if ((PyObject *)so == other)
             continue;
         if (set_update_local(result, other)) {
@@ -1440,18 +1440,19 @@ Return a new set with elements common to the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2406ef3387adbe2f input=0d9f3805ccbba6a4]*/
+set_intersection_multi_impl(PySetObject *so, Py_ssize_t nargs,
+                            PyObject *const *args)
+/*[clinic end generated code: output=ef0756ddb5f2dee9 input=0d9f3805ccbba6a4]*/
 {
     Py_ssize_t i;
 
-    if (PyTuple_GET_SIZE(args) == 0) {
+    if (nargs == 0) {
         return set_copy(so, NULL);
     }
 
     PyObject *result = Py_NewRef(so);
-    for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
-        PyObject *other = PyTuple_GET_ITEM(args, i);
+    for (i = 0; i < nargs; i++) {
+        PyObject *other = args[i];
         PyObject *newresult;
         Py_BEGIN_CRITICAL_SECTION2(result, other);
         newresult = set_intersection((PySetObject *)result, other);
@@ -1487,12 +1488,13 @@ Update the set, keeping only elements found in it and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=251c1f729063609d input=223c1e086aa669a9]*/
+set_intersection_update_multi_impl(PySetObject *so, Py_ssize_t nargs,
+                                   PyObject *const *args)
+/*[clinic end generated code: output=808d7ad1935b1dfe input=223c1e086aa669a9]*/
 {
     PyObject *tmp;
 
-    tmp = set_intersection_multi_impl(so, args);
+    tmp = set_intersection_multi_impl(so, nargs, args);
     if (tmp == NULL)
         return NULL;
     Py_BEGIN_CRITICAL_SECTION(so);
@@ -1676,13 +1678,14 @@ Update the set, removing elements found in others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=28685b2fc63e41c4 input=024e6baa6fbcbb3d]*/
+set_difference_update_impl(PySetObject *so, Py_ssize_t nargs,
+                           PyObject *const *args)
+/*[clinic end generated code: output=55f850c27748d312 input=024e6baa6fbcbb3d]*/
 {
     Py_ssize_t i;
 
-    for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
-        PyObject *other = PyTuple_GET_ITEM(args, i);
+    for (i = 0; i < nargs; i++) {
+        PyObject *other = args[i];
         int rv;
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_difference_update_internal(so, other);
@@ -1793,25 +1796,26 @@ Return a new set with elements in the set that are not in the others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=3130c3bb3cac873d input=ba78ea5f099e58df]*/
+set_difference_multi_impl(PySetObject *so, Py_ssize_t nargs,
+                          PyObject *const *args)
+/*[clinic end generated code: output=8150d008c00523f3 input=ba78ea5f099e58df]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
 
-    if (PyTuple_GET_SIZE(args) == 0) {
+    if (nargs == 0) {
         return set_copy(so, NULL);
     }
 
-    other = PyTuple_GET_ITEM(args, 0);
+    other = args[0];
     Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_difference(so, other);
     Py_END_CRITICAL_SECTION2();
     if (result == NULL)
         return NULL;
 
-    for (i=1 ; i<PyTuple_GET_SIZE(args) ; i++) {
-        other = PyTuple_GET_ITEM(args, i);
+    for (i = 1; i < nargs; i++) {
+        other = args[i];
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);
         rv = set_difference_update_internal((PySetObject *)result, other);
