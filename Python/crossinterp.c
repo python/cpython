@@ -126,7 +126,7 @@ void
 _PyXIData_Init(_PyXIData_t *data,
                PyInterpreterState *interp,
                void *shared, PyObject *obj,
-               xid_newobjectfunc new_object)
+               xid_newobjfunc new_object)
 {
     assert(data != NULL);
     assert(new_object != NULL);
@@ -150,7 +150,7 @@ int
 _PyXIData_InitWithSize(_PyXIData_t *data,
                        PyInterpreterState *interp,
                        const size_t size, PyObject *obj,
-                       xid_newobjectfunc new_object)
+                       xid_newobjfunc new_object)
 {
     assert(size > 0);
     // For now we always free the shared data in the same interpreter

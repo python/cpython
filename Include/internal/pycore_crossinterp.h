@@ -40,7 +40,7 @@ extern int _Py_CallInInterpreterAndRawFree(
 /**************************/
 
 typedef struct _xid _PyXIData_t;
-typedef PyObject *(*xid_newobjectfunc)(_PyXIData_t *);
+typedef PyObject *(*xid_newobjfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
 // _PyXIData_t is similar to Py_buffer as an effectively
@@ -72,7 +72,7 @@ struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    xid_newobjectfunc new_object;
+    xid_newobjfunc new_object;
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -117,11 +117,11 @@ PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
 PyAPI_FUNC(void) _PyXIData_Init(
         _PyXIData_t *data,
         PyInterpreterState *interp, void *shared, PyObject *obj,
-        xid_newobjectfunc new_object);
+        xid_newobjfunc new_object);
 PyAPI_FUNC(int) _PyXIData_InitWithSize(
         _PyXIData_t *,
         PyInterpreterState *interp, const size_t, PyObject *,
-        xid_newobjectfunc);
+        xid_newobjfunc);
 PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 
 // Normally the Init* functions are sufficient.  The only time
