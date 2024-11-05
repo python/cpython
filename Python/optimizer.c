@@ -1225,6 +1225,9 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 }
 #endif
 
+static int uop_optimize_initialized = 0;
+static int uop_optimize_flag = 0;
+
 static int
 uop_optimize(
     _PyOptimizerObject *self,
@@ -1245,8 +1248,18 @@ uop_optimize(
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+
+    if (!uop_optimize_initialized) {
+        char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+        if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+            uop_optimize_flag = 1;
+        } else {
+            uop_optimize_flag = 0;
+        }
+        uop_optimize_initialized = 1;
+    }
+
+    if (uop_optimize_flag) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
