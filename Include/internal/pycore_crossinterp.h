@@ -160,7 +160,7 @@ typedef struct {
     _PyXIData_lookup_t data_lookup;
 } _PyXI_global_state_t;
 
-struct _xi_state {
+typedef struct {
     // heap types
     _PyXIData_lookup_t data_lookup;
 
@@ -171,7 +171,7 @@ struct _xi_state {
         // heap types
         PyObject *PyExc_NotShareableError;
     } exceptions;
-};
+} _PyXI_state_t;
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
