@@ -21,7 +21,7 @@ on:
 jobs:
   build_tsan_reusable:
     name: 'Thread sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
