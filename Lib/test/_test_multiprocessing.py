@@ -2336,9 +2336,12 @@ class _TestContainers(BaseTestCase):
         a = self.list()
         self.assertIsInstance(a, collections.abc.MutableSequence)
 
+        # MutableSequence also has __iter__, but we can iterate over
+        # ListProxy using __getitem__ instead. Adding __iter__ to ListProxy
+        # would change the behavior of a list modified during iteration.
         mutable_sequence_methods = (
             '__contains__', '__delitem__', '__getitem__', '__iadd__',
-            '__iter__', '__len__', '__reversed__', '__setitem__', 'append',
+            '__len__', '__reversed__', '__setitem__', 'append',
             'clear', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
             'reverse',
         )

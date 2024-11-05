@@ -1,1 +1,0 @@
-add ``__iter__`` method to :class:`!multiprocessing.managers.ListProxy`

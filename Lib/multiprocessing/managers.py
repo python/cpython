@@ -1154,7 +1154,7 @@ class ValueProxy(BaseProxy):
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
-    '__iter__', '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
     'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
     'remove', 'reverse', 'sort',
     ))
