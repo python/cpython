@@ -22,7 +22,7 @@ clear_xid_class(PyTypeObject *cls)
 
 
 static inline int64_t
-_get_interpid(_PyCrossInterpreterData *data)
+_get_interpid(_PyXIData_t *data)
 {
     int64_t interpid;
     if (data != NULL) {

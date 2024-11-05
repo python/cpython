@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
@@ -84,7 +84,7 @@ typedef struct {
 } XIBufferViewObject;
 
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
     assert(_PyCrossInterpreterData_DATA(data) != NULL);
     assert(_PyCrossInterpreterData_OBJ(data) == NULL);
@@ -154,7 +154,7 @@ static PyType_Spec XIBufferViewType_spec = {
 static PyTypeObject * _get_current_xibufferview_type(void);
 
 static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
+_memoryview_from_xid(_PyXIData_t *data)
 {
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
@@ -168,8 +168,7 @@ _memoryview_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
+_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
     if (view == NULL) {

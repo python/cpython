@@ -1786,8 +1786,7 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
     if (data != NULL) {
         assert(_PyCrossInterpreterData_Release(data) == 0);
         _PyCrossInterpreterData_Free(data);
@@ -1802,7 +1801,7 @@ get_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+    _PyXIData_t *data = _PyCrossInterpreterData_New();
     if (data == NULL) {
         return NULL;
     }
@@ -1826,8 +1825,7 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
     if (data == NULL) {
         return NULL;
     }

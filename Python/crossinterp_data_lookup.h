@@ -304,15 +304,14 @@ struct _shared_bytes_data {
 };
 
 static PyObject *
-_new_bytes_object(_PyCrossInterpreterData *data)
+_new_bytes_object(_PyXIData_t *data)
 {
     struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
     return PyBytes_FromStringAndSize(shared->bytes, shared->len);
 }
 
 static int
-_bytes_shared(PyThreadState *tstate, PyObject *obj,
-              _PyCrossInterpreterData *data)
+_bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     if (_PyCrossInterpreterData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
@@ -338,15 +337,14 @@ struct _shared_str_data {
 };
 
 static PyObject *
-_new_str_object(_PyCrossInterpreterData *data)
+_new_str_object(_PyXIData_t *data)
 {
     struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
     return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
 }
 
 static int
-_str_shared(PyThreadState *tstate, PyObject *obj,
-            _PyCrossInterpreterData *data)
+_str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     if (_PyCrossInterpreterData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_str_data), obj,
@@ -365,14 +363,13 @@ _str_shared(PyThreadState *tstate, PyObject *obj,
 // int
 
 static PyObject *
-_new_long_object(_PyCrossInterpreterData *data)
+_new_long_object(_PyXIData_t *data)
 {
     return PyLong_FromSsize_t((Py_ssize_t)(data->data));
 }
 
 static int
-_long_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     /* Note that this means the size of shareable ints is bounded by
      * sys.maxsize.  Hence on 32-bit architectures that is half the
@@ -394,15 +391,14 @@ _long_shared(PyThreadState *tstate, PyObject *obj,
 // float
 
 static PyObject *
-_new_float_object(_PyCrossInterpreterData *data)
+_new_float_object(_PyXIData_t *data)
 {
     double * value_ptr = data->data;
     return PyFloat_FromDouble(*value_ptr);
 }
 
 static int
-_float_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     if (_PyCrossInterpreterData_InitWithSize(
             data, tstate->interp, sizeof(double), NULL,
@@ -419,15 +415,14 @@ _float_shared(PyThreadState *tstate, PyObject *obj,
 // None
 
 static PyObject *
-_new_none_object(_PyCrossInterpreterData *data)
+_new_none_object(_PyXIData_t *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
     return Py_NewRef(Py_None);
 }
 
 static int
-_none_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
             _new_none_object);
@@ -438,7 +433,7 @@ _none_shared(PyThreadState *tstate, PyObject *obj,
 // bool
 
 static PyObject *
-_new_bool_object(_PyCrossInterpreterData *data)
+_new_bool_object(_PyXIData_t *data)
 {
     if (data->data){
         Py_RETURN_TRUE;
@@ -447,8 +442,7 @@ _new_bool_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_bool_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     _PyCrossInterpreterData_Init(data, tstate->interp,
             (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
@@ -461,11 +455,11 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
 
 struct _shared_tuple_data {
     Py_ssize_t len;
-    _PyCrossInterpreterData **data;
+    _PyXIData_t **data;
 };
 
 static PyObject *
-_new_tuple_object(_PyCrossInterpreterData *data)
+_new_tuple_object(_PyXIData_t *data)
 {
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
     PyObject *tuple = PyTuple_New(shared->len);
@@ -504,8 +498,7 @@ _tuple_shared_free(void* data)
 }
 
 static int
-_tuple_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
@@ -518,14 +511,14 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     }
 
     shared->len = len;
-    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    shared->data = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
     if (shared->data == NULL) {
         PyErr_NoMemory();
         return -1;
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        _PyXIData_t *data = _PyCrossInterpreterData_New();
         if (data == NULL) {
             goto error;  // PyErr_NoMemory already set
         }

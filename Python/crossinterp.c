@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_simple_func
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
@@ -71,11 +71,10 @@ static crossinterpdatafunc lookup_getdata(PyInterpreterState *, PyObject *);
 
 /* lifecycle */
 
-_PyCrossInterpreterData *
+_PyXIData_t *
 _PyCrossInterpreterData_New(void)
 {
-    _PyCrossInterpreterData *xid = PyMem_RawMalloc(
-                                            sizeof(_PyCrossInterpreterData));
+    _PyXIData_t *xid = PyMem_RawMalloc(sizeof(_PyXIData_t));
     if (xid == NULL) {
         PyErr_NoMemory();
     }
@@ -83,7 +82,7 @@ _PyCrossInterpreterData_New(void)
 }
 
 void
-_PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
+_PyCrossInterpreterData_Free(_PyXIData_t *xid)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     _PyCrossInterpreterData_Clear(interp, xid);
@@ -94,20 +93,20 @@ _PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
 /* defining cross-interpreter data */
 
 static inline void
-_xidata_init(_PyCrossInterpreterData *data)
+_xidata_init(_PyXIData_t *data)
 {
     // If the value is being reused
     // then _xidata_clear() should have been called already.
     assert(data->data == NULL);
     assert(data->obj == NULL);
-    *data = (_PyCrossInterpreterData){0};
+    *data = (_PyXIData_t){0};
     _PyCrossInterpreterData_INTERPID(data) = -1;
 }
 
 static inline void
-_xidata_clear(_PyCrossInterpreterData *data)
+_xidata_clear(_PyXIData_t *data)
 {
-    // _PyCrossInterpreterData only has two members that need to be
+    // _PyXIData_t only has two members that need to be
     // cleaned up, if set: "data" must be freed and "obj" must be decref'ed.
     // In both cases the original (owning) interpreter must be used,
     // which is the caller's responsibility to ensure.
@@ -121,7 +120,7 @@ _xidata_clear(_PyCrossInterpreterData *data)
 }
 
 void
-_PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
+_PyCrossInterpreterData_Init(_PyXIData_t *data,
                              PyInterpreterState *interp,
                              void *shared, PyObject *obj,
                              xid_newobjectfunc new_object)
@@ -145,7 +144,7 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
 }
 
 int
-_PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
+_PyCrossInterpreterData_InitWithSize(_PyXIData_t *data,
                                      PyInterpreterState *interp,
                                      const size_t size, PyObject *obj,
                                      xid_newobjectfunc new_object)
@@ -164,8 +163,7 @@ _PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
 }
 
 void
-_PyCrossInterpreterData_Clear(PyInterpreterState *interp,
-                              _PyCrossInterpreterData *data)
+_PyCrossInterpreterData_Clear(PyInterpreterState *interp, _PyXIData_t *data)
 {
     assert(data != NULL);
     // This must be called in the owning interpreter.
@@ -179,7 +177,7 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
 /* using cross-interpreter data */
 
 static int
-_check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
+_check_xidata(PyThreadState *tstate, _PyXIData_t *data)
 {
     // data->data can be anything, including NULL, so we don't check it.
 
@@ -235,13 +233,13 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 }
 
 int
-_PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
+_PyObject_GetCrossInterpreterData(PyObject *obj, _PyXIData_t *data)
 {
     PyThreadState *tstate = PyThreadState_Get();
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.
-    *data = (_PyCrossInterpreterData){0};
+    *data = (_PyXIData_t){0};
     _PyCrossInterpreterData_INTERPID(data) = -1;
 
     // Call the "getdata" func for the object.
@@ -271,7 +269,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 }
 
 PyObject *
-_PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
+_PyCrossInterpreterData_NewObject(_PyXIData_t *data)
 {
     return data->new_object(data);
 }
@@ -279,12 +277,12 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 static int
 _call_clear_xidata(void *data)
 {
-    _xidata_clear((_PyCrossInterpreterData *)data);
+    _xidata_clear((_PyXIData_t *)data);
     return 0;
 }
 
 static int
-_xidata_release(_PyCrossInterpreterData *data, int rawfree)
+_xidata_release(_PyXIData_t *data, int rawfree)
 {
     if ((data->data == NULL || data->free == NULL) && data->obj == NULL) {
         // Nothing to release!
@@ -321,13 +319,13 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
 }
 
 int
-_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+_PyCrossInterpreterData_Release(_PyXIData_t *data)
 {
     return _xidata_release(data, 0);
 }
 
 int
-_PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
+_PyCrossInterpreterData_ReleaseAndRawFree(_PyXIData_t *data)
 {
     return _xidata_release(data, 1);
 }
@@ -446,7 +444,7 @@ _format_TracebackException(PyObject *tbexc)
 
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int rawfree)
+_release_xid_data(_PyXIData_t *data, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
     int res = rawfree
@@ -1094,7 +1092,7 @@ _PyXI_ApplyError(_PyXI_error *error)
 
 typedef struct _sharednsitem {
     const char *name;
-    _PyCrossInterpreterData *data;
+    _PyXIData_t *data;
     // We could have a "PyCrossInterpreterData _data" field, so it would
     // be allocated as part of the item and avoid an extra allocation.
     // However, doing so adds a bunch of complexity because we must
@@ -1141,7 +1139,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 {
     assert(_sharednsitem_is_initialized(item));
     assert(item->data == NULL);
-    item->data = PyMem_RawMalloc(sizeof(_PyCrossInterpreterData));
+    item->data = PyMem_RawMalloc(sizeof(_PyXIData_t));
     if (item->data == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -1159,7 +1157,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 static void
 _sharednsitem_clear_value(_PyXI_namespace_item *item)
 {
-    _PyCrossInterpreterData *data = item->data;
+    _PyXIData_t *data = item->data;
     if (data != NULL) {
         item->data = NULL;
         int rawfree = 1;

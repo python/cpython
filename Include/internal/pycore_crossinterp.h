@@ -38,11 +38,11 @@ extern int _Py_CallInInterpreterAndRawFree(
 /* cross-interpreter data */
 /**************************/
 
-typedef struct _xid _PyCrossInterpreterData;
-typedef PyObject *(*xid_newobjectfunc)(_PyCrossInterpreterData *);
+typedef struct _xid _PyXIData_t;
+typedef PyObject *(*xid_newobjectfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
+// _PyXIData_t is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
 struct _xid {
@@ -84,8 +84,8 @@ struct _xid {
     xid_freefunc free;
 };
 
-PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
+PyAPI_FUNC(_PyXIData_t *) _PyCrossInterpreterData_New(void);
+PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyXIData_t *data);
 
 #define _PyCrossInterpreterData_DATA(DATA) ((DATA)->data)
 #define _PyCrossInterpreterData_OBJ(DATA) ((DATA)->obj)
@@ -96,15 +96,15 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
 /* defining cross-interpreter data */
 
 PyAPI_FUNC(void) _PyCrossInterpreterData_Init(
-        _PyCrossInterpreterData *data,
+        _PyXIData_t *data,
         PyInterpreterState *interp, void *shared, PyObject *obj,
         xid_newobjectfunc new_object);
 PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
-        _PyCrossInterpreterData *,
+        _PyXIData_t *,
         PyInterpreterState *interp, const size_t, PyObject *,
         xid_newobjectfunc);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
-        PyInterpreterState *, _PyCrossInterpreterData *);
+        PyInterpreterState *, _PyXIData_t *);
 
 // Normally the Init* functions are sufficient.  The only time
 // additional initialization might be needed is to set the "free" func,
@@ -129,10 +129,10 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
 /* using cross-interpreter data */
 
 PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyXIData_t *);
+PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyXIData_t *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyXIData_t *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyXIData_t *);
 
 
 /* cross-interpreter data registry */
@@ -142,7 +142,7 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterDat
 // crossinterpdatafunc. It would be simpler and more efficient.
 
 typedef int (*crossinterpdatafunc)(PyThreadState *tstate, PyObject *,
-                                   _PyCrossInterpreterData *);
+                                   _PyXIData_t *);
 
 struct _xidregitem;
 

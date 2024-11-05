@@ -6,7 +6,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 
 #define REGISTERS_HEAP_TYPES
 #define HAS_UNBOUND_ITEMS
@@ -30,7 +30,7 @@
 #define XID_FREE 2
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int flags)
+_release_xid_data(_PyXIData_t *data, int flags)
 {
     int ignoreexc = flags & XID_IGNORE_EXC;
     PyObject *exc;
@@ -400,7 +400,7 @@ typedef struct _queueitem {
        This is necessary because item->data might be NULL,
        meaning the interpreter has been destroyed. */
     int64_t interpid;
-    _PyCrossInterpreterData *data;
+    _PyXIData_t *data;
     int fmt;
     int unboundop;
     struct _queueitem *next;
@@ -408,8 +408,7 @@ typedef struct _queueitem {
 
 static void
 _queueitem_init(_queueitem *item,
-                int64_t interpid, _PyCrossInterpreterData *data,
-                int fmt, int unboundop)
+                int64_t interpid, _PyXIData_t *data, int fmt, int unboundop)
 {
     if (interpid < 0) {
         interpid = _get_interpid(data);
@@ -447,8 +446,7 @@ _queueitem_clear(_queueitem *item)
 }
 
 static _queueitem *
-_queueitem_new(int64_t interpid, _PyCrossInterpreterData *data,
-               int fmt, int unboundop)
+_queueitem_new(int64_t interpid, _PyXIData_t *data, int fmt, int unboundop)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
@@ -478,7 +476,7 @@ _queueitem_free_all(_queueitem *item)
 
 static void
 _queueitem_popped(_queueitem *item,
-                  _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
+                  _PyXIData_t **p_data, int *p_fmt, int *p_unboundop)
 {
     *p_data = item->data;
     *p_fmt = item->fmt;
@@ -633,7 +631,7 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, int64_t interpid, _PyCrossInterpreterData *data,
+_queue_add(_queue *queue, int64_t interpid, _PyXIData_t *data,
            int fmt, int unboundop)
 {
     int err = _queue_lock(queue);
@@ -671,7 +669,7 @@ _queue_add(_queue *queue, int64_t interpid, _PyCrossInterpreterData *data,
 
 static int
 _queue_next(_queue *queue,
-            _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
+            _PyXIData_t **p_data, int *p_fmt, int *p_unboundop)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -1138,7 +1136,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
     assert(queue != NULL);
 
     // Convert the object to cross-interpreter data.
-    _PyCrossInterpreterData *data = GLOBAL_MALLOC(_PyCrossInterpreterData);
+    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
     if (data == NULL) {
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;
@@ -1184,7 +1182,7 @@ queue_get(_queues *queues, int64_t qid,
     assert(queue != NULL);
 
     // Pop off the next item from the queue.
-    _PyCrossInterpreterData *data = NULL;
+    _PyXIData_t *data = NULL;
     err = _queue_next(queue, &data, p_fmt, p_unboundop);
     _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
@@ -1258,8 +1256,7 @@ queue_get_count(_queues *queues, int64_t qid, Py_ssize_t *p_count)
 
 /* external Queue objects ***************************************************/
 
-static int _queueobj_shared(PyThreadState *,
-                            PyObject *, _PyCrossInterpreterData *);
+static int _queueobj_shared(PyThreadState *, PyObject *, _PyXIData_t *);
 
 static int
 set_external_queue_type(module_state *state, PyTypeObject *queue_type)
@@ -1339,7 +1336,7 @@ _queueid_xid_free(void *data)
 }
 
 static PyObject *
-_queueobj_from_xid(_PyCrossInterpreterData *data)
+_queueobj_from_xid(_PyXIData_t *data)
 {
     int64_t qid = *(int64_t *)_PyCrossInterpreterData_DATA(data);
     PyObject *qidobj = PyLong_FromLongLong(qid);
@@ -1367,8 +1364,7 @@ _queueobj_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
-                 _PyCrossInterpreterData *data)
+_queueobj_shared(PyThreadState *tstate, PyObject *queueobj, _PyXIData_t *data)
 {
     PyObject *qidobj = PyObject_GetAttrString(queueobj, "_id");
     if (qidobj == NULL) {
