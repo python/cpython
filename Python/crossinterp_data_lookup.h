@@ -1,3 +1,5 @@
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 
 static xidatafunc _lookup_getdata_from_registry(PyInterpreterState *, PyObject *);
 

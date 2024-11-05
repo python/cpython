@@ -7,7 +7,6 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
 /**************/
