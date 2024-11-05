@@ -77,6 +77,10 @@ def _managed_dict_offset():
     else:
         return -3 * _sizeof_void_p()
 
+def _interp_frame_has_tlbc_index():
+    interp_frame = gdb.lookup_type("_PyInterpreterFrame")
+    return any(field.name == "tlbc_index" for field in interp_frame.fields())
+
 
 Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
@@ -104,6 +108,8 @@ ENCODING = locale.getpreferredencoding()
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
+
+INTERP_FRAME_HAS_TLBC_INDEX = _interp_frame_has_tlbc_index()
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -158,8 +164,11 @@ class PyObjectPtr(object):
 
     def __init__(self, gdbval, cast_to=None):
         # Clear the tagged pointer
-        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
-        if cast_to:
+        if gdbval.type.name == '_PyStackRef':
+            if cast_to is None:
+                cast_to = gdb.lookup_type('PyObject').pointer()
+            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+        elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
             self._gdbval = gdbval
@@ -690,6 +699,16 @@ def parse_location_table(firstlineno, linetable):
         yield addr, end_addr, line
         addr = end_addr
 
+
+class PyCodeArrayPtr:
+    def __init__(self, gdbval):
+        self._gdbval = gdbval
+
+    def get_entry(self, index):
+        assert (index >= 0) and (index < self._gdbval["size"])
+        return self._gdbval["entries"][index]
+
+
 class PyCodeObjectPtr(PyObjectPtr):
     """
     Class wrapping a gdb.Value that's a PyCodeObject* i.e. a <code> instance
@@ -1052,7 +1071,7 @@ class PyFramePtr:
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
 
-        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+        localsplus = self._gdbval["localsplus"]
 
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
@@ -1082,7 +1101,12 @@ class PyFramePtr:
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
         instr_ptr = self._gdbval["instr_ptr"]
-        first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
+        if INTERP_FRAME_HAS_TLBC_INDEX:
+            tlbc_index = self._gdbval["tlbc_index"]
+            code_arr = PyCodeArrayPtr(self._f_code().field("co_tlbc"))
+            first_instr = code_arr.get_entry(tlbc_index).cast(codeunit_p)
+        else:
+            first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
@@ -1581,7 +1605,10 @@ class PyObjectPtrPrinter:
             return stringify(proxyval)
 
 def pretty_printer_lookup(gdbval):
-    type = gdbval.type.unqualified()
+    type = gdbval.type.strip_typedefs().unqualified()
+    if type.code == gdb.TYPE_CODE_UNION and type.tag == '_PyStackRef':
+        return PyObjectPtrPrinter(gdbval)
+
     if type.code != gdb.TYPE_CODE_PTR:
         return None
 

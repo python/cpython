@@ -65,14 +65,12 @@
 struct _PyCompiler;
 typedef struct _PyCompiler compiler;
 
-#define IS_TOP_LEVEL_AWAIT(C) _PyCompile_IsTopLevelAwait(C)
 #define INSTR_SEQUENCE(C) _PyCompile_InstrSequence(C)
 #define FUTURE_FEATURES(C) _PyCompile_FutureFeatures(C)
 #define SYMTABLE(C) _PyCompile_Symtable(C)
 #define SYMTABLE_ENTRY(C) _PyCompile_SymtableEntry(C)
 #define OPTIMIZATION_LEVEL(C) _PyCompile_OptimizationLevel(C)
-#define IS_INTERACTIVE(C) _PyCompile_IsInteractive(C)
-#define IS_NESTED_SCOPE(C) _PyCompile_IsNestedScope(C)
+#define IS_INTERACTIVE_TOP_LEVEL(C) _PyCompile_IsInteractiveTopLevel(C)
 #define SCOPE_TYPE(C) _PyCompile_ScopeType(C)
 #define QUALNAME(C) _PyCompile_Qualname(C)
 #define METADATA(C) _PyCompile_Metadata(C)
@@ -196,6 +194,7 @@ static int codegen_visit_expr(compiler *, expr_ty);
 static int codegen_augassign(compiler *, stmt_ty);
 static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
+static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
 static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
@@ -281,6 +280,14 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
+    if (PyLong_CheckExact(o)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(o, &overflow);
+        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
+            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
+            return SUCCESS;
+        }
+    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
@@ -657,6 +664,9 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
+    // Insert None into consts to prevent an annotation
+    // appearing to be a docstring
+    _PyCompile_AddConst(c, Py_None);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -747,7 +757,7 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
    and for annotations. */
 
 int
-_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
+_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interactive)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -759,23 +769,22 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    if (!IS_INTERACTIVE(c)) {
+    if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
         PyObject *docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             first_instr = 1;
-            /* if not -OO mode, set docstring */
-            if (OPTIMIZATION_LEVEL(c) < 2) {
-                PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-                if (cleandoc == NULL) {
-                    return ERROR;
-                }
-                stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-                assert(st->kind == Expr_kind);
-                location loc = LOC(st->v.Expr.value);
-                ADDOP_LOAD_CONST(c, loc, cleandoc);
-                Py_DECREF(cleandoc);
-                RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
+            /* set docstring */
+            assert(OPTIMIZATION_LEVEL(c) < 2);
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
             }
+            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
+            RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
@@ -1004,25 +1013,21 @@ codegen_annotations(compiler *c, location loc,
     PySTEntryObject *ste;
     RETURN_IF_ERROR(_PySymtable_LookupOptional(SYMTABLE(c), args, &ste));
     assert(ste != NULL);
-    bool annotations_used = ste->ste_annotations_used;
 
-    int err = annotations_used ?
-        codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name) : SUCCESS;
-    Py_DECREF(ste);
-    RETURN_IF_ERROR(err);
-
-    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (annotations_used) {
-            _PyCompile_ExitScope(c);
-        }
-        return ERROR;
-    }
-
-    if (annotations_used) {
+    if (ste->ste_annotations_used) {
+        int err = codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name);
+        Py_DECREF(ste);
+        RETURN_IF_ERROR(err);
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
+        );
         RETURN_IF_ERROR(
             codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
+    }
+    else {
+        Py_DECREF(ste);
     }
 
     return 0;
@@ -1230,23 +1235,18 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
+    assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
     if (docstring) {
         first_instr = 1;
-        /* if not -OO mode, add docstring */
-        if (OPTIMIZATION_LEVEL(c) < 2) {
-            docstring = _PyCompile_CleanDoc(docstring);
-            if (docstring == NULL) {
-                _PyCompile_ExitScope(c);
-                return ERROR;
-            }
+        docstring = _PyCompile_CleanDoc(docstring);
+        if (docstring == NULL) {
+            _PyCompile_ExitScope(c);
+            return ERROR;
         }
-        else {
-            docstring = NULL;
-        }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        Py_DECREF(docstring);
+        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
-    Py_ssize_t idx = _PyCompile_AddConst(c, docstring ? docstring : Py_None);
-    Py_XDECREF(docstring);
-    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
@@ -1443,7 +1443,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
-    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body));
+    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body, false));
     PyObject *static_attributes = _PyCompile_StaticAttributesAsTuple(c);
     if (static_attributes == NULL) {
         _PyCompile_ExitScope(c);
@@ -2834,7 +2834,7 @@ codegen_assert(compiler *c, stmt_ty s)
 static int
 codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 {
-    if (IS_INTERACTIVE(c) && !IS_NESTED_SCOPE(c)) {
+    if (IS_INTERACTIVE_TOP_LEVEL(c)) {
         VISIT(c, expr, value);
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
         ADDOP(c, NO_LOCATION, POP_TOP);
@@ -3152,17 +3152,15 @@ codegen_boolop(compiler *c, expr_ty e)
     location loc = LOC(e);
     assert(e->kind == BoolOp_kind);
     if (e->v.BoolOp.op == And)
-        jumpi = POP_JUMP_IF_FALSE;
+        jumpi = JUMP_IF_FALSE;
     else
-        jumpi = POP_JUMP_IF_TRUE;
+        jumpi = JUMP_IF_TRUE;
     NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
-        ADDOP_I(c, loc, COPY, 1);
-        ADDOP(c, loc, TO_BOOL);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
@@ -4089,9 +4087,12 @@ codegen_call_helper(compiler *c, location loc,
     return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
 }
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
@@ -4177,6 +4178,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
 
     if (IS_JUMP_TARGET_LABEL(start)) {
         depth++;
+        ADDOP(c, LOC(gen->iter), GET_ITER);
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
@@ -4503,10 +4505,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
-#ifndef NDEBUG
-    int scope_type = SCOPE_TYPE(c);
-    int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-#endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
     if (entry == NULL) {
         goto error;
@@ -4536,12 +4534,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         }
     }
     Py_CLEAR(entry);
-
-    assert (!is_async_comprehension ||
-            type == COMP_GENEXP ||
-            scope_type == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            scope_type == COMPILE_SCOPE_COMPREHENSION ||
-            is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;
@@ -4967,11 +4959,6 @@ codegen_visit_expr(compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
-            SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            SCOPE_TYPE(c) == COMPILE_SCOPE_COMPREHENSION
-        )));
-
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -5034,12 +5021,8 @@ codegen_visit_expr(compiler *c, expr_ty e)
         }
         break;
     case Slice_kind:
-    {
-        int n = codegen_slice(c, e);
-        RETURN_IF_ERROR(n);
-        ADDOP_I(c, loc, BUILD_SLICE, n);
+        RETURN_IF_ERROR(codegen_slice(c, e));
         break;
-    }
     case Name_kind:
         return codegen_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5052,9 +5035,22 @@ codegen_visit_expr(compiler *c, expr_ty e)
 }
 
 static bool
-is_two_element_slice(expr_ty s)
+is_constant_slice(expr_ty s)
 {
     return s->kind == Slice_kind &&
+        (s->v.Slice.lower == NULL ||
+         s->v.Slice.lower->kind == Constant_kind) &&
+        (s->v.Slice.upper == NULL ||
+         s->v.Slice.upper->kind == Constant_kind) &&
+        (s->v.Slice.step == NULL ||
+         s->v.Slice.step->kind == Constant_kind);
+}
+
+static bool
+should_apply_two_element_slice_optimization(expr_ty s)
+{
+    return !is_constant_slice(s) &&
+           s->kind == Slice_kind &&
            s->v.Slice.step == NULL;
 }
 
@@ -5075,8 +5071,8 @@ codegen_augassign(compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
-        if (is_two_element_slice(e->v.Subscript.slice)) {
-            RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
+        if (should_apply_two_element_slice_optimization(e->v.Subscript.slice)) {
+            RETURN_IF_ERROR(codegen_slice_two_parts(c, e->v.Subscript.slice));
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
@@ -5113,7 +5109,7 @@ codegen_augassign(compiler *c, stmt_ty s)
         ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        if (is_two_element_slice(e->v.Subscript.slice)) {
+        if (should_apply_two_element_slice_optimization(e->v.Subscript.slice)) {
             ADDOP_I(c, loc, SWAP, 4);
             ADDOP_I(c, loc, SWAP, 3);
             ADDOP_I(c, loc, SWAP, 2);
@@ -5260,8 +5256,10 @@ codegen_subscript(compiler *c, expr_ty e)
     }
 
     VISIT(c, expr, e->v.Subscript.value);
-    if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
+    if (should_apply_two_element_slice_optimization(e->v.Subscript.slice) &&
+        ctx != Del
+    ) {
+        RETURN_IF_ERROR(codegen_slice_two_parts(c, e->v.Subscript.slice));
         if (ctx == Load) {
             ADDOP(c, loc, BINARY_SLICE);
         }
@@ -5283,15 +5281,9 @@ codegen_subscript(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-/* Returns the number of the values emitted,
- * thus are needed to build the slice, or -1 if there is an error. */
 static int
-codegen_slice(compiler *c, expr_ty s)
+codegen_slice_two_parts(compiler *c, expr_ty s)
 {
-    int n = 2;
-    assert(s->kind == Slice_kind);
-
-    /* only handles the cases where BUILD_SLICE is emitted */
     if (s->v.Slice.lower) {
         VISIT(c, expr, s->v.Slice.lower);
     }
@@ -5306,11 +5298,45 @@ codegen_slice(compiler *c, expr_ty s)
         ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
+    return 0;
+}
+
+static int
+codegen_slice(compiler *c, expr_ty s)
+{
+    int n = 2;
+    assert(s->kind == Slice_kind);
+
+    if (is_constant_slice(s)) {
+        PyObject *start = NULL;
+        if (s->v.Slice.lower) {
+            start = s->v.Slice.lower->v.Constant.value;
+        }
+        PyObject *stop = NULL;
+        if (s->v.Slice.upper) {
+            stop = s->v.Slice.upper->v.Constant.value;
+        }
+        PyObject *step = NULL;
+        if (s->v.Slice.step) {
+            step = s->v.Slice.step->v.Constant.value;
+        }
+        PyObject *slice = PySlice_New(start, stop, step);
+        if (slice == NULL) {
+            return ERROR;
+        }
+        ADDOP_LOAD_CONST_NEW(c, LOC(s), slice);
+        return SUCCESS;
+    }
+
+    RETURN_IF_ERROR(codegen_slice_two_parts(c, s));
+
     if (s->v.Slice.step) {
         n++;
         VISIT(c, expr, s->v.Slice.step);
     }
-    return n;
+
+    ADDOP_I(c, LOC(s), BUILD_SLICE, n);
+    return SUCCESS;
 }
 
 
