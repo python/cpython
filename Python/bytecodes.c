@@ -197,7 +197,7 @@ dummy_func(
                 _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                 ERROR_IF(bytecode == NULL, error);
-                int off = this_instr - _PyFrame_GetBytecode(frame);
+                ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                 frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                 frame->instr_ptr = bytecode + off;
                 // Make sure this_instr gets reset correctley for any uops that
@@ -2811,11 +2811,12 @@ dummy_func(
             }
             else {
                 /* `iterable` is not a generator. */
-                iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                PyObject *iter_o = PyObject_GetIter(iterable_o);
                 DEAD(iterable);
-                if (PyStackRef_IsNull(iter)) {
+                if (iter_o == NULL) {
                     ERROR_NO_POP();
                 }
+                iter = PyStackRef_FromPyObjectSteal(iter_o);
                 DECREF_INPUTS();
             }
         }

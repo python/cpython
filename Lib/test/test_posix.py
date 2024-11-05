@@ -6,12 +6,14 @@ from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 
+import copy
 import errno
 import sys
 import signal
 import time
 import os
 import platform
+import pickle
 import stat
 import tempfile
 import unittest
@@ -1316,6 +1318,25 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
         param = posix.sched_param(sched_priority=-large)
         self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
+
+    @requires_sched
+    def test_sched_param(self):
+        param = posix.sched_param(1)
+        for proto in range(pickle.HIGHEST_PROTOCOL+1):
+            newparam = pickle.loads(pickle.dumps(param, proto))
+            self.assertEqual(newparam, param)
+        newparam = copy.copy(param)
+        self.assertIsNot(newparam, param)
+        self.assertEqual(newparam, param)
+        newparam = copy.deepcopy(param)
+        self.assertIsNot(newparam, param)
+        self.assertEqual(newparam, param)
+        newparam = copy.replace(param)
+        self.assertIsNot(newparam, param)
+        self.assertEqual(newparam, param)
+        newparam = copy.replace(param, sched_priority=0)
+        self.assertNotEqual(newparam, param)
+        self.assertEqual(newparam.sched_priority, 0)
 
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):

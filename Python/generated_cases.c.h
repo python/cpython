@@ -4304,11 +4304,12 @@
                 else {
                     /* `iterable` is not a generator. */
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                    PyObject *iter_o = PyObject_GetIter(iterable_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (PyStackRef_IsNull(iter)) {
+                    if (iter_o == NULL) {
                         goto error;
                     }
+                    iter = PyStackRef_FromPyObjectSteal(iter_o);
                     PyStackRef_CLOSE(iterable);
                 }
             }
@@ -4841,7 +4842,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) goto error;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;
@@ -6898,7 +6899,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) goto error;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;
