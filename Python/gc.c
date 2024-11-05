@@ -1320,6 +1320,7 @@ gc_collect_young(PyThreadState *tstate,
 
     PyGC_Head survivors;
     gc_list_init(&survivors);
+    gc_list_set_space(young, gcstate->visited_space);
     gc_collect_region(tstate, young, &survivors, UNTRACK_TUPLES, stats);
     Py_ssize_t survivor_count = 0;
     if (gcstate->visited_space) {
@@ -1407,6 +1408,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
          * have been marked as visited */
         assert(IS_IN_VISITED(gc, gcstate->visited_space));
         PyObject *op = FROM_GC(gc);
+        assert(_PyObject_GC_IS_TRACKED(op));
         if (_Py_IsImmortal(op)) {
             PyGC_Head *next = GC_NEXT(gc);
             gc_list_move(gc, &get_gc_state()->permanent_generation.head);
@@ -1426,88 +1428,49 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
 static void
 completed_cycle(GCState *gcstate)
 {
-#ifdef Py_DEBUG
-    PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
-    assert(gc_list_is_empty(not_visited));
-#endif
-    gcstate->visited_space = flip_old_space(gcstate->visited_space);
+    assert(gc_list_is_empty(&gcstate->old[gcstate->visited_space^1].head));
+    int not_visited = gcstate->visited_space;
+    gcstate->visited_space = flip_old_space(not_visited);
     /* Make sure all young objects have old space bit set correctly */
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *gc = GC_NEXT(young);
     while (gc != young) {
         PyGC_Head *next = GC_NEXT(gc);
-        gc_set_old_space(gc, gcstate->visited_space);
+        gc_set_old_space(gc, not_visited);
         gc = next;
     }
     gcstate->work_to_do = 0;
     gcstate->phase = GC_PHASE_MARK;
 }
 
-static void
-gc_mark(PyThreadState *tstate, struct gc_collection_stats *stats)
+static int
+move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
 {
-    // TO DO -- Make this incremental
-    GCState *gcstate = &tstate->interp->gc;
-    validate_old(gcstate);
-    PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    PyGC_Head reachable;
-    gc_list_init(&reachable);
-    // Move all reachable objects into visited space.
-    PyGC_Head *gc = AS_GC(tstate->interp->sysdict);
-    Py_ssize_t objects_marked = 0;
-    if (gc_old_space(gc) != gcstate->visited_space) {
-        gc_flip_old_space(gc);
-        gc_list_move(gc, &reachable);
-        objects_marked++;
-    }
-    gc = AS_GC(tstate->interp->builtins);
-    if (gc_old_space(gc) != gcstate->visited_space) {
-        gc_flip_old_space(gc);
-        gc_list_move(gc, &reachable);
-        objects_marked++;
-    }
-    // Move all objects on stacks to reachable
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(tstate->interp);
-    HEAD_UNLOCK(runtime);
-    while (ts) {
-        _PyInterpreterFrame *frame = ts->current_frame;
-        while (frame) {
-            _PyStackRef *locals = frame->localsplus;
-            _PyStackRef *sp = frame->stackpointer;
-            while (sp > locals) {
-                sp--;
-                if (PyStackRef_IsNull(*sp)) {
-                    continue;
-                }
-                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
-                if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
-                   PyGC_Head *gc = AS_GC(op);
-                    if (_PyObject_GC_IS_TRACKED(op) &&
-                        gc_old_space(gc) != gcstate->visited_space) {
-                        gc_flip_old_space(gc);
-                        objects_marked++;
-                        gc_list_move(gc, &reachable);
-                    }
-                }
-            }
-            frame = frame->previous;
+    if (op != NULL && !_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
+        PyGC_Head *gc = AS_GC(op);
+        if (_PyObject_GC_IS_TRACKED(op) &&
+            gc_old_space(gc) != visited_space) {
+            gc_flip_old_space(gc);
+            gc_list_move(gc, reachable);
+            return 1;
         }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
     }
+    return 0;
+}
+
+static int
+mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
+{
     // Transitively traverse all objects from reachable, until empty
     struct container_and_flag arg = {
-        .container = &reachable,
-        .visited_space = gcstate->visited_space,
+        .container = reachable,
+        .visited_space = visited_space,
         .mark = 1,
         .size = 0
     };
-    while (!gc_list_is_empty(&reachable)) {
-        PyGC_Head *gc = _PyGCHead_NEXT(&reachable);
-        assert(gc_old_space(gc) == gcstate->visited_space);
+    while (!gc_list_is_empty(reachable)) {
+        PyGC_Head *gc = _PyGCHead_NEXT(reachable);
+        assert(gc_old_space(gc) == visited_space);
         gc_list_move(gc, visited);
         PyObject *op = FROM_GC(gc);
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
@@ -1515,8 +1478,87 @@ gc_mark(PyThreadState *tstate, struct gc_collection_stats *stats)
                         visit_add_to_container,
                         &arg);
     }
-    objects_marked += arg.size;
+    gc_list_validate_space(visited, visited_space);
+    return arg.size;
+}
+
+static int
+mark_global_roots(PyInterpreterState *interp, PyGC_Head *visited, int visited_space)
+{
+    PyGC_Head reachable;
+    gc_list_init(&reachable);
+    Py_ssize_t objects_marked = 0;
+    objects_marked += move_to_reachable(interp->sysdict, &reachable, visited_space);
+    objects_marked += move_to_reachable(interp->builtins, &reachable, visited_space);
+    objects_marked += move_to_reachable(interp->dict, &reachable, visited_space);
+    objects_marked += mark_all_reachable(&reachable, visited, visited_space);
+    assert(gc_list_is_empty(&reachable));
+    return objects_marked;
+}
+
+static int
+mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, bool start)
+{
+    PyGC_Head reachable;
+    gc_list_init(&reachable);
+    Py_ssize_t objects_marked = 0;
+    // Move all objects on stacks to reachable
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+    while (ts) {
+        _PyInterpreterFrame *frame = ts->current_frame;
+        while (frame) {
+            _PyStackRef *locals = frame->localsplus;
+            _PyStackRef *sp = frame->stackpointer;
+            if (frame->owner != FRAME_OWNED_BY_CSTACK) {
+                objects_marked += move_to_reachable(frame->f_locals, &reachable, visited_space);
+                PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                objects_marked += move_to_reachable(func, &reachable, visited_space);
+            }
+            while (sp > locals) {
+                sp--;
+                if (PyStackRef_IsNull(*sp)) {
+                    continue;
+                }
+                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
+                if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
+                    PyGC_Head *gc = AS_GC(op);
+                    if (_PyObject_GC_IS_TRACKED(op) &&
+                        gc_old_space(gc) != visited_space) {
+                        gc_flip_old_space(gc);
+                        objects_marked++;
+                        gc_list_move(gc, &reachable);
+                    }
+                }
+            }
+            if (!start && frame->visited) {
+                // If this frame has already been visited, then the lower frames
+                // will have already been visited and will not have changed
+                break;
+            }
+            frame->visited = 1;
+            frame = frame->previous;
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+    objects_marked += mark_all_reachable(&reachable, visited, visited_space);
+    assert(gc_list_is_empty(&reachable));
+    return objects_marked;
+}
+
+static void
+mark_at_start(PyThreadState *tstate)
+{
+    // TO DO -- Make this incremental
+    GCState *gcstate = &tstate->interp->gc;
     validate_old(gcstate);
+    PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    Py_ssize_t objects_marked = mark_global_roots(tstate->interp, visited, gcstate->visited_space);
+    objects_marked += mark_stacks(tstate->interp, visited, gcstate->visited_space, true);
     gcstate->work_to_do -= objects_marked;
 #ifdef Py_STATS
     if (_Py_stats) {
@@ -1531,8 +1573,9 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 {
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
+    gcstate->work_to_do += gcstate->young.count;
     if (gcstate->phase == GC_PHASE_MARK) {
-        gc_mark(tstate, stats);
+        mark_at_start(tstate);
         return;
     }
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
@@ -1543,6 +1586,8 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (scale_factor < 1) {
         scale_factor = 1;
     }
+    gcstate->work_to_do -= mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
+    gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
     gc_list_merge(&gcstate->young.head, &increment);
     gcstate->young.count = 0;
     gc_list_validate_space(&increment, gcstate->visited_space);
@@ -1554,6 +1599,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         PyGC_Head *gc = _PyGCHead_NEXT(not_visited);
         gc_list_move(gc, &increment);
         increment_size++;
+        assert(!_Py_IsImmortal(FROM_GC(gc)));
         gc_set_old_space(gc, gcstate->visited_space);
         increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
@@ -1564,7 +1610,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR/ 2 / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     validate_old(gcstate);
@@ -1585,20 +1631,25 @@ gc_collect_full(PyThreadState *tstate,
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    /* merge all generations into visited */
-    gc_list_validate_space(young, gcstate->visited_space);
-    gc_list_set_space(pending, gcstate->visited_space);
+    mark_global_roots(tstate->interp, visited, gcstate->visited_space);
+    mark_stacks(tstate->interp, visited, gcstate->visited_space, true);
+    /* merge all generations into pending */
+    gc_list_validate_space(young, 1-gcstate->visited_space);
     gc_list_merge(young, pending);
+    gc_list_set_space(visited, 1-gcstate->visited_space);
+    gc_list_merge(visited, pending);
+    /* Mark reachable */
+    mark_global_roots(tstate->interp, visited, gcstate->visited_space);
+    mark_stacks(tstate->interp, visited, gcstate->visited_space, true);
     gcstate->young.count = 0;
-    gc_list_merge(pending, visited);
-
-    gc_collect_region(tstate, visited, visited,
+    gc_list_set_space(pending, gcstate->visited_space);
+    gc_collect_region(tstate, pending, visited,
                       UNTRACK_TUPLES | UNTRACK_DICTS,
                       stats);
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
     gcstate->old[1].count = 0;
-
+    completed_cycle(gcstate);
     gcstate->work_to_do = - gcstate->young.threshold * 2;
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_old(gcstate);
