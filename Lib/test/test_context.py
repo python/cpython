@@ -357,7 +357,7 @@ class ContextTest(unittest.TestCase):
 
         mapping_methods = (
             '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
-            '__ne__','get', 'items', 'keys', 'values',
+            '__ne__', 'get', 'items', 'keys', 'values',
         )
         for name in mapping_methods:
             self.assertTrue(callable(getattr(ctx, name)))
