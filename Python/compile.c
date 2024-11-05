@@ -1285,6 +1285,8 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {

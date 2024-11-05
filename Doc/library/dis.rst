@@ -862,13 +862,6 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
-.. opcode:: RETURN_CONST (consti)
-
-   Returns with ``co_consts[consti]`` to the caller of the function.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -1084,6 +1077,22 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
+
+
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Pushes the integer ``i`` onto the stack.
+   ``i`` must be in ``range(256)``
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Pushes ``co_consts[consti]`` onto the stack.
+   Can be used when the constant value is known to be immortal.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_NAME (namei)
@@ -1553,7 +1562,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1638,7 +1647,7 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 

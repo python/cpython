@@ -1,0 +1,2 @@
+Avoid crashing in :mod:`platform` due to slow WMI calls on some Windows
+machines.

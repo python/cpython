@@ -7,8 +7,10 @@ import io
 import operator
 import os
 import py_compile
+import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import tempfile
@@ -17,10 +19,15 @@ import argparse
 import warnings
 
 from enum import StrEnum
+from pathlib import Path
+from test.support import REPO_ROOT
+from test.support import TEST_HOME_DIR
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import script_helper
+from test.test_tools import skip_if_missing
 from unittest import mock
 
 
@@ -2048,7 +2055,7 @@ class TestFileTypeMissingInitialization(TestCase):
 
     def test(self):
         parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('-x', type=argparse.FileType)
 
         self.assertEqual(
@@ -2370,11 +2377,24 @@ class TestInvalidAction(TestCase):
         self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
 
     def test_modified_invalid_action(self):
-        parser = ErrorRaisingArgumentParser()
+        parser = argparse.ArgumentParser(exit_on_error=False)
         action = parser.add_argument('--foo')
         # Someone got crazy and did this
         action.type = 1
-        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+        self.assertRaisesRegex(TypeError, '1 is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        action.type = ()
+        self.assertRaisesRegex(TypeError, r'\(\) is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        # It is impossible to distinguish a TypeError raised due to a mismatch
+        # of the required function arguments from a TypeError raised for an incorrect
+        # argument value, and using the heavy inspection machinery is not worthwhile
+        # as it does not reliably work in all cases.
+        # Therefore, a generic ArgumentError is raised to handle this logical error.
+        action.type = pow
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "argument --foo: invalid pow value: 'bar'",
+                               parser.parse_args, ['--foo', 'bar'])
 
 
 # ================
@@ -2412,7 +2432,7 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertRaisesRegex(argparse.ArgumentError,
+        self.assertRaisesRegex(ValueError,
                                'cannot have multiple subparser arguments',
                                parser.add_subparsers)
 
@@ -5570,20 +5590,27 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
-        self.assertValueError('--')
-        self.assertValueError('---')
+        self.assertTypeError('-', errmsg='dest= is required')
+        self.assertTypeError('--', errmsg='dest= is required')
+        self.assertTypeError('---', errmsg='dest= is required')
 
     def test_invalid_prefix(self):
-        self.assertValueError('--foo', '+foo')
+        self.assertValueError('--foo', '+foo',
+                              errmsg='must start with a character')
 
     def test_invalid_type(self):
-        self.assertValueError('--foo', type='int')
-        self.assertValueError('--foo', type=(int, float))
+        self.assertTypeError('--foo', type='int',
+                             errmsg="'int' is not callable")
+        self.assertTypeError('--foo', type=(int, float),
+                             errmsg='is not callable')
 
     def test_invalid_action(self):
-        self.assertValueError('-x', action='foo')
-        self.assertValueError('foo', action='baz')
-        self.assertValueError('--foo', action=('store', 'append'))
+        self.assertValueError('-x', action='foo',
+                              errmsg='unknown action')
+        self.assertValueError('foo', action='baz',
+                              errmsg='unknown action')
+        self.assertValueError('--foo', action=('store', 'append'),
+                              errmsg='unknown action')
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
@@ -5598,7 +5625,7 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('bar', dest='baz')
         self.assertIn('dest supplied twice for positional argument,'
                       ' did you mean metavar?',
@@ -5769,14 +5796,18 @@ class TestConflictHandling(TestCase):
         parser = argparse.ArgumentParser()
         sp = parser.add_subparsers()
         sp.add_parser('fullname', aliases=['alias'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'fullname')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'alias')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['fullname'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['alias'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: fullname',
+                               sp.add_parser, 'fullname')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: alias',
+                               sp.add_parser, 'alias')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: fullname',
+                               sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: alias',
+                               sp.add_parser, 'other', aliases=['alias'])
 
 
 # =============================
@@ -7057,6 +7088,55 @@ class TestProgName(TestCase):
     def test_directory_in_zipfile_compiled(self):
         self.test_directory_in_zipfile(compiled=True)
 
+# =================
+# Translation tests
+# =================
+
+pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
+snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
+
+msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
+msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
+
+
+@requires_subprocess()
+class TestTranslations(unittest.TestCase):
+
+    def test_translations(self):
+        # Test messages extracted from the argparse module against a snapshot
+        skip_if_missing('i18n')
+        res = generate_po_file(stdout_only=False)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(res.stderr, '')
+        msgids = extract_msgids(res.stdout)
+        snapshot = snapshot_path.read_text().splitlines()
+        self.assertListEqual(msgids, snapshot)
+
+
+def generate_po_file(*, stdout_only=True):
+    res = subprocess.run([sys.executable, pygettext,
+                          '--no-location', '-o', '-', argparse.__file__],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if stdout_only:
+        return res.stdout
+    return res
+
+
+def extract_msgids(po):
+    msgids = []
+    for msgid in msgid_pattern.findall(po):
+        msgid_string = ''.join(msgid_string_pattern.findall(msgid))
+        msgid_string = msgid_string.replace(r'\"', '"')
+        if msgid_string:
+            msgids.append(msgid_string)
+    return sorted(msgids)
+
+
+def update_translation_snapshots():
+    contents = generate_po_file()
+    msgids = extract_msgids(contents)
+    snapshot_path.write_text('\n'.join(msgids))
+
 
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
@@ -7065,4 +7145,8 @@ def tearDownModule():
 
 
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots()
+        sys.exit(0)
     unittest.main()
