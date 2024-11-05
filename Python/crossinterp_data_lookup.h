@@ -2,7 +2,7 @@
 
 
 typedef struct _xidregistry dlregistry_t;
-typedef struct _xidregitem dlregitem_t;
+typedef _PyXIData_regitem_t dlregitem_t;
 
 
 // forward

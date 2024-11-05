@@ -7,24 +7,24 @@
 // alternative would be to add a tp_* slot for a class's
 // xidatafunc. It would be simpler and more efficient.
 
-struct _xidregitem;
+struct _xid_regitem;
 
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
+typedef struct _xid_regitem {
+    struct _xid_regitem *prev;
+    struct _xid_regitem *next;
     /* This can be a dangling pointer, but only if weakref is set. */
     PyTypeObject *cls;
     /* This is NULL for builtin types. */
     PyObject *weakref;
     size_t refcount;
     xidatafunc getdata;
-};
+} _PyXIData_regitem_t;
 
 struct _xidregistry {
     int global;  /* builtin types or heap types */
     int initialized;
     PyMutex mutex;
-    struct _xidregitem *head;
+    _PyXIData_regitem_t *head;
 };
 
 PyAPI_FUNC(int) _PyXIData_RegisterClass(PyTypeObject *, xidatafunc);
