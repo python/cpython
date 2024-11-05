@@ -193,10 +193,17 @@ typedef struct {
 #define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
 #define _PyXI_GET_STATE(interp) (&(interp)->xi)
 
+#ifndef Py_BUILD_CORE_MODULE
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
+#endif  // Py_BUILD_CORE_MODULE
+
+int _Py_xi_global_state_init(_PyXI_global_state_t *);
+void _Py_xi_global_state_fini(_PyXI_global_state_t *);
+int _Py_xi_state_init(_PyXI_state_t *);
+void _Py_xi_state_fini(_PyXI_state_t *);
 
 
 /***************************/

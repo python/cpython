@@ -1868,6 +1868,49 @@ _PyXI_FiniTypes(PyInterpreterState *interp)
     fini_static_exctypes(&_PyXI_GET_STATE(interp)->exceptions, interp);
 }
 
+int
+_Py_xi_global_state_init(_PyXI_global_state_t *state)
+{
+    xid_lookup_init(&state->data_lookup);
+    return 0;
+}
+
+void
+_Py_xi_global_state_fini(_PyXI_global_state_t *state)
+{
+    xid_lookup_fini(&state->data_lookup);
+}
+
+int
+_Py_xi_state_init(_PyXI_state_t *state)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    xid_lookup_init(&state->data_lookup);
+
+    // Initialize exceptions.
+    if (init_exceptions(interp) < 0) {
+        return -1;
+    }
+    if (_init_not_shareable_error_type(state) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+void
+_Py_xi_state_fini(_PyXI_state_t *state)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    // Finalize exceptions.
+    _fini_not_shareable_error_type(state);
+    fini_exceptions(interp);
+
+    // Finalize the XID lookup state (e.g. registry).
+    xid_lookup_fini(&state->data_lookup);
+}
+
 
 /*************/
 /* other API */
