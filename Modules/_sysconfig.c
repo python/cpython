@@ -66,20 +66,7 @@ _sysconfig_config_vars_impl(PyObject *module)
         Py_DECREF(config);
         return NULL;
     }
-#ifdef Py_JIT_ENABLED
-    PyObject *py_jit_enabled;
-    if (Py_JIT_ENABLED == 1) {
-        py_jit_enabled = _PyLong_GetOne();
-    } else {
-        py_jit_enabled = PyLong_FromLong(2);
-    }
-#else
-    PyObject *py_jit_enabled = _PyLong_GetZero();
-#endif
-    if (PyDict_SetItemString(config, "Py_JIT_ENABLED", py_jit_enabled) < 0) {
-        Py_DECREF(config);
-        return NULL;
-    }
+
     return config;
 }
 

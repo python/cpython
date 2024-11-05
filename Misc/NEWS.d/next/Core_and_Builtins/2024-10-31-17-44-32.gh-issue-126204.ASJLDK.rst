@@ -1,2 +1,0 @@
-Add a ``Py_JIT_ENABLED`` variable to ``pyconfig.h`` to help determine if CPython was built
-with JIT or not.
