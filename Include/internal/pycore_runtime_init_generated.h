@@ -557,6 +557,7 @@ extern "C" {
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
+    INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
@@ -755,6 +756,7 @@ extern "C" {
     INIT_ID(_initializing), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
+    INIT_ID(_isatty_open_only), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
@@ -1227,6 +1229,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
@@ -1244,8 +1247,10 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(timeout), \
+    INIT_ID(timer), \
     INIT_ID(times), \
     INIT_ID(timetuple), \
+    INIT_ID(timeunit), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
     INIT_ID(traceback), \

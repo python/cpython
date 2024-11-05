@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
@@ -18,9 +19,8 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
-#include "pycore_typeid.h"        // _PyType_FinalizeThreadLocalRefcounts()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -523,12 +523,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 
     _PyTypes_AfterFork();
 
-    /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
-     * not force the default allocator. */
-    if (_PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex) < 0) {
-        return _PyStatus_ERR("Failed to reinitialize runtime locks");
-    }
-
     PyStatus status = gilstate_tss_reinit(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -629,14 +623,14 @@ init_interpreter(PyInterpreterState *interp,
     assert(id > 0 || (id == 0 && interp == runtime->interpreters.main));
     interp->id = id;
 
+    interp->id_refcount = 0;
+
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    PyStatus status = _PyObject_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    // We would call _PyObject_InitState() at this point
+    // if interp->feature_flags were alredy set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
@@ -654,6 +648,7 @@ init_interpreter(PyInterpreterState *interp,
             interp->monitoring_callables[t][e] = NULL;
 
         }
+        interp->monitoring_tool_versions[t] = 0;
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
@@ -988,10 +983,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(runtime);
 
-    if (interp->id_mutex != NULL) {
-        PyThread_free_lock(interp->id_mutex);
-    }
-
     _Py_qsbr_fini(interp);
 
     _PyObject_FiniState(interp);
@@ -1030,9 +1021,6 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
         // the "current" tstate to be set?
         PyInterpreterState_Clear(interp);  // XXX must activate?
         zapthreads(interp);
-        if (interp->id_mutex != NULL) {
-            PyThread_free_lock(interp->id_mutex);
-        }
         PyInterpreterState *prev_interp = interp;
         interp = interp->next;
         free_interpreter(prev_interp);
@@ -1246,9 +1234,6 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 PyObject *
 _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_IDInitref(interp) != 0) {
-        return NULL;
-    };
     int64_t interpid = interp->id;
     if (interpid < 0) {
         return NULL;
@@ -1258,50 +1243,22 @@ _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
 }
 
 
-int
-_PyInterpreterState_IDInitref(PyInterpreterState *interp)
-{
-    if (interp->id_mutex != NULL) {
-        return 0;
-    }
-    interp->id_mutex = PyThread_allocate_lock();
-    if (interp->id_mutex == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to create init interpreter ID mutex");
-        return -1;
-    }
-    interp->id_refcount = 0;
-    return 0;
-}
 
-
-int
+void
 _PyInterpreterState_IDIncref(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_IDInitref(interp) < 0) {
-        return -1;
-    }
-
-    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
-    interp->id_refcount += 1;
-    PyThread_release_lock(interp->id_mutex);
-    return 0;
+    _Py_atomic_add_ssize(&interp->id_refcount, 1);
 }
 
 
 void
 _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 {
-    assert(interp->id_mutex != NULL);
     _PyRuntimeState *runtime = interp->runtime;
 
-    PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
-    assert(interp->id_refcount != 0);
-    interp->id_refcount -= 1;
-    int64_t refcount = interp->id_refcount;
-    PyThread_release_lock(interp->id_mutex);
+    Py_ssize_t refcount = _Py_atomic_add_ssize(&interp->id_refcount, -1);
 
-    if (refcount == 0 && interp->requires_idref) {
+    if (refcount == 1 && interp->requires_idref) {
         PyThreadState *tstate =
             _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
 
@@ -1556,6 +1513,11 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    if (tlbc_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
 #endif
 
     /* We serialize concurrent creation to protect global state. */
@@ -1598,6 +1560,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
     _Py_qsbr_register(tstate, interp, qsbr_idx);
+    tstate->tlbc_index = tlbc_idx;
 #endif
 
     return (PyThreadState *)tstate;
@@ -1745,10 +1708,14 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Merge our thread-local refcounts into the type's own refcount and
     // free our local refcount array.
-    _PyType_FinalizeThreadLocalRefcounts((_PyThreadStateImpl *)tstate);
+    _PyObject_FinalizePerThreadRefcounts((_PyThreadStateImpl *)tstate);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
+
+    // Release our thread-local copies of the bytecode for reuse by another
+    // thread
+    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.
@@ -1805,7 +1772,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
-    assert(tstate_impl->types.refcounts == NULL);
+    assert(tstate_impl->refcounts.values == NULL);
 #endif
 
     HEAD_UNLOCK(runtime);

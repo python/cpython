@@ -119,9 +119,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -273,6 +273,31 @@ class PurePath(PurePathBase):
                 # e.g. //?/unc/server/share
                 root = sep
         return drv, root, [x for x in rel.split(sep) if x and x != '.']
+
+    @classmethod
+    def _parse_pattern(cls, pattern):
+        """Parse a glob pattern to a list of parts. This is much like
+        _parse_path, except:
+
+        - Rather than normalizing and returning the drive and root, we raise
+          NotImplementedError if either are present.
+        - If the path has no real parts, we raise ValueError.
+        - If the path ends in a slash, then a final empty part is added.
+        """
+        drv, root, rel = cls.parser.splitroot(pattern)
+        if root or drv:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        sep = cls.parser.sep
+        altsep = cls.parser.altsep
+        if altsep:
+            rel = rel.replace(altsep, sep)
+        parts = [x for x in rel.split(sep) if x and x != '.']
+        if not parts:
+            raise ValueError(f"Unacceptable pattern: {str(pattern)!r}")
+        elif rel.endswith(sep):
+            # GH-65238: preserve trailing slash in glob patterns.
+            parts.append('')
+        return parts
 
     @property
     def _raw_path(self):
@@ -615,6 +640,14 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
+    def scandir(self):
+        """Yield os.DirEntry objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        return os.scandir(self)
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -633,17 +666,7 @@ class Path(PathBase, PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if not isinstance(pattern, PurePath):
-            pattern = self.with_segments(pattern)
-        if pattern.anchor:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        parts = pattern._tail.copy()
-        if not parts:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        raw = pattern._raw_path
-        if raw[-1] in (self.parser.sep, self.parser.altsep):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            parts.append('')
+        parts = self._parse_pattern(pattern)
         select = self._glob_selector(parts[::-1], case_sensitive, recurse_symlinks)
         root = str(self)
         paths = select(root)
@@ -664,9 +687,7 @@ class Path(PathBase, PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        if not isinstance(pattern, PurePath):
-            pattern = self.with_segments(pattern)
-        pattern = '**' / pattern
+        pattern = self.parser.join('**', pattern)
         return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
