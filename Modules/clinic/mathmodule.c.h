@@ -8,6 +8,64 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(math_gcd__doc__,
+"gcd($module, /, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+#define MATH_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
+
+static PyObject *
+math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gcd", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_gcd_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_lcm__doc__,
+"lcm($module, /, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
+
+#define MATH_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
+
+static PyObject *
+math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("lcm", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_lcm_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -34,9 +92,9 @@ PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
 "\n"
-"Return an accurate floating point sum of values in the iterable seq.\n"
+"Return an accurate floating-point sum of values in the iterable seq.\n"
 "\n"
-"Assumes IEEE-754 floating point arithmetic.");
+"Assumes IEEE-754 floating-point arithmetic.");
 
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
@@ -351,6 +409,46 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_hypot__doc__,
+"hypot($module, /, *coordinates)\n"
+"--\n"
+"\n"
+"Multidimensional Euclidean distance from the origin to a point.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum(x**2 for x in coordinates))\n"
+"\n"
+"For a two dimensional point (x, y), gives the hypotenuse\n"
+"using the Pythagorean theorem:  sqrt(x*x + y*y).\n"
+"\n"
+"For example, the hypotenuse of a 3/4/5 right triangle is:\n"
+"\n"
+"    >>> hypot(3.0, 4.0)\n"
+"    5.0");
+
+#define MATH_HYPOT_METHODDEF    \
+    {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
+
+static PyObject *
+math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs - 0;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("hypot", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_hypot_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_sumprod__doc__,
 "sumprod($module, p, q, /)\n"
 "--\n"
@@ -359,7 +457,7 @@ PyDoc_STRVAR(math_sumprod__doc__,
 "\n"
 "Roughly equivalent to:\n"
 "\n"
-"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"    sum(map(operator.mul, p, q, strict=True))\n"
 "\n"
 "For float and mixed int/float inputs, the intermediate products\n"
 "and sums are computed with extended precision.");
@@ -610,7 +708,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "isclose($module, /, a, b, *, rel_tol=1e-09, abs_tol=0.0)\n"
 "--\n"
 "\n"
-"Determine whether two floating point numbers are close in value.\n"
+"Determine whether two floating-point numbers are close in value.\n"
 "\n"
 "  rel_tol\n"
 "    maximum difference for being considered \"close\", relative to the\n"
@@ -648,7 +746,7 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1011,4 +1109,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9fe3f007f474e015 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff99a737c18d9210 input=a9049054013a1b77]*/

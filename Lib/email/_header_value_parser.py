@@ -92,6 +92,8 @@ TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
 ATTRIBUTE_ENDS = ASPECIALS | WSP
 EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
+NLSET = {'\n', '\r'}
+SPECIALSNL = SPECIALS | NLSET
 
 def quote_string(value):
     return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
@@ -2802,9 +2804,13 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
-        if part.token_type == 'ptext' and set(tstr) & SPECIALS:
-            # Encode if tstr contains special characters.
-            want_encoding = True
+        if not want_encoding:
+            if part.token_type == 'ptext':
+                # Encode if tstr contains special characters.
+                want_encoding = not SPECIALSNL.isdisjoint(tstr)
+            else:
+                # Encode if tstr contains newlines.
+                want_encoding = not NLSET.isdisjoint(tstr)
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2988,6 +2994,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
             excess = len(encoded_word) - remaining_space
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
+        leading_whitespace = ''
 
         if to_encode:
             lines.append(' ')

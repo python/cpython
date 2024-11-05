@@ -60,6 +60,14 @@ class ContextTest(unittest.TestCase):
         c.reset(t)
         self.assertIn(' used ', repr(t))
 
+    @isolated_context
+    def test_token_repr_1(self):
+        c = contextvars.ContextVar('a')
+        tok = c.set(1)
+        self.assertRegex(repr(tok),
+                         r"^<Token var=<ContextVar name='a' "
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
+
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
             class MyContextVar(contextvars.ContextVar):

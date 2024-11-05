@@ -33,7 +33,7 @@ implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
 
-* otherwise, if either argument is a floating point number, the other is
+* otherwise, if either argument is a floating-point number, the other is
   converted to floating point;
 
 * otherwise, both must be integers and no conversion is necessary.
@@ -83,18 +83,47 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The :attr:`~definition.__name__` attribute of nested functions, classes, and
+  type aliases is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
@@ -110,8 +139,8 @@ Python supports string and bytes literals and various numeric literals:
           : | `integer` | `floatnumber` | `imagnumber`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
-integer, floating point number, complex number) with the given value.  The value
-may be approximated in the case of floating point and imaginary (complex)
+integer, floating-point number, complex number) with the given value.  The value
+may be approximated in the case of floating-point and imaginary (complex)
 literals.  See section :ref:`literals` for details.
 
 .. index::
@@ -218,10 +247,12 @@ A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
 expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`!async for` clauses or
-:keyword:`!await` expressions or other asynchronous comprehensions it is called
-an :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
-suspend the execution of the coroutine function in which it appears.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
 .. versionadded:: 3.6
@@ -253,7 +284,7 @@ A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
 .. productionlist:: python-grammar
-   list_display: "[" [`starred_list` | `comprehension`] "]"
+   list_display: "[" [`flexible_expression_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -278,7 +309,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist:: python-grammar
-   set_display: "{" (`starred_list` | `comprehension`) "}"
+   set_display: "{" (`flexible_expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -423,7 +454,7 @@ Yield expressions
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
-   yield_expression: "yield" `expression_list` | `yield_from`
+   yield_expression: "yield" `yield_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
@@ -454,9 +485,9 @@ When a generator function is called, it returns an iterator known as a
 generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
-suspended again, returning the value of :token:`~python-grammar:expression_list`
+suspended again, returning the value of :token:`~python-grammar:yield_list`
 to the generator's caller,
-or ``None`` if :token:`~python-grammar:expression_list` is omitted.
+or ``None`` if :token:`~python-grammar:yield_list` is omitted.
 By suspended, we mean that all local state is
 retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
@@ -545,7 +576,7 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:expression_list` is returned to :meth:`__next__`'s
+   :token:`~python-grammar:yield_list` is returned to :meth:`__next__`'s
    caller.  If the generator exits without yielding another value, a
    :exc:`StopIteration` exception is raised.
 
@@ -664,7 +695,7 @@ how a generator object would be used in a :keyword:`for` statement.
 Calling one of the asynchronous generator's methods returns an :term:`awaitable`
 object, and the execution starts when this object is awaited on. At that time,
 the execution proceeds to the first yield expression, where it is suspended
-again, returning the value of :token:`~python-grammar:expression_list` to the
+again, returning the value of :token:`~python-grammar:yield_list` to the
 awaiting coroutine. As with a generator, suspension means that all local state
 is retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
@@ -728,7 +759,7 @@ which are used to control the execution of a generator function.
    asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in the
    returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:expression_list` of the
+   expression. The value of the :token:`~python-grammar:yield_list` of the
    yield expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
    yielding another value, the awaitable instead raises a
@@ -741,7 +772,7 @@ which are used to control the execution of a generator function.
 .. coroutinemethod:: agen.asend(value)
 
    Returns an awaitable which when run resumes the execution of the
-   asynchronous generator. As with the :meth:`~generator.send()` method for a
+   asynchronous generator. As with the :meth:`~generator.send` method for a
    generator, this "sends" a value into the asynchronous generator function,
    and the *value* argument becomes the result of the current yield expression.
    The awaitable returned by the :meth:`asend` method will return the next
@@ -861,7 +892,7 @@ will generally select an element from the container. The subscription of a
 :ref:`GenericAlias <types-genericalias>` object.
 
 .. productionlist:: python-grammar
-   subscription: `primary` "[" `expression_list` "]"
+   subscription: `primary` "[" `flexible_expression_list` "]"
 
 When an object is subscripted, the interpreter will evaluate the primary and
 the expression list.
@@ -873,9 +904,13 @@ primary is subscripted, the evaluated result of the expression list will be
 passed to one of these methods. For more details on when ``__class_getitem__``
 is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the expression list contains at least one comma, it will evaluate to a
-:class:`tuple` containing the items of the expression list. Otherwise, the
-expression list will evaluate to the value of the list's sole member.
+If the expression list contains at least one comma, or if any of the expressions
+are starred, the expression list will evaluate to a :class:`tuple` containing
+the items of the expression list. Otherwise, the expression list will evaluate
+to the value of the list's sole member.
+
+.. versionchanged:: 3.11
+   Expressions in an expression list may be starred. See :pep:`646`.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
@@ -1330,7 +1365,7 @@ The floor division operation can be customized using the special
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
 type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
-arguments may be floating point numbers, e.g., ``3.14%0.7`` equals ``0.34``
+arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
 (since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
 result with the same sign as its second operand (or zero); the absolute value of
 the result is strictly smaller than the absolute value of the second operand
@@ -1350,8 +1385,8 @@ The *modulo* operation can be customized using the special :meth:`~object.__mod_
 and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
-function are not defined for complex numbers.  Instead, convert to a floating
-point number using the :func:`abs` function if appropriate.
+function are not defined for complex numbers.  Instead, convert to a
+floating-point number using the :func:`abs` function if appropriate.
 
 .. index::
    single: addition
@@ -1772,6 +1807,9 @@ returns a boolean value regardless of the type of its argument
    single: assignment expression
    single: walrus operator
    single: named expression
+   pair: assignment; expression
+
+.. _assignment-expressions:
 
 Assignment expressions
 ======================
@@ -1874,10 +1912,12 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
+   starred_expression: ["*"] `or_expr`
+   flexible_expression: `assignment_expression` | `starred_expression`
+   flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
    expression_list: `expression` ("," `expression`)* [","]
-   starred_list: `starred_item` ("," `starred_item`)* [","]
-   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `assignment_expression` | "*" `or_expr`
+   yield_list: `expression_list` | `starred_expression` "," [`starred_expression_list`]
 
 .. index:: pair: object; tuple
 
@@ -1897,6 +1937,9 @@ the unpacking.
 
 .. versionadded:: 3.5
    Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 .. index:: pair: trailing; comma
 
