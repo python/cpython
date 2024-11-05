@@ -511,7 +511,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       free(bignum);
 
    *flags* is either ``-1`` (``Py_ASNATIVEBYTES_DEFAULTS``) to select defaults
-   that behave most like a C cast, or a combintation of the other flags in
+   that behave most like a C cast, or a combination of the other flags in
    the table below.
    Note that ``-1`` cannot be combined with other flags.
 

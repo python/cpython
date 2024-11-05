@@ -274,7 +274,7 @@ Improved error messages
        File "/home/me/random.py", line 3, in <module>
          print(random.randint(5))
                ^^^^^^^^^^^^^^
-     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and prevents importing that standard library module)
 
   Similarly, if a script has the same name as a third-party
   module that it attempts to import and this results in errors,
@@ -289,7 +289,7 @@ Improved error messages
        File "/home/me/numpy.py", line 3, in <module>
          np.array([1, 2, 3])
          ^^^^^^^^
-     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a third-party module you intended to import)
+     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a library you intended to import)
 
   (Contributed by Shantanu Jain in :gh:`95754`.)
 
