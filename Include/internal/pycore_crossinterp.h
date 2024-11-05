@@ -93,6 +93,22 @@ PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 // Users should not need getters for "new_object" or "free".
 
 
+/* getting cross-interpreter data */
+
+typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
+
+PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(PyObject *);
+PyAPI_FUNC(int) _PyObject_CheckXIData(PyObject *);
+PyAPI_FUNC(int) _PyObject_GetXIData(PyObject *, _PyXIData_t *);
+
+
+/* using cross-interpreter data */
+
+PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
+
+
 /* defining cross-interpreter data */
 
 PyAPI_FUNC(void) _PyXIData_Init(
@@ -125,22 +141,11 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
     } while (0)
 
 
-/* using cross-interpreter data */
-
-PyAPI_FUNC(int) _PyObject_CheckXIData(PyObject *);
-PyAPI_FUNC(int) _PyObject_GetXIData(PyObject *, _PyXIData_t *);
-PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
-PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
-PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
-
-
 /* cross-interpreter data registry */
 
 // For now we use a global registry of shareable classes.  An
 // alternative would be to add a tp_* slot for a class's
 // xidatafunc. It would be simpler and more efficient.
-
-typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
 struct _xidregitem;
 
@@ -164,7 +169,6 @@ struct _xidregistry {
 
 PyAPI_FUNC(int) _PyXIData_RegisterClass(PyTypeObject *, xidatafunc);
 PyAPI_FUNC(int) _PyXIData_UnregisterClass(PyTypeObject *);
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(PyObject *);
 
 
 /*****************************/
