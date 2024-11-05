@@ -659,11 +659,138 @@ defined by the module.  The specific list of defined symbols is available as
 
    Quota exceeded
 
+
 .. data:: EQFULL
 
    Interface output queue is full
 
    .. versionadded:: 3.11
+
+
+.. data:: ENOMEDIUM
+
+   No medium found
+
+
+.. data:: EMEDIUMTYPE
+
+   Wrong medium type
+
+
+.. data:: ENOKEY
+
+   Required key not available
+
+
+.. data:: EKEYEXPIRED
+
+   Key has expired
+
+
+.. data:: EKEYREVOKED
+
+   Key has been revoked
+
+
+.. data:: EKEYREJECTED
+
+   Key was rejected by service
+
+
+.. data:: ERFKILL
+
+   Operation not possible due to RF-kill
+
+
+.. data:: ELOCKUNMAPPED
+
+   Locked lock was unmapped
+
+
+.. data:: ENOTACTIVE
+
+   Facility is not active
+
+
+.. data:: EAUTH
+
+   Authentication error
+
+
+.. data:: EBADARCH
+
+   Bad CPU type in executable
+
+
+.. data:: EBADEXEC
+
+   Bad executable (or shared library)
+
+
+.. data:: EBADMACHO
+
+   Malformed Mach-o file
+
+
+.. data:: EDEVERR
+
+   Device error
+
+
+.. data:: EFTYPE
+
+   Inappropriate file type or format
+
+
+.. data:: ENEEDAUTH
+
+   Need authenticator
+
+
+.. data:: ENOATTR
+
+   Attribute not found
+
+
+.. data:: ENOPOLICY
+
+   Policy not found
+
+
+.. data:: EPROCLIM
+
+   Too many processes
+
+
+.. data:: EPROCUNAVAIL
+
+   Bad procedure for program
+
+
+.. data:: EPROGMISMATCH
+
+   Program version wrong
+
+
+.. data:: EPROGUNAVAIL
+
+   RPC prog. not avail
+
+
+.. data:: EPWROFF
+
+   Device power is off
+
+
+.. data:: ERPCMISMATCH
+
+   RPC version wrong
+
+
+.. data:: ESHLIBVERS
+
+   Shared library version mismatch
+
 
 .. data:: ENOTCAPABLE
 
