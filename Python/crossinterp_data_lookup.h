@@ -1,7 +1,7 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
-typedef struct _xidregistry dlregistry_t;
+typedef _PyXIData_registry_t dlregistry_t;
 typedef _PyXIData_regitem_t dlregitem_t;
 
 

@@ -16,7 +16,7 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_crossinterp.h"   // struct _xi_state
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state

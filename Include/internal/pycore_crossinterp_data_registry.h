@@ -20,17 +20,17 @@ typedef struct _xid_regitem {
     xidatafunc getdata;
 } _PyXIData_regitem_t;
 
-struct _xidregistry {
+typedef struct {
     int global;  /* builtin types or heap types */
     int initialized;
     PyMutex mutex;
     _PyXIData_regitem_t *head;
-};
+} _PyXIData_registry_t;
 
 PyAPI_FUNC(int) _PyXIData_RegisterClass(PyTypeObject *, xidatafunc);
 PyAPI_FUNC(int) _PyXIData_UnregisterClass(PyTypeObject *);
 
 struct _xid_lookup_state {
     // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry registry;
+    _PyXIData_registry_t registry;
 };
