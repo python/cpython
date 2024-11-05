@@ -24227,41 +24227,34 @@ printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
 case $ax_cv_c_float_words_bigendian in
   yes)
 
-printf "%s\n" "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
  ;;
   no)
-     ;;
+
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;;
   *)
-    as_fn_error $? "
+    case $host_cpu in #(
+  *arm*) :
+    # Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
 
-Unknown float word ordering. You need to manually preset
-ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  wasm*) :
 
-    " "$LINENO" 5 ;;
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  *) :
+     ;;
+esac ;;
 esac
 
 
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-
-printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
-
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-
-printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
-  # or little, then it must be this?
-
-printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
-
-fi
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from

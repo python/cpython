@@ -1513,6 +1513,11 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    if (tlbc_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
 #endif
 
     /* We serialize concurrent creation to protect global state. */
@@ -1555,6 +1560,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
     _Py_qsbr_register(tstate, interp, qsbr_idx);
+    tstate->tlbc_index = tlbc_idx;
 #endif
 
     return (PyThreadState *)tstate;
@@ -1706,6 +1712,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
+
+    // Release our thread-local copies of the bytecode for reuse by another
+    // thread
+    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.
