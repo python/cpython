@@ -355,10 +355,12 @@ class ContextTest(unittest.TestCase):
         ctx = contextvars.Context()
         self.assertIsInstance(ctx, collections.abc.Mapping)
 
-        mapping_methods = ("__getitem__", "__iter__", "__len__", "__contains__", "keys",
-                           "items", "values", "get", "__eq__", "__ne__")
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__','get', 'items', 'keys', 'values',
+        )
         for name in mapping_methods:
-            self.assertIn(name, dir(ctx))
+            self.assertTrue(callable(getattr(ctx, name)))
 
     @isolated_context
     @threading_helper.requires_working_threading()
