@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_long.h"          // _PyLong_GetOne()
@@ -13,6 +14,10 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include "osdefs.h"               // MAXPATHLEN
+
+
+#define _PyModule_CAST(op) \
+    (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
 
 
 static PyMemberDef module_members[] = {
@@ -101,7 +106,7 @@ new_module_notrack(PyTypeObject *mt)
 static void
 track_module(PyModuleObject *m)
 {
-    _PyObject_SetDeferredRefcount(m->md_dict);
+    _PyDict_EnablePerThreadRefcounting(m->md_dict);
     PyObject_GC_Track(m->md_dict);
 
     _PyObject_SetDeferredRefcount((PyObject *)m);
@@ -225,7 +230,9 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         return NULL;
     }
     name = _PyImport_ResolveNameWithPackageContext(name);
-    if ((m = (PyModuleObject*)PyModule_New(name)) == NULL)
+
+    m = (PyModuleObject*)PyModule_New(name);
+    if (m == NULL)
         return NULL;
 
     if (module->m_size > 0) {
@@ -251,7 +258,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def = module;
-#ifdef Py_GIL_DISABLE
+#ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
 #endif
     return (PyObject*)m;
@@ -758,22 +765,26 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 }
 
 static void
-module_dealloc(PyModuleObject *m)
+module_dealloc(PyObject *self)
 {
-    int verbose = _Py_GetConfig()->verbose;
+    PyModuleObject *m = _PyModule_CAST(self);
 
     PyObject_GC_UnTrack(m);
+
+    int verbose = _Py_GetConfig()->verbose;
     if (verbose && m->md_name) {
         PySys_FormatStderr("# destroy %U\n", m->md_name);
     }
     if (m->md_weaklist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m);
+
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_free
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
     {
         m->md_def->m_free(m);
     }
+
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
@@ -782,8 +793,9 @@ module_dealloc(PyModuleObject *m)
 }
 
 static PyObject *
-module_repr(PyModuleObject *m)
+module_repr(PyObject *self)
 {
+    PyModuleObject *m = _PyModule_CAST(self);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return _PyImport_ImportlibModuleRepr(interp, (PyObject *)m);
 }
@@ -824,15 +836,15 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
-static int
-_get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
+int
+_PyModuleSpec_GetFileOrigin(PyObject *spec, PyObject **p_origin)
 {
     PyObject *has_location = NULL;
     int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
     if (rc <= 0) {
         return rc;
     }
-    // If origin is not a location, or doesn't exist, or is not a str), we could consider falling
+    // If origin is not a location, or doesn't exist, or is not a str, we could consider falling
     // back to module.__file__. But the cases in which module.__file__ is not __spec__.origin
     // are cases in which we probably shouldn't be guessing.
     rc = PyObject_IsTrue(has_location);
@@ -855,8 +867,8 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
     return 1;
 }
 
-static int
-_is_module_possibly_shadowing(PyObject *origin)
+int
+_PyModule_IsPossiblyShadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
@@ -981,11 +993,11 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     PyObject *origin = NULL;
-    if (_get_file_origin_from_spec(spec, &origin) < 0) {
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
         goto done;
     }
 
-    int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
+    int is_possibly_shadowing = _PyModule_IsPossiblyShadowing(origin);
     if (is_possibly_shadowing < 0) {
         goto done;
     }
@@ -1006,20 +1018,23 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                     "module '%U' has no attribute '%U' "
                     "(consider renaming '%U' since it has the same "
                     "name as the standard library module named '%U' "
-                    "and the import system gives it precedence)",
+                    "and prevents importing that standard library module)",
                     mod_name, name, origin, mod_name);
     }
     else {
         int rc = _PyModuleSpec_IsInitializing(spec);
-        if (rc > 0) {
+        if (rc < 0) {
+            goto done;
+        }
+        else if (rc > 0) {
             if (is_possibly_shadowing) {
                 assert(origin);
-                // For third-party modules, only mention the possibility of
+                // For non-stdlib modules, only mention the possibility of
                 // shadowing if the module is being initialized.
                 PyErr_Format(PyExc_AttributeError,
                             "module '%U' has no attribute '%U' "
                             "(consider renaming '%U' if it has the same name "
-                            "as a third-party module you intended to import)",
+                            "as a library you intended to import)",
                             mod_name, name, origin);
             }
             else if (origin) {
@@ -1037,7 +1052,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                             mod_name, name);
             }
         }
-        else if (rc == 0) {
+        else {
+            assert(rc == 0);
             rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
             if (rc > 0) {
                 PyErr_Format(PyExc_AttributeError,
@@ -1062,14 +1078,17 @@ done:
 
 
 PyObject*
-_Py_module_getattro(PyModuleObject *m, PyObject *name)
+_Py_module_getattro(PyObject *self, PyObject *name)
 {
+    PyModuleObject *m = _PyModule_CAST(self);
     return _Py_module_getattro_impl(m, name, 0);
 }
 
 static int
-module_traverse(PyModuleObject *m, visitproc visit, void *arg)
+module_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    PyModuleObject *m = _PyModule_CAST(self);
+
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_traverse
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
@@ -1078,13 +1097,16 @@ module_traverse(PyModuleObject *m, visitproc visit, void *arg)
         if (res)
             return res;
     }
+
     Py_VISIT(m->md_dict);
     return 0;
 }
 
 static int
-module_clear(PyModuleObject *m)
+module_clear(PyObject *self)
 {
+    PyModuleObject *m = _PyModule_CAST(self);
+
     /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_clear
         && (m->md_def->m_size <= 0 || m->md_state != NULL))
@@ -1149,8 +1171,10 @@ module_get_dict(PyModuleObject *m)
 }
 
 static PyObject *
-module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
+module_get_annotate(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyModuleObject *m = _PyModule_CAST(self);
+
     PyObject *dict = module_get_dict(m);
     if (dict == NULL) {
         return NULL;
@@ -1168,12 +1192,14 @@ module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
 }
 
 static int
-module_set_annotate(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
+module_set_annotate(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyModuleObject *m = _PyModule_CAST(self);
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "cannot delete __annotate__ attribute");
         return -1;
     }
+
     PyObject *dict = module_get_dict(m);
     if (dict == NULL) {
         return -1;
@@ -1200,8 +1226,10 @@ module_set_annotate(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored)
 }
 
 static PyObject *
-module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
+module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyModuleObject *m = _PyModule_CAST(self);
+
     PyObject *dict = module_get_dict(m);
     if (dict == NULL) {
         return NULL;
@@ -1249,14 +1277,16 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 }
 
 static int
-module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
+module_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
-    int ret = -1;
+    PyModuleObject *m = _PyModule_CAST(self);
+
     PyObject *dict = module_get_dict(m);
     if (dict == NULL) {
         return -1;
     }
 
+    int ret = -1;
     if (value != NULL) {
         /* set */
         ret = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
@@ -1282,8 +1312,8 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 
 
 static PyGetSetDef module_getsets[] = {
-    {"__annotations__", (getter)module_get_annotations, (setter)module_set_annotations},
-    {"__annotate__", (getter)module_get_annotate, (setter)module_set_annotate},
+    {"__annotations__", module_get_annotations, module_set_annotations},
+    {"__annotate__", module_get_annotate, module_set_annotate},
     {NULL}
 };
 
@@ -1292,26 +1322,26 @@ PyTypeObject PyModule_Type = {
     "module",                                   /* tp_name */
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
-    (destructor)module_dealloc,                 /* tp_dealloc */
+    module_dealloc,                             /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)module_repr,                      /* tp_repr */
+    module_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)_Py_module_getattro,          /* tp_getattro */
+    _Py_module_getattro,                        /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
     module___init____doc__,                     /* tp_doc */
-    (traverseproc)module_traverse,              /* tp_traverse */
-    (inquiry)module_clear,                      /* tp_clear */
+    module_traverse,                            /* tp_traverse */
+    module_clear,                               /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyModuleObject, md_weaklist),      /* tp_weaklistoffset */
     0,                                          /* tp_iter */

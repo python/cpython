@@ -10,7 +10,6 @@
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
-#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
@@ -403,7 +402,11 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
         }
     }
     else if (PyUnicode_Check(configobj)) {
-        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+        const char *utf8name = PyUnicode_AsUTF8(configobj);
+        if (utf8name == NULL) {
+            return -1;
+        }
+        if (init_named_config(config, utf8name) < 0) {
             return -1;
         }
     }

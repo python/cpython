@@ -159,8 +159,8 @@ def weekday(year, month, day):
 
 
 def monthrange(year, month):
-    """Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for
-       year, month."""
+    """Return weekday of first day of month (0-6 ~ Mon-Sun)
+       and number of days (28-31) for year, month."""
     if not 1 <= month <= 12:
         raise IllegalMonthError(month)
     day1 = weekday(year, month, 1)

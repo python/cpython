@@ -47,7 +47,6 @@ extern "C" {
 
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
@@ -57,6 +56,7 @@ extern "C" {
 #define MAKE_FUNCTION_KWDEFAULTS  0x02
 #define MAKE_FUNCTION_ANNOTATIONS 0x04
 #define MAKE_FUNCTION_CLOSURE     0x08
+#define MAKE_FUNCTION_ANNOTATE    0x10
 
 /* Values used as the oparg for LOAD_COMMON_CONSTANT */
 #define CONSTANT_ASSERTIONERROR 0

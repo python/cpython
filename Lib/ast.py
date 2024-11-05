@@ -422,6 +422,8 @@ def compare(
     might differ in whitespace or similar details.
     """
 
+    sentinel = object()  # handle the possibility of a missing attribute/field
+
     def _compare(a, b):
         # Compare two fields on an AST object, which may themselves be
         # AST objects, lists of AST objects, or primitive ASDL types
@@ -449,8 +451,14 @@ def compare(
         if a._fields != b._fields:
             return False
         for field in a._fields:
-            a_field = getattr(a, field)
-            b_field = getattr(b, field)
+            a_field = getattr(a, field, sentinel)
+            b_field = getattr(b, field, sentinel)
+            if a_field is sentinel and b_field is sentinel:
+                # both nodes are missing a field at runtime
+                continue
+            if a_field is sentinel or b_field is sentinel:
+                # one of the node is missing a field
+                return False
             if not _compare(a_field, b_field):
                 return False
         else:
@@ -461,8 +469,11 @@ def compare(
             return False
         # Attributes are always ints.
         for attr in a._attributes:
-            a_attr = getattr(a, attr)
-            b_attr = getattr(b, attr)
+            a_attr = getattr(a, attr, sentinel)
+            b_attr = getattr(b, attr, sentinel)
+            if a_attr is sentinel and b_attr is sentinel:
+                # both nodes are missing an attribute at runtime
+                continue
             if a_attr != b_attr:
                 return False
         else:
@@ -1732,7 +1743,7 @@ def unparse(ast_obj):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog='python -m ast')
+    parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',

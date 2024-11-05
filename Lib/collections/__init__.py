@@ -29,6 +29,9 @@ __all__ = [
 import _collections_abc
 import sys as _sys
 
+_sys.modules['collections.abc'] = _collections_abc
+abc = _collections_abc
+
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -46,7 +49,8 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
-    from _collections import _deque_iterator
+    # Expose _deque_iterator to support pickling deque iterators
+    from _collections import _deque_iterator  # noqa: F401
 except ImportError:
     pass
 

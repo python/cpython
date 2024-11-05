@@ -140,6 +140,7 @@ class AuditTest(unittest.TestCase):
         )
 
 
+    @support.requires_resource('network')
     def test_http(self):
         import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
@@ -305,6 +306,13 @@ class AuditTest(unittest.TestCase):
         expected = [("_winapi.CreateNamedPipe", f"({pipe_name!r}, 3, 8)")]
 
         self.assertEqual(actual, expected)
+
+    def test_assert_unicode(self):
+        # See gh-126018
+        returncode, _, stderr = self.run_python("test_assert_unicode")
+        if returncode:
+            self.fail(stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

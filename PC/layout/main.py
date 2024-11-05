@@ -202,7 +202,7 @@ def get_layout(ns):
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
-    dest="" if ns.flat_dlls else "DLLs/"
+    dest = "" if ns.flat_dlls else "DLLs/"
 
     for _, src in rglob(ns.build, "*.pyd"):
         if ns.include_freethreaded:
@@ -226,7 +226,7 @@ def get_layout(ns):
             continue
         if src in EXCLUDE_FROM_DLLS:
             continue
-        yield from in_build(src.name, no_lib=True)
+        yield from in_build(src.name, dest=dest, no_lib=True)
 
     if ns.zip_lib:
         zip_name = PYTHON_ZIP_NAME

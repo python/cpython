@@ -32,8 +32,9 @@ import pprint
 import sys
 import builtins
 import pkgutil
-from asyncio import iscoroutinefunction
+from inspect import iscoroutinefunction
 import threading
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -628,7 +629,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self,  visited=None,*, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -830,6 +833,9 @@ class NonCallableMock(Base):
             mock_name = f'{self._extract_mock_name()}.{name}'
             raise AttributeError(f'Cannot set {mock_name}')
 
+        if isinstance(value, PropertyMock):
+            self.__dict__[name] = value
+            return
         return object.__setattr__(self, name, value)
 
 
@@ -1508,13 +1514,12 @@ class _patch(object):
                 if isinstance(original, type):
                     # If we're patching out a class and there is a spec
                     inherit = True
-            if spec is None and _is_async_obj(original):
-                Klass = AsyncMock
-            else:
-                Klass = MagicMock
-            _kwargs = {}
+
+            # Determine the Klass to use
             if new_callable is not None:
                 Klass = new_callable
+            elif spec is None and _is_async_obj(original):
+                Klass = AsyncMock
             elif spec is not None or spec_set is not None:
                 this_spec = spec
                 if spec_set is not None:
@@ -1527,7 +1532,12 @@ class _patch(object):
                     Klass = AsyncMock
                 elif not_callable:
                     Klass = NonCallableMagicMock
+                else:
+                    Klass = MagicMock
+            else:
+                Klass = MagicMock
 
+            _kwargs = {}
             if spec is not None:
                 _kwargs['spec'] = spec
             if spec_set is not None:
@@ -1822,7 +1832,8 @@ def patch(
 class _patch_dict(object):
     """
     Patch a dictionary, or dictionary like object, and restore the dictionary
-    to its original state after the test.
+    to its original state after the test, where the restored dictionary is
+    a copy of the dictionary as it was before the test.
 
     `in_dict` can be a dictionary or a mapping like container. If it is a
     mapping then it must at least support getting, setting and deleting items
@@ -2158,8 +2169,6 @@ class MagicMixin(Base):
 
         if getattr(self, "_mock_methods", None) is not None:
             these_magics = orig_magics.intersection(self._mock_methods)
-
-            remove_magics = set()
             remove_magics = orig_magics - these_magics
 
             for entry in remove_magics:
@@ -2212,6 +2221,17 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
+        if (
+            return_value
+            and self._mock_name
+            and _is_magic(self._mock_name)
+        ):
+            # Don't reset return values for magic methods,
+            # otherwise `m.__str__` will start
+            # to return `MagicMock` instances, instead of `str` instances.
+            return_value = False
+        super().reset_mock(*args, return_value=return_value, **kwargs)
 
 
 class MagicProxy(Base):
@@ -2448,7 +2468,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> iscoroutinefunction(mock)
+    >>> inspect.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
@@ -2737,7 +2757,15 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
-    _kwargs = {'spec': spec}
+
+    entries = [(entry, _missing) for entry in dir(spec)]
+    if is_type and instance and is_dataclass(spec):
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+    else:
+        _kwargs = {'spec': spec}
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2747,6 +2775,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _kwargs['_spec_as_instance'] = True
     if not unsafe:
         _check_spec_arg_typos(kwargs)
+
+    _name = kwargs.pop('name', _name)
+    _new_name = _name
+    if _parent is None:
+        # for a top level object no _new_name should be set
+        _new_name = ''
 
     _kwargs.update(kwargs)
 
@@ -2764,13 +2798,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         Klass = NonCallableMagicMock
     elif is_type and instance and not _instance_callable(spec):
         Klass = NonCallableMagicMock
-
-    _name = _kwargs.pop('name', _name)
-
-    _new_name = _name
-    if _parent is None:
-        # for a top level object no _new_name should be set
-        _new_name = ''
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
                  name=_name, **_kwargs)
@@ -2795,7 +2822,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2809,10 +2836,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is _missing:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
         child_kwargs = {'spec': original}
         # Wrap child attributes also.

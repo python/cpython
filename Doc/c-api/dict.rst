@@ -156,7 +156,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
 
-   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
 
@@ -206,7 +206,7 @@ Dictionary Objects
      ``NULL``, and return ``0``.
    - On error, raise an exception and return ``-1``.
 
-   This is similar to :meth:`dict.pop`, but without the default value and
+   Similar to :meth:`dict.pop`, but without the default value and
    not raising :exc:`KeyError` if the key missing.
 
    .. versionadded:: 3.13
@@ -289,6 +289,17 @@ Dictionary Objects
           }
           Py_DECREF(o);
       }
+
+   The function is not thread-safe in the :term:`free-threaded <free threading>`
+   build without external synchronization.  You can use
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
+   over it::
+
+      Py_BEGIN_CRITICAL_SECTION(self->dict);
+      while (PyDict_Next(self->dict, &pos, &key, &value)) {
+          ...
+      }
+      Py_END_CRITICAL_SECTION();
 
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
