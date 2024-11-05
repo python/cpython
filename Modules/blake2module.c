@@ -474,7 +474,7 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
 
     /* Validate salt parameter. */
     if ((salt->obj != NULL) && salt->len) {
-        if (salt->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES)) {
+        if ((size_t)salt->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum salt length is %d bytes",
                 (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES));
@@ -485,7 +485,7 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
 
     /* Validate personalization parameter. */
     if ((person->obj != NULL) && person->len) {
-        if (person->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES)) {
+        if ((size_t)person->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum person length is %d bytes",
                 (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES));
@@ -534,7 +534,7 @@ py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
 
     /* Set key length. */
     if ((key->obj != NULL) && key->len) {
-        if (key->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES)) {
+        if ((size_t)key->len > (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum key length is %d bytes",
                 (is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES));
