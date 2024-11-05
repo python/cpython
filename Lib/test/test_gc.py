@@ -1094,6 +1094,14 @@ class GCTests(unittest.TestCase):
         gc.collect()
         gc.unfreeze()
 
+        # Also from GH-126312: objects that use deferred reference counting
+        # weren't ignored if they were frozen. Unfortunately, it's pretty
+        # difficult to come up with a case that triggers this.
+        #
+        # Calling gc.collect() while the garbage collector is frozen doesn't
+        # trigger this normally, but it *does* if it's inside unittest for whatever
+        # reason. We can't call unittest from inside a test, so it has to be
+        # in a subprocess.
         source = textwrap.dedent("""
         import gc
         import unittest
