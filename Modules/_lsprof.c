@@ -799,7 +799,8 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         PyObject *register_result = PyObject_CallMethod(monitoring, "register_callback",
                                                         "iiO", self->tool_id,
                                                         event, callback);
-        Py_DECREF(callback);  // register_result is callback
+        Py_DECREF(register_result);
+        Py_DECREF(callback);
         if (register_result == NULL) {
             goto error;
         }
