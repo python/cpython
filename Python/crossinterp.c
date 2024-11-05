@@ -72,7 +72,7 @@ static xidatafunc lookup_getdata(PyInterpreterState *, PyObject *);
 /* lifecycle */
 
 _PyXIData_t *
-_PyCrossInterpreterData_New(void)
+_PyXIData_New(void)
 {
     _PyXIData_t *xid = PyMem_RawMalloc(sizeof(_PyXIData_t));
     if (xid == NULL) {
@@ -82,10 +82,10 @@ _PyCrossInterpreterData_New(void)
 }
 
 void
-_PyCrossInterpreterData_Free(_PyXIData_t *xid)
+_PyXIData_Free(_PyXIData_t *xid)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyCrossInterpreterData_Clear(interp, xid);
+    _PyXIData_Clear(interp, xid);
     PyMem_RawFree(xid);
 }
 
@@ -100,7 +100,7 @@ _xidata_init(_PyXIData_t *data)
     assert(data->data == NULL);
     assert(data->obj == NULL);
     *data = (_PyXIData_t){0};
-    _PyCrossInterpreterData_INTERPID(data) = -1;
+    _PyXIData_INTERPID(data) = -1;
 }
 
 static inline void
@@ -120,10 +120,10 @@ _xidata_clear(_PyXIData_t *data)
 }
 
 void
-_PyCrossInterpreterData_Init(_PyXIData_t *data,
-                             PyInterpreterState *interp,
-                             void *shared, PyObject *obj,
-                             xid_newobjectfunc new_object)
+_PyXIData_Init(_PyXIData_t *data,
+               PyInterpreterState *interp,
+               void *shared, PyObject *obj,
+               xid_newobjectfunc new_object)
 {
     assert(data != NULL);
     assert(new_object != NULL);
@@ -131,29 +131,29 @@ _PyCrossInterpreterData_Init(_PyXIData_t *data,
     data->data = shared;
     if (obj != NULL) {
         assert(interp != NULL);
-        // released in _PyCrossInterpreterData_Clear()
+        // released in _PyXIData_Clear()
         data->obj = Py_NewRef(obj);
     }
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    _PyCrossInterpreterData_INTERPID(data) = (interp != NULL)
+    _PyXIData_INTERPID(data) = (interp != NULL)
         ? PyInterpreterState_GetID(interp)
         : -1;
     data->new_object = new_object;
 }
 
 int
-_PyCrossInterpreterData_InitWithSize(_PyXIData_t *data,
-                                     PyInterpreterState *interp,
-                                     const size_t size, PyObject *obj,
-                                     xid_newobjectfunc new_object)
+_PyXIData_InitWithSize(_PyXIData_t *data,
+                       PyInterpreterState *interp,
+                       const size_t size, PyObject *obj,
+                       xid_newobjectfunc new_object)
 {
     assert(size > 0);
     // For now we always free the shared data in the same interpreter
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
-    _PyCrossInterpreterData_Init(data, interp, NULL, obj, new_object);
+    _PyXIData_Init(data, interp, NULL, obj, new_object);
     data->data = PyMem_RawMalloc(size);
     if (data->data == NULL) {
         return -1;
@@ -163,13 +163,13 @@ _PyCrossInterpreterData_InitWithSize(_PyXIData_t *data,
 }
 
 void
-_PyCrossInterpreterData_Clear(PyInterpreterState *interp, _PyXIData_t *data)
+_PyXIData_Clear(PyInterpreterState *interp, _PyXIData_t *data)
 {
     assert(data != NULL);
     // This must be called in the owning interpreter.
     assert(interp == NULL
-           || _PyCrossInterpreterData_INTERPID(data) == -1
-           || _PyCrossInterpreterData_INTERPID(data) == PyInterpreterState_GetID(interp));
+           || _PyXIData_INTERPID(data) == -1
+           || _PyXIData_INTERPID(data) == PyInterpreterState_GetID(interp));
     _xidata_clear(data);
 }
 
@@ -183,7 +183,7 @@ _check_xidata(PyThreadState *tstate, _PyXIData_t *data)
 
     // data->obj may be NULL, so we don't check it.
 
-    if (_PyCrossInterpreterData_INTERPID(data) < 0) {
+    if (_PyXIData_INTERPID(data) < 0) {
         PyErr_SetString(PyExc_SystemError, "missing interp");
         return -1;
     }
@@ -219,7 +219,7 @@ _set_xid_lookup_failure(PyInterpreterState *interp,
 }
 
 int
-_PyObject_CheckCrossInterpreterData(PyObject *obj)
+_PyObject_CheckXIData(PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     xidatafunc getdata = lookup_getdata(interp, obj);
@@ -233,14 +233,14 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 }
 
 int
-_PyObject_GetCrossInterpreterData(PyObject *obj, _PyXIData_t *data)
+_PyObject_GetXIData(PyObject *obj, _PyXIData_t *data)
 {
     PyThreadState *tstate = PyThreadState_Get();
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.
     *data = (_PyXIData_t){0};
-    _PyCrossInterpreterData_INTERPID(data) = -1;
+    _PyXIData_INTERPID(data) = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
@@ -259,9 +259,9 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyXIData_t *data)
     }
 
     // Fill in the blanks and validate the result.
-    _PyCrossInterpreterData_INTERPID(data) = PyInterpreterState_GetID(interp);
+    _PyXIData_INTERPID(data) = PyInterpreterState_GetID(interp);
     if (_check_xidata(tstate, data) != 0) {
-        (void)_PyCrossInterpreterData_Release(data);
+        (void)_PyXIData_Release(data);
         return -1;
     }
 
@@ -269,7 +269,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyXIData_t *data)
 }
 
 PyObject *
-_PyCrossInterpreterData_NewObject(_PyXIData_t *data)
+_PyXIData_NewObject(_PyXIData_t *data)
 {
     return data->new_object(data);
 }
@@ -297,7 +297,7 @@ _xidata_release(_PyXIData_t *data, int rawfree)
 
     // Switch to the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(
-                                    _PyCrossInterpreterData_INTERPID(data));
+                                        _PyXIData_INTERPID(data));
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.
@@ -319,13 +319,13 @@ _xidata_release(_PyXIData_t *data, int rawfree)
 }
 
 int
-_PyCrossInterpreterData_Release(_PyXIData_t *data)
+_PyXIData_Release(_PyXIData_t *data)
 {
     return _xidata_release(data, 0);
 }
 
 int
-_PyCrossInterpreterData_ReleaseAndRawFree(_PyXIData_t *data)
+_PyXIData_ReleaseAndRawFree(_PyXIData_t *data)
 {
     return _xidata_release(data, 1);
 }
@@ -448,11 +448,11 @@ _release_xid_data(_PyXIData_t *data, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
     int res = rawfree
-        ? _PyCrossInterpreterData_Release(data)
-        : _PyCrossInterpreterData_ReleaseAndRawFree(data);
+        ? _PyXIData_Release(data)
+        : _PyXIData_ReleaseAndRawFree(data);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
-        _PyCrossInterpreterData_Clear(NULL, data);
+        _PyXIData_Clear(NULL, data);
         // XXX Emit a warning?
         PyErr_Clear();
     }
@@ -1093,7 +1093,7 @@ _PyXI_ApplyError(_PyXI_error *error)
 typedef struct _sharednsitem {
     const char *name;
     _PyXIData_t *data;
-    // We could have a "PyCrossInterpreterData _data" field, so it would
+    // We could have a "PyXIData _data" field, so it would
     // be allocated as part of the item and avoid an extra allocation.
     // However, doing so adds a bunch of complexity because we must
     // ensure the item isn't freed before a pending call might happen
@@ -1129,7 +1129,7 @@ _sharednsitem_has_value(_PyXI_namespace_item *item, int64_t *p_interpid)
         return 0;
     }
     if (p_interpid != NULL) {
-        *p_interpid = _PyCrossInterpreterData_INTERPID(item->data);
+        *p_interpid = _PyXIData_INTERPID(item->data);
     }
     return 1;
 }
@@ -1144,7 +1144,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         PyErr_NoMemory();
         return -1;
     }
-    if (_PyObject_GetCrossInterpreterData(value, item->data) != 0) {
+    if (_PyObject_GetXIData(value, item->data) != 0) {
         PyMem_RawFree(item->data);
         item->data = NULL;
         // The caller may want to propagate PyExc_NotShareableError
@@ -1203,7 +1203,7 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns, PyObject *dflt)
     }
     PyObject *value;
     if (item->data != NULL) {
-        value = _PyCrossInterpreterData_NewObject(item->data);
+        value = _PyXIData_NewObject(item->data);
         if (value == NULL) {
             Py_DECREF(name);
             return -1;

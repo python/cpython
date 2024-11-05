@@ -83,7 +83,7 @@ The above state includes the following allocations by the module:
    * 1 _PyXIData_t
 
 The only objects in that global state are the references held by each
-channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
+channel's queue, which are safely managed via the _PyXIData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
@@ -111,10 +111,10 @@ _release_xid_data(_PyXIData_t *data, int flags)
     }
     int res;
     if (flags & XID_FREE) {
-        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+        res = _PyXIData_ReleaseAndRawFree(data);
     }
     else {
-        res = _PyCrossInterpreterData_Release(data);
+        res = _PyXIData_Release(data);
     }
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
@@ -541,8 +541,8 @@ _channelitem_init(_channelitem *item,
     }
     else {
         assert(data == NULL
-               || _PyCrossInterpreterData_INTERPID(data) < 0
-               || interpid == _PyCrossInterpreterData_INTERPID(data));
+               || _PyXIData_INTERPID(data) < 0
+               || interpid == _PyXIData_INTERPID(data));
     }
     *item = (_channelitem){
         .interpid = interpid,
@@ -634,7 +634,7 @@ _channelitem_clear_interpreter(_channelitem *item)
         assert(item->unboundop != UNBOUND_REMOVE);
         return 0;
     }
-    assert(_PyCrossInterpreterData_INTERPID(item->data) == item->interpid);
+    assert(_PyXIData_INTERPID(item->data) == item->interpid);
 
     switch (item->unboundop) {
     case UNBOUND_REMOVE:
@@ -1779,7 +1779,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+    if (_PyObject_GetXIData(obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;
@@ -1917,7 +1917,7 @@ channel_recv(_channels *channels, int64_t cid, PyObject **res, int *p_unboundop)
     }
 
     // Convert the data back to an object.
-    PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    PyObject *obj = _PyXIData_NewObject(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
         // It was allocated in channel_send(), so we free it.
@@ -2545,8 +2545,7 @@ struct _channelid_xid {
 static PyObject *
 _channelid_from_xid(_PyXIData_t *data)
 {
-    struct _channelid_xid *xid = \
-                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
+    struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
 
     // It might not be imported yet, so we can't use _get_current_module().
     PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
@@ -2594,15 +2593,14 @@ done:
 static int
 _channelid_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _channelid_xid), obj,
             _channelid_from_xid
             ) < 0)
     {
         return -1;
     }
-    struct _channelid_xid *xid = \
-                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
+    struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
     xid->cid = ((channelid *)obj)->cid;
     xid->end = ((channelid *)obj)->end;
     xid->resolve = ((channelid *)obj)->resolve;
@@ -2770,7 +2768,7 @@ _channelend_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     if (res < 0) {
         return -1;
     }
-    _PyCrossInterpreterData_SET_NEW_OBJECT(data, _channelend_from_xid);
+    _PyXIData_SET_NEW_OBJECT(data, _channelend_from_xid);
     return 0;
 }
 

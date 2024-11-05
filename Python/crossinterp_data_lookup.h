@@ -11,7 +11,7 @@ lookup_getdata(PyInterpreterState *interp, PyObject *obj)
 }
 
 xidatafunc
-_PyCrossInterpreterData_Lookup(PyObject *obj)
+_PyXIData_Lookup(PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     return lookup_getdata(interp, obj);
@@ -237,7 +237,7 @@ _xidregistry_clear(struct _xidregistry *xidregistry)
 }
 
 int
-_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
+_PyXIData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
@@ -268,7 +268,7 @@ finally:
 }
 
 int
-_PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
+_PyXIData_UnregisterClass(PyTypeObject *cls)
 {
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -311,7 +311,7 @@ _new_bytes_object(_PyXIData_t *data)
 static int
 _bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
             _new_bytes_object
             ) < 0)
@@ -320,7 +320,7 @@ _bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     }
     struct _shared_bytes_data *shared = (struct _shared_bytes_data *)data->data;
     if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
-        _PyCrossInterpreterData_Clear(tstate->interp, data);
+        _PyXIData_Clear(tstate->interp, data);
         return -1;
     }
     return 0;
@@ -344,7 +344,7 @@ _new_str_object(_PyXIData_t *data)
 static int
 _str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_str_data), obj,
             _new_str_object
             ) < 0)
@@ -380,8 +380,7 @@ _long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         }
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, (void *)value, NULL,
-            _new_long_object);
+    _PyXIData_Init(data, tstate->interp, (void *)value, NULL, _new_long_object);
     // data->obj and data->free remain NULL
     return 0;
 }
@@ -398,7 +397,7 @@ _new_float_object(_PyXIData_t *data)
 static int
 _float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(double), NULL,
             _new_float_object
             ) < 0)
@@ -422,8 +421,7 @@ _new_none_object(_PyXIData_t *data)
 static int
 _none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
-            _new_none_object);
+    _PyXIData_Init(data, tstate->interp, NULL, NULL, _new_none_object);
     // data->data, data->obj and data->free remain NULL
     return 0;
 }
@@ -442,7 +440,7 @@ _new_bool_object(_PyXIData_t *data)
 static int
 _bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    _PyCrossInterpreterData_Init(data, tstate->interp,
+    _PyXIData_Init(data, tstate->interp,
             (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
             _new_bool_object);
     // data->obj and data->free remain NULL
@@ -466,7 +464,7 @@ _new_tuple_object(_PyXIData_t *data)
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        PyObject *item = _PyXIData_NewObject(shared->data[i]);
         if (item == NULL){
             Py_DECREF(tuple);
             return NULL;
@@ -485,8 +483,8 @@ _tuple_shared_free(void* data)
 #endif
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         if (shared->data[i] != NULL) {
-            assert(_PyCrossInterpreterData_INTERPID(shared->data[i]) == interpid);
-            _PyCrossInterpreterData_Release(shared->data[i]);
+            assert(_PyXIData_INTERPID(shared->data[i]) == interpid);
+            _PyXIData_Release(shared->data[i]);
             PyMem_RawFree(shared->data[i]);
             shared->data[i] = NULL;
         }
@@ -516,7 +514,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        _PyXIData_t *data = _PyCrossInterpreterData_New();
+        _PyXIData_t *data = _PyXIData_New();
         if (data == NULL) {
             goto error;  // PyErr_NoMemory already set
         }
@@ -524,7 +522,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetCrossInterpreterData(item, data);
+            res = _PyObject_GetXIData(item, data);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {
@@ -533,8 +531,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         }
         shared->data[i] = data;
     }
-    _PyCrossInterpreterData_Init(
-            data, tstate->interp, shared, obj, _new_tuple_object);
+    _PyXIData_Init(data, tstate->interp, shared, obj, _new_tuple_object);
     data->free = _tuple_shared_free;
     return 0;
 

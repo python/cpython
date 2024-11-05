@@ -1788,8 +1788,8 @@ _xid_capsule_destructor(PyObject *capsule)
 {
     _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
     if (data != NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        _PyCrossInterpreterData_Free(data);
+        assert(_PyXIData_Release(data) == 0);
+        _PyXIData_Free(data);
     }
 }
 
@@ -1801,18 +1801,18 @@ get_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyXIData_t *data = _PyCrossInterpreterData_New();
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         return NULL;
     }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        _PyCrossInterpreterData_Free(data);
+    if (_PyObject_GetXIData(obj, data) != 0) {
+        _PyXIData_Free(data);
         return NULL;
     }
     PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        _PyCrossInterpreterData_Free(data);
+        assert(_PyXIData_Release(data) == 0);
+        _PyXIData_Free(data);
     }
     return capsule;
 }
@@ -1829,7 +1829,7 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
     if (data == NULL) {
         return NULL;
     }
-    return _PyCrossInterpreterData_NewObject(data);
+    return _PyXIData_NewObject(data);
 }
 
 

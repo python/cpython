@@ -86,16 +86,16 @@ typedef struct {
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
-    assert(_PyCrossInterpreterData_DATA(data) != NULL);
-    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
-    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
-    self->interpid = _PyCrossInterpreterData_INTERPID(data);
+    self->view = (Py_buffer *)_PyXIData_DATA(data);
+    self->interpid = _PyXIData_INTERPID(data);
     return (PyObject *)self;
 }
 
@@ -178,8 +178,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         PyMem_RawFree(view);
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
+    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
     return 0;
 }
 
@@ -1182,7 +1181,7 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
+    if (_PyObject_CheckXIData(obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
