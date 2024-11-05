@@ -1360,6 +1360,7 @@ IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 struct container_and_flag {
     PyGC_Head *container;
     int visited_space;
+    int mark;
     uintptr_t size;
 };
 
@@ -1367,8 +1368,15 @@ struct container_and_flag {
 static int
 visit_add_to_container(PyObject *op, void *arg)
 {
-    OBJECT_STAT_INC(object_visits);
     struct container_and_flag *cf = (struct container_and_flag *)arg;
+#ifdef Py_STATS
+    if (cf->mark) {
+        GC_STAT_ADD(1, mark_visits, 1);
+    }
+    else {
+        OBJECT_STAT_INC(object_visits);
+    }
+#endif
     int visited = cf->visited_space;
     assert(visited == get_gc_state()->visited_space);
     if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
@@ -1390,6 +1398,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
     struct container_and_flag arg = {
         .container = container,
         .visited_space = gcstate->visited_space,
+        .mark = 0,
         .size = 0
     };
     assert(GC_NEXT(gc) == container);
@@ -1493,6 +1502,7 @@ gc_mark(PyThreadState *tstate, struct gc_collection_stats *stats)
     struct container_and_flag arg = {
         .container = &reachable,
         .visited_space = gcstate->visited_space,
+        .mark = 1,
         .size = 0
     };
     while (!gc_list_is_empty(&reachable)) {

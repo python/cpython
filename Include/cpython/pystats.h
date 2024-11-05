@@ -98,6 +98,7 @@ typedef struct _object_stats {
 typedef struct _gc_stats {
     uint64_t collections;
     uint64_t object_visits;
+    uint64_t mark_visits;
     uint64_t objects_collected;
     uint64_t objects_marked;
 } GCStats;
