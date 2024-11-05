@@ -9,10 +9,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 
 
-#define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
-#define _PyXI_GET_STATE(interp) (&(interp)->xi)
-
-
 /**************/
 /* exceptions */
 /**************/

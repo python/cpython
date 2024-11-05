@@ -173,12 +173,13 @@ typedef struct {
     } exceptions;
 } _PyXI_state_t;
 
+#define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
+#define _PyXI_GET_STATE(interp) (&(interp)->xi)
+
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
-
-#define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
 
 
 /***************************/
