@@ -1,6 +1,12 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
+typedef struct _xidregistry dlregistry_t;
+typedef struct _xidregitem dlregitem_t;
+
+
+// forward
+
 static xidatafunc _lookup_getdata_from_registry(PyInterpreterState *, PyObject *);
 
 static xidatafunc
@@ -31,10 +37,10 @@ _PyXIData_Lookup(PyObject *obj)
 
 /* registry lifecycle */
 
-static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *);
+static void _register_builtins_for_crossinterpreter_data(dlregistry_t *);
 
 static void
-_xidregistry_init(struct _xidregistry *registry)
+_xidregistry_init(dlregistry_t *registry)
 {
     if (registry->initialized) {
         return;
@@ -48,10 +54,10 @@ _xidregistry_init(struct _xidregistry *registry)
     }
 }
 
-static void _xidregistry_clear(struct _xidregistry *);
+static void _xidregistry_clear(dlregistry_t *);
 
 static void
-_xidregistry_fini(struct _xidregistry *registry)
+_xidregistry_fini(dlregistry_t *registry)
 {
     if (!registry->initialized) {
         return;
@@ -86,7 +92,7 @@ xid_lookup_fini(PyInterpreterState *interp)
 /* registry thread safety */
 
 static void
-_xidregistry_lock(struct _xidregistry *registry)
+_xidregistry_lock(dlregistry_t *registry)
 {
     if (registry->global) {
         PyMutex_Lock(&registry->mutex);
@@ -95,7 +101,7 @@ _xidregistry_lock(struct _xidregistry *registry)
 }
 
 static void
-_xidregistry_unlock(struct _xidregistry *registry)
+_xidregistry_unlock(dlregistry_t *registry)
 {
     if (registry->global) {
         PyMutex_Unlock(&registry->mutex);
@@ -105,35 +111,34 @@ _xidregistry_unlock(struct _xidregistry *registry)
 
 /* accessing the registry */
 
-static inline struct _xidregistry *
+static inline dlregistry_t *
 _get_global_xidregistry(_PyRuntimeState *runtime)
 {
     return &runtime->xi.registry;
 }
 
-static inline struct _xidregistry *
+static inline dlregistry_t *
 _get_xidregistry(PyInterpreterState *interp)
 {
     return &interp->xi.registry;
 }
 
-static inline struct _xidregistry *
+static inline dlregistry_t *
 _get_xidregistry_for_type(PyInterpreterState *interp, PyTypeObject *cls)
 {
-    struct _xidregistry *registry = _get_global_xidregistry(interp->runtime);
+    dlregistry_t *registry = _get_global_xidregistry(interp->runtime);
     if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         registry = _get_xidregistry(interp);
     }
     return registry;
 }
 
-static struct _xidregitem * _xidregistry_remove_entry(
-        struct _xidregistry *, struct _xidregitem *);
+static dlregitem_t* _xidregistry_remove_entry(dlregistry_t *, dlregitem_t *);
 
-static struct _xidregitem *
-_xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
+static dlregitem_t *
+_xidregistry_find_type(dlregistry_t *xidregistry, PyTypeObject *cls)
 {
-    struct _xidregitem *cur = xidregistry->head;
+    dlregitem_t *cur = xidregistry->head;
     while (cur != NULL) {
         if (cur->weakref != NULL) {
             // cur is/was a heap type.
@@ -161,10 +166,10 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
 
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     xidatafunc func = matched != NULL ? matched->getdata : NULL;
 
     _xidregistry_unlock(xidregistry);
@@ -175,14 +180,14 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 /* updating the registry */
 
 static int
-_xidregistry_add_type(struct _xidregistry *xidregistry,
+_xidregistry_add_type(dlregistry_t *xidregistry,
                       PyTypeObject *cls, xidatafunc getdata)
 {
-    struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
+    dlregitem_t *newhead = PyMem_RawMalloc(sizeof(dlregitem_t));
     if (newhead == NULL) {
         return -1;
     }
-    *newhead = (struct _xidregitem){
+    *newhead = (dlregitem_t){
         // We do not keep a reference, to avoid keeping the class alive.
         .cls = cls,
         .refcount = 1,
@@ -204,11 +209,10 @@ _xidregistry_add_type(struct _xidregistry *xidregistry,
     return 0;
 }
 
-static struct _xidregitem *
-_xidregistry_remove_entry(struct _xidregistry *xidregistry,
-                          struct _xidregitem *entry)
+static dlregitem_t *
+_xidregistry_remove_entry(dlregistry_t *xidregistry, dlregitem_t *entry)
 {
-    struct _xidregitem *next = entry->next;
+    dlregitem_t *next = entry->next;
     if (entry->prev != NULL) {
         assert(entry->prev->next == entry);
         entry->prev->next = next;
@@ -226,12 +230,12 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
 }
 
 static void
-_xidregistry_clear(struct _xidregistry *xidregistry)
+_xidregistry_clear(dlregistry_t *xidregistry)
 {
-    struct _xidregitem *cur = xidregistry->head;
+    dlregitem_t *cur = xidregistry->head;
     xidregistry->head = NULL;
     while (cur != NULL) {
-        struct _xidregitem *next = cur->next;
+        dlregitem_t *next = cur->next;
         Py_XDECREF(cur->weakref);
         PyMem_RawFree(cur);
         cur = next;
@@ -252,10 +256,10 @@ _PyXIData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
 
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
         assert(matched->getdata == getdata);
         matched->refcount += 1;
@@ -274,10 +278,10 @@ _PyXIData_UnregisterClass(PyTypeObject *cls)
 {
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
         assert(matched->refcount > 0);
         matched->refcount -= 1;
@@ -545,7 +549,7 @@ error:
 // registration
 
 static void
-_register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
+_register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
 {
     // None
     if (_xidregistry_add_type(xidregistry, (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
