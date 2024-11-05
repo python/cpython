@@ -1543,7 +1543,7 @@ visit_freeze(const mi_heap_t *heap, const mi_heap_area_t *area,
              void *block, size_t block_size, void *args)
 {
     PyObject *op = op_from_block(block, args, true);
-    if (op != NULL) {
+    if (op != NULL && ((op->ob_gc_bits & _PyGC_BITS_UNREACHABLE) == 0)) {
         op->ob_gc_bits |= _PyGC_BITS_FROZEN;
     }
     return true;
