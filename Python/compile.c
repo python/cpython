@@ -1835,7 +1835,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
-                Py_DECREF(freevars);
+                Py_XDECREF(freevars);
                 return ERROR;
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
