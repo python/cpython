@@ -1003,6 +1003,8 @@ LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
+host_exec_prefix
+host_prefix
 MACHDEP
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
@@ -1116,7 +1118,6 @@ enable_ipv6
 with_doc_strings
 with_mimalloc
 with_pymalloc
-with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1829,7 +1830,7 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
-  --disable-safety        disable usage of the security compiler options with
+  --enable-safety         enable usage of the security compiler options with
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
@@ -1918,7 +1919,6 @@ Optional Packages:
   --with-mimalloc         build with mimalloc memory allocator (default is yes
                           if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
-  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -3710,7 +3710,7 @@ fi
     fi
         ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
 printf "%s\n" "$with_build_python" >&6; }
 
@@ -4106,6 +4106,29 @@ printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
+
+
+if test -z "$host_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_prefix=/ ;; #(
+  *) :
+    host_prefix='${prefix}'
+   ;;
+esac
+fi
+
+
+if test -z "$host_exec_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_exec_prefix=$host_prefix ;; #(
+  *) :
+    host_exec_prefix='${exec_prefix}'
+   ;;
+esac
+fi
+
 
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
@@ -7325,6 +7348,9 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
 printf "%s\n" "$EXEEXT" >&6; }
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+ac_exeext=$EXEEXT
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 
@@ -7757,61 +7783,6 @@ else
 fi
 
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bigint" >&5
-printf %s "checking for node --experimental-wasm-bigint... " >&6; }
-if test ${ac_cv_tool_node_wasm_bigint+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bigint" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bigint" >&6; }
-      if test "x$ac_cv_tool_node_wasm_bigint" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-bigint"
-
-fi
-
-      if test "x$enable_wasm_pthreads" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-threads"
-        # no longer available in Node 16
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bulk-memory" >&5
-printf %s "checking for node --experimental-wasm-bulk-memory... " >&6; }
-if test ${ac_cv_tool_node_wasm_bulk_memory+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bulk_memory" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bulk_memory" >&6; }
-        if test "x$ac_cv_tool_node_wasm_bulk_memory" = xyes
-then :
-
-          as_fn_append HOSTRUNNER " --experimental-wasm-bulk-memory"
-
-fi
-
-fi
-
       if test "x$host_cpu" = xwasm64
 then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
@@ -8234,6 +8205,10 @@ printf "%s\n" "#define Py_TRACE_REFS 1" >>confdefs.h
 
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  as_fn_error $? "--disable-gil cannot be used with --with-trace-refs" "$LINENO" 5
+fi
 
 # Check for --enable-pystats
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
@@ -9573,6 +9548,7 @@ fi
 then :
   wasm_debug=yes
 fi
+        as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
         as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -9671,25 +9647,25 @@ fi
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
-printf %s "checking for --disable-safety... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-safety" >&5
+printf %s "checking for --enable-safety... " >&6; }
 # Check whether --enable-safety was given.
 if test ${enable_safety+y}
 then :
-  enableval=$enable_safety; if test "x$enable_safety" = xyes
+  enableval=$enable_safety; if test "x$disable_safety" = xyes
 then :
-  disable_safety=no
+  enable_safety=no
 else $as_nop
-  disable_safety=yes
+  enable_safety=yes
 fi
 else $as_nop
-  disable_safety=no
+  enable_safety=no
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
-printf "%s\n" "$disable_safety" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_safety" >&5
+printf "%s\n" "$enable_safety" >&6; }
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
@@ -9767,6 +9743,162 @@ then :
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
+printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wimplicit-fallthrough"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wimplicit-fallthrough not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wimplicit-fallthrough not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Werror=format-security" >&5
+printf %s "checking whether C compiler accepts -Werror=format-security... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Werror_format_security+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Werror=format-security"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Werror_format_security=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Werror_format_security=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Werror_format_security" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Werror_format_security" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Werror_format_security" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Werror=format-security not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Werror=format-security not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wbidi-chars=any" >&5
+printf %s "checking whether C compiler accepts -Wbidi-chars=any... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wbidi_chars_any+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wbidi-chars=any"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wbidi_chars_any" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wbidi_chars_any" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wbidi_chars_any" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wbidi-chars=any not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wbidi-chars=any not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wall" >&5
+printf %s "checking whether C compiler accepts -Wall... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wall+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wall"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wall=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wall=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wall" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wall" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wall" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wall"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wall not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wall not supported" >&2;}
 fi
 
 fi
@@ -10933,6 +11065,12 @@ ac_fn_c_check_header_compile "$LINENO" "linux/memfd.h" "ac_cv_header_linux_memfd
 if test "x$ac_cv_header_linux_memfd_h" = xyes
 then :
   printf "%s\n" "#define HAVE_LINUX_MEMFD_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "linux/netfilter_ipv4.h" "ac_cv_header_linux_netfilter_ipv4_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_netfilter_ipv4_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_NETFILTER_IPV4_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "linux/random.h" "ac_cv_header_linux_random_h" "$ac_includes_default"
@@ -13908,6 +14046,14 @@ done
 
 fi
 
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
+
+fi
+
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
@@ -14877,6 +15023,83 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+
+fi
+
+# Check for libffi with real complex double support.
+# This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+# but real support was provided only in libffi v3.3.0.
+# See https://github.com/python/cpython/issues/125206 for more details.
+#
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking libffi has complex type support" >&5
+printf %s "checking libffi has complex type support... " >&6; }
+if test ${ac_cv_ffi_complex_double_supported+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
+if test "$cross_compiling" = yes
+then :
+  ac_cv_ffi_complex_double_supported=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <complex.h>
+#include <ffi.h>
+int z_is_expected(double complex z)
+{
+    const double complex expected = CMPLX(1.25, -0.5);
+    return z == expected;
+}
+int main(void)
+{
+    double complex z = 1.25 - 0.5 * I;
+    ffi_type *args[1] = {&ffi_type_complex_double};
+    void *values[1] = {&z};
+    ffi_cif cif;
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+        &ffi_type_sint, args) != FFI_OK)
+    {
+        return 2;
+    }
+    ffi_arg rc;
+    ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
+    return !rc;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_ffi_complex_double_supported=yes
+else $as_nop
+  ac_cv_ffi_complex_double_supported=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
+printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
+if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
+
+printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -17811,31 +18034,6 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
 
-# Check whether objects such as float, tuple and dict are using
-# freelists to optimization memory allocation.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
-printf %s "checking for --with-freelists... " >&6; }
-
-# Check whether --with-freelists was given.
-if test ${with_freelists+y}
-then :
-  withval=$with_freelists;
-fi
-
-
-if test -z "$with_freelists"
-then
-    with_freelists="yes"
-fi
-if test "$with_freelists" != "no"
-then
-
-printf "%s\n" "#define WITH_FREELISTS 1" >>confdefs.h
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
-printf "%s\n" "$with_freelists" >&6; }
-
 # Check for --with-c-locale-coercion
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
 printf %s "checking for --with-c-locale-coercion... " >&6; }
@@ -20280,10 +20478,89 @@ fi
 printf "%s\n" "$ac_cv_lib_resolv_inet_aton" >&6; }
 if test "x$ac_cv_lib_resolv_inet_aton" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBRESOLV 1" >>confdefs.h
+  SOCKET_LIBS="-lresolv"
+fi
 
-  LIBS="-lresolv $LIBS"
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lc" >&5
+printf %s "checking for hstrerror in -lc... " >&6; }
+if test ${ac_cv_lib_c_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_c_hstrerror=yes
+else $as_nop
+  ac_cv_lib_c_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_c_hstrerror" >&6; }
+if test "x$ac_cv_lib_c_hstrerror" = xyes
+then :
+  $ac_cv_prog_TRUE
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lresolv" >&5
+printf %s "checking for hstrerror in -lresolv... " >&6; }
+if test ${ac_cv_lib_resolv_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lresolv  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_resolv_hstrerror=yes
+else $as_nop
+  ac_cv_lib_resolv_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_resolv_hstrerror" >&6; }
+if test "x$ac_cv_lib_resolv_hstrerror" = xyes
+then :
+  SOCKET_LIBS="-lresolv"
 fi
 
 
@@ -23912,18 +24189,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest$EXEEXT >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest$EXEEXT >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -23933,7 +24218,8 @@ fi
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
 printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
@@ -23941,41 +24227,34 @@ printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
 case $ax_cv_c_float_words_bigendian in
   yes)
 
-printf "%s\n" "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
  ;;
   no)
-     ;;
+
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;;
   *)
-    as_fn_error $? "
+    case $host_cpu in #(
+  *arm*) :
+    # Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
 
-Unknown float word ordering. You need to manually preset
-ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  wasm*) :
 
-    " "$LINENO" 5 ;;
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  *) :
+     ;;
+esac ;;
 esac
 
 
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-
-printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
-
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-
-printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
-  # or little, then it must be this?
-
-printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
-
-fi
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -27805,7 +28084,6 @@ done
 
 SRCDIRS="\
   Modules \
-  Modules/_blake2 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
@@ -28853,10 +29131,6 @@ if test ${ac_cv_libatomic_needed+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  if test "$cross_compiling" = yes
-then :
-    ac_cv_libatomic_needed=no
-else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -28897,16 +29171,14 @@ int main()
 }
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_libatomic_needed=no
 else $as_nop
     ac_cv_libatomic_needed=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
 printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
@@ -28974,7 +29246,7 @@ case $ac_sys_system in #(
 
     py_cv_module__scproxy=n/a
  ;; #(
-  Emscripten|WASI) :
+  Emscripten) :
 
 
 
@@ -28996,9 +29268,6 @@ case $ac_sys_system in #(
     py_cv_module_syslog=n/a
     py_cv_module_=n/a
 
-    case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-
 
 
     py_cv_module_fcntl=n/a
@@ -29006,10 +29275,28 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 
-       ;; #(
-  Emscripten/node*) :
-     ;; #(
-  WASI/*) :
+   ;; #(
+  WASI) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__interpreters=n/a
+    py_cv_module__interpchannels=n/a
+    py_cv_module__interpqueues=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
 
 
 
@@ -29025,11 +29312,6 @@ case $ac_sys_system in #(
     py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
-
-     ;; #(
-  *) :
-     ;;
-esac
    ;; #(
   *) :
 
@@ -29787,7 +30069,7 @@ fi
 then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET_LDFLAGS=$SOCKET_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__socket" = yes; then
@@ -30486,7 +30768,10 @@ case "$ac_sys_system" in
 esac
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
 then :
@@ -30520,21 +30805,44 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2
 if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
 then :
 
-  LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
-  LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+    LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+
+
+    # macOS universal2 builds *support* the -msse etc flags because they're
+    # available on x86_64. However, performance of the HACL SIMD128 implementation
+    # isn't great, so it's disabled on ARM64.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
+printf %s "checking for HACL* SIMD128 implementation... " >&6; }
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+printf "%s\n" "universal2" >&6; }
+    else
+      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+printf "%s\n" "standard" >&6; }
+    fi
 
 
 else $as_nop
   :
 fi
 
+fi
 
 
 
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+#
+# Although AVX support is not guaranteed on Android
+# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
+# runtime CPUID check.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
 then :
@@ -30568,17 +30876,32 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
 
-  LIBHACL_SIMD256_FLAGS="-mavx2"
-  LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+    LIBHACL_SIMD256_FLAGS="-mavx2"
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
+
+    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+    # available on x86_64; but the HACL SIMD256 build then fails because the
+    # implementation requires symbols that aren't available on ARM64. Use a
+    # wrapped implementation if we're building for universal2.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
+printf %s "checking for HACL* SIMD256 implementation... " >&6; }
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+printf "%s\n" "universal2" >&6; }
+    else
+      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+printf "%s\n" "standard" >&6; }
+    fi
 
 else $as_nop
   :
 fi
 
-
+fi
 
 
 

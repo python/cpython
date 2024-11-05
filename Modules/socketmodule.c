@@ -3421,6 +3421,18 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Common functionality for socket.connect and socket.connect_ex.
+ *
+ * If *raise* is set:
+ * - On success, return 0.
+ * - On any failure, return -1 with an exception set.
+ * If *raise* is zero:
+ * - On success, return 0.
+ * - On connect() failure, return errno (without an exception set)
+ * - On other error, return -1 with an exception set.
+ *
+ *   Note that -1 is a valid errno value on some systems.
+ */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3505,8 +3517,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -3536,8 +3550,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     return PyLong_FromLong((long) res);
 }
@@ -5621,7 +5636,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
         return PyErr_SetFromWindowsErr(0);
 
     if (size == 0)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
@@ -7906,6 +7921,9 @@ socket_exec(PyObject *m)
 #ifdef  SO_OOBINLINE
     ADD_INT_MACRO(m, SO_OOBINLINE);
 #endif
+#ifdef  SO_ORIGINAL_DST
+    ADD_INT_MACRO(m, SO_ORIGINAL_DST);
+#endif
 #ifndef __GNU__
 #ifdef  SO_REUSEPORT
     ADD_INT_MACRO(m, SO_REUSEPORT);
@@ -8559,6 +8577,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef IPV6_RECVDSTOPTS
     ADD_INT_MACRO(m, IPV6_RECVDSTOPTS);
+#endif
+#ifdef IPV6_RECVERR
+    ADD_INT_MACRO(m, IPV6_RECVERR);
 #endif
 #ifdef IPV6_RECVHOPLIMIT
     ADD_INT_MACRO(m, IPV6_RECVHOPLIMIT);

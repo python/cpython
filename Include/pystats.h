@@ -18,6 +18,8 @@ extern "C" {
 #else
 #  define _Py_INCREF_STAT_INC() ((void)0)
 #  define _Py_DECREF_STAT_INC() ((void)0)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() ((void)0)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() ((void)0)
 #endif  // !Py_STATS
 
 #ifdef __cplusplus

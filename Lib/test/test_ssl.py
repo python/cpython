@@ -3,6 +3,8 @@
 import sys
 import unittest
 import unittest.mock
+from ast import literal_eval
+from threading import Thread
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -82,21 +84,8 @@ BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
-CERTFILE_INFO = {
-    'issuer': ((('countryName', 'XY'),),
-               (('localityName', 'Castle Anthrax'),),
-               (('organizationName', 'Python Software Foundation'),),
-               (('commonName', 'localhost'),)),
-    'notAfter': 'Jan 24 04:21:36 2043 GMT',
-    'notBefore': 'Nov 25 04:21:36 2023 GMT',
-    'serialNumber': '53E14833F7546C29256DD0F034F776C5E983004C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert.pem.reference')) as file:
+    CERTFILE_INFO = literal_eval(file.read())
 
 # empty CRL
 CRLFILE = data_file("revocation.crl")
@@ -106,23 +95,8 @@ SIGNED_CERTFILE = data_file("keycert3.pem")
 SINGED_CERTFILE_ONLY = data_file("cert3.pem")
 SIGNED_CERTFILE_HOSTNAME = 'localhost'
 
-SIGNED_CERTFILE_INFO = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert3.pem.reference')) as file:
+    SIGNED_CERTFILE_INFO = literal_eval(file.read())
 
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
@@ -304,11 +278,19 @@ def test_wrap_socket(sock, *,
     return context.wrap_socket(sock, **kwargs)
 
 
+USE_SAME_TEST_CONTEXT = False
+_TEST_CONTEXT = None
+
 def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     """Create context
 
     client_context, server_context, hostname = testing_context()
     """
+    global _TEST_CONTEXT
+    if USE_SAME_TEST_CONTEXT:
+        if _TEST_CONTEXT is not None:
+            return _TEST_CONTEXT
+
     if server_cert == SIGNED_CERTFILE:
         hostname = SIGNED_CERTFILE_HOSTNAME
     elif server_cert == SIGNED_CERTFILE2:
@@ -325,6 +307,10 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     server_context.load_cert_chain(server_cert)
     if server_chain:
         server_context.load_verify_locations(SIGNING_CA)
+
+    if USE_SAME_TEST_CONTEXT:
+        if _TEST_CONTEXT is not None:
+            _TEST_CONTEXT = client_context, server_context, hostname
 
     return client_context, server_context, hostname
 
@@ -410,6 +396,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     def test_parse_cert(self):
+        self.maxDiff = None
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
         # parsing code
@@ -2826,6 +2813,44 @@ class ThreadedTests(unittest.TestCase):
             self.assertIn(
                 'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
                 str(e.exception))
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful if the GIL is disabled")
+    def test_ssl_in_multiple_threads(self):
+        # See GH-124984: OpenSSL is not thread safe.
+        threads = []
+
+        global USE_SAME_TEST_CONTEXT
+        USE_SAME_TEST_CONTEXT = True
+        try:
+            for func in (
+                self.test_echo,
+                self.test_alpn_protocols,
+                self.test_getpeercert,
+                self.test_crl_check,
+                self.test_check_hostname_idn,
+                self.test_wrong_cert_tls12,
+                self.test_wrong_cert_tls13,
+            ):
+                # Be careful with the number of threads here.
+                # Too many can result in failing tests.
+                for num in range(5):
+                    with self.subTest(func=func, num=num):
+                        threads.append(Thread(target=func))
+
+            with threading_helper.catch_threading_exception() as cm:
+                for thread in threads:
+                    with self.subTest(thread=thread):
+                        thread.start()
+
+                for thread in threads:
+                    with self.subTest(thread=thread):
+                        thread.join()
+                if cm.exc_value is not None:
+                    # Some threads can skip their test
+                    if not isinstance(cm.exc_value, unittest.SkipTest):
+                        raise cm.exc_value
+        finally:
+            USE_SAME_TEST_CONTEXT = False
 
     def test_getpeercert(self):
         if support.verbose:
