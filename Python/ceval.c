@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
@@ -26,7 +27,6 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
@@ -99,6 +99,11 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+            if (tracer->tracer_func != NULL) { \
+                void* data = tracer->tracer_data; \
+                tracer->tracer_func(op, PyRefTracer_DESTROY, data); \
+            } \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
@@ -184,7 +189,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     dump_stack(frame, stack_pointer);
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
+    int offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     if (OPCODE_HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -634,7 +639,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -649,6 +654,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_closure = NULL
     };
     PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
+    _Py_DECREF_BUILTINS(builtins);
     if (func == NULL) {
         return NULL;
     }
@@ -835,6 +841,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
+#ifdef Py_GIL_DISABLED
+        /* Load thread-local bytecode */
+        if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
+            _Py_CODEUNIT *bytecode =
+                _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+            if (bytecode == NULL) {
+                goto error;
+            }
+            ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+            frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+            frame->instr_ptr = bytecode + off;
+        }
+#endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
@@ -977,7 +996,7 @@ exception_unwind:
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
@@ -1039,6 +1058,8 @@ enter_tier_two:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
+#undef ENABLE_SPECIALIZATION_FT
+#define ENABLE_SPECIALIZATION_FT 0
 
 #ifdef Py_DEBUG
     #define DPRINTF(level, ...) \
@@ -1133,7 +1154,7 @@ exit_to_tier1_dynamic:
     goto goto_to_tier1;
 exit_to_tier1:
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -1758,7 +1779,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_Initialize(frame, func, locals, code, 0, previous);
+    _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
@@ -1894,7 +1915,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
@@ -1949,6 +1970,7 @@ fail:
     Py_XDECREF(func);
     Py_XDECREF(kwnames);
     PyMem_Free(newargs);
+    _Py_DECREF_BUILTINS(builtins);
     Py_DECREF(defaults);
     return res;
 }
@@ -2795,7 +2817,7 @@ PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
+    PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
@@ -2803,16 +2825,16 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &pkgname) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
-        Py_CLEAR(pkgname);
+    if (mod_name == NULL || !PyUnicode_Check(mod_name)) {
+        Py_CLEAR(mod_name);
         goto error;
     }
-    fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
+    fullmodname = PyUnicode_FromFormat("%U.%U", mod_name, name);
     if (fullmodname == NULL) {
-        Py_DECREF(pkgname);
+        Py_DECREF(mod_name);
         return NULL;
     }
     x = PyImport_GetModule(fullmodname);
@@ -2820,63 +2842,121 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (x == NULL && !_PyErr_Occurred(tstate)) {
         goto error;
     }
-    Py_DECREF(pkgname);
+    Py_DECREF(mod_name);
     return x;
+
  error:
-    if (pkgname == NULL) {
-        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
-        if (pkgname_or_unknown == NULL) {
+    if (mod_name == NULL) {
+        mod_name_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (mod_name_or_unknown == NULL) {
             return NULL;
         }
     } else {
-        pkgname_or_unknown = pkgname;
+        mod_name_or_unknown = mod_name;
     }
+    // mod_name is no longer an owned reference
+    assert(mod_name_or_unknown);
+    assert(mod_name == NULL || mod_name == mod_name_or_unknown);
 
-    pkgpath = NULL;
-    if (PyModule_Check(v)) {
-        pkgpath = PyModule_GetFilenameObject(v);
-        if (pkgpath == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                Py_DECREF(pkgname_or_unknown);
-                return NULL;
-            }
-            // module filename missing
-            _PyErr_Clear(tstate);
-        }
+    origin = NULL;
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec) < 0) {
+        Py_DECREF(mod_name_or_unknown);
+        return NULL;
     }
-    if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
-        Py_CLEAR(pkgpath);
+    if (spec == NULL) {
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
-            name, pkgname_or_unknown
+            name, mod_name_or_unknown
+        );
+        goto done_with_errmsg;
+    }
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
+        goto done;
+    }
+
+    int is_possibly_shadowing = _PyModule_IsPossiblyShadowing(origin);
+    if (is_possibly_shadowing < 0) {
+        goto done;
+    }
+    int is_possibly_shadowing_stdlib = 0;
+    if (is_possibly_shadowing) {
+        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
+            is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
+            if (is_possibly_shadowing_stdlib < 0) {
+                goto done;
+            }
+        }
+    }
+
+    if (is_possibly_shadowing_stdlib) {
+        assert(origin);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R "
+            "(consider renaming %R since it has the same "
+            "name as the standard library module named %R "
+            "and prevents importing that standard library module)",
+            name, mod_name_or_unknown, origin, mod_name_or_unknown
         );
     }
     else {
-        PyObject *spec;
-        int rc = PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec);
-        if (rc > 0) {
-            rc = _PyModuleSpec_IsInitializing(spec);
-            Py_DECREF(spec);
-        }
+        int rc = _PyModuleSpec_IsInitializing(spec);
         if (rc < 0) {
-            Py_DECREF(pkgname_or_unknown);
-            Py_DECREF(pkgpath);
-            return NULL;
+            goto done;
         }
-        const char *fmt =
-            rc ?
-            "cannot import name %R from partially initialized module %R "
-            "(most likely due to a circular import) (%S)" :
-            "cannot import name %R from %R (%S)";
-
-        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
+        else if (rc > 0) {
+            if (is_possibly_shadowing) {
+                assert(origin);
+                // For non-stdlib modules, only mention the possibility of
+                // shadowing if the module is being initialized.
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R "
+                    "(consider renaming %R if it has the same name "
+                    "as a library you intended to import)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else if (origin) {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from partially initialized module %R "
+                    "(most likely due to a circular import) (%S)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from partially initialized module %R "
+                    "(most likely due to a circular import)",
+                    name, mod_name_or_unknown
+                );
+            }
+        }
+        else {
+            assert(rc == 0);
+            if (origin) {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R (%S)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R (unknown location)",
+                    name, mod_name_or_unknown
+                );
+            }
+        }
     }
-    /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
 
-    Py_XDECREF(errmsg);
-    Py_DECREF(pkgname_or_unknown);
-    Py_XDECREF(pkgpath);
+done_with_errmsg:
+    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
+    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+    Py_DECREF(errmsg);
+
+done:
+    Py_XDECREF(origin);
+    Py_XDECREF(spec);
+    Py_DECREF(mod_name_or_unknown);
     return NULL;
 }
 
@@ -3236,5 +3316,3 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     }
     return value;
 }
-
-

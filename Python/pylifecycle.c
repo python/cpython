@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
@@ -26,7 +27,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -78,6 +79,7 @@ static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
+
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
  * interpreter state for various runtime debugging tools, but is *not* an
@@ -106,6 +108,7 @@ __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
+
 
 static int runtime_initialized = 0;
 
@@ -667,6 +670,13 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     config.gil = PyInterpreterConfig_OWN_GIL;
     config.check_multi_interp_extensions = 0;
     status = init_interp_settings(interp, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1300,14 +1310,26 @@ init_interp_main(PyThreadState *tstate)
             enabled = *env != '0';
         }
         if (enabled) {
-            PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-            if (opt == NULL) {
-                return _PyStatus_ERR("can't initialize optimizer");
+#ifdef _Py_JIT
+            // perf profiler works fine with tier 2 interpreter, so
+            // only checking for a "real JIT".
+            if (config->perf_profiling > 0) {
+                (void)PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "JIT deactivated as perf profiling support is active",
+                    0);
+            } else
+#endif
+            {
+                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
+                if (opt == NULL) {
+                    return _PyStatus_ERR("can't initialize optimizer");
+                }
+                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+                    return _PyStatus_ERR("can't install optimizer");
+                }
+                Py_DECREF(opt);
             }
-            if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                return _PyStatus_ERR("can't install optimizer");
-            }
-            Py_DECREF(opt);
         }
     }
 #endif
@@ -2292,6 +2314,13 @@ new_interpreter(PyThreadState **tstate_p,
     status = init_interp_settings(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
+    }
+
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     // initialize the interp->obmalloc state.  This must be done after

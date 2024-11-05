@@ -16,6 +16,7 @@ import errno
 import functools
 import signal
 import array
+import collections.abc
 import socket
 import random
 import logging
@@ -2331,6 +2332,10 @@ class _TestContainers(BaseTestCase):
         a.append('hello')
         self.assertEqual(f[0][:], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'hello'])
 
+    def test_list_isinstance(self):
+        a = self.list()
+        self.assertIsInstance(a, collections.abc.MutableSequence)
+
     def test_list_iter(self):
         a = self.list(list(range(10)))
         it = iter(a)
@@ -2370,6 +2375,10 @@ class _TestContainers(BaseTestCase):
         self.assertEqual(sorted(d.keys()), indices)
         self.assertEqual(sorted(d.values()), [chr(i) for i in indices])
         self.assertEqual(sorted(d.items()), [(i, chr(i)) for i in indices])
+
+    def test_dict_isinstance(self):
+        a = self.dict()
+        self.assertIsInstance(a, collections.abc.MutableMapping)
 
     def test_dict_iter(self):
         d = self.dict()
@@ -5761,6 +5770,8 @@ class TestResourceTracker(unittest.TestCase):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)
 
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-125620: Skip on NetBSD due to long wait for SIGKILL process termination.")
     def test_resource_tracker_sigkill(self):
         # Uncatchable signal.
         self.check_resource_tracker_death(signal.SIGKILL, True)
