@@ -358,7 +358,6 @@ Modules/_testclinic.c	-	TestClass	-
 ##-----------------------
 ## static types
 
-Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_DateType	-
 Modules/_datetimemodule.c	-	PyDateTime_DeltaType	-
@@ -383,16 +382,12 @@ Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 
 ## exception types
-Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
 ##-----------------------
 ## other
-
-## initialized once
-Modules/_cursesmodule.c	-	ModDict	-
 
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
@@ -412,10 +407,11 @@ Modules/_tkinter.c	-	trbInCmd	-
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
-Modules/_cursesmodule.c	-	initialised	-
-Modules/_cursesmodule.c	-	initialised_setupterm	-
-Modules/_cursesmodule.c	-	initialisedcolors	-
-Modules/_cursesmodule.c	-	screen_encoding	-
+Modules/_cursesmodule.c	-	curses_module_loaded	-
+Modules/_cursesmodule.c	-	curses_initscr_called	-
+Modules/_cursesmodule.c	-	curses_setupterm_called	-
+Modules/_cursesmodule.c	-	curses_start_color_called	-
+Modules/_cursesmodule.c	-	curses_screen_encoding	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-

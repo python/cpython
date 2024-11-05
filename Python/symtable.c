@@ -136,6 +136,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_annotation_block = NULL;
 
+    ste->ste_has_docstring = 0;
+
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
     ste->ste_children = PyList_New(0);
@@ -354,7 +356,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 
 static void dump_symtable(PySTEntryObject* ste)
 {
-    PyObject *empty = PyUnicode_FromString("");
+    PyObject *empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     assert(empty != NULL);
     _dump_symtable(ste, empty);
     Py_DECREF(empty);
@@ -551,7 +553,7 @@ _PyST_GetScope(PySTEntryObject *ste, PyObject *name)
     if (symbol < 0) {
         return -1;
     }
-    return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+    return SYMBOL_TO_SCOPE(symbol);
 }
 
 int
@@ -809,7 +811,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             assert(_PyUnicode_EqualToASCIIString(k, ".0"));
             continue;
         }
-        int scope = (comp_flags >> SCOPE_OFFSET) & SCOPE_MASK;
+        int scope = SYMBOL_TO_SCOPE(comp_flags);
         int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
         if (scope == CELL || only_flags & DEF_COMP_CELL) {
             if (PySet_Add(inlined_cells, k) < 0) {
@@ -1841,6 +1843,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
+        }
+
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns, new_ste)) {
             Py_DECREF(new_ste);
@@ -2166,6 +2172,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                            LOCATION(s));
         if (!new_ste) {
             return 0;
+        }
+
+        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
         }
 
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
@@ -3120,33 +3130,30 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (ipriv == plen) {
         return Py_NewRef(ident); /* Don't mangle if class is just underscores */
     }
-    plen -= ipriv;
 
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+    if (nlen + (plen - ipriv) >= PY_SSIZE_T_MAX - 1) {
         PyErr_SetString(PyExc_OverflowError,
                         "private identifier too large to be mangled");
         return NULL;
     }
 
-    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
-    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
-        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1 + nlen + (plen - ipriv));
+    if (!writer) {
+        return NULL;
     }
+    // ident = "_" + priv[ipriv:] + ident
+    if (PyUnicodeWriter_WriteChar(writer, '_') < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(writer, privateobj, ipriv, plen) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteStr(writer, ident) < 0) {
+        goto error;
+    }
+    return PyUnicodeWriter_Finish(writer);
 
-    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result) {
-        return NULL;
-    }
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }

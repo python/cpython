@@ -946,7 +946,7 @@ The :mod:`test.support` module defines the following functions:
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
    The *extra* argument can be a set of names that wouldn't otherwise be automatically
-   detected as "public", like objects without a proper ``__module__``
+   detected as "public", like objects without a proper :attr:`~definition.__module__`
    attribute. If provided, it will be added to the automatically detected ones.
 
    The *not_exported* argument can be a set of names that must not be treated
@@ -1701,7 +1701,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
 .. function:: check_warnings(*filters, quiet=True)
 
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   A convenience wrapper for :func:`warnings.catch_warnings` that makes it
    easier to test that a warning was correctly raised.  It is approximately
    equivalent to calling ``warnings.catch_warnings(record=True)`` with
    :meth:`warnings.simplefilter` set to ``always`` and with the option to
