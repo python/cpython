@@ -50,9 +50,10 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     }
 )
 
-# Sentinel to be used as default arg during deprecation period of
-# TOMLDecodeError's free-form arguments
-_DEFAULT = object()
+
+class DEPRECATED_DEFAULT:
+    """Sentinel to be used as default arg during deprecation
+    period of TOMLDecodeError's free-form arguments."""
 
 
 class TOMLDecodeError(ValueError):
@@ -68,9 +69,9 @@ class TOMLDecodeError(ValueError):
 
     def __init__(
         self,
-        msg: str = _DEFAULT,  # type: ignore[assignment]
-        doc: str = _DEFAULT,  # type: ignore[assignment]
-        pos: Pos = _DEFAULT,  # type: ignore[assignment]
+        msg: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
+        doc: str = DEPRECATED_DEFAULT,  # type: ignore[assignment]
+        pos: Pos = DEPRECATED_DEFAULT,  # type: ignore[assignment]
         *args: Any,
     ):
         if (
@@ -85,11 +86,11 @@ class TOMLDecodeError(ValueError):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if pos is not _DEFAULT:
+            if pos is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = pos, *args
-            if doc is not _DEFAULT:
+            if doc is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = doc, *args
-            if msg is not _DEFAULT:
+            if msg is not DEPRECATED_DEFAULT:  # type: ignore[comparison-overlap]
                 args = msg, *args
             ValueError.__init__(self, *args)
             return
