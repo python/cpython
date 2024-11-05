@@ -784,7 +784,6 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
                                           "use_tool_id", "is",
                                           self->tool_id, "cProfile");
     if (check == NULL) {
-        PyErr_Clear();
         PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
         goto error;
     }
@@ -799,11 +798,11 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         PyObject *register_result = PyObject_CallMethod(monitoring, "register_callback",
                                                         "iiO", self->tool_id,
                                                         event, callback);
-        Py_DECREF(register_result);
         Py_DECREF(callback);
         if (register_result == NULL) {
             goto error;
         }
+        Py_DECREF(register_result);
         all_events |= event;
     }
 
