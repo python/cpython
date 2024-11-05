@@ -1592,6 +1592,11 @@ Copying, moving and deleting
    This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
+   .. note::
+      Where supported by the operating system and file system, this method
+      performs a lightweight copy, where data blocks are only copied when
+      modified. This is known as copy-on-write.
+
    .. versionadded:: 3.14
 
 
