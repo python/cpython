@@ -360,7 +360,8 @@ class ContextTest(unittest.TestCase):
             '__ne__', 'get', 'items', 'keys', 'values',
         )
         for name in mapping_methods:
-            self.assertTrue(callable(getattr(ctx, name)))
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
 
     @isolated_context
     @threading_helper.requires_working_threading()
