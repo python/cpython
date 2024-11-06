@@ -5100,7 +5100,7 @@ static PyObject *
 Pickler_getattr(PyObject *self, PyObject *name)
 {
     if (PyUnicode_Check(name)
-        && PyUnicode_CompareWithASCIIString(name, "persistent_id") == 0
+        && PyUnicode_EqualToUTF8(name, "persistent_id")
         && ((PicklerObject *)self)->persistent_id_attr)
     {
         return Py_NewRef(((PicklerObject *)self)->persistent_id_attr);
@@ -5113,7 +5113,7 @@ static int
 Pickler_setattr(PyObject *self, PyObject *name, PyObject *value)
 {
     if (PyUnicode_Check(name)
-        && PyUnicode_CompareWithASCIIString(name, "persistent_id") == 0)
+        && PyUnicode_EqualToUTF8(name, "persistent_id"))
     {
         Py_XINCREF(value);
         Py_XSETREF(((PicklerObject *)self)->persistent_id_attr, value);
