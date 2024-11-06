@@ -197,7 +197,6 @@ consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers
 or the ``prog`` and the ``usage`` arguments to
 :meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and 
 usage information across subparsers.
-``
 
 
 .. _description:
