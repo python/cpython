@@ -4,7 +4,9 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support import (threading_helper, check_impl_detail,
+                          requires_specialization, requires_specialization_ft,
+                          cpython_only)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -1198,6 +1200,50 @@ class TestInstanceDict(unittest.TestCase):
         #This should set x.b = 0
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
+
+
+class TestSpecializer(TestBase):
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_op(self):
+        def f():
+            a, b = 1, 2
+            for _ in range(100):
+                c = a + b
+                self.assertEqual(c, 3)
+
+        f()
+        self.assert_specialized(f, "BINARY_OP_ADD_INT")
+
+        def g():
+            a, b = "foo", "bar"
+            for _ in range(100):
+                c = a + b
+                self.assertEqual(c, "foobar")
+
+        g()
+        self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_contain_op(self):
+        def f():
+            a, b = 1, {1: 2, 2: 5}
+            for _ in range(100):
+                self.assertTrue(a in b)
+
+        f()
+        self.assert_specialized(f, "CONTAINS_OP_DICT")
+
+        def g():
+            a, b = 1, {1, 2}
+            for _ in range(100):
+                self.assertTrue(a in b)
+
+        g()
+        self.assert_specialized(g, "CONTAINS_OP_SET")
+
 
 
 if __name__ == "__main__":
