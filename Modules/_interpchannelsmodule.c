@@ -2047,7 +2047,7 @@ struct channel_info {
             int recv;
         } cur;
     } status;
-    Py_ssize_t count;
+    int64_t count;
 };
 
 static int
