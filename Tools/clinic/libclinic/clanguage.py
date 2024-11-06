@@ -15,7 +15,7 @@ from libclinic.function import (
     Module, Class, Function, Parameter,
     permute_optional_groups,
     GETTER, SETTER, METHOD_INIT)
-from libclinic.converters import defining_class_converter, self_converter
+from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
