@@ -84,7 +84,12 @@ The following exceptions are available:
 
       The column corresponding to *pos*.
 
-   .. versionadded:: 3.14
+   .. versionchanged:: next
+      Added the *msg*, *doc* and *pos* parameters.
+      Added the :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno` attributes.
+
+   .. deprecated:: next
+      Passing free-form positional arguments is deprecated.
 
 
 Examples
