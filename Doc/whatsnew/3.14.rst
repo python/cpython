@@ -471,6 +471,15 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+io
+---
+* :mod:`io` which provides the built-in :func:`open` makes less system calls
+  when opening regular files as well as reading whole files. Reading a small
+  operating system cached file in full is up to 15% faster.
+  :func:`pathlib.Path.read_bytes` has the most optimizations for reading a
+  file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
+  :gh:`120754` and :gh:`90102`.)
+
 Deprecated
 ==========
 
