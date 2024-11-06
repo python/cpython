@@ -192,10 +192,12 @@ arguments it contains. The default message can be overridden with the
 The ``%(prog)s`` format specifier is available to fill in the program name in
 your usage messages.
 
-When a custom usage message is specified for the main parser, consider
-also passing the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
+When a custom usage message is specified for the main parser, you may also want to
+consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
 or the ``prog`` and the ``usage`` arguments to
-:meth:`~_SubParsersAction.add_parser`.
+:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and 
+usage information across subparsers.
+``
 
 
 .. _description:
