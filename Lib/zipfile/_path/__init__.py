@@ -280,7 +280,7 @@ class Path:
     >>> str(path.parent)
     'mem'
 
-    If the zipfile has no filename, such ﻿attributes are not
+    If the zipfile has no filename, such attributes are not
     valid and accessing them will raise an Exception.
 
     >>> zf.filename = None
