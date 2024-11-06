@@ -156,7 +156,7 @@ def search_function(encoding):
 codecs.register(search_function)
 
 if sys.platform == 'win32':
-    from _win_cp_codecs import create_win32_code_page_codec
+    from ._win_cp_codecs import create_win32_code_page_codec
 
     def win32_code_page_search_function(encoding):
         encoding = encoding.lower()
