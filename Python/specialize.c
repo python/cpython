@@ -2784,7 +2784,6 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
-    uint8_t specialized_op;
     if (PyDict_CheckExact(value)) {
         specialize(instr, CONTAINS_OP_DICT);
         return;
