@@ -883,6 +883,7 @@ new_dict(PyInterpreterState *interp,
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
     ASSERT_CONSISTENT(mp);
+    _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
 }
 
@@ -1578,64 +1579,6 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
     return 1;
 }
 
-#define MAINTAIN_TRACKING(mp, key, value) \
-    do { \
-        if (!_PyObject_GC_IS_TRACKED(mp)) { \
-            if (_PyObject_GC_MAY_BE_TRACKED(key) || \
-                _PyObject_GC_MAY_BE_TRACKED(value)) { \
-                _PyObject_GC_TRACK(mp); \
-            } \
-        } \
-    } while(0)
-
-void
-_PyDict_MaybeUntrack(PyObject *op)
-{
-    PyDictObject *mp;
-    PyObject *value;
-    Py_ssize_t i, numentries;
-
-    ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(op);
-
-    if (!PyDict_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
-        return;
-
-    mp = (PyDictObject *) op;
-    ASSERT_CONSISTENT(mp);
-    numentries = mp->ma_keys->dk_nentries;
-    if (_PyDict_HasSplitTable(mp)) {
-        for (i = 0; i < numentries; i++) {
-            if ((value = mp->ma_values->values[i]) == NULL)
-                continue;
-            if (_PyObject_GC_MAY_BE_TRACKED(value)) {
-                return;
-            }
-        }
-    }
-    else {
-        if (DK_IS_UNICODE(mp->ma_keys)) {
-            PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(mp->ma_keys);
-            for (i = 0; i < numentries; i++) {
-                if ((value = ep0[i].me_value) == NULL)
-                    continue;
-                if (_PyObject_GC_MAY_BE_TRACKED(value))
-                    return;
-            }
-        }
-        else {
-            PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
-            for (i = 0; i < numentries; i++) {
-                if ((value = ep0[i].me_value) == NULL)
-                    continue;
-                if (_PyObject_GC_MAY_BE_TRACKED(value) ||
-                    _PyObject_GC_MAY_BE_TRACKED(ep0[i].me_key))
-                    return;
-            }
-        }
-    }
-    _PyObject_GC_UNTRACK(op);
-}
-
 void
 _PyDict_EnablePerThreadRefcounting(PyObject *op)
 {
@@ -1761,7 +1704,6 @@ insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, 
 {
     assert(PyUnicode_CheckExact(key));
     ASSERT_DICT_LOCKED(mp);
-    MAINTAIN_TRACKING(mp, key, value);
     PyObject *old_value = mp->ma_values->values[ix];
     if (old_value == NULL) {
         _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
@@ -1817,8 +1759,6 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         goto Fail;
-
-    MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
         assert(!_PyDict_HasSplitTable(mp));
@@ -1877,8 +1817,6 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
 
     /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     assert(mp->ma_values == NULL);
-
-    MAINTAIN_TRACKING(mp, key, value);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
     dictkeys_set_index(newkeys, hashpos, 0);
@@ -3770,11 +3708,6 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
 
-            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                /* Maintain tracking. */
-                _PyObject_GC_TRACK(mp);
-            }
-
             return 0;
         }
     }
@@ -4024,8 +3957,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
-        if (_PyObject_GC_IS_TRACKED(mp))
-            _PyObject_GC_TRACK(split_copy);
+        _PyObject_GC_TRACK(split_copy);
         return (PyObject *)split_copy;
     }
 
@@ -4060,10 +3992,6 @@ copy_lock_held(PyObject *o)
 
         new->ma_used = mp->ma_used;
         ASSERT_CONSISTENT(new);
-        if (_PyObject_GC_IS_TRACKED(mp)) {
-            /* Maintain tracking. */
-            _PyObject_GC_TRACK(new);
-        }
 
         return (PyObject *)new;
     }
@@ -4350,8 +4278,6 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
                 *result = NULL;
             }
         }
-
-        MAINTAIN_TRACKING(mp, key, value);
         STORE_USED(mp, mp->ma_used + 1);
         assert(mp->ma_keys->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
@@ -4801,15 +4727,8 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
 
-    if (type != &PyDict_Type) {
-        // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
-        if (!_PyObject_GC_IS_TRACKED(d)) {
-            _PyObject_GC_TRACK(d);
-        }
-    }
-    else {
-        // _PyType_AllocNoTrack() does not track the created object
-        assert(!_PyObject_GC_IS_TRACKED(d));
+    if (!_PyObject_GC_IS_TRACKED(d)) {
+        _PyObject_GC_TRACK(d);
     }
     return self;
 }
@@ -6755,9 +6674,6 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
         }
     }
     PyDictObject *res = (PyDictObject *)new_dict(interp, keys, values, used, 0);
-    if (track && res) {
-        _PyObject_GC_TRACK(res);
-    }
     return res;
 }
 
