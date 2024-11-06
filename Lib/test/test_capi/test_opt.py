@@ -1486,6 +1486,14 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_jit_error_pops(self):
+        """
+        Tests that the correct number of pops are inserted into the
+        exit stub
+        """
+        items = 17 * [None] + [[]]
+        with self.assertRaises(TypeError):
+            {item for item in items}
 
 if __name__ == "__main__":
     unittest.main()
