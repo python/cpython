@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+
 PyDoc_STRVAR(grp_getgrgid__doc__,
 "getgrgid($module, /, id)\n"
 "--\n"
@@ -26,7 +28,9 @@ grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:getgrgid", _keywords,
         &id))
         goto exit;
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = grp_getgrgid_impl(module, id);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -56,7 +60,9 @@ grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:getgrnam", _keywords,
         &name))
         goto exit;
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = grp_getgrnam_impl(module, name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -80,6 +86,12 @@ grp_getgrall_impl(PyObject *module);
 static PyObject *
 grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return grp_getgrall_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = grp_getgrall_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=81f180beb67fc585 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfcdb3a6951a1805 input=a9049054013a1b77]*/

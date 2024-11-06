@@ -1,9 +1,17 @@
-/* UNIX group file access module */
+/* UNIX group file access module
+ *
+ * Use @critical_section since getgrgid(), getgrnam() and getgrall() are not
+ * thread safe (gh-126316).
+ */
 
 // Need limited C API version 3.13 for PyMem_RawRealloc()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x030d0000
+#  define Py_LIMITED_API 0x030d0000
+#else
+#  ifndef Py_BUILD_CORE_BUILTIN
+#    define Py_BUILD_CORE_MODULE 1
+#  endif
 #endif
 
 #include "Python.h"
@@ -111,6 +119,7 @@ mkgrent(PyObject *module, struct group *p)
 }
 
 /*[clinic input]
+@critical_section
 grp.getgrgid
 
     id: object
@@ -122,7 +131,7 @@ If id is not valid, raise KeyError.
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id)
-/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+/*[clinic end generated code: output=30797c289504a1ba input=f5bf2ce5d1b3d6bc]*/
 {
     PyObject *retval = NULL;
     int nomem = 0;
@@ -191,6 +200,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 }
 
 /*[clinic input]
+@critical_section
 grp.getgrnam
 
     name: unicode
@@ -202,7 +212,7 @@ If name is not valid, raise KeyError.
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
+/*[clinic end generated code: output=67905086f403c21c input=da37ffb830c57159]*/
 {
     char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
@@ -269,6 +279,7 @@ out:
 }
 
 /*[clinic input]
+@critical_section
 grp.getgrall
 
 Return a list of all available group entries, in arbitrary order.
@@ -279,7 +290,7 @@ to use YP/NIS and may not be accessible via getgrnam or getgrgid.
 
 static PyObject *
 grp_getgrall_impl(PyObject *module)
-/*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
+/*[clinic end generated code: output=585dad35e2e763d7 input=b257403558f07a1d]*/
 {
     PyObject *d;
     struct group *p;
