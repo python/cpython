@@ -2747,25 +2747,27 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 {
     PyObject *value = PyStackRef_AsPyObjectBorrow(value_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    uint8_t specialized_op;
     _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
     if (PyDict_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_DICT;
+        specialized_op = CONTAINS_OP_DICT;
         goto success;
     }
     if (PySet_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_SET;
+        specialized_op = CONTAINS_OP_SET;
         goto success;
     }
 
     SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
     STAT_INC(CONTAINS_OP, failure);
-    instr->op.code = CONTAINS_OP;
+    SET_OPCODE_OR_RETURN(instr, CONTAINS_OP);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(CONTAINS_OP, success);
+    SET_OPCODE_OR_RETURN(instr, specialized_op);
     cache->counter = adaptive_counter_cooldown();
 }
 
