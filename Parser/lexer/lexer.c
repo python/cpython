@@ -328,7 +328,6 @@ verify_identifier(struct tok_state *tok)
         }
         return 0;
     }
-    
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
     Py_ssize_t len = PyUnicode_GET_LENGTH(s);
 
