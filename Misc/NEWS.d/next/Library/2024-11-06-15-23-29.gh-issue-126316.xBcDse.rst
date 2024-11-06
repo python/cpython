@@ -1,2 +1,2 @@
-:mod:`grp`: Fix segfault on concurrent calls on Free Threaded build by using
+:mod:`grp`: Fix segfault on concurrent calls on :term:`free-threaded <free threading>` build by using
 mutexes. Patch by Victor Stinner.
