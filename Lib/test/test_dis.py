@@ -10,8 +10,7 @@ import sys
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, requires_specialization_ft,
-                          cpython_only)
+                          requires_specialization, cpython_only)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
