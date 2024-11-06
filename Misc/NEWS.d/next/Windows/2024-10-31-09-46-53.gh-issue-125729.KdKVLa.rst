@@ -1,1 +1,1 @@
-Add turtle.py into Tcl/Tk installation option
+Mention the turtle module in Tcl/Tk installation option in Windows installer. Exclude turtle.py from stdlib if this option is not set.
