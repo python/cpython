@@ -15,9 +15,12 @@ extern PyTypeObject _PyContextTokenMissing_Type;
 
 PyStatus _PyContext_Init(PyInterpreterState *);
 
-// Exits any thread-owned contexts (see context_get) at the top of the thread's
-// context stack.  Logs a warning via PyErr_FormatUnraisable if the thread's
-// context stack is non-empty afterwards (those contexts can never be exited or
+// Exits any thread-owned contexts (see context_get) at the top of the given
+// thread's context stack.  The given thread state is not required to belong to
+// the calling thread; if not, the thread is assumed to have exited (or not yet
+// started) and no Py_CONTEXT_SWITCHED event is emitted for any context
+// changes.  Logs a warning via PyErr_FormatUnraisable if the thread's context
+// stack is non-empty afterwards (because those contexts can never be exited or
 // re-entered).
 void _PyContext_ExitThreadOwned(PyThreadState *);
 
