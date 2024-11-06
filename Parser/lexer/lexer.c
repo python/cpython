@@ -328,8 +328,11 @@ verify_identifier(struct tok_state *tok)
         }
         return 0;
     }
+    
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
-    if (invalid < 0) {
+    Py_ssize_t len = PyUnicode_GET_LENGTH(s);
+
+    if (invalid < len) {
         Py_DECREF(s);
         tok->done = E_ERROR;
         return 0;
