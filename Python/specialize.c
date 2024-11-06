@@ -24,6 +24,25 @@ extern const char *_PyUOpName(int index);
  * ./adaptive.md
  */
 
+#ifdef Py_GIL_DISABLED
+#define SET_OPCODE_OR_RETURN(instr, opcode)                                \
+    do {                                                                   \
+        uint8_t old_op = _Py_atomic_load_uint8_relaxed(&(instr)->op.code); \
+        if (old_op >= MIN_INSTRUMENTED_OPCODE) {                           \
+            /* Lost race with instrumentation */                           \
+            return;                                                        \
+        }                                                                  \
+        if (!_Py_atomic_compare_exchange_uint8(&(instr)->op.code, &old_op, \
+                                               (opcode))) {                \
+            /* Lost race with instrumentation */                           \
+            assert(old_op >= MIN_INSTRUMENTED_OPCODE);                     \
+            return;                                                        \
+        }                                                                  \
+    } while (0)
+#else
+#define SET_OPCODE_OR_RETURN(instr, opcode) (instr)->op.code = (opcode)
+#endif
+
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
