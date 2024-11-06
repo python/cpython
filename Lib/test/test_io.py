@@ -4504,6 +4504,7 @@ class CMiscIOTest(MiscIOTest):
     io = io
     name_of_module = "io", "_io"
     extra_exported = "BlockingIOError",
+    not_exported = "OpenWrapper",  # deprecated, added on demand
 
     def test_readinto_buffer_overflow(self):
         # Issue #18025
@@ -4570,7 +4571,10 @@ class PyMiscIOTest(MiscIOTest):
     io = pyio
     name_of_module = "_pyio", "io"
     extra_exported = "BlockingIOError", "open_code",
-    not_exported = "valid_seek_flags",
+    not_exported = (
+        "valid_seek_flags",
+        "OpenWrapper",   # deprecated, added on demand
+    )
 
 
 @unittest.skipIf(os.name == 'nt', 'POSIX signals required for this test.')
