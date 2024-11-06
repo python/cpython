@@ -1228,3 +1228,36 @@ class self_converter(CConverter):
             type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
+
+
+# Converters for var-positional parameter.
+
+class varpos_tuple_converter(CConverter):
+    type = 'PyObject *'
+    format_unit = ''
+    c_default = 'NULL'
+
+    def converter_init(self) -> None:
+        pass
+
+    def cleanup(self) -> str:
+        return f"""Py_XDECREF({self.parser_name});\n"""
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        raise AssertionError('should never be called')
+
+class varpos_array_converter(CConverter):
+    type = 'PyObject * const *'
+    format_unit = ''
+    length = True
+    c_ignored_default = ''
+
+    def converter_init(self) -> None:
+        pass
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        raise AssertionError('should never be called')
+
+# XXX: temporary
+class varpos_object_converter(varpos_tuple_converter):
+    pass

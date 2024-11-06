@@ -2738,7 +2738,11 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
+    // Beware: An evil call_soon could alter task_context.
+    // See: https://github.com/python/cpython/issues/126080.
+    PyObject *task_context = Py_NewRef(task->task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
+    Py_DECREF(task_context);
     Py_DECREF(cb);
     return ret;
 }
@@ -2963,8 +2967,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
@@ -3056,8 +3069,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }

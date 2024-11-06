@@ -243,6 +243,7 @@ extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 // self->tp_flags = (self->tp_flags & ~mask) | flags;
 extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
                              unsigned long flags);
+extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 
 // Like _PyType_SetFlags(), but apply the operation to self and any of its
 // subclasses without Py_TPFLAGS_IMMUTABLETYPE set.

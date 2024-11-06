@@ -925,14 +925,13 @@ class DSLParser:
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
-        if is_vararg and (name != 'object' or kwargs):
-            fail("Unsupported converter for var-positional parameter")
+        if is_vararg:
+            name = 'varpos_' + name
 
         value: object
         if not default:
             if is_vararg:
                 value = NULL
-                kwargs.setdefault('c_default', "NULL")
             else:
                 if self.parameter_state is ParamState.OPTIONAL:
                     fail(f"Can't have a parameter without a default ({parameter_name!r}) "

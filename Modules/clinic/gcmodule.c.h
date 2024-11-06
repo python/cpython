@@ -313,23 +313,23 @@ PyDoc_STRVAR(gc_get_referrers__doc__,
     {"get_referrers", _PyCFunction_CAST(gc_get_referrers), METH_FASTCALL, gc_get_referrers__doc__},
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args);
+gc_get_referrers_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
+    objs = _PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    return_value = gc_get_referrers_impl(module, __clinic_args);
+    return_value = gc_get_referrers_impl(module, objs);
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
 
     return return_value;
 }
@@ -344,23 +344,23 @@ PyDoc_STRVAR(gc_get_referents__doc__,
     {"get_referents", _PyCFunction_CAST(gc_get_referents), METH_FASTCALL, gc_get_referents__doc__},
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args);
+gc_get_referents_impl(PyObject *module, PyObject *objs);
 
 static PyObject *
 gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *objs = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
+    objs = _PyTuple_FromArray(args, nargs);
+    if (objs == NULL) {
         goto exit;
     }
-    return_value = gc_get_referents_impl(module, __clinic_args);
+    return_value = gc_get_referents_impl(module, objs);
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for objs */
+    Py_XDECREF(objs);
 
     return return_value;
 }
@@ -578,4 +578,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29b60bfc31906600 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f35875870da17c9 input=a9049054013a1b77]*/

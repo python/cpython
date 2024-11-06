@@ -296,10 +296,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.post_parsing.append('/* Post parse cleanup for ' + name + ' */\n' + post_parsing.rstrip() + '\n')
 
         # cleanup
-        if parameter.is_vararg():
-            cleanup = f"Py_XDECREF({self.parser_name});"
-        else:
-            cleanup = self.cleanup()
+        cleanup = self.cleanup()
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
@@ -315,7 +312,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
         assert self.length is not None
-        return self.parser_name + "_length"
+        return self.parser_name.removeprefix(libclinic.CLINIC_PREFIX) + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,

@@ -249,6 +249,7 @@ class ParseArgsCodeGen:
         for i, p in enumerate(self.parameters):
             if p.is_vararg():
                 self.varpos = p
+                #print('varpos', id(p), p)
                 del self.parameters[i]
                 break
 
@@ -453,6 +454,21 @@ class ParseArgsCodeGen:
     def _parse_vararg(self) -> str:
         assert self.varpos is not None
         paramname = self.varpos.converter.parser_name
+        if self.varpos.converter.length:
+            start = 'args' if self.fastcall else '_PyTuple_ITEMS(args)'
+            size = 'nargs'
+            if self.max_pos:
+                if min(self.pos_only, self.min_pos) < self.max_pos:
+                    start = f'{start} + Py_MIN(nargs, {self.max_pos})'
+                    size = f'Py_MAX(0, nargs - {self.max_pos})'
+                else:
+                    start = f'{start} + {self.max_pos}'
+                    size = f'nargs - {self.max_pos}'
+            return f"""
+                {paramname} = {start};
+                {self.varpos.converter.length_name} = {size};
+                """
+
         if self.fastcall:
             if self.limited_capi:
                 if min(self.pos_only, self.min_pos) < self.max_pos:
