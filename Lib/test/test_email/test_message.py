@@ -986,7 +986,11 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m.get_body()
 
     def test_get_payload_strip_ex_space(self):
-        """test for gh-123742"""
+        # gh-123742
+        #
+        # Test whether get_payload can handle extra
+        # spaces in 'content-transfer-encoding' field.
+
         msg = textwrap.dedent("""\
             From: no-reply@example.com
             To: reciever@example.com
