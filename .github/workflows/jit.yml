@@ -131,10 +131,9 @@ jobs:
           brew update
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
-          softwareupdate -i "Command Line Tools for Xcode-16.1"
           SDKROOT="$(xcrun --show-sdk-path)" \
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make all --jobs 4
+          SDKROOT="$(xcrun --show-sdk-path)" make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux
