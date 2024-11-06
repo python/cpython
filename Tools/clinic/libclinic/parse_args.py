@@ -249,7 +249,6 @@ class ParseArgsCodeGen:
         for i, p in enumerate(self.parameters):
             if p.is_vararg():
                 self.varpos = p
-                #print('varpos', id(p), p)
                 del self.parameters[i]
                 break
 
