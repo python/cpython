@@ -346,7 +346,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
         // _STORE_FAST:
-        GETLOCAL(this_instr->operand) = res;
+        GETLOCAL(this_instr->operand0) = res;
     }
 
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {

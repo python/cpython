@@ -30,10 +30,10 @@ class HoleValue(enum.Enum):
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
     # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
+    OPERAND0 = enum.auto()
     # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
-    OPERAND_HI = enum.auto()
-    OPERAND_LO = enum.auto()
+    OPERAND0_HI = enum.auto()
+    OPERAND0_LO = enum.auto()
     # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND):
     OPERAND1 = enum.auto()
     # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
@@ -104,9 +104,9 @@ _HOLE_EXPRS = {
     # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
-    HoleValue.OPERAND: "instruction->operand",
-    HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
-    HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.OPERAND0: "instruction->operand0",
+    HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
+    HoleValue.OPERAND0_LO: "(instruction->operand0 & UINT32_MAX)",
     HoleValue.OPERAND1: "instruction->operand1",
     HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
     HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
