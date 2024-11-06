@@ -26,6 +26,7 @@ extern "C" {
 #include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
@@ -102,9 +103,8 @@ struct _is {
     PyInterpreterState *next;
 
     int64_t id;
-    int64_t id_refcount;
+    Py_ssize_t id_refcount;
     int requires_idref;
-    PyThread_type_lock id_mutex;
 
 #define _PyInterpreterState_WHENCE_NOTSET -1
 #define _PyInterpreterState_WHENCE_UNKNOWN 0
@@ -223,6 +223,7 @@ struct _is {
     struct _brc_state brc;  // biased reference counting state
     struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
+    _PyIndexPool tlbc_indices;
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -318,8 +319,7 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);

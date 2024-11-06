@@ -8,6 +8,7 @@ import pickle
 import weakref
 import errno
 from codecs import BOM_UTF8
+from itertools import product
 from textwrap import dedent
 
 from test.support import (captured_stderr, check_impl_detail,
@@ -318,8 +319,8 @@ class ExceptionTests(unittest.TestCase):
         check('def f():\n  global x\n  nonlocal x', 2, 3)
 
         # Errors thrown by future.c
-        check('from __future__ import doesnt_exist', 1, 1)
-        check('from __future__ import braces', 1, 1)
+        check('from __future__ import doesnt_exist', 1, 24)
+        check('from __future__ import braces', 1, 24)
         check('x=1\nfrom __future__ import division', 2, 1)
         check('foo(1=2)', 1, 5)
         check('def f():\n  x, y: int', 2, 3)
@@ -1335,6 +1336,29 @@ class ExceptionTests(unittest.TestCase):
         klasses = UnicodeEncodeError, UnicodeDecodeError, UnicodeTranslateError
         for klass in klasses:
             self.assertEqual(str(klass.__new__(klass)), "")
+
+    def test_unicode_error_str_does_not_crash(self):
+        # Test that str(UnicodeError(...)) does not crash.
+        # See https://github.com/python/cpython/issues/123378.
+
+        for start, end, objlen in product(
+            range(-5, 5),
+            range(-5, 5),
+            range(7),
+        ):
+            obj = 'a' * objlen
+            with self.subTest('encode', objlen=objlen, start=start, end=end):
+                exc = UnicodeEncodeError('utf-8', obj, start, end, '')
+                self.assertIsInstance(str(exc), str)
+
+            with self.subTest('translate', objlen=objlen, start=start, end=end):
+                exc = UnicodeTranslateError(obj, start, end, '')
+                self.assertIsInstance(str(exc), str)
+
+            encoded = obj.encode()
+            with self.subTest('decode', objlen=objlen, start=start, end=end):
+                exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
+                self.assertIsInstance(str(exc), str)
 
     @no_tracing
     def test_badisinstance(self):

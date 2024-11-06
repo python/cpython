@@ -9,8 +9,8 @@ import tempfile
 from subprocess import *
 
 startdate = "20180829142316Z"
-enddate_default = "20371028142316Z"
-days_default = "7000"
+enddate_default = "25251028142316Z"
+days_default = "140000"
 
 req_template = """
     [ default ]

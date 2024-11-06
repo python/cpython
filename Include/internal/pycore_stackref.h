@@ -60,54 +60,29 @@ typedef union _PyStackRef {
 #define Py_TAG_BITS     ((uintptr_t)1)
 
 #ifdef Py_GIL_DISABLED
-    static const _PyStackRef PyStackRef_NULL = { .bits = 0 | Py_TAG_DEFERRED};
-#else
-    static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
-#endif
 
+static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
+#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
 
-
-#ifdef Py_GIL_DISABLED
-#   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
-#else
-#   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) })
-#endif
-
-#ifdef Py_GIL_DISABLED
-#   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
-#else
-#   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
-#endif
-
-#ifdef Py_GIL_DISABLED
-#   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
-#else
-#   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
-#endif
-
-// Note: the following are all macros because MSVC (Windows) has trouble inlining them.
-
-#define PyStackRef_Is(a, b) ((a).bits == (b).bits)
-
-#define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
-
-
-#ifdef Py_GIL_DISABLED
-// Gets a PyObject * from a _PyStackRef
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
     PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
     return cleared;
 }
-#else
-#   define PyStackRef_AsPyObjectBorrow(stackref) ((PyObject *)(stackref).bits)
-#endif
 
-// Converts a PyStackRef back to a PyObject *, stealing the
-// PyStackRef.
-#ifdef Py_GIL_DISABLED
+#define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
+
+static inline PyObject *
+PyStackRef_NotDeferred_AsPyObject(_PyStackRef stackref)
+{
+    assert(!PyStackRef_IsDeferred(stackref));
+    return (PyObject *)stackref.bits;
+}
+
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
@@ -117,18 +92,7 @@ PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
     }
     return PyStackRef_AsPyObjectBorrow(stackref);
 }
-#else
-#   define PyStackRef_AsPyObjectSteal(stackref) PyStackRef_AsPyObjectBorrow(stackref)
-#endif
 
-// Converts a PyStackRef back to a PyObject *, converting the
-// stackref to a new reference.
-#define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
-
-#define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
-
-// Converts a PyObject * to a PyStackRef, stealing the reference
-#ifdef Py_GIL_DISABLED
 static inline _PyStackRef
 _PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
@@ -139,13 +103,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
-#else
-#   define PyStackRef_FromPyObjectSteal(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
-#endif
 
-
-// Converts a PyObject * to a PyStackRef, with a new reference
-#ifdef Py_GIL_DISABLED
 static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {
@@ -159,13 +117,8 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
         return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
     }
 }
-#   define PyStackRef_FromPyObjectNew(obj) PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
-#else
-#   define PyStackRef_FromPyObjectNew(obj) ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) })
-#endif
+#define PyStackRef_FromPyObjectNew(obj) PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
 
-#ifdef Py_GIL_DISABLED
-// Same as PyStackRef_FromPyObjectNew but only for immortal objects.
 static inline _PyStackRef
 PyStackRef_FromPyObjectImmortal(PyObject *obj)
 {
@@ -175,24 +128,9 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     assert(_Py_IsImmortal(obj));
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
 }
-#   define PyStackRef_FromPyObjectImmortal(obj) PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj))
-#else
-#   define PyStackRef_FromPyObjectImmortal(obj) ((_PyStackRef){ .bits = (uintptr_t)(obj) })
-#endif
+#define PyStackRef_FromPyObjectImmortal(obj) PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj))
 
-
-#define PyStackRef_CLEAR(op) \
-    do { \
-        _PyStackRef *_tmp_op_ptr = &(op); \
-        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        if (!PyStackRef_IsNull(_tmp_old_op)) { \
-            *_tmp_op_ptr = PyStackRef_NULL; \
-            PyStackRef_CLOSE(_tmp_old_op); \
-        } \
-    } while (0)
-
-#ifdef Py_GIL_DISABLED
-#   define PyStackRef_CLOSE(REF)                                        \
+#define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
             _PyStackRef _close_tmp = (REF);                             \
             assert(!PyStackRef_IsNull(_close_tmp));                     \
@@ -200,20 +138,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
                 Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
             }                                                           \
         } while (0)
-#else
-#   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
-#endif
 
-#define PyStackRef_XCLOSE(stackref) \
-    do {                            \
-        _PyStackRef _tmp = (stackref); \
-        if (!PyStackRef_IsNull(_tmp)) { \
-            PyStackRef_CLOSE(_tmp); \
-        } \
-    } while (0);
-
-
-#ifdef Py_GIL_DISABLED
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
@@ -227,9 +152,6 @@ PyStackRef_DUP(_PyStackRef stackref)
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
     return stackref;
 }
-#else
-#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
-#endif
 
 // Convert a possibly deferred reference to a strong reference.
 static inline _PyStackRef
@@ -238,13 +160,65 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
     return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
 }
 
-static inline void
-_PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t length)
-{
-    for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_AsPyObjectBorrow(src[i]);
-    }
-}
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
+
+
+#else // Py_GIL_DISABLED
+
+// With GIL
+static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
+#define PyStackRef_IsNull(stackref) ((stackref).bits == 0)
+#define PyStackRef_True ((_PyStackRef){.bits = (uintptr_t)&_Py_TrueStruct })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
+
+#define PyStackRef_AsPyObjectBorrow(stackref) ((PyObject *)(stackref).bits)
+
+#define PyStackRef_AsPyObjectSteal(stackref) PyStackRef_AsPyObjectBorrow(stackref)
+
+#define PyStackRef_FromPyObjectSteal(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+
+#define PyStackRef_FromPyObjectNew(obj) ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) })
+
+#define PyStackRef_FromPyObjectImmortal(obj) ((_PyStackRef){ .bits = (uintptr_t)(obj) })
+
+#define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
+
+#define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
+
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) _Py_DECREF_SPECIALIZED(PyStackRef_AsPyObjectBorrow(stackref), dealloc)
+
+#endif // Py_GIL_DISABLED
+
+// Note: this is a macro because MSVC (Windows) has trouble inlining it.
+
+#define PyStackRef_Is(a, b) ((a).bits == (b).bits)
+
+// Converts a PyStackRef back to a PyObject *, converting the
+// stackref to a new reference.
+#define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
+
+#define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
+
+#define PyStackRef_CLEAR(op) \
+    do { \
+        _PyStackRef *_tmp_op_ptr = &(op); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
+        if (!PyStackRef_IsNull(_tmp_old_op)) { \
+            *_tmp_op_ptr = PyStackRef_NULL; \
+            PyStackRef_CLOSE(_tmp_old_op); \
+        } \
+    } while (0)
+
+#define PyStackRef_XCLOSE(stackref) \
+    do {                            \
+        _PyStackRef _tmp = (stackref); \
+        if (!PyStackRef_IsNull(_tmp)) { \
+            PyStackRef_CLOSE(_tmp); \
+        } \
+    } while (0);
+
+
 
 // StackRef type checks
 
