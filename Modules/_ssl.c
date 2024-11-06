@@ -2979,7 +2979,7 @@ static PyType_Spec PySSLSocket_spec = {
     .name = "_ssl._SSLSocket",
     .basicsize = sizeof(PySSLSocket),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSocket_slots,
 };
 
