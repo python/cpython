@@ -1,0 +1,2 @@
+Raise :class:`calendar.IllegalMonthError` for :function:`calendar.month`
+when the input month is not correct.
