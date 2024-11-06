@@ -7603,7 +7603,7 @@ static PyObject *
 Unpickler_getattr(PyObject *self, PyObject *name)
 {
     if (PyUnicode_Check(name)
-        && PyUnicode_CompareWithASCIIString(name, "persistent_load") == 0
+        && PyUnicode_EqualToUTF8(name, "persistent_load")
         && ((UnpicklerObject *)self)->persistent_load_attr)
     {
         return Py_NewRef(((UnpicklerObject *)self)->persistent_load_attr);
@@ -7616,7 +7616,7 @@ static int
 Unpickler_setattr(PyObject *self, PyObject *name, PyObject *value)
 {
     if (PyUnicode_Check(name)
-        && PyUnicode_CompareWithASCIIString(name, "persistent_load") == 0)
+        && PyUnicode_EqualToUTF8(name, "persistent_load"))
     {
         Py_XINCREF(value);
         Py_XSETREF(((UnpicklerObject *)self)->persistent_load_attr, value);
