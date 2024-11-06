@@ -1287,9 +1287,9 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 
 /*[clinic input]
-class _testclinic.TestClass "PyObject *" "PyObject"
+class _testclinic.TestClass "PyObject *" "&PyBaseObject_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c991635bb3c91f1a]*/
 
 /*[clinic input]
 _testclinic.TestClass.get_defining_class
@@ -1352,11 +1352,95 @@ _testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
     return pack_arguments_newref(4, cls, a, b, args);
 }
 
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as varpos_no_fastcall
+
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+/*[clinic end generated code: output=04e94f2898bb2dde input=b0447ebab3e81001]*/
+{
+    return Py_NewRef(args);
+}
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_varpos_no_fastcall
+
+    a: object
+    b: object
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
+                                PyObject *args)
+/*[clinic end generated code: output=b0a0425719f69f5a input=d2ec37a06b3c2389]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_req_opt_varpos_no_fastcall
+
+    a: object
+    b: object = False
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                        PyObject *b, PyObject *args)
+/*[clinic end generated code: output=3c44915b1a554e2d input=e9e74686a5e6a06d]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_poskw_varpos_no_fastcall
+
+    a: object
+    /
+    b: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                      PyObject *b, PyObject *args)
+/*[clinic end generated code: output=6ad74bed4bdc7f96 input=fa931c38184213aa]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
 static struct PyMethodDef test_class_methods[] = {
     _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
     _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
     _TESTCLINIC_TESTCLASS_DEFCLASS_VARPOS_METHODDEF
     _TESTCLINIC_TESTCLASS_DEFCLASS_POSONLY_VARPOS_METHODDEF
+
+    {"varpos_no_fastcall", _PyCFunction_CAST(varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_varpos_no_fastcall", _PyCFunction_CAST(posonly_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_req_opt_varpos_no_fastcall", _PyCFunction_CAST(posonly_req_opt_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_poskw_varpos_no_fastcall", _PyCFunction_CAST(posonly_poskw_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+
     {NULL, NULL}
 };
 

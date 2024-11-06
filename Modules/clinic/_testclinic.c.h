@@ -3809,4 +3809,161 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e4717fe7fdaf5cf3 input=a9049054013a1b77]*/
+
+static PyObject *
+varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args);
+
+static PyObject *
+varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyBaseObject_Type;
+    PyObject *__clinic_args = NULL;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("TestClass", kwargs)) {
+        goto exit;
+    }
+    __clinic_args = Py_NewRef(args);
+    return_value = varpos_no_fastcall_impl(type, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
+posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
+                                PyObject *args);
+
+static PyObject *
+posonly_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyBaseObject_Type;
+    PyObject *a;
+    PyObject *b;
+    PyObject *__clinic_args = NULL;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("TestClass", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    b = PyTuple_GET_ITEM(args, 1);
+    __clinic_args = PyTuple_GetSlice(args, 2, PY_SSIZE_T_MAX);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    return_value = posonly_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
+posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                        PyObject *b, PyObject *args);
+
+static PyObject *
+posonly_req_opt_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyBaseObject_Type;
+    PyObject *a;
+    PyObject *b = Py_False;
+    PyObject *__clinic_args = NULL;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("TestClass", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    b = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    __clinic_args = PyTuple_GetSlice(args, 2, PY_SSIZE_T_MAX);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    return_value = posonly_req_opt_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
+posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                      PyObject *b, PyObject *args);
+
+static PyObject *
+posonly_poskw_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "TestClass",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+    PyObject *b;
+    PyObject *__clinic_args = NULL;
+
+    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    b = fastargs[1];
+    __clinic_args = PyTuple_GetSlice(args, 2, PY_SSIZE_T_MAX);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    return_value = posonly_poskw_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+/*[clinic end generated code: output=60ab26511f9eeac1 input=a9049054013a1b77]*/

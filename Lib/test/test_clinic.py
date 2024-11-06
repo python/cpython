@@ -3384,9 +3384,24 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(), ())
         self.assertEqual(fn(1, 2), (1, 2))
 
+    def test_varpos_no_fastcall(self):
+        # fn(*args), no fastcall
+        fn = ac_tester.TestClass.varpos_no_fastcall
+        self.assertEqual(fn(), ())
+        self.assertEqual(fn(1, 2), (1, 2))
+
     def test_posonly_varpos(self):
         # fn(a, b, /, *args)
         fn = ac_tester.posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1)
+        self.assertRaises(TypeError, fn, 1, b=2)
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+
+    def test_posonly_varpos_no_fastcall(self):
+        # fn(a, b, /, *args), no fastcall
+        fn = ac_tester.TestClass.posonly_varpos_no_fastcall
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1)
         self.assertRaises(TypeError, fn, 1, b=2)
@@ -3402,9 +3417,29 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, 2), (1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
+    def test_posonly_req_opt_varpos_no_fastcall(self):
+        # fn(a, b=False, /, *args), no fastcall
+        fn = ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, a=1)
+        self.assertEqual(fn(1), (1, False, ()))
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+
     def test_posonly_poskw_varpos(self):
         # fn(a, /, b, *args)
         fn = ac_tester.posonly_poskw_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, b=2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+        self.assertRaises(TypeError, fn, b=4)
+        errmsg = re.escape("given by name ('b') and position (2)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
+
+    def test_posonly_poskw_varpos_no_fastcall(self):
+        # fn(a, /, b, *args), no fastcall
+        fn = ac_tester.TestClass.posonly_poskw_varpos_no_fastcall
         self.assertRaises(TypeError, fn)
         self.assertEqual(fn(1, 2), (1, 2, ()))
         self.assertEqual(fn(1, b=2), (1, 2, ()))
