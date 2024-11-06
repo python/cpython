@@ -2812,14 +2812,14 @@ class RawTurtle(TPen, TNavigator):
         joe = mick.clone()
         """
         screen = self.screen
+        self._newLine(self._drawing)
 
         turtle = self.turtle
         self.screen = None
         self.turtle = None  # too make self deepcopy-able
 
         q = deepcopy(self)
-        self._newLine(self._drawing)
-
+        
         self.screen = screen
         self.turtle = turtle
 
@@ -2836,7 +2836,7 @@ class RawTurtle(TPen, TNavigator):
             q.turtle._item = [screen._createpoly() for item in
                               screen._shapes[self.turtle.shapeIndex]._data]
         q.currentLineItem = screen._createline()
-        q.items.append(q.currentLineItem)
+        q.items[-1] = q.currentLineItem
         q._update()
         return q
 
