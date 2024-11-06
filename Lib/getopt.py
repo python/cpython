@@ -60,7 +60,7 @@ def getopt(args, shortopts, longopts = []):
     long options which should be supported.  The leading '--'
     characters should not be included in the option name.  Options
     which require an argument should be followed by an equal sign
-    ('=').  Options which acept an optional argument should be
+    ('=').  Options which accept an optional argument should be
     followed by an equal sign and question mark ('=?').
 
     The return value consists of two elements: the first is a list of
