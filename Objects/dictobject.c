@@ -7173,6 +7173,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     PyDictValues *values = copy_values(mp->ma_values);
 
+    mp->ma_values = values;
     if (values == NULL) {
         /* Out of memory. Clear the dict */
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -7183,7 +7184,6 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
         PyErr_NoMemory();
         return -1;
     }
-    mp->ma_values = values;
 
     FT_ATOMIC_STORE_UINT8(_PyObject_InlineValues(obj)->valid, 0);
 
