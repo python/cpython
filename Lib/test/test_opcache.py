@@ -36,6 +36,11 @@ class TestBase(unittest.TestCase):
         opnames = {instruction.opname for instruction in instructions}
         self.assertIn(opname, opnames)
 
+    def assert_no_opcode(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertNotIn(opname, opnames)
+
 
 class TestLoadSuperAttrCache(unittest.TestCase):
     def test_descriptor_not_double_executed_on_spec_fail(self):
@@ -1208,41 +1213,47 @@ class TestSpecializer(TestBase):
     @requires_specialization_ft
     def test_binary_op(self):
         def f():
-            a, b = 1, 2
             for _ in range(100):
+                a, b = 1, 2
                 c = a + b
                 self.assertEqual(c, 3)
 
         f()
         self.assert_specialized(f, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(f, "BINARY_OP")
 
         def g():
-            a, b = "foo", "bar"
             for _ in range(100):
+                a, b = "foo", "bar"
                 c = a + b
                 self.assertEqual(c, "foobar")
 
         g()
         self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
+        self.assert_no_opcode(g, "BINARY_OP")
 
     @cpython_only
     @requires_specialization_ft
     def test_contain_op(self):
         def f():
-            a, b = 1, {1: 2, 2: 5}
             for _ in range(100):
+                a, b = 1, {1: 2, 2: 5}
                 self.assertTrue(a in b)
+                self.assertFalse(3 in b)
 
         f()
         self.assert_specialized(f, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(f, "CONTAINS_OP")
 
         def g():
-            a, b = 1, {1, 2}
             for _ in range(100):
+                a, b = 1, {1, 2}
                 self.assertTrue(a in b)
+                self.assertFalse(3 in b)
 
         g()
         self.assert_specialized(g, "CONTAINS_OP_SET")
+        self.assert_no_opcode(g, "CONTAINS_OP")
 
 
 
