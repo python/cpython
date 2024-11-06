@@ -985,6 +985,30 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
 
+    def test_get_payload_strip_ex_space(self):
+        """test for gh-123742"""
+        msg = textwrap.dedent("""\
+            From: no-reply@example.com
+            To: reciever@example.com
+            Subject: Report
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary="----=_Part3035080226180533"
+            Message-ID: <01000191b7fd06ba-d3c9ca36-5171-4a1d-ba3c-b378336cccbc-000000@email.amazonses.com>
+            Date: Tue, 3 Sep 2024 13:04:58 +0000
+
+            ------=_Part3035080226180533
+            Content-Disposition: attachment;
+            Content-Type: text/plain; charset=UTF-8
+            Content-Transfer-Encoding: base64 
+
+            aGVsbG8=
+            ------=_Part3035080226180533
+            Content-Type: text/html; charset=UTF-8
+            Content-Transfer-Encoding: 7bit
+            """)
+        m = self._str_msg(msg)
+        recv_m = m.get_payload(0).get_payload(decode=True)
+        self.assertEqual(recv_m, b"hello")
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
