@@ -3160,7 +3160,7 @@ posonly_req_opt_varpos_array(PyObject *module, PyObject *const *args, Py_ssize_t
     }
     b = args[1];
 skip_optional:
-    __clinic_args = args + Py_MIN(nargs, 2);
+    __clinic_args = nargs > 2 ? args + 2 : args;
     args_length = Py_MAX(0, nargs - 2);
     return_value = posonly_req_opt_varpos_array_impl(module, a, b, __clinic_args, args_length);
 
@@ -3223,7 +3223,7 @@ posonly_poskw_varpos_array(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     a = fastargs[0];
     b = fastargs[1];
-    __clinic_args = args + Py_MIN(nargs, 2);
+    __clinic_args = nargs > 2 ? args + 2 : args;
     args_length = Py_MAX(0, nargs - 2);
     return_value = posonly_poskw_varpos_array_impl(module, a, b, __clinic_args, args_length);
 
@@ -4214,7 +4214,7 @@ posonly_req_opt_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyO
     }
     b = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    __clinic_args = _PyTuple_ITEMS(args) + Py_MIN(PyTuple_GET_SIZE(args), 2);
+    __clinic_args = PyTuple_GET_SIZE(args) > 2 ? _PyTuple_ITEMS(args) + 2 : _PyTuple_ITEMS(args);
     args_length = Py_MAX(0, PyTuple_GET_SIZE(args) - 2);
     return_value = posonly_req_opt_varpos_array_no_fastcall_impl(type, a, b, __clinic_args, args_length);
 
@@ -4271,11 +4271,11 @@ posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObj
     }
     a = fastargs[0];
     b = fastargs[1];
-    __clinic_args = _PyTuple_ITEMS(args) + Py_MIN(PyTuple_GET_SIZE(args), 2);
+    __clinic_args = PyTuple_GET_SIZE(args) > 2 ? _PyTuple_ITEMS(args) + 2 : _PyTuple_ITEMS(args);
     args_length = Py_MAX(0, PyTuple_GET_SIZE(args) - 2);
     return_value = posonly_poskw_varpos_array_no_fastcall_impl(type, a, b, __clinic_args, args_length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d6902bae9f418590 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed3408af146a746c input=a9049054013a1b77]*/

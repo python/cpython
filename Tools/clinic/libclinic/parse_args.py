@@ -461,7 +461,7 @@ class ParseArgsCodeGen:
             size = 'nargs' if self.fastcall else 'PyTuple_GET_SIZE(args)'
             if self.max_pos:
                 if min(self.pos_only, self.min_pos) < self.max_pos:
-                    start = f'{start} + Py_MIN({size}, {self.max_pos})'
+                    start = f'{size} > {self.max_pos} ? {start} + {self.max_pos} : {start}'
                     size = f'Py_MAX(0, {size} - {self.max_pos})'
                 else:
                     start = f'{start} + {self.max_pos}'

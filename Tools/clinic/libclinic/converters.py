@@ -1237,9 +1237,6 @@ class varpos_tuple_converter(CConverter):
     format_unit = ''
     c_default = 'NULL'
 
-    def converter_init(self) -> None:
-        pass
-
     def cleanup(self) -> str:
         return f"""Py_XDECREF({self.parser_name});\n"""
 
@@ -1251,9 +1248,6 @@ class varpos_array_converter(CConverter):
     format_unit = ''
     length = True
     c_ignored_default = ''
-
-    def converter_init(self) -> None:
-        pass
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         raise AssertionError('should never be called')

@@ -230,9 +230,7 @@ gc_get_referrers_impl(PyObject *module, PyObject *objs)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *result = _PyGC_GetReferrers(interp, objs);
-
-    return result;
+    return _PyGC_GetReferrers(interp, objs);
 }
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
