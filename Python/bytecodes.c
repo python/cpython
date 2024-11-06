@@ -2508,7 +2508,7 @@ dummy_func(
         }
 
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ContainsOp(right, next_instr);
@@ -2811,11 +2811,12 @@ dummy_func(
             }
             else {
                 /* `iterable` is not a generator. */
-                iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                PyObject *iter_o = PyObject_GetIter(iterable_o);
                 DEAD(iterable);
-                if (PyStackRef_IsNull(iter)) {
+                if (iter_o == NULL) {
                     ERROR_NO_POP();
                 }
+                iter = PyStackRef_FromPyObjectSteal(iter_o);
                 DECREF_INPUTS();
             }
         }
