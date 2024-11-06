@@ -7028,11 +7028,12 @@
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
                 {
+                    _PyInterpreterFrame *gen_frame;
                     PyGenObject *gen = (PyGenObject *)receiver_o;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     Py_BEGIN_CRITICAL_SECTION(gen);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+                    gen_frame = &gen->gi_iframe;
                     STACK_SHRINK(1);
                     _PyFrame_StackPush(gen_frame, v);
                     gen->gi_frame_state = FRAME_EXECUTING;
