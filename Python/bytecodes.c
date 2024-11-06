@@ -1105,6 +1105,7 @@ dummy_func(
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
             {
                 PyGenObject *gen = (PyGenObject *)receiver_o;
+                Py_BEGIN_CRITICAL_SECTION(gen);
                 _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 STACK_SHRINK(1);
                 _PyFrame_StackPush(gen_frame, v);
@@ -1115,6 +1116,7 @@ dummy_func(
                 frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
                 assert(gen_frame->previous == NULL);
                 gen_frame->previous = frame;
+                Py_END_CRITICAL_SECTION();
                 DISPATCH_INLINED(gen_frame);
             }
             if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
