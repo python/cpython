@@ -52,7 +52,7 @@ jobs:
           - x86_64-pc-windows-msvc/msvc
           - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
-          # - aarch64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
           - x86_64-unknown-linux-gnu/clang
           - aarch64-unknown-linux-gnu/gcc
