@@ -1,0 +1,3 @@
+:mod:`grp`: :func:`grp.getgrall` now uses ``getgrent_r()``, if the function
+is available, to make :func:`grp.getgrall` thread-safe. Patch by Victor
+Stinner.

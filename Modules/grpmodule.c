@@ -281,22 +281,46 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
-    PyObject *d;
-    struct group *p;
-
-    if ((d = PyList_New(0)) == NULL)
+    PyObject *d = PyList_New(0);
+    if (d == NULL) {
         return NULL;
+    }
+
     setgrent();
-    while ((p = getgrent()) != NULL) {
-        PyObject *v = mkgrent(module, p);
+    while (1) {
+#ifdef HAVE_GETGRENT_R
+        struct group grp;
+        struct group *grpp;
+        char buf[4096];
+        int err = getgrent_r(&grp, buf, sizeof(buf), &grpp);
+        if (err) {
+            if (err != ENOENT) {
+                errno = err;
+                PyErr_SetFromErrno(PyExc_OSError);
+                goto error;
+            }
+            break;
+        }
+#else
+        struct group *grpp = getgrent();
+        if (grpp == NULL) {
+            break;
+        }
+#endif
+
+        PyObject *v = mkgrent(module, grpp);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
-            Py_DECREF(d);
-            endgrent();
-            return NULL;
+            goto error;
         }
         Py_DECREF(v);
     }
+    goto done;
+
+error:
+    Py_CLEAR(d);
+
+done:
     endgrent();
     return d;
 }
