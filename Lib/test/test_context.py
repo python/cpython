@@ -1,3 +1,4 @@
+import collections.abc
 import concurrent.futures
 import contextvars
 import functools
@@ -349,6 +350,19 @@ class ContextTest(unittest.TestCase):
             self.assertEqual(c.get(), 30)
 
         ctx1.run(ctx1_fun)
+
+    def test_context_isinstance(self):
+        ctx = contextvars.Context()
+        self.assertIsInstance(ctx, collections.abc.Mapping)
+        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
+
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__', 'get', 'items', 'keys', 'values',
+        )
+        for name in mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
 
     @isolated_context
     @threading_helper.requires_working_threading()
