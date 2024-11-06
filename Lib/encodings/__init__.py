@@ -156,7 +156,9 @@ def search_function(encoding):
 codecs.register(search_function)
 
 if sys.platform == 'win32':
-    def _code_page_search_function(encoding):
+    from _win_cp_codecs import create_win32_code_page_codec
+
+    def win32_code_page_search_function(encoding):
         encoding = encoding.lower()
         if not encoding.startswith('cp'):
             return None
@@ -170,36 +172,6 @@ if sys.platform == 'win32':
         except (OverflowError, OSError):
             return None
 
-        def encode(input, errors='strict'):
-            return codecs.code_page_encode(cp, input, errors)
+        return create_win32_code_page_codec(cp)
 
-        def decode(input, errors='strict'):
-            return codecs.code_page_decode(cp, input, errors, True)
-
-        class IncrementalEncoder(codecs.IncrementalEncoder):
-            def encode(self, input, final=False):
-                return codecs.code_page_encode(cp, input, self.errors)[0]
-
-        class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
-            def _buffer_decode(self, input, errors, final):
-                return codecs.code_page_decode(cp, input, errors, final)
-
-        class StreamWriter(codecs.StreamWriter):
-            def encode(self, input, errors='strict'):
-                return codecs.code_page_encode(cp, input, errors)
-
-        class StreamReader(codecs.StreamReader):
-            def decode(self, input, errors, final):
-                return codecs.code_page_decode(cp, input, errors, final)
-
-        return codecs.CodecInfo(
-            name=f'cp{cp}',
-            encode=encode,
-            decode=decode,
-            incrementalencoder=IncrementalEncoder,
-            incrementaldecoder=IncrementalDecoder,
-            streamreader=StreamReader,
-            streamwriter=StreamWriter,
-        )
-
-    codecs.register(_code_page_search_function)
+    codecs.register(win32_code_page_search_function)
