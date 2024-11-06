@@ -355,7 +355,6 @@ class ContextTest(unittest.TestCase):
         ctx = contextvars.Context()
         self.assertIsInstance(ctx, collections.abc.Mapping)
         self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
-        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
 
         mapping_methods = (
             '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
