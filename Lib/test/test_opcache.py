@@ -4,7 +4,9 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support import (threading_helper, check_impl_detail,
+                          requires_specialization, requires_specialization_ft,
+                          cpython_only)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -33,6 +35,11 @@ class TestBase(unittest.TestCase):
         instructions = dis.get_instructions(f, adaptive=True)
         opnames = {instruction.opname for instruction in instructions}
         self.assertIn(opname, opnames)
+
+    def assert_no_opcode(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertNotIn(opname, opnames)
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -1198,6 +1205,56 @@ class TestInstanceDict(unittest.TestCase):
         #This should set x.b = 0
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
+
+
+class TestSpecializer(TestBase):
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_op(self):
+        def f():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a + b
+                self.assertEqual(c, 3)
+
+        f()
+        self.assert_specialized(f, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(f, "BINARY_OP")
+
+        def g():
+            for _ in range(100):
+                a, b = "foo", "bar"
+                c = a + b
+                self.assertEqual(c, "foobar")
+
+        g()
+        self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
+        self.assert_no_opcode(g, "BINARY_OP")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_contain_op(self):
+        def f():
+            for _ in range(100):
+                a, b = 1, {1: 2, 2: 5}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        f()
+        self.assert_specialized(f, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(f, "CONTAINS_OP")
+
+        def g():
+            for _ in range(100):
+                a, b = 1, {1, 2}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        g()
+        self.assert_specialized(g, "CONTAINS_OP_SET")
+        self.assert_no_opcode(g, "CONTAINS_OP")
+
 
 
 if __name__ == "__main__":
