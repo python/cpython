@@ -150,7 +150,7 @@ special_type(double d)
 #define P14 0.25*Py_MATH_PI
 #define P12 0.5*Py_MATH_PI
 #define P34 0.75*Py_MATH_PI
-#define INF Py_HUGE_VAL
+#define INF Py_INFINITY
 #define N Py_NAN
 #define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
@@ -925,7 +925,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -950,7 +950,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     double r, phi;
 
     errno = 0;
-    phi = m_atan2(z.imag, z.real); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();

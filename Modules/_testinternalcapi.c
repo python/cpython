@@ -14,6 +14,7 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
+#include "pycore_code.h"          // _PyCode_GetTLBCFast()
 #include "pycore_compile.h"       // _PyCompile_CodeGen()
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
@@ -681,13 +682,13 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    if (PyFunction_Check(f->f_funcobj)) {
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list, func->func_name);
         if (res < 0) {
             return NULL;
         }
@@ -1853,7 +1854,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 {
     struct triple {
         long input;
-        size_t nbits;
+        uint64_t nbits;
         int sign;
     } testcases[] = {{0, 0, 0},
                      {1L, 1, 1},
@@ -1873,7 +1874,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     size_t i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
+        uint64_t nbits;
         int sign;
         PyObject *plong;
 
@@ -1963,33 +1964,49 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
     return PyLong_FromUnsignedLongLong(tid);
 }
-#endif
+
+static PyCodeObject *
+get_code(PyObject *obj)
+{
+    if (PyCode_Check(obj)) {
+        return (PyCodeObject *)obj;
+    }
+    else if (PyFunction_Check(obj)) {
+        return (PyCodeObject *)PyFunction_GetCode(obj);
+    }
+    return (PyCodeObject *)PyErr_Format(
+        PyExc_TypeError, "expected function or code object, got %s",
+        Py_TYPE(obj)->tp_name);
+}
 
 static PyObject *
-suppress_immortalization(PyObject *self, PyObject *value)
+get_tlbc(PyObject *Py_UNUSED(module), PyObject *obj)
 {
-#ifdef Py_GIL_DISABLED
-    int suppress = PyObject_IsTrue(value);
-    if (suppress < 0) {
+    PyCodeObject *code = get_code(obj);
+    if (code == NULL) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    // Subtract two to suppress immortalization (so that 1 -> -1)
-    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
-#endif
-    Py_RETURN_NONE;
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(PyThreadState_GET(), code);
+    if (bc == NULL) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromStringAndSize((const char *)bc, _PyCode_NBYTES(code));
 }
 
 static PyObject *
-get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
 {
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
-#else
-    Py_RETURN_FALSE;
-#endif
+    PyCodeObject *code = get_code(obj);
+    if (code == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(PyThreadState_GET(), code);
+    if (bc == NULL) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromVoidPtr(bc);
 }
+#endif
 
 static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
@@ -2047,7 +2064,6 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _PyType_GetSlotWrapperNames();
 }
-
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2136,9 +2152,9 @@ static PyMethodDef module_functions[] = {
 
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
+    {"get_tlbc", get_tlbc, METH_O, NULL},
+    {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
 #endif
-    {"suppress_immortalization", suppress_immortalization, METH_O},
-    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif

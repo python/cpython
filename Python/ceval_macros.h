@@ -108,6 +108,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
+        assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -124,7 +125,7 @@ do { \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        (NEW_FRAME)->previous = frame;                  \
+        assert((NEW_FRAME)->previous == frame);         \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
@@ -150,7 +151,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
@@ -300,14 +301,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#ifdef Py_GIL_DISABLED
-#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
-    do { \
-        /* gh-115999 tracks progress on addressing this. */ \
-        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
-    } while (0);
-#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
-#else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
@@ -317,6 +310,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+
+#ifdef ENABLE_SPECIALIZATION_FT
+/* Multiple threads may execute these concurrently if thread-local bytecode is
+ * disabled and they all execute the main copy of the bytecode. Specialization
+ * is disabled in that case so the value is unused, but the RMW cycle should be
+ * free of data races.
+ */
+#define RECORD_BRANCH_TAKEN(bitset, flag) \
+    FT_ATOMIC_STORE_UINT16_RELAXED(       \
+        bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#else
+#define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -325,26 +330,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     "cannot access free variable '%s' where it is not associated with a value" \
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
-
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
-do { \
-    if (Py_REFCNT(left) == 1) { \
-        ((PyFloatObject *)left)->ob_fval = (dval); \
-        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
-        result = (left); \
-    } \
-    else if (Py_REFCNT(right) == 1)  {\
-        ((PyFloatObject *)right)->ob_fval = (dval); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        result = (right); \
-    }\
-    else { \
-        result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) GOTO_ERROR(error); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        _Py_DECREF_NO_DEALLOC(right); \
-    } \
-} while (0)
 
 // If a trace function sets a new f_lineno and
 // *then* raises, we use the destination when searching

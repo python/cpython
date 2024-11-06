@@ -124,7 +124,7 @@ class ProfileHookTestCase(TestCaseBase):
     def test_caught_exception(self):
         def f(p):
             try: 1/0
-            except: pass
+            except ZeroDivisionError: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident),
@@ -133,7 +133,7 @@ class ProfileHookTestCase(TestCaseBase):
     def test_caught_nested_exception(self):
         def f(p):
             try: 1/0
-            except: pass
+            except ZeroDivisionError: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident),
@@ -156,9 +156,9 @@ class ProfileHookTestCase(TestCaseBase):
         def g(p):
             try:
                 f(p)
-            except:
+            except ZeroDivisionError:
                 try: f(p)
-                except: pass
+                except ZeroDivisionError: pass
         f_ident = ident(f)
         g_ident = ident(g)
         self.check_events(g, [(1, 'call', g_ident),
@@ -187,7 +187,7 @@ class ProfileHookTestCase(TestCaseBase):
     def test_raise_twice(self):
         def f(p):
             try: 1/0
-            except: 1/0
+            except ZeroDivisionError: 1/0
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident),
@@ -196,7 +196,7 @@ class ProfileHookTestCase(TestCaseBase):
     def test_raise_reraise(self):
         def f(p):
             try: 1/0
-            except: raise
+            except ZeroDivisionError: raise
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident),
@@ -320,7 +320,7 @@ class ProfileSimulatorTestCase(TestCaseBase):
     def test_caught_exception(self):
         def f(p):
             try: 1/0
-            except: pass
+            except ZeroDivisionError: pass
         f_ident = ident(f)
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident),

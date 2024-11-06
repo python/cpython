@@ -161,8 +161,8 @@ class FakeConsole(Console):
     def forgetinput(self) -> None:
         pass
 
-    def wait(self) -> None:
-        pass
+    def wait(self, timeout: float | None = None) -> bool:
+        return True
 
     def repaint(self) -> None:
         pass
