@@ -991,7 +991,8 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # Test whether get_payload can handle extra
         # spaces in 'content-transfer-encoding' field.
 
-        msg = textwrap.dedent("""\
+        err_field = 'Content-Transfer-Encoding: base64 '
+        msg = textwrap.dedent(f"""\
             From: no-reply@example.com
             To: reciever@example.com
             Subject: Report
@@ -1003,7 +1004,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
             ------=_Part3035080226180533
             Content-Disposition: attachment;
             Content-Type: text/plain; charset=UTF-8
-            Content-Transfer-Encoding: base64 
+            {err_field}
 
             aGVsbG8=
             ------=_Part3035080226180533
