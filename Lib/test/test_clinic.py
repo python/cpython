@@ -33,6 +33,15 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.cli import parse_file, Clinic
 
 
+def repeat_fn(*functions):
+    def wrapper(test):
+        def wrapped(self):
+            for fn in functions:
+                with self.subTest(fn=fn):
+                    test(self, fn)
+        return wrapped
+    return wrapper
+
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = CLanguage(filename)
     c = Clinic(clang, filename=filename, limited_capi=limited_capi)
@@ -3378,75 +3387,53 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_varpos(self):
-        # fn(*args)
-        fn = ac_tester.varpos
-        self.assertEqual(fn(), ())
-        self.assertEqual(fn(1, 2), (1, 2))
+    if ac_tester is not None:
+        @repeat_fn(ac_tester.varpos,
+                   ac_tester.varpos_array,
+                   ac_tester.TestClass.varpos_no_fastcall,
+                   ac_tester.TestClass.varpos_array_no_fastcall)
+        def test_varpos(self, fn):
+            # fn(*args)
+            self.assertEqual(fn(), ())
+            self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_varpos_no_fastcall(self):
-        # fn(*args), no fastcall
-        fn = ac_tester.TestClass.varpos_no_fastcall
-        self.assertEqual(fn(), ())
-        self.assertEqual(fn(1, 2), (1, 2))
+        @repeat_fn(ac_tester.posonly_varpos,
+                   ac_tester.posonly_varpos_array,
+                   ac_tester.TestClass.posonly_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_varpos_array_no_fastcall)
+        def test_posonly_varpos(self, fn):
+            # fn(a, b, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, 1)
+            self.assertRaises(TypeError, fn, 1, b=2)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_posonly_varpos(self):
-        # fn(a, b, /, *args)
-        fn = ac_tester.posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
-        self.assertRaises(TypeError, fn, 1, b=2)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+        @repeat_fn(ac_tester.posonly_req_opt_varpos,
+                   ac_tester.posonly_req_opt_varpos_array,
+                   ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_req_opt_varpos_array_no_fastcall)
+        def test_posonly_req_opt_varpos(self, fn):
+            # fn(a, b=False, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, a=1)
+            self.assertEqual(fn(1), (1, False, ()))
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_posonly_varpos_no_fastcall(self):
-        # fn(a, b, /, *args), no fastcall
-        fn = ac_tester.TestClass.posonly_varpos_no_fastcall
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
-        self.assertRaises(TypeError, fn, 1, b=2)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-
-    def test_posonly_req_opt_varpos(self):
-        # fn(a, b=False, /, *args)
-        fn = ac_tester.posonly_req_opt_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, a=1)
-        self.assertEqual(fn(1), (1, False, ()))
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-
-    def test_posonly_req_opt_varpos_no_fastcall(self):
-        # fn(a, b=False, /, *args), no fastcall
-        fn = ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, a=1)
-        self.assertEqual(fn(1), (1, False, ()))
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-
-    def test_posonly_poskw_varpos(self):
-        # fn(a, /, b, *args)
-        fn = ac_tester.posonly_poskw_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, b=2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-        self.assertRaises(TypeError, fn, b=4)
-        errmsg = re.escape("given by name ('b') and position (2)")
-        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
-
-    def test_posonly_poskw_varpos_no_fastcall(self):
-        # fn(a, /, b, *args), no fastcall
-        fn = ac_tester.TestClass.posonly_poskw_varpos_no_fastcall
-        self.assertRaises(TypeError, fn)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, b=2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-        self.assertRaises(TypeError, fn, b=4)
-        errmsg = re.escape("given by name ('b') and position (2)")
-        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
+        @repeat_fn(ac_tester.posonly_poskw_varpos,
+                   ac_tester.posonly_poskw_varpos_array,
+                   ac_tester.TestClass.posonly_poskw_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_poskw_varpos_array_no_fastcall)
+        def test_posonly_poskw_varpos(self, fn):
+            # fn(a, /, b, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, b=2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+            self.assertRaises(TypeError, fn, b=4)
+            errmsg = re.escape("given by name ('b') and position (2)")
+            self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
     def test_poskw_varpos(self):
         # fn(a, *args)
