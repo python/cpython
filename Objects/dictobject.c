@@ -6664,13 +6664,11 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 {
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
-    Py_ssize_t track = 0;
     size_t size = shared_keys_usable_size(keys);
     for (size_t i = 0; i < size; i++) {
         PyObject *val = values->values[i];
         if (val != NULL) {
             used += 1;
-            track += _PyObject_GC_MAY_BE_TRACKED(val);
         }
     }
     PyDictObject *res = (PyDictObject *)new_dict(interp, keys, values, used, 0);
