@@ -68,10 +68,6 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
-
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -300,24 +296,13 @@ class PurePath(PurePathBase):
         return parts
 
     @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.parser.join(*paths)
-        return path
-
-    @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._drv
 
     @property
@@ -326,7 +311,8 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._root
 
     @property
@@ -334,7 +320,8 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._tail_cached
 
     @property
