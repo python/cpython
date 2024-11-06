@@ -1094,6 +1094,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         gc.unfreeze()
 
+    def test_deferred_refcount_frozen(self):
         # Also from GH-126312: objects that use deferred reference counting
         # weren't ignored if they were frozen. Unfortunately, it's pretty
         # difficult to come up with a case that triggers this.
