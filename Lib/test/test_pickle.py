@@ -224,25 +224,31 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
     def test_pickler_super(self):
         class PersPickler(self.pickler):
             def persistent_id(subself, obj):
+                called.append(obj)
                 self.assertIsNone(super().persistent_id(obj))
                 return obj
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             f = io.BytesIO()
             pickler = PersPickler(f, proto)
+            called = []
             pickler.dump('abc')
+            self.assertEqual(called, ['abc'])
             self.assertEqual(self.loads(f.getvalue()), 'abc')
 
     def test_unpickler_super(self):
         class PersUnpickler(self.unpickler):
             def persistent_load(subself, pid):
+                called.append(pid)
                 with self.assertRaises(self.persistent_load_error):
                     super().persistent_load(pid)
                 return pid
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
+            called = []
             self.assertEqual(unpickler.load(), 'abc')
+            self.assertEqual(called, ['abc'])
 
 class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
 
