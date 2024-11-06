@@ -1,0 +1,2 @@
+:mod:`grp`: Fix segfault on concurrent calls on Free Threaded build by using
+mutexes. Patch by Victor Stinner.

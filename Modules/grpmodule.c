@@ -14,6 +14,22 @@
 #include <string.h>               // memcpy()
 #include <unistd.h>               // sysconf()
 
+#ifdef Py_GIL_DISABLED
+// Need mutexes since getgrgid(), getgrnam() and getgrall() are not
+// thread safe (gh-126316).
+static PyMutex getgrgid_mutex = {0};
+static PyMutex getgrnam_mutex = {0};
+static PyMutex getgrall_mutex = {0};
+
+#  define LOCK(mutex) PyMutex_Lock(&(mutex))
+#  define UNLOCK(mutex) PyMutex_Unlock(&(mutex))
+#else
+   // Calls are serialized by the GIL
+#  define LOCK(mutex)
+#  define UNLOCK(mutex)
+#endif
+
+
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
 module grp
@@ -46,6 +62,13 @@ typedef struct {
   PyTypeObject *StructGrpType;
 } grpmodulestate;
 
+
+// Forward declarations
+static PyObject* grp_getgrgid_unlocked(grpmodulestate *state, PyObject *id);
+static PyObject* grp_getgrnam_unlocked(grpmodulestate *state, PyObject *name);
+static PyObject* grp_getgrall_unlocked(grpmodulestate *state);
+
+
 static inline grpmodulestate*
 get_grp_state(PyObject *module)
 {
@@ -59,13 +82,13 @@ static struct PyModuleDef grpmodule;
 #define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
-mkgrent(PyObject *module, struct group *p)
+mkgrent(grpmodulestate *state, struct group *p)
 {
     int setIndex = 0;
     PyObject *v, *w;
     char **member;
 
-    v = PyStructSequence_New(get_grp_state(module)->StructGrpType);
+    v = PyStructSequence_New(state->StructGrpType);
     if (v == NULL)
         return NULL;
 
@@ -123,6 +146,17 @@ If id is not valid, raise KeyError.
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id)
 /*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+{
+    grpmodulestate *state = get_grp_state(module);
+    LOCK(getgrgid_mutex);
+    PyObject *res = grp_getgrgid_unlocked(state, id);
+    UNLOCK(getgrgid_mutex);
+    return res;
+}
+
+
+static PyObject*
+grp_getgrgid_unlocked(grpmodulestate *state, PyObject *id)
 {
     PyObject *retval = NULL;
     int nomem = 0;
@@ -183,7 +217,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         Py_DECREF(gid_obj);
         return NULL;
     }
-    retval = mkgrent(module, p);
+    retval = mkgrent(state, p);
 #ifdef HAVE_GETGRGID_R
     PyMem_RawFree(buf);
 #endif
@@ -203,6 +237,17 @@ If name is not valid, raise KeyError.
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
+{
+    grpmodulestate *state = get_grp_state(module);
+    LOCK(getgrnam_mutex);
+    PyObject *res = grp_getgrnam_unlocked(state, name);
+    UNLOCK(getgrnam_mutex);
+    return res;
+}
+
+
+static PyObject*
+grp_getgrnam_unlocked(grpmodulestate *state, PyObject *name)
 {
     char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
@@ -261,7 +306,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         }
         goto out;
     }
-    retval = mkgrent(module, p);
+    retval = mkgrent(state, p);
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -281,6 +326,16 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
+    grpmodulestate *state = get_grp_state(module);
+    LOCK(getgrall_mutex);
+    PyObject *res = grp_getgrall_unlocked(state);
+    UNLOCK(getgrall_mutex);
+    return res;
+}
+
+static PyObject*
+grp_getgrall_unlocked(grpmodulestate *state)
+{
     PyObject *d;
     struct group *p;
 
@@ -288,7 +343,7 @@ grp_getgrall_impl(PyObject *module)
         return NULL;
     setgrent();
     while ((p = getgrent()) != NULL) {
-        PyObject *v = mkgrent(module, p);
+        PyObject *v = mkgrent(state, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(d);
