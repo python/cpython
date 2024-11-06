@@ -27,7 +27,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
 error = ValueError
 
 # Exceptions raised for bad input
-class IllegalMonthError(ValueError):
+# This is trick for backward compatibility. Since 3.13, we will raise IllegalMonthError instead of
+# IndexError for bad month number(out of 1-12). But we can't remove IndexError for backward compatibility.
+class IllegalMonthError(ValueError, IndexError):
     def __init__(self, month):
         self.month = month
     def __str__(self):
@@ -792,6 +794,8 @@ def main(args=None):
         if options.month is None:
             optdict["c"] = options.spacing
             optdict["m"] = options.months
+        if options.month is not None:
+            _validate_month(options.month)
         if options.year is None:
             result = cal.formatyear(datetime.date.today().year, **optdict)
         elif options.month is None:
