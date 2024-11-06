@@ -204,7 +204,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     if (result == NULL) {
         /* XXX Perhaps we should cache misses too ? */
         PyErr_Format(PyExc_LookupError,
-                     "unknown encoding: %s", encoding);
+                     "encoding '%s' is not registered", encoding);
         goto onError;
     }
 

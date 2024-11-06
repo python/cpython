@@ -3196,7 +3196,7 @@ class ExceptionNotesTest(unittest.TestCase):
 
     # http://bugs.python.org/issue19609
     def test_codec_lookup_failure(self):
-        msg = "^unknown encoding: {}$".format(self.codec_name)
+        msg = f"^encoding '{self.codec_name}' is not registered$"
         with self.assertRaisesRegex(LookupError, msg):
             "str input".encode(self.codec_name)
         with self.assertRaisesRegex(LookupError, msg):

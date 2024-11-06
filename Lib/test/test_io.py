@@ -3939,7 +3939,7 @@ def _to_memoryview(buf):
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
-    shutdown_error = "LookupError: unknown encoding: ascii"
+    shutdown_error = "LookupError: encoding 'ascii' is not registered"
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
@@ -4039,7 +4039,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
-    shutdown_error = "LookupError: unknown encoding: ascii"
+    shutdown_error = "LookupError: encoding 'ascii' is not registered"
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
