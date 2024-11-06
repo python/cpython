@@ -1291,6 +1291,10 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
             else {
                 read_size = _Unpickler_SetStringInput(self, data);
                 Py_DECREF(data);
+                if (read_size < 0) {
+                    return -1;
+                }
+
                 self->prefetched_idx = 0;
                 if (n <= read_size)
                     return n;

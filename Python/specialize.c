@@ -24,25 +24,6 @@ extern const char *_PyUOpName(int index);
  * ./adaptive.md
  */
 
-#ifdef Py_GIL_DISABLED
-#define SET_OPCODE_OR_RETURN(instr, opcode)                                \
-    do {                                                                   \
-        uint8_t old_op = _Py_atomic_load_uint8_relaxed(&(instr)->op.code); \
-        if (old_op >= MIN_INSTRUMENTED_OPCODE) {                           \
-            /* Lost race with instrumentation */                           \
-            return;                                                        \
-        }                                                                  \
-        if (!_Py_atomic_compare_exchange_uint8(&(instr)->op.code, &old_op, \
-                                               (opcode))) {                \
-            /* Lost race with instrumentation */                           \
-            assert(old_op >= MIN_INSTRUMENTED_OPCODE);                     \
-            return;                                                        \
-        }                                                                  \
-    } while (0)
-#else
-#define SET_OPCODE_OR_RETURN(instr, opcode) (instr)->op.code = (opcode)
-#endif
-
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
@@ -686,6 +667,73 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_CONTAINS_OP_TUPLE      10
 #define SPEC_FAIL_CONTAINS_OP_LIST       11
 #define SPEC_FAIL_CONTAINS_OP_USER_CLASS 12
+
+static inline int
+set_opcode(_Py_CODEUNIT *instr, uint8_t opcode)
+{
+#ifdef Py_GIL_DISABLED
+    uint8_t old_op = _Py_atomic_load_uint8_relaxed(&instr->op.code);
+    if (old_op >= MIN_INSTRUMENTED_OPCODE) {
+        /* Lost race with instrumentation */
+        return 0;
+    }
+    if (!_Py_atomic_compare_exchange_uint8(&instr->op.code, &old_op, opcode)) {
+        /* Lost race with instrumentation */
+        assert(old_op >= MIN_INSTRUMENTED_OPCODE);
+        return 0;
+    }
+    return 1;
+#else
+    instr->op.code = opcode;
+    return 1;
+#endif
+}
+
+static inline void
+set_counter(_Py_BackoffCounter *counter, _Py_BackoffCounter value)
+{
+    FT_ATOMIC_STORE_UINT16_RELAXED(counter->value_and_backoff,
+                                   value.value_and_backoff);
+}
+
+static inline _Py_BackoffCounter
+load_counter(_Py_BackoffCounter *counter)
+{
+    _Py_BackoffCounter result = {
+        .value_and_backoff =
+            FT_ATOMIC_LOAD_UINT16_RELAXED(counter->value_and_backoff)};
+    return result;
+}
+
+static inline void
+specialize(_Py_CODEUNIT *instr, uint8_t specialized_opcode)
+{
+    assert(!PyErr_Occurred());
+    if (!set_opcode(instr, specialized_opcode)) {
+        STAT_INC(_PyOpcode_Deopt[specialized_opcode], failure);
+        SPECIALIZATION_FAIL(_PyOpcode_Deopt[specialized_opcode],
+                            SPEC_FAIL_OTHER);
+        return;
+    }
+    set_counter((_Py_BackoffCounter *)instr + 1, adaptive_counter_cooldown());
+}
+
+static inline void
+unspecialize(_Py_CODEUNIT *instr, int reason)
+{
+    assert(!PyErr_Occurred());
+    uint8_t opcode = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
+    uint8_t generic_opcode = _PyOpcode_Deopt[opcode];
+    STAT_INC(generic_opcode, failure);
+    if (!set_opcode(instr, generic_opcode)) {
+        SPECIALIZATION_FAIL(generic_opcode, SPEC_FAIL_OTHER);
+        return;
+    }
+    SPECIALIZATION_FAIL(generic_opcode, reason);
+    _Py_BackoffCounter *counter = (_Py_BackoffCounter *)instr + 1;
+    _Py_BackoffCounter cur = load_counter(counter);
+    set_counter(counter, adaptive_counter_backoff(cur));
+}
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2195,7 +2243,6 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     }
 }
 
-#ifdef Py_STATS
 static int
 binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 {
@@ -2263,7 +2310,6 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
     }
     Py_UNREACHABLE();
 }
-#endif   // Py_STATS
 
 void
 _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
@@ -2273,8 +2319,6 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     PyObject *rhs = PyStackRef_AsPyObjectBorrow(rhs_st);
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
-    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    uint8_t specialized_op;
     switch (oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
@@ -2285,19 +2329,19 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
                 bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
-                    specialized_op = BINARY_OP_INPLACE_ADD_UNICODE;
-                    goto success;
+                    specialize(instr, BINARY_OP_INPLACE_ADD_UNICODE);
+                    return;
                 }
-                specialized_op = BINARY_OP_ADD_UNICODE;
-                goto success;
+                specialize(instr, BINARY_OP_ADD_UNICODE);
+                return;
             }
             if (PyLong_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_ADD_INT;
-                goto success;
+                specialize(instr, BINARY_OP_ADD_INT);
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_ADD_FLOAT;
-                goto success;
+                specialize(instr, BINARY_OP_ADD_FLOAT);
+                return;
             }
             break;
         case NB_MULTIPLY:
@@ -2306,12 +2350,12 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_MULTIPLY_INT;
-                goto success;
+                specialize(instr, BINARY_OP_MULTIPLY_INT);
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_MULTIPLY_FLOAT;
-                goto success;
+                specialize(instr, BINARY_OP_MULTIPLY_FLOAT);
+                return;
             }
             break;
         case NB_SUBTRACT:
@@ -2320,24 +2364,16 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_SUBTRACT_INT;
-                goto success;
+                specialize(instr, BINARY_OP_SUBTRACT_INT);
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
-                specialized_op = BINARY_OP_SUBTRACT_FLOAT;
-                goto success;
+                specialize(instr, BINARY_OP_SUBTRACT_FLOAT);
+                return;
             }
             break;
     }
-    SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
-    STAT_INC(BINARY_OP, failure);
-    SET_OPCODE_OR_RETURN(instr, BINARY_OP);
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(BINARY_OP, success);
-    SET_OPCODE_OR_RETURN(instr, specialized_op);
-    cache->counter = adaptive_counter_cooldown();
+    unspecialize(instr, binary_op_fail_kind(oparg, lhs, rhs));
 }
 
 
@@ -2747,25 +2783,27 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 {
     PyObject *value = PyStackRef_AsPyObjectBorrow(value_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    uint8_t specialized_op;
     _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
     if (PyDict_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_DICT;
+        specialized_op = CONTAINS_OP_DICT;
         goto success;
     }
     if (PySet_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_SET;
+        specialized_op = CONTAINS_OP_SET;
         goto success;
     }
 
     SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
     STAT_INC(CONTAINS_OP, failure);
-    instr->op.code = CONTAINS_OP;
+    SET_OPCODE_OR_RETURN(instr, CONTAINS_OP);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(CONTAINS_OP, success);
+    SET_OPCODE_OR_RETURN(instr, specialized_op);
     cache->counter = adaptive_counter_cooldown();
 }
 
