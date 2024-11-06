@@ -1284,7 +1284,8 @@ class GCCallbackTests(unittest.TestCase):
             from test.support import gc_collect, SuppressCrashReport
 
             a = [1, 2, 3]
-            b = [a]
+            b = [a, a]
+            a.append(b)
 
             # Avoid coredump when Py_FatalError() calls abort()
             SuppressCrashReport().__enter__()
@@ -1294,6 +1295,8 @@ class GCCallbackTests(unittest.TestCase):
             # (to avoid deallocating it):
             import ctypes
             ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+            del a
+            del b
 
             # The garbage collector should now have a fatal error
             # when it reaches the broken object
@@ -1322,7 +1325,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertRegex(stderr,
             br'object type name: list')
         self.assertRegex(stderr,
-            br'object repr     : \[1, 2, 3\]')
+            br'object repr     : \[1, 2, 3, \[\[...\], \[...\]\]\]')
 
 
 class GCTogglingTests(unittest.TestCase):

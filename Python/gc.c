@@ -726,7 +726,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 }
 
 static void
-untrack_tuples(PyGC_Head *head)
+untrack_tuples_and_dicts(PyGC_Head *head)
 {
     PyGC_Head *next, *gc = GC_NEXT(head);
     while (gc != head) {
@@ -735,19 +735,7 @@ untrack_tuples(PyGC_Head *head)
         if (PyTuple_CheckExact(op)) {
             _PyTuple_MaybeUntrack(op);
         }
-        gc = next;
-    }
-}
-
-/* Try to untrack all currently tracked dictionaries */
-static void
-untrack_dicts(PyGC_Head *head)
-{
-    PyGC_Head *next, *gc = GC_NEXT(head);
-    while (gc != head) {
-        PyObject *op = FROM_GC(gc);
-        next = GC_NEXT(gc);
-        if (PyDict_CheckExact(op)) {
+        else if (PyDict_CheckExact(op)) {
             _PyDict_MaybeUntrack(op);
         }
         gc = next;
@@ -1307,6 +1295,7 @@ gc_collect_young(PyThreadState *tstate,
     GCState *gcstate = &tstate->interp->gc;
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    untrack_tuples_and_dicts(&gcstate->young.head);
     GC_STAT_ADD(0, collections, 1);
 #ifdef Py_STATS
     {
@@ -1361,7 +1350,6 @@ IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 struct container_and_flag {
     PyGC_Head *container;
     int visited_space;
-    int mark;
     uintptr_t size;
 };
 
@@ -1392,7 +1380,6 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
     struct container_and_flag arg = {
         .container = container,
         .visited_space = gcstate->visited_space,
-        .mark = 0,
         .size = 0
     };
     assert(GC_NEXT(gc) == container);
@@ -1458,7 +1445,6 @@ mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
     struct container_and_flag arg = {
         .container = reachable,
         .visited_space = visited_space,
-        .mark = 1,
         .size = 0
     };
     while (!gc_list_is_empty(reachable)) {
@@ -1590,6 +1576,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
     gcstate->work_to_do -= objects_marked;
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
+    untrack_tuples_and_dicts(&gcstate->young.head);
     gc_list_merge(&gcstate->young.head, &increment);
     gcstate->young.count = 0;
     gc_list_validate_space(&increment, gcstate->visited_space);
@@ -1613,7 +1600,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR/ 2 / scale_factor;
+    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     validate_old(gcstate);
@@ -1634,6 +1621,7 @@ gc_collect_full(PyThreadState *tstate,
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    untrack_tuples_and_dicts(&gcstate->young.head);
     /* merge all generations into pending */
     gc_list_validate_space(young, 1-gcstate->visited_space);
     gc_list_merge(young, pending);
@@ -1680,12 +1668,6 @@ gc_collect_region(PyThreadState *tstate,
     gc_list_init(&unreachable);
     deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
-    if (untrack & UNTRACK_TUPLES) {
-        untrack_tuples(from);
-    }
-    if (untrack & UNTRACK_DICTS) {
-        untrack_dicts(from);
-    }
     validate_consistent_old_space(to);
     if (from != to) {
         gc_list_merge(from, to);
@@ -1905,9 +1887,10 @@ _PyGC_Freeze(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
     /* The permanent_generation has its old space bit set to zero */
-    if (gcstate->visited_space) {
+    if (!gcstate->visited_space) {
         gc_list_set_space(&gcstate->young.head, 0);
     }
+    gc_list_validate_space(&gcstate->young.head, 0);
     gc_list_merge(&gcstate->young.head, &gcstate->permanent_generation.head);
     gcstate->young.count = 0;
     PyGC_Head*old0 = &gcstate->old[0].head;
