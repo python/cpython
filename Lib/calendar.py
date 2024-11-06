@@ -158,11 +158,14 @@ def weekday(year, month, day):
     return Day(datetime.date(year, month, day).weekday())
 
 
+def _validate_month(month):
+    if not 1 <= month <= 12:
+        raise IllegalMonthError(month)
+
 def monthrange(year, month):
     """Return weekday of first day of month (0-6 ~ Mon-Sun)
        and number of days (28-31) for year, month."""
-    if not 1 <= month <= 12:
-        raise IllegalMonthError(month)
+    _validate_month(month)
     day1 = weekday(year, month, 1)
     ndays = mdays[month] + (month == FEBRUARY and isleap(year))
     return day1, ndays
@@ -370,6 +373,8 @@ class TextCalendar(Calendar):
         """
         Return a formatted month name.
         """
+        _validate_month(themonth)
+
         s = month_name[themonth]
         if withyear:
             s = "%s %r" % (s, theyear)
@@ -500,6 +505,7 @@ class HTMLCalendar(Calendar):
         """
         Return a month name as a table row.
         """
+        _validate_month(themonth)
         if withyear:
             s = '%s %s' % (month_name[themonth], theyear)
         else:
