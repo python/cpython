@@ -141,6 +141,8 @@ if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
                     "ThreadingUnixDatagramServer"])
+    if hasattr(os, "fork"):
+        __all__.extend(["ForkingUnixStreamServer", "ForkingUnixDatagramServer"])
 
 # poll/select have the advantage of not requiring any extra file descriptor,
 # contrarily to epoll/kqueue (also, they require a single syscall).
@@ -726,6 +728,11 @@ if hasattr(socket, 'AF_UNIX'):
     class ThreadingUnixStreamServer(ThreadingMixIn, UnixStreamServer): pass
 
     class ThreadingUnixDatagramServer(ThreadingMixIn, UnixDatagramServer): pass
+
+    if hasattr(os, "fork"):
+        class ForkingUnixStreamServer(ForkingMixIn, UnixStreamServer): pass
+
+        class ForkingUnixDatagramServer(ForkingMixIn, UnixDatagramServer): pass
 
 class BaseRequestHandler:
 

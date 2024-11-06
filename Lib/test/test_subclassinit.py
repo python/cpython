@@ -230,7 +230,7 @@ class Test(unittest.TestCase):
                 super().__init__(name, bases, namespace)
 
         with self.assertRaises(TypeError):
-            class MyClass(metaclass=MyMeta, otherarg=1):
+            class MyClass2(metaclass=MyMeta, otherarg=1):
                 pass
 
         class MyMeta(type):
@@ -241,10 +241,10 @@ class Test(unittest.TestCase):
                 super().__init__(name, bases, namespace)
                 self.otherarg = otherarg
 
-        class MyClass(metaclass=MyMeta, otherarg=1):
+        class MyClass3(metaclass=MyMeta, otherarg=1):
             pass
 
-        self.assertEqual(MyClass.otherarg, 1)
+        self.assertEqual(MyClass3.otherarg, 1)
 
     def test_errors_changed_pep487(self):
         # These tests failed before Python 3.6, PEP 487
@@ -263,10 +263,10 @@ class Test(unittest.TestCase):
                 self.otherarg = otherarg
                 return self
 
-        class MyClass(metaclass=MyMeta, otherarg=1):
+        class MyClass2(metaclass=MyMeta, otherarg=1):
             pass
 
-        self.assertEqual(MyClass.otherarg, 1)
+        self.assertEqual(MyClass2.otherarg, 1)
 
     def test_type(self):
         t = type('NewClass', (object,), {})

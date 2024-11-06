@@ -1,1 +1,0 @@
-Reduce the number of inline :opcode:`CACHE` entries for :opcode:`CALL`.

@@ -1,2 +1,0 @@
-Improve performance of :func:`dataclasses.astuple` and
-:func:`dataclasses.asdict` in cases where the contents are common Python types.

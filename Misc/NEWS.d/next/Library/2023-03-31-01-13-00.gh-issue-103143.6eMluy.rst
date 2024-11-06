@@ -1,1 +1,0 @@
-Polish the help messages and docstrings of :mod:`pdb`.

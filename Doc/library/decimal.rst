@@ -1,5 +1,5 @@
-:mod:`decimal` --- Decimal fixed point and floating point arithmetic
-====================================================================
+:mod:`!decimal` --- Decimal fixed-point and floating-point arithmetic
+=====================================================================
 
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.
@@ -31,7 +31,7 @@
 --------------
 
 The :mod:`decimal` module provides support for fast correctly rounded
-decimal floating point arithmetic. It offers several advantages over the
+decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
 * Decimal "is based on a floating-point model which was designed with people
@@ -207,7 +207,7 @@ a decimal raises :class:`InvalidOperation`::
 .. versionchanged:: 3.3
 
 Decimals interact well with much of the rest of Python.  Here is a small decimal
-floating point flying circus:
+floating-point flying circus:
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
@@ -373,7 +373,7 @@ Decimal objects
    digits, and an integer exponent. For example, ``Decimal((0, (1, 4, 1, 4), -3))``
    returns ``Decimal('1.414')``.
 
-   If *value* is a :class:`float`, the binary floating point value is losslessly
+   If *value* is a :class:`float`, the binary floating-point value is losslessly
    converted to its exact decimal equivalent.  This conversion can often require
    53 or more digits of precision.  For example, ``Decimal(float('1.1'))``
    converts to
@@ -403,7 +403,7 @@ Decimal objects
       Underscores are allowed for grouping, as with integral and floating-point
       literals in code.
 
-   Decimal floating point objects share many properties with the other built-in
+   Decimal floating-point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
    operations and special methods apply.  Likewise, decimal objects can be
    copied, pickled, printed, used as dictionary keys, used as set elements,
@@ -445,7 +445,7 @@ Decimal objects
       Mixed-type comparisons between :class:`Decimal` instances and other
       numeric types are now fully supported.
 
-   In addition to the standard numeric properties, decimal floating point
+   In addition to the standard numeric properties, decimal floating-point
    objects also have a number of specialized methods:
 
 
@@ -598,6 +598,23 @@ Decimal objects
 
       .. versionadded:: 3.1
 
+   .. classmethod:: from_number(number)
+
+      Alternative constructor that only accepts instances of
+      :class:`float`, :class:`int` or :class:`Decimal`, but not strings
+      or tuples.
+
+      .. doctest::
+
+          >>> Decimal.from_number(314)
+          Decimal('314')
+          >>> Decimal.from_number(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_number(Decimal('3.14'))
+          Decimal('3.14')
+
+      .. versionadded:: 3.14
+
    .. method:: fma(other, third, context=None)
 
       Fused multiply-add.  Return self*other+third with no rounding of the
@@ -743,12 +760,23 @@ Decimal objects
 
    .. method:: normalize(context=None)
 
-      Normalize the number by stripping the rightmost trailing zeros and
-      converting any result equal to ``Decimal('0')`` to
-      ``Decimal('0e0')``. Used for producing canonical values for attributes
-      of an equivalence class. For example, ``Decimal('32.100')`` and
-      ``Decimal('0.321000e+2')`` both normalize to the equivalent value
-      ``Decimal('32.1')``.
+      Used for producing canonical values of an equivalence
+      class within either the current context or the specified context.
+
+      This has the same semantics as the unary plus operation, except that if
+      the final result is finite it is reduced to its simplest form, with all
+      trailing zeros removed and its sign preserved. That is, while the
+      coefficient is non-zero and a multiple of ten the coefficient is divided
+      by ten and the exponent is incremented by 1. Otherwise (the coefficient is
+      zero) the exponent is set to 0. In all cases the sign is unchanged.
+
+      For example, ``Decimal('32.100')`` and ``Decimal('0.321000e+2')`` both
+      normalize to the equivalent value ``Decimal('32.1')``.
+
+      Note that rounding is applied *before* reducing to simplest form.
+
+      In the latest versions of the specification, this operation is also known
+      as ``reduce``.
 
    .. method:: number_class(context=None)
 
@@ -886,6 +914,48 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
+   Decimal numbers can be rounded using the :func:`.round` function:
+
+   .. describe:: round(number)
+   .. describe:: round(number, ndigits)
+
+      If *ndigits* is not given or ``None``,
+      returns the nearest :class:`int` to *number*,
+      rounding ties to even, and ignoring the rounding mode of the
+      :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
+      infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
+
+      If *ndigits* is an :class:`int`, the context's rounding mode is respected
+      and a :class:`Decimal` representing *number* rounded to the nearest
+      multiple of ``Decimal('1E-ndigits')`` is returned; in this case,
+      ``round(number, ndigits)`` is equivalent to
+      ``self.quantize(Decimal('1E-ndigits'))``.  Returns ``Decimal('NaN')`` if
+      *number* is a quiet NaN.  Raises :class:`InvalidOperation` if *number*
+      is an infinity, a signaling NaN, or if the length of the coefficient after
+      the quantize operation would be greater than the current context's
+      precision.  In other words, for the non-corner cases:
+
+      * if *ndigits* is positive, return *number* rounded to *ndigits* decimal
+        places;
+      * if *ndigits* is zero, return *number* rounded to the nearest integer;
+      * if *ndigits* is negative, return *number* rounded to the nearest
+        multiple of ``10**abs(ndigits)``.
+
+      For example::
+
+          >>> from decimal import Decimal, getcontext, ROUND_DOWN
+          >>> getcontext().rounding = ROUND_DOWN
+          >>> round(Decimal('3.75'))     # context rounding ignored
+          4
+          >>> round(Decimal('3.5'))      # round-ties-to-even
+          4
+          >>> round(Decimal('3.75'), 0)  # uses the context rounding
+          Decimal('3')
+          >>> round(Decimal('3.75'), 1)
+          Decimal('3.7')
+          >>> round(Decimal('3.75'), -1)
+          Decimal('0E+1')
+
 
 .. _logical_operands_label:
 
@@ -926,7 +996,7 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None, \*\*kwargs)
+.. function:: localcontext(ctx=None, **kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
@@ -1385,10 +1455,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
-         - ``y`` must be nonnegative
-         - at least one of ``x`` or ``y`` must be nonzero
-         - ``modulo`` must be nonzero and have at most 'precision' digits
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
       The value resulting from ``Context.power(x, y, modulo)`` is
       equal to the value that would be obtained by computing ``(x**y)
@@ -1497,7 +1567,7 @@ are also included in the pure Python version for compatibility.
 
    The value is ``True``.  Deprecated, because Python now always has threads.
 
-.. deprecated:: 3.9
+   .. deprecated:: 3.9
 
 .. data:: HAVE_CONTEXTVAR
 
@@ -1506,7 +1576,7 @@ are also included in the pure Python version for compatibility.
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
-.. versionadded:: 3.9 backported to 3.7 and 3.8.
+   .. versionadded:: 3.8.3
 
 
 Rounding modes
@@ -1688,7 +1758,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating Point Notes
+Floating-Point Notes
 --------------------
 
 
@@ -1701,7 +1771,7 @@ can still incur round-off error when non-zero digits exceed the fixed precision.
 
 The effects of round-off error can be amplified by the addition or subtraction
 of nearly offsetting quantities resulting in loss of significance.  Knuth
-provides two instructive examples where rounded floating point arithmetic with
+provides two instructive examples where rounded floating-point arithmetic with
 insufficient precision causes the breakdown of the associative and distributive
 properties of addition:
 
@@ -1791,7 +1861,7 @@ treated as equal and their sign is informational.
 In addition to the two signed zeros which are distinct yet equal, there are
 various representations of zero with differing precisions yet equivalent in
 value.  This takes a bit of getting used to.  For an eye accustomed to
-normalized floating point representations, it is not immediately obvious that
+normalized floating-point representations, it is not immediately obvious that
 the following calculation returns a value equal to zero:
 
    >>> 1 / Decimal('Infinity')
@@ -2078,6 +2148,26 @@ representative:
    >>> [v.normalize() for v in values]
    [Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2')]
 
+Q. When does rounding occur in a computation?
+
+A. It occurs *after* the computation.  The philosophy of the decimal
+specification is that numbers are considered exact and are created
+independent of the current context.  They can even have greater
+precision than current context.  Computations process with those
+exact inputs and then rounding (or other context operations) is
+applied to the *result* of the computation::
+
+   >>> getcontext().prec = 5
+   >>> pi = Decimal('3.1415926535')   # More than 5 digits
+   >>> pi                             # All digits are retained
+   Decimal('3.1415926535')
+   >>> pi + 0                         # Rounded after an addition
+   Decimal('3.1416')
+   >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
+   Decimal('3.1415')
+   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   Decimal('3.1416')
+
 Q. Some decimal values always print with exponential notation.  Is there a way
 to get a non-exponential representation?
 
@@ -2098,7 +2188,7 @@ value unchanged:
 
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
-A. Yes, any binary floating point number can be exactly expressed as a
+A. Yes, any binary floating-point number can be exactly expressed as a
 Decimal though an exact conversion may take more precision than intuition would
 suggest:
 
@@ -2152,7 +2242,7 @@ Q. Is the CPython implementation fast for large numbers?
 A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
-arbitrary precision correctly rounded decimal floating point arithmetic [#]_.
+arbitrary precision correctly rounded decimal floating-point arithmetic [#]_.
 ``libmpdec`` uses `Karatsuba multiplication
 <https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
 for medium-sized numbers and the `Number Theoretic Transform
