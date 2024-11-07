@@ -573,7 +573,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: int PyLong_IsPositive(PyObject *obj)
 
-   Check if the integer object *obj* is positive.
+   Check if the integer object *obj* is positive (``obj > 0``).
 
    If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
    return ``1`` when it's positive and ``0`` otherwise.  Else set an
@@ -584,7 +584,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: int PyLong_IsNegative(PyObject *obj)
 
-   Check if the integer object *obj* is negative.
+   Check if the integer object *obj* is negative (``obj < 0``).
 
    If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
    return ``1`` when it's negative and ``0`` otherwise.  Else set an
