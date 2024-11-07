@@ -5045,7 +5045,7 @@ dummy_func(
                 if (type->tp_as_async == NULL || type->tp_as_async->am_aiter == NULL) {
                     PyErr_Format(PyExc_TypeError,
                         "'async for' requires an object with "
-                        "__aiter__ method, got %.100s",
+                        "__aiter__ method, got %.200s",
                         type->tp_name);
                     ERROR_NO_POP();
                 }
