@@ -600,13 +600,12 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        assert((this_instr-1)->opcode == _CHECK_FUNCTION_VERSION || (this_instr-1)->opcode == _CHECK_FUNCTION_VERSION_INLINE);
+        assert(sym_matches_type(callable, &PyFunction_Type));
         if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
                 PyCodeObject *co = (PyCodeObject *)func->func_code;
                 if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
-                    // Note: this is only valid if CHECK_FUNCTION_VERSION precedes this instruction.
                     REPLACE_OP(this_instr, _NOP, 0 ,0);
                 }
             }
