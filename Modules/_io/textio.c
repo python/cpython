@@ -1313,7 +1313,6 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     }
     Py_DECREF(codec_info);
 
-    Py_INCREF(errors);
     Py_SETREF(self->encoding, encoding);
     Py_SETREF(self->errors, errors);
 
