@@ -1347,7 +1347,7 @@ IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 struct container_and_flag {
     PyGC_Head *container;
     int visited_space;
-    uintptr_t size;
+    Py_ssize_t size;
 };
 
 /* A traversal callback for adding to container) */
@@ -1370,7 +1370,7 @@ visit_add_to_container(PyObject *op, void *arg)
     return 0;
 }
 
-static uintptr_t
+static Py_ssize_t
 expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCState *gcstate)
 {
     validate_list(container, collecting_clear_unreachable_clear);
@@ -1420,7 +1420,7 @@ completed_cycle(GCState *gcstate)
     gcstate->phase = GC_PHASE_MARK;
 }
 
-static int
+static Py_ssize_t
 move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
 {
     if (op != NULL && !_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
@@ -1435,7 +1435,7 @@ move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
     return 0;
 }
 
-static int
+static Py_ssize_t
 mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
 {
     // Transitively traverse all objects from reachable, until empty
