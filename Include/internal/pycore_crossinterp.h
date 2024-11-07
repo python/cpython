@@ -202,8 +202,8 @@ extern void _PyXI_FiniTypes(PyInterpreterState *interp);
 
 int _Py_xi_global_state_init(_PyXI_global_state_t *);
 void _Py_xi_global_state_fini(_PyXI_global_state_t *);
-int _Py_xi_state_init(_PyXI_state_t *);
-void _Py_xi_state_fini(_PyXI_state_t *);
+int _Py_xi_state_init(_PyXI_state_t *, PyInterpreterState *);
+void _Py_xi_state_fini(_PyXI_state_t *, PyInterpreterState *);
 
 
 /***************************/
