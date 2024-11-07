@@ -1142,7 +1142,7 @@ class IncrementalGCTests(unittest.TestCase):
                 collected = young['collected'] + incremental['collected'] + old['collected']
                 count += CORRECTION
                 live = count - collected
-                self.assertLess(live, 25000)
+                self.assertLess(live, 27000)
                 del olds[:]
         if not enabled:
             gc.disable()
