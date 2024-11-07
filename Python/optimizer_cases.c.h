@@ -17,6 +17,8 @@
 
         /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
 
+        /* _LOAD_BYTECODE is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
@@ -61,6 +63,27 @@
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_CONST_IMMORTAL: {
+            _Py_UopsSymbol *value;
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT: {
+            _Py_UopsSymbol *value;
+            PyObject *val = PyLong_FromLong(this_instr->oparg);
             value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -484,6 +507,25 @@
         }
 
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            _Py_UopsSymbol *res;
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+                PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
+            // _STORE_FAST:
+            GETLOCAL(this_instr->operand) = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
