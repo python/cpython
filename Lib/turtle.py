@@ -2819,7 +2819,6 @@ class RawTurtle(TPen, TNavigator):
         self.turtle = None  # too make self deepcopy-able
 
         q = deepcopy(self)
-        
         self.screen = screen
         self.turtle = turtle
 
