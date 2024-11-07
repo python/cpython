@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -933,7 +934,8 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *__clinic_args = NULL;
     PyObject *sep = Py_None;
@@ -941,41 +943,46 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *file = Py_None;
     int flush = 0;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
-        sep = args[1];
+    if (fastargs[0]) {
+        sep = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[2]) {
-        end = args[2];
+    if (fastargs[1]) {
+        end = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (args[3]) {
-        file = args[3];
+    if (fastargs[2]) {
+        file = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    flush = PyObject_IsTrue(args[4]);
+    flush = PyObject_IsTrue(fastargs[3]);
     if (flush < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = builtin_print_impl(module, __clinic_args, sep, end, file, flush);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -1228,4 +1235,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=435d3f286a863c49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76b27cf4164f257e input=a9049054013a1b77]*/

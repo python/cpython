@@ -4148,6 +4148,45 @@ PyDoc_STRVAR(test_vararg_and_posonly__doc__,
     {"test_vararg_and_posonly", _PyCFunction_CAST(test_vararg_and_posonly), METH_FASTCALL, test_vararg_and_posonly__doc__},
 
 static PyObject *
+test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("test_vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = test_vararg_and_posonly_impl(module, a, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
+test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=0c11c475e240869e input=9cfa748bbff09877]*/
+
+PyDoc_STRVAR(test_vararg_and_posonly__doc__,
+"test_vararg_and_posonly($module, a, /, *args)\n"
+"--\n"
+"\n");
+
+#define TEST_VARARG_AND_POSONLY_METHODDEF    \
+    {"test_vararg_and_posonly", _PyCFunction_CAST(test_vararg_and_posonly), METH_FASTCALL, test_vararg_and_posonly__doc__},
+
+static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, Py_ssize_t nargs,
                              PyObject *const *args);
 
@@ -4163,17 +4202,19 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     a = args[0];
-    __clinic_args = args + 1;
+    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = test_vararg_and_posonly_impl(module, a, nvararg, __clinic_args);
 
 exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
-static PyObject *
-test_vararg_and_posonly_impl(PyObject *module, PyObject *a, Py_ssize_t nargs,
-                             PyObject *const *args)
-/*[clinic end generated code: output=dc2dd9483cc0459e input=9cfa748bbff09877]*/
 
 /*[clinic input]
 test_vararg
@@ -4224,26 +4265,34 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    __clinic_args = args[1];
+    a = fastargs[0];
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = test_vararg_impl(module, a, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=1411e464f358a7ba input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=e7d7da6a7e008125 input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4296,37 +4345,45 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
     int b = 0;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    a = args[0];
-    __clinic_args = args[1];
+    a = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    b = PyObject_IsTrue(args[2]);
+    b = PyObject_IsTrue(fastargs[1]);
     if (b < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    __clinic_args = nargs > 1
+        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        : PyTuple_New(0);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = test_vararg_with_default_impl(module, a, __clinic_args, b);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=f09d4b917063ca41 input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=46781f9920ecedcf input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4379,22 +4436,22 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *__clinic_args = NULL;
     int b = 0;
     PyObject *c = " ";
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
+    fastargs = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
-    __clinic_args = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
-        b = PyObject_IsTrue(args[1]);
+    if (fastargs[0]) {
+        b = PyObject_IsTrue(fastargs[0]);
         if (b < 0) {
             goto exit;
         }
@@ -4402,19 +4459,25 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
             goto skip_optional_kwonly;
         }
     }
-    c = args[2];
+    c = fastargs[1];
 skip_optional_kwonly:
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
     return_value = test_vararg_with_only_defaults_impl(module, __clinic_args, b, c);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=cc6590b8805d5433 input=fa56a709a035666e]*/
+/*[clinic end generated code: output=d03daf5067039c03 input=fa56a709a035666e]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4927,6 +4990,41 @@ PyDoc_STRVAR(Test___init____doc__,
 "Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static int
+Test___init___impl(TestObj *self, PyObject *args);
+
+static int
+Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyTypeObject *base_tp = TestType;
+    PyObject *__clinic_args = NULL;
+
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoKeywords("Test", kwargs)) {
+        goto exit;
+    }
+    __clinic_args = Py_NewRef(args);
+    return_value = Test___init___impl((TestObj *)self, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static int
+Test___init___impl(TestObj *self, PyObject *args)
+/*[clinic end generated code: output=f172425cec373cd6 input=2a8bd0033c9ac772]*/
+
+PyDoc_STRVAR(Test___init____doc__,
+"Test(*args)\n"
+"--\n"
+"\n"
+"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
+
+static int
 Test___init___impl(TestObj *self, Py_ssize_t nargs, PyObject *const *args);
 
 static int
@@ -4941,19 +5039,16 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("Test", PyTuple_GET_SIZE(args), 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = _PyTuple_CAST(args)->ob_item;
+    __clinic_args = Py_NewRef(args);
     return_value = Test___init___impl((TestObj *)self, nvararg, __clinic_args);
 
 exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
-static int
-Test___init___impl(TestObj *self, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=6a64b417c9080a73 input=2a8bd0033c9ac772]*/
 
 
 /*[clinic input]
@@ -4963,6 +5058,40 @@ Test.__new__
 
 Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
+
+PyDoc_STRVAR(Test__doc__,
+"Test(*args)\n"
+"--\n"
+"\n"
+"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
+
+static PyObject *
+Test_impl(PyTypeObject *type, PyObject *args);
+
+static PyObject *
+Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = TestType;
+    PyObject *__clinic_args = NULL;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("Test", kwargs)) {
+        goto exit;
+    }
+    __clinic_args = Py_NewRef(args);
+    return_value = Test_impl(type, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
+Test_impl(PyTypeObject *type, PyObject *args)
+/*[clinic end generated code: output=ee1e8892a67abd4a input=70ad829df3dd9b84]*/
 
 PyDoc_STRVAR(Test__doc__,
 "Test(*args)\n"
@@ -4984,19 +5113,16 @@ Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("Test", PyTuple_GET_SIZE(args), 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = _PyTuple_CAST(args)->ob_item;
+    __clinic_args = Py_NewRef(args);
     return_value = Test_impl(type, nvararg, __clinic_args);
 
 exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
-static PyObject *
-Test_impl(PyTypeObject *type, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=bf22f942407383a5 input=70ad829df3dd9b84]*/
 
 
 /*[clinic input]

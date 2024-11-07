@@ -59,18 +59,19 @@ pack_arguments_newref(int argc, ...)
 }
 
 static PyObject *
-pack_varargs_to_tuple(Py_ssize_t varargssize, PyObject *const *args)
+pack_arguments_2pos_varpos(PyObject *a, PyObject *b,
+                           PyObject * const *args, Py_ssize_t args_length)
+/*[clinic end generated code: output=267032f41bd039cc input=86ee3064b7853e86]*/
 {
-    assert(!PyErr_Occurred());
-    PyObject *tuple = PyTuple_New(varargssize);
-    if (!tuple) {
+    PyObject *tuple = _PyTuple_FromArray(args, args_length);
+    if (tuple == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; i < varargssize; i++) {
-        PyTuple_SET_ITEM(tuple, i, Py_NewRef(args[i]));
-    }
-    return tuple;
+    PyObject *result = pack_arguments_newref(3, a, b, tuple);
+    Py_DECREF(tuple);
+    return result;
 }
+
 
 /* Pack arguments to a tuple.
  * `wrapper` is function which converts primitive type to PyObject.
@@ -984,16 +985,10 @@ varpos
 [clinic start generated code]*/
 
 static PyObject *
-varpos_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=b65096f423fb5dcc input=f87cd674145d394c]*/
+varpos_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=7b0b9545872bdca4 input=f87cd674145d394c]*/
 {
-    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
-    if (!vararg_tuple) {
-        return NULL;
-    }
-    PyObject *result =  pack_arguments_newref(1, vararg_tuple);
-    Py_DECREF(vararg_tuple);
-    return result;
+    return Py_NewRef(args);
 }
 
 
@@ -1009,16 +1004,29 @@ posonly_varpos
 
 static PyObject *
 posonly_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
-                    Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=d10d43d86d117ab3 input=c9fd7895cfbaabba]*/
+                    PyObject *args)
+/*[clinic end generated code: output=5dae5eb2a0d623cd input=c9fd7895cfbaabba]*/
 {
-    PyObject *vararg_tuple = pack_varargs_to_tuple(nargs, args);
-    if (!vararg_tuple) {
-        return NULL;
-    }
-    PyObject *result = pack_arguments_newref(3, a, b, vararg_tuple);
-    Py_DECREF(vararg_tuple);
-    return result;
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+posonly_req_opt_varpos
+
+    a: object
+    b: object = False
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
+                            PyObject *args)
+/*[clinic end generated code: output=67f82f90838e166a input=a49bd64740171e1c]*/
+{
+    return pack_arguments_newref(3, a, b, args);
 }
 
 
@@ -1130,6 +1138,81 @@ varpos_kwonly_req_opt_impl(PyObject *module, PyObject *args, PyObject *a,
 }
 
 
+/*[clinic input]
+varpos_array
+
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_array_impl(PyObject *module, PyObject * const *args,
+                  Py_ssize_t args_length)
+/*[clinic end generated code: output=a25f42f39c9b13ad input=97b8bdcf87e019c7]*/
+{
+    return _PyTuple_FromArray(args, args_length);
+}
+
+
+/*[clinic input]
+posonly_varpos_array
+
+    a: object
+    b: object
+    /
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_varpos_array_impl(PyObject *module, PyObject *a, PyObject *b,
+                          PyObject * const *args, Py_ssize_t args_length)
+/*[clinic end generated code: output=267032f41bd039cc input=86ee3064b7853e86]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
+
+/*[clinic input]
+posonly_req_opt_varpos_array
+
+    a: object
+    b: object = False
+    /
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_array_impl(PyObject *module, PyObject *a, PyObject *b,
+                                  PyObject * const *args,
+                                  Py_ssize_t args_length)
+/*[clinic end generated code: output=f2f93c77ead93699 input=b01d7728164fd93e]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
+
+/*[clinic input]
+posonly_poskw_varpos_array
+
+    a: object
+    /
+    b: object
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_poskw_varpos_array_impl(PyObject *module, PyObject *a, PyObject *b,
+                                PyObject * const *args,
+                                Py_ssize_t args_length)
+/*[clinic end generated code: output=155811a8b2d65a12 input=5fb08cdc6afb9d7c]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
+
 
 /*[clinic input]
 gh_32092_oob
@@ -1183,9 +1266,8 @@ Proof-of-concept of GH-99233 refcount error bug.
 [clinic start generated code]*/
 
 static PyObject *
-gh_99233_refcount_impl(PyObject *module, Py_ssize_t nargs,
-                       PyObject *const *args)
-/*[clinic end generated code: output=b570007e61e5c670 input=eecfdc2092d90dc3]*/
+gh_99233_refcount_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=585855abfbca9a7f input=eecfdc2092d90dc3]*/
 {
     Py_RETURN_NONE;
 }
@@ -1295,9 +1377,9 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 
 /*[clinic input]
-class _testclinic.TestClass "PyObject *" "PyObject"
+class _testclinic.TestClass "PyObject *" "&PyBaseObject_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c991635bb3c91f1a]*/
 
 /*[clinic input]
 _testclinic.TestClass.get_defining_class
@@ -1360,11 +1442,192 @@ _testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
     return pack_arguments_newref(4, cls, a, b, args);
 }
 
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as varpos_no_fastcall
+
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+/*[clinic end generated code: output=04e94f2898bb2dde input=b0447ebab3e81001]*/
+{
+    return Py_NewRef(args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_varpos_no_fastcall
+
+    a: object
+    b: object
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
+                                PyObject *args)
+/*[clinic end generated code: output=b0a0425719f69f5a input=d2ec37a06b3c2389]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_req_opt_varpos_no_fastcall
+
+    a: object
+    b: object = False
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                        PyObject *b, PyObject *args)
+/*[clinic end generated code: output=3c44915b1a554e2d input=e9e74686a5e6a06d]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_poskw_varpos_no_fastcall
+
+    a: object
+    /
+    b: object
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                      PyObject *b, PyObject *args)
+/*[clinic end generated code: output=6ad74bed4bdc7f96 input=fa931c38184213aa]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as varpos_array_no_fastcall
+
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject * const *args,
+                              Py_ssize_t args_length)
+/*[clinic end generated code: output=f99d984346c60d42 input=368d8eea6de48c12]*/
+{
+    return _PyTuple_FromArray(args, args_length);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_varpos_array_no_fastcall
+
+    a: object
+    b: object
+    /
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                      PyObject *b, PyObject * const *args,
+                                      Py_ssize_t args_length)
+/*[clinic end generated code: output=1eec4da1fb5b5978 input=7330c8d819a23548]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_req_opt_varpos_array_no_fastcall
+
+    a: object
+    b: object = False
+    /
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                              PyObject *a, PyObject *b,
+                                              PyObject * const *args,
+                                              Py_ssize_t args_length)
+/*[clinic end generated code: output=88041c2176135218 input=7f5fd34ee5f9e0bf]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
+
+/*[clinic input]
+@classmethod
+_testclinic.TestClass.__new__ as posonly_poskw_varpos_array_no_fastcall
+
+    a: object
+    /
+    b: object
+    *args: array
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
+                                            PyObject *b,
+                                            PyObject * const *args,
+                                            Py_ssize_t args_length)
+/*[clinic end generated code: output=70eda18c3667681e input=2b0fcd7bd9bb865c]*/
+{
+    return pack_arguments_2pos_varpos(a, b, args, args_length);
+}
+
 static struct PyMethodDef test_class_methods[] = {
     _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
     _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
     _TESTCLINIC_TESTCLASS_DEFCLASS_VARPOS_METHODDEF
     _TESTCLINIC_TESTCLASS_DEFCLASS_POSONLY_VARPOS_METHODDEF
+
+    {"varpos_no_fastcall", _PyCFunction_CAST(varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_varpos_no_fastcall", _PyCFunction_CAST(posonly_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_req_opt_varpos_no_fastcall", _PyCFunction_CAST(posonly_req_opt_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_poskw_varpos_no_fastcall", _PyCFunction_CAST(posonly_poskw_varpos_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+
+    {"varpos_array_no_fastcall",
+        _PyCFunction_CAST(varpos_array_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_varpos_array_no_fastcall",
+        _PyCFunction_CAST(posonly_varpos_array_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_req_opt_varpos_array_no_fastcall",
+        _PyCFunction_CAST(posonly_req_opt_varpos_array_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    {"posonly_poskw_varpos_array_no_fastcall",
+        _PyCFunction_CAST(posonly_poskw_varpos_array_no_fastcall),
+        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+
     {NULL, NULL}
 };
 
@@ -2023,12 +2286,19 @@ static PyMethodDef tester_methods[] = {
 
     VARPOS_METHODDEF
     POSONLY_VARPOS_METHODDEF
+    POSONLY_REQ_OPT_VARPOS_METHODDEF
     POSONLY_POSKW_VARPOS_METHODDEF
     POSKW_VARPOS_METHODDEF
     POSKW_VARPOS_KWONLY_OPT_METHODDEF
     POSKW_VARPOS_KWONLY_OPT2_METHODDEF
     VARPOS_KWONLY_OPT_METHODDEF
     VARPOS_KWONLY_REQ_OPT_METHODDEF
+
+    VARPOS_ARRAY_METHODDEF
+    POSONLY_VARPOS_ARRAY_METHODDEF
+    POSONLY_REQ_OPT_VARPOS_ARRAY_METHODDEF
+    POSONLY_POSKW_VARPOS_ARRAY_METHODDEF
+
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF

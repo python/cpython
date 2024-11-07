@@ -33,6 +33,15 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.cli import parse_file, Clinic
 
 
+def repeat_fn(*functions):
+    def wrapper(test):
+        def wrapped(self):
+            for fn in functions:
+                with self.subTest(fn=fn):
+                    test(self, fn)
+        return wrapped
+    return wrapper
+
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = CLanguage(filename)
     c = Clinic(clang, filename=filename, limited_capi=limited_capi)
@@ -3378,30 +3387,53 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_varpos(self):
-        # fn(*args)
-        fn = ac_tester.varpos
-        self.assertEqual(fn(), ((),))
-        self.assertEqual(fn(1, 2), ((1, 2),))
+    if ac_tester is not None:
+        @repeat_fn(ac_tester.varpos,
+                   ac_tester.varpos_array,
+                   ac_tester.TestClass.varpos_no_fastcall,
+                   ac_tester.TestClass.varpos_array_no_fastcall)
+        def test_varpos(self, fn):
+            # fn(*args)
+            self.assertEqual(fn(), ())
+            self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_posonly_varpos(self):
-        # fn(a, b, /, *args)
-        fn = ac_tester.posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
-        self.assertRaises(TypeError, fn, 1, b=2)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+        @repeat_fn(ac_tester.posonly_varpos,
+                   ac_tester.posonly_varpos_array,
+                   ac_tester.TestClass.posonly_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_varpos_array_no_fastcall)
+        def test_posonly_varpos(self, fn):
+            # fn(a, b, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, 1)
+            self.assertRaises(TypeError, fn, 1, b=2)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_posonly_poskw_varpos(self):
-        # fn(a, /, b, *args)
-        fn = ac_tester.posonly_poskw_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, b=2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-        self.assertRaises(TypeError, fn, b=4)
-        self.assertRaises(TypeError, fn, 1, 2, 3, b=4)
+        @repeat_fn(ac_tester.posonly_req_opt_varpos,
+                   ac_tester.posonly_req_opt_varpos_array,
+                   ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_req_opt_varpos_array_no_fastcall)
+        def test_posonly_req_opt_varpos(self, fn):
+            # fn(a, b=False, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, a=1)
+            self.assertEqual(fn(1), (1, False, ()))
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+
+        @repeat_fn(ac_tester.posonly_poskw_varpos,
+                   ac_tester.posonly_poskw_varpos_array,
+                   ac_tester.TestClass.posonly_poskw_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_poskw_varpos_array_no_fastcall)
+        def test_posonly_poskw_varpos(self, fn):
+            # fn(a, /, b, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, b=2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+            self.assertRaises(TypeError, fn, b=4)
+            errmsg = re.escape("given by name ('b') and position (2)")
+            self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
     def test_poskw_varpos(self):
         # fn(a, *args)
@@ -3409,7 +3441,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1, b=2)
         self.assertEqual(fn(a=1), (1, ()))
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1), (1, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
 
@@ -3417,7 +3450,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False)
         fn = ac_tester.poskw_varpos_kwonly_opt
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), True))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
@@ -3428,7 +3462,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False, c=False)
         fn = ac_tester.poskw_varpos_kwonly_opt2
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), 2, False))
         self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
         self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
@@ -3490,9 +3525,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
         self.assertRaises(TypeError, fn, covariant=True)
-        self.assertRaises(TypeError, fn, 1, name='a')
-        self.assertRaises(TypeError, fn, 1, 2, 3, name='a', covariant=True)
-        self.assertRaises(TypeError, fn, 1, 2, 3, covariant=True, name='a')
+        errmsg = re.escape("given by name ('name') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, name='a')
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3568,14 +3604,15 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
+        errmsg = 'takes at least 2 positional arguments'
+        self.assertRaisesRegex(TypeError, errmsg, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
         fn = cls.defclass_posonly_varpos
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, obj)
-        self.assertRaises(TypeError, fn, obj, 1)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj, 1)
         self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 

@@ -18,22 +18,20 @@ PyDoc_STRVAR(math_gcd__doc__,
     {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
 
 static PyObject *
-math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+math_gcd_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length);
 
 static PyObject *
 math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
 
-    if (!_PyArg_CheckPositional("gcd", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = args + 0;
-    return_value = math_gcd_impl(module, nvararg, __clinic_args);
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_gcd_impl(module, __clinic_args, args_length);
 
-exit:
     return return_value;
 }
 
@@ -47,22 +45,20 @@ PyDoc_STRVAR(math_lcm__doc__,
     {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
 
 static PyObject *
-math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+math_lcm_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length);
 
 static PyObject *
 math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
 
-    if (!_PyArg_CheckPositional("lcm", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = args + 0;
-    return_value = math_lcm_impl(module, nvararg, __clinic_args);
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_lcm_impl(module, __clinic_args, args_length);
 
-exit:
     return return_value;
 }
 
@@ -430,22 +426,20 @@ PyDoc_STRVAR(math_hypot__doc__,
     {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
 
 static PyObject *
-math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+math_hypot_impl(PyObject *module, PyObject * const *args,
+                Py_ssize_t args_length);
 
 static PyObject *
 math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 0;
-    PyObject *const *__clinic_args = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
 
-    if (!_PyArg_CheckPositional("hypot", nargs, 0, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    __clinic_args = args + 0;
-    return_value = math_hypot_impl(module, nvararg, __clinic_args);
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_hypot_impl(module, __clinic_args, args_length);
 
-exit:
     return return_value;
 }
 
@@ -1109,4 +1103,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff99a737c18d9210 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb506f61bc5ef862 input=a9049054013a1b77]*/
