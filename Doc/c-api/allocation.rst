@@ -19,6 +19,13 @@ Allocating Objects on the Heap
    not initialized.  Specifically, this function does **not** call the object's
    :meth:`~object.__init__` method (:c:member:`~PyTypeObject.tp_init` slot).
 
+   .. warning::
+
+      This function does not guarantee that the memory will be completely
+      zeroed before it is initialized.  Fields that are not initialized by this
+      function will have indeterminate values, which might include sensitive
+      data from previously destroyed objects (e.g., secret keys).
+
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
 
@@ -28,23 +35,44 @@ Allocating Objects on the Heap
 
 .. c:macro:: PyObject_New(TYPE, typeobj)
 
-   Calls :c:func:`PyObject_Malloc` to allocate memory for a new Python object
-   using the C structure type *TYPE* and the Python type object *typeobj*
-   (``PyTypeObject*``), then initializes the memory like
+   Allocates a new Python object using the C structure type *TYPE* and the
+   Python type object *typeobj* (``PyTypeObject*``) by calling
+   :c:func:`PyObject_Malloc` to allocate memory and initializing it like
    :c:func:`PyObject_Init`.  The caller will own the only reference to the
    object (i.e. its reference count will be one).  The size of the memory
    allocation is determined from the :c:member:`~PyTypeObject.tp_basicsize`
    field of the type object.
 
-   This does not call :c:member:`~PyTypeObject.tp_alloc`,
+   For a type's :c:member:`~PyTypeObject.tp_alloc` slot,
+   :c:func:`PyType_GenericAlloc` is generally preferred over a custom function
+   that simply calls this macro.
+
+   This macro does not call :c:member:`~PyTypeObject.tp_alloc`,
    :c:member:`~PyTypeObject.tp_new` (:meth:`~object.__new__`), or
    :c:member:`~PyTypeObject.tp_init` (:meth:`~object.__init__`).
 
-   This should not be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC` set
-   in :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_New`
+   This macro should not be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC`
+   set in :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_New`
    instead.
 
-   Memory allocated by this function must be freed with :c:func:`PyObject_Free`.
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_Free`.
+
+   .. warning::
+
+      The returned memory is not guaranteed to have been completely zeroed
+      before it was initialized.  Fields that were not initialized by this
+      function will have indeterminate values, which might include sensitive
+      data from previously destroyed objects (e.g., secret keys).
+
+   .. warning::
+
+      This macro does not construct a fully initialized object of the given
+      type; it merely allocates memory and prepares it for further
+      initialization by :c:member:`~PyTypeObject.tp_init`.  To construct a
+      fully initialized object, call *typeobj* instead.  For example::
+
+         PyObject *foo = PyObject_CallNoArgs((PyObject *)&PyFoo_Type);
 
 
 .. c:macro:: PyObject_NewVar(TYPE, typeobj, size)
@@ -65,7 +93,8 @@ Allocating Objects on the Heap
    in :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_NewVar`
    instead.
 
-   Memory allocated by this function must be freed with :c:func:`PyObject_Free`.
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_Free`.
 
 
 .. c:function:: void PyObject_Del(void *op)
