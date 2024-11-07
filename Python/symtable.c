@@ -136,6 +136,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_annotation_block = NULL;
 
+    ste->ste_has_docstring = 0;
+
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
     ste->ste_children = PyList_New(0);
@@ -1841,6 +1843,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
+        }
+
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns, new_ste)) {
             Py_DECREF(new_ste);
@@ -2166,6 +2172,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                            LOCATION(s));
         if (!new_ste) {
             return 0;
+        }
+
+        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
         }
 
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,

@@ -3239,8 +3239,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class C(base):
                 def __init__(self, value):
                     self.value = int(value)
-                def __cmp__(self_, other):
-                    self.fail("shouldn't call __cmp__")
                 def __eq__(self, other):
                     if isinstance(other, C):
                         return self.value == other.value

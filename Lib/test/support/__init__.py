@@ -520,6 +520,11 @@ is_jython = sys.platform.startswith('java')
 
 is_android = sys.platform == "android"
 
+def skip_android_selinux(name):
+    return unittest.skipIf(
+        sys.platform == "android", f"Android blocks {name} with SELinux"
+    )
+
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
@@ -1267,6 +1272,11 @@ TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'y
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+
+
+def requires_specialization_ft(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
 
 
 #=======================================================================

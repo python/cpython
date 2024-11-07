@@ -355,7 +355,7 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`newfunc`           | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
-|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyTypeObject` * |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
@@ -2748,7 +2748,7 @@ Slot Type typedefs
 
    See :c:member:`~PyTypeObject.tp_free`.
 
-.. c:type:: PyObject *(*newfunc)(PyObject *, PyObject *, PyObject *)
+.. c:type:: PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *)
 
    See :c:member:`~PyTypeObject.tp_new`.
 

@@ -901,7 +901,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;
@@ -1285,6 +1285,8 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {

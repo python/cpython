@@ -280,6 +280,14 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
+    if (PyLong_CheckExact(o)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(o, &overflow);
+        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
+            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
+            return SUCCESS;
+        }
+    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
@@ -656,6 +664,9 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
+    // Insert None into consts to prevent an annotation
+    // appearing to be a docstring
+    _PyCompile_AddConst(c, Py_None);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -1232,10 +1243,10 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
             _PyCompile_ExitScope(c);
             return ERROR;
         }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        Py_DECREF(docstring);
+        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
-    Py_ssize_t idx = _PyCompile_AddConst(c, docstring ? docstring : Py_None);
-    Py_XDECREF(docstring);
-    RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
@@ -4076,9 +4087,12 @@ codegen_call_helper(compiler *c, location loc,
     return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
 }
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
