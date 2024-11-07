@@ -1,1 +1,1 @@
-:attr:`!socket.SocketType` is deprecated and is planned to be removed in 3.16. Use :class:`socket.socket` in type annotations instead.
+:attr:`!socket.SocketType` is now deprecated and planned to be removed in Python 3.16. Use :class:`socket.socket` in type annotations instead.
