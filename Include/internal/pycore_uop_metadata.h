@@ -1124,7 +1124,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _TIER2_RESUME_CHECK:
             return 0;
         case _CHECK_ITERABLE:
-            return 1;
+            return 0;
         default:
             return -1;
     }
