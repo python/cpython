@@ -2388,7 +2388,6 @@ _PyCode_ConstantKey(PyObject *op)
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
        || PyUnicode_CheckExact(op)
-       || PySlice_Check(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
        || PyCode_Check(op))
     {
@@ -2495,6 +2494,40 @@ _PyCode_ConstantKey(PyObject *op)
         key = PyTuple_Pack(2, set, op);
         Py_DECREF(set);
         return key;
+    }
+    else if (PySlice_Check(op)) {
+        PySliceObject *slice = (PySliceObject *)op;
+        PyObject *start_key = NULL;
+        PyObject *stop_key = NULL;
+        PyObject *step_key = NULL;
+        key = NULL;
+
+        start_key = _PyCode_ConstantKey(slice->start);
+        if (start_key == NULL) {
+            goto slice_exit;
+        }
+
+        stop_key = _PyCode_ConstantKey(slice->stop);
+        if (stop_key == NULL) {
+            goto slice_exit;
+        }
+
+        step_key = _PyCode_ConstantKey(slice->step);
+        if (step_key == NULL) {
+            goto slice_exit;
+        }
+
+        PyObject *slice_key = PySlice_New(start_key, stop_key, step_key);
+        if (slice_key == NULL) {
+            goto slice_exit;
+        }
+
+        key = PyTuple_Pack(2, slice_key, op);
+        Py_DECREF(slice_key);
+    slice_exit:
+        Py_XDECREF(start_key);
+        Py_XDECREF(stop_key);
+        Py_XDECREF(step_key);
     }
     else {
         /* for other types, use the object identifier as a unique identifier
