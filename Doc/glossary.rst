@@ -334,10 +334,10 @@ Glossary
       becomes the current context whenever the task starts or resumes execution.
 
    cyclic isolate
-      A subgroup of one or more usable, non-broken objects that reference each
-      other in a reference cycle, but are not referenced by objects outside the
-      group.  The goal of the garbage collector is to identify these groups and
-      break the reference cycles so that the memory can be reclaimed.
+      A subgroup of one or more objects that reference each other in a reference
+      cycle, but are not referenced by objects outside the group.  The goal of
+      the garbage collector is to identify these groups and break the reference
+      cycles so that the memory can be reclaimed.
 
    decorator
       A function returning another function, usually applied as a function
