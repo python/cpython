@@ -967,18 +967,30 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return NULL;
     }
 #else
+    dlerror();
     address = (void *)dlsym(handle, name);
-    if (!address) {
 #ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
+    if (!address) {
+        /* dlerror() isn't very helpful on cygwin */
         PyErr_Format(PyExc_ValueError,
                      "symbol '%s' not found",
                      name);
-#else
-        PyErr_SetString(PyExc_ValueError, dlerror());
-#endif
         return NULL;
     }
+#else
+    char *dlerr;
+    dlerr = dlerror();
+    if (dlerr) {
+        PyErr_SetString(PyExc_ValueError, dlerr);
+        return NULL;
+    }
+    else if (!address) {
+        PyErr_Format(PyExc_ValueError,
+                     "symbol '%s' not found",
+                     name);
+        return NULL;
+    }
+#endif
 #endif
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     return PyCData_AtAddress(st, type, address);
@@ -3774,19 +3786,33 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
+    dlerror();
     address = (PPROC)dlsym(handle, name);
-    if (!address) {
 #ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
+    if (!address) {
+        /* dlerror() isn't very helpful on cygwin */
         PyErr_Format(PyExc_AttributeError,
                      "function '%s' not found",
                      name);
-#else
-        PyErr_SetString(PyExc_AttributeError, dlerror());
-#endif
         Py_DECREF(ftuple);
         return NULL;
     }
+#else
+    char *dlerr;
+    dlerr = dlerror();
+    if (dlerr) {
+        PyErr_SetString(PyExc_AttributeError, dlerr);
+        Py_DECREF(ftuple);
+        return NULL;
+    }
+    else if (!address) {
+        PyErr_Format(PyExc_AttributeError,
+                     "function '%s' not found",
+                     name);
+        Py_DECREF(ftuple);
+        return NULL;
+    }
+#endif
 #endif
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {

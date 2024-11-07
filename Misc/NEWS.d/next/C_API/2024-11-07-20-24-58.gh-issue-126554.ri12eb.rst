@@ -1,0 +1,1 @@
+Correctly handle NULL dlsym() values in ctypes.
