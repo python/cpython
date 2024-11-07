@@ -7921,6 +7921,9 @@ socket_exec(PyObject *m)
 #ifdef  SO_OOBINLINE
     ADD_INT_MACRO(m, SO_OOBINLINE);
 #endif
+#ifdef  SO_ORIGINAL_DST
+    ADD_INT_MACRO(m, SO_ORIGINAL_DST);
+#endif
 #ifndef __GNU__
 #ifdef  SO_REUSEPORT
     ADD_INT_MACRO(m, SO_REUSEPORT);
@@ -8574,6 +8577,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef IPV6_RECVDSTOPTS
     ADD_INT_MACRO(m, IPV6_RECVDSTOPTS);
+#endif
+#ifdef IPV6_RECVERR
+    ADD_INT_MACRO(m, IPV6_RECVERR);
 #endif
 #ifdef IPV6_RECVHOPLIMIT
     ADD_INT_MACRO(m, IPV6_RECVHOPLIMIT);

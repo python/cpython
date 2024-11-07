@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
@@ -18,9 +19,8 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
-#include "pycore_uniqueid.h"      // _PyType_FinalizeThreadLocalRefcounts()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -629,10 +629,8 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    PyStatus status = _PyObject_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    // We would call _PyObject_InitState() at this point
+    // if interp->feature_flags were alredy set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
@@ -1515,6 +1513,11 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    if (tlbc_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
 #endif
 
     /* We serialize concurrent creation to protect global state. */
@@ -1557,6 +1560,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
     _Py_qsbr_register(tstate, interp, qsbr_idx);
+    tstate->tlbc_index = tlbc_idx;
 #endif
 
     return (PyThreadState *)tstate;
@@ -1708,6 +1712,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
+
+    // Release our thread-local copies of the bytecode for reuse by another
+    // thread
+    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.

@@ -35,7 +35,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper, suppress_immortalization
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -51,7 +51,7 @@ from test.test_inspect import inspect_deferred_annotations
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
-# isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
+# isbuiltin, isroutine, isgenerator, ispackage, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
 # getclasstree, getargvalues, formatargvalues, currentframe,
 # stack, trace, ismethoddescriptor, isdatadescriptor, ismethodwrapper
@@ -105,7 +105,7 @@ unsorted_keyword_only_parameters = 'throw out the baby with_ the_ bathwater'.spl
 class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
-                      inspect.ismodule, inspect.istraceback,
+                      inspect.ismodule, inspect.istraceback, inspect.ispackage,
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
                       inspect.isasyncgen, inspect.isasyncgenfunction,
@@ -121,7 +121,10 @@ class IsTestBase(unittest.TestCase):
                predicate == inspect.iscoroutinefunction) and \
                other == inspect.isfunction:
                 continue
-            self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
+            if predicate == inspect.ispackage and other == inspect.ismodule:
+                self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+            else:
+                self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
         support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
@@ -201,7 +204,17 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(int))
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
+    def test_ispackage(self):
+        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'importlib')
+        self.assertFalse(inspect.ispackage(inspect))
+        self.assertFalse(inspect.ispackage(mod))
+        self.assertFalse(inspect.ispackage(':)'))
 
+        class FakePackage:
+            __path__ = None
+
+        self.assertFalse(inspect.ispackage(FakePackage()))
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
@@ -771,7 +784,6 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
-    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -1948,6 +1960,19 @@ class TestGetClosureVars(unittest.TestCase):
                                        builtin_vars, unbound_names)
         self.assertEqual(inspect.getclosurevars(C().f(_arg)), expected)
 
+    def test_attribute_same_name_as_global_var(self):
+        class C:
+            _global_ref = object()
+        def f():
+            print(C._global_ref, _global_ref)
+        nonlocal_vars = {"C": C}
+        global_vars = {"_global_ref": _global_ref}
+        builtin_vars = {"print": print}
+        unbound_names = {"_global_ref"}
+        expected = inspect.ClosureVars(nonlocal_vars, global_vars,
+                                       builtin_vars, unbound_names)
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
     def test_nonlocal_vars(self):
         # More complex tests of nonlocal resolution
         def _nonlocal_vars(f):
@@ -2576,7 +2601,6 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
-    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -5362,7 +5386,7 @@ class TestSignatureBind(unittest.TestCase):
         # Issue #19611: getcallargs should work with comprehensions
         def make_set():
             return set(z * z for z in range(5))
-        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_code = make_set.__code__.co_consts[0]
         gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
@@ -5697,8 +5721,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        no_signature = {'reduce'}
-        self._test_module_has_signatures(functools, no_signature)
+        unsupported_signature = {"reduce"}
+        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
 
     def test_gc_module_has_signatures(self):
         import gc
