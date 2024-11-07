@@ -3170,7 +3170,7 @@
             PyTypeObject *type = Py_TYPE(iterable);
             if (oparg == 0) {
                 // Sync case, similar to GET_ITER
-                if (type->tp_iter == NULL || !PySequence_Check(iterable)) {
+                if (type->tp_iter == NULL && !PySequence_Check(iterable)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyErr_Format(PyExc_TypeError,
                                  "'%.200s' object is not iterable",
