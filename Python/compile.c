@@ -31,9 +31,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
