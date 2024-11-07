@@ -1798,12 +1798,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         res = self.loop.run_until_complete(run())
         self.assertEqual(res, [i * 2 for i in range(1, 10)])
 
-    def test_async_gen_expression_incorrect(self):
-        err_msg = "'async for' requires an object with " \
-            "__aiter__ method, got int"
-        with self.assertRaisesRegex(TypeError, err_msg):
-            g = (x async for x in 42)
-
     def test_asyncgen_nonstarted_hooks_are_cancellable(self):
         # See https://bugs.python.org/issue38013
         messages = []
