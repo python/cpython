@@ -174,6 +174,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 spawn.import_main_path(main_path)
             finally:
                 del process.current_process()._inheriting
+        if sys_path is not None:
+            sys.path[:] = sys_path
         for modname in preload:
             try:
                 __import__(modname)
