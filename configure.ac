@@ -336,7 +336,7 @@ then
 	*-*-emscripten)
 	    ac_sys_system=Emscripten
 	    ;;
-	*-*-wasi)
+	*-*-wasi*)
 	    ac_sys_system=WASI
 	    ;;
 	*)
@@ -1181,7 +1181,7 @@ AS_CASE([$host/$ac_cv_cc_name],
   [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
   [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
   [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
-  [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface, clang
+  [wasm32-unknown-wasip1/clang],     [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface preview1, clang
   [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
 
   [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC

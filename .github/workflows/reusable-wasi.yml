@@ -15,7 +15,7 @@ jobs:
       WASI_SDK_VERSION: 22
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
-      CROSS_BUILD_WASI: cross-build/wasm32-wasi
+      CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@v4
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -29,7 +29,7 @@ jobs:
       with:
         path: ${{ env.WASI_SDK_PATH }}
         key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
-    - name: "Install WASI SDK"
+    - name: "Install WASI SDK"  # Hard-coded to x64.
       if: steps.cache-wasi-sdk.outputs.cache-hit != 'true'
       run: |
         mkdir ${{ env.WASI_SDK_PATH }} && \

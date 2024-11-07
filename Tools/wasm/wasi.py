@@ -20,7 +20,7 @@ CHECKOUT = pathlib.Path(__file__).parent.parent.parent
 
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 BUILD_DIR = CROSS_BUILD_DIR / "build"
-HOST_TRIPLE = "wasm32-wasi"
+HOST_TRIPLE = "wasm32-wasip1"
 HOST_DIR = CROSS_BUILD_DIR / HOST_TRIPLE
 
 LOCAL_SETUP = CHECKOUT / "Modules" / "Setup.local"

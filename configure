@@ -4060,7 +4060,7 @@ then
 	*-*-emscripten)
 	    ac_sys_system=Emscripten
 	    ;;
-	*-*-wasi)
+	*-*-wasi*)
 	    ac_sys_system=WASI
 	    ;;
 	*)
@@ -7058,7 +7058,7 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=2 ;; #(
   powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
-    wasm32-unknown-wasi/clang) :
+    wasm32-unknown-wasip1/clang) :
     PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
