@@ -346,7 +346,7 @@ def main():
                              "(default designed for wasmtime 14 or newer: "
                                 f"`{default_host_runner}`)")
     for subcommand in build, configure_host, make_host:
-        subcommand.add_argument("--host-triple", action="store", default="wasm32-wasi",
+        subcommand.add_argument("--host-triple", action="store", default="wasm32-wasip1",
                         help="The target triple for the WASI host build")
 
     context = parser.parse_args()
