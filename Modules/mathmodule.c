@@ -2710,7 +2710,7 @@ Return the sum of products of values from two iterables p and q.
 
 Roughly equivalent to:
 
-    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+    sum(map(operator.mul, p, q, strict=True))
 
 For float and mixed int/float inputs, the intermediate products
 and sums are computed with extended precision.
@@ -2718,7 +2718,7 @@ and sums are computed with extended precision.
 
 static PyObject *
 math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=6722dbfe60664554 input=82be54fe26f87e30]*/
+/*[clinic end generated code: output=6722dbfe60664554 input=a2880317828c61d2]*/
 {
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
     PyObject *p_it, *q_it, *total;
