@@ -61,29 +61,41 @@ _get_not_shareable_error_type(PyInterpreterState *interp)
 static int
 init_exceptions(PyInterpreterState *interp)
 {
+    // Initialize static types.
+    int base_initialized = 0;
+    int notfound_initialized = 0;
     PyTypeObject *base = (PyTypeObject *)PyExc_Exception;
-
-    // builtin static types
 
     _PyExc_InterpreterError.tp_base = base;
     _PyExc_InterpreterError.tp_traverse = base->tp_traverse;
     _PyExc_InterpreterError.tp_clear = base->tp_clear;
     if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
-        return -1;
+        goto error;
     }
+    base_initialized = 1;
 
     _PyExc_InterpreterNotFoundError.tp_traverse = base->tp_traverse;
     _PyExc_InterpreterNotFoundError.tp_clear = base->tp_clear;
     if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
-        return -1;
+        goto error;
     }
+    notfound_initialized = 1;
 
-    // heap types
+    // Initialize heap types.
 
     // We would  call _init_not_shareable_error_type() here too,
     // but that leads to ref leaks
 
     return 0;
+
+error:
+    if (base_initialized) {
+        _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterError);
+    }
+    if (notfound_initialized) {
+        _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterNotFoundError);
+    }
+    return -1;
 }
 
 static void
