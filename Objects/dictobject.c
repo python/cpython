@@ -7161,7 +7161,7 @@ PyObject_ClearManagedDict(PyObject *obj)
         PyDictKeysObject *oldkeys = dict->ma_keys;
         set_keys(dict, Py_EMPTY_KEYS);
         dict->ma_values = NULL;
-        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));
         STORE_USED(dict, 0);
         set_dict_inline_values(obj, NULL);
         Py_END_CRITICAL_SECTION2();
