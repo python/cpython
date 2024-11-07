@@ -16,12 +16,6 @@ extern int _PyModule_IsPossiblyShadowing(PyObject *);
 
 extern int _PyModule_IsExtension(PyObject *obj);
 
-static inline int
-_PyModule_HasSpecializedGetAttr(PyObject* op)
-{
-    return Py_TYPE(op)->tp_getattro != PyModule_Type.tp_getattro;
-}
-
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;

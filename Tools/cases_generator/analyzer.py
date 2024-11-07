@@ -598,7 +598,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_Multiply",
     "_PyLong_Subtract",
     "_PyManagedDictPointer_IsValues",
-    "_PyModule_HasSpecializedGetAttr",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
     "_PyObject_GC_TRACK",

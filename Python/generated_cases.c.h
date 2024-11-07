@@ -5561,7 +5561,7 @@
                 owner = stack_pointer[-1];
                 uint32_t dict_version = read_u32(&this_instr[2].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                DEOPT_IF(_PyModule_HasSpecializedGetAttr(owner_o), LOAD_ATTR);
+                DEOPT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro, LOAD_ATTR);
                 PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
                 assert(dict != NULL);
                 DEOPT_IF(dict->ma_keys->dk_version != dict_version, LOAD_ATTR);
