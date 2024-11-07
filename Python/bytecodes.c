@@ -5032,13 +5032,11 @@ dummy_func(
             PyTypeObject *type = Py_TYPE(iterable);
             if (oparg == 0) {
                 // Sync case, similar to GET_ITER
-                if (type->tp_iter == NULL) {
-                    if (!PySequence_Check(iterable)) {
-                        PyErr_Format(PyExc_TypeError,
-                            "'%.200s' object is not iterable",
-                            type->tp_name);
-                        ERROR_NO_POP();
-                    }
+                if (type->tp_iter == NULL || !PySequence_Check(iterable)) {
+                    PyErr_Format(PyExc_TypeError,
+                        "'%.200s' object is not iterable",
+                        type->tp_name);
+                    ERROR_NO_POP();
                 }
             } else if (oparg == 1) {
                 // Async case, similar to GET_AITER
@@ -5049,6 +5047,8 @@ dummy_func(
                         type->tp_name);
                     ERROR_NO_POP();
                 }
+            } else {
+                Py_UNREACHABLE();
             }
         }
 
