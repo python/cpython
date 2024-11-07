@@ -27,217 +27,197 @@ module _hmac
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
 
 /*[clinic input]
-@critical_section
 _hmac.compute_md5
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_md5_impl(PyObject *module, Py_buffer *key, Py_buffer *data)
-/*[clinic end generated code: output=bcf3dfafd7092a5a input=9ceaaa27ec318007]*/
+_hmac_compute_md5_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=06415d62c949b812 input=ba930327d472e0be]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_md5, 16, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_md5, 16, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha1
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha1_impl(PyObject *module, Py_buffer *key, Py_buffer *data)
-/*[clinic end generated code: output=f26338ed3aa68853 input=2380452bf9d1fe7d]*/
+_hmac_compute_sha1_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=3daf26128c9e84b5 input=6015854f4040c058]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha1, 20, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha1, 20, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha2_224
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha2_224_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=d9907a240da31c07 input=b874f95fd4b0fb99]*/
+_hmac_compute_sha2_224_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=f665a01d0ce8873b input=b82974de99696949]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_224, 28, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_224, 28, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha2_256
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha2_256_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=1ba977f01c332460 input=c880969b65dca329]*/
+_hmac_compute_sha2_256_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=6eda2182e50c3832 input=ae9639dccbca11bb]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_256, 32, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_256, 32, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha2_384
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha2_384_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=5ad8e1c6346fcf5b input=e206968b3c4aad3d]*/
+_hmac_compute_sha2_384_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=0fc9803f1d0b731c input=d643b1254bc142e1]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_384, 48, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_384, 48, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha2_512
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha2_512_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=8e73b2c39812934c input=839c27c90c3aed01]*/
+_hmac_compute_sha2_512_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=f4b3f79c749c2100 input=1252a28c102c1d23]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_512, 64, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha2_512, 64, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha3_224
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha3_224_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=5b3ee358e5d96fa8 input=f52550611ea10725]*/
+_hmac_compute_sha3_224_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=ba0f59d80a557e20 input=b02a4325fbc691ad]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_224, 28, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_224, 28, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha3_256
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha3_256_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=cf977eed9c59ed3b input=ce59d1ddd77c0624]*/
+_hmac_compute_sha3_256_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=cda6fbc13c233f45 input=64a7b8ac5fc62521]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_256, 32, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_256, 32, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha3_384
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha3_384_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=3f576e31d4d05f35 input=f4bca88551693caa]*/
+_hmac_compute_sha3_384_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=5a0fc341caa1b4ed input=3e9e2f74c65193bd]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_384, 48, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_384, 48, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_sha3_512
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_hmac_compute_sha3_512_impl(PyObject *module, Py_buffer *key,
-                            Py_buffer *data)
-/*[clinic end generated code: output=238126dcba98fda2 input=2f98f302c64eca64]*/
+_hmac_compute_sha3_512_impl(PyObject *module, Py_buffer *key, Py_buffer *msg)
+/*[clinic end generated code: output=af9773a23df74056 input=da79fd5e1de89478]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_512, 64, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_sha3_512, 64, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_blake2s_32
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _hmac_compute_blake2s_32_impl(PyObject *module, Py_buffer *key,
-                              Py_buffer *data)
-/*[clinic end generated code: output=72a8231623e4ccf9 input=0be9099b69bcd9e7]*/
+                              Py_buffer *msg)
+/*[clinic end generated code: output=9951eb111793d727 input=cc384ff59f0bf43b]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2s_32, 32, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2s_32, 32, key, msg);
 }
 
 /*[clinic input]
-@critical_section
 _hmac.compute_blake2b_32
 
     key: Py_buffer
-    data: Py_buffer
+    msg: Py_buffer
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _hmac_compute_blake2b_32_impl(PyObject *module, Py_buffer *key,
-                              Py_buffer *data)
-/*[clinic end generated code: output=ea083dfa29679029 input=aecba54a3e2dff72]*/
+                              Py_buffer *msg)
+/*[clinic end generated code: output=341c892645174059 input=52f8b6ccfc97bcba]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2b_32, 64, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2b_32, 64, key, msg);
 }
 
 static PyMethodDef hmacmodule_methods[] = {
