@@ -1865,6 +1865,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
                     INSTR_SET_OP0(inst, NOP);
                 }
+                break;
         }
     }
 
