@@ -2626,6 +2626,15 @@ class ReTests(unittest.TestCase):
                 self.assertIsNone(re.search(p, s))
                 self.assertIsNone(re.search('(?s:.)' + p, s))
 
+    def test_ascii_character_range_non_bmp(self):
+        # gh-126505
+        # should match in Unicode mode
+        self.assertEqual(re.compile("[\ua7aa-\uffff]", re.IGNORECASE).match("\u0266").span(), (0, 1))
+        # should not match in ASCII mode
+        self.assertIsNone(re.compile("[\ua7aa-\uffff]", re.ASCII | re.IGNORECASE).match("\u0266"))
+        # should not match in ASCII mode, even if upper bound is outside of BMP
+        self.assertIsNone(re.compile("[\ua7aa-\U00010000]", re.ASCII | re.IGNORECASE).match("\u0266"))
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:

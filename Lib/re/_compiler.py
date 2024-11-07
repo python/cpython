@@ -298,7 +298,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                 # Character set contains non-BMP character codes.
                 # For range, all BMP characters in the range are already
                 # proceeded.
-                if fixup:
+                if fixes:
                     hascased = True
                     # For now, IN_UNI_IGNORE+LITERAL and
                     # IN_UNI_IGNORE+RANGE_UNI_IGNORE work for all non-BMP
