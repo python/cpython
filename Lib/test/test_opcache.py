@@ -4,7 +4,9 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support import (threading_helper, check_impl_detail,
+                          requires_specialization, requires_specialization_ft,
+                          cpython_only)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -26,6 +28,18 @@ def disabling_optimizer(func):
             _testinternalcapi.set_optimizer(old_opt)
 
     return wrapper
+
+
+class TestBase(unittest.TestCase):
+    def assert_specialized(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertIn(opname, opnames)
+
+    def assert_no_opcode(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertNotIn(opname, opnames)
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -479,7 +493,7 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
-class TestCallCache(unittest.TestCase):
+class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
             pass
@@ -507,21 +521,39 @@ class TestCallCache(unittest.TestCase):
             f(None)
             f()
 
+    @disabling_optimizer
+    @requires_specialization
+    def test_assign_init_code(self):
+        class MyClass:
+            def __init__(self):
+                pass
+
+        def instantiate():
+            return MyClass()
+
+        # Trigger specialization
+        for _ in range(1025):
+            instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        def count_args(self, *args):
+            self.num_args = len(args)
+
+        # Set MyClass.__init__.__code__ to a code object that uses different
+        # args
+        MyClass.__init__.__code__ = count_args.__code__
+        instantiate()
+
 
 @threading_helper.requires_working_threading()
 @requires_specialization
-class TestRacesDoNotCrash(unittest.TestCase):
+class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
     LOOPS = 4
     WARMUPS = 2
     WRITERS = 2
-
-    def assert_specialized(self, f, opname):
-        instructions = dis.get_instructions(f, adaptive=True)
-        opnames = {instruction.opname for instruction in instructions}
-        self.assertIn(opname, opnames)
 
     @disabling_optimizer
     def assert_races_do_not_crash(
@@ -1129,6 +1161,100 @@ class TestInstanceDict(unittest.TestCase):
             c.__dict__,
             {'a':1, 'b':2}
         )
+
+    def test_125868(self):
+
+        def make_special_dict():
+            """Create a dictionary an object with a this table:
+            index | key | value
+            ----- | --- | -----
+              0   | 'b' | 'value'
+              1   | 'b' | NULL
+            """
+            class A:
+                pass
+            a = A()
+            a.a = 1
+            a.b = 2
+            d = a.__dict__.copy()
+            del d['a']
+            del d['b']
+            d['b'] = "value"
+            return d
+
+        class NoInlineAorB:
+            pass
+        for i in range(ord('c'), ord('z')):
+            setattr(NoInlineAorB(), chr(i), i)
+
+        c = NoInlineAorB()
+        c.a = 0
+        c.b = 1
+        self.assertFalse(_testinternalcapi.has_inline_values(c))
+
+        def f(o, n):
+            for i in range(n):
+                o.b = i
+        # Prime f to store to dict slot 1
+        f(c, 100)
+
+        test_obj = NoInlineAorB()
+        test_obj.__dict__ = make_special_dict()
+        self.assertEqual(test_obj.b, "value")
+
+        #This should set x.b = 0
+        f(test_obj, 1)
+        self.assertEqual(test_obj.b, 0)
+
+
+class TestSpecializer(TestBase):
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_op(self):
+        def f():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a + b
+                self.assertEqual(c, 3)
+
+        f()
+        self.assert_specialized(f, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(f, "BINARY_OP")
+
+        def g():
+            for _ in range(100):
+                a, b = "foo", "bar"
+                c = a + b
+                self.assertEqual(c, "foobar")
+
+        g()
+        self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
+        self.assert_no_opcode(g, "BINARY_OP")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_contain_op(self):
+        def f():
+            for _ in range(100):
+                a, b = 1, {1: 2, 2: 5}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        f()
+        self.assert_specialized(f, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(f, "CONTAINS_OP")
+
+        def g():
+            for _ in range(100):
+                a, b = 1, {1, 2}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        g()
+        self.assert_specialized(g, "CONTAINS_OP_SET")
+        self.assert_no_opcode(g, "CONTAINS_OP")
+
 
 
 if __name__ == "__main__":

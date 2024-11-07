@@ -1,15 +1,22 @@
-Pending Removal in Future Versions
+Pending removal in future versions
 ----------------------------------
 
 The following APIs will be removed in the future,
 although there is currently no date scheduled for their removal.
 
-* :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
-  groups are deprecated.
+* :mod:`argparse`:
+
+  * Nesting argument groups and nesting mutually exclusive
+    groups are deprecated.
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+  * The :class:`argparse.FileType` type converter is deprecated.
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :mod:`builtins`:
 
-  * ``~bool``, bitwise inversion on bool.
   * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
@@ -32,6 +39,10 @@ although there is currently no date scheduled for their removal.
     :class:`complex`: these methods will be required to return an instance of
     :class:`complex`.
   * Delegation of ``int()`` to ``__trunc__()`` method.
+  * Passing a complex number as the *real* or *imag* argument in the
+    :func:`complex` constructor is now deprecated; it should only be passed
+    as a single positional argument.
+    (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
   deprecated and replaced by :data:`calendar.JANUARY` and
@@ -60,6 +71,9 @@ although there is currently no date scheduled for their removal.
 
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
+
+* :mod:`logging`: the ``warn()`` method has been deprecated
+  since Python 3.3, use :meth:`~logging.warning` instead.
 
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.

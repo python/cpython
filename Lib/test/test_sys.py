@@ -206,6 +206,20 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # Overflow results in a -1 exit code, which may be converted to 0xff
+        # or 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         # call with integer argument
         with self.assertRaises(SystemExit) as cm:
             sys.exit(42)
@@ -1042,14 +1056,10 @@ class SysModuleTest(unittest.TestCase):
         # Output of sys._debugmallocstats() depends on configure flags.
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
-            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-            if with_freelists:
-                self.assertIn(b"free PyDictObjects", err)
+            self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
-                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
@@ -1084,7 +1094,14 @@ class SysModuleTest(unittest.TestCase):
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
             # it is unlikely to happen in a normal test run.
-            self.assertLess(a, sys.gettotalrefcount())
+            #
+            # In free-threaded builds each code object owns an array of
+            # pointers to copies of the bytecode. When the number of
+            # code objects is a large fraction of the total number of
+            # references, this can cause the total number of allocated
+            # blocks to exceed the total number of references.
+            if not support.Py_GIL_DISABLED:
+                self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -1603,7 +1620,10 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        INTERPRETER_FRAME = '9PhcP'
+        if support.Py_GIL_DISABLED:
+            INTERPRETER_FRAME = '10PhcP'
+        else:
+            INTERPRETER_FRAME = '9PhcP'
         check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
@@ -1710,6 +1730,7 @@ class SizeofTest(unittest.TestCase):
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
         s = vsize(fmt)
         check(int, s)
+        typeid = 'n' if support.Py_GIL_DISABLED else ''
         # class
         s = vsize(fmt +                 # PyTypeObject
                   '4P'                  # PyAsyncMethods
@@ -1717,8 +1738,9 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '6P'
-                  '1PIP'                 # Specializer cache
+                  '7P'
+                  '1PIP'                # Specializer cache
+                  + typeid              # heap type id (free-threaded only)
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
@@ -1823,7 +1845,8 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        check(sys.flags, vsize('') + self.P * len(sys.flags))
+        # FIXME: The +1 will not be necessary once gh-122575 is fixed
+        check(sys.flags, vsize('') + self.P * (1 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()

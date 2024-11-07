@@ -477,7 +477,7 @@ object belongs to, potentially breaking the unpickling of those objects.
 
 Simplify the :mod:`importlib` external bootstrap code:
 ``importlib._bootstrap_external`` now uses regular imports to import builtin
-modules. When it is imported, the builtin :func:`__import__()` function is
+modules. When it is imported, the builtin :func:`__import__` function is
 already fully working and so can be used to import builtin modules like
 :mod:`sys`. Patch by Victor Stinner.
 
@@ -517,8 +517,8 @@ Port the ``_signal`` extension module to the multi-phase initialization API
 .. nonce: Wh5svI
 .. section: Library
 
-:func:`time.time()`, :func:`time.perf_counter()` and
-:func:`time.monotonic()` functions can no longer fail with a Python fatal
+:func:`time.time`, :func:`time.perf_counter` and
+:func:`time.monotonic` functions can no longer fail with a Python fatal
 error, instead raise a regular Python exception on failure.
 
 ..
@@ -550,10 +550,10 @@ deduplicate, use type to cache key). Patch provided by Yurii Karabas.
 .. nonce: iDbHrw
 .. section: Library
 
-:func:`time.perf_counter()` on Windows and :func:`time.monotonic()` on macOS
+:func:`time.perf_counter` on Windows and :func:`time.monotonic` on macOS
 are now system-wide. Previously, they used an offset computed at startup to
 reduce the precision loss caused by the float type. Use
-:func:`time.perf_counter_ns()` and :func:`time.monotonic_ns()` added in
+:func:`time.perf_counter_ns` and :func:`time.monotonic_ns` added in
 Python 3.7 to avoid this precision loss.
 
 ..

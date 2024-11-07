@@ -7,7 +7,8 @@ import os
 
 import _opcode
 
-from test.support import script_helper, requires_specialization, import_helper
+from test.support import (script_helper, requires_specialization,
+                          import_helper, Py_GIL_DISABLED)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -34,6 +35,7 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
@@ -138,6 +140,7 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
@@ -176,7 +179,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             self.assertTrue(exe.is_valid())
         # Assert that the correct executors are invalidated
         # and check that nothing crashes when we invalidate
-        # an executor mutliple times.
+        # an executor multiple times.
         for i in (4,3,2,1,0):
             _testinternalcapi.invalidate_executors(objects[i])
             for exe in executors[i:]:
@@ -219,6 +222,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
@@ -274,6 +278,7 @@ class TestUops(unittest.TestCase):
                 z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
                 while z9 > 0:
                     z9 = z9 - 1
+                    +z9
         """), ns, ns)
         many_vars = ns["many_vars"]
 
@@ -585,6 +590,7 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")

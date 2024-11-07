@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import concurrent.futures
+import contextvars
 import inspect
 import os
 import site
@@ -22,6 +23,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
 
         self.loop = loop
+        self.context = contextvars.copy_context()
 
     def runcode(self, code):
         global return_code
@@ -55,12 +57,12 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 return
 
             try:
-                repl_future = self.loop.create_task(coro)
+                repl_future = self.loop.create_task(coro, context=self.context)
                 futures._chain_future(repl_future, future)
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -91,6 +93,8 @@ class REPLThread(threading.Thread):
             console.write(banner)
 
             if startup_path := os.getenv("PYTHONSTARTUP"):
+                sys.audit("cpython.run_startup", startup_path)
+
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
@@ -125,8 +129,19 @@ class REPLThread(threading.Thread):
 
             loop.call_soon_threadsafe(loop.stop)
 
+    def interrupt(self) -> None:
+        if not CAN_USE_PYREPL:
+            return
+
+        from _pyrepl.simple_interact import _get_reader
+        r = _get_reader()
+        if r.threading_hook is not None:
+            r.threading_hook.add("")  # type: ignore
+
 
 if __name__ == '__main__':
+    sys.audit("cpython.run_stdin")
+
     if os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
@@ -155,6 +170,7 @@ if __name__ == '__main__':
     interactive_hook = getattr(sys, "__interactivehook__", None)
 
     if interactive_hook is not None:
+        sys.audit("cpython.run_interactivehook", interactive_hook)
         interactive_hook()
 
     if interactive_hook is site.register_readline:
@@ -179,6 +195,7 @@ if __name__ == '__main__':
             keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
+            repl_thread.interrupt()
             continue
         else:
             break

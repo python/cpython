@@ -34,8 +34,8 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms, and on iOS, large parts of the :mod:`os` module are
-  not available or behave differently. API related to processes (e.g.
+* On WebAssembly platforms, Android and iOS, large parts of the :mod:`os` module are
+  not available or behave differently. APIs related to processes (e.g.
   :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
   are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
   emulated or stubs. WebAssembly platforms also lack support for signals (e.g.
@@ -113,8 +113,8 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
@@ -133,8 +133,8 @@ level APIs also exhibit different default behaviours:
 
 * Command line arguments, environment variables and filenames are decoded
   to text using the UTF-8 encoding.
-* :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-* :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
+* :func:`os.fsdecode` and :func:`os.fsencode` use the UTF-8 encoding.
+* :func:`open`, :func:`io.open`, and :func:`codecs.open` use the UTF-8
   encoding by default. However, they still use the strict error handler by
   default so that attempting to open a binary file in text mode is likely
   to raise an exception rather than producing nonsense data.
@@ -193,10 +193,6 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
-   changes to the environment made by :func:`os.putenv`, by
-   :func:`os.unsetenv`, or made outside Python in the same process.
-
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -226,11 +222,12 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. seealso::
+
+      The :func:`os.reload_environ` function.
+
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
-
-   .. versionchanged:: 3.14
-      Added the :meth:`!os.environ.refresh()` method.
 
 
 .. data:: environb
@@ -247,6 +244,24 @@ process and user.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+
+.. function:: reload_environ()
+
+   The :data:`os.environ` and :data:`os.environb` mappings are a cache of
+   environment variables at the time that Python started.
+   As such, changes to the current process environment are not reflected
+   if made outside Python, or by :func:`os.putenv` or :func:`os.unsetenv`.
+   Use :func:`!os.reload_environ` to update :data:`os.environ` and :data:`os.environb`
+   with any such changes to the current process environment.
+
+   .. warning::
+      This function is not thread-safe. Calling it while the environment is
+      being modified in an other thread is an undefined behavior. Reading from
+      :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
+      while reloading, may return an empty result.
+
+   .. versionadded:: next
 
 
 .. function:: chdir(path)
@@ -549,7 +564,7 @@ process and user.
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
    .. versionadded:: 3.2
 
@@ -568,7 +583,7 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :func:`os.reload_environ` function.
 
    .. note::
 
@@ -585,21 +600,21 @@ process and user.
 
    Set the current process's effective group id.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. function:: setgid(gid, /)
 
    Set the current process' group id.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. function:: setgroups(groups, /)
@@ -693,14 +708,14 @@ process and user.
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
    .. versionadded:: 3.2
 
@@ -709,7 +724,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
    .. versionadded:: 3.2
 
@@ -718,7 +733,7 @@ process and user.
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. function:: getsid(pid, /)
@@ -741,7 +756,7 @@ process and user.
 
    Set the current process's user id.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -794,7 +809,7 @@ process and user.
    ``socket.gethostbyaddr(socket.gethostname())``.
 
    On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
-   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname()`
+   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
    can be used to get the user-facing operating system name and version on iOS and
    Android.
 
@@ -818,7 +833,7 @@ process and user.
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :func:`os.reload_environ` function.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -1562,7 +1577,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0, /)
 
-   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   Write the *buffers* contents to file descriptor *fd* at an offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
    :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
    array order. Entire contents of the first buffer is written before
@@ -2208,7 +2223,7 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not Android.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2860,7 +2875,7 @@ features:
 
    .. versionchanged:: 3.6
       Added support for the :term:`context manager` protocol and the
-      :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
+      :func:`~scandir.close` method.  If a :func:`scandir` iterator is neither
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
       in its destructor.
 
@@ -3675,6 +3690,7 @@ features:
               os.remove(os.path.join(root, name))
           for name in dirs:
               os.rmdir(os.path.join(root, name))
+      os.rmdir(top)
 
    .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
 
@@ -3805,7 +3821,7 @@ features:
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    *initval* is the initial value of the event counter. The initial value
-   must be an 32 bit unsigned integer. Please note that the initial value is
+   must be a 32 bit unsigned integer. Please note that the initial value is
    limited to a 32 bit unsigned int although the event counter is an unsigned
    64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
 
@@ -3884,13 +3900,15 @@ features:
 
 .. data:: EFD_SEMAPHORE
 
-   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   Provide semaphore-like semantics for reads from an :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
    .. availability:: Linux >= 2.6.30
 
    .. versionadded:: 3.10
 
+
+.. _os-timerfd:
 
 Timer File Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -4312,7 +4330,7 @@ to be ignored.
 
    .. audit-event:: os.exec path,args,env os.execl
 
-   .. availability:: Unix, Windows, not WASI, not iOS.
+   .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
    .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor
@@ -4515,7 +4533,7 @@ written in Python, such as a mail server's external command delivery program.
       for technical details of why we're surfacing this longstanding
       platform compatibility problem to developers.
 
-   .. availability:: POSIX, not WASI, not iOS.
+   .. availability:: POSIX, not WASI, not Android, not iOS.
 
 
 .. function:: forkpty()
@@ -4542,7 +4560,7 @@ written in Python, such as a mail server's external command delivery program.
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: kill(pid, sig, /)
@@ -4600,7 +4618,7 @@ written in Python, such as a mail server's external command delivery program.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
-   .. availability:: Linux >= 5.3
+   .. availability:: Linux >= 5.3, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
    .. data:: PIDFD_NONBLOCK
@@ -4651,7 +4669,7 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
-   .. availability:: not WASI, not iOS.
+   .. availability:: not WASI, not Android, not iOS.
 
    .. note::
       The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
@@ -4763,7 +4781,7 @@ written in Python, such as a mail server's external command delivery program.
       ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
       :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 .. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4779,7 +4797,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: POSIX, not WASI, not iOS.
+   .. availability:: POSIX, not WASI, not Android, not iOS.
 
       See :func:`posix_spawn` documentation.
 
@@ -4812,7 +4830,7 @@ written in Python, such as a mail server's external command delivery program.
 
    There is no way to unregister a function.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.7
 
@@ -4881,7 +4899,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows, not WASI, not iOS.
+   .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
       :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
@@ -5009,7 +5027,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.system command os.system
 
-   .. availability:: Unix, Windows, not WASI, not iOS.
+   .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
 
 .. function:: times()
@@ -5053,7 +5071,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. seealso::
 
@@ -5087,7 +5105,7 @@ written in Python, such as a mail server's external command delivery program.
    Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5128,7 +5146,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, Windows, not WASI, not iOS.
+   .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -5148,7 +5166,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: wait4(pid, options)
@@ -5162,7 +5180,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. data:: P_PID
@@ -5179,7 +5197,7 @@ written in Python, such as a mail server's external command delivery program.
    * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
      *id* (a process file descriptor created with :func:`pidfd_open`).
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
 
@@ -5194,7 +5212,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` causes child processes to be reported if they have been
    continued from a job control stop since they were last reported.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. data:: WEXITED
@@ -5205,7 +5223,7 @@ written in Python, such as a mail server's external command delivery program.
    The other ``wait*`` functions always report children that have terminated,
    so this option is not available for them.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5217,7 +5235,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5230,7 +5248,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for :func:`waitid`.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. data:: WNOHANG
@@ -5239,7 +5257,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` to return right away if no child process status is available
    immediately.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. data:: WNOWAIT
@@ -5249,7 +5267,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. data:: CLD_EXITED
@@ -5262,7 +5280,7 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for :attr:`!si_code` in the result returned by
    :func:`waitid`.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5297,7 +5315,7 @@ written in Python, such as a mail server's external command delivery program.
       :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
       :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
 
-   .. availability:: Unix, Windows, not WASI, not iOS.
+   .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
    .. versionadded:: 3.9
 
@@ -5313,7 +5331,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WIFCONTINUED(status)
@@ -5324,7 +5342,7 @@ used to determine the disposition of a process.
 
    See :data:`WCONTINUED` option.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WIFSTOPPED(status)
@@ -5336,14 +5354,14 @@ used to determine the disposition of a process.
    done using :data:`WUNTRACED` option or when the process is being traced (see
    :manpage:`ptrace(2)`).
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 .. function:: WIFSIGNALED(status)
 
    Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WIFEXITED(status)
@@ -5352,7 +5370,7 @@ used to determine the disposition of a process.
    by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WEXITSTATUS(status)
@@ -5361,7 +5379,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFEXITED` is true.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WSTOPSIG(status)
@@ -5370,7 +5388,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSTOPPED` is true.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 .. function:: WTERMSIG(status)
@@ -5379,7 +5397,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not Android, not iOS.
 
 
 Interface to the scheduler
@@ -5577,7 +5595,7 @@ Miscellaneous System Information
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
    :func:`process_cpu_count` returns the overridden value *n*.
 
-   See also the :func:`sched_getaffinity` functions.
+   See also the :func:`sched_getaffinity` function.
 
    .. versionadded:: 3.13
 
