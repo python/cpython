@@ -1779,10 +1779,21 @@ PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
     _PyXI_state_t *state = _PyXI_GET_STATE(interp);
+    if (state == NULL) {
+        PyErr_PrintEx(0);
+        return _PyStatus_ERR(
+                "failed to get interpreter's cross-interpreter state");
+    }
 
     // Initialize the XID lookup state (e.g. registry).
     if (_Py_IsMainInterpreter(interp)) {
-        xid_lookup_init(&_PyXI_GET_GLOBAL_STATE(interp)->data_lookup);
+        _PyXI_global_state_t *global_state = _PyXI_GET_GLOBAL_STATE(interp);
+        if (global_state == NULL) {
+            PyErr_PrintEx(0);
+            return _PyStatus_ERR(
+                    "failed to get global cross-interpreter state");
+        }
+        xid_lookup_init(&global_state->data_lookup);
     }
     xid_lookup_init(&state->data_lookup);
 
@@ -1803,6 +1814,13 @@ void
 _PyXI_Fini(PyInterpreterState *interp)
 {
     _PyXI_state_t *state = _PyXI_GET_STATE(interp);
+    assert(state != NULL);
+#ifndef NDEBUG
+    if (state == NULL) {
+        PyErr_PrintEx(0);
+        return;
+    }
+#endif
 
     // Finalize exceptions (heap types).
     // See _PyXI_FiniTypes() for the static types.
@@ -1811,7 +1829,9 @@ _PyXI_Fini(PyInterpreterState *interp)
     // Finalize the XID lookup state (e.g. registry).
     xid_lookup_fini(&state->data_lookup);
     if (_Py_IsMainInterpreter(interp)) {
-        xid_lookup_fini(&_PyXI_GET_GLOBAL_STATE(interp)->data_lookup);
+        _PyXI_global_state_t *global_state = _PyXI_GET_GLOBAL_STATE(interp);
+        assert(global_state != NULL);
+        xid_lookup_fini(&global_state->data_lookup);
     }
 }
 
