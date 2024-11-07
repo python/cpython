@@ -1495,13 +1495,15 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
+            if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+                frame = frame->previous;
+                continue;
+            }
             _PyStackRef *locals = frame->localsplus;
             _PyStackRef *sp = frame->stackpointer;
-            if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                objects_marked += move_to_reachable(frame->f_locals, &reachable, visited_space);
-                PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-                objects_marked += move_to_reachable(func, &reachable, visited_space);
-            }
+            objects_marked += move_to_reachable(frame->f_locals, &reachable, visited_space);
+            PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            objects_marked += move_to_reachable(func, &reachable, visited_space);
             while (sp > locals) {
                 sp--;
                 if (PyStackRef_IsNull(*sp)) {
