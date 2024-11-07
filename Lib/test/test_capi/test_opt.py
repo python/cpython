@@ -1390,7 +1390,9 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for i in range(100):
+            # 90 iterations with Foo.attr == 1, then 16 to invalidate, warm up
+            # again, and re-optimize with Foo.attr == 2:
+            for i in range(90 + 16):
                 x += a.attr
                 # for the first 90 iterations we set the attribute on this dummy function which shouldn't
                 # trigger the type watcher
@@ -1410,7 +1412,7 @@ class TestUopsOptimization(unittest.TestCase):
         opnames = list(iter_opnames(ex))
 
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 219)
+        self.assertEqual(res, 243)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 2)
 
