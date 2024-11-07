@@ -1,6 +1,5 @@
 import copy
 import operator
-import platform
 import re
 import sys
 import textwrap
