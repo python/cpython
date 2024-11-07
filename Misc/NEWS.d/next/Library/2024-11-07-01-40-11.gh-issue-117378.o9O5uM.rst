@@ -1,0 +1,11 @@
+Fixed the :mod:`multiprocessing` ``"forkserver"`` start method forkserver
+process was to correctly inherit the parent's :data:`sys.path` during the
+importing of :func:`multiprocessing.set_forkserver_preload` modules in the
+same manner as :data:`sys.path` is configured when executing work items in
+the worker processes.
+
+This bug could cause some forkserver module preloading to silently fail to
+be preloaded, leading to a performance degration in child processes due to
+additional repeated work.  It could also have led to a side effect of ``""``
+still being in :data:`sys.path` during forkserver preload imports instead of
+the absolute path of the directory that workers see.
