@@ -7853,7 +7853,8 @@ AC_SUBST([LIBHACL_CFLAGS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
-if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
@@ -7879,11 +7880,12 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
 #
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
     AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
