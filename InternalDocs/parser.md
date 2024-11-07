@@ -17,7 +17,7 @@ Therefore, changes to the Python language are made by modifying the
 [grammar file](../Grammar/python.gram).
 Developers rarely need to modify the generator itself.
 
-See [Changing CPython's grammar](./changing_grammar.md)
+See [Changing CPython's grammar](changing_grammar.md)
 for a detailed description of the grammar and the process for changing it.
 
 How PEG parsers work
