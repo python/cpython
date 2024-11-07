@@ -2022,7 +2022,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Inheritance:**
 
    Static subtypes inherit this slot, which will be
-   :c:func:`PyType_GenericAlloc` if inherited from :c:data:`PyBaseObject_Type`.
+   :c:func:`PyType_GenericAlloc` if inherited from :class:`object`.
 
    Dynamic subtypes (created by a class statement) do not inherit this slot.
 
@@ -2085,11 +2085,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Inheritance:**
 
    Static subtypes inherit this slot, which will be :c:func:`PyObject_Free` if
-   inherited from :c:data:`PyBaseObject_Type`.  Exception: If the type supports
-   garbage collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
+   inherited from :class:`object`.  Exception: If the type supports garbage
+   collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
    :c:member:`~PyTypeObject.tp_flags`) and it would inherit
-   :c:func:`PyObject_Free`, then this slot is not inherited but instead
-   defaults to :c:func:`PyObject_GC_Del`.
+   :c:func:`PyObject_Free`, then this slot is not inherited but instead defaults
+   to :c:func:`PyObject_GC_Del`.
 
    Dynamic subtypes (created by a class statement) do not inherit this slot.
 

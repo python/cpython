@@ -42,7 +42,7 @@ Explanation:
   :c:member:`~PyTypeObject.tp_finalize` via
   :c:func:`PyObject_CallFinalizerFromDealloc` if it wishes to reuse that code to
   help with object destruction.  This is recommended because it guarantees that
-  :c:member:`tp_finalize` is always called before destruction.
+  :c:member:`!tp_finalize` is always called before destruction.
 * When :c:member:`~PyTypeObject.tp_dealloc` finishes object destruction, it
   directly calls :c:member:`~PyTypeObject.tp_free` to deallocate the memory.
 
@@ -103,7 +103,7 @@ longer isolated due to finalizer resurrection (see
 #. **Leaked:** If a cyclic isolate still exists after all objects in the group
    have been finalized and cleared, then the objects remain indefinitely
    uncollectable (see :data:`gc.garbage`).  It is a bug if a cyclic isolate
-   reaches this stage---it means the :c:member:`~PyTypeObjects.tp_clear` methods
+   reaches this stage---it means the :c:member:`~PyTypeObject.tp_clear` methods
    have failed to break the reference cycle as required.
 
 If :c:member:`~PyTypeObject.tp_clear` did not exist, then Python would have no
