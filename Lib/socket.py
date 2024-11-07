@@ -73,6 +73,8 @@ def __getattr__(name):
         warnings._deprecated(name, remove=(3, 16))
         return _socket.socket
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
 # nicer string representations.
 # Note that _socket only knows about the integer values. The public interface
