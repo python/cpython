@@ -1,6 +1,18 @@
 Pending Removal in Python 3.15
 ------------------------------
 
+* The import system:
+
+  * Setting :attr:`~module.__cached__` on a module while
+    failing to set :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>`
+    is deprecated. In Python 3.15, :attr:`!__cached__` will cease to be set or
+    take into consideration by the import system or standard library. (:gh:`97879`)
+
+  * Setting :attr:`~module.__package__` on a module while
+    failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+    is deprecated. In Python 3.15, :attr:`!__package__` will cease to be set or
+    take into consideration by the import system or standard library. (:gh:`97879`)
+
 * :mod:`ctypes`:
 
   * The undocumented :func:`!ctypes.SetPointerType` function
@@ -16,9 +28,6 @@ Pending Removal in Python 3.15
 
   * The :option:`!--cgi` flag to the :program:`python -m http.server`
     command-line interface has been deprecated since Python 3.13.
-
-* :mod:`importlib`: ``__package__`` and ``__cached__`` will cease to be set or
-  taken into consideration by the import system (:gh:`97879`).
 
 * :class:`locale`:
 
@@ -49,6 +58,15 @@ Pending Removal in Python 3.15
     as the  Python version does not permit any arguments,
     but the C version allows any number of positional or keyword arguments,
     ignoring every argument.
+
+* :mod:`types`:
+
+  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+    deprecated in :pep:`626`
+    since 3.10 and was planned to be removed in 3.12,
+    but it only got a proper :exc:`DeprecationWarning` in 3.12.
+    May be removed in 3.15.
+    (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 * :mod:`typing`:
 

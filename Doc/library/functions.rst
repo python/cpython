@@ -588,6 +588,11 @@ are always available.  They are listed here in alphabetical order.
    :returns: The result of the evaluated expression.
    :raises: Syntax errors are reported as exceptions.
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
@@ -644,6 +649,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
@@ -678,9 +688,10 @@ are always available.  They are listed here in alphabetical order.
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing free variables.
-   The length of the tuple must exactly match the number of free variables
-   referenced by the code object.
+   It's only valid when the *object* is a code object containing
+   :term:`free (closure) variables <closure variable>`.
+   The length of the tuple must exactly match the length of the code object's
+   :attr:`~codeobject.co_freevars` attribute.
 
    .. audit-event:: exec code_object exec
 
@@ -1275,9 +1286,10 @@ are always available.  They are listed here in alphabetical order.
 
 .. class:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all classes.
-   It has methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   This is the ultimate base class of all other classes. It has methods
+   that are common to all instances of Python classes. When the constructor
+   is called, it returns a new featureless object. The constructor does not
+   accept any arguments.
 
    .. note::
 

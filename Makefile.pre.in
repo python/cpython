@@ -2476,6 +2476,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/testmock \
@@ -2488,6 +2489,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tkinterdata \
 		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \

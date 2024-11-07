@@ -682,6 +682,19 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          Py_DECREF(tp);
      }
 
+   .. warning::
+
+      In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
+      any Python thread, not just the thread which created the object (if the
+      object becomes part of a refcount cycle, that cycle might be collected by
+      a garbage collection on any thread).  This is not a problem for Python
+      API calls, since the thread on which :c:member:`!tp_dealloc` is called
+      will own the Global Interpreter Lock (GIL).  However, if the object being
+      destroyed in turn destroys objects from some other C or C++ library, care
+      should be taken to ensure that destroying those objects on the thread
+      which called :c:member:`!tp_dealloc` will not violate any assumptions of
+      the library.
+
 
    **Inheritance:**
 
@@ -2109,17 +2122,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           PyErr_Restore(error_type, error_value, error_traceback);
       }
 
-   Also, note that, in a garbage collected Python,
-   :c:member:`~PyTypeObject.tp_dealloc` may be called from
-   any Python thread, not just the thread which created the object (if the object
-   becomes part of a refcount cycle, that cycle might be collected by a garbage
-   collection on any thread).  This is not a problem for Python API calls, since
-   the thread on which tp_dealloc is called will own the Global Interpreter Lock
-   (GIL). However, if the object being destroyed in turn destroys objects from some
-   other C or C++ library, care should be taken to ensure that destroying those
-   objects on the thread which called tp_dealloc will not violate any assumptions
-   of the library.
-
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -2199,7 +2201,7 @@ This is done by filling a :c:type:`PyType_Spec` structure and calling
 .. _number-structs:
 
 Number Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2313,7 +2315,7 @@ Number Object Structures
 .. _mapping-structs:
 
 Mapping Object Structures
-=========================
+-------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2350,7 +2352,7 @@ Mapping Object Structures
 .. _sequence-structs:
 
 Sequence Object Structures
-==========================
+--------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2430,7 +2432,7 @@ Sequence Object Structures
 .. _buffer-structs:
 
 Buffer Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Greg J. Stein <greg@lyra.org>
 .. sectionauthor:: Benjamin Peterson
@@ -2525,7 +2527,7 @@ Buffer Object Structures
 
 
 Async Object Structures
-=======================
+-----------------------
 
 .. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
@@ -2593,7 +2595,7 @@ Async Object Structures
 .. _slot-typedefs:
 
 Slot Type typedefs
-==================
+------------------
 
 .. c:type:: PyObject *(*allocfunc)(PyTypeObject *cls, Py_ssize_t nitems)
 
@@ -2702,7 +2704,7 @@ Slot Type typedefs
 .. _typedef-examples:
 
 Examples
-========
+--------
 
 The following are simple examples of Python type definitions.  They
 include common usage you may encounter.  Some demonstrate tricky corner

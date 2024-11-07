@@ -1,0 +1,4 @@
+Fix ``locale.nl_langinfo(locale.ALT_DIGITS)`` on platforms with glibc.
+Now it returns a string consisting of up to 100 semicolon-separated symbols
+(an empty string in most locales) on all Posix platforms.
+Previously it only returned the first symbol or an empty string.
