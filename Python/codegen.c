@@ -90,7 +90,6 @@ typedef _PyCompile_FBlockInfo fblockinfo;
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
-// This macro must not be enclosed in brackets since it creates a new variable.
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
     jump_target_label NAME = _PyInstructionSequence_NewLabel(INSTR_SEQUENCE(C)); \
     if (!IS_JUMP_TARGET_LABEL(NAME)) { \
