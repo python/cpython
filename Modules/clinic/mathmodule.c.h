@@ -457,7 +457,7 @@ PyDoc_STRVAR(math_sumprod__doc__,
 "\n"
 "Roughly equivalent to:\n"
 "\n"
-"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"    sum(map(operator.mul, p, q, strict=True))\n"
 "\n"
 "For float and mixed int/float inputs, the intermediate products\n"
 "and sums are computed with extended precision.");
@@ -1109,4 +1109,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee0a2f6bd1220061 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff99a737c18d9210 input=a9049054013a1b77]*/
