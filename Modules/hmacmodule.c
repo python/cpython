@@ -237,7 +237,7 @@ _hmac_compute_blake2b_32_impl(PyObject *module, Py_buffer *key,
                               Py_buffer *data)
 /*[clinic end generated code: output=ea083dfa29679029 input=aecba54a3e2dff72]*/
 {
-    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2b_32, 32, key, data);
+    HACL_HMAC_COMPUTE_HASH(Hacl_HMAC_compute_blake2b_32, 64, key, data);
 }
 
 static PyMethodDef hmacmodule_methods[] = {
