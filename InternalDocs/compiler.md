@@ -42,10 +42,10 @@ The definitions for literal tokens (such as `:`, numbers, etc.) can be found in
 
 See Also:
 
-* [Guide to the parser](https://devguide.python.org/internals/parser/index.html)
+* [Guide to the parser](parser.md)
   for a detailed description of the parser.
 
-* [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
+* [Changing CPython’s grammar](changing_grammar.md)
   for a detailed description of the grammar.
 
 
