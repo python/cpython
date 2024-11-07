@@ -7117,6 +7117,7 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
         // since we locked it.
         dict = _PyObject_ManagedDictPointer(obj)->dict;
         err = _PyDict_DetachFromObject(dict, obj);
+        assert(err == 0 || new_dict == NULL);
         if (err == 0) {
             FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
                                 (PyDictObject *)Py_XNewRef(new_dict));
@@ -7149,7 +7150,21 @@ void
 PyObject_ClearManagedDict(PyObject *obj)
 {
     if (_PyObject_SetManagedDict(obj, NULL) < 0) {
+        /* Must be out of memory */
+        assert(PyErr_Occurred() == PyExc_MemoryError);
         PyErr_WriteUnraisable(NULL);
+        /* Clear the dict */
+        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        Py_BEGIN_CRITICAL_SECTION2(dict, obj);
+        dict = _PyObject_ManagedDictPointer(obj)->dict;
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDictKeysObject *oldkeys = dict->ma_keys;
+        set_keys(dict, Py_EMPTY_KEYS);
+        dict->ma_values = NULL;
+        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+        STORE_USED(dict, 0);
+        set_dict_inline_values(obj, NULL);
+        Py_END_CRITICAL_SECTION2();
     }
 }
 
@@ -7173,17 +7188,11 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     PyDictValues *values = copy_values(mp->ma_values);
 
-    mp->ma_values = values;
     if (values == NULL) {
-        /* Out of memory. Clear the dict */
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        PyDictKeysObject *oldkeys = mp->ma_keys;
-        set_keys(mp, Py_EMPTY_KEYS);
-        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
-        STORE_USED(mp, 0);
         PyErr_NoMemory();
         return -1;
     }
+    mp->ma_values = values;
 
     FT_ATOMIC_STORE_UINT8(_PyObject_InlineValues(obj)->valid, 0);
 
