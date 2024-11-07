@@ -4135,7 +4135,7 @@ test_vararg_and_posonly
 
     a: object
     /
-    *args: object
+    *args: tuple
 
 [clinic start generated code]*/
 
@@ -4176,7 +4176,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=0c11c475e240869e input=9cfa748bbff09877]*/
+/*[clinic end generated code: output=0c11c475e240869e input=2c49a482f68545c0]*/
 
 PyDoc_STRVAR(test_vararg_and_posonly__doc__,
 "test_vararg_and_posonly($module, a, /, *args)\n"
@@ -4221,7 +4221,7 @@ test_vararg
 
 
     a: object
-    *args: object
+    *args: tuple
 
 [clinic start generated code]*/
 
@@ -4292,14 +4292,14 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=e7d7da6a7e008125 input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=e7d7da6a7e008125 input=7448995636d9186a]*/
 
 /*[clinic input]
 test_vararg_with_default
 
 
     a: object
-    *args: object
+    *args: tuple
     b: bool = False
 
 [clinic start generated code]*/
@@ -4383,13 +4383,13 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=46781f9920ecedcf input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=46781f9920ecedcf input=3a0f9f557ce1f712]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
 
 
-    *args: object
+    *args: tuple
     b: bool = False
     c: object = ' '
 
@@ -4477,7 +4477,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=d03daf5067039c03 input=fa56a709a035666e]*/
+/*[clinic end generated code: output=d03daf5067039c03 input=6983e66817f82924]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4978,7 +4978,7 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 
 /*[clinic input]
 Test.__init__
-    *args: object
+    *args: tuple
 
 Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
@@ -5016,7 +5016,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=f172425cec373cd6 input=2a8bd0033c9ac772]*/
+/*[clinic end generated code: output=f172425cec373cd6 input=4b8388c4e6baab6f]*/
 
 PyDoc_STRVAR(Test___init____doc__,
 "Test(*args)\n"
@@ -5054,7 +5054,7 @@ exit:
 /*[clinic input]
 @classmethod
 Test.__new__
-    *args: object
+    *args: tuple
 
 Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
@@ -5091,7 +5091,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=ee1e8892a67abd4a input=70ad829df3dd9b84]*/
+/*[clinic end generated code: output=ee1e8892a67abd4a input=a8259521129cad20]*/
 
 PyDoc_STRVAR(Test__doc__,
 "Test(*args)\n"
