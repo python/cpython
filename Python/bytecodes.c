@@ -5042,11 +5042,7 @@ dummy_func(
                 }
             } else if (oparg == 1) {
                 // Async case, similar to GET_AITER
-                unaryfunc getter = NULL;
-                if (type->tp_as_async != NULL) {
-                    getter = type->tp_as_async->am_aiter;
-                }
-                if (getter == NULL) {
+                if (type->tp_as_async == NULL || type->tp_as_async->am_aiter == NULL) {
                     PyErr_Format(PyExc_TypeError,
                         "'async for' requires an object with "
                         "__aiter__ method, got %.100s",
