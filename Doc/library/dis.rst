@@ -675,7 +675,7 @@ result back on the stack.
    Checks that ``STACK[-1]`` is iterable or async iterable, depending on
    oparg value.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. opcode:: TO_BOOL
