@@ -1502,7 +1502,7 @@ module_exec(PyObject *mod)
         goto error;
     }
     PyObject *PyExc_NotShareableError = \
-                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
+                _PyInterpreterState_GetXIState(interp)->exceptions.PyExc_NotShareableError;
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
         goto error;
     }

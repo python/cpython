@@ -25,89 +25,78 @@ static PyTypeObject _PyExc_InterpreterNotFoundError = {
 };
 PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
 
-static PyObject *
-_get_not_shareable_error_type(PyInterpreterState *interp)
-{
-    assert(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError != NULL);
-    return _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
-}
-
 
 /* lifecycle */
 
 static int
-init_exceptions(PyInterpreterState *interp, int statictypes)
+init_static_exctypes(exceptions_t *state, PyInterpreterState *interp)
 {
-    int heaptypes = (!statictypes);
+    assert(state == &_PyXI_GET_STATE(interp)->exceptions);
+    PyTypeObject *base = (PyTypeObject *)PyExc_Exception;
 
-    // Initialize static types.
-    int base_initialized = 0;
-    int notfound_initialized = 0;
-    if (statictypes) {
-        PyTypeObject *base = (PyTypeObject *)PyExc_Exception;
-
-        _PyExc_InterpreterError.tp_base = base;
-        _PyExc_InterpreterError.tp_traverse = base->tp_traverse;
-        _PyExc_InterpreterError.tp_clear = base->tp_clear;
-        if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
-            goto error;
-        }
-        base_initialized = 1;
-
-        _PyExc_InterpreterNotFoundError.tp_traverse = base->tp_traverse;
-        _PyExc_InterpreterNotFoundError.tp_clear = base->tp_clear;
-        if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
-            goto error;
-        }
-        notfound_initialized = 1;
+    // PyExc_InterpreterError
+    _PyExc_InterpreterError.tp_base = base;
+    _PyExc_InterpreterError.tp_traverse = base->tp_traverse;
+    _PyExc_InterpreterError.tp_clear = base->tp_clear;
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
+        goto error;
     }
+    state->PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
 
-    // Initialize heap types.
-    if (heaptypes) {
-        /* NotShareableError extends ValueError */
-        const char *name = "interpreters.NotShareableError";
-        PyObject *base = PyExc_ValueError;
-        PyObject *ns = NULL;
-        PyObject *exctype = PyErr_NewException(name, base, ns);
-        if (exctype == NULL) {
-            goto error;
-        }
-        _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError = exctype;
+    // PyExc_InterpreterNotFoundError
+    _PyExc_InterpreterNotFoundError.tp_traverse = base->tp_traverse;
+    _PyExc_InterpreterNotFoundError.tp_clear = base->tp_clear;
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
+        goto error;
     }
-
-    // Initialize heap types.
-
-    // We would  call _init_not_shareable_error_type() here too,
-    // but that leads to ref leaks
+    state->PyExc_InterpreterNotFoundError =
+            (PyObject *)&_PyExc_InterpreterNotFoundError;
 
     return 0;
 
 error:
-    if (heaptypes) {
-        Py_CLEAR(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError);
-    }
-    if (notfound_initialized) {
-        _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterNotFoundError);
-    }
-    if (base_initialized) {
-        _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterError);
-    }
+    fini_static_exctypes(state, interp);
     return -1;
 }
 
 static void
-fini_exceptions(PyInterpreterState *interp, int statictypes)
+fini_static_exctypes(exceptions_t *state, PyInterpreterState *interp)
 {
-    int heaptypes = (!statictypes);
-
-    // Finalize heap types.
-    if (heaptypes) {
-        Py_CLEAR(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError);
-    }
-
-    // Finalize static types.
-    if (statictypes) {
+    assert(state == &_PyXI_GET_STATE(interp)->exceptions);
+    if (state->PyExc_InterpreterNotFoundError != NULL) {
+        state->PyExc_InterpreterNotFoundError = NULL;
         _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterNotFoundError);
+    }
+    if (state->PyExc_InterpreterError != NULL) {
+        state->PyExc_InterpreterError = NULL;
         _PyStaticType_FiniBuiltin(interp, &_PyExc_InterpreterError);
     }
+}
+
+static int
+init_heap_exctypes(exceptions_t *state)
+{
+    PyObject *exctype;
+
+    /* NotShareableError extends ValueError */
+    const char *name = "interpreters.NotShareableError";
+    PyObject *base = PyExc_ValueError;
+    PyObject *ns = NULL;
+    exctype = PyErr_NewException(name, base, ns);
+    if (exctype == NULL) {
+        goto error;
+    }
+    state->PyExc_NotShareableError = exctype;
+
+    return 0;
+
+error:
+    fini_heap_exctypes(state);
+    return -1;
+}
+
+static void
+fini_heap_exctypes(exceptions_t *state)
+{
+    Py_CLEAR(state->PyExc_NotShareableError);
 }
