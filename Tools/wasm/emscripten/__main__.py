@@ -186,7 +186,6 @@ def configure_emscripten_python(context, working_dir):
     configure = [
         "emconfigure",
         os.path.relpath(CHECKOUT / "configure", working_dir),
-        "ax_cv_c_float_words_bigendian=no",
         "CFLAGS=-DPY_CALL_TRAMPOLINE -sUSE_BZIP2",
         f"--host={HOST_TRIPLE}",
         f"--build={build_platform()}",
