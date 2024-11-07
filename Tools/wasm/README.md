@@ -29,8 +29,8 @@ access the file system directly.
 
 To cross compile to the ``wasm32-emscripten`` platform you need
 [the Emscripten compiler toolchain](https://emscripten.org/), 
-a Python interpreter, and an install of Node version 18 or newer. Emscripten
-3.1.42 or newer are recommended. All commands below are relative to a checkout
+a Python interpreter, and an installation of Node version 18 or newer. Emscripten
+version 3.1.42 or newer is recommended. All commands below are relative to a checkout
 of the Python repository.
 
 #### Install [the Emscripten compiler toolchain](https://emscripten.org/docs/getting_started/downloads.html)
