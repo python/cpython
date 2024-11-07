@@ -1,4 +1,4 @@
 Fix a crash in DEBUG builds due to an overflow when the :attr:`co_stacksize
 <codeobject.co_stacksize>` field of a :ref:`code object <code-objects>` is
-set to an absurdely large integer.
+set to an absurdly large integer.
 Reported by Valery Fedorenko. Patch by Bénédikt Tran.
