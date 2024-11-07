@@ -1203,6 +1203,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_critical_section.h \
 		$(srcdir)/Include/internal/pycore_crossinterp.h \
+		$(srcdir)/Include/internal/pycore_crossinterp_data_registry.h \
 		$(srcdir)/Include/internal/pycore_debug_offsets.h \
 		$(srcdir)/Include/internal/pycore_descrobject.h \
 		$(srcdir)/Include/internal/pycore_dict.h \

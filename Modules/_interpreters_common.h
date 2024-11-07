@@ -6,27 +6,27 @@
 
 
 static int
-ensure_xid_class(PyTypeObject *cls, crossinterpdatafunc getdata)
+ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
 {
     //assert(cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    return _PyCrossInterpreterData_RegisterClass(cls, getdata);
+    return _PyXIData_RegisterClass(cls, getdata);
 }
 
 #ifdef REGISTERS_HEAP_TYPES
 static int
 clear_xid_class(PyTypeObject *cls)
 {
-    return _PyCrossInterpreterData_UnregisterClass(cls);
+    return _PyXIData_UnregisterClass(cls);
 }
 #endif
 
 
 static inline int64_t
-_get_interpid(_PyCrossInterpreterData *data)
+_get_interpid(_PyXIData_t *data)
 {
     int64_t interpid;
     if (data != NULL) {
-        interpid = _PyCrossInterpreterData_INTERPID(data);
+        interpid = _PyXIData_INTERPID(data);
         assert(!PyErr_Occurred());
     }
     else {
