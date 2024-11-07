@@ -910,7 +910,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    same as ``type(socket(...))``.
 
    .. deprecated:: next
-      If type annotations are required, use :class:`socket.socket` instead.
+      Use :class:`socket.socket` type instead.
 
 
 Other functions
