@@ -303,7 +303,7 @@ _PyContext_ExitThreadOwned(PyThreadState *ts)
                         "contextvars.Context object(s) still entered during "
                         "thread state reset");
         PyErr_FormatUnraisable(
-            "Exception ignored during reset of thread state %p", ts);
+            "Exception ignored during reset of thread state");
         PyErr_SetRaisedException(exc);
     }
 }
