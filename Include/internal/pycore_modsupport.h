@@ -76,7 +76,7 @@ PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
     ...);
 
 // Export for 'math' shared extension
-PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
+PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsEx(
     PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs,
@@ -85,20 +85,19 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
     int minpos,
     int maxpos,
     int minkw,
+    int varpos,
     PyObject **buf);
 #define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
     (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
-      (minpos) <= (nargs) && (nargs) <= (maxpos) && (args) != NULL) ? (args) : \
-     _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
-                           (minpos), (maxpos), (minkw), (buf)))
-
-// Export for '_testclinic' shared extension
-PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
-        PyObject *const *args, Py_ssize_t nargs,
-        PyObject *kwargs, PyObject *kwnames,
-        struct _PyArg_Parser *parser,
-        int minpos, int maxpos, int minkw,
-        int vararg, PyObject **buf);
+      (minpos) <= (nargs) && (nargs) <= (maxpos) && (args) != NULL) ? \
+      (args) : \
+     _PyArg_UnpackKeywordsEx((args), (nargs), (kwargs), (kwnames), (parser), \
+                           (minpos), (maxpos), (minkw), 0, (buf)))
+#define _PyArg_UnpackKeywordsWithVararg(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
+    (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
+      (minpos) <= (nargs) && (args) != NULL) ? (args) : \
+     _PyArg_UnpackKeywordsEx((args), (nargs), (kwargs), (kwnames), (parser), \
+                           (minpos), (maxpos), (minkw), 1, (buf)))
 
 #ifdef __cplusplus
 }
