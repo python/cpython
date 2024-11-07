@@ -51,16 +51,19 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
-#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
-    if ((CALL) < 0) { \
-        _PyCompile_ExitScope((C)); \
-        return ERROR; \
-    } \
-}
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL)   \
+    do {                                    \
+        if ((CALL) < 0) {                   \
+            _PyCompile_ExitScope((C));      \
+            return ERROR;                   \
+        }                                   \
+    } while (0)
 
 struct _PyCompiler;
 typedef struct _PyCompiler compiler;
@@ -87,6 +90,7 @@ typedef _PyCompile_FBlockInfo fblockinfo;
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
+// This macro must not be enclosed in brackets since it creates a new variable.
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
     jump_target_label NAME = _PyInstructionSequence_NewLabel(INSTR_SEQUENCE(C)); \
     if (!IS_JUMP_TARGET_LABEL(NAME)) { \
@@ -261,7 +265,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
 #define ADDOP_I_IN_SCOPE(C, LOC, OP, O) \
-    RETURN_IF_ERROR_IN_SCOPE(C, codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)));
+    RETURN_IF_ERROR_IN_SCOPE(C, codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
@@ -303,17 +307,18 @@ codegen_addop_load_const(compiler *c, location loc, PyObject *o)
     RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const((C), (LOC), (O)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return ERROR; \
-    } \
-    if (codegen_addop_load_const((C), (LOC), __new_const) < 0) { \
-        Py_DECREF(__new_const); \
-        return ERROR; \
-    } \
-    Py_DECREF(__new_const); \
-}
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O)                                 \
+    do {                                                                \
+        PyObject *__new_const = (O);                                    \
+        if (__new_const == NULL) {                                      \
+            return ERROR;                                               \
+        }                                                               \
+        if (codegen_addop_load_const((C), (LOC), __new_const) < 0) {    \
+            Py_DECREF(__new_const);                                     \
+            return ERROR;                                               \
+        }                                                               \
+        Py_DECREF(__new_const);                                         \
+    } while (0)
 
 static int
 codegen_addop_o(compiler *c, location loc,
@@ -325,19 +330,23 @@ codegen_addop_o(compiler *c, location loc,
     return SUCCESS;
 }
 
-#define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    int ret = codegen_addop_o((C), (LOC), (OP), METADATA(C)->u_ ## TYPE, (O)); \
-    Py_DECREF((O)); \
-    RETURN_IF_ERROR(ret); \
-}
+#define ADDOP_N(C, LOC, OP, O, TYPE)                                    \
+    do {                                                                \
+        assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */   \
+        int ret = codegen_addop_o((C), (LOC), (OP),                     \
+                                  METADATA(C)->u_ ## TYPE, (O));        \
+        Py_DECREF((O));                                                 \
+        RETURN_IF_ERROR(ret);                                           \
+    } while (0)
 
-#define ADDOP_N_IN_SCOPE(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    int ret = codegen_addop_o((C), (LOC), (OP), METADATA(C)->u_ ## TYPE, (O)); \
-    Py_DECREF((O)); \
-    RETURN_IF_ERROR_IN_SCOPE((C), ret); \
-}
+#define ADDOP_N_IN_SCOPE(C, LOC, OP, O, TYPE)                           \
+    do {                                                                \
+        assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */   \
+        int ret = codegen_addop_o((C), (LOC), (OP),                     \
+                                  METADATA(C)->u_ ## TYPE, (O));        \
+        Py_DECREF((O));                                                 \
+        RETURN_IF_ERROR_IN_SCOPE((C), ret);                             \
+    } while (0)
 
 #define LOAD_METHOD -1
 #define LOAD_SUPER_METHOD -2
@@ -426,31 +435,31 @@ codegen_addop_j(instr_sequence *seq, location loc,
 */
 
 #define VISIT(C, TYPE, V) \
-    RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), (V)));
+    RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), (V)))
 
 #define VISIT_IN_SCOPE(C, TYPE, V) \
     RETURN_IF_ERROR_IN_SCOPE((C), codegen_visit_ ## TYPE((C), (V)))
 
-#define VISIT_SEQ(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), elt)); \
-    } \
-}
+#define VISIT_SEQ(C, TYPE, SEQ)                                             \
+    do {                                                                    \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */    \
+        for (int _i = 0; _i < asdl_seq_LEN(seq); _i++) {                    \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i);           \
+            RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), elt));              \
+        }                                                                   \
+    } while (0)
 
-#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (codegen_visit_ ## TYPE((C), elt) < 0) { \
-            _PyCompile_ExitScope(C); \
-            return ERROR; \
-        } \
-    } \
-}
+#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ)                                    \
+    do {                                                                    \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */    \
+        for (int _i = 0; _i < asdl_seq_LEN(seq); _i++) {                    \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i);           \
+            if (codegen_visit_ ## TYPE((C), elt) < 0) {                     \
+                _PyCompile_ExitScope(C);                                    \
+                return ERROR;                                               \
+            }                                                               \
+        }                                                                   \
+    } while (0)
 
 static int
 codegen_call_exit_with_nones(compiler *c, location loc)
@@ -2866,7 +2875,7 @@ codegen_visit_stmt(compiler *c, stmt_ty s)
     case Return_kind:
         return codegen_return(c, s);
     case Delete_kind:
-        VISIT_SEQ(c, expr, s->v.Delete.targets)
+        VISIT_SEQ(c, expr, s->v.Delete.targets);
         break;
     case Assign_kind:
     {
@@ -4759,7 +4768,7 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
     pos++;
     if (pos == asdl_seq_LEN(s->v.AsyncWith.items)) {
         /* BLOCK code */
-        VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
+        VISIT_SEQ(c, stmt, s->v.AsyncWith.body);
     }
     else {
         RETURN_IF_ERROR(codegen_async_with(c, s, pos));
@@ -4858,7 +4867,7 @@ codegen_with(compiler *c, stmt_ty s, int pos)
     pos++;
     if (pos == asdl_seq_LEN(s->v.With.items)) {
         /* BLOCK code */
-        VISIT_SEQ(c, stmt, s->v.With.body)
+        VISIT_SEQ(c, stmt, s->v.With.body);
     }
     else {
         RETURN_IF_ERROR(codegen_with(c, s, pos));
