@@ -1729,8 +1729,8 @@ without the dedicated syntax, as documented below.
    This syntax can also be used to create bounded and constrained type
    variables::
 
-      class StrSequence[S: str]:  # S is a TypeVar with a `str` upper bound
-          ...
+      class StrSequence[S: str]:  # S is a TypeVar with a `str` upper bound;
+          ...                     # We can say that S is "bounded by `str`"
 
 
       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
