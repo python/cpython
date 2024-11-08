@@ -86,7 +86,7 @@ Tuple Objects
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
    *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
-   and set an :exc:`IndexError` exception.
+   and set an :exc:`IndexError` exception. Both ``p`` and ``o`` must be non-``NULL``.
 
    .. note::
 

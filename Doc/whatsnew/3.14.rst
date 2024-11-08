@@ -827,6 +827,10 @@ Porting to Python 3.14
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
+* The :c:func:`PyTuple_SET_ITEM` inline function may not be passed ``NULL``.
+  This has always been the documented behavior, but was not enforced for
+  the value until now. :c:var:``Py_None` should be used instead of ``NULL``.
+
 
 Deprecated
 ----------

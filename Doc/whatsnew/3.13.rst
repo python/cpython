@@ -2661,10 +2661,6 @@ Changes in the C API
 
   Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
   should be the deallocation function it is in. The new macros were
-* The :c:func:`PyTuple_SET_ITEM` inline function may not be passed ``NULL``.
-  This has always been the documented behavior, but was not enforced for
-  the value until now. :c:var:``Py_None` should be used instead of ``NULL``.
-
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
