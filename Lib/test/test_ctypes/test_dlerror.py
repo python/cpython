@@ -75,17 +75,14 @@ class TestNullDlsym(unittest.TestCase):
             # Load the shared library
             L = CDLL(dstname)
 
-            with self.assertRaises(AttributeError) as cm:
+            with self.assertRaisesRegex(AttributeError, "function 'foo' not found"):
                 # Try accessing the 'foo' symbol.
                 # It should resolve via dlsym() to NULL,
                 # and since we subjectively treat NULL
                 # addresses as errors, we should get
                 # an error.
                 L.foo
-                self.fail("AttributeError should have been raised!")
 
-            self.assertEqual(str(cm.exception),
-                             "function 'foo' not found")
 
 if __name__ == "__main__":
     unittest.main()
