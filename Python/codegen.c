@@ -759,7 +759,8 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-int codegen_is_stmt_docstring(stmt_ty st) {
+static int
+codegen_is_stmt_docstring(stmt_ty st) {
     if (st->kind != Expr_kind) {
         return 0;
     }
