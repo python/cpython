@@ -107,10 +107,9 @@ import sys
 
 from os.path import isfile, split, join
 from pathlib import Path
+from contextlib import contextmanager
 from copy import deepcopy
 from tkinter import simpledialog
-
-from contextlib import contextmanager
 
 _tg_classes = ['ScrolledCanvas', 'TurtleScreen', 'Screen',
                'RawTurtle', 'Turtle', 'RawPen', 'Pen', 'Shape', 'Vec2D']

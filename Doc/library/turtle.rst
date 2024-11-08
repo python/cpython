@@ -222,9 +222,9 @@ If you have Python 3.14 or later, you don't need to call :func:`begin_fill` and
 example::
 
    with fill():
-      for i in range(4):
-         forward(100)
-         right(90)
+       for i in range(4):
+           forward(100)
+           right(90)
 
    forward(200)
 
@@ -232,8 +232,8 @@ The code above is equivalent to::
 
    begin_fill()
    for i in range(4):
-      forward(100)
-      right(90)
+       forward(100)
+       right(90)
    end_fill()
 
    forward(200)
@@ -377,6 +377,7 @@ Pen control
 
    Filling
       | :func:`filling`
+      | :func:`fill`
       | :func:`begin_fill`
       | :func:`end_fill`
 

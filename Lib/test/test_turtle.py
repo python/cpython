@@ -3,8 +3,8 @@ import pickle
 import re
 import unittest
 import unittest.mock
-import tempfile
 import sys
+import tempfile
 from contextlib import contextmanager
 from test import support
 from test.support import import_helper
@@ -572,7 +572,6 @@ class TestTurtleScreen(unittest.TestCase):
 
 class TestTurtle(unittest.TestCase):
     def test_begin_end_fill(self):
-        """begin_fill and end_fill counter each other."""
         with patch_screen():
             t = turtle.Turtle()
 
@@ -583,7 +582,7 @@ class TestTurtle(unittest.TestCase):
         self.assertFalse(t.filling())
 
     def test_fill(self):
-        """The context manager behaves like begin_ and end_ fill."""
+        # The context manager behaves like begin_fill and end_fill.
         with patch_screen():
             t = turtle.Turtle()
 
@@ -593,7 +592,7 @@ class TestTurtle(unittest.TestCase):
         self.assertFalse(t.filling())
 
     def test_fill_resets_after_exception(self):
-        """The context manager cleans up correctly after exceptions."""
+        # The context manager cleans up correctly after exceptions.
         with patch_screen():
             t = turtle.Turtle()
         try:
@@ -604,7 +603,7 @@ class TestTurtle(unittest.TestCase):
             self.assertFalse(t.filling())
 
     def test_fill_context_when_filling(self):
-        """The context manager works even when the turtle is already filling."""
+        # The context manager works even when the turtle is already filling.
         with patch_screen():
             t = turtle.Turtle()
 
@@ -615,7 +614,6 @@ class TestTurtle(unittest.TestCase):
         self.assertFalse(t.filling())
 
     def test_begin_end_poly(self):
-        """begin_fill and end_poly counter each other."""
         with patch_screen():
             t = turtle.Turtle()
 
@@ -626,7 +624,7 @@ class TestTurtle(unittest.TestCase):
         self.assertFalse(t._creatingPoly)
 
     def test_poly(self):
-        """The context manager behaves like begin_ and end_ poly."""
+        # The context manager behaves like begin_poly and end_poly.
         with patch_screen():
             t = turtle.Turtle()
 
@@ -636,7 +634,7 @@ class TestTurtle(unittest.TestCase):
         self.assertFalse(t._creatingPoly)
 
     def test_poly_resets_after_exception(self):
-        """The context manager cleans up correctly after exceptions."""
+        # The context manager cleans up correctly after exceptions.
         with patch_screen():
             t = turtle.Turtle()
         try:
@@ -647,8 +645,7 @@ class TestTurtle(unittest.TestCase):
             self.assertFalse(t._creatingPoly)
 
     def test_poly_context_when_creating_poly(self):
-        """The context manager works when the turtle is already creating poly.
-        """
+        # The context manager works when the turtle is already creating poly.
         with patch_screen():
             t = turtle.Turtle()
 
