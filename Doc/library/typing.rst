@@ -1834,7 +1834,7 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __bound__
 
-      The bound of the type variable, if any.
+      The upper bound of the type variable, if any.
 
       .. versionchanged:: 3.12
 
@@ -2100,7 +2100,7 @@ without the dedicated syntax, as documented below.
           return x + y
 
    Without ``ParamSpec``, the simplest way to annotate this previously was to
-   use a :class:`TypeVar` with bound ``Callable[..., Any]``.  However this
+   use a :class:`TypeVar` with upper bound ``Callable[..., Any]``.  However this
    causes two problems:
 
    1. The type checker can't type check the ``inner`` function because
