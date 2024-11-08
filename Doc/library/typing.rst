@@ -1729,7 +1729,7 @@ without the dedicated syntax, as documented below.
    This syntax can also be used to create bounded and constrained type
    variables::
 
-      class StrSequence[S: str]:  # S is a TypeVar bounded by str
+      class StrSequence[S: str]:  # S is a TypeVar with a `str` upper bound
           ...
 
 
@@ -1789,8 +1789,8 @@ without the dedicated syntax, as documented below.
 
       z = print_capitalized(45)  # error: int is not a subtype of str
 
-   Type variables can be bounded by concrete types, abstract types (ABCs or
-   protocols), and even unions of types::
+   The upper bound of a type variable can be a concrete type, abstract type
+   (ABC or Protocol), or even a union of types::
 
       # Can be anything with an __abs__ method
       def print_abs[T: SupportsAbs](arg: T) -> None:
