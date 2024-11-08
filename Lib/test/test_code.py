@@ -604,12 +604,11 @@ class CodeTest(unittest.TestCase):
         c = foo.__code__
 
         fss = support.get_frame_specials_size()
-        ps = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
         co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
         # anything below that limit is a valid co_stacksize
-        evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
+        evil_stacksize = int(_testcapi.INT_MAX / 16 - fss - co_nlocalsplus)
 
-        with self.assertRaisesRegex(OverflowError, "co_stacksize"):
+        with self.assertRaisesRegex(OverflowError, "stack size is too large"):
             c.__replace__(co_stacksize=evil_stacksize)
         c.__replace__(co_stacksize=evil_stacksize - 1)
 
