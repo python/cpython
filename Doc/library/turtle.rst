@@ -1315,7 +1315,7 @@ Filling
       ...     turtle.circle(80)
 
    Using ``fill``  is equivalent to adding the :func:`begin_fill` before the
-   fill-block and :func:`end_fill` after the fill-block
+   fill-block and :func:`end_fill` after the fill-block:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1702,7 +1702,7 @@ Special Turtle methods
 
 .. function:: poly()
 
-   Record the vertices of a polygon.  The first and last vertices will be
+   Record the vertices of a polygon drawn in the ``with turtle.poly():`` block.  The first and last vertices will be
    connected.
 
    .. doctest::
@@ -1996,7 +1996,7 @@ Animation control
 
    Temporarilly disable turtle animation. The code written inside the
    ``no_animation`` block will not be animated, and once the code block is
-   exitted, the drawing will appear.
+   exited, the drawing will appear.
 
    .. doctest::
       :skipif: _tkinter is None

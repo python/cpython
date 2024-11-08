@@ -1289,7 +1289,7 @@ class TurtleScreen(TurtleScreenBase):
         be displayed.
 
         Example (for a TurtleScreen instance named screen):
-        >>> with turtle.no_animation()
+        >>> with screen.no_animation()
         ...    turtle.circle(50)
         """
         tracer = self.tracer()
