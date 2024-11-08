@@ -5921,14 +5921,11 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
            [wasm*], [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
                                [Define if C doubles are 64-bit IEEE 754 binary format,
                                 stored with the least significant byte first])],
-           [AC_MSG_ERROR([
-
-Unknown float word ordering. You need to manually preset
-ax_cv_c_float_words_bigendian=no (or yes) according to your system.
-
-           ])]
-  )]
-)
+           [AC_MSG_ERROR([m4_normalize([
+             Unknown float word ordering. You need to manually
+             preset ax_cv_c_float_words_bigendian=no (or yes)
+             according to your system.
+           ])])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
