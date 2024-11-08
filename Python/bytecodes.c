@@ -1631,8 +1631,7 @@ dummy_func(
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
-            int increfed;
-            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
             DEOPT_IF(!increfed);
             #else
             Py_INCREF(res_o);
@@ -1649,8 +1648,7 @@ dummy_func(
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
-            int increfed;
-            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
             DEOPT_IF(!increfed);
             #else
             Py_INCREF(res_o);

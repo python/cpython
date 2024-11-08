@@ -6162,9 +6162,8 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                int increfed;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+                int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 #else
@@ -6208,9 +6207,8 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                int increfed;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+                int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 #else
