@@ -389,6 +389,10 @@ extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *ar
         }                                                               \
     } while (0)
 
+#ifdef Py_GIL_DISABLED
+extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                                           gcvisitobjects_t callback, void *arg);
+#endif
 
 #ifdef __cplusplus
 }

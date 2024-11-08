@@ -99,7 +99,7 @@ class PathGlobber(_GlobberBase):
     @staticmethod
     def concat_path(path, text):
         """Appends text to the given path."""
-        return path.with_segments(path._raw_path + text)
+        return path.with_segments(str(path) + text)
 
 
 class PurePathBase:
@@ -112,9 +112,9 @@ class PurePathBase:
     """
 
     __slots__ = (
-        # The `_raw_path` slot store a joined string path. This is set in the
-        # `__init__()` method.
-        '_raw_path',
+        # The `_raw_paths` slot stores unjoined string paths. This is set in
+        # the `__init__()` method.
+        '_raw_paths',
 
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
@@ -124,11 +124,14 @@ class PurePathBase:
     parser = ParserBase()
     _globber = PathGlobber
 
-    def __init__(self, path, *paths):
-        self._raw_path = self.parser.join(path, *paths) if paths else path
-        if not isinstance(self._raw_path, str):
-            raise TypeError(
-                f"path should be a str, not {type(self._raw_path).__name__!r}")
+    def __init__(self, arg, *args):
+        paths = [arg]
+        paths.extend(args)
+        for path in paths:
+            if not isinstance(path, str):
+                raise TypeError(
+                    f"path should be a str, not {type(path).__name__!r}")
+        self._raw_paths = paths
         self._resolving = False
 
     def with_segments(self, *pathsegments):
@@ -141,7 +144,19 @@ class PurePathBase:
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        return self._raw_path
+        paths = self._raw_paths
+        if len(paths) == 1:
+            return paths[0]
+        elif paths:
+            # Join path segments from the initializer.
+            path = self.parser.join(*paths)
+            # Cache the joined path.
+            paths.clear()
+            paths.append(path)
+            return path
+        else:
+            paths.append('')
+            return ''
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -166,7 +181,7 @@ class PurePathBase:
     @property
     def name(self):
         """The final path component, if any."""
-        return self.parser.split(self._raw_path)[1]
+        return self.parser.split(str(self))[1]
 
     @property
     def suffix(self):
@@ -202,7 +217,7 @@ class PurePathBase:
         split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(split(self._raw_path)[0], name)
+        return self.with_segments(split(str(self))[0], name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -242,7 +257,7 @@ class PurePathBase:
         anchor0, parts0 = self._stack
         anchor1, parts1 = other._stack
         if anchor0 != anchor1:
-            raise ValueError(f"{self._raw_path!r} and {other._raw_path!r} have different anchors")
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
             parts0.pop()
             parts1.pop()
@@ -250,9 +265,9 @@ class PurePathBase:
             if not part or part == '.':
                 pass
             elif not walk_up:
-                raise ValueError(f"{self._raw_path!r} is not in the subpath of {other._raw_path!r}")
+                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
             elif part == '..':
-                raise ValueError(f"'..' segment in {other._raw_path!r} cannot be walked")
+                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
             else:
                 parts0.append('..')
         return self.with_segments('', *reversed(parts0))
@@ -289,17 +304,17 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(self._raw_path, *pathsegments)
+        return self.with_segments(*self._raw_paths, *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(self._raw_path, key)
+            return self.with_segments(*self._raw_paths, key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, self._raw_path)
+            return self.with_segments(key, *self._raw_paths)
         except TypeError:
             return NotImplemented
 
@@ -311,7 +326,7 @@ class PurePathBase:
         *parts* is a reversed list of parts following the anchor.
         """
         split = self.parser.split
-        path = self._raw_path
+        path = str(self)
         parent, name = split(path)
         names = []
         while path != parent:
@@ -323,7 +338,7 @@ class PurePathBase:
     @property
     def parent(self):
         """The logical parent of the path."""
-        path = self._raw_path
+        path = str(self)
         parent = self.parser.split(path)[0]
         if path != parent:
             parent = self.with_segments(parent)
@@ -335,7 +350,7 @@ class PurePathBase:
     def parents(self):
         """A sequence of this path's logical parents."""
         split = self.parser.split
-        path = self._raw_path
+        path = str(self)
         parent = split(path)[0]
         parents = []
         while path != parent:
@@ -347,7 +362,7 @@ class PurePathBase:
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        return self.parser.isabs(self._raw_path)
+        return self.parser.isabs(str(self))
 
     @property
     def _pattern_str(self):
@@ -695,16 +710,18 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                for child in path.iterdir():
-                    try:
-                        if child.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
-                        filenames.append(child.name)
+                with path.scandir() as entries:
+                    for entry in entries:
+                        name = entry.name
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks):
+                                if not top_down:
+                                    paths.append(path.joinpath(name))
+                                dirnames.append(name)
+                            else:
+                                filenames.append(name)
+                        except OSError:
+                            filenames.append(name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
