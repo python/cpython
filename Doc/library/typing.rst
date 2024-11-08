@@ -1726,10 +1726,10 @@ without the dedicated syntax, as documented below.
       class Sequence[T]:  # T is a TypeVar
           ...
 
-   This syntax can also be used to create bound and constrained type
+   This syntax can also be used to create bounded and constrained type
    variables::
 
-      class StrSequence[S: str]:  # S is a TypeVar bound to str
+      class StrSequence[S: str]:  # S is a TypeVar bounded by str
           ...
 
 
@@ -1763,8 +1763,8 @@ without the dedicated syntax, as documented below.
           """Add two strings or bytes objects together."""
           return x + y
 
-   Note that type variables can be *bound*, *constrained*, or neither, but
-   cannot be both bound *and* constrained.
+   Note that type variables can be *bounded*, *constrained*, or neither, but
+   cannot be both bounded *and* constrained.
 
    The variance of type variables is inferred by type checkers when they are created
    through the :ref:`type parameter syntax <type-params>` or when
@@ -1774,8 +1774,8 @@ without the dedicated syntax, as documented below.
    By default, manually created type variables are invariant.
    See :pep:`484` and :pep:`695` for more details.
 
-   Bound type variables and constrained type variables have different
-   semantics in several important ways. Using a *bound* type variable means
+   Bounded type variables and constrained type variables have different
+   semantics in several important ways. Using a *bounded* type variable means
    that the ``TypeVar`` will be solved using the most specific type possible::
 
       x = print_capitalized('a string')
@@ -1789,7 +1789,7 @@ without the dedicated syntax, as documented below.
 
       z = print_capitalized(45)  # error: int is not a subtype of str
 
-   Type variables can be bound to concrete types, abstract types (ABCs or
+   Type variables can be bounded by concrete types, abstract types (ABCs or
    protocols), and even unions of types::
 
       # Can be anything with an __abs__ method
