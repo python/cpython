@@ -48,6 +48,9 @@
     <ClInclude Include="..\Include\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\audit.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -70,6 +73,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\complexobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\critical_section.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
@@ -112,6 +118,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\listobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\lock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -205,6 +214,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\rangeobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\refcount.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\setobject.h">
@@ -345,6 +357,9 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\audit.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\bytearrayobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -372,6 +387,9 @@
     <ClInclude Include="..\Include\cpython\context.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\critical_section.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\descrobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -393,6 +411,9 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\lock.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\longintrepr.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -405,9 +426,6 @@
     <ClInclude Include="..\Include\cpython\odictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\optimizer.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\unicodeobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -418,6 +436,9 @@
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\methodobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\modsupport.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\objimpl.h">
@@ -498,9 +519,6 @@
     <ClInclude Include="..\Include\cpython\setobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\sysmodule.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -535,6 +553,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atexit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_audit.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bitutils.h">
@@ -588,6 +609,9 @@
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_debug_offsets.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -624,6 +648,9 @@
     <ClInclude Include="..\Include\internal\pycore_freelist.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_freelist_state.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_function.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -658,6 +685,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_importdl.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_index_pool.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
@@ -700,6 +730,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_alloc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_deferred.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_state.h">
@@ -789,6 +822,9 @@
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -817,6 +853,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uniqueid.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
@@ -879,15 +918,6 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_bisectmodule.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_blake2\blake2module.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_blake2\blake2b_impl.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_blake2\blake2s_impl.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c">
@@ -1271,6 +1301,9 @@
     <ClCompile Include="..\Python\codecs.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\codegen.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1343,6 +1376,9 @@
     <ClCompile Include="..\Python\importdl.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\index_pool.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1398,6 +1434,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
@@ -1464,6 +1503,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\bootstrap_hash.c">
@@ -1547,13 +1589,13 @@
     <ClCompile Include="..\Parser\peg_api.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c">
+    <ClCompile Include="..\Modules\_interpretersmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+    <ClCompile Include="..\Modules\_interpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
+    <ClCompile Include="..\Modules\_interpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

@@ -1,5 +1,5 @@
-:mod:`tracemalloc` --- Trace memory allocations
-===============================================
+:mod:`!tracemalloc` --- Trace memory allocations
+================================================
 
 .. module:: tracemalloc
    :synopsis: Trace memory allocations.

@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 #include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
+#include "pycore_debug_offsets.h"  // _Py_DebugOffsets_INIT()
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
 #include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_function.h"
 #include "pycore_object.h"        // _PyObject_HEAD_INIT
 #include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
@@ -29,66 +31,9 @@ extern PyTypeObject _PyExc_MemoryError;
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
-#define _PyRuntimeState_INIT(runtime) \
+#define _PyRuntimeState_INIT(runtime, debug_cookie) \
     { \
-        .debug_offsets = { \
-            .cookie = "xdebugpy", \
-            .version = PY_VERSION_HEX, \
-            .runtime_state = { \
-                .finalizing = offsetof(_PyRuntimeState, _finalizing), \
-                .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
-            }, \
-            .interpreter_state = { \
-                .next = offsetof(PyInterpreterState, next), \
-                .threads_head = offsetof(PyInterpreterState, threads.head), \
-                .gc = offsetof(PyInterpreterState, gc), \
-                .imports_modules = offsetof(PyInterpreterState, imports.modules), \
-                .sysdict = offsetof(PyInterpreterState, sysdict), \
-                .builtins = offsetof(PyInterpreterState, builtins), \
-                .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
-                .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
-                .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
-            }, \
-            .thread_state = { \
-                .prev = offsetof(PyThreadState, prev), \
-                .next = offsetof(PyThreadState, next), \
-                .interp = offsetof(PyThreadState, interp), \
-                .current_frame = offsetof(PyThreadState, current_frame), \
-                .thread_id = offsetof(PyThreadState, thread_id), \
-                .native_thread_id = offsetof(PyThreadState, native_thread_id), \
-            }, \
-            .interpreter_frame = { \
-                .previous = offsetof(_PyInterpreterFrame, previous), \
-                .executable = offsetof(_PyInterpreterFrame, f_executable), \
-                .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
-                .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
-                .owner = offsetof(_PyInterpreterFrame, owner), \
-            }, \
-            .code_object = { \
-                .filename = offsetof(PyCodeObject, co_filename), \
-                .name = offsetof(PyCodeObject, co_name), \
-                .linetable = offsetof(PyCodeObject, co_linetable), \
-                .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
-                .argcount = offsetof(PyCodeObject, co_argcount), \
-                .localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
-                .localspluskinds = offsetof(PyCodeObject, co_localspluskinds), \
-                .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
-            }, \
-            .pyobject = { \
-                .ob_type = offsetof(PyObject, ob_type), \
-            }, \
-            .type_object = { \
-                .tp_name = offsetof(PyTypeObject, tp_name), \
-            }, \
-            .tuple_object = { \
-                .ob_item = offsetof(PyTupleObject, ob_item), \
-            }, \
-            .unicode_object = { \
-                .state = offsetof(PyUnicodeObject, _base._base.state), \
-                .length = offsetof(PyUnicodeObject, _base._base.length), \
-                .asciiobject_size = sizeof(PyASCIIObject), \
-            }, \
-        }, \
+        .debug_offsets = _Py_DebugOffsets_INIT(debug_cookie), \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \
             .debug = _pymem_allocators_debug_INIT, \
@@ -114,6 +59,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .pending_mainthread = { \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
+            }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
@@ -124,6 +73,10 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .ref_tracer = { \
+            .tracer_func = NULL, \
+            .tracer_data = NULL, \
+        }, \
         .stoptheworld = { \
             .is_global = 1, \
         }, \
@@ -166,6 +119,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \
@@ -184,7 +141,7 @@ extern PyTypeObject _PyExc_MemoryError;
         .dict_state = _dict_state_INIT, \
         .mem_free_queue = _Py_mem_free_queue_INIT(INTERP.mem_free_queue), \
         .func_state = { \
-            .next_version = 1, \
+            .next_version = FUNC_VERSION_FIRST_VALID, \
         }, \
         .types = { \
             .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \

@@ -13,16 +13,9 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_funcobj);
-    Py_VISIT(_PyFrame_GetCode(frame));
-   /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
-    /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-        Py_VISIT(locals[i]);
-    }
-    return 0;
+    _Py_VISIT_STACKREF(frame->f_funcobj);
+    _Py_VISIT_STACKREF(frame->f_executable);
+    return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
 PyFrameObject *
@@ -53,35 +46,25 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     return f;
 }
 
-void
-_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
-{
-    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
-    memcpy(dest, src, size);
-    // Don't leave a dangling pointer to the old frame when creating generators
-    // and coroutines:
-    dest->previous = NULL;
-}
-
-
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
     assert(frame->owner != FRAME_OWNED_BY_CSTACK);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    Py_INCREF(_PyFrame_GetCode(frame));
+    Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
+    frame->f_executable = PyStackRef_DUP(frame->f_executable);
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        frame->instr_ptr =
+            _PyFrame_GetBytecode(frame) + code->_co_firsttraceable + 1;
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
@@ -107,12 +90,26 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 }
 
 void
+_PyFrame_ClearLocals(_PyInterpreterFrame *frame)
+{
+    assert(frame->stackpointer != NULL);
+    _PyStackRef *sp = frame->stackpointer;
+    _PyStackRef *locals = frame->localsplus;
+    frame->stackpointer = locals;
+    while (sp > locals) {
+        sp--;
+        PyStackRef_XCLOSE(*sp);
+    }
+    Py_CLEAR(frame->f_locals);
+}
+
+void
 _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
+        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
@@ -126,12 +123,8 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         }
         Py_DECREF(f);
     }
-    assert(frame->stacktop >= 0);
-    for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
-    }
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_funcobj);
+    _PyFrame_ClearLocals(frame);
+    PyStackRef_CLEAR(frame->f_funcobj);
 }
 
 /* Unstable API functions */
@@ -139,9 +132,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
-    PyObject *code = frame->f_executable;
-    Py_INCREF(code);
-    return code;
+    return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
 int

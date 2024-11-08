@@ -86,3 +86,11 @@
 /* New in 3.10 */
 #define Py_am_send 81
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+/* New in 3.14 */
+#define Py_tp_vectorcall 82
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+/* New in 3.14 */
+#define Py_tp_token 83
+#endif

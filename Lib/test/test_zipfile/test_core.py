@@ -389,7 +389,6 @@ class AbstractTestsWithSourceFile:
                 with zipfp.open(fname) as zipopen:
                     r = repr(zipopen)
                     self.assertIn('name=%r' % fname, r)
-                    self.assertIn("mode='r'", r)
                     if self.compression != zipfile.ZIP_STORED:
                         self.assertIn('compress_type=', r)
                 self.assertIn('[closed]', repr(zipopen))
@@ -455,14 +454,14 @@ class AbstractTestsWithSourceFile:
             with zipfp.open(fname) as fid:
                 self.assertEqual(fid.name, fname)
                 self.assertRaises(io.UnsupportedOperation, fid.fileno)
-                self.assertEqual(fid.mode, 'r')
+                self.assertEqual(fid.mode, 'rb')
                 self.assertIs(fid.readable(), True)
                 self.assertIs(fid.writable(), False)
                 self.assertIs(fid.seekable(), True)
                 self.assertIs(fid.closed, False)
             self.assertIs(fid.closed, True)
             self.assertEqual(fid.name, fname)
-            self.assertEqual(fid.mode, 'r')
+            self.assertEqual(fid.mode, 'rb')
             self.assertRaises(io.UnsupportedOperation, fid.fileno)
             self.assertRaises(ValueError, fid.readable)
             self.assertIs(fid.writable(), False)
@@ -1117,7 +1116,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # Because this is hard to verify by parsing the data as a zip, the raw
         # bytes are checked to ensure that they line up with the zip spec.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.5.3 for zip64 extra field
 
@@ -1188,7 +1187,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # in as a zip, this test looks at the raw bytes created to ensure that
         # the correct data has been generated.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.3.9 for the data descriptor
         #  - 4.5.3 for zip64 extra field
@@ -1308,12 +1307,16 @@ class AbstractWriterTests:
         fname = "somefile.txt"
         with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
             with zipfp.open(fname, 'w') as fid:
+                self.assertEqual(fid.name, fname)
                 self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertEqual(fid.mode, 'wb')
                 self.assertIs(fid.readable(), False)
                 self.assertIs(fid.writable(), True)
                 self.assertIs(fid.seekable(), False)
                 self.assertIs(fid.closed, False)
             self.assertIs(fid.closed, True)
+            self.assertEqual(fid.name, fname)
+            self.assertEqual(fid.mode, 'wb')
             self.assertRaises(io.UnsupportedOperation, fid.fileno)
             self.assertIs(fid.readable(), False)
             self.assertIs(fid.writable(), True)

@@ -398,12 +398,18 @@ class Stats:
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
-        total_increfs = self._data.get(
-            "Object interpreter increfs", 0
-        ) + self._data.get("Object increfs", 0)
-        total_decrefs = self._data.get(
-            "Object interpreter decrefs", 0
-        ) + self._data.get("Object decrefs", 0)
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
 
         result = {}
         for key, value in self._data.items():
@@ -736,9 +742,9 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section() -> Section:
+def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        opcode_stats = stats.get_opcode_stats("opcode")
+        opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
         total = opcode_stats.get_total_execution_count()
 
@@ -760,7 +766,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 Tier 1 instructions",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1232,6 +1238,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1292,7 +1299,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section(),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),

@@ -9,7 +9,7 @@ from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
-from libclinic.crenderdata import CRenderData, TemplateDict
+from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
     CConverter, legacy_converters, add_legacy_c_converter)
 
@@ -89,10 +89,24 @@ class char_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'c':
             return self.format_code("""
-                if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
+                if (PyBytes_Check({argname})) {{{{
+                    if (PyBytes_GET_SIZE({argname}) != 1) {{{{
+                        PyErr_Format(PyExc_TypeError,
+                            "{{name}}(): {displayname} must be a byte string of length 1, "
+                            "not a bytes object of length %zd",
+                            PyBytes_GET_SIZE({argname}));
+                        goto exit;
+                    }}}}
                     {paramname} = PyBytes_AS_STRING({argname})[0];
                 }}}}
-                else if (PyByteArray_Check({argname}) && PyByteArray_GET_SIZE({argname}) == 1) {{{{
+                else if (PyByteArray_Check({argname})) {{{{
+                    if (PyByteArray_GET_SIZE({argname}) != 1) {{{{
+                        PyErr_Format(PyExc_TypeError,
+                            "{{name}}(): {displayname} must be a byte string of length 1, "
+                            "not a bytearray object of length %zd",
+                            PyByteArray_GET_SIZE({argname}));
+                        goto exit;
+                    }}}}
                     {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
@@ -101,6 +115,7 @@ class char_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
+                displayname=displayname,
                 bad_argument=self.bad_argument(displayname, 'a byte string of length 1', limited_capi=limited_capi),
             )
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
@@ -272,12 +287,16 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    {bad_argument}
+                    PyErr_Format(PyExc_TypeError,
+                        "{{name}}(): {displayname} must be a unicode character, "
+                        "not a string of length %zd",
+                        PyUnicode_GET_LENGTH({argname}));
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
                 """,
                 argname=argname,
+                displayname=displayname,
                 bad_argument=self.bad_argument(displayname, 'a unicode character', limited_capi=limited_capi),
             )
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)

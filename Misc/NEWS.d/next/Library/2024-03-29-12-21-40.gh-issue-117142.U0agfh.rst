@@ -1,1 +1,0 @@
-Convert :mod:`!_ctypes` to multi-phase initialisation (:pep:`489`).

@@ -12,12 +12,16 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_descrobject.h"
+#include "pycore_stackref.h"
 
 #include "ceval_macros.h"
+
+#include "jit.h"
 
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
@@ -47,7 +51,7 @@
 do {  \
     OPT_STAT_INC(traces_executed);                \
     __attribute__((musttail))                     \
-    return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
@@ -64,13 +68,13 @@ do {  \
 
 #define PATCH_VALUE(TYPE, NAME, ALIAS)  \
     PyAPI_DATA(void) ALIAS;             \
-    TYPE NAME = (TYPE)(uint64_t)&ALIAS;
+    TYPE NAME = (TYPE)(uintptr_t)&ALIAS;
 
 #define PATCH_JUMP(ALIAS)                                    \
 do {                                                         \
     PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)&ALIAS)(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -79,13 +83,19 @@ do {                                                         \
 #undef JUMP_TO_ERROR
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
-_Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
+#undef WITHIN_STACK_BOUNDS
+#define WITHIN_STACK_BOUNDS() 1
+
+#define TIER_TWO 2
+
+__attribute__((preserve_none)) _Py_CODEUNIT *
+_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int uopcode = _JIT_OPCODE;
+    _Py_CODEUNIT *next_instr;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
 #if SIZEOF_VOID_P == 8
@@ -97,18 +107,13 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     uint64_t _operand = ((uint64_t)_operand_hi << 32) | _operand_lo;
 #endif
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
-    PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
 
     OPT_STAT_INC(uops_executed);
     UOP_STAT_INC(uopcode, execution_count);
 
-    // The actual instruction definitions (only one will be used):
-    if (uopcode == _JUMP_TO_TOP) {
-        CHECK_EVAL_BREAKER();
-        PATCH_JUMP(_JIT_TOP);
-    }
     switch (uopcode) {
-#include "executor_cases.c.h"
+        // The actual instruction definition gets inserted here:
+        CASE
         default:
             Py_UNREACHABLE();
     }
@@ -121,11 +126,7 @@ error_tier_two:
 exit_to_tier1:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
-exit_to_trace:
-    {
-        _PyExitData *exit = &current_executor->exits[_exit_index];
-        Py_INCREF(exit->executor);
-        tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_TWO(exit->executor);
-    }
+exit_to_tier1_dynamic:
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(frame->instr_ptr);
 }

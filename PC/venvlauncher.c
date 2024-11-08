@@ -223,7 +223,7 @@ find_home_value(const char *buffer, DWORD maxlen, const char **start, DWORD *len
         return 0;
     }
     for (const char *s = strstr(buffer, "home");
-         s && ((ptrdiff_t)s - (ptrdiff_t)buffer) < maxlen;
+         s && (size_t)((ptrdiff_t)s - (ptrdiff_t)buffer) < maxlen;
          s = strstr(s + 1, "\nhome")
     ) {
         if (*s == '\n') {
@@ -484,8 +484,8 @@ process(int argc, wchar_t ** argv)
 
     // We do not update argv[0] to point at the target runtime, and so we do not
     // pass through our original argv[0] in an environment variable.
-    //exitCode = smuggle_path();
-    //if (exitCode) return exitCode;
+    exitCode = smuggle_path();
+    if (exitCode) return exitCode;
 
     exitCode = launch(home_path, GetCommandLineW());
     return exitCode;

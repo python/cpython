@@ -1,4 +1,5 @@
 import unittest
+import inspect
 import pickle
 import sys
 from decimal import Decimal
@@ -346,6 +347,26 @@ class OperatorTestCase:
         self.assertFalse(operator.is_not(a, b))
         self.assertTrue(operator.is_not(a,c))
 
+    def test_is_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_none)
+        self.assertFalse(operator.is_none(a))
+        self.assertFalse(operator.is_none(b))
+        self.assertTrue(operator.is_none(c))
+
+    def test_is_not_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_not_none)
+        self.assertTrue(operator.is_not_none(a))
+        self.assertTrue(operator.is_not_none(b))
+        self.assertFalse(operator.is_not_none(c))
+
     def test_attrgetter(self):
         operator = self.module
         class A:
@@ -601,6 +622,28 @@ class OperatorTestCase:
             dunder = getattr(operator, '__' + name.strip('_') + '__', None)
             if dunder:
                 self.assertIs(dunder, orig)
+
+    def test_attrgetter_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.attrgetter)
+        self.assertEqual(str(sig), '(attr, /, *attrs)')
+        sig = inspect.signature(operator.attrgetter('x', 'z', 'y'))
+        self.assertEqual(str(sig), '(obj, /)')
+
+    def test_itemgetter_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.itemgetter)
+        self.assertEqual(str(sig), '(item, /, *items)')
+        sig = inspect.signature(operator.itemgetter(2, 3, 5))
+        self.assertEqual(str(sig), '(obj, /)')
+
+    def test_methodcaller_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.methodcaller)
+        self.assertEqual(str(sig), '(name, /, *args, **kwargs)')
+        sig = inspect.signature(operator.methodcaller('foo', 2, y=3))
+        self.assertEqual(str(sig), '(obj, /)')
+
 
 class PyOperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = py_operator

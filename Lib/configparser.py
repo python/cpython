@@ -143,23 +143,24 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
-from collections.abc import MutableMapping
+# Do not import dataclasses; overhead is unacceptable (gh-117703)
+
+from collections.abc import Iterable, MutableMapping
 from collections import ChainMap as _ChainMap
 import contextlib
-from dataclasses import dataclass, field
 import functools
 import io
 import itertools
 import os
 import re
 import sys
-from typing import Iterable
+import types
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "MultilineContinuationError",
+           "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -361,6 +362,14 @@ class MultilineContinuationError(ParsingError):
         self.line = line
         self.args = (filename, lineno, line)
 
+
+class UnnamedSectionDisabledError(Error):
+    """Raised when an attempt to use UNNAMED_SECTION is made with the
+    feature disabled."""
+    def __init__(self):
+        Error.__init__(self, "Support for UNNAMED_SECTION is disabled.")
+
+
 class _UnnamedSection:
 
     def __repr__(self):
@@ -538,21 +547,18 @@ class ExtendedInterpolation(Interpolation):
                     "found: %r" % (rest,))
 
 
-@dataclass
 class _ReadState:
-    elements_added : set[str] = field(default_factory=set)
+    elements_added : set[str]
     cursect : dict[str, str] | None = None
     sectname : str | None = None
     optname : str | None = None
     lineno : int = 0
     indent_level : int = 0
-    errors : list[ParsingError] = field(default_factory=list)
+    errors : list[ParsingError]
 
-
-@dataclass
-class _Prefixes:
-    full : Iterable[str]
-    inline : Iterable[str]
+    def __init__(self):
+        self.elements_added = set()
+        self.errors = list()
 
 
 class _Line(str):
@@ -560,7 +566,7 @@ class _Line(str):
     def __new__(cls, val, *args, **kwargs):
         return super().__new__(cls, val)
 
-    def __init__(self, val, prefixes: _Prefixes):
+    def __init__(self, val, prefixes):
         self.prefixes = prefixes
 
     @functools.cached_property
@@ -653,7 +659,7 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._prefixes = _Prefixes(
+        self._prefixes = types.SimpleNamespace(
             full=tuple(comment_prefixes or ()),
             inline=tuple(inline_comment_prefixes or ()),
         )
@@ -693,6 +699,10 @@ class RawConfigParser(MutableMapping):
         """
         if section == self.default_section:
             raise ValueError('Invalid section name: %r' % section)
+
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise UnnamedSectionDisabledError
 
         if section in self._sections:
             raise DuplicateSectionError(section)
@@ -959,7 +969,7 @@ class RawConfigParser(MutableMapping):
                                 self._sections[section].items(), d)
 
     def _write_section(self, fp, section_name, section_items, delimiter, unnamed=False):
-        """Write a single section to the specified `fp'."""
+        """Write a single section to the specified 'fp'."""
         if not unnamed:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
@@ -1205,20 +1215,20 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_value_types(self, *, section="", option="", value=""):
-        """Raises a TypeError for non-string values.
+        """Raises a TypeError for illegal non-string values.
 
-        The only legal non-string value if we allow valueless
-        options is None, so we need to check if the value is a
-        string if:
-        - we do not allow valueless options, or
-        - we allow valueless options but the value is not None
+        Legal non-string values are UNNAMED_SECTION and falsey values if
+        they are allowed.
 
         For compatibility reasons this method is not used in classic set()
         for RawConfigParsers. It is invoked in every case for mapping protocol
         access and in ConfigParser.set().
         """
-        if not isinstance(section, str):
-            raise TypeError("section names must be strings")
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise UnnamedSectionDisabledError
+        elif not isinstance(section, str):
+            raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
         if not self._allow_no_value or value:

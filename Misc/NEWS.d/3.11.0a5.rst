@@ -486,8 +486,8 @@ Use ``dis.Positions`` in ``dis.Instruction`` instead of a regular ``tuple``.
 .. nonce: geS-aP
 .. section: Library
 
-:mod:`pdb` now gracefully handles ``help`` when :attr:`__doc__` is missing,
-for example when run with pregenerated optimized ``.pyc`` files.
+:mod:`pdb` now gracefully handles ``help`` when :attr:`~module.__doc__` is
+missing, for example when run with pregenerated optimized ``.pyc`` files.
 
 ..
 
@@ -748,7 +748,7 @@ tests to use ``support.infinite_recursion()``. Patch by Victor Stinner.
 
 Skip test_builtin PTY tests on non-ASCII characters if the readline module
 is loaded. The readline module changes input() behavior, but test_builtin is
-not intented to test the readline module. Patch by Victor Stinner.
+not intended to test the readline module. Patch by Victor Stinner.
 
 ..
 

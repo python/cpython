@@ -506,7 +506,7 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_SETTABLE: mask of owner changable flags\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
 UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
@@ -679,6 +679,7 @@ stat_exec(PyObject *module)
 static PyModuleDef_Slot stat_slots[] = {
     {Py_mod_exec, stat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

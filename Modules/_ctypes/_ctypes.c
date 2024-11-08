@@ -320,7 +320,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
   indicator set.  If called with a suffix of NULL the error indicator must
   already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string(const char *prefix, const char *suffix)
 {
     size_t len;
@@ -352,7 +352,7 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
   Returns NULL on failure, with the error indicator set.  If called with
   a suffix of NULL the error indicator must already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
                                        const char *prefix, const char *suffix)
 {
@@ -454,20 +454,17 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            Py_VISIT(info->proto);
-            Py_VISIT(info->argtypes);
-            Py_VISIT(info->converters);
-            Py_VISIT(info->restype);
-            Py_VISIT(info->checker);
-            Py_VISIT(info->module);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        Py_VISIT(info->proto);
+        Py_VISIT(info->argtypes);
+        Py_VISIT(info->converters);
+        Py_VISIT(info->restype);
+        Py_VISIT(info->checker);
+        Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
@@ -488,15 +485,12 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        ctype_clear_stginfo(info);
     }
     return PyType_Type.tp_clear(self);
 }
@@ -504,22 +498,20 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            PyMem_Free(info->ffi_type_pointer.elements);
-            info->ffi_type_pointer.elements = NULL;
-            PyMem_Free(info->format);
-            info->format = NULL;
-            PyMem_Free(info->shape);
-            info->shape = NULL;
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(NULL);  // NULL avoids segfault here
     }
+    if (info) {
+        PyMem_Free(info->ffi_type_pointer.elements);
+        info->ffi_type_pointer.elements = NULL;
+        PyMem_Free(info->format);
+        info->format = NULL;
+        PyMem_Free(info->shape);
+        info->shape = NULL;
+        ctype_clear_stginfo(info);
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
@@ -568,6 +560,7 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyType_Slot ctype_type_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
@@ -577,7 +570,7 @@ static PyType_Slot ctype_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pyctype_type_spec = {
+PyType_Spec pyctype_type_spec = {
     .name = "_ctypes.CType_Type",
     .basicsize = -(Py_ssize_t)sizeof(StgInfo),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
@@ -671,9 +664,6 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     if (!info) {
         Py_DECREF(attrdict);
         return -1;
-    }
-    if (!isStruct) {
-        info->flags |= TYPEFLAG_HASUNION;
     }
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
@@ -1077,32 +1067,31 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(st, self, length);
 }
 
+static int
+_structunion_setattro(PyObject *self, PyObject *key, PyObject *value, int is_struct)
+{
+    /* XXX Should we disallow deleting _fields_? */
+    if (PyUnicode_Check(key)
+            && _PyUnicode_EqualToASCIIString(key, "_fields_"))
+    {
+        if (PyCStructUnionType_update_stginfo(self, value, is_struct) < 0) {
+            return -1;
+        }
+    }
+
+    return PyType_Type.tp_setattro(self, key, value);
+}
 
 static int
 PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (value && PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 1);
-    return 0;
+    return _structunion_setattro(self, key, value, 1);
 }
-
 
 static int
 UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyObject_GenericSetAttr(self, key, value))
-        return -1;
-
-    if (PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 0);
-    return 0;
+    return _structunion_setattro(self, key, value, 0);
 }
 
 static PyType_Slot pycstruct_type_slots[] = {
@@ -1614,7 +1603,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (_PyLong_Sign(length_attr) == -1) {
+    if (_PyLong_IsNegative((PyLongObject *)length_attr)) {
         Py_DECREF(length_attr);
         PyErr_SetString(PyExc_ValueError,
                         "The '_length_' attribute must not be negative");
@@ -1758,7 +1747,11 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
+#else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
+#endif
 
 /*[clinic input]
 _ctypes.c_wchar_p.from_param as c_wchar_p_from_param
@@ -2234,7 +2227,18 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stginfo->ffi_type_pointer = *fmt->pffi_type;
+    if (!fmt->pffi_type->elements) {
+        stginfo->ffi_type_pointer = *fmt->pffi_type;
+    }
+    else {
+        const size_t els_size = sizeof(fmt->pffi_type->elements);
+        stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
+        stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
+        stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
+        memcpy(stginfo->ffi_type_pointer.elements,
+               fmt->pffi_type->elements, els_size);
+    }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -2296,9 +2300,14 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             if (!meth) {
                 return -1;
             }
-            x = PyDict_SetItemString(((PyTypeObject*)self)->tp_dict,
-                                     ml->ml_name,
-                                     meth);
+            PyObject *name = PyUnicode_FromString(ml->ml_name);
+            if (name == NULL) {
+                Py_DECREF(meth);
+                return -1;
+            }
+            PyUnicode_InternInPlace(&name);
+            x = PyDict_SetItem(((PyTypeObject*)self)->tp_dict, name, meth);
+            Py_DECREF(name);
             Py_DECREF(meth);
             if (x == -1) {
                 return -1;
@@ -2416,7 +2425,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
         return NULL;
     }
     if (as_parameter) {
-        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
             return NULL;
@@ -2522,6 +2531,10 @@ converters_from_argtypes(ctypes_state *st, PyObject *ob)
             return -1;
         }
 
+        // TYPEFLAG_HASUNION and TYPEFLAG_HASBITFIELD used to be set
+        // if there were any unions/bitfields;
+        // if the check is re-enabled we either need to loop here or
+        // restore the flag
         if (stginfo != NULL) {
             if (stginfo->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
@@ -4082,7 +4095,7 @@ _build_callargs(ctypes_state *st, PyCFuncPtrObject *self, PyObject *argtypes,
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
             (*pnumretvals)++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 0:
         case PARAMFLAG_FIN:
             /* 'in' parameter.  Copy it from inargs. */
@@ -4719,7 +4732,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -4743,7 +4756,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -5405,7 +5418,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
@@ -5425,7 +5438,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);
@@ -5768,7 +5781,7 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    CREATE_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
+    MOD_ADD_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
 
     /*************************************************
      *
@@ -5947,7 +5960,8 @@ module_free(void *module)
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _ctypes_mod_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

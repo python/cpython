@@ -3,7 +3,7 @@
 : ${HOST:?}  # GNU target triplet
 
 # You may also override the following:
-: ${api_level:=21}  # Minimum Android API level the build will run on
+: ${api_level:=24}  # Minimum Android API level the build will run on
 : ${PREFIX:-}  # Path in which to find required libraries
 
 
@@ -24,11 +24,11 @@ fail() {
 # * https://android.googlesource.com/platform/ndk/+/ndk-rXX-release/docs/BuildSystemMaintainers.md
 #   where XX is the NDK version. Do a diff against the version you're upgrading from, e.g.:
 #   https://android.googlesource.com/platform/ndk/+/ndk-r25-release..ndk-r26-release/docs/BuildSystemMaintainers.md
-ndk_version=26.2.11394342
+ndk_version=27.1.12297006
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
 if ! [ -e $ndk ]; then
-    log "Installing NDK: this may take several minutes"
+    log "Installing NDK - this may take several minutes"
     yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;$ndk_version"
 fi
 
@@ -58,8 +58,14 @@ for path in "$AR" "$AS" "$CC" "$CXX" "$LD" "$NM" "$RANLIB" "$READELF" "$STRIP"; 
     fi
 done
 
-export CFLAGS=""
-export LDFLAGS="-Wl,--build-id=sha1 -Wl,--no-rosegment"
+export CFLAGS="-D__BIONIC_NO_PAGE_SIZE_MACRO"
+export LDFLAGS="-Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,-z,max-page-size=16384"
+
+# Unlike Linux, Android does not implicitly use a dlopened library to resolve
+# relocations in subsequently-loaded libraries, even if RTLD_GLOBAL is used
+# (https://github.com/android/ndk/issues/1244). So any library that fails to
+# build with this flag, would also fail to load at runtime.
+LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 
 # Many packages get away with omitting -lm on Linux, but Android is stricter.
 LDFLAGS="$LDFLAGS -lm"
@@ -78,6 +84,10 @@ if [ -n "${PREFIX:-}" ]; then
     export PKG_CONFIG="pkg-config --define-prefix"
     export PKG_CONFIG_LIBDIR="$abs_prefix/lib/pkgconfig"
 fi
+
+# When compiling C++, some build systems will combine CFLAGS and CXXFLAGS, and some will
+# use CXXFLAGS alone.
+export CXXFLAGS=$CFLAGS
 
 # Use the same variable name as conda-build
 if [ $(uname) = "Darwin" ]; then

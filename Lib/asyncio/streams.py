@@ -591,17 +591,17 @@ class StreamReader:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
 
-        The ``separator`` may also be an iterable of separators. In this
+        The ``separator`` may also be a tuple of separators. In this
         case the return value will be the shortest possible that has any
         separator as the suffix. For the purposes of LimitOverrunError,
         the shortest possible separator is considered to be the one that
         matched.
         """
-        if isinstance(separator, bytes):
-            separator = [separator]
-        else:
-            # Makes sure shortest matches wins, and supports arbitrary iterables
+        if isinstance(separator, tuple):
+            # Makes sure shortest matches wins
             separator = sorted(separator, key=len)
+        else:
+            separator = [separator]
         if not separator:
             raise ValueError('Separator should contain at least one element')
         min_seplen = len(separator[0])

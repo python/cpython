@@ -473,7 +473,13 @@ _multiprocessing_SemLock___enter___impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock___enter__(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock___enter___impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock___enter___impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -518,7 +524,9 @@ _multiprocessing_SemLock___exit__(SemLockObject *self, PyObject *const *args, Py
     }
     exc_tb = args[2];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock___exit___impl(self, exc_type, exc_value, exc_tb);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -565,4 +573,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=713b597256233716 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dea36482d23a355f input=a9049054013a1b77]*/

@@ -3,7 +3,7 @@ import test.support
 from ctypes import (CDLL, PyDLL, ArgumentError,
                     Structure, Array, Union,
                     _Pointer, _SimpleCData, _CFuncPtr,
-                    POINTER, pointer, byref,
+                    POINTER, pointer, byref, sizeof,
                     c_void_p, c_char_p, c_wchar_p, py_object,
                     c_bool,
                     c_char, c_wchar,
@@ -87,19 +87,33 @@ class SimpleTypesTestCase(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             c_char.from_param(b"abc")
         self.assertEqual(str(cm.exception),
-                         "one character bytes, bytearray or integer expected")
+                         "one character bytes, bytearray, or an integer "
+                         "in range(256) expected, not bytes of length 3")
 
     def test_c_wchar(self):
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param("abc")
         self.assertEqual(str(cm.exception),
-                         "one character unicode string expected")
+                         "a unicode character expected, not a string of length 3")
 
+        with self.assertRaises(TypeError) as cm:
+            c_wchar.from_param("")
+        self.assertEqual(str(cm.exception),
+                         "a unicode character expected, not a string of length 0")
 
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param(123)
         self.assertEqual(str(cm.exception),
-                         "unicode string expected instead of int instance")
+                         "a unicode character expected, not instance of int")
+
+        if sizeof(c_wchar) < 4:
+            with self.assertRaises(TypeError) as cm:
+                c_wchar.from_param('\U0001f40d')
+            self.assertEqual(str(cm.exception),
+                             "the string '\\U0001f40d' cannot be converted to "
+                             "a single wchar_t character")
+
+
 
     def test_int_pointers(self):
         LPINT = POINTER(c_int)

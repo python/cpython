@@ -384,9 +384,9 @@ class StreamTests(test_utils.TestCase):
         with self.assertRaisesRegex(ValueError, 'Separator should be'):
             self.loop.run_until_complete(stream.readuntil(separator=b''))
         with self.assertRaisesRegex(ValueError, 'Separator should be'):
-            self.loop.run_until_complete(stream.readuntil(separator=[b'']))
+            self.loop.run_until_complete(stream.readuntil(separator=(b'',)))
         with self.assertRaisesRegex(ValueError, 'Separator should contain'):
-            self.loop.run_until_complete(stream.readuntil(separator=[]))
+            self.loop.run_until_complete(stream.readuntil(separator=()))
 
     def test_readuntil_multi_chunks(self):
         stream = asyncio.StreamReader(loop=self.loop)
@@ -475,15 +475,15 @@ class StreamTests(test_utils.TestCase):
 
         # Simple case
         stream.feed_data(b'line 1\nline 2\r')
-        data = self.loop.run_until_complete(stream.readuntil([b'\r', b'\n']))
+        data = self.loop.run_until_complete(stream.readuntil((b'\r', b'\n')))
         self.assertEqual(b'line 1\n', data)
-        data = self.loop.run_until_complete(stream.readuntil([b'\r', b'\n']))
+        data = self.loop.run_until_complete(stream.readuntil((b'\r', b'\n')))
         self.assertEqual(b'line 2\r', data)
         self.assertEqual(b'', stream._buffer)
 
         # First end position matches, even if that's a longer match
         stream.feed_data(b'ABCDEFG')
-        data = self.loop.run_until_complete(stream.readuntil([b'DEF', b'BCDE']))
+        data = self.loop.run_until_complete(stream.readuntil((b'DEF', b'BCDE')))
         self.assertEqual(b'ABCDE', data)
         self.assertEqual(b'FG', stream._buffer)
 
@@ -493,7 +493,7 @@ class StreamTests(test_utils.TestCase):
 
         with self.assertRaisesRegex(asyncio.LimitOverrunError,
                                     'is found') as cm:
-            self.loop.run_until_complete(stream.readuntil([b'A', b'ome dataA']))
+            self.loop.run_until_complete(stream.readuntil((b'A', b'ome dataA')))
 
         self.assertEqual(b'some dataA', stream._buffer)
 
@@ -504,13 +504,20 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.StreamReader(loop=self.loop)
         stream.feed_data(b'data')
 
-        readuntil_task = self.loop.create_task(stream.readuntil([b'A', b'long sep']))
+        readuntil_task = self.loop.create_task(stream.readuntil((b'A', b'long sep')))
         self.loop.call_soon(stream.feed_data, b'Z')
         self.loop.call_soon(stream.feed_data, b'Aaaa')
 
         data = self.loop.run_until_complete(readuntil_task)
         self.assertEqual(b'dataZA', data)
         self.assertEqual(b'aaa', stream._buffer)
+
+    def test_readuntil_bytearray(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(b'some data\r\n')
+        data = self.loop.run_until_complete(stream.readuntil(bytearray(b'\r\n')))
+        self.assertEqual(b'some data\r\n', data)
+        self.assertEqual(b'', stream._buffer)
 
     def test_readexactly_zero_or_less(self):
         # Read exact number of bytes (zero or less).
@@ -814,52 +821,6 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(messages, [])
         self.assertEqual(msg1, b"hello world 1!\n")
         self.assertEqual(msg2, b"hello world 2!\n")
-
-    @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
-    @requires_subprocess()
-    def test_read_all_from_pipe_reader(self):
-        # See asyncio issue 168.  This test is derived from the example
-        # subprocess_attach_read_pipe.py, but we configure the
-        # StreamReader's limit so that twice it is less than the size
-        # of the data writer.  Also we must explicitly attach a child
-        # watcher to the event loop.
-
-        code = """\
-import os, sys
-fd = int(sys.argv[1])
-os.write(fd, b'data')
-os.close(fd)
-"""
-        rfd, wfd = os.pipe()
-        args = [sys.executable, '-c', code, str(wfd)]
-
-        pipe = open(rfd, 'rb', 0)
-        reader = asyncio.StreamReader(loop=self.loop, limit=1)
-        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
-        transport, _ = self.loop.run_until_complete(
-            self.loop.connect_read_pipe(lambda: protocol, pipe))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(self.loop)
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(watcher)
-            create = asyncio.create_subprocess_exec(
-                *args,
-                pass_fds={wfd},
-            )
-            proc = self.loop.run_until_complete(create)
-            self.loop.run_until_complete(proc.wait())
-        finally:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
-
-        os.close(wfd)
-        data = self.loop.run_until_complete(reader.read(-1))
-        self.assertEqual(data, b'data')
 
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
@@ -1238,6 +1199,24 @@ os.close(fd)
             asyncio.current_task().cancel()
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
+
+    def test_open_connection_happy_eyeball_refcycles(self):
+        port = socket_helper.find_unused_port()
+        async def main():
+            exc = None
+            try:
+                await asyncio.open_connection(
+                    host="localhost",
+                    port=port,
+                    happy_eyeballs_delay=0.25,
+                )
+            except* OSError as excs:
+                # can't use assertRaises because that clears frames
+                exc = excs.exceptions[0]
+            self.assertIsNotNone(exc)
+            self.assertListEqual(gc.get_referrers(exc), [main_coro])
+        main_coro = main()
+        asyncio.run(main_coro)
 
 
 if __name__ == '__main__':

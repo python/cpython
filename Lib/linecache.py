@@ -70,7 +70,7 @@ def checkcache(filename=None):
             return
         try:
             stat = os.stat(fullname)
-        except OSError:
+        except (OSError, ValueError):
             cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
@@ -78,16 +78,15 @@ def checkcache(filename=None):
 
 
 def updatecache(filename, module_globals=None):
-    # These imports are not at top level because linecache is in the critical
-    # path of the interpreter startup and importing os and sys take a lot of time
-    # and slow down the startup sequence.
-    import os
-    import sys
-
     """Update a cache entry and return its list of lines.
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
 
+    # These imports are not at top level because linecache is in the critical
+    # path of the interpreter startup and importing os and sys take a lot of time
+    # and slows down the startup sequence.
+    import os
+    import sys
     import tokenize
 
     if filename in cache:
@@ -136,10 +135,12 @@ def updatecache(filename, module_globals=None):
             try:
                 stat = os.stat(fullname)
                 break
-            except OSError:
+            except (OSError, ValueError):
                 pass
         else:
             return []
+    except ValueError:  # may be raised by os.stat()
+        return []
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()

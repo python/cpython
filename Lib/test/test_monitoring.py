@@ -3,15 +3,18 @@
 import collections
 import dis
 import functools
+import math
 import operator
 import sys
 import textwrap
 import types
 import unittest
-import asyncio
-from test import support
+
+import test.support
 from test.support import requires_specialization, script_helper
 from test.support.import_helper import import_module
+
+_testcapi = test.support.import_helper.import_module("_testcapi")
 
 PAIR = (0,1)
 
@@ -43,10 +46,14 @@ def nth_line(func, offset):
 
 class MonitoringBasicTest(unittest.TestCase):
 
+    def tearDown(self):
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
     def test_has_objects(self):
         m = sys.monitoring
         m.events
         m.use_tool_id
+        m.clear_tool_id
         m.free_tool_id
         m.get_tool
         m.get_events
@@ -73,6 +80,43 @@ class MonitoringBasicTest(unittest.TestCase):
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         with self.assertRaises(ValueError):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.CALL)
+
+    def test_clear(self):
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, lambda *args: events.append(args))
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        def f():
+            a = 1
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+
+        f()
+        sys.monitoring.clear_tool_id(TEST_TOOL)
+        f()
+
+        # the first f() should trigger a PY_START and a LINE event
+        # the second f() after clear_tool_id should not trigger any event
+        # the callback function should be cleared as well
+        self.assertEqual(len(events), 2)
+        callback = sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+        self.assertIs(callback, None)
+
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        f()
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        f()
+        # the first f() should trigger a LINE event, and even if we use the
+        # tool id immediately after freeing it, the second f() should not
+        # trigger any event
+        self.assertEqual(len(events), 1)
+        sys.monitoring.free_tool_id(TEST_TOOL)
 
 
 class MonitoringTestBase:
@@ -652,6 +696,17 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
         self.check_lines(func2, [1,2,3,4,5,6])
 
+    def test_generator_with_line(self):
+
+        def f():
+            def a():
+                yield
+            def b():
+                yield from a()
+            next(b())
+
+        self.check_lines(f, [1,3,5,4,2,4])
+
 class TestDisable(MonitoringTestBase, unittest.TestCase):
 
     def gen(self, cond):
@@ -730,8 +785,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):
@@ -818,20 +871,43 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
-    # gh-116090: This test doesn't really require specialization, but running
-    # it without specialization exposes a monitoring bug.
-    @requires_specialization
     def test_implicit_stop_iteration(self):
+        """Generators are documented as raising a StopIteration
+           when they terminate.
+           However, we don't do that if we can avoid it, for speed.
+           sys.monitoring handles that by injecting a STOP_ITERATION
+           event when we would otherwise have skip the RAISE event.
+           This test checks that both paths record an equivalent event.
+           """
 
         def gen():
             yield 1
             return 2
 
-        def implicit_stop_iteration():
-            for _ in gen():
+        def implicit_stop_iteration(iterator=None):
+            if iterator is None:
+                iterator = gen()
+            for _ in iterator:
                 pass
 
-        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+        recorders=(ExceptionRecorder, StopiterationRecorder,)
+        expected = [("raise", StopIteration)]
+
+        # Make sure that the loop is unspecialized, and that it will not
+        # re-specialize immediately, so that we can we can test the
+        # unspecialized version of the loop first.
+        # Note: this assumes that we don't specialize loops over sets.
+        implicit_stop_iteration(set(range(100)))
+
+        # This will record a RAISE event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
+
+        # Now specialize, so that we see a STOP_ITERATION event.
+        for _ in range(100):
+            implicit_stop_iteration()
+
+        # This will record a STOP_ITERATION event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
     initial = [
         ("raise", ZeroDivisionError),
@@ -1129,6 +1205,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_c_call(self):
@@ -1153,6 +1230,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 40),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
+            ('instruction', 'func2', 46),
             ('line', 'get_events', 11)])
 
     def test_try_except(self):
@@ -1186,6 +1264,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func3', 30),
             ('instruction', 'func3', 32),
             ('instruction', 'func3', 34),
+            ('instruction', 'func3', 36),
             ('line', 'get_events', 11)])
 
     def test_with_restart(self):
@@ -1206,6 +1285,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
         sys.monitoring.restart_events()
@@ -1222,6 +1302,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_turn_off_only_instruction(self):
@@ -1409,9 +1490,27 @@ class BranchRecorder(JumpRecorder):
 
 
 
+class JumpOffsetRecorder:
+
+    event_type = E.JUMP
+    name = "jump"
+
+    def __init__(self, events, offsets=False):
+        self.events = events
+
+    def __call__(self, code, from_, to):
+        self.events.append((self.name, code.co_name, from_, to))
+
+class BranchOffsetRecorder(JumpOffsetRecorder):
+
+    event_type = E.BRANCH
+    name = "branch"
+
+
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
 FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
+BRANCH_OFFSET_RECORDERS = BranchOffsetRecorder,
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1501,6 +1600,24 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('return', 'func', None),
             ('line', 'get_events', 11)])
 
+    def test_while_offset_consistency(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        in_loop = ('branch', 'foo', 10, 14)
+        exit_loop = ('branch', 'foo', 10, 30)
+        self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
+            in_loop,
+            in_loop,
+            in_loop,
+            in_loop,
+            exit_loop])
+
+
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
 
@@ -1561,7 +1678,7 @@ class TestLoadSuperAttr(CheckEvents):
             ('line', 'method', 2),
             ('line', 'method', 3),
             ('line', 'method', 2),
-            ('call', 'method', 1),
+            ('call', 'method', d["b"]),
             ('line', 'method', 1),
             ('line', 'method', 1),
             ('line', 'get_events', 11),
@@ -1826,20 +1943,37 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         self.assertEqual(call_data[0], (f, 1))
         self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
 
+    def test_instruction_explicit_callback(self):
+        # gh-122247
+        # Calling the instruction event callback explicitly should not
+        # crash CPython
+        def callback(code, instruction_offset):
+            pass
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.register_callback(0, sys.monitoring.events.INSTRUCTION, callback)
+        sys.monitoring.set_events(0, sys.monitoring.events.INSTRUCTION)
+        callback(None, 0)  # call the *same* handler while it is registered
+        sys.monitoring.restart_events()
+        sys.monitoring.set_events(0, 0)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
         _testinternalcapi = import_module("_testinternalcapi")
-        self.old_opt = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.new_counter_optimizer()
-        _testinternalcapi.set_optimizer(opt)
+        if hasattr(_testinternalcapi, "get_optimizer"):
+            self.old_opt = _testinternalcapi.get_optimizer()
+            opt = _testinternalcapi.new_counter_optimizer()
+            _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
         super(TestOptimizer, self).tearDown()
         import _testinternalcapi
-        _testinternalcapi.set_optimizer(self.old_opt)
+        if hasattr(_testinternalcapi, "get_optimizer"):
+            _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
         def test_func(x):
@@ -1885,5 +2019,201 @@ class TestMonitoringAtShutdown(unittest.TestCase):
         # gh-115832: An object destructor running during the final GC of
         # interpreter shutdown triggered an infinite loop in the
         # instrumentation code.
-        script = support.findfile("_test_monitoring_shutdown.py")
+        script = test.support.findfile("_test_monitoring_shutdown.py")
         script_helper.run_test_script(script)
+
+
+class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
+
+    class Scope:
+        def __init__(self, *args):
+            self.args = args
+
+        def __enter__(self):
+            _testcapi.monitoring_enter_scope(*self.args)
+
+        def __exit__(self, *args):
+            _testcapi.monitoring_exit_scope()
+
+    def setUp(self):
+        super(TestCApiEventGeneration, self).setUp()
+
+        capi = _testcapi
+
+        self.codelike = capi.CodeLike(2)
+
+        self.cases = [
+            # (Event, function, *args)
+            ( 1, E.PY_START, capi.fire_event_py_start),
+            ( 1, E.PY_RESUME, capi.fire_event_py_resume),
+            ( 1, E.PY_YIELD, capi.fire_event_py_yield, 10),
+            ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
+            ( 2, E.CALL, capi.fire_event_call, callable, 40),
+            ( 1, E.JUMP, capi.fire_event_jump, 60),
+            ( 1, E.BRANCH, capi.fire_event_branch, 70),
+            ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
+            ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
+            ( 1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, 7),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, StopIteration(8)),
+        ]
+
+        self.EXPECT_RAISED_EXCEPTION = [E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED, E.PY_UNWIND]
+
+
+    def check_event_count(self, event, func, args, expected, callback_raises=None):
+        class Counter:
+            def __init__(self, callback_raises):
+                self.callback_raises = callback_raises
+                self.count = 0
+
+            def __call__(self, *args):
+                self.count += 1
+                if self.callback_raises:
+                    exc = self.callback_raises
+                    self.callback_raises = None
+                    raise exc
+
+        try:
+            counter = Counter(callback_raises)
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                try:
+                    func(*args)
+                except ValueError as e:
+                    self.assertIsInstance(expected, ValueError)
+                    self.assertEqual(str(e), str(expected))
+                    return
+                else:
+                    self.assertEqual(counter.count, expected)
+
+            prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, 0)
+                self.assertEqual(prev, counter)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_fire_event(self):
+        for expected, event, function, *args in self.cases:
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset) + tuple(args)
+                self.check_event_count(event, function, args_, expected)
+
+    def test_missing_exception(self):
+        for _, event, function, *args in self.cases:
+            if event not in self.EXPECT_RAISED_EXCEPTION:
+                continue
+            assert args and isinstance(args[-1], BaseException)
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset) + tuple(args[:-1]) + (None,)
+                evt = int(math.log2(event))
+                expected = ValueError(f"Firing event {evt} with no exception set")
+                self.check_event_count(event, function, args_, expected)
+
+    def test_fire_event_failing_callback(self):
+        for expected, event, function, *args in self.cases:
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset) + tuple(args)
+                exc = OSError(42)
+                with self.assertRaises(type(exc)):
+                    self.check_event_count(event, function, args_, expected,
+                                           callback_raises=exc)
+
+
+    CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
+                       E.EXCEPTION_HANDLED, E.PY_UNWIND }
+
+    def check_disable(self, event, func, args, expected):
+        try:
+            counter = CounterWithDisable()
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected)
+                counter.disable = True
+                if event in self.CANNOT_DISABLE:
+                    # use try-except rather then assertRaises to avoid
+                    # events from framework code
+                    try:
+                        counter.count = 0
+                        func(*args)
+                        self.assertEqual(counter.count, expected)
+                    except ValueError:
+                        pass
+                    else:
+                        self.Error("Expected a ValueError")
+                else:
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected)
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected - 1)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_disable_event(self):
+        for expected, event, function, *args in self.cases:
+            offset = 0
+            self.codelike = _testcapi.CodeLike(2)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, 0) + tuple(args)
+                self.check_disable(event, function, args_, expected)
+
+    def test_enter_scope_two_events(self):
+        try:
+            yield_counter = CounterWithDisable()
+            unwind_counter = CounterWithDisable()
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_YIELD, yield_counter)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, unwind_counter)
+            sys.monitoring.set_events(TEST_TOOL, E.PY_YIELD | E.PY_UNWIND)
+
+            yield_value = int(math.log2(E.PY_YIELD))
+            unwind_value = int(math.log2(E.PY_UNWIND))
+            cl = _testcapi.CodeLike(2)
+            common_args = (cl, 0)
+            with self.Scope(cl, yield_value, unwind_value):
+                yield_counter.count = 0
+                unwind_counter.count = 0
+
+                _testcapi.fire_event_py_unwind(*common_args, ValueError(42))
+                assert(yield_counter.count == 0)
+                assert(unwind_counter.count == 1)
+
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
+                assert(yield_counter.count == 1)
+                assert(unwind_counter.count == 1)
+
+                yield_counter.disable = True
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
+                assert(yield_counter.count == 2)
+                assert(unwind_counter.count == 1)
+
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
+                assert(yield_counter.count == 2)
+                assert(unwind_counter.count == 1)
+
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)

@@ -146,7 +146,7 @@ _Py_CalculateSuggestions(PyObject *dir,
     if (buffer == NULL) {
         return PyErr_NoMemory();
     }
-    for (int i = 0; i < dir_size; ++i) {
+    for (Py_ssize_t i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
         if (_PyUnicode_Equal(name, item)) {
             continue;

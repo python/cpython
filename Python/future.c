@@ -8,7 +8,7 @@
 static int
 future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
-    int i;
+    Py_ssize_t i;
 
     assert(s->kind == ImportFrom_kind);
 
@@ -41,12 +41,20 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset + 1);
+            PyErr_RangedSyntaxLocationObject(filename,
+                                             name->lineno,
+                                             name->col_offset + 1,
+                                             name->end_lineno,
+                                             name->end_col_offset + 1);
             return 0;
         } else {
             PyErr_Format(PyExc_SyntaxError,
                          UNDEFINED_FUTURE_FEATURE, feature);
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset + 1);
+            PyErr_RangedSyntaxLocationObject(filename,
+                                             name->lineno,
+                                             name->col_offset + 1,
+                                             name->end_lineno,
+                                             name->end_col_offset + 1);
             return 0;
         }
     }
@@ -77,7 +85,7 @@ future_parse(_PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
          *  are another future statement and a doc string.
          */
 
-        if (s->kind == ImportFrom_kind) {
+        if (s->kind == ImportFrom_kind && s->v.ImportFrom.level == 0) {
             identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {
