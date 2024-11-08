@@ -82,6 +82,7 @@ class TestNullDlsym(unittest.TestCase):
                 # addresses as errors, we should get
                 # an error.
                 L.foo
+                self.fail("AttributeError should have been raised!")
 
             self.assertEqual(str(cm.exception),
                              "function 'foo' not found")
