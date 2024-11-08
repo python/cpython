@@ -7402,11 +7402,13 @@ uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     uint32_t v;
     do {
-        v = _Py_atomic_load_uint32_relaxed(&interp->dict_state.next_keys_version);
+        v = _Py_atomic_load_uint32_relaxed(
+            &interp->dict_state.next_keys_version);
         if (v == 0) {
             return 0;
         }
-    } while(!_Py_atomic_compare_exchange_uint32(&interp->dict_state.next_keys_version, &v, v + 1));
+    } while (!_Py_atomic_compare_exchange_uint32(
+        &interp->dict_state.next_keys_version, &v, v + 1));
 #else
     if (interp->dict_state.next_keys_version == 0) {
         return 0;
