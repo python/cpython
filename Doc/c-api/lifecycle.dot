@@ -1,7 +1,7 @@
 digraph "Life Events" {
    graph [
      fontname="svg"
-     fontsize=10.0
+     fontsize=12.0
      id="life_events_graph"
      layout="dot"
      ranksep=0.25
@@ -9,11 +9,11 @@ digraph "Life Events" {
    ]
    node [
      fontname="Courier"
-     fontsize=10.0
+     fontsize=12.0
    ]
    edge [
      fontname="Times-Italic"
-     fontsize=10.0
+     fontsize=12.0
    ]
 
    "start" [fontname="Times-Italic" shape=plain label=<  start  > style=invis]
