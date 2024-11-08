@@ -42,22 +42,23 @@ def pathname2url(p):
     # becomes
     #   ///C:/foo/bar/spam.foo
     import urllib.parse
+    p = p.replace('\\', '/')
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
-    if p[:4] == '\\\\?\\':
+    if p[:4] == '//?/':
         p = p[4:]
-        if p[:4].upper() == 'UNC\\':
-            p = '\\\\' + p[4:]
+        if p[:4].upper() == 'UNC/':
+            p = '//' + p[4:]
         elif p[1:2] != ':':
             raise OSError('Bad path: ' + p)
     if not ':' in p:
         # No drive specifier, just convert slashes and quote the name
-        return urllib.parse.quote(p.replace('\\', '/'))
+        return urllib.parse.quote(p)
     comp = p.split(':', maxsplit=2)
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
         raise OSError(error)
 
     drive = urllib.parse.quote(comp[0].upper())
-    tail = urllib.parse.quote(comp[1].replace('\\', '/'))
+    tail = urllib.parse.quote(comp[1])
     return '///' + drive + ':' + tail
