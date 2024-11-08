@@ -1256,6 +1256,37 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(g, "CONTAINS_OP")
 
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_unpack_sequence(self):
+        def f():
+            for _ in range(100):
+                a, b = 1, 2
+                self.assertEqual(a, 1)
+                self.assertEqual(b, 2)
+
+        f()
+        self.assert_specialized(f, "UNPACK_SEQUENCE_TWO_TUPLE")
+        self.assert_no_opcode(f, "UNPACK_SEQUENCE")
+
+        def g():
+            for _ in range(100):
+                a, = 1,
+                self.assertEqual(a, 1)
+
+        g()
+        self.assert_specialized(g, "UNPACK_SEQUENCE_TUPLE")
+        self.assert_no_opcode(g, "UNPACK_SEQUENCE")
+
+        def x():
+            for _ in range(100):
+                a, b = [1, 2]
+                self.assertEqual(a, 1)
+                self.assertEqual(b, 2)
+
+        x()
+        self.assert_specialized(x, "UNPACK_SEQUENCE_LIST")
+        self.assert_no_opcode(x, "UNPACK_SEQUENCE")
 
 if __name__ == "__main__":
     unittest.main()
