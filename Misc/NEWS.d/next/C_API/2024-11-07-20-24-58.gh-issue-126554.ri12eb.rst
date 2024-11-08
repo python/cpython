@@ -1,1 +1,1 @@
-Correctly handle NULL dlsym() values in ctypes.
+Fix rare crash upon system failure in :class:`ctypes.CDLL`.
