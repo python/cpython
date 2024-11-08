@@ -8,7 +8,7 @@
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _Py_SetImmortalUntracked
+#include "pycore_object.h"        // _Py_SetImmortalUntracked()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -84,8 +84,6 @@ typedef struct {
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
 #endif
-
-typedef struct futureiterobject futureiterobject;
 
 /* State of the _asyncio module */
 typedef struct {
