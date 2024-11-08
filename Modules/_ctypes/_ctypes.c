@@ -3811,8 +3811,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #else
     char *dlerr = dlerror();
     if (dlerr) {
-		// XXX: This assumes that UTF-8 is the default locale.
-		//      Investigate if this can cause problems.
+		  // XXX: This assumes that UTF-8 is the default locale.
+		  //      Investigate if this can cause problems.
         PyErr_SetString(PyExc_AttributeError, dlerr);
         Py_DECREF(ftuple);
         return NULL;
