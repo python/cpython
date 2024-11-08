@@ -2464,7 +2464,6 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
-#ifdef Py_STATS
 static int
 unpack_sequence_fail_kind(PyObject *seq)
 {
@@ -2476,46 +2475,36 @@ unpack_sequence_fail_kind(PyObject *seq)
     }
     return SPEC_FAIL_OTHER;
 }
-#endif   // Py_STATS
 
 void
 _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg)
 {
     PyObject *seq = PyStackRef_AsPyObjectBorrow(seq_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[UNPACK_SEQUENCE] ==
            INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-    _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)(instr + 1);
     if (PyTuple_CheckExact(seq)) {
         if (PyTuple_GET_SIZE(seq) != oparg) {
-            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+            return;
         }
         if (PyTuple_GET_SIZE(seq) == 2) {
-            instr->op.code = UNPACK_SEQUENCE_TWO_TUPLE;
-            goto success;
+            specialize(instr, UNPACK_SEQUENCE_TWO_TUPLE);
+            return;
         }
-        instr->op.code = UNPACK_SEQUENCE_TUPLE;
-        goto success;
+        specialize(instr, UNPACK_SEQUENCE_TUPLE);
+        return;
     }
     if (PyList_CheckExact(seq)) {
         if (PyList_GET_SIZE(seq) != oparg) {
-            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+            return;
         }
-        instr->op.code = UNPACK_SEQUENCE_LIST;
-        goto success;
+        specialize(instr, UNPACK_SEQUENCE_LIST);
+        return;
     }
-    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
-failure:
-    STAT_INC(UNPACK_SEQUENCE, failure);
-    instr->op.code = UNPACK_SEQUENCE;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(UNPACK_SEQUENCE, success);
-    cache->counter = adaptive_counter_cooldown();
+    unspecialize(instr, unpack_sequence_fail_kind(seq));
 }
 
 #ifdef Py_STATS
