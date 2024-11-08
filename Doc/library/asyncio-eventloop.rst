@@ -59,9 +59,8 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
-   .. deprecated:: 3.12
-      Deprecation warning is emitted if there is no current event loop.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      Raises a :exc:`RuntimeError` if there is no current event loop.
 
 .. function:: set_event_loop(loop)
 

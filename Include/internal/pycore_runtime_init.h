@@ -50,8 +50,10 @@ extern PyTypeObject _PyExc_MemoryError;
             .next_id = -1, \
         }, \
         .xi = { \
-            .registry = { \
-                .global = 1, \
+            .data_lookup = { \
+                .registry = { \
+                    .global = 1, \
+                }, \
             }, \
         }, \
         /* A TSS key must be initialized with Py_tss_NEEDS_INIT \

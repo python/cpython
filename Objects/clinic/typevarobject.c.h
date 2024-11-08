@@ -49,7 +49,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[7];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -61,7 +61,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int contravariant = 0;
     int infer_variance = 0;
 
-    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -70,24 +70,23 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     name = fastargs[0];
-    constraints = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
+    if (fastargs[1]) {
+        bound = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
     if (fastargs[2]) {
-        bound = fastargs[2];
+        default_value = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[3]) {
-        default_value = fastargs[3];
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    if (fastargs[4]) {
-        covariant = PyObject_IsTrue(fastargs[4]);
+        covariant = PyObject_IsTrue(fastargs[3]);
         if (covariant < 0) {
             goto exit;
         }
@@ -95,8 +94,8 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[5]) {
-        contravariant = PyObject_IsTrue(fastargs[5]);
+    if (fastargs[4]) {
+        contravariant = PyObject_IsTrue(fastargs[4]);
         if (contravariant < 0) {
             goto exit;
         }
@@ -104,15 +103,21 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    infer_variance = PyObject_IsTrue(fastargs[6]);
+    infer_variance = PyObject_IsTrue(fastargs[5]);
     if (infer_variance < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    constraints = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    if (!constraints) {
+        goto exit;
+    }
     return_value = typevar_new_impl(type, name, constraints, bound, default_value, covariant, contravariant, infer_variance);
 
 exit:
+    /* Cleanup for constraints */
     Py_XDECREF(constraints);
+
     return return_value;
 }
 
@@ -695,4 +700,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=73b39e550e4e336c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32b9e6ced80d3fb0 input=a9049054013a1b77]*/

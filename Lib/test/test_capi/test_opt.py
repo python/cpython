@@ -7,7 +7,8 @@ import os
 
 import _opcode
 
-from test.support import script_helper, requires_specialization, import_helper
+from test.support import (script_helper, requires_specialization,
+                          import_helper, Py_GIL_DISABLED)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -34,6 +35,7 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
@@ -138,6 +140,7 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
@@ -219,6 +222,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
@@ -586,6 +590,7 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
@@ -1481,6 +1486,14 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_jit_error_pops(self):
+        """
+        Tests that the correct number of pops are inserted into the
+        exit stub
+        """
+        items = 17 * [None] + [[]]
+        with self.assertRaises(TypeError):
+            {item for item in items}
 
 if __name__ == "__main__":
     unittest.main()
