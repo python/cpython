@@ -168,14 +168,14 @@ class ForkServer(object):
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
     '''Run forkserver.'''
     if preload:
+        if sys_path is not None:
+            sys.path[:] = sys_path
         if '__main__' in preload and main_path is not None:
             process.current_process()._inheriting = True
             try:
                 spawn.import_main_path(main_path)
             finally:
                 del process.current_process()._inheriting
-        if sys_path is not None:
-            sys.path[:] = sys_path
         for modname in preload:
             try:
                 __import__(modname)
