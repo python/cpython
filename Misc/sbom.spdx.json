@@ -1682,14 +1682,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "cbd19d064b3136172cabe88ab1b51fe2ee5264fe8eaf4a586355533ffe97977d"
+          "checksumValue": "017202337a7052c64832c134d80777a7a868cefd056471052cb608f38c71b181"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/fc2e38f4d899ba28665c5b91caedaf35b3b37452.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/cea4e8eb5c81fa668c6240e8c5a334de8a86394f.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:fc2e38f4d899ba28665c5b91caedaf35b3b37452:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:cea4e8eb5c81fa668c6240e8c5a334de8a86394f:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1697,7 +1697,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "fc2e38f4d899ba28665c5b91caedaf35b3b37452"
+      "versionInfo": "cea4e8eb5c81fa668c6240e8c5a334de8a86394f"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",
