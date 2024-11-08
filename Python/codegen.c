@@ -768,7 +768,8 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
-    if ((FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) && SYMTABLE_ENTRY(c)->ste_annotations_used) {
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    if ((FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) && ste->ste_annotations_used) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
@@ -776,8 +777,8 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     }
     Py_ssize_t first_instr = 0;
     if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
-        PyObject *docstring = _PyAST_GetDocString(stmts);
-        if (docstring) {
+        if (ste->ste_has_docstring) {
+            PyObject *docstring = _PyAST_GetDocString(stmts);
             first_instr = 1;
             /* set docstring */
             assert(OPTIMIZATION_LEVEL(c) < 2);
@@ -1241,9 +1242,8 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
 
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     Py_ssize_t first_instr = 0;
-    PyObject *docstring = _PyAST_GetDocString(body);
-    assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
     if (ste->ste_has_docstring) {
+        PyObject *docstring = _PyAST_GetDocString(body);
         assert(docstring);
         first_instr = 1;
         docstring = _PyCompile_CleanDoc(docstring);
