@@ -180,7 +180,6 @@ class _Target(typing.Generic[_S, _R]):
             )
         return stencil_groups
 
-
     def build(
         self, out: pathlib.Path, *, comment: str = "", force: bool = False
     ) -> None:
