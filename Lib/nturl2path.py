@@ -52,7 +52,7 @@ def pathname2url(p):
         elif p[1:2] != ':':
             raise OSError('Bad path: ' + p)
     if not ':' in p:
-        # No drive specifier, just convert slashes and quote the name
+        # No drive specifier, just quote the name
         return urllib.parse.quote(p)
     comp = p.split(':', maxsplit=2)
     if len(comp) != 2 or len(comp[0]) > 1:
