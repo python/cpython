@@ -3,15 +3,9 @@
 #endif
 
 #include "Python.h"
+
 #include "hashlib.h"
-
 #include "_hacl/Hacl_HMAC.h"
-
-#include "clinic/hmacmodule.c.h"
-
-typedef void (*HACL_HMAC_digest_func_t)(uint8_t *out,
-                                        uint8_t *key, uint32_t keylen,
-                                        uint8_t *msg, uint32_t msglen);
 
 // HMAC underlying hash function static information.
 
@@ -94,6 +88,13 @@ typedef void (*HACL_HMAC_digest_func_t)(uint8_t *out,
 
 #define Py_hmac_hash_max_digest_size    64
 
+/*[clinic input]
+module _hmac
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
+
+#include "clinic/hmacmodule.c.h"
+
 /* Check that the buffer length fits on a uint32_t. */
 static inline int
 has_uint32_t_buffer_length(const Py_buffer *buffer)
@@ -137,11 +138,6 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
             Py_hmac_## HACL_HID ##_digest_size                      \
         );                                                          \
     } while (0)
-
-/*[clinic input]
-module _hmac
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
 
 /*[clinic input]
 _hmac.compute_md5
