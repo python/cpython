@@ -27,57 +27,77 @@ condition that must be true for *B* to occur after *A*.
 .. raw:: html
    :file: lifecycle.dot.svg
 
-Explanation:
+.. raw:: html
 
-* :c:member:`~PyTypeObject.tp_new` is called to create a new object.
-* :c:member:`~PyTypeObject.tp_alloc` is directly called by
-  :c:member:`~PyTypeObject.tp_new` to allocate the memory for the new object.
-* :c:member:`~PyTypeObject.tp_init` initializes the newly created object.
-* After :c:member:`!tp_init` completes, the object is ready to use.
-* Once the object becomes *unreachable* (either no references to the object
-  exist or the object is a member of a :term:`cyclic isolate`):
+   <script>
+       (() => {
+           const g = document.getElementById('life_events_graph');
+           const title = g.querySelector(':scope > title');
+           title.id = 'life-events-graph-title';
+           const svg = g.closest('svg');
+           svg.role = 'img';
+           svg.setAttribute('aria-describedby',
+                            'life-events-graph-description');
+           svg.setAttribute('aria-labelledby', 'life-events-graph-title');
+       })();
+   </script>
 
-  #. :c:member:`~PyTypeObject.tp_finalize` might be called [2]_ to finalize the
-     object
-  #. :c:member:`~PyTypeObject.tp_clear` might be called [2]_ to clear references
-     held by the object, if :c:member:`~PyTypeObject.tp_finalize` was previously
-     called
-  #. :c:member:`~PyTypeObject.tp_dealloc` is called to destroy the object
+.. container::
+   :name: life-events-graph-description
 
-* The :c:member:`~PyTypeObject.tp_finalize` function can optionally add a
-  reference to the object, *resurrecting* it and preventing its pending
-  destruction.  Python may or may not call :c:member:`!tp_finalize` a second
-  time on a resurrected object; currently :term:`CPython` never calls an
-  object's :c:member:`!tp_finalize` twice.
-* :c:member:`~PyTypeObject.tp_dealloc` can optionally call
-  :c:member:`~PyTypeObject.tp_finalize` via
-  :c:func:`PyObject_CallFinalizerFromDealloc` if it wishes to reuse that code to
-  help with object destruction.  This is recommended because it guarantees that
-  :c:member:`!tp_finalize` is always called before destruction.
-* When :c:member:`~PyTypeObject.tp_dealloc` finishes object destruction, it
-  directly calls :c:member:`~PyTypeObject.tp_free` to deallocate the memory.
+   Explanation:
 
-If the object is marked as supporting garbage collection (the
-:c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
-:c:member:`~PyTypeObject.tp_flags`), the following events are also possible:
+   * :c:member:`~PyTypeObject.tp_new` is called to create a new object.
+   * :c:member:`~PyTypeObject.tp_alloc` is directly called by
+     :c:member:`~PyTypeObject.tp_new` to allocate the memory for the new
+     object.
+   * :c:member:`~PyTypeObject.tp_init` initializes the newly created object.
+   * After :c:member:`!tp_init` completes, the object is ready to use.
+   * Once the object becomes *unreachable* (either no references to the object
+     exist or the object is a member of a :term:`cyclic isolate`):
 
-* The garbage collector occasionally calls
-  :c:member:`~PyTypeObject.tp_traverse` to identify :term:`cyclic isolates
-  <cyclic isolate>`.
-* When the garbage collector discovers a :term:`cyclic isolate`, it finalizes
-  one of the objects in the group by calling its
-  :c:member:`~PyTypeObject.tp_finalize` function.  This repeats until the
-  cyclic isolate doesn't exist or all of the objects have been finalized.
-* :c:member:`~PyTypeObject.tp_finalize` can resurrect the object by adding a
-  reference from outside the :term:`cyclic isolate`.  The new reference causes
-  the group of objects to no longer form a cyclic isolate (the reference cycle
-  may still exist, but the objects are no longer isolated).
-* When the garbage collector discovers a :term:`cyclic isolate` and all of the
-  objects in the group have already been finalized, the garbage collector clears
-  one or more of the uncleared objects in the group (possibly concurrently) by
-  calling each's :c:member:`~PyTypeObject.tp_clear` function.  This repeats as
-  long as the cyclic isolate still exists and not all of the objects have been
-  cleared.
+     #. :c:member:`~PyTypeObject.tp_finalize` might be called [2]_ to finalize
+        the object
+     #. :c:member:`~PyTypeObject.tp_clear` might be called [2]_ to clear
+        references held by the object, if :c:member:`~PyTypeObject.tp_finalize`
+        was previously called
+     #. :c:member:`~PyTypeObject.tp_dealloc` is called to destroy the object
+
+   * The :c:member:`~PyTypeObject.tp_finalize` function can optionally add a
+     reference to the object, *resurrecting* it and preventing its pending
+     destruction.  Python may or may not call :c:member:`!tp_finalize` a second
+     time on a resurrected object; currently :term:`CPython` never calls an
+     object's :c:member:`!tp_finalize` twice.
+   * :c:member:`~PyTypeObject.tp_dealloc` can optionally call
+     :c:member:`~PyTypeObject.tp_finalize` via
+     :c:func:`PyObject_CallFinalizerFromDealloc` if it wishes to reuse that
+     code to help with object destruction.  This is recommended because it
+     guarantees that :c:member:`!tp_finalize` is always called before
+     destruction.
+   * When :c:member:`~PyTypeObject.tp_dealloc` finishes object destruction, it
+     directly calls :c:member:`~PyTypeObject.tp_free` to deallocate the memory.
+
+   If the object is marked as supporting garbage collection (the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
+   :c:member:`~PyTypeObject.tp_flags`), the following events are also possible:
+
+   * The garbage collector occasionally calls
+     :c:member:`~PyTypeObject.tp_traverse` to identify :term:`cyclic isolates
+     <cyclic isolate>`.
+   * When the garbage collector discovers a :term:`cyclic isolate`, it
+     finalizes one of the objects in the group by calling its
+     :c:member:`~PyTypeObject.tp_finalize` function.  This repeats until the
+     cyclic isolate doesn't exist or all of the objects have been finalized.
+   * :c:member:`~PyTypeObject.tp_finalize` can resurrect the object by adding a
+     reference from outside the :term:`cyclic isolate`.  The new reference
+     causes the group of objects to no longer form a cyclic isolate (the
+     reference cycle may still exist, but the objects are no longer isolated).
+   * When the garbage collector discovers a :term:`cyclic isolate` and all of
+     the objects in the group have already been finalized, the garbage
+     collector clears one or more of the uncleared objects in the group
+     (possibly concurrently) by calling each's
+     :c:member:`~PyTypeObject.tp_clear` function.  This repeats as long as the
+     cyclic isolate still exists and not all of the objects have been cleared.
 
 
 Cyclic Isolate Destruction
