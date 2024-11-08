@@ -3414,7 +3414,7 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.color("black", "red")
-        >>> with turtle.poly():
+        >>> with turtle.fill():
         ...     turtle.circle(60)
         """
         self.begin_fill()

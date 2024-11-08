@@ -1326,7 +1326,7 @@ Filling
       >>> turtle.circle(80)
       >>> turtle.end_fill()
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. function:: begin_fill()
@@ -1703,8 +1703,8 @@ Special Turtle methods
 
 .. function:: poly()
 
-   Record the vertices of a polygon drawn in the ``with turtle.poly():`` block.  The first and last vertices will be
-   connected.
+   Record the vertices of a polygon drawn in the ``with turtle.poly():`` block.
+   The first and last vertices will be connected.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1714,7 +1714,7 @@ Special Turtle methods
       ...     turtle.right(60)
       ...     turtle.forward(100)
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. function:: begin_poly()
 
@@ -2010,7 +2010,8 @@ Animation control
       ...         dist += 2
 
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
+
 
 .. function:: delay(delay=None)
 
