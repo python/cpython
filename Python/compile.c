@@ -129,7 +129,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
         return ERROR;
     }
-    c->c_st = _PySymtable_Build(mod, filename, &c->c_future, c->c_optimize);
+    c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
     if (c->c_st == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_SystemError, "no symtable");

@@ -759,15 +759,6 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int
-codegen_is_stmt_docstring(stmt_ty st) {
-    if (st->kind != Expr_kind) {
-        return 0;
-    }
-    expr_ty e = st->v.Expr.value;
-    return (e->kind == Constant_kind) && PyUnicode_CheckExact(e->v.Constant.value);
-}
-
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
@@ -787,25 +778,19 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
         PyObject *docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
-            if (SYMTABLE_ENTRY(c)->ste_has_docstring) {
-                assert(OPTIMIZATION_LEVEL(c) < 2);
-                first_instr = 1;
-                PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-                if (cleandoc == NULL) {
-                    return ERROR;
-                }
-                stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-                assert(st->kind == Expr_kind);
-                location loc = LOC(st->v.Expr.value);
-                ADDOP_LOAD_CONST(c, loc, cleandoc);
-                Py_DECREF(cleandoc);
-                RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
+            first_instr = 1;
+            /* set docstring */
+            assert(OPTIMIZATION_LEVEL(c) < 2);
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
             }
-            // Skip string literals
-            while ((first_instr < asdl_seq_LEN(stmts)) &&
-                    codegen_is_stmt_docstring(asdl_seq_GET(stmts, first_instr))) {
-                first_instr++;
-            }
+            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
+            RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
@@ -1257,24 +1242,18 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
-    if (docstring) {
-        if (ste->ste_has_docstring) {
-            assert(OPTIMIZATION_LEVEL(c) < 2);
-            first_instr = 1;
-            docstring = _PyCompile_CleanDoc(docstring);
-            if (docstring == NULL) {
-                _PyCompile_ExitScope(c);
-                return ERROR;
-            }
-            Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
-            Py_DECREF(docstring);
-            RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
+    assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
+    if (ste->ste_has_docstring) {
+        assert(docstring);
+        first_instr = 1;
+        docstring = _PyCompile_CleanDoc(docstring);
+        if (docstring == NULL) {
+            _PyCompile_ExitScope(c);
+            return ERROR;
         }
-        // Skip string literals
-        while ((first_instr < asdl_seq_LEN(body)) &&
-                codegen_is_stmt_docstring(asdl_seq_GET(body, first_instr))) {
-            first_instr++;
-        }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        Py_DECREF(docstring);
+        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
     }
 
     NEW_JUMP_TARGET_LABEL(c, start);

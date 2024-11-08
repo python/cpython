@@ -2184,10 +2184,6 @@ and classes for traversing abstract syntax trees:
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
 
-   .. versionchanged:: 3.14
-      :func:`ast.parse` now will **NOT** remove the docstring in nodes
-      when ``optimize=2``.
-
 
 .. function:: unparse(ast_obj)
 
