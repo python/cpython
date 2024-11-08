@@ -19,6 +19,13 @@ slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
 
+
+.. seealso::
+
+   Module :mod:`shelve`
+      Persistence module that can store keys and values of types other than bytes.
+
+
 .. exception:: error
 
    A tuple containing the exceptions that can be raised by each of the supported
@@ -134,12 +141,6 @@ then prints out the contents of the database::
        db['www.yahoo.com'] = 4
 
    # db is automatically closed when leaving the with statement.
-
-
-.. seealso::
-
-   Module :mod:`shelve`
-      Persistence module which stores non-string data.
 
 
 The individual submodules are described in the following sections.
