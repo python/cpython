@@ -2520,6 +2520,7 @@ PyTypeObject PySet_Type = {
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = set_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_SET,
 };
 
 /* frozenset object ********************************************************/
@@ -2610,6 +2611,7 @@ PyTypeObject PyFrozenSet_Type = {
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = frozenset_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FROZEN_SET,
 };
 
 
