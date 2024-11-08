@@ -1,10 +1,10 @@
 import os
 import pickle
 import re
-import unittest
-import unittest.mock
 import sys
 import tempfile
+import unittest
+import unittest.mock
 from contextlib import contextmanager
 from test import support
 from test.support import import_helper

@@ -1716,6 +1716,7 @@ Special Turtle methods
 
    .. versionadded:: next
 
+
 .. function:: begin_poly()
 
    Start recording the vertices of a polygon.  Current turtle position is first

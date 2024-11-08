@@ -442,11 +442,8 @@ turtle
 ------
 
 * Add context managers for :func:`turtle.fill`, :func:`turtle.poly` and
-  :func:`turtle.no_animation` for
-  :func:`turtle.begin_fill`/:func:`turtle.end_fill`,
-  :func:`turtle.begin_poly`/:func:`turtle.end_poly`, and
-  :func:`turtle.tracer(0)`/:func:`turtle.tracer(1)`, respectively.
-  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
+  :func:`turtle.no_animation` (Contributed by Marie Roald and Yngve Mardal Moe
+  in :gh:`126350`.)
 
 unicodedata
 -----------
