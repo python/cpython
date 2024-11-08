@@ -21,6 +21,8 @@
 
 #include "ceval_macros.h"
 
+#include "jit.h"
+
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
 
@@ -49,7 +51,7 @@
 do {  \
     OPT_STAT_INC(traces_executed);                \
     __attribute__((musttail))                     \
-    return ((jit_func)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
@@ -72,7 +74,7 @@ do {  \
 do {                                                         \
     PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)&ALIAS)(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -84,7 +86,9 @@ do {                                                         \
 #undef WITHIN_STACK_BOUNDS
 #define WITHIN_STACK_BOUNDS() 1
 
-_Py_CODEUNIT *
+#define TIER_TWO 2
+
+__attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
@@ -107,9 +111,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
     OPT_STAT_INC(uops_executed);
     UOP_STAT_INC(uopcode, execution_count);
 
-    // The actual instruction definitions (only one will be used):
     switch (uopcode) {
-#include "executor_cases.c.h"
+        // The actual instruction definition gets inserted here:
+        CASE
         default:
             Py_UNREACHABLE();
     }

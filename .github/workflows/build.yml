@@ -1,8 +1,5 @@
 name: Tests
 
-# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
-# it prevents to mark a job as mandatory. A PR cannot be merged if a job is
-# mandatory but not scheduled because of "paths-ignore".
 on:
   workflow_dispatch:
   push:
@@ -23,86 +20,19 @@ concurrency:
 
 jobs:
   check_source:
-    name: 'Check for source changes'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
-      run_tests: ${{ steps.check.outputs.run_tests }}
-      run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
-      run_cifuzz: ${{ steps.check.outputs.run_cifuzz }}
-      config_hash: ${{ steps.config_hash.outputs.hash }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check for source changes
-        id: check
-        run: |
-          if [ -z "$GITHUB_BASE_REF" ]; then
-            echo "run_tests=true" >> $GITHUB_OUTPUT
-          else
-            git fetch origin $GITHUB_BASE_REF --depth=1
-            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
-            # reliable than git diff "origin/$GITHUB_BASE_REF.." (2 dots),
-            # but it requires to download more commits (this job uses
-            # "git fetch --depth=1").
-            #
-            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) works with Git
-            # 2.26, but Git 2.28 is stricter and fails with "no merge base".
-            #
-            # git diff "origin/$GITHUB_BASE_REF.." (2 dots) should be enough on
-            # GitHub, since GitHub starts by merging origin/$GITHUB_BASE_REF
-            # into the PR branch anyway.
-            #
-            # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
-          fi
-
-          # Check if we should run hypothesis tests
-          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
-          echo $GIT_BRANCH
-          if $(echo "$GIT_BRANCH" | grep -q -w '3\.\(8\|9\|10\|11\)'); then
-            echo "Branch too old for hypothesis tests"
-            echo "run_hypothesis=false" >> $GITHUB_OUTPUT
-          else
-            echo "Run hypothesis tests"
-            echo "run_hypothesis=true" >> $GITHUB_OUTPUT
-          fi
-
-          # oss-fuzz maintains a configuration for fuzzing the main branch of
-          # CPython, so CIFuzz should be run only for code that is likely to be
-          # merged into the main branch; compatibility with older branches may
-          # be broken.
-          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
-          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
-            # The tests are pretty slow so they are executed only for PRs
-            # changing relevant files.
-            echo "Run CIFuzz tests"
-            echo "run_cifuzz=true" >> $GITHUB_OUTPUT
-          else
-            echo "Branch too old for CIFuzz tests; or no C files were changed"
-            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Compute hash for config cache key
-        id: config_hash
-        run: |
-          echo "hash=${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}" >> $GITHUB_OUTPUT
-      - name: Get a list of the changed documentation-related files
-        if: github.event_name == 'pull_request'
-        id: changed-docs-files
-        uses: Ana06/get-changed-files@v2.3.0
-        with:
-          filter: |
-            Doc/**
-            Misc/**
-            .github/workflows/reusable-docs.yml
-          format: csv  # works for paths with spaces
-      - name: Check for docs changes
-        if: >-
-          github.event_name == 'pull_request'
-          && steps.changed-docs-files.outputs.added_modified_renamed != ''
-        id: docs-changes
-        run: |
-          echo "run-docs=true" >> "${GITHUB_OUTPUT}"
+    name: Change detection
+    # To use boolean outputs from this job, parse them as JSON.
+    # Here's some examples:
+    #
+    #   if: fromJSON(needs.check_source.outputs.run-docs)
+    #
+    #   ${{
+    #        fromJSON(needs.check_source.outputs.run_tests)
+    #        && 'truthy-branch'
+    #        || 'falsy-branch'
+    #   }}
+    #
+    uses: ./.github/workflows/reusable-change-detection.yml
 
   check-docs:
     name: Docs
@@ -110,11 +40,55 @@ jobs:
     if: fromJSON(needs.check_source.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
+  check_autoconf_regen:
+    name: 'Check if Autoconf files are up to date'
+    # Don't use ubuntu-latest but a specific version to make the job
+    # reproducible: to get the same tools versions (autoconf, aclocal, ...)
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/python/autoconf:2024.10.16.11360930377
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+      - name: Install Git
+        run: |
+          apt install git -yq
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Runner image version
+        run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      - name: Check Autoconf and aclocal versions
+        run: |
+          grep "Generated by GNU Autoconf 2.71" configure
+          grep "aclocal 1.16.5" aclocal.m4
+          grep -q "runstatedir" configure
+          grep -q "PKG_PROG_PKG_CONFIG" aclocal.m4
+      - name: Regenerate autoconf files
+        # Same command used by Tools/build/regen-configure.sh ($AUTORECONF)
+        run: autoreconf -ivf -Werror
+      - name: Check for changes
+        run: |
+          git add -u
+          changes=$(git status --porcelain)
+          # Check for changes in regenerated files
+          if test -n "$changes"; then
+            echo "Generated files not up to date."
+            echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
+            echo "configure files must be regenerated with a specific version of autoconf."
+            echo "$changes"
+            echo ""
+            git diff --staged || true
+            exit 1
+          fi
+
   check_generated_files:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -124,7 +98,7 @@ jobs:
         with:
           python-version: '3.x'
       - name: Runner image version
-        run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+        run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
       - name: Restore config.cache
         uses: actions/cache@v4
         with:
@@ -134,24 +108,15 @@ jobs:
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure ccache action
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           save: false
-      - name: Check Autoconf and aclocal versions
-        run: |
-          grep "Generated by GNU Autoconf 2.71" configure
-          grep "aclocal 1.16.5" aclocal.m4
-          grep -q "runstatedir" configure
-          grep -q "PKG_PROG_PKG_CONFIG" aclocal.m4
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
           ./configure --config-cache --with-pydebug --enable-shared
-      - name: Regenerate autoconf files
-        # Same command used by Tools/build/regen-configure.sh ($AUTORECONF)
-        run: autoreconf -ivf -Werror
       - name: Build CPython
         run: |
           make -j4 regen-all
@@ -179,79 +144,101 @@ jobs:
         run: make check-c-globals
 
   build_windows:
-    name: 'Windows'
+    name: >-
+      Windows
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-windows.yml
-
-  build_windows_free_threading:
-    name: 'Windows (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: fromJSON(needs.check_source.outputs.run_tests)
+    strategy:
+      matrix:
+        arch:
+        - Win32
+        - x64
+        - arm64
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      free-threading: true
+      arch: ${{ matrix.arch }}
+      free-threading: ${{ matrix.free-threading }}
+
+  build_windows_msi:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Windows MSI${{ '' }}
+    needs: check_source
+    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    strategy:
+      matrix:
+        arch:
+        - x86
+        - x64
+        - arm64
+    uses: ./.github/workflows/reusable-windows-msi.yml
+    with:
+      arch: ${{ matrix.arch }}
 
   build_macos:
-    name: 'macOS'
+    name: >-
+      macOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # macOS 13 only runs tests against the GIL-enabled CPython.
+        # Cirrus used for upstream, macos-14 for forks.
+        os:
+        - ghcr.io/cirruslabs/macos-runner:sonoma
+        - macos-14
+        - macos-13
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        free-threading:
+        - false
+        - true
+        exclude:
+        - os: ghcr.io/cirruslabs/macos-runner:sonoma
+          is-fork: true
+        - os: macos-14
+          is-fork: false
+        - os: macos-13
+          free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
-
-  build_macos_free_threading:
-    name: 'macOS (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-macos.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threading: true
-      # Cirrus and macos-14 are M1.
-      # Cirrus used for upstream, macos-14 for forks.
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
+      free-threading: ${{ matrix.free-threading }}
+      os: ${{ matrix.os }}
 
   build_ubuntu:
-    name: 'Ubuntu'
+    name: >-
+      Ubuntu
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        free-threading:
+        - false
+        - true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
-
-  build_ubuntu_free_threading:
-    name: 'Ubuntu (free-threading)'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-ubuntu.yml
-    with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: |
-        ../cpython-ro-srcdir/configure \
-          --config-cache \
-          --with-pydebug \
-          --with-openssl=$OPENSSL_DIR \
-          --disable-gil
+      free-threading: ${{ matrix.free-threading }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1w, 3.0.13, 3.1.5, 3.2.1]
+        os: [ubuntu-24.04]
+        openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -260,7 +247,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
@@ -272,27 +259,27 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         save: false
     - name: Configure CPython
-      run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -310,12 +297,12 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
     env:
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -325,9 +312,9 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
@@ -336,24 +323,24 @@ jobs:
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         save: false
     - name: Setup directory envs for out-of-tree builds
       run: |
-        echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV
-        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+        echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
+        echo "CPYTHON_BUILDDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-builddir)" >> "$GITHUB_ENV"
     - name: Create directories for read-only out-of-tree builds
-      run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
+      run: mkdir -p "$CPYTHON_RO_SRCDIR" "$CPYTHON_BUILDDIR"
     - name: Bind mount sources read-only
-      run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+      run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
@@ -365,7 +352,8 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
+          --enable-slower-safety \
+          --with-openssl="$OPENSSL_DIR"
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4
@@ -374,18 +362,18 @@ jobs:
       run: make pythoninfo
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
-      run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+      run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Setup directory envs for out-of-tree builds
       run: |
-        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+        echo "CPYTHON_BUILDDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-builddir)" >> "$GITHUB_ENV"
     - name: "Create hypothesis venv"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
         VENV_LOC=$(realpath -m .)/hypovenv
         VENV_PYTHON=$VENV_LOC/bin/python
-        echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
-        echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
-        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -r ${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt
+        echo "HYPOVENV=${VENV_LOC}" >> "$GITHUB_ENV"
+        echo "VENV_PYTHON=${VENV_PYTHON}" >> "$GITHUB_ENV"
+        ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
       uses: actions/cache@v4
@@ -393,7 +381,7 @@ jobs:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
-          - hypothesis-database-
+          hypothesis-database-
     - name: "Run tests"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -423,18 +411,21 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
@@ -450,21 +441,21 @@ jobs:
         version: 10
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:
@@ -477,7 +468,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make test
+      run: xvfb-run make ci
 
   build_tsan:
     name: 'Thread sanitizer'
@@ -548,15 +539,14 @@ jobs:
     needs:
     - check_source  # Transitive dependency, needed to access `run_tests` value
     - check-docs
+    - check_autoconf_regen
     - check_generated_files
     - build_macos
-    - build_macos_free_threading
     - build_ubuntu
-    - build_ubuntu_free_threading
     - build_ubuntu_ssltests
     - build_wasi
     - build_windows
-    - build_windows_free_threading
+    - build_windows_msi
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -571,6 +561,7 @@ jobs:
       with:
         allowed-failures: >-
           build_ubuntu_ssltests,
+          build_windows_msi,
           cifuzz,
           test_hypothesis,
         allowed-skips: >-
@@ -584,15 +575,13 @@ jobs:
           ${{
             needs.check_source.outputs.run_tests != 'true'
             && '
+            check_autoconf_regen,
             check_generated_files,
             build_macos,
-            build_macos_free_threading,
             build_ubuntu,
-            build_ubuntu_free_threading,
             build_ubuntu_ssltests,
             build_wasi,
             build_windows,
-            build_windows_free_threading,
             build_asan,
             build_tsan,
             build_tsan_free_threading,
