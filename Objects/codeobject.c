@@ -443,12 +443,14 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
      * usually prevents crashes due to assertions but a MemoryError may still
      * be triggered later.
      *
-     * See https://github.com/python/cpython/issues/126119 for details.
+     * See https://github.com/python/cpython/issues/126119 for details
+     * and corresponding PR for the rationale on the upper limit value.
      */
-    int ub = (int)(INT_MAX / sizeof(PyObject *)) - FRAME_SPECIALS_SIZE;
+    Py_ssize_t limit = (Py_ssize_t)(INT_MAX / 16) - FRAME_SPECIALS_SIZE;
     Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(con->localsplusnames);
-    if (nlocalsplus >= (Py_ssize_t)ub || con->stacksize >= (int)ub - nlocalsplus) {
-        PyErr_SetString(PyExc_OverflowError, "code: co_stacksize is too large");
+    if (nlocalsplus >= limit || con->stacksize >= limit - nlocalsplus) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "code: locals + stack size is too large");
         return -1;
     }
     return 0;
