@@ -434,6 +434,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
+        if (_PyAST_GetDocString(seq)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
             if (!symtable_visit_stmt(st,
                         (stmt_ty)asdl_seq_GET(seq, i)))
@@ -1909,6 +1912,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 return 0;
             }
         }
+
+        if (_PyAST_GetDocString(s->v.ClassDef.body)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
+
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         if (!symtable_exit_block(st))
             return 0;
