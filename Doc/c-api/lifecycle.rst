@@ -104,18 +104,18 @@ Cyclic Isolate Destruction
 --------------------------
 
 Listed below are the stages of life of a hypothetical :term:`cyclic isolate`
-that continues to exist after each member object is finalized or cleared.  It is
-a bug if a cyclic isolate progresses through all of these stages; it should
-vanish once all objects are cleared, if not sooner.  A cyclic isolate can vanish
-either because the reference cycle is broken or because the objects are no
-longer isolated due to finalizer resurrection (see
+that continues to exist after each member object is finalized or cleared.  It
+is a bug if a cyclic isolate progresses through all of these stages; it should
+vanish once all objects are cleared, if not sooner.  A cyclic isolate can
+vanish either because the reference cycle is broken or because the objects are
+no longer isolated due to finalizer resurrection (see
 :c:member:`~PyTypeObject.tp_finalize`).
 
 0. **Reachable** (pre-cyclic isolate): All objects are in their normal,
    reachable state.  A reference cycle exists, but an external reference means
    the objects are not yet isolated.
-#. **Unreachable but consistent:** The final reference from outside the group of
-   objects has been removed, causing the objects to become isolated (thus a
+#. **Unreachable but consistent:** The final reference from outside the group
+   of objects has been removed, causing the objects to become isolated (thus a
    cyclic isolate is born).  None of the group's objects have been finalized or
    cleared yet.
 #. **Mix of finalized and not finalized:** Objects in a cyclic isolate are
@@ -143,13 +143,13 @@ isolate would result in a dangling pointer, triggering undefined behavior when
 an object referencing the destroyed object is itself destroyed.
 
 :c:member:`~PyTypeObject.tp_finalize` is not needed to safely destroy a cyclic
-isolate, but its existence makes it easier to design types that behave in a sane
-manner when objects are cleared.  Clearing an object might necessarily leave it
-in a broken state---it might be unsafe to call any of the cleared object's
-methods or access any of its attributes.  With finalization, only finalized
-objects can possibly interact with cleared objects; non-finalized objects are
-guaranteed to interact with only non-cleared (but potentially finalized)
-objects.
+isolate, but its existence makes it easier to design types that behave in a
+sane manner when objects are cleared.  Clearing an object might necessarily
+leave it in a broken state---it might be unsafe to call any of the cleared
+object's methods or access any of its attributes.  With finalization, only
+finalized objects can possibly interact with cleared objects; non-finalized
+objects are guaranteed to interact with only non-cleared (but potentially
+finalized) objects.
 
 To summarize the possible interactions:
 
