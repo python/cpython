@@ -54,7 +54,8 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t index;
     PyObject *bit_size_obj = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 5, 6, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 5, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -110,4 +111,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=27c010bae9be7213 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b450bdd861571e7 input=a9049054013a1b77]*/

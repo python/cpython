@@ -168,7 +168,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
     def test_varargs18_kw(self):
-        # _PyArg_UnpackKeywordsWithVararg()
+        # _PyArg_UnpackKeywords() with varpos
         msg = r"invalid keyword argument for print\(\)$"
         with self.assertRaisesRegex(TypeError, msg):
             print(0, 1, **{BadStr('foo'): ','})

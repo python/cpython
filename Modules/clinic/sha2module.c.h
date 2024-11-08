@@ -188,7 +188,8 @@ _sha2_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -262,7 +263,8 @@ _sha2_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -336,7 +338,8 @@ _sha2_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -410,7 +413,8 @@ _sha2_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -437,4 +441,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b46da764024b1764 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=602a6939b8ec0927 input=a9049054013a1b77]*/

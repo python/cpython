@@ -73,7 +73,8 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *closure = Py_None;
     PyObject *kwdefaults = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 6, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -115,4 +116,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=10947342188f38a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bad4e19757dd26c3 input=a9049054013a1b77]*/
