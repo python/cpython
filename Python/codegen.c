@@ -779,6 +779,7 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
         if (ste->ste_has_docstring) {
             PyObject *docstring = _PyAST_GetDocString(stmts);
+            assert(docstring);
             first_instr = 1;
             /* set docstring */
             assert(OPTIMIZATION_LEVEL(c) < 2);
