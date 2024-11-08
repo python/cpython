@@ -1,0 +1,2 @@
+Set ``wasm32-wasip1`` as the WASI target. The old ``wasm32-wasi`` target is
+deprecated so it can be used for an eventual WASI 1.0.
