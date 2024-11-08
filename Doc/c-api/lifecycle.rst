@@ -14,6 +14,17 @@ occur after event *A* has occurred, with the arrow's label indicating the
 condition that must be true for *B* to occur after *A*.
 
 .. raw:: html
+
+   <style type="text/css">
+
+.. raw:: html
+   :file: lifecycle.dot.css
+
+.. raw:: html
+
+   </style>
+
+.. raw:: html
    :file: lifecycle.dot.svg
 
 Explanation:
