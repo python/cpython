@@ -906,6 +906,9 @@ class TestSpecifics(unittest.TestCase):
 
             def with_const_expression():
                 "also" + " not docstring"
+
+            def multiple_const_strings():
+                "not docstring " * 3
             """)
 
         for opt in [0, 1, 2]:
@@ -922,6 +925,7 @@ class TestSpecifics(unittest.TestCase):
                     self.assertIsNone(ns['two_strings'].__doc__)
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
+                self.assertIsNone(ns['multiple_const_strings'].__doc__)
 
     @support.cpython_only
     def test_docstring_interactive_mode(self):
