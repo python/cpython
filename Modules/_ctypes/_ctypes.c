@@ -985,12 +985,14 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
 #else
     char *dlerr = dlerror();
     if (dlerr) {
+		// XXX: This assumes that UTF-8 is the default locale.
+		//      Investigate if this can cause problems.
         PyErr_SetString(PyExc_ValueError, dlerr);
         return NULL;
     }
     else if (!address) {
         PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
+                     "[CDataType_in_dll_impl]: symbol '%s' not found",
                      name);
         return NULL;
     }
@@ -3809,13 +3811,15 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #else
     char *dlerr = dlerror();
     if (dlerr) {
+		// XXX: This assumes that UTF-8 is the default locale.
+		//      Investigate if this can cause problems.
         PyErr_SetString(PyExc_AttributeError, dlerr);
         Py_DECREF(ftuple);
         return NULL;
     }
     else if (!address) {
         PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
+                     "[PyCFuncPtr_FromDll]: function '%s' not found",
                      name);
         Py_DECREF(ftuple);
         return NULL;

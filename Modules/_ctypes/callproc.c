@@ -1633,12 +1633,14 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     ptr = dlsym((void*)handle, name);
 	char *dlerr = dlerror();
     if (dlerr) {
+		// XXX: This assumes that UTF-8 is the default locale.
+		//      Investigate if this can cause problems.
         PyErr_SetString(PyExc_OSError, dlerr);
         return NULL;
     }
     else if (!ptr) {
         PyErr_Format(PyExc_OSError,
-                     "symbol '%s' not found",
+                     "[py_dl_sym]:symbol '%s' not found",
                      name);
         return NULL;
     }
