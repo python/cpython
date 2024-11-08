@@ -452,71 +452,13 @@ class ParseArgsCodeGen:
 
     def _parse_vararg(self) -> str:
         assert self.varpos is not None
-        paramname = self.varpos.converter.parser_name
-        if self.varpos.converter.length:
-            if not self.fastcall:
-                self.codegen.add_include('pycore_tuple.h',
-                                        '_PyTuple_ITEMS()')
-            start = 'args' if self.fastcall else '_PyTuple_ITEMS(args)'
-            size = 'nargs' if self.fastcall else 'PyTuple_GET_SIZE(args)'
-            if self.max_pos:
-                if min(self.pos_only, self.min_pos) < self.max_pos:
-                    start = f'{size} > {self.max_pos} ? {start} + {self.max_pos} : {start}'
-                    size = f'Py_MAX(0, {size} - {self.max_pos})'
-                else:
-                    start = f'{start} + {self.max_pos}'
-                    size = f'{size} - {self.max_pos}'
-            return f"""
-                {paramname} = {start};
-                {self.varpos.converter.length_name} = {size};
-                """
-
-        if self.fastcall:
-            if self.limited_capi:
-                if min(self.pos_only, self.min_pos) < self.max_pos:
-                    size = f'Py_MAX(nargs - {self.max_pos}, 0)'
-                else:
-                    size = f'nargs - {self.max_pos}' if self.max_pos else 'nargs'
-                return f"""
-                    {paramname} = PyTuple_New({size});
-                    if (!{paramname}) {{{{
-                        goto exit;
-                    }}}}
-                    for (Py_ssize_t i = {self.max_pos}; i < nargs; ++i) {{{{
-                        PyTuple_SET_ITEM({paramname}, i - {self.max_pos}, Py_NewRef(args[i]));
-                    }}}}
-                    """
-            else:
-                self.codegen.add_include('pycore_tuple.h',
-                                         '_PyTuple_FromArray()')
-                if min(self.pos_only, self.min_pos) < self.max_pos:
-                    return f"""
-                        {paramname} = nargs > {self.max_pos}
-                            ? _PyTuple_FromArray(args + {self.max_pos}, nargs - {self.max_pos})
-                            : PyTuple_New(0);
-                        if ({paramname} == NULL) {{{{
-                            goto exit;
-                        }}}}
-                        """
-                else:
-                    start = f'args + {self.max_pos}' if self.max_pos else 'args'
-                    size = f'nargs - {self.max_pos}' if self.max_pos else 'nargs'
-                    return f"""
-                        {paramname} = _PyTuple_FromArray({start}, {size});
-                        if ({paramname} == NULL) {{{{
-                            goto exit;
-                        }}}}
-                        """
-        else:
-            if self.max_pos:
-                return f"""
-                    {paramname} = PyTuple_GetSlice(args, {self.max_pos}, PY_SSIZE_T_MAX);
-                    if (!{paramname}) {{{{
-                        goto exit;
-                    }}}}
-                    """
-            else:
-                return f"{paramname} = Py_NewRef(args);\n"
+        c = self.varpos.converter
+        assert isinstance(c, libclinic.converters.VarPosCConverter)
+        return c.parse_vararg(pos_only=self.pos_only,
+                              min_pos=self.min_pos,
+                              max_pos=self.max_pos,
+                              fastcall=self.fastcall,
+                              limited_capi=self.limited_capi)
 
     def parse_pos_only(self) -> None:
         if self.fastcall:
@@ -660,15 +602,11 @@ class ParseArgsCodeGen:
             use_parser_code = False
             self.fastcall = False
         else:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_UnpackKeywords()')
             if not self.varpos:
-                self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_UnpackKeywords()')
-                unpack_func = '_PyArg_UnpackKeywords'
                 nargs = "nargs"
             else:
-                self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_UnpackKeywordsWithVararg()')
-                unpack_func = '_PyArg_UnpackKeywordsWithVararg'
                 nargs = f"Py_MIN(nargs, {self.max_pos})" if self.max_pos else "0"
 
             if self.fastcall:
@@ -699,10 +637,9 @@ class ParseArgsCodeGen:
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 unpack_args = '_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL'
-            unpack_args += (f', &_parser, {self.min_pos}, {self.max_pos}, '
-                            f'{self.min_kw_only}, argsbuf')
             parser_code = [libclinic.normalize_snippet(f"""
-                {argsname} = {unpack_func}({unpack_args});
+                {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                        /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
                 if (!{argsname}) {{{{
                     goto exit;
                 }}}}
@@ -839,7 +776,10 @@ class ParseArgsCodeGen:
     def copy_includes(self) -> None:
         # Copy includes from parameters to Clinic after parse_arg()
         # has been called above.
-        for converter in self.converters:
+        converters = self.converters
+        if self.varpos:
+            converters = converters + [self.varpos.converter]
+        for converter in converters:
             for include in converter.get_includes():
                 self.codegen.add_include(
                     include.filename,
