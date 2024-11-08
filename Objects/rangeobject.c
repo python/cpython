@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
@@ -51,16 +52,20 @@ static rangeobject *
 make_range_object(PyTypeObject *type, PyObject *start,
                   PyObject *stop, PyObject *step)
 {
-    rangeobject *obj = NULL;
     PyObject *length;
     length = compute_range_length(start, stop, step);
     if (length == NULL) {
         return NULL;
     }
-    obj = PyObject_New(rangeobject, type);
+    rangeobject *obj = _Py_FREELIST_POP(rangeobject, ranges);
     if (obj == NULL) {
-        Py_DECREF(length);
-        return NULL;
+        obj = PyObject_New(rangeobject, type);
+        if (obj == NULL) {
+            Py_DECREF(length);
+            return NULL;
+        }
+    } else {
+        //printf("rangeobject from freelist!\n");
     }
     obj->start = start;
     obj->stop = stop;
@@ -170,7 +175,7 @@ range_dealloc(rangeobject *r)
     Py_DECREF(r->stop);
     Py_DECREF(r->step);
     Py_DECREF(r->length);
-    PyObject_Free(r);
+    _Py_FREELIST_FREE(ranges, r, PyObject_Free);
 }
 
 static unsigned long
