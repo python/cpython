@@ -335,7 +335,7 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
 
     offset = NULL;
     for (i = 0; i < nitems; i++) {
-        /* Loop invariant: args[j] are borrowed references or None. */
+        /* Loop invariant: args[j] are borrowed references. */
         PyTuple_SET_ITEM(args, 0, obj);
         for (j = 1; j < 2+nmemb; j++)
             PyTuple_SET_ITEM(args, j, Py_None);

@@ -43,7 +43,6 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
     if (!PyArg_ParseTuple(args, "OnO", &obj, &i, &value)) {
         return NULL;
     }
-    NULLABLE(value);
     if (PyTuple_CheckExact(obj)) {
         newtuple = tuple_copy(obj);
         if (!newtuple) {

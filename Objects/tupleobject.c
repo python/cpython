@@ -35,18 +35,19 @@ static PyTupleObject *
 tuple_alloc(Py_ssize_t size)
 {
     assert(size > 0);
-    PyTupleObject *op = maybe_freelist_pop(size);
-    if (op == NULL) {
-        /* Check for overflow */
-        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                    sizeof(PyObject *))) / sizeof(PyObject *)) {
-            return (PyTupleObject *)PyErr_NoMemory();
+    Py_ssize_t index = size - 1;
+    if (index < PyTuple_MAXSAVESIZE) {
+        PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
+        if (op != NULL) {
+            return op;
         }
-        op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
-        if (op == NULL)
-            return NULL;
     }
-    return op;
+    /* Check for overflow */
+    if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        return (PyTupleObject *)PyErr_NoMemory();
+    }
+    return PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
 }
 
 // The empty tuple singleton is not tracked by the GC.
@@ -63,7 +64,11 @@ PyObject *
 PyTuple_New(Py_ssize_t size)
 {
     PyTupleObject *op;
-    if (size == 0) {
+    if (size <= 0) {
+        if (size < 0) {
+            PyErr_BadInternalCall();
+            return NULL;
+        }
         return tuple_get_empty();
     }
     op = tuple_alloc(size);
@@ -153,10 +158,15 @@ PyTuple_Pack(Py_ssize_t n, ...)
     PyObject **items;
     va_list vargs;
 
-    if (n == 0) {
-        return tuple_get_empty();
+    if (n <= 0) {
+        if (n == 0) {
+            return tuple_get_empty();
+        }
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "negative size");
+            return NULL;
+        }
     }
-
     va_start(vargs, n);
     PyTupleObject *result = tuple_alloc(n);
     if (result == NULL) {
@@ -924,7 +934,8 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
     v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
+        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1) ||
+        newsize < 0) {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
