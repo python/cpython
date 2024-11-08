@@ -1495,5 +1495,34 @@ class TestUopsOptimization(unittest.TestCase):
         with self.assertRaises(TypeError):
             {item for item in items}
 
+    def test_guard_function_version_removed(self):
+        def thing(f):
+            x = 0
+            for _ in range(100):
+                x += f() + f()
+            return x
+
+        res, ex = self._run_with_optimizer(thing, lambda: 1)
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        self.assertEqual(opnames.count("_CHECK_FUNCTION_VERSION"), 1)
+
+    def test_guard_function_version_invalidated(self):
+        def thing(f):
+            x = 0
+            for _ in range(100):
+                x += f()
+                x += f()
+            return x
+
+        def fn():
+            return 1
+        res, ex = self._run_with_optimizer(thing, fn)
+        self.assertTrue(ex.is_valid())
+        fn.__code__ = fn.__code__.replace(co_name="new_name")
+        self.assertFalse(ex.is_valid())
+
+
 if __name__ == "__main__":
     unittest.main()
