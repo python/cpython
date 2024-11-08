@@ -875,10 +875,9 @@ class PyShell(OutputWindow):
     from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
-        if use_subprocess:
-            ms = self.menu_specs
-            if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "She_ll"))
+        ms = self.menu_specs
+        if ms[2][0] != "shell":
+            ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
@@ -951,6 +950,10 @@ class PyShell(OutputWindow):
         # events generated in Tcl/Tk to go through this delegator.
         self.text.insert = self.per.top.insert
         self.per.insertfilter(UserInputTaggingDelegator())
+
+        if not use_subprocess:
+            self.update_menu_state("shell", 0, "disabled")
+            self.update_menu_state("shell", 1, "disabled")
 
     def ResetFont(self):
         super().ResetFont()
