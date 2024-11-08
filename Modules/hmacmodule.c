@@ -4,8 +4,8 @@
 
 #include "Python.h"
 
-#include "hashlib.h"
 #include "_hacl/Hacl_HMAC.h"
+#include "hashlib.h"
 
 // HMAC underlying hash function static information.
 
