@@ -4424,7 +4424,7 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
     if (info.origname != NULL && info.origname[0] != '\0') {
         origname = PyUnicode_FromString(info.origname);
         if (origname == NULL) {
-            Py_DECREF(data);
+            Py_XDECREF(data);
             return NULL;
         }
     }
