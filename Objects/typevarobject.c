@@ -651,7 +651,7 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
 typevar.__new__ as typevar_new
 
     name: object(subclass_of="&PyUnicode_Type")
-    *constraints: object
+    *constraints: tuple
     bound: object = None
     default as default_value: object(c_default="&_Py_NoDefaultStruct") = typing.NoDefault
     covariant: bool = False
@@ -665,7 +665,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, PyObject *default_value, int covariant,
                  int contravariant, int infer_variance)
-/*[clinic end generated code: output=d2b248ff074eaab6 input=836f97f631d7293a]*/
+/*[clinic end generated code: output=d2b248ff074eaab6 input=1b5b62e40c92c167]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,

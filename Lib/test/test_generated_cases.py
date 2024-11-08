@@ -1270,6 +1270,33 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_error_if_true(self):
+
+        input = """
+        inst(OP1, ( --)) {
+            ERROR_IF(true, here);
+        }
+        inst(OP2, ( --)) {
+            ERROR_IF(1, there);
+        }
+        """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            goto here;
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP2);
+            goto there;
+        }
+        """
+        self.run_cases_test(input, output)
+
     def test_scalar_array_inconsistency(self):
 
         input = """
@@ -1370,6 +1397,70 @@ class TestGeneratedCases(unittest.TestCase):
         """
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, output)
+
+    def test_instruction_size_macro(self):
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1 ;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+        # Two instructions of different sizes referencing the same
+        # uop containing the `INSTRUCTION_SIZE` macro is not allowed.
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        macro(OP2) = unused/1 + OP;
+        """
+
+        output = ""  # No output needed as this should raise an error.
+        with self.assertRaisesRegex(SyntaxError, "All instructions containing a uop"):
+            self.run_cases_test(input, output)
+
+    def test_escaping_call_next_to_cmacro(self):
+        input = """
+        inst(OP, (--)) {
+            #ifdef Py_GIL_DISABLED
+            escaping_call();
+            #else
+            another_escaping_call();
+            #endif
+            yet_another_escaping_call();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            #ifdef Py_GIL_DISABLED
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #else
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            another_escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #endif
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            yet_another_escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):
