@@ -967,6 +967,11 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return NULL;
     }
 #else
+	/* dlerror() always returns the latest error.
+	 *
+	 * Clear the previous value before calling dlsym(),
+	 * to ensure we can tell if our call resulted in an error.
+	 */
     dlerror();
     address = (void *)dlsym(handle, name);
 #ifdef __CYGWIN__
@@ -3785,6 +3790,11 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
+	/* dlerror() always returns the latest error.
+	 *
+	 * Clear the previous value before calling dlsym(),
+	 * to ensure we can tell if our call resulted in an error.
+	 */
     dlerror();
     address = (PPROC)dlsym(handle, name);
 #ifdef __CYGWIN__

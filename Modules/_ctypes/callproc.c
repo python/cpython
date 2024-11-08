@@ -1623,10 +1623,23 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
+
+	/* dlerror() always returns the latest error.
+	 *
+	 * Clear the previous value before calling dlsym(),
+	 * to ensure we can tell if our call resulted in an error.
+	 */
+	dlerror();
     ptr = dlsym((void*)handle, name);
-    if (!ptr) {
-        PyErr_SetString(PyExc_OSError,
-                               dlerror());
+	char *dlerr = dlerror();
+    if (dlerr) {
+        PyErr_SetString(PyExc_OSError, dlerr);
+        return NULL;
+    }
+    else if (!ptr) {
+        PyErr_Format(PyExc_OSError,
+                     "symbol '%s' not found",
+                     name);
         return NULL;
     }
     return PyLong_FromVoidPtr(ptr);
