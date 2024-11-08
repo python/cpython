@@ -15,6 +15,7 @@ inited -- flag set when init() has been called
 suffix_map -- dictionary mapping suffixes to suffixes
 encodings_map -- dictionary mapping suffixes to encodings
 types_map -- dictionary mapping suffixes to types
+duplicate_types_map -- dictionary mapping suffixes to types for suffixes that map to multiple types
 
 Functions:
 
@@ -42,7 +43,8 @@ __all__ = [
     "knownfiles", "inited", "MimeTypes",
     "guess_type", "guess_file_type", "guess_all_extensions", "guess_extension",
     "add_type", "init", "read_mime_types",
-    "suffix_map", "encodings_map", "types_map", "common_types"
+    "suffix_map", "encodings_map", "types_map", "common_types",
+    "duplicate_ext_types",
 ]
 
 knownfiles = [
@@ -80,6 +82,11 @@ class MimeTypes:
             self.add_type(type, ext, True)
         for (ext, type) in _common_types_default.items():
             self.add_type(type, ext, False)
+        for (ext, type) in _duplicate_ext_types_default.items():
+            exts = self.types_map_inv[strict].setdefault(type, [])
+            if ext not in exts:
+                exts.append(ext)
+
         for name in filenames:
             self.read(name, strict)
 
@@ -425,6 +432,7 @@ def _default_mime_types():
     global suffix_map, _suffix_map_default
     global encodings_map, _encodings_map_default
     global types_map, _types_map_default
+    global duplicate_ext_types, _duplicate_ext_types_default
     global common_types, _common_types_default
 
     suffix_map = _suffix_map_default = {
@@ -607,6 +615,20 @@ def _default_mime_types():
         '.avi'    : 'video/x-msvideo',
         '.movie'  : 'video/x-sgi-movie',
         }
+
+    # Some extensions in the default list are linked to multiple mimetypes.
+    # If you need to add a type that duplicates an extension in the default
+    # map, add it here.
+
+    # Please sort these too.
+    # Make sure the entry with the preferred file extension for a particular mime type
+    # appears before any others of the same mimetype.
+    duplicate_ext_types = _duplicate_ext_types_default = {
+        '.3gp'   : 'video/3gpp',
+        '.3gpp'  : 'video/3gpp',
+        '.3g2'   : 'video/3gpp2',
+        '.3gpp2' : 'video/3gpp2',
+    }
 
     # These are non-standard types, commonly found in the wild.  They will
     # only match if strict=0 flag is given to the API methods.
