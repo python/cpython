@@ -6166,6 +6166,11 @@
                 int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
+                PyDictObject *dict = (PyDictObject*) BUILTINS();
+                if (builtins_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
+                    Py_DECREF(res_o);
+                    DEOPT_IF(true, LOAD_GLOBAL);
+                }
                 #else
                 Py_INCREF(res_o);
                 #endif
@@ -6211,6 +6216,11 @@
                 int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
+                PyDictObject *dict = (PyDictObject*) GLOBALS();
+                if (globals_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
+                    Py_DECREF(res_o);
+                    DEOPT_IF(true, LOAD_GLOBAL);
+                }
                 #else
                 Py_INCREF(res_o);
                 #endif

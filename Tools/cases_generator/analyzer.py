@@ -623,6 +623,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_NewRef",
     "_Py_SINGLETON",
     "_Py_STR",
+    "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
     "advance_backoff_counter",

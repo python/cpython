@@ -1633,6 +1633,11 @@ dummy_func(
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
             DEOPT_IF(!increfed);
+            PyDictObject *dict = (PyDictObject*) GLOBALS();
+            if (globals_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
+                Py_DECREF(res_o);
+                DEOPT_IF(true);
+            }
             #else
             Py_INCREF(res_o);
             #endif
@@ -1650,6 +1655,11 @@ dummy_func(
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
             DEOPT_IF(!increfed);
+            PyDictObject *dict = (PyDictObject*) BUILTINS();
+            if (builtins_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
+                Py_DECREF(res_o);
+                DEOPT_IF(true);
+            }
             #else
             Py_INCREF(res_o);
             #endif
