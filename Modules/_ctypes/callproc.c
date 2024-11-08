@@ -1640,7 +1640,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     }
     else if (!ptr) {
         PyErr_Format(PyExc_OSError,
-                     "[py_dl_sym]:symbol '%s' not found",
+                     "symbol '%s' not found",
                      name);
         return NULL;
     }

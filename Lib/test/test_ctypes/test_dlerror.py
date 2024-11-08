@@ -83,10 +83,8 @@ class TestNullDlsym(unittest.TestCase):
                 # an error.
                 L.foo
 
-            pred = "function 'foo' not found" in str(cm.exception)
-            self.assertTrue(pred)
-            # self.assertEqual(str(cm.exception),
-            #                  "function 'foo' not found")
+            self.assertEqual(str(cm.exception),
+                             "function 'foo' not found")
 
 if __name__ == "__main__":
     unittest.main()

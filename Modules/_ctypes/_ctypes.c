@@ -992,7 +992,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     }
     else if (!address) {
         PyErr_Format(PyExc_ValueError,
-                     "[CDataType_in_dll_impl]: symbol '%s' not found",
+                     "symbol '%s' not found",
                      name);
         return NULL;
     }
@@ -3819,7 +3819,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     else if (!address) {
         PyErr_Format(PyExc_AttributeError,
-                     "[PyCFuncPtr_FromDll]: function '%s' not found",
+                     "function '%s' not found",
                      name);
         Py_DECREF(ftuple);
         return NULL;
