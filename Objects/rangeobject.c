@@ -885,6 +885,12 @@ rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
     Py_RETURN_NONE;
 }
 
+static void
+rangeiter_dealloc(_PyRangeIterObject *r)
+{
+    _Py_FREELIST_FREE(rangeiters, r, PyObject_Free);
+}
+
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
@@ -904,7 +910,7 @@ PyTypeObject PyRangeIter_Type = {
         sizeof(_PyRangeIterObject),             /* tp_basicsize */
         0,                                      /* tp_itemsize */
         /* methods */
-        (destructor)PyObject_Free,              /* tp_dealloc */
+        (destructor)rangeiter_dealloc,              /* tp_dealloc */
         0,                                      /* tp_vectorcall_offset */
         0,                                      /* tp_getattr */
         0,                                      /* tp_setattr */
@@ -965,9 +971,12 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyRangeIterObject *it = _Py_FREELIST_POP(_PyRangeIterObject, rangeiters);
+    if (it == NULL) {
+        it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
     it->start = start;
     it->step = step;
     it->len = len;
