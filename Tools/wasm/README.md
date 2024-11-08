@@ -38,8 +38,8 @@ of the Python repository.
 You can install the Emscripten toolchain as follows:
 ```shell
 git clone https://github.com/emscripten-core/emsdk.git --depth 1
-./emsdk/emsdk install 3.1.68
-./emsdk/emsdk activate 3.1.68
+./emsdk/emsdk install latest
+./emsdk/emsdk activate latest
 ```
 To add the Emscripten compiler to your path:
 ```shell

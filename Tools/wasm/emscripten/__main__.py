@@ -16,7 +16,7 @@ import sys
 import sysconfig
 import tempfile
 
-WASM_DIR = Path(__file__).parent
+WASM_DIR = Path(__file__).parent.parent
 CHECKOUT = WASM_DIR.parent.parent
 
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
