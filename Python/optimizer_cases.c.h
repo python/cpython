@@ -1833,7 +1833,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             assert(sym_matches_type(callable, &PyFunction_Type));
-            if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            if (sym_is_const(callable)) {
                 if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                     PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
                     PyCodeObject *co = (PyCodeObject *)func->func_code;

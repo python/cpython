@@ -103,16 +103,13 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
 #if SIZEOF_VOID_P == 8
     PATCH_VALUE(uint64_t, _operand0, _JIT_OPERAND0)
+    PATCH_VALUE(uint64_t, _operand1, _JIT_OPERAND1)
 #else
     assert(SIZEOF_VOID_P == 4);
     PATCH_VALUE(uint32_t, _operand0_hi, _JIT_OPERAND0_HI)
     PATCH_VALUE(uint32_t, _operand0_lo, _JIT_OPERAND0_LO)
     uint64_t _operand0 = ((uint64_t)_operand0_hi << 32) | _operand0_lo;
-#endif
-#if SIZEOF_VOID_P == 8
-    PATCH_VALUE(uint64_t, _operand1, _JIT_OPERAND1)
-#else
-    assert(SIZEOF_VOID_P == 4);
+
     PATCH_VALUE(uint32_t, _operand1_hi, _JIT_OPERAND1_HI)
     PATCH_VALUE(uint32_t, _operand1_lo, _JIT_OPERAND1_LO)
     uint64_t _operand1 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
