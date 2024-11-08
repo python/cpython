@@ -237,9 +237,7 @@ class BaseHandler:
         self.status = status
         self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
-        assert len(status)>=4,"Status must be at least 4 characters"
-        assert status[:3].isdigit(), "Status message must begin w/3-digit code"
-        assert status[3]==" ", "Status message must have a space after code"
+        self._validate_status(status)
 
         if __debug__:
             for name, val in headers:
@@ -249,6 +247,14 @@ class BaseHandler:
                        f"Hop-by-hop header, '{name}: {val}', not allowed"
 
         return self.write
+
+    def _validate_status(self, status):
+        if len(status) < 4:
+            raise AssertionError("Status must be at least 4 characters")
+        if not status[:3].isdigit():
+            raise AssertionError("Status message must begin w/3-digit code")
+        if status[3] != " ":
+            raise AssertionError("Status message must have a space after code")
 
     def _convert_string_type(self, value, title):
         """Convert/check value type."""
@@ -469,10 +475,7 @@ class SimpleHandler(BaseHandler):
         from warnings import warn
         warn("SimpleHandler.stdout.write() should not do partial writes",
             DeprecationWarning)
-        while True:
-            data = data[result:]
-            if not data:
-                break
+        while data := data[result:]:
             result = self.stdout.write(data)
 
     def _flush(self):

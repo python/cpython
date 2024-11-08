@@ -18,6 +18,7 @@ import sys
 import threading
 import signal
 import array
+import collections.abc
 import queue
 import time
 import types
@@ -90,7 +91,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -153,7 +157,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=16)
+        self.listener = Listener(address=address, backlog=128)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
@@ -433,7 +437,6 @@ class Server(object):
                     self.id_to_refcount[ident] = 1
                     self.id_to_obj[ident] = \
                         self.id_to_local_proxy_obj[ident]
-                    obj, exposed, gettypeid = self.id_to_obj[ident]
                     util.debug('Server re-enabled tracking & INCREF %r', ident)
                 else:
                     raise ke
@@ -834,7 +837,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''
@@ -1147,10 +1153,10 @@ class ValueProxy(BaseProxy):
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__mul__', '__reversed__', '__rmul__', '__setitem__',
-    'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-    'reverse', 'sort', '__imul__'
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
+    'remove', 'reverse', 'sort',
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1160,16 +1166,27 @@ class ListProxy(BaseListProxy):
         self._callmethod('__imul__', (value,))
         return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
-DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'items',
+collections.abc.MutableSequence.register(BaseListProxy)
+
+_BaseDictProxy = MakeProxyType('_BaseDictProxy', (
+    '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
+    '__len__', '__or__', '__reversed__', '__ror__',
+    '__setitem__', 'clear', 'copy', 'fromkeys', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
-DictProxy._method_to_typeid_ = {
+_BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
     }
+class DictProxy(_BaseDictProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseDictProxy)
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'

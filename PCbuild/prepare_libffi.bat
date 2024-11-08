@@ -60,7 +60,7 @@ goto :Usage
 if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 if NOT DEFINED BUILD_ARM64 (
     set BUILD_X64=1
     set BUILD_X86=1
-    set BUILD_ARM32=1
+    set BUILD_ARM32=0
     set BUILD_ARM64=1
     set COPY_LICENSE=1
 )
@@ -204,7 +204,7 @@ if NOT DEFINED CYG_CACHE (set CYG_CACHE=C:/cygwin/var/cache/setup)
 if NOT DEFINED CYG_MIRROR (set CYG_MIRROR=http://mirrors.kernel.org/sourceware/cygwin/)
 
 powershell -c "md $env:CYG_ROOT -ErrorAction SilentlyContinue"
-powershell -c "$setup = $env:CYG_ROOT+'/setup.exe'; if (!(Test-Path $setup)){invoke-webrequest https://cygwin.com/setup-x86.exe -outfile $setup}
+powershell -c "$setup = $env:CYG_ROOT+'/setup.exe'; if (!(Test-Path $setup)){invoke-webrequest https://cygwin.com/setup-x86_64.exe -outfile $setup}
 %CYG_ROOT%/setup.exe -qnNdO -R "%CYG_ROOT%" -s "%CYG_MIRROR%" -l "%CYG_CACHE%" -P make -P autoconf -P automake -P libtool -P dejagnu
 
 endlocal

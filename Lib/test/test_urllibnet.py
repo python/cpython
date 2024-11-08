@@ -109,6 +109,7 @@ class urlopenNetworkTests(unittest.TestCase):
                 open_url.close()
             self.assertEqual(code, 404)
 
+    @support.requires_resource('walltime')
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
@@ -191,6 +192,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     logo = "http://www.pythontest.net/"
 
+    @support.requires_resource('walltime')
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):
             datevalue = fileheaders.get('Date')

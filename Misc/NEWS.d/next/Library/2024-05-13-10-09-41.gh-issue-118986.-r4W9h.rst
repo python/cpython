@@ -1,0 +1,1 @@
+Add :data:`!socket.IPV6_RECVERR` constant (available since Linux 2.2).

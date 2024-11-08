@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "blob.h"
 #include "util.h"
 
@@ -95,12 +99,14 @@ blob_close_impl(pysqlite_Blob *self)
 void
 pysqlite_close_all_blobs(pysqlite_Connection *self)
 {
-    for (int i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
         PyObject *weakref = PyList_GET_ITEM(self->blobs, i);
-        PyObject *blob = PyWeakref_GetObject(weakref);
-        if (!Py_IsNone(blob)) {
-            close_blob((pysqlite_Blob *)blob);
+        PyObject *blob;
+        if (!PyWeakref_GetRef(weakref, &blob)) {
+            continue;
         }
+        close_blob((pysqlite_Blob *)blob);
+        Py_DECREF(blob);
     }
 }
 
@@ -108,22 +114,30 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-#if SQLITE_VERSION_NUMBER < 3008008
-    // SQLite pre 3.8.8 does not set this blob error on the connection
-    if (rc == SQLITE_ABORT) {
-        PyErr_SetString(self->connection->OperationalError,
-                        "Cannot operate on an expired blob handle");
-        return;
-    }
-#endif
     _pysqlite_seterror(self->connection->state, self->connection->db);
 }
 
 static PyObject *
-inner_read(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+read_single(pysqlite_Blob *self, Py_ssize_t offset)
+{
+    unsigned char buf = 0;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_read(self->blob, (void *)&buf, 1, (int)offset);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        blob_seterror(self, rc);
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong((unsigned long)buf);
+}
+
+static PyObject *
+read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 {
     assert(length <= sqlite3_blob_bytes(self->blob));
-    assert(offset <= sqlite3_blob_bytes(self->blob));
+    assert(offset < sqlite3_blob_bytes(self->blob));
 
     PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
@@ -175,7 +189,12 @@ blob_read_impl(pysqlite_Blob *self, int length)
         length = max_read_len;
     }
 
-    PyObject *buffer = inner_read(self, length, self->offset);
+    assert(length >= 0);
+    if (length == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
+    PyObject *buffer = read_multiple(self, length, self->offset);
     if (buffer == NULL) {
         return NULL;
     }
@@ -387,7 +406,7 @@ subscript_index(pysqlite_Blob *self, PyObject *item)
     if (i < 0) {
         return NULL;
     }
-    return inner_read(self, 1, i);
+    return read_single(self, i);
 }
 
 static int
@@ -411,9 +430,9 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     }
 
     if (step == 1) {
-        return inner_read(self, len, start);
+        return read_multiple(self, len, start);
     }
-    PyObject *blob = inner_read(self, stop - start, start);
+    PyObject *blob = read_multiple(self, stop - start, start);
     if (blob == NULL) {
         return NULL;
     }
@@ -455,24 +474,29 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
                         "Blob doesn't support item deletion");
         return -1;
     }
+    if (!PyLong_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "'%s' object cannot be interpreted as an integer",
+                     Py_TYPE(value)->tp_name);
+        return -1;
+    }
     Py_ssize_t i = get_subscript_index(self, item);
     if (i < 0) {
         return -1;
     }
 
-    Py_buffer vbuf;
-    if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
+    long val = PyLong_AsLong(value);
+    if (val == -1 && PyErr_Occurred()) {
+        PyErr_Clear();
+        val = -1;
+    }
+    if (val < 0 || val > 255) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return -1;
     }
-    int rc = -1;
-    if (vbuf.len != 1) {
-        PyErr_SetString(PyExc_ValueError, "Blob assignment must be a single byte");
-    }
-    else {
-        rc = inner_write(self, (const char *)vbuf.buf, 1, i);
-    }
-    PyBuffer_Release(&vbuf);
-    return rc;
+    // Downcast to avoid endianness problems.
+    unsigned char byte = (unsigned char)val;
+    return inner_write(self, (const void *)&byte, 1, i);
 }
 
 static int
@@ -507,7 +531,7 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {
-        PyObject *blob_bytes = inner_read(self, stop - start, start);
+        PyObject *blob_bytes = read_multiple(self, stop - start, start);
         if (blob_bytes != NULL) {
             char *blob_buf = PyBytes_AS_STRING(blob_bytes);
             for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
@@ -552,7 +576,7 @@ static PyMethodDef blob_methods[] = {
 };
 
 static struct PyMemberDef blob_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Blob, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Blob, in_weakreflist), Py_READONLY},
     {NULL},
 };
 

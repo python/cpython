@@ -331,7 +331,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
             case _Py_ERROR_REPLACE:
                 memset(p, '?', endpos - startpos);
                 p += (endpos - startpos);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case _Py_ERROR_IGNORE:
                 i += (endpos - startpos - 1);
                 break;
@@ -379,7 +379,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 }
                 startpos = k;
                 assert(startpos < endpos);
-                /* fall through */
+                _Py_FALLTHROUGH;
             default:
                 rep = unicode_encode_call_errorhandler(
                       errors, &error_handler_obj, "utf-8", "surrogates not allowed",
@@ -387,8 +387,19 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 if (!rep)
                     goto error;
 
-                /* subtract preallocated bytes */
-                writer->min_size -= max_char_size * (newpos - startpos);
+                if (newpos < startpos) {
+                    writer->overallocate = 1;
+                    p = _PyBytesWriter_Prepare(writer, p,
+                                               max_char_size * (startpos - newpos));
+                    if (p == NULL)
+                        goto error;
+                }
+                else {
+                    /* subtract preallocated bytes */
+                    writer->min_size -= max_char_size * (newpos - startpos);
+                    /* Only overallocate the buffer if it's not the last write */
+                    writer->overallocate = (newpos < size);
+                }
 
                 if (PyBytes_Check(rep)) {
                     p = _PyBytesWriter_WriteBytes(writer, p,
@@ -397,9 +408,6 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 }
                 else {
                     /* rep is unicode */
-                    if (PyUnicode_READY(rep) < 0)
-                        goto error;
-
                     if (!PyUnicode_IS_ASCII(rep)) {
                         raise_encode_exception(&exc, "utf-8", unicode,
                                                startpos, endpos,
