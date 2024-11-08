@@ -1251,7 +1251,3 @@ class varpos_array_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         raise AssertionError('should never be called')
-
-# XXX: temporary
-class varpos_object_converter(varpos_tuple_converter):
-    pass

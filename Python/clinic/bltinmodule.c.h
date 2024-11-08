@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -902,8 +901,9 @@ PyDoc_STRVAR(builtin_print__doc__,
     {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
-                   PyObject *end, PyObject *file, int flush);
+builtin_print_impl(PyObject *module, PyObject * const *args,
+                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+                   PyObject *file, int flush);
 
 static PyObject *
 builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -937,7 +937,8 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *__clinic_args = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
     PyObject *file = Py_None;
@@ -973,16 +974,11 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
-        goto exit;
-    }
-    return_value = builtin_print_impl(module, __clinic_args, sep, end, file, flush);
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = builtin_print_impl(module, __clinic_args, args_length, sep, end, file, flush);
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
     return return_value;
 }
 
@@ -1235,4 +1231,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=76b27cf4164f257e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c510ec462507656 input=a9049054013a1b77]*/
