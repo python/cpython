@@ -24219,8 +24219,15 @@ printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
 printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
  ;; #(
   *) :
-     ;;
-esac ;;
+    as_fn_error $? "
+
+Unknown float word ordering. You need to manually preset
+ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+
+           " "$LINENO" 5
+   ;;
+esac
+ ;;
 esac
 
 
