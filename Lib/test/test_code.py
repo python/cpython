@@ -200,11 +200,6 @@ try:
 except ImportError:
     _testcapi = None
 
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
-
 from test import support
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
@@ -593,7 +588,6 @@ class CodeTest(unittest.TestCase):
 
     @unittest.skipUnless(ctypes, "requires ctypes")
     @unittest.skipUnless(_testcapi, "requires _testcapi")
-    @unittest.skipUnless(_testinternalcapi, "requires _testinternalcapi")
     def test_co_framesize_overflow(self):
         # See: https://github.com/python/cpython/issues/126119.
 
