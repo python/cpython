@@ -1389,7 +1389,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(UNPACK_SEQUENCE);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
             (void)seq;
             (void)counter;
         }
@@ -1429,12 +1429,18 @@ dummy_func(
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o));
-            DEOPT_IF(PyList_GET_SIZE(seq_o) != oparg);
-            STAT_INC(UNPACK_SEQUENCE, hit);
-            PyObject **items = _PyList_ITEMS(seq_o);
-            for (int i = oparg; --i >= 0; ) {
-                *values++ = PyStackRef_FromPyObjectNew(items[i]);
+            int should_deopt = 0;
+            Py_BEGIN_CRITICAL_SECTION(seq_o);
+            should_deopt = PyList_GET_SIZE(seq_o) != oparg;
+            if (!should_deopt) {
+                STAT_INC(UNPACK_SEQUENCE, hit);
+                PyObject **items = _PyList_ITEMS(seq_o);
+                for (int i = oparg; --i >= 0; ) {
+                    *values++ = PyStackRef_FromPyObjectNew(items[i]);
+                }
             }
+            Py_END_CRITICAL_SECTION();
+            DEOPT_IF(should_deopt);
             DECREF_INPUTS();
         }
 
@@ -2516,7 +2522,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(CONTAINS_OP);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;

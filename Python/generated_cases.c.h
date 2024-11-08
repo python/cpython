@@ -3405,7 +3405,7 @@
                 }
                 OPCODE_DEFERRED_INC(CONTAINS_OP);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             // _CONTAINS_OP
             {
@@ -7992,7 +7992,7 @@
                 }
                 OPCODE_DEFERRED_INC(UNPACK_SEQUENCE);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
                 (void)seq;
                 (void)counter;
             }
@@ -8023,12 +8023,22 @@
             values = &stack_pointer[-1];
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o), UNPACK_SEQUENCE);
-            DEOPT_IF(PyList_GET_SIZE(seq_o) != oparg, UNPACK_SEQUENCE);
-            STAT_INC(UNPACK_SEQUENCE, hit);
-            PyObject **items = _PyList_ITEMS(seq_o);
-            for (int i = oparg; --i >= 0; ) {
-                *values++ = PyStackRef_FromPyObjectNew(items[i]);
+            int should_deopt = 0;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_BEGIN_CRITICAL_SECTION(seq_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            should_deopt = PyList_GET_SIZE(seq_o) != oparg;
+            if (!should_deopt) {
+                STAT_INC(UNPACK_SEQUENCE, hit);
+                PyObject **items = _PyList_ITEMS(seq_o);
+                for (int i = oparg; --i >= 0; ) {
+                    *values++ = PyStackRef_FromPyObjectNew(items[i]);
+                }
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_END_CRITICAL_SECTION();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DEOPT_IF(should_deopt, UNPACK_SEQUENCE);
             PyStackRef_CLOSE(seq);
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
