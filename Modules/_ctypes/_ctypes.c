@@ -978,8 +978,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return NULL;
     }
 #else
-    char *dlerr;
-    dlerr = dlerror();
+    char *dlerr = dlerror();
     if (dlerr) {
         PyErr_SetString(PyExc_ValueError, dlerr);
         return NULL;
