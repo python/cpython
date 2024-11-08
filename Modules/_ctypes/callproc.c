@@ -1633,8 +1633,8 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     ptr = dlsym((void*)handle, name);
 	char *dlerr = dlerror();
     if (dlerr) {
-		// XXX: This assumes that UTF-8 is the default locale.
-		//      Investigate if this can cause problems.
+		  // XXX: This assumes that UTF-8 is the default locale.
+		  //      Investigate if this can cause problems.
         PyErr_SetString(PyExc_OSError, dlerr);
         return NULL;
     }
