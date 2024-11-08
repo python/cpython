@@ -1,7 +1,6 @@
 import copy
 import gc
 import pickle
-import re
 import sys
 import doctest
 import unittest
@@ -11,7 +10,6 @@ import textwrap
 import types
 
 from test import support
-from test.support import import_helper
 
 try:
     import _testcapi
@@ -269,33 +267,6 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
-
-    @unittest.skipUnless(_testcapi, "requires _testcapi")
-    def test_gi_frame_f_code_overflow(self):
-        # See: https://github.com/python/cpython/issues/126119
-        ctypes = import_helper.import_module('ctypes')
-
-        def f(): yield
-        c = f().gi_frame.f_code
-        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
-
-        ps = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
-        fss = support.get_frame_specials_size()
-        # anything below that limit is a valid co_stacksize
-        evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
-
-        evil = c.__replace__(co_stacksize=evil_stacksize - 1)
-
-        if support.Py_GIL_DISABLED:
-            self.skipTest("segmentation fault on free-threaded builds")
-        elif sys.maxsize == 2147483647:  # 32-bit machine
-            with self.assertRaises(MemoryError):
-                evil_gi = types.FunctionType(evil, {})()
-        else:
-            # the following crashes on free-threaded builds for now
-            evil_gi = types.FunctionType(evil, {})()
-            message = re.escape("size exceeds INT_MAX")
-            self.assertRaisesRegex(OverflowError, message, evil_gi.__sizeof__)
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):

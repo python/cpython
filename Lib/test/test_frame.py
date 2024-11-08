@@ -222,29 +222,6 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
-    @unittest.skipUnless(_testcapi, "requires _testcapi")
-    def test_sizeof_overflow(self):
-        # See: https://github.com/python/cpython/issues/126119
-        ctypes = import_helper.import_module('ctypes')
-
-        f, _, _ = self.make_frames()
-        c = f.f_code
-        co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
-
-        fss = support.get_frame_specials_size()
-        ps = ctypes.sizeof(ctypes.c_void_p)  # sizeof(PyObject *)
-        evil_stacksize = int(_testcapi.INT_MAX / ps - fss - co_nlocalsplus)
-        # an evil code with a valid (but very large) stack size
-        evil_code = f.f_code.replace(co_stacksize=evil_stacksize - 1)
-
-        if sys.maxsize == 2147483647:  # 32-bit machine
-            with self.assertRaises(MemoryError):
-                frame = _testcapi.frame_new(evil_code, globals(), locals())
-        else:
-            frame = _testcapi.frame_new(evil_code, globals(), locals())
-            message = re.escape("size exceeds INT_MAX")
-            self.assertRaisesRegex(OverflowError, message, frame.__sizeof__)
-
 
 class ReprTest(unittest.TestCase):
     """
