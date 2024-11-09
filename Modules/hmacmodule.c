@@ -10,7 +10,7 @@
 // HMAC underlying hash function static information.
 
 /* MD-5 */
-// (HACL_HID = md5)
+// HACL_HID = md5
 #define Py_hmac_md5_block_size          64
 #define Py_hmac_md5_digest_size         16
 #define Py_hmac_md5_update_func         NULL
