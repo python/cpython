@@ -737,7 +737,13 @@ class PathBase(PurePathBase):
 
         Use resolve() to resolve symlinks and remove '..' segments.
         """
-        raise UnsupportedOperation(self._unsupported_msg('absolute()'))
+        if self.is_absolute():
+            return self
+        elif self.parser is not posixpath:
+            raise UnsupportedOperation(self._unsupported_msg('absolute()'))
+        else:
+            # Treat the root directory as the current working directory.
+            return self.with_segments('/', *self._raw_paths)
 
     @classmethod
     def cwd(cls):
@@ -774,10 +780,13 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
+        elif self.parser is not posixpath:
+            raise UnsupportedOperation(self._unsupported_msg('resolve()'))
 
-        def getcwd():
-            return str(self.with_segments().absolute())
+        def raise_error(*args):
+            raise OSError("Unsupported operation.")
 
+        getcwd = raise_error
         if strict or getattr(self.readlink, '_supported', True):
             def lstat(path_str):
                 path = self.with_segments(path_str)
@@ -792,14 +801,10 @@ class PathBase(PurePathBase):
             # If the user has *not* overridden the `readlink()` method, then
             # symlinks are unsupported and (in non-strict mode) we can improve
             # performance by not calling `path.lstat()`.
-            def skip(path_str):
-                # This exception will be internally consumed by `_realpath()`.
-                raise OSError("Operation skipped.")
-
-            lstat = readlink = skip
+            lstat = readlink = raise_error
 
         return self.with_segments(posixpath._realpath(
-            str(self), strict, self.parser.sep,
+            str(self.absolute()), strict, self.parser.sep,
             getcwd=getcwd, lstat=lstat, readlink=readlink,
             maxlinks=self._max_symlinks))
 
