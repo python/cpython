@@ -124,14 +124,12 @@ class PurePathBase:
     parser = ParserBase()
     _globber = PathGlobber
 
-    def __init__(self, arg, *args):
-        paths = [arg]
-        paths.extend(args)
-        for path in paths:
-            if not isinstance(path, str):
+    def __init__(self, *args):
+        for arg in args:
+            if not isinstance(arg, str):
                 raise TypeError(
-                    f"path should be a str, not {type(path).__name__!r}")
-        self._raw_paths = paths
+                    f"argument should be a str, not {type(arg).__name__!r}")
+        self._raw_paths = list(args)
         self._resolving = False
 
     def with_segments(self, *pathsegments):
