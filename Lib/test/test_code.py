@@ -200,7 +200,6 @@ try:
 except ImportError:
     _testcapi = None
 
-from test import support
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED)
@@ -597,10 +596,9 @@ class CodeTest(unittest.TestCase):
 
         c = foo.__code__
 
-        fss = support.get_frame_specials_size()
         co_nlocalsplus = len({*c.co_varnames, *c.co_cellvars, *c.co_freevars})
         # anything below that limit is a valid co_stacksize
-        evil_stacksize = int(_testcapi.INT_MAX / 16 - fss - co_nlocalsplus)
+        evil_stacksize = int(_testcapi.INT_MAX / 16 - co_nlocalsplus)
 
         with self.assertRaisesRegex(OverflowError, "stack size is too large"):
             c.__replace__(co_stacksize=evil_stacksize)
