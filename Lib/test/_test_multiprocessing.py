@@ -12,6 +12,7 @@ import itertools
 import sys
 import os
 import gc
+import importlib
 import errno
 import functools
 import signal
@@ -20,8 +21,10 @@ import collections.abc
 import socket
 import random
 import logging
+import shutil
 import subprocess
 import struct
+import tempfile
 import operator
 import pickle
 import weakref
@@ -6395,6 +6398,81 @@ class _TestAtExit(BaseTestCase):
             p.join()
             with open(output_path) as f:
                 self.assertEqual(f.read(), 'deadbeef')
+
+
+class _TestSpawnedSysPath(BaseTestCase):
+    """Test that sys.path is setup in forkserver and spawn processes."""
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        self._orig_sys_path = list(sys.path)
+        self._temp_dir = tempfile.mkdtemp(prefix="test_sys_path-")
+        self._mod_name = "unique_test_mod"
+        module_path = os.path.join(self._temp_dir, f"{self._mod_name}.py")
+        with open(module_path, "w", encoding="utf-8") as mod:
+            mod.write("# A simple test module\n")
+        sys.path[:] = [p for p in sys.path if p]  # remove any existing ""s
+        sys.path.insert(0, self._temp_dir)
+        sys.path.insert(0, "")  # Replaced with an abspath in child.
+        try:
+            self._ctx_forkserver = multiprocessing.get_context("forkserver")
+        except ValueError:
+            self._ctx_forkserver = None
+        self._ctx_spawn = multiprocessing.get_context("spawn")
+
+    def tearDown(self):
+        sys.path[:] = self._orig_sys_path
+        shutil.rmtree(self._temp_dir, ignore_errors=True)
+
+    @staticmethod
+    def enq_imported_module_names(queue):
+        queue.put(tuple(sys.modules))
+
+    def test_forkserver_preload_imports_sys_path(self):
+        ctx = self._ctx_forkserver
+        if not ctx:
+            self.skipTest("requires forkserver start method.")
+        self.assertNotIn(self._mod_name, sys.modules)
+        multiprocessing.forkserver._forkserver._stop()  # Must be fresh.
+        ctx.set_forkserver_preload(
+            ["test.test_multiprocessing_forkserver", self._mod_name])
+        q = ctx.Queue()
+        proc = ctx.Process(target=self.enq_imported_module_names, args=(q,))
+        proc.start()
+        proc.join()
+        child_imported_modules = q.get()
+        q.close()
+        self.assertIn(self._mod_name, child_imported_modules)
+
+    @staticmethod
+    def enq_sys_path_and_import(queue, mod_name):
+        queue.put(sys.path)
+        try:
+            importlib.import_module(mod_name)
+        except ImportError as exc:
+            queue.put(exc)
+        else:
+            queue.put(None)
+
+    def test_child_sys_path(self):
+        for ctx in (self._ctx_spawn, self._ctx_forkserver):
+            if not ctx:
+                continue
+            with self.subTest(f"{ctx.get_start_method()} start method"):
+                q = ctx.Queue()
+                proc = ctx.Process(target=self.enq_sys_path_and_import,
+                                   args=(q, self._mod_name))
+                proc.start()
+                proc.join()
+                child_sys_path = q.get()
+                import_error = q.get()
+                q.close()
+                self.assertNotIn("", child_sys_path)  # replaced by an abspath
+                self.assertIn(self._temp_dir, child_sys_path)  # our addition
+                # ignore the first element, it is the absolute "" replacement
+                self.assertEqual(child_sys_path[1:], sys.path[1:])
+                self.assertIsNone(import_error, msg=f"child could not import {self._mod_name}")
 
 
 class MiscTestCase(unittest.TestCase):
