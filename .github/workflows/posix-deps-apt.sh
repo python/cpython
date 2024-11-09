@@ -19,6 +19,7 @@ apt-get -yq install \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
+    libnsl-dev \
     lzma \
     lzma-dev \
     tk-dev \
