@@ -48,11 +48,27 @@ class ProtoComMethod:
         foreign_func = self.proto(self.index, name, *self.args)
         self.mth = PyInstanceMethod_Type(foreign_func)
 
+    # NOTE: To aid understanding, adding type annotations with `typing`
+    # would look like this.
+    #
+    # _ParamFlags = None | tuple[tuple[int, str] | tuple[int, str, Any], ...]
+    #
+    # @overload
+    # def __call__(self, paramflags: _ParamFlags, iid: GUID, /) -> Self: ...
+    # @overload
+    # def __call__(self, paramflags: _ParamFlags, /) -> Self: ...
+    # @overload
+    # def __call__(self) -> Self: ...
     def __call__(self, *args):
         self.args = args
         return self
 
     def __get__(self, instance, owner=None):
+        # if instance is None:
+        #     return self
+        # NOTE: In this test, there is no need to define behavior for the
+        # custom descriptor as a class attribute, so the above implementation
+        # is omitted.
         return self.mth.__get__(instance)
 
 
