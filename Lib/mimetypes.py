@@ -51,6 +51,7 @@ knownfiles = [
     "/etc/httpd/conf/mime.types",               # Apache
     "/etc/apache/mime.types",                   # Apache 1
     "/etc/apache2/mime.types",                  # Apache 2
+    "/etc/nginx/mime.types",                    # Nginx
     "/usr/local/etc/httpd/conf/mime.types",
     "/usr/local/lib/netscape/mime.types",
     "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
@@ -442,6 +443,8 @@ def _default_mime_types():
         '.bz2': 'bzip2',
         '.xz': 'xz',
         '.br': 'br',
+        '.7z': 'lzma',
+        '.zst': 'zstd'
         }
 
     # Before adding new types, make sure they are either registered with IANA,
