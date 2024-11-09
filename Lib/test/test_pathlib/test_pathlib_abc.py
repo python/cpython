@@ -148,6 +148,7 @@ class DummyPurePathTest(unittest.TestCase):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
+        P()
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
