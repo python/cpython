@@ -654,9 +654,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    No guarantees are made about when an object is destroyed, except:
 
-   * Python will destroy an object after the final reference to the object is
-     deleted, unless its finalizer (:c:member:`~PyTypeObject.tp_finalize`)
-     subsequently resurrects the object.
+   * Python will destroy an object immediately or some time after the final
+     reference to the object is deleted, unless its finalizer
+     (:c:member:`~PyTypeObject.tp_finalize`) subsequently resurrects the
+     object.
    * An object will not be destroyed while it is being automatically finalized
      (:c:member:`~PyTypeObject.tp_finalize`) or automatically cleared
      (:c:member:`~PyTypeObject.tp_clear`).
@@ -2328,6 +2329,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    members of a :term:`cyclic isolate`, but future versions might finalize
    objects regularly before their destruction.
 
+   To manually finalize an object, do not call this function directly; call
+   :c:func:`PyObject_CallFinalizer` or
+   :c:func:`PyObject_CallFinalizerFromDealloc` instead.
+
    :c:member:`~PyTypeObject.tp_finalize` should leave the current exception
    status unchanged.  The recommended way to write a non-trivial finalizer is
    to back up the exception at the beginning by calling
@@ -2376,6 +2381,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       * :pep:`442`: "Safe object finalization"
       * :ref:`life-cycle` for details about how this slot relates to other
         slots.
+      * :c:func:`PyObject_CallFinalizer`
+      * :c:func:`PyObject_CallFinalizerFromDealloc`
 
 
 .. c:member:: vectorcallfunc PyTypeObject.tp_vectorcall

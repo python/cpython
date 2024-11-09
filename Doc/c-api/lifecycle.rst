@@ -9,9 +9,9 @@ Life Events
 -----------
 
 The figure below illustrates the order of events that can occur throughout an
-object's life [1]_.  An arrow from *A* to *B* indicates that event *B* can
-occur after event *A* has occurred, with the arrow's label indicating the
-condition that must be true for *B* to occur after *A*.
+object's life.  An arrow from *A* to *B* indicates that event *B* can occur
+after event *A* has occurred, with the arrow's label indicating the condition
+that must be true for *B* to occur after *A*.
 
 .. raw:: html
 
@@ -47,27 +47,37 @@ condition that must be true for *B* to occur after *A*.
 
    Explanation:
 
-   * :c:member:`~PyTypeObject.tp_new` is called to create a new object.
-   * :c:member:`~PyTypeObject.tp_alloc` is directly called by
-     :c:member:`~PyTypeObject.tp_new` to allocate the memory for the new
-     object.
-   * :c:member:`~PyTypeObject.tp_init` initializes the newly created object.
-   * After :c:member:`!tp_init` completes, the object is ready to use.
-   * Once the object becomes *unreachable* (either no references to the object
-     exist or the object is a member of a :term:`cyclic isolate`):
+   * When a new object is constructed by calling its type:
 
-     #. :c:member:`~PyTypeObject.tp_finalize` might be called [2]_ to finalize
-        the object
-     #. :c:member:`~PyTypeObject.tp_clear` might be called [2]_ to clear
-        references held by the object, if :c:member:`~PyTypeObject.tp_finalize`
-        was previously called
-     #. :c:member:`~PyTypeObject.tp_dealloc` is called to destroy the object
+     * :c:member:`~PyTypeObject.tp_new` is called to create a new object.
+     * :c:member:`~PyTypeObject.tp_alloc` is directly called by
+       :c:member:`~PyTypeObject.tp_new` to allocate the memory for the new
+       object.
+     * :c:member:`~PyTypeObject.tp_init` initializes the newly created object.
+       :c:member:`!tp_init` can be called again to re-initialize an object, if
+       desired.
+
+   * After :c:member:`!tp_init` completes, the object is ready to use.
+   * After the last reference to an object is removed:
+
+     #. :c:member:`~PyTypeObject.tp_finalize` might be called to finalize the
+        object.  :term:`CPython` currently does not finalize an object when the
+        last reference to it is deleted.  Also, for types that support garbage
+        collection (the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), CPython
+        currently never finalizes the same object twice, even if it has been
+        resurrected.  These behaviors may change in the future.
+     #. If the object was previously finalized,
+        :c:member:`~PyTypeObject.tp_clear` might be called to clear references
+        held by the object.  :term:`CPython` currently does not clear an object
+        in response to the deletion of the last reference, but this may change
+        in the future.
+     #. :c:member:`~PyTypeObject.tp_dealloc` is called to destroy the object.
 
    * The :c:member:`~PyTypeObject.tp_finalize` function can optionally add a
      reference to the object, *resurrecting* it and preventing its pending
-     destruction.  Python may or may not call :c:member:`!tp_finalize` a second
-     time on a resurrected object; currently :term:`CPython` never calls an
-     object's :c:member:`!tp_finalize` twice.
+     destruction.  (Only :c:member:`!tp_finalize` can resurrect an object;
+     :c:member:`~PyTypeObject.tp_clear` and :c:member:`~PyTypeObject.tp_dealloc`
+     cannot.)
    * :c:member:`~PyTypeObject.tp_dealloc` can optionally call
      :c:member:`~PyTypeObject.tp_finalize` via
      :c:func:`PyObject_CallFinalizerFromDealloc` if it wishes to reuse that
@@ -76,6 +86,10 @@ condition that must be true for *B* to occur after *A*.
      destruction.
    * When :c:member:`~PyTypeObject.tp_dealloc` finishes object destruction, it
      directly calls :c:member:`~PyTypeObject.tp_free` to deallocate the memory.
+   * If the object is a member of a :term:`cyclic isolate` and
+     :c:member:`~PyTypeObject.tp_clear` fails to break the reference cycle (or
+     that function is not called), the objects remain indefinitely uncollectable
+     (they "leak").  See :data:`gc.garbage`.
 
    If the object is marked as supporting garbage collection (the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
@@ -95,7 +109,8 @@ condition that must be true for *B* to occur after *A*.
    * When the garbage collector discovers a :term:`cyclic isolate` and all of
      the objects in the group have already been finalized, the garbage
      collector clears one or more of the uncleared objects in the group
-     (possibly concurrently) by calling each's
+     (possibly concurrently, but with the :term:`GIL` held :ref:`unless
+     disabled <whatsnew313-free-threaded-cpython>`) by calling each's
      :c:member:`~PyTypeObject.tp_clear` function.  This repeats as long as the
      cyclic isolate still exists and not all of the objects have been cleared.
 
@@ -128,14 +143,16 @@ no longer isolated due to finalizer resurrection (see
 #. **All finalized:** All objects in a cyclic isolate are finalized before any
    of them are cleared.
 #. **Mix of finalized and cleared:** The objects can be cleared serially or
-   concurrently; either way, some will finish before the others.  A finalized
-   object must be able to tolerate the clearing of a subset of its referents.
-   :pep:`442` calls this stage "cyclic trash".
+   concurrently (but with the :term:`GIL` held :ref:`unless disabled
+   <whatsnew313-free-threaded-cpython>`); either way, some will finish before
+   others.  A finalized object must be able to tolerate the clearing of a
+   subset of its referents.  :pep:`442` calls this stage "cyclic trash".
 #. **Leaked:** If a cyclic isolate still exists after all objects in the group
    have been finalized and cleared, then the objects remain indefinitely
    uncollectable (see :data:`gc.garbage`).  It is a bug if a cyclic isolate
    reaches this stage---it means the :c:member:`~PyTypeObject.tp_clear` methods
-   have failed to break the reference cycle as required.
+   of the participating objects have failed to break the reference cycle as
+   required.
 
 If :c:member:`~PyTypeObject.tp_clear` did not exist, then Python would have no
 way to break a reference cycle.  The destruction of an object in a cyclic
@@ -154,11 +171,11 @@ finalized) objects.
 To summarize the possible interactions:
 
 * A non-finalized object might have references to or from non-finalized and
-  finalized objects, but not cleared objects.
+  finalized objects, but not to or from cleared objects.
 * A finalized object might have references to or from non-finalized, finalized,
   and cleared objects.
 * A cleared object might have references to or from finalized and cleared
-  objects, but not non-finalized objects.
+  objects, but not to or from non-finalized objects.
 
 Without any reference cycles, an object can be simply destroyed once its last
 reference is deleted; the finalization and clearing steps are not necessary to
@@ -180,6 +197,9 @@ To allocate and free memory, see :ref:`allocating-objects`.
 .. c:function:: void PyObject_CallFinalizer(PyObject *op)
 
    Finalizes the object as described in :c:member:`~PyTypeObject.tp_finalize`.
+   Call this function (or :c:func:`PyObject_CallFinalizerFromDealloc`) instead
+   of calling :c:member:`~PyTypeObject.tp_finalize` directly because this
+   function can deduplicate multiple calls to :c:member:`!tp_finalize`.
 
 
 .. c:function:: int PyObject_CallFinalizerFromDealloc(PyObject *op)
@@ -190,17 +210,3 @@ To allocate and free memory, see :ref:`allocating-objects`.
    resurrects the object, this function returns -1; no further destruction
    should happen.  Otherwise, this function returns 0 and destruction can
    continue normally.
-
-
-.. rubric:: Footnotes
-
-.. [1] Disclaimer: Some of the details documented in this section may change in
-   a future version of :term:`CPython`.  Care was taken to limit the promises
-   made here without sacrificing information needed to correctly design types
-   and without sacrificing the ability to improve CPython in a
-   backwards-compatible way.  Time will tell whether we were successful.
-
-.. [2] :term:`CPython` has historically only called
-   :c:member:`~PyTypeObject.tp_finalize` and :c:member:`~PyTypeObject.tp_clear`
-   from the garbage collector when the object is in a :term:`cyclic isolate`,
-   but may call them whenever an object is about to be destroyed.

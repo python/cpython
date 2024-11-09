@@ -58,7 +58,8 @@ rules:
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
    Memory allocated by this function must be freed with
-   :c:func:`PyObject_GC_Del`.
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
 
 .. c:macro:: PyObject_GC_NewVar(TYPE, typeobj, size)
 
@@ -66,7 +67,8 @@ rules:
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
    Memory allocated by this function must be freed with
-   :c:func:`PyObject_GC_Del`.
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
 
 .. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
@@ -80,7 +82,8 @@ rules:
    not managed by Python.
 
    Memory allocated by this function must be freed with
-   :c:func:`PyObject_GC_Del`.
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
 
    .. warning::
       The function is marked as unstable because the final mechanism

@@ -1,6 +1,5 @@
 digraph "Life Events" {
    graph [
-     fontname="svg"
      fontsize=12.0
      id="life_events_graph"
      layout="dot"
@@ -23,16 +22,27 @@ digraph "Life Events" {
      "tp_alloc" [href="typeobj.html#c.PyTypeObject.tp_alloc" target="_top"]
    }
    "tp_init" [href="typeobj.html#c.PyTypeObject.tp_init" target="_top"]
-   {
-     rank="same"
-     "reachable" [fontname="Times-Italic" shape=box]
-     "tp_traverse" [
-       href="typeobj.html#c.PyTypeObject.tp_traverse"
-       target="_top"
-     ]
-   }
-   "tp_finalize" [href="typeobj.html#c.PyTypeObject.tp_finalize" target="_top"]
+   "reachable" [fontname="Times-Italic" shape=box]
+   "tp_traverse" [
+     href="typeobj.html#c.PyTypeObject.tp_traverse"
+     target="_top"
+   ]
+   "finalized" [
+     fontname="Times-Italic"
+     label=<marked as<br/>finalized?>
+     shape=diamond
+   ]
+   "tp_finalize" [
+     href="typeobj.html#c.PyTypeObject.tp_finalize"
+     ordering="in"
+     target="_top"
+   ]
    "tp_clear" [href="typeobj.html#c.PyTypeObject.tp_clear" target="_top"]
+   "uncollectable" [
+     fontname="Times-Italic"
+     label=<uncollectable<br/>(leaked)>
+     shape=box
+   ]
    "tp_dealloc" [
      href="typeobj.html#c.PyTypeObject.tp_dealloc"
      ordering="in"
@@ -40,41 +50,33 @@ digraph "Life Events" {
    ]
    "tp_free" [href="typeobj.html#c.PyTypeObject.tp_free" target="_top"]
 
-   "start" -> "tp_new"
-   "tp_new" -> "tp_alloc" [label=<  direct call  >]
-   "tp_alloc" -> "tp_new" [label=<    >]
+   "start" -> "tp_new" [label=<    type call  >]
+   "tp_new" -> "tp_alloc" [label=<  direct call  > arrowhead=empty]
    "tp_new" -> "tp_init"
    "tp_init" -> "reachable"
-   "reachable" -> "tp_traverse"
-   "tp_traverse" -> "reachable"
-   "reachable" -> "tp_clear" [
-     label=<  was resurrected,  <br/>  then became  <br/>  unreachable  >
+   "reachable" -> "tp_traverse" [
+     label=<  periodic  <br/>  cyclic isolate   <br/>  detection  >
    ]
+   "reachable" -> "tp_init"
    "reachable" -> "tp_finalize" [dir="back" label=<  resurrected  >]
-   "reachable" -> "tp_finalize" [label=<  became  <br/>  unreachable  >]
-   "tp_finalize" -> "tp_clear" [label=<  still  <br/>  unreachable  >]
+   "tp_traverse" -> "reachable" [label=<  not in a  <br/>  cyclic isolate  >]
+   "tp_traverse" -> "finalized" [label=<  cyclic  <br/>  isolate  >]
+   "reachable" -> "finalized" [label=<  no refs  >]
+   "finalized" -> "tp_finalize" [label=<  no  >]
+   "finalized" -> "tp_clear" [label=<  yes  >]
+   "tp_finalize" -> "tp_clear" [label=<  no refs or   <br/>  cyclic isolate  >]
    "tp_finalize" -> "tp_dealloc" [
+     arrowtail=empty
      dir="back"
      href="lifecycle.html#c.PyObject_CallFinalizerFromDealloc"
-     label=<
-       <table border="0" cellborder="0" cellpadding="0" cellspacing="0">
-         <tr>
-           <td rowspan="4">  </td>
-           <td align="left">recommended call to</td>
-         </tr>
-         <tr>
-           <td align="left"><font face="Courier">PyObject_Call</font></td>
-         </tr>
-         <tr>
-           <td align="left"><font face="Courier">FinalizerFrom</font></td>
-         </tr>
-         <tr><td align="left"><font face="Courier">Dealloc</font></td></tr>
-       </table>
-     >
+     style=dashed
+     label=<  recommended<br/>  call (see<br/>  explanation)>
      target="_top"
    ]
-   "tp_finalize" -> "tp_dealloc" [label=<  still  <br/>  unreachable  >]
-   "tp_clear" -> "tp_dealloc" [label=<    >]
-   "reachable" -> "tp_dealloc" [label=<  became  <br/>  unreachable  >]
-   "tp_dealloc" -> "tp_free" [label=<    direct call  >]
+   "tp_finalize" -> "tp_dealloc" [label=<   no refs  >]
+   "tp_clear" -> "tp_dealloc" [label=<  no refs  >]
+   "tp_clear" -> "uncollectable" [label=<  cyclic  <br/>  isolate  >]
+   "uncollectable" -> "tp_dealloc" [style=invis]
+   "reachable" -> "tp_dealloc" [label=<  no refs>]
+   "tp_dealloc" -> "tp_free" [label=<    direct call  > arrowhead=empty]
 }
