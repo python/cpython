@@ -699,7 +699,7 @@ set_cache_verison(uint16_t *old_version, uint32_t new_version)
     }
     return 1;
 #else
-    write_u32(cache, new_version);
+    write_u32(old_version, new_version);
     return 1;
 #endif
 }
