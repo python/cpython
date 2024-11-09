@@ -29,14 +29,14 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
+    # The current uop's operand0 on 64-bit platforms (exposed as _JIT_OPERAND0):
     OPERAND0 = enum.auto()
-    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
+    # The current uop's operand0 on 32-bit platforms (exposed as _JIT_OPERAND0_HI/LO):
     OPERAND0_HI = enum.auto()
     OPERAND0_LO = enum.auto()
-    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND):
+    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND1):
     OPERAND1 = enum.auto()
-    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
+    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND1_HI/LO):
     OPERAND1_HI = enum.auto()
     OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
