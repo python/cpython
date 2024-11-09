@@ -1,0 +1,1 @@
+Expose error code ``XML_ERROR_NOT_STARTED`` of Expat >=2.6.4 in :mod:`xml.parsers.expat.errors`.
