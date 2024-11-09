@@ -6308,7 +6308,8 @@ class _TestSpawnedSysPath(BaseTestCase):
         queue.put(tuple(sys.modules))
 
     def test_forkserver_preload_imports_sys_path(self):
-        if not (ctx := self._ctx_forkserver):
+        ctx = self._ctx_forkserver
+        if not ctx:
             self.skipTest("requires forkserver start method.")
         self.assertNotIn(self._mod_name, sys.modules)
         multiprocessing.forkserver._forkserver._stop()  # Must be fresh.
