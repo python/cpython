@@ -441,9 +441,9 @@ sys
 turtle
 ------
 
-* Add context managers for :func:`turtle.fill`, :func:`turtle.poly` and
-  :func:`turtle.no_animation` (Contributed by Marie Roald and Yngve Mardal Moe
-  in :gh:`126350`.)
+* Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
+  and :func:`turtle.no_animation`.
+  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 unicodedata
 -----------
