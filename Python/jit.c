@@ -109,9 +109,9 @@ mark_executable(unsigned char *memory, size_t size)
 #else
     int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-# ifndef MAP_JIT
+#ifndef MAP_JIT
     failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
-# endif
+#endif
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
