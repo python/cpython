@@ -346,7 +346,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
         // _STORE_FAST:
-        GETLOCAL(this_instr->operand) = res;
+        GETLOCAL(this_instr->operand0) = res;
     }
 
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -589,8 +589,27 @@ dummy_func(void) {
         self = sym_new_not_null(ctx);
     }
 
-    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        (void)self_or_null;
+        if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            assert(PyFunction_Check(sym_get_const(callable)));
+            REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+            this_instr->operand1 = (uintptr_t)sym_get_const(callable);
+        }
         sym_set_type(callable, &PyFunction_Type);
+    }
+
+    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        assert(sym_matches_type(callable, &PyFunction_Type));
+        if (sym_is_const(callable)) {
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
+                PyCodeObject *co = (PyCodeObject *)func->func_code;
+                if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                    REPLACE_OP(this_instr, _NOP, 0 ,0);
+                }
+            }
+        }
         (void)self_or_null;
     }
 

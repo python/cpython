@@ -100,11 +100,11 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    assert(inst->operand <= UINT16_MAX);
-    if ((int)inst->operand >= dict->ma_keys->dk_nentries) {
+    assert(inst->operand0 <= UINT16_MAX);
+    if ((int)inst->operand0 >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
-    PyObject *res = entries[inst->operand].me_value;
+    PyObject *res = entries[inst->operand0].me_value;
     if (res == NULL) {
         return NULL;
     }
@@ -114,7 +114,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     else {
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
     }
-    inst->operand = (uint64_t)res;
+    inst->operand0 = (uint64_t)res;
     return res;
 }
 
@@ -125,7 +125,7 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
         return 1;
     }
     PyDictObject *dict = (PyDictObject *)obj;
-    if (dict->ma_keys->dk_version != inst->operand) {
+    if (dict->ma_keys->dk_version != inst->operand0) {
         return 1;
     }
     return 0;
@@ -215,7 +215,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = function_version;
+                    buffer[pc].operand0 = function_version;
                     function_checked |= 1;
                 }
                 // We're no longer pushing the builtins keys; rewrite the
@@ -248,7 +248,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = function_version;
+                    buffer[pc].operand0 = function_version;
                     function_checked |= 1;
                 }
                 if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS) {
@@ -273,7 +273,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
-                uint64_t operand = buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand0;
                 if (operand == 0 || (operand & 1)) {
                     // It's either a code object or NULL, so bail
                     return 1;
@@ -301,7 +301,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
-                uint64_t operand = buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand0;
                 if (operand == 0 || (operand & 1)) {
                     // It's either a code object or NULL, so bail
                     return 1;
@@ -317,7 +317,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             }
             case _CHECK_FUNCTION_EXACT_ARGS:
-                prechecked_function_version = (uint32_t)buffer[pc].operand;
+                prechecked_function_version = (uint32_t)buffer[pc].operand0;
                 break;
             default:
                 if (is_terminator(inst)) {
@@ -343,7 +343,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define REPLACE_OP(INST, OP, ARG, OPERAND)    \
     INST->opcode = OP;            \
     INST->oparg = ARG;            \
-    INST->operand = OPERAND;
+    INST->operand0 = OPERAND;
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
@@ -409,7 +409,7 @@ get_code(_PyUOpInstruction *op)
 {
     assert(op->opcode == _PUSH_FRAME || op->opcode == _RETURN_VALUE || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
-    uint64_t operand = op->operand;
+    uint64_t operand = op->operand0;
     if (operand == 0) {
         return NULL;
     }
@@ -429,7 +429,7 @@ static PyCodeObject *
 get_code_with_logging(_PyUOpInstruction *op)
 {
     PyCodeObject *co = NULL;
-    uint64_t push_operand = op->operand;
+    uint64_t push_operand = op->operand0;
     if (push_operand & 1) {
         co = (PyCodeObject *)(push_operand & ~1);
         DPRINTF(3, "code=%p ", co);
@@ -534,7 +534,7 @@ optimize_uops(
         assert(max_space <= INT_MAX);
         assert(max_space <= INT32_MAX);
         first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand = max_space;
+        first_valid_check_stack->operand0 = max_space;
     }
     return trace_len;
 

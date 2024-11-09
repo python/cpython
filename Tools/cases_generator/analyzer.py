@@ -200,7 +200,7 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
