@@ -3386,13 +3386,35 @@ count_nextlong(countobject *lz)
     return long_cnt;
 }
 
+static inline int
+count_switch_to_slow_mode(countobject *lz)
+{
+    assert(lz->cnt == PY_SSIZE_T_MAX);
+    assert(lz->long_cnt == NULL);
+    /* Switch to slow_mode */
+    PyObject *long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+    if (long_cnt == NULL) {
+        return -1;
+    }
+    lz->long_cnt = long_cnt;
+    return 0;
+}
+
 static PyObject *
 count_next(countobject *lz)
 {
 #ifndef Py_GIL_DISABLED
     if (lz->cnt == PY_SSIZE_T_MAX)
         return count_nextlong(lz);
-    return PyLong_FromSsize_t(lz->cnt++);
+    PyObject *res = PyLong_FromSsize_t(lz->cnt++);
+    if (lz->cnt == PY_SSIZE_T_MAX && lz->long_cnt == NULL) {
+        /* populate lz->long_cnt since it could be used by repr() */
+        if (count_switch_to_slow_mode(lz) < 0) {
+            Py_DECREF(res);
+            return NULL;
+        }
+    }
+    return res;
 #else
     // free-threading version
     // fast mode uses compare-exchange loop
@@ -3409,7 +3431,19 @@ count_next(countobject *lz)
             return returned;
         }
         if (_Py_atomic_compare_exchange_ssize(&lz->cnt, &cnt, cnt + 1)) {
-            return PyLong_FromSsize_t(cnt);
+            /* populate lz->long_cnt now since it could be used by repr() */
+            returned = PyLong_FromSsize_t(cnt);
+            if (lz->cnt == PY_SSIZE_T_MAX && lz->long_cnt == NULL) {
+                int rc;
+                Py_BEGIN_CRITICAL_SECTION(lz);
+                rc = count_switch_to_slow_mode(lz);
+                Py_END_CRITICAL_SECTION();
+                if (rc < 0) {
+                    Py_DECREF(returned);
+                    return NULL;
+                }
+            }
+            return returned;
         }
     }
 #endif
