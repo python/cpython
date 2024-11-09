@@ -516,6 +516,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(c), -8)
         self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(repr(count(10.0)), 'count(10.0)')
+
+        self.assertEqual(repr(count(maxsize)), f'count({maxsize})')
+        c = count(maxsize - 1)
+        self.assertEqual(repr(c), f'count({maxsize - 1})')
+        next(c)  # now c is at maxsize
+        self.assertEqual(repr(c), f'count({maxsize})')
+
         self.assertEqual(type(next(count(10.0))), float)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr
@@ -569,6 +576,11 @@ class TestBasicOps(unittest.TestCase):
         c = count(10, 1.0)
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
+
+        c = count(maxsize + 1, -1)
+        self.assertEqual(repr(c), f'count({maxsize + 1}, -1)')
+        next(c)  # now c is at maxsize
+        self.assertEqual(repr(c), f'count({maxsize}, -1)')
 
     @threading_helper.requires_working_threading()
     def test_count_threading(self, step=1):
