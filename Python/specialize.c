@@ -2663,101 +2663,91 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+static int
+to_bool_fail_kind(PyObject *value)
+{
+    if (PyByteArray_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_BYTEARRAY;
+    }
+    if (PyBytes_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_BYTES;
+    }
+    if (PyDict_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_DICT;
+    }
+    if (PyFloat_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_FLOAT;
+    }
+    if (PyMemoryView_Check(value)) {
+        return SPEC_FAIL_TO_BOOL_MEMORY_VIEW;
+    }
+    if (PyAnySet_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_SET;
+    }
+    if (PyTuple_CheckExact(value)) {
+        return SPEC_FAIL_TO_BOOL_TUPLE;
+    }
+    return SPEC_FAIL_OTHER;
+}
+
 void
 _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
 {
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[TO_BOOL] == INLINE_CACHE_ENTRIES_TO_BOOL);
     _PyToBoolCache *cache = (_PyToBoolCache *)(instr + 1);
     PyObject *value = PyStackRef_AsPyObjectBorrow(value_o);
     if (PyBool_Check(value)) {
-        instr->op.code = TO_BOOL_BOOL;
-        goto success;
+        specialize(instr, TO_BOOL_BOOL);
+        return;
     }
     if (PyLong_CheckExact(value)) {
-        instr->op.code = TO_BOOL_INT;
-        goto success;
+        specialize(instr, TO_BOOL_INT);
+        return;
     }
     if (PyList_CheckExact(value)) {
-        instr->op.code = TO_BOOL_LIST;
-        goto success;
+        specialize(instr, TO_BOOL_LIST);
+        return;
     }
     if (Py_IsNone(value)) {
-        instr->op.code = TO_BOOL_NONE;
-        goto success;
+        specialize(instr, TO_BOOL_NONE);
+        return;
     }
     if (PyUnicode_CheckExact(value)) {
-        instr->op.code = TO_BOOL_STR;
-        goto success;
+        specialize(instr, TO_BOOL_STR);
+        return;
     }
     if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
         PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
         if (nb && nb->nb_bool) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_NUMBER);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_TO_BOOL_NUMBER);
+            return;
         }
         PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
         if (mp && mp->mp_length) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MAPPING);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_TO_BOOL_MAPPING);
+            return;
         }
         PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
         if (sq && sq->sq_length) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SEQUENCE);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_TO_BOOL_SEQUENCE);
+            return;
         }
         if (!PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            return;
         }
-        uint32_t version = type_get_version(Py_TYPE(value), TO_BOOL);
+        uint32_t version = FT_ATOMIC_LOAD_UINT32_RELAXED(Py_TYPE(value)->tp_version_tag);
         if (version == 0) {
-            goto failure;
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            return;
         }
-        instr->op.code = TO_BOOL_ALWAYS_TRUE;
+        specialize(instr, TO_BOOL_ALWAYS_TRUE);
         write_u32(cache->version, version);
         assert(version);
-        goto success;
+        return;
     }
-#ifdef Py_STATS
-    if (PyByteArray_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_BYTEARRAY);
-        goto failure;
-    }
-    if (PyBytes_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_BYTES);
-        goto failure;
-    }
-    if (PyDict_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_DICT);
-        goto failure;
-    }
-    if (PyFloat_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_FLOAT);
-        goto failure;
-    }
-    if (PyMemoryView_Check(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MEMORY_VIEW);
-        goto failure;
-    }
-    if (PyAnySet_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SET);
-        goto failure;
-    }
-    if (PyTuple_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_TUPLE);
-        goto failure;
-    }
-    SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OTHER);
-#endif   // Py_STATS
-failure:
-    STAT_INC(TO_BOOL, failure);
-    instr->op.code = TO_BOOL;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(TO_BOOL, success);
-    cache->counter = adaptive_counter_cooldown();
+    unspecialize(instr, to_bool_fail_kind(value));
 }
 
 static int

@@ -1255,6 +1255,72 @@ class TestSpecializer(TestBase):
         self.assert_specialized(g, "CONTAINS_OP_SET")
         self.assert_no_opcode(g, "CONTAINS_OP")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_to_bool(self):
+        def to_bool_bool():
+            true_cnt, false_cnt = 0, 0
+            elems = [e % 2 == 0 for e in range(100)]
+            for e in elems:
+                if e:
+                    true_cnt += 1
+                else:
+                    false_cnt -= 1
+            self.assertEqual(true_cnt, 50)
+            self.assertEqual(false_cnt, -50)
+
+        to_bool_bool()
+        self.assert_specialized(to_bool_bool, "TO_BOOL_BOOL")
+        self.assert_no_opcode(to_bool_bool, "TO_BOOL")
+
+        def to_bool_int():
+            count = 0
+            for i in range(100):
+                if i:
+                    count += 1
+                else:
+                    count -= 1
+            self.assertEqual(count, 98)
+
+        to_bool_int()
+        self.assert_specialized(to_bool_int, "TO_BOOL_INT")
+        self.assert_no_opcode(to_bool_int, "TO_BOOL")
+
+        def to_bool_list():
+            count = 0
+            elems = [1, 2, 3]
+            while elems:
+                count += elems.pop()
+            self.assertEqual(elems, [])
+            self.assertEqual(count, 6)
+
+        to_bool_list()
+        self.assert_specialized(to_bool_list, "TO_BOOL_LIST")
+        self.assert_no_opcode(to_bool_list, "TO_BOOL")
+
+        def to_bool_none():
+            count = 0
+            elems = [None, None, None, None]
+            for e in elems:
+                if not e:
+                    count += 1
+            self.assertEqual(count, len(elems))
+
+        to_bool_none()
+        self.assert_specialized(to_bool_none, "TO_BOOL_NONE")
+        self.assert_no_opcode(to_bool_none, "TO_BOOL")
+
+        def to_bool_str():
+            count = 0
+            elems = ["", "foo", ""]
+            for e in elems:
+                if e:
+                    count += 1
+            self.assertEqual(count, 1)
+
+        to_bool_str()
+        self.assert_specialized(to_bool_str, "TO_BOOL_STR")
+        self.assert_no_opcode(to_bool_str, "TO_BOOL")
 
 
 if __name__ == "__main__":
