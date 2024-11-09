@@ -121,7 +121,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
         default=None, sort_keys=False, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
-    ``.write()``-supporting file-like object).
+    ``.write()``-supporting file-like object or file path).
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
@@ -174,6 +174,10 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
             separators=separators,
             default=default, sort_keys=sort_keys, **kw).iterencode(obj)
+        
+    if type(fp) == str:
+        fp = open(fp, "w")
+        
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
     for chunk in iterable:
@@ -273,7 +277,7 @@ def detect_encoding(b):
 
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
-    """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
+    """Deserialize ``fp`` (a ``.read()``-supporting file-like object or fiel path containing
     a JSON document) to a Python object.
 
     ``object_hook`` is an optional function that will be called with the
@@ -290,6 +294,9 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
     """
+    if type(fp) == str:
+        fp = open(fp)
+    
     return loads(fp.read(),
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
