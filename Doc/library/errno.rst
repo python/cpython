@@ -671,125 +671,175 @@ defined by the module.  The specific list of defined symbols is available as
 
    No medium found
 
+   .. versionadded:: 2.7
+
 
 .. data:: EMEDIUMTYPE
 
    Wrong medium type
+
+   .. versionadded:: 2.7
 
 
 .. data:: ENOKEY
 
    Required key not available
 
+   .. versionadded:: 2.7
+
 
 .. data:: EKEYEXPIRED
 
    Key has expired
+
+   .. versionadded:: 2.7
 
 
 .. data:: EKEYREVOKED
 
    Key has been revoked
 
+   .. versionadded:: 2.7
+
 
 .. data:: EKEYREJECTED
 
    Key was rejected by service
+
+   .. versionadded:: 2.7
 
 
 .. data:: ERFKILL
 
    Operation not possible due to RF-kill
 
+   .. versionadded:: 2.7
+
 
 .. data:: ELOCKUNMAPPED
 
    Locked lock was unmapped
+
+   .. versionadded:: 2.7
 
 
 .. data:: ENOTACTIVE
 
    Facility is not active
 
+   .. versionadded:: 2.7
+
 
 .. data:: EAUTH
 
    Authentication error
+
+   .. versionadded:: 3.2
 
 
 .. data:: EBADARCH
 
    Bad CPU type in executable
 
+   .. versionadded:: 3.2
+
 
 .. data:: EBADEXEC
 
    Bad executable (or shared library)
+
+   .. versionadded:: 3.2
 
 
 .. data:: EBADMACHO
 
    Malformed Mach-o file
 
+   .. versionadded:: 3.2
+
 
 .. data:: EDEVERR
 
    Device error
+
+   .. versionadded:: 3.2
 
 
 .. data:: EFTYPE
 
    Inappropriate file type or format
 
+   .. versionadded:: 3.2
+
 
 .. data:: ENEEDAUTH
 
    Need authenticator
+
+   .. versionadded:: 3.2
 
 
 .. data:: ENOATTR
 
    Attribute not found
 
+   .. versionadded:: 3.2
+
 
 .. data:: ENOPOLICY
 
    Policy not found
+
+   .. versionadded:: 3.2
 
 
 .. data:: EPROCLIM
 
    Too many processes
 
+   .. versionadded:: 3.2
+
 
 .. data:: EPROCUNAVAIL
 
    Bad procedure for program
+
+   .. versionadded:: 3.2
 
 
 .. data:: EPROGMISMATCH
 
    Program version wrong
 
+   .. versionadded:: 3.2
+
 
 .. data:: EPROGUNAVAIL
 
    RPC prog. not avail
+
+   .. versionadded:: 3.2
 
 
 .. data:: EPWROFF
 
    Device power is off
 
+   .. versionadded:: 3.2
+
 
 .. data:: ERPCMISMATCH
 
    RPC version wrong
 
+   .. versionadded:: 3.2
+
 
 .. data:: ESHLIBVERS
 
    Shared library version mismatch
+
+   .. versionadded:: 3.2
 
 
 .. data:: ENOTCAPABLE
