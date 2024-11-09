@@ -1624,7 +1624,7 @@ class SizeofTest(unittest.TestCase):
             INTERPRETER_FRAME = '10PhcP'
         else:
             INTERPRETER_FRAME = '9PhcP'
-        check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
+        check(x, size('3PiccPP' + INTERPRETER_FRAME + 'PP'))
         # function
         def func(): pass
         check(func, size('16Pi'))
@@ -1641,7 +1641,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('6P4c' + INTERPRETER_FRAME + 'P'))
+        check(get_gen(), size('6P4c' + INTERPRETER_FRAME + 'PP'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
