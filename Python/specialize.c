@@ -693,8 +693,8 @@ static inline int
 set_cache_verison(uint16_t *old_version, uint32_t new_version)
 {
 #ifdef Py_GIL_DISABLED
-    uint32_t old_version_val = read_u32(old_version);
-    if (!_Py_atomic_compare_exchange_uint32((uint32_t *)old_version, &old_version_val, new_version)) {
+    uint16_t old_version_val = _Py_atomic_load_uint16_relaxed(old_version);
+    if (!_Py_atomic_compare_exchange_uint16(old_version, &old_version_val, new_version)) {
         return 0;
     }
     return 1;
