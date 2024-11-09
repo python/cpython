@@ -775,5 +775,33 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             self.run_with_own_gil(script)
 
 
+class MiscTests(unittest.TestCase):
+    def test_atomic_write_should_notice_incomplete_writes(self):
+        from importlib import _bootstrap_external
+        from test.support import os_helper
+        import _pyio
+        import os
+
+        oldwrite = os.write
+        seen_write = False
+
+        # emulate an os.write that only writes partial data
+        def write(fd, data):
+            nonlocal seen_write
+            seen_write = True
+            return oldwrite(fd, data[:100])
+
+        # need to patch _io to be _pyio, so that io.FileIO is affected by the
+        # os.write patch
+        with (unittest.mock.patch('importlib._bootstrap_external._io', _pyio),
+              unittest.mock.patch('os.write', write)):
+            with self.assertRaises(OSError):
+                _bootstrap_external._write_atomic(os_helper.TESTFN, b'x' * 10000)
+        assert seen_write
+
+        with self.assertRaises(OSError):
+            os.stat(os_helper.TESTFN) # did not get written
+
+
 if __name__ == '__main__':
     unittest.main()
