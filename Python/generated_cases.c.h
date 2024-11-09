@@ -6162,9 +6162,7 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 PyDictObject *dict = (PyDictObject*) BUILTINS();
                 if (builtins_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
@@ -6212,9 +6210,7 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 PyDictObject *dict = (PyDictObject*) GLOBALS();
                 if (globals_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {

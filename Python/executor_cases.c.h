@@ -1937,9 +1937,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #if Py_GIL_DISABLED
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (!increfed) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -1981,9 +1979,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #if Py_GIL_DISABLED
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (!increfed) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
