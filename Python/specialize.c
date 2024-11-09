@@ -690,10 +690,13 @@ set_opcode(_Py_CODEUNIT *instr, uint8_t opcode)
 }
 
 static inline int
-set_cache_verison(uint16_t *old_version, uint32_t new_version)
+set_cache_version(uint16_t *old_version, uint32_t new_version)
 {
 #ifdef Py_GIL_DISABLED
     uint16_t old_version_val = _Py_atomic_load_uint16_relaxed(old_version);
+    if (old_version_val > (uint16_t)new_version) {
+        return 0;
+    }
     if (!_Py_atomic_compare_exchange_uint16(old_version, &old_version_val, new_version)) {
         return 0;
     }
@@ -2757,13 +2760,7 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
         }
-#ifdef Py_GIL_DISABLED
-        if (read_u32(cache->version) > version) {
-            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
-            return;
-        }
-#endif
-        if (!set_cache_verison(cache->version, version)) {
+        if (!set_cache_version(cache->version, version)) {
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
         }
