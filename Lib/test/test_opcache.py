@@ -1265,9 +1265,9 @@ class TestSpecializer(TestBase):
                 if e:
                     true_cnt += 1
                 else:
-                    false_cnt -= 1
+                    false_cnt += 1
             self.assertEqual(true_cnt, 50)
-            self.assertEqual(false_cnt, -50)
+            self.assertEqual(false_cnt, 50)
 
         to_bool_bool()
         self.assert_specialized(to_bool_bool, "TO_BOOL_BOOL")
