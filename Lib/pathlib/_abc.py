@@ -268,7 +268,7 @@ class PurePathBase:
                 raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
             else:
                 parts0.append('..')
-        return self.with_segments('', *reversed(parts0))
+        return self.with_segments(*reversed(parts0))
 
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
@@ -744,7 +744,7 @@ class PathBase(PurePathBase):
         # enable users to replace the implementation of 'absolute()' in a
         # subclass and benefit from the new behaviour here. This works because
         # os.path.abspath('.') == os.getcwd().
-        return cls('').absolute()
+        return cls().absolute()
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
