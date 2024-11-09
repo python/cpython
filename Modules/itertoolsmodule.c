@@ -3329,6 +3329,10 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
 
     if (cnt == PY_SSIZE_T_MAX && long_cnt == NULL) {
         long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (long_cnt == NULL) {
+            Py_DECREF(long_step);
+            return NULL;
+        }
     }
 
     /* create countobject structure */
