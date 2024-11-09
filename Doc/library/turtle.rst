@@ -2009,6 +2009,7 @@ Animation control
       ...         fd(dist)
       ...         rt(90)
       ...         dist += 2
+
    .. versionadded:: next
 
 
