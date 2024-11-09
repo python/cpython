@@ -182,6 +182,9 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     # a debuggability cost
     for chunk in iterable:
         fp.write(chunk)
+        
+    if type(fp) == str:
+        fp.close()
 
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
@@ -297,10 +300,15 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     if type(fp) == str:
         fp = open(fp)
     
-    return loads(fp.read(),
+    data = loads(fp.read(),
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+    
+    if type(fp) == str:
+        fp.close()
+        
+    return data
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
