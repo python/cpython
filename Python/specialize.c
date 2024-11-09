@@ -689,6 +689,21 @@ set_opcode(_Py_CODEUNIT *instr, uint8_t opcode)
 #endif
 }
 
+static inline int
+set_cache_verison(uint16_t *old_version, uint32_t new_version)
+{
+#ifdef Py_GIL_DISABLED
+    uint32_t old_version_val = read_u32(old_version);
+    if (!_Py_atomic_compare_exchange_uint32((uint32_t *)old_version, &old_version_val, new_version)) {
+        return 0;
+    }
+    return 1;
+#else
+    write_u32(cache, new_version);
+    return 1;
+#endif
+}
+
 static inline void
 set_counter(_Py_BackoffCounter *counter, _Py_BackoffCounter value)
 {
@@ -2742,8 +2757,17 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
         }
+#ifdef Py_GIL_DISABLED
+        if (read_u32(cache->version) > version) {
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            return;
+        }
+#endif
+        if (!set_cache_verison(cache->version, version)) {
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            return;
+        }
         specialize(instr, TO_BOOL_ALWAYS_TRUE);
-        write_u32(cache->version, version);
         assert(version);
         return;
     }
