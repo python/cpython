@@ -571,89 +571,71 @@ class TestTurtleScreen(unittest.TestCase):
 
 
 class TestTurtle(unittest.TestCase):
-    def test_begin_end_fill(self):
+    def setUp(self):
         with patch_screen():
-            t = turtle.Turtle()
+            self.turtle = turtle.Turtle()
 
-        self.assertFalse(t.filling())
-        t.begin_fill()
-        self.assertTrue(t.filling())
-        t.end_fill()
-        self.assertFalse(t.filling())
+    def test_begin_end_fill(self):
+        self.assertFalse(self.turtle.filling())
+        self.turtle.begin_fill()
+        self.assertTrue(self.turtle.filling())
+        self.turtle.end_fill()
+        self.assertFalse(self.turtle.filling())
 
     def test_fill(self):
         # The context manager behaves like begin_fill and end_fill.
-        with patch_screen():
-            t = turtle.Turtle()
-
-        self.assertFalse(t.filling())
-        with t.fill():
-            self.assertTrue(t.filling())
-        self.assertFalse(t.filling())
+        self.assertFalse(self.turtle.filling())
+        with self.turtle.fill():
+            self.assertTrue(self.turtle.filling())
+        self.assertFalse(self.turtle.filling())
 
     def test_fill_resets_after_exception(self):
         # The context manager cleans up correctly after exceptions.
-        with patch_screen():
-            t = turtle.Turtle()
         try:
-            with t.fill():
-                self.assertTrue(t.filling())
+            with self.turtle.fill():
+                self.assertTrue(self.turtle.filling())
                 raise Exception
         except Exception:
-            self.assertFalse(t.filling())
+            self.assertFalse(self.turtle.filling())
 
     def test_fill_context_when_filling(self):
         # The context manager works even when the turtle is already filling.
-        with patch_screen():
-            t = turtle.Turtle()
-
-        t.begin_fill()
-        self.assertTrue(t.filling())
-        with t.fill():
-            self.assertTrue(t.filling())
-        self.assertFalse(t.filling())
+        self.turtle.begin_fill()
+        self.assertTrue(self.turtle.filling())
+        with self.turtle.fill():
+            self.assertTrue(self.turtle.filling())
+        self.assertFalse(self.turtle.filling())
 
     def test_begin_end_poly(self):
-        with patch_screen():
-            t = turtle.Turtle()
-
-        self.assertFalse(t._creatingPoly)
-        t.begin_poly()
-        self.assertTrue(t._creatingPoly)
-        t.end_poly()
-        self.assertFalse(t._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
+        self.turtle.begin_poly()
+        self.assertTrue(self.turtle._creatingPoly)
+        self.turtle.end_poly()
+        self.assertFalse(self.turtle._creatingPoly)
 
     def test_poly(self):
         # The context manager behaves like begin_poly and end_poly.
-        with patch_screen():
-            t = turtle.Turtle()
-
-        self.assertFalse(t._creatingPoly)
-        with t.poly():
-            self.assertTrue(t._creatingPoly)
-        self.assertFalse(t._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
+        with self.turtle.poly():
+            self.assertTrue(self.turtle._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
 
     def test_poly_resets_after_exception(self):
         # The context manager cleans up correctly after exceptions.
-        with patch_screen():
-            t = turtle.Turtle()
         try:
-            with t.poly():
-                self.assertTrue(t._creatingPoly)
+            with self.turtle.poly():
+                self.assertTrue(self.turtle._creatingPoly)
                 raise Exception
         except Exception:
-            self.assertFalse(t._creatingPoly)
+            self.assertFalse(self.turtle._creatingPoly)
 
     def test_poly_context_when_creating_poly(self):
         # The context manager works when the turtle is already creating poly.
-        with patch_screen():
-            t = turtle.Turtle()
-
-        t.begin_poly()
-        self.assertTrue(t._creatingPoly)
-        with t.poly():
-            self.assertTrue(t._creatingPoly)
-        self.assertFalse(t._creatingPoly)
+        self.turtle.begin_poly()
+        self.assertTrue(self.turtle._creatingPoly)
+        with self.turtle.poly():
+            self.assertTrue(self.turtle._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
 
 
 class TestModuleLevel(unittest.TestCase):
