@@ -1520,7 +1520,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
     return 1;
 }
 
-void
+static void
 specialize_load_global_lock_held(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
