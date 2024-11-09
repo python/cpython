@@ -944,7 +944,7 @@ The ``errors`` module has the following attributes:
 .. data:: XML_ERROR_NOT_STARTED
 
    The parser was tried to be stopped or suspended before it started.
-   
+
    .. versionadded:: next
 
 
