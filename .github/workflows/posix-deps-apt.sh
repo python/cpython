@@ -16,10 +16,10 @@ apt-get -yq install \
     libgdbm-compat-dev \
     liblzma-dev \
     libncurses5-dev \
+    libnsl-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
-    libnsl-dev \
     lzma \
     lzma-dev \
     tk-dev \
