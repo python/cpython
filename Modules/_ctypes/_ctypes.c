@@ -985,8 +985,8 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
 #else
     char *dlerr = dlerror();
     if (dlerr) {
-		  // XXX: This assumes that UTF-8 is the default locale.
-		  //      Investigate if this can cause problems.
+        // XXX: This assumes that UTF-8 is the default locale.
+        // Investigate if this can cause problems.
         PyErr_SetString(PyExc_ValueError, dlerr);
         return NULL;
     }
