@@ -594,8 +594,8 @@ class TestTurtle(unittest.TestCase):
         try:
             with self.turtle.fill():
                 self.assertTrue(self.turtle.filling())
-                raise Exception
-        except Exception:
+                raise ValueError
+        except ValueError:
             self.assertFalse(self.turtle.filling())
 
     def test_fill_context_when_filling(self):
@@ -625,8 +625,8 @@ class TestTurtle(unittest.TestCase):
         try:
             with self.turtle.poly():
                 self.assertTrue(self.turtle._creatingPoly)
-                raise Exception
-        except Exception:
+                raise ValueError
+        except ValueError:
             self.assertFalse(self.turtle._creatingPoly)
 
     def test_poly_context_when_creating_poly(self):

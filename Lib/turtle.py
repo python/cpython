@@ -1287,7 +1287,8 @@ class TurtleScreen(TurtleScreenBase):
         is too slow. Once this context manager is exited, the drawing will
         be displayed.
 
-        Example (for a TurtleScreen instance named screen):
+        Example (for a TurtleScreen instance named screen
+        and a Turtle instance named turtle):
         >>> with screen.no_animation():
         ...    turtle.circle(50)
         """
