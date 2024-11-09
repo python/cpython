@@ -3287,7 +3287,10 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
         if (fast_mode) {
             assert(PyLong_Check(long_cnt));
             cnt = PyLong_AsSsize_t(long_cnt);
-            if (cnt == -1 && PyErr_Occurred()) {
+            if (cnt == PY_SSIZE_T_MAX) {
+                fast_mode = 0;
+            }
+            else if (cnt == -1 && PyErr_Occurred()) {
                 PyErr_Clear();
                 fast_mode = 0;
             }

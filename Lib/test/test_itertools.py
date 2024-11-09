@@ -494,6 +494,14 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3, 4)
         self.assertRaises(TypeError, count, 'a')
+        self.assertEqual(take(3, count(maxsize)),
+                        [maxsize, maxsize + 1, maxsize + 2])
+        self.assertEqual(take(3, count(maxsize, 2)),
+                         [maxsize, maxsize + 2, maxsize + 4])
+        self.assertEqual(take(3, count(maxsize, maxsize)),
+                         [maxsize, 2 * maxsize, 3 * maxsize])
+        self.assertEqual(take(3, count(-maxsize, maxsize)),
+                        [-maxsize, 0, maxsize])
         self.assertEqual(take(10, count(maxsize-5)),
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(take(10, count(-maxsize-5)),
