@@ -3406,7 +3406,7 @@ class RawTurtle(TPen, TNavigator):
 
     @contextmanager
     def fill(self):
-        """Create a filled shape
+        """Create a filled shape.
 
         No argument.
 
