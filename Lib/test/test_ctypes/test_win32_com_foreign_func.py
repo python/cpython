@@ -68,15 +68,15 @@ def CLSIDFromString(name):
     return guid
 
 
+def IsEqualGUID(guid1, guid2):
+    return ole32.IsEqualGUID(byref(guid1), byref(guid2))
+
+
 if sys.platform == "win32":
     from _ctypes import COMError
     from ctypes import HRESULT
 
     ole32 = ctypes.oledll.ole32
-
-    IsEqualGUID = ole32.IsEqualGUID
-    IsEqualGUID.argtypes = (GUID, GUID)
-    IsEqualGUID.restype = BOOL
 
     IID_IUnknown = CLSIDFromString("{00000000-0000-0000-C000-000000000046}")
     IID_IStream = CLSIDFromString("{0000000C-0000-0000-C000-000000000046}")
