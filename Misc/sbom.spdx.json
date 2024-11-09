@@ -300,11 +300,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "39845bf2f06d85ba98824f6f4f02f3a2f27d4d1a"
+          "checksumValue": "c314722e89fefe2c00fb35b89f6eec7e03c336e6"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0ca9c580923d8e88e09d8b709257462dcf11eb18ea40d9b782e0ffa694141bbd"
+          "checksumValue": "a3166efac8b34ea03fb61e7ce3a06cfab52adcccdac765c59eb3b0b848678ebf"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_HMAC.c"
