@@ -1433,6 +1433,7 @@ move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
     return 0;
 }
 
+
 static Py_ssize_t
 mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
 {
@@ -1442,18 +1443,77 @@ mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
         .visited_space = visited_space,
         .size = 0
     };
+    Py_ssize_t objects_marked = 0;
     while (!gc_list_is_empty(reachable)) {
         PyGC_Head *gc = _PyGCHead_NEXT(reachable);
         assert(gc_old_space(gc) == visited_space);
         gc_list_move(gc, visited);
         PyObject *op = FROM_GC(gc);
-        traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-                        visit_add_to_container,
-                        &arg);
+        assert(PyObject_IS_GC(op));
+        switch(Py_TYPE(op)->tp_version_tag) {
+            case _Py_TYPE_VERSION_LIST:
+            {
+                PyListObject *o = (PyListObject *)op;
+                Py_ssize_t i;
+                for (i = Py_SIZE(o); --i >= 0; ) {
+                    PyObject *item = o->ob_item[i];
+                    objects_marked += move_to_reachable(item, reachable, visited_space);
+                }
+                break;
+            }
+            case _Py_TYPE_VERSION_TUPLE:
+            {
+                PyTupleObject *o = (PyTupleObject *)op;
+                for (Py_ssize_t i = Py_SIZE(o); --i >= 0; ) {
+                    PyObject *item = o->ob_item[i];
+                    objects_marked += move_to_reachable(item, reachable, visited_space);
+                }
+                break;
+            }
+            case _Py_TYPE_VERSION_DICT:
+            {
+                PyDictObject *mp = (PyDictObject *)op;
+                PyDictKeysObject *keys = mp->ma_keys;
+                Py_ssize_t i, n = keys->dk_nentries;
+                if (DK_IS_UNICODE(keys)) {
+                    if (_PyDict_HasSplitTable(mp)) {
+                        if (!mp->ma_values->embedded) {
+                            for (i = 0; i < n; i++) {
+                                PyObject *value = mp->ma_values->values[i];
+                                objects_marked += move_to_reachable(value, reachable, visited_space);
+                            }
+                        }
+                    }
+                    else {
+                        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+                        for (i = 0; i < n; i++) {
+                            PyObject *value = entries[i].me_value;
+                            objects_marked += move_to_reachable(value, reachable, visited_space);
+                        }
+                    }
+                }
+                else {
+                    PyDictKeyEntry *entries = DK_ENTRIES(keys);
+                    for (i = 0; i < n; i++) {
+                        if (entries[i].me_value != NULL) {
+                            PyObject *key = entries[i].me_key;
+                            objects_marked += move_to_reachable(key, reachable, visited_space);
+                            PyObject *value = entries[i].me_value;
+                            objects_marked += move_to_reachable(value, reachable, visited_space);
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+            {
+                traverseproc traverse = Py_TYPE(op)->tp_traverse;
+                (void) traverse(op, visit_add_to_container, &arg);
+            }
+        }
     }
     gc_list_validate_space(visited, visited_space);
-    return arg.size;
+    return objects_marked + arg.size;
 }
 
 static Py_ssize_t
