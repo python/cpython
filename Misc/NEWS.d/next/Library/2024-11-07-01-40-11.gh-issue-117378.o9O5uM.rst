@@ -5,7 +5,7 @@ of :func:`multiprocessing.set_forkserver_preload` modules in the same manner as
 
 This bug caused some forkserver module preloading to silently fail to preload.
 This manifested as a performance degration in child processes when the
-`sys.path` was required due to additional repeated work in every worker.
+``sys.path`` was required due to additional repeated work in every worker.
 
 It could also have a side effect of ``""`` remaining in :data:`sys.path` during
 forkserver preload imports instead of the absolute path from :func:`os.getcwd`
