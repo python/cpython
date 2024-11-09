@@ -1,19 +1,9 @@
-import sys
-import unittest
-
-
-def setUpModule():
-    if sys.platform != "win32":
-        raise unittest.SkipTest("Windows-specific test")
-
-
 import ctypes
 import gc
-from _ctypes import COMError
-from ctypes import HRESULT, POINTER, byref, c_void_p
+import sys
+import unittest
+from ctypes import POINTER, byref, c_void_p
 from ctypes.wintypes import BOOL, BYTE, DWORD, WORD
-
-ole32 = ctypes.oledll.ole32
 
 COINIT_APARTMENTTHREADED = 0x2
 CLSCTX_SERVER = 5
@@ -78,23 +68,28 @@ def CLSIDFromString(name):
     return guid
 
 
-IsEqualGUID = ole32.IsEqualGUID
-IsEqualGUID.argtypes = (GUID, GUID)
-IsEqualGUID.restype = BOOL
+if sys.platform == "win32":
+    from _ctypes import COMError
+    from ctypes import HRESULT
+
+    ole32 = ctypes.oledll.ole32
+
+    IsEqualGUID = ole32.IsEqualGUID
+    IsEqualGUID.argtypes = (GUID, GUID)
+    IsEqualGUID.restype = BOOL
+
+    IID_IUnknown = CLSIDFromString("{00000000-0000-0000-C000-000000000046}")
+    IID_IStream = CLSIDFromString("{0000000C-0000-0000-C000-000000000046}")
+    IID_IPersist = CLSIDFromString("{0000010C-0000-0000-C000-000000000046}")
+    CLSID_ShellLink = CLSIDFromString("{00021401-0000-0000-C000-000000000046}")
+
+    proto_qi = ProtoComMethod(0, HRESULT, POINTER(GUID), POINTER(c_void_p))
+    proto_addref = ProtoComMethod(1, ctypes.c_long)
+    proto_release = ProtoComMethod(2, ctypes.c_long)
+    proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
 
 
-IID_IUnknown = CLSIDFromString("{00000000-0000-0000-C000-000000000046}")
-IID_IStream = CLSIDFromString("{0000000C-0000-0000-C000-000000000046}")
-IID_IPersist = CLSIDFromString("{0000010C-0000-0000-C000-000000000046}")
-CLSID_ShellLink = CLSIDFromString("{00021401-0000-0000-C000-000000000046}")
-
-
-proto_qi = ProtoComMethod(0, HRESULT, POINTER(GUID), POINTER(c_void_p))
-proto_addref = ProtoComMethod(1, ctypes.c_long)
-proto_release = ProtoComMethod(2, ctypes.c_long)
-proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
-
-
+@unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
 class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
     def setUp(self):
         ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
