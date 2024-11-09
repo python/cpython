@@ -13543,18 +13543,19 @@ conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablenam
 {
     if (PyUnicode_Check(arg)) {
         PyObject *table = PyObject_GetAttrString(module, tablename);
-        if (table != NULL) {
-            arg = PyObject_GetItem(table, arg);
-            if (arg == NULL) {
-                PyErr_SetString(
-                    PyExc_ValueError, "unrecognized configuration name");
-            }
-            Py_DECREF(table);
-        }
-        if (PyErr_Occurred())
+        if (table == NULL) {
             return 0;
+        }
+
+        arg = PyObject_GetItem(table, arg);
+        Py_DECREF(table);
+        if (arg == NULL) {
+            PyErr_SetString(
+                PyExc_ValueError, "unrecognized configuration name");
+            return 0;
+        }
     } else {
-        Py_INCREF(arg);
+        Py_INCREF(arg);  // Match the Py_DECREF below.
     }
 
     if (PyLong_Check(arg)) {
