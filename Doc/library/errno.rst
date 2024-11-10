@@ -671,63 +671,45 @@ defined by the module.  The specific list of defined symbols is available as
 
    No medium found
 
-   .. versionadded:: 2.7
-
 
 .. data:: EMEDIUMTYPE
 
    Wrong medium type
-
-   .. versionadded:: 2.7
 
 
 .. data:: ENOKEY
 
    Required key not available
 
-   .. versionadded:: 2.7
-
 
 .. data:: EKEYEXPIRED
 
    Key has expired
-
-   .. versionadded:: 2.7
 
 
 .. data:: EKEYREVOKED
 
    Key has been revoked
 
-   .. versionadded:: 2.7
-
 
 .. data:: EKEYREJECTED
 
    Key was rejected by service
-
-   .. versionadded:: 2.7
 
 
 .. data:: ERFKILL
 
    Operation not possible due to RF-kill
 
-   .. versionadded:: 2.7
-
 
 .. data:: ELOCKUNMAPPED
 
    Locked lock was unmapped
 
-   .. versionadded:: 2.7
-
 
 .. data:: ENOTACTIVE
 
    Facility is not active
-
-   .. versionadded:: 2.7
 
 
 .. data:: EAUTH
