@@ -1648,7 +1648,7 @@ class _patch(object):
             exit_stack=exit_stack,
             is_local=is_local,
             original=original,
-            target=self.getter(),
+            target=target,
         )
         try:
             setattr(self.target, self.attribute, new_attr)
