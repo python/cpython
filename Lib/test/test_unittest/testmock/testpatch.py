@@ -745,6 +745,35 @@ class PatchTest(unittest.TestCase):
         self.assertIsNone(patcher.stop())
 
 
+    def test_exit_idempotent(self):
+        patcher = patch(foo_name, 'bar', 3)
+        with patcher:
+            patcher.stop()
+
+
+    def test_second_start_failure(self):
+        patcher = patch(foo_name, 'bar', 3)
+        patcher.start()
+        try:
+            self.assertRaises(RuntimeError, patcher.start)
+        finally:
+            patcher.stop()
+
+
+    def test_second_enter_failure(self):
+        patcher = patch(foo_name, 'bar', 3)
+        with patcher:
+            self.assertRaises(RuntimeError, patcher.start)
+
+
+    def test_second_start_after_stop(self):
+        patcher = patch(foo_name, 'bar', 3)
+        patcher.start()
+        patcher.stop()
+        patcher.start()
+        patcher.stop()
+
+
     def test_patchobject_start_stop(self):
         original = something
         patcher = patch.object(PTModule, 'something', 'foo')
@@ -1098,7 +1127,7 @@ class PatchTest(unittest.TestCase):
 
         self.assertIsNot(m1, m2)
         for mock in m1, m2:
-            self.assertNotCallable(m1)
+            self.assertNotCallable(mock)
 
 
     def test_new_callable_patch_object(self):
@@ -1111,7 +1140,7 @@ class PatchTest(unittest.TestCase):
 
         self.assertIsNot(m1, m2)
         for mock in m1, m2:
-            self.assertNotCallable(m1)
+            self.assertNotCallable(mock)
 
 
     def test_new_callable_keyword_arguments(self):

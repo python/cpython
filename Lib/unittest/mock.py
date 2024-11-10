@@ -1320,6 +1320,14 @@ def _check_spec_arg_typos(kwargs_to_check):
             )
 
 
+class _PatchStartedContext(object):
+    def __init__(self, exit_stack, is_local, target, temp_original):
+        self.exit_stack = exit_stack
+        self.is_local = is_local
+        self.target = target
+        self.temp_original = temp_original
+
+
 class _patch(object):
 
     attribute_name = None
@@ -1360,6 +1368,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
+        self._started_context = None
 
 
     def copy(self):
@@ -1469,13 +1478,31 @@ class _patch(object):
             )
         return original, local
 
+    @property
+    def is_started(self):
+        return self._started_context is not None
+
+    @property
+    def is_local(self):
+        return self._started_context.is_local
+
+    @property
+    def target(self):
+        return self._started_context.target
+
+    @property
+    def temp_original(self):
+        return self._started_context.temp_original
 
     def __enter__(self):
         """Perform the patch."""
+        if self.is_started:
+            raise RuntimeError("Patch is already started")
+
         new, spec, spec_set = self.new, self.spec, self.spec_set
         autospec, kwargs = self.autospec, self.kwargs
         new_callable = self.new_callable
-        self.target = self.getter()
+        target = self.getter()
 
         # normalise False to None
         if spec is False:
@@ -1491,7 +1518,7 @@ class _patch(object):
             spec_set not in (True, None)):
             raise TypeError("Can't provide explicit spec_set *and* spec or autospec")
 
-        original, local = self.get_original()
+        original, is_local = self.get_original()
 
         if new is DEFAULT and autospec is None:
             inherit = False
@@ -1579,17 +1606,17 @@ class _patch(object):
             if autospec is True:
                 autospec = original
 
-            if _is_instance_mock(self.target):
+            if _is_instance_mock(target):
                 raise InvalidSpecError(
                     f'Cannot autospec attr {self.attribute!r} as the patch '
                     f'target has already been mocked out. '
-                    f'[target={self.target!r}, attr={autospec!r}]')
+                    f'[target={target!r}, attr={autospec!r}]')
             if _is_instance_mock(autospec):
-                target_name = getattr(self.target, '__name__', self.target)
+                target_name = getattr(target, '__name__', target)
                 raise InvalidSpecError(
                     f'Cannot autospec attr {self.attribute!r} from target '
                     f'{target_name!r} as it has already been mocked out. '
-                    f'[target={self.target!r}, attr={autospec!r}]')
+                    f'[target={target!r}, attr={autospec!r}]')
 
             new = create_autospec(autospec, spec_set=spec_set,
                                   _name=self.attribute, **kwargs)
@@ -1600,9 +1627,12 @@ class _patch(object):
 
         new_attr = new
 
-        self.temp_original = original
-        self.is_local = local
-        self._exit_stack = contextlib.ExitStack()
+        self._started_context = _PatchStartedContext(
+            exit_stack=contextlib.ExitStack(),
+            is_local=is_local,
+            target=self.getter(),
+            temp_original=original,
+        )
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1610,7 +1640,7 @@ class _patch(object):
                 if self.new is DEFAULT:
                     extra_args[self.attribute_name] =  new
                 for patching in self.additional_patchers:
-                    arg = self._exit_stack.enter_context(patching)
+                    arg = self._started_context.exit_stack.enter_context(patching)
                     if patching.new is DEFAULT:
                         extra_args.update(arg)
                 return extra_args
@@ -1622,6 +1652,9 @@ class _patch(object):
 
     def __exit__(self, *exc_info):
         """Undo the patch."""
+        if not self.is_started:
+            return
+
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
         else:
@@ -1633,11 +1666,8 @@ class _patch(object):
                 # needed for proxy objects like django settings
                 setattr(self.target, self.attribute, self.temp_original)
 
-        del self.temp_original
-        del self.is_local
-        del self.target
-        exit_stack = self._exit_stack
-        del self._exit_stack
+        exit_stack = self._started_context.exit_stack
+        self._started_context = None
         return exit_stack.__exit__(*exc_info)
 
 

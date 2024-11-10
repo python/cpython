@@ -1,0 +1,5 @@
+Limit starting a patcher (from :func:`unittest.mock.patch`,
+:func:`unittest.mock.patch.object` or :func:`unittest.mock.dict`) more than
+once without stopping it. Previously, this would cause an
+:exc:`AttributeError` if the patch stopped more than once after this, and
+would also disrupt the original patched object.
