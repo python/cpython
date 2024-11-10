@@ -476,15 +476,22 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                 Py_XDECREF(tuple_args);
                 return NULL;
             }
-            PyObject *subargs_list = PySequence_List(subargs);
-            Py_DECREF(subargs);
-            if (subargs_list == NULL) {
-                Py_DECREF(newargs);
-                Py_DECREF(item);
-                Py_XDECREF(tuple_args);
-                return NULL;
+            if (PyTuple_Check(arg)) {
+                PyTuple_SET_ITEM(newargs, jarg, subargs);
             }
-            PyTuple_SET_ITEM(newargs, jarg, subargs_list);
+            else {
+                // _Py_subs_parameters returns a tuple. If the original arg was a list,
+                // convert subargs to a list as well.
+                PyObject *subargs_list = PySequence_List(subargs);
+                Py_DECREF(subargs);
+                if (subargs_list == NULL) {
+                    Py_DECREF(newargs);
+                    Py_DECREF(item);
+                    Py_XDECREF(tuple_args);
+                    return NULL;
+                }
+                PyTuple_SET_ITEM(newargs, jarg, subargs_list);
+            }
             jarg++;
             continue;
         }
