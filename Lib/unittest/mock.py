@@ -1487,14 +1487,6 @@ class _patch(object):
         self._context.is_local = value
 
     @property
-    def original(self):
-        return self._context.original
-
-    @original.setter
-    def original(self, value):
-        self._context.original = value
-
-    @property
     def target(self):
         return self._context.target
 
@@ -1503,12 +1495,12 @@ class _patch(object):
         self._context.target = value
 
     @property
-    def temp_original(self):  # backwards compatibility
-        return self.original
+    def temp_original(self):
+        return self._context.original
 
     @temp_original.setter
-    def temp_original(self, value):  # backwards compatibility
-        self.original = value
+    def temp_original(self, value):
+        self._context.original = value
 
     def __enter__(self):
         """Perform the patch."""
@@ -1672,8 +1664,8 @@ class _patch(object):
         if not self.is_started:
             return
 
-        if self.is_local and self.original is not DEFAULT:
-            setattr(self.target, self.attribute, self.original)
+        if self.is_local and self.temp_original is not DEFAULT:
+            setattr(self.target, self.attribute, self.temp_original)
         else:
             delattr(self.target, self.attribute)
             if not self.create and (not hasattr(self.target, self.attribute) or
@@ -1681,7 +1673,7 @@ class _patch(object):
                                            '__defaults__', '__annotations__',
                                            '__kwdefaults__')):
                 # needed for proxy objects like django settings
-                setattr(self.target, self.attribute, self.original)
+                setattr(self.target, self.attribute, self.temp_original)
 
         exit_stack = self._context.exit_stack
         self._context = None
