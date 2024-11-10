@@ -1235,13 +1235,16 @@ always available.
 
    .. versionadded:: 3.13
 
-.. function:: _jit_enabled()
-   Return :const:`True` if :ref:`JIT compiler <whatsnew313-jit-compiler>` is active.
-   Return :const:`False` otherwise.
 
-   Available only in JIT builds, tier 2 interpreter doesn't count here.
+.. function:: _jit_enabled()
+
+   Return :const:`True` if the :ref:`JIT compiler <whatsnew313-jit-compiler>` is active,
+   and :const:`False` otherwise.
+
+   Available only in JIT builds; tier 2 interpreter does not count here.
 
    .. versionadded:: next
+
 
 .. function:: is_finalizing()
 
