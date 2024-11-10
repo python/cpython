@@ -2541,7 +2541,7 @@ close_and_release:
 int
 _PySys_JITEnabled(void)
 {
-    char *env = Py_GETENV("PYTHON_JIT");
+    const char *env = Py_GETENV("PYTHON_JIT");
     if (_Py_TIER2 == 1) {
         // Interpreter was built with enabled jit, but it can be disabled via PYTHON_JIT=0
         if (env && *env != '\0') {

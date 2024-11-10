@@ -1303,14 +1303,13 @@ init_interp_main(PyThreadState *tstate)
 // perf profiler works fine with tier 2 interpreter, so
 // only checking for a "real JIT".
 #if _Py_TIER % 2 != 0
-        int enabled = _PySys_JITEnabled();
-        printf("enabled = %d\n", enabled);
-        if (enabled && config->perf_profiling > 0) {
+        if (_PySys_JITEnabled() && config->perf_profiling > 0) {
             (void)PyErr_WarnEx(
-            PyExc_RuntimeWarning,
-            "JIT deactivated as perf profiling support is active",
-            0);
-        } else
+                PyExc_RuntimeWarning,
+	            "JIT deactivated as perf profiling support is active",
+	            0);
+        }
+        else
 #endif
     {
         PyObject *opt = _PyOptimizer_NewUOpOptimizer();
