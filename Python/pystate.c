@@ -1072,6 +1072,7 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp)
         // Interpreter is running, can't prevent it yet.
         return 0;
     }
+
     int expected_prevented = _PyInterpreterState_RUNNING_OK;
     if (_Py_atomic_compare_exchange_int(&interp->threads.prevented,
                                         &expected_prevented,
@@ -1080,16 +1081,8 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp)
         // Another thread beat us!
         return 0;
     }
+
     assert(!_PyInterpreterState_IsRunningAllowed(interp));
-    if (_Py_atomic_compare_exchange_ptr(
-                                        &interp->threads.main,
-                                        &expected,
-                                        NULL) == 0)
-    {
-        // It started running again, can't finish.
-        // Though, the next call will already be prevented.
-        return 0;
-    }
     assert(!_PyInterpreterState_IsRunningMain(interp));
     return 1;
 #else
