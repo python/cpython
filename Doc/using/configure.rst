@@ -306,6 +306,8 @@ General Options
    * ``yes-off`` - build the interpreter with the JIT but disable it by default.
    * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
 
+   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+   
    .. versionadded:: 3.13
 
 .. option:: PKG_CONFIG
