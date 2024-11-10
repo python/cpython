@@ -116,6 +116,7 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     // The callbacks are registered on the interpreter, not on the thread, so
     // the only way callbacks can know which thread changed is by calling the
     // callbacks from the affected thread.
+    assert(ts != NULL);
     assert(ts == _PyThreadState_GET());
     if (ctx == NULL) {
         // This will happen after exiting the last context in the stack, which
@@ -221,7 +222,7 @@ PyContext_Enter(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    if (_PyContext_Enter(ts, octx)) {
+    if (_PyContext_Enter(ts, octx) < 0) {
         return -1;
     }
     context_switched(ts);
@@ -263,7 +264,7 @@ PyContext_Exit(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    if (_PyContext_Exit(ts, octx)) {
+    if (_PyContext_Exit(ts, octx) < 0) {
         return -1;
     }
     context_switched(ts);
@@ -278,7 +279,7 @@ _PyContext_ExitThreadOwned(PyThreadState *ts)
     while (ts->context != NULL
            && PyContext_CheckExact(ts->context)
            && ((PyContext *)ts->context)->ctx_owned_by_thread) {
-        if (_PyContext_Exit(ts, ts->context)) {
+        if (_PyContext_Exit(ts, ts->context) < 0) {
             // Exiting a context that is already known to be at the top of the
             // stack cannot fail.
             Py_UNREACHABLE();
@@ -533,7 +534,7 @@ context_get(void)
     assert(ts != NULL);
     if (ts->context == NULL) {
         PyContext *ctx = context_new_empty();
-        if (ctx == NULL || _PyContext_Enter(ts, (PyObject *)ctx)) {
+        if (ctx == NULL || _PyContext_Enter(ts, (PyObject *)ctx) < 0) {
             return NULL;
         }
         ctx->ctx_owned_by_thread = 1;

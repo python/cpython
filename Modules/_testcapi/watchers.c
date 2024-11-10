@@ -727,7 +727,7 @@ clear_context_stack(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 static PyObject *
 context_enter(PyObject *self, PyObject *ctx)
 {
-    if (PyContext_Enter(ctx)) {
+    if (PyContext_Enter(ctx) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
