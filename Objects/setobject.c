@@ -492,6 +492,11 @@ set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
     return 1;
 }
 
+int _PyTemporary_SetNext(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
+{
+    return set_next(so, pos_ptr, entry_ptr);
+}
+
 static void
 set_dealloc(PyObject *self)
 {

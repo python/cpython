@@ -6351,6 +6351,7 @@ PyTypeObject PyType_Type = {
     PyObject_GC_Del,                            /* tp_free */
     type_is_gc,                                 /* tp_is_gc */
     .tp_vectorcall = type_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_TYPE,
 };
 
 

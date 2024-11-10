@@ -1356,4 +1356,5 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_alloc */
     new_module,                                 /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_MODULE,
 };

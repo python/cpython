@@ -876,25 +876,8 @@ PyTypeObject PyGen_Type = {
     gen_methods,                                /* tp_methods */
     gen_memberlist,                             /* tp_members */
     gen_getsetlist,                             /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
+    .tp_version_tag = _Py_TYPE_VERSION_GENERATOR,
 };
 
 static PyObject *
@@ -1236,24 +1219,8 @@ PyTypeObject PyCoro_Type = {
     coro_methods,                               /* tp_methods */
     coro_memberlist,                            /* tp_members */
     coro_getsetlist,                            /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
+    .tp_version_tag = _Py_TYPE_VERSION_COROUTINE,
 };
 
 static void
