@@ -1007,9 +1007,9 @@ this approach.
       using the :class:`types.ModuleType` constructor.
       Previously the attribute was optional.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.16
       Setting :attr:`!__loader__` on a module while failing to set
-      :attr:`!__spec__.loader` is deprecated. In Python 3.14,
+      :attr:`!__spec__.loader` is deprecated. In Python 3.16,
       :attr:`!__loader__` will cease to be set or taken into consideration by
       the import system or the standard library.
 
