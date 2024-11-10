@@ -520,6 +520,30 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(x_tuple.__args__, ((int, str), float))
         self.assertEqual(x_tuple.__parameters__, ())
 
+        U = TypeVar("U")
+        V = TypeVar("V")
+
+        multiple_params_list = X[[int, U], V]
+        self.assertEqual(multiple_params_list.__args__, ([int, U], V))
+        self.assertEqual(multiple_params_list.__parameters__, (U, V))
+        multiple_params_list_specialized = multiple_params_list[str, float]
+        self.assertEqual(multiple_params_list_specialized.__args__, ([int, str], float))
+        self.assertEqual(multiple_params_list_specialized.__parameters__, ())
+
+        multiple_params_tuple = X[(int, U), V]
+        self.assertEqual(multiple_params_tuple.__args__, ((int, U), V))
+        self.assertEqual(multiple_params_tuple.__parameters__, (U, V))
+        multiple_params_tuple_specialized = multiple_params_tuple[str, float]
+        self.assertEqual(multiple_params_tuple_specialized.__args__, ((int, str), float))
+        self.assertEqual(multiple_params_tuple_specialized.__parameters__, ())
+
+        deeply_nested = X[[U, [V], int], V]
+        self.assertEqual(deeply_nested.__args__, ([U, [V], int], V))
+        self.assertEqual(deeply_nested.__parameters__, (U, V))
+        deeply_nested_specialized = deeply_nested[str, float]
+        self.assertEqual(deeply_nested_specialized.__args__, ([str, [float], int], float))
+        self.assertEqual(deeply_nested_specialized.__parameters__, ())
+
 
 class TypeIterationTests(unittest.TestCase):
     _UNITERABLE_TYPES = (list, tuple)
