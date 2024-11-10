@@ -1,0 +1,1 @@
+Add a :func:`!sys._jit_enabled` helper to determine in runtime if JIT is enabled or not.
