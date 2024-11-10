@@ -1807,8 +1807,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').group()
 
-    def setUpWalk(self):
-        super().setUpWalk()
+
+class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
+    cls = pathlib.Path
+    base = PathTest.base
+    can_symlink = PathTest.can_symlink
+
+    def setUp(self):
+        super().setUp()
         sub21_path= self.sub2_path / "SUB21"
         tmp5_path = sub21_path / "tmp3"
         broken_link3_path = self.sub2_path / "broken_link3"
@@ -1831,8 +1837,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             os.unlink(tmp5_path)
             os.rmdir(sub21_path)
 
+    def tearDown(self):
+        if not is_emscripten:
+            sub21_path = self.sub2_path / "SUB21"
+            os.chmod(sub21_path, stat.S_IRWXU)
+        super().tearDown()
+
     def test_walk_bad_dir(self):
-        self.setUpWalk()
         errors = []
         walk_it = self.walk_path.walk(on_error=errors.append)
         root, dirs, files = next(walk_it)
