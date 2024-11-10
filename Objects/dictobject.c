@@ -4673,8 +4673,8 @@ PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
-If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
+"D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.\n\
+If E is present and has a .keys() method, then does:  for k in E.keys(): D[k] = E[k]\n\
 If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
 In either case, this is followed by: for k in F:  D[k] = F[k]");
 
@@ -4912,6 +4912,7 @@ PyTypeObject PyDict_Type = {
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_DICT,
 };
 
 /* For backward compatibility with old dictionary interface */

@@ -24,6 +24,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
+#include "pycore_typeobject.h"    // _PyType_AddMethod()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
@@ -8213,6 +8214,16 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
     PyStructSequence_SET_ITEM(res, 0, Py_NewRef(sched_priority));
     return res;
 }
+
+static PyObject *
+os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+}
+
+static PyMethodDef os_sched_param_reduce_method = {
+    "__reduce__", (PyCFunction)os_sched_param_reduce, METH_NOARGS|METH_COEXIST, NULL,
+};
 
 PyDoc_VAR(os_sched_param__doc__);
 
@@ -17976,6 +17987,12 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     ((PyTypeObject *)state->SchedParamType)->tp_new = os_sched_param;
+    if (_PyType_AddMethod((PyTypeObject *)state->SchedParamType,
+                          &os_sched_param_reduce_method) < 0)
+    {
+        return -1;
+    }
+    PyType_Modified((PyTypeObject *)state->SchedParamType);
 #endif
 
     /* initialize TerminalSize_info */

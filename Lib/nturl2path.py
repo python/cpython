@@ -24,23 +24,15 @@ def url2pathname(url):
             # convert this to \\host\path\on\remote\host
             # (notice halving of slashes at the start of the path)
             url = url[2:]
-        components = url.split('/')
         # make sure not to convert quoted slashes :-)
-        return urllib.parse.unquote('\\'.join(components))
+        return urllib.parse.unquote(url.replace('/', '\\'))
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
     drive = comp[0][-1].upper()
-    components = comp[1].split('/')
-    path = drive + ':'
-    for comp in components:
-        if comp:
-            path = path + '\\' + urllib.parse.unquote(comp)
-    # Issue #11474 - handing url such as |c/|
-    if path.endswith(':') and url.endswith('/'):
-        path += '\\'
-    return path
+    tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
+    return drive + ':' + tail
 
 def pathname2url(p):
     """OS-specific conversion from a file system path to a relative URL
@@ -55,27 +47,17 @@ def pathname2url(p):
     if p[:4] == '\\\\?\\':
         p = p[4:]
         if p[:4].upper() == 'UNC\\':
-            p = '\\' + p[4:]
+            p = '\\\\' + p[4:]
         elif p[1:2] != ':':
             raise OSError('Bad path: ' + p)
     if not ':' in p:
         # No drive specifier, just convert slashes and quote the name
-        if p[:2] == '\\\\':
-        # path is something like \\host\path\on\remote\host
-        # convert this to ////host/path/on/remote/host
-        # (notice doubling of slashes at the start of the path)
-            p = '\\\\' + p
-        components = p.split('\\')
-        return urllib.parse.quote('/'.join(components))
+        return urllib.parse.quote(p.replace('\\', '/'))
     comp = p.split(':', maxsplit=2)
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
         raise OSError(error)
 
     drive = urllib.parse.quote(comp[0].upper())
-    components = comp[1].split('\\')
-    path = '///' + drive + ':'
-    for comp in components:
-        if comp:
-            path = path + '/' + urllib.parse.quote(comp)
-    return path
+    tail = urllib.parse.quote(comp[1].replace('\\', '/'))
+    return '///' + drive + ':' + tail

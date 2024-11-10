@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
@@ -84,18 +84,18 @@ typedef struct {
 } XIBufferViewObject;
 
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
-    assert(_PyCrossInterpreterData_DATA(data) != NULL);
-    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
-    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
-    self->interpid = _PyCrossInterpreterData_INTERPID(data);
+    self->view = (Py_buffer *)_PyXIData_DATA(data);
+    self->interpid = _PyXIData_INTERPID(data);
     return (PyObject *)self;
 }
 
@@ -154,7 +154,7 @@ static PyType_Spec XIBufferViewType_spec = {
 static PyTypeObject * _get_current_xibufferview_type(void);
 
 static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
+_memoryview_from_xid(_PyXIData_t *data)
 {
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
@@ -168,8 +168,7 @@ _memoryview_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
+_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
     if (view == NULL) {
@@ -179,8 +178,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj,
         PyMem_RawFree(view);
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
+    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
     return 0;
 }
 
@@ -402,7 +400,11 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
         }
     }
     else if (PyUnicode_Check(configobj)) {
-        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+        const char *utf8name = PyUnicode_AsUTF8(configobj);
+        if (utf8name == NULL) {
+            return -1;
+        }
+        if (init_named_config(config, utf8name) < 0) {
             return -1;
         }
     }
@@ -1179,7 +1181,7 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
+    if (_PyObject_CheckXIData(obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
