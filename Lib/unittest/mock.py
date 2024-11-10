@@ -25,6 +25,7 @@ __all__ = (
 
 
 import asyncio
+from collections import namedtuple
 import contextlib
 import io
 import inspect
@@ -1320,12 +1321,7 @@ def _check_spec_arg_typos(kwargs_to_check):
             )
 
 
-class _PatchStartedContext(object):
-    def __init__(self, exit_stack, is_local, target, temp_original):
-        self.exit_stack = exit_stack
-        self.is_local = is_local
-        self.target = target
-        self.temp_original = temp_original
+_PatchContext = namedtuple("_PatchContext", "exit_stack is_local original target")
 
 
 class _patch(object):
@@ -1368,7 +1364,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
-        self._started_context = None
+        self._context = None
 
 
     def copy(self):
@@ -1480,19 +1476,23 @@ class _patch(object):
 
     @property
     def is_started(self):
-        return self._started_context is not None
+        return self._context is not None
 
     @property
     def is_local(self):
-        return self._started_context.is_local
+        return self._context.is_local
+
+    @property
+    def original(self):
+        return self._context.original
 
     @property
     def target(self):
-        return self._started_context.target
+        return self._context.target
 
     @property
-    def temp_original(self):
-        return self._started_context.temp_original
+    def temp_original(self):  # backwards compatibility
+        return self.original
 
     def __enter__(self):
         """Perform the patch."""
@@ -1627,11 +1627,12 @@ class _patch(object):
 
         new_attr = new
 
-        self._started_context = _PatchStartedContext(
-            exit_stack=contextlib.ExitStack(),
+        exit_stack = contextlib.ExitStack()
+        self._context = _PatchContext(
+            exit_stack=exit_stack,
             is_local=is_local,
+            original=original,
             target=self.getter(),
-            temp_original=original,
         )
         try:
             setattr(self.target, self.attribute, new_attr)
@@ -1640,7 +1641,7 @@ class _patch(object):
                 if self.new is DEFAULT:
                     extra_args[self.attribute_name] =  new
                 for patching in self.additional_patchers:
-                    arg = self._started_context.exit_stack.enter_context(patching)
+                    arg = exit_stack.enter_context(patching)
                     if patching.new is DEFAULT:
                         extra_args.update(arg)
                 return extra_args
@@ -1655,8 +1656,8 @@ class _patch(object):
         if not self.is_started:
             return
 
-        if self.is_local and self.temp_original is not DEFAULT:
-            setattr(self.target, self.attribute, self.temp_original)
+        if self.is_local and self.original is not DEFAULT:
+            setattr(self.target, self.attribute, self.original)
         else:
             delattr(self.target, self.attribute)
             if not self.create and (not hasattr(self.target, self.attribute) or
@@ -1664,10 +1665,10 @@ class _patch(object):
                                            '__defaults__', '__annotations__',
                                            '__kwdefaults__')):
                 # needed for proxy objects like django settings
-                setattr(self.target, self.attribute, self.temp_original)
+                setattr(self.target, self.attribute, self.original)
 
-        exit_stack = self._started_context.exit_stack
-        self._started_context = None
+        exit_stack = self._context.exit_stack
+        self._context = None
         return exit_stack.__exit__(*exc_info)
 
 
