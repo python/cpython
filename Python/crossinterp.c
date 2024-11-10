@@ -1721,7 +1721,7 @@ _PyXI_Enter(_PyXI_session *session,
         // be more efficient to leave the exception in place and return
         // immediately.  However, life is simpler if we don't.
 #ifdef Py_GIL_DISABLED
-        errcode = _PyInterpreterState_IsRunningAllowed(interp)
+        errcode = _PyInterpreterState_IsRunningAllowed(interp) == 1
             ? _PyXI_ERR_ALREADY_RUNNING
             : _PyXI_ERR_SHUTTING_DOWN;
 #else

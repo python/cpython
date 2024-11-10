@@ -1047,19 +1047,19 @@ get_main_thread(PyInterpreterState *interp)
     return _Py_atomic_load_ptr_relaxed(&interp->threads.main);
 }
 
+#define _PyInterpreterState_RUNNING_OK 0
+#define _PyInterpreterState_RUNNING_PREVENTED 1
+
 int
 _PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp)
 {
     assert(interp != NULL);
 #ifdef Py_GIL_DISABLED
-    return !_Py_atomic_load_int_relaxed(&interp->threads.prevented);
+    return _Py_atomic_load_int(&interp->threads.prevented) == _PyInterpreterState_RUNNING_OK;
 #else
     return 1;
 #endif
 }
-
-#define _PyInterpreterState_RUNNING_OK 0
-#define _PyInterpreterState_RUNNING_PREVENTED 1
 
 int
 _PyInterpreterState_PreventMain(PyInterpreterState *interp)
@@ -1096,12 +1096,12 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp)
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
-        return -1;
-    }
     if (!_PyInterpreterState_IsRunningAllowed(interp))
     {
         PyErr_SetString(PyExc_RuntimeError, "cannot run this interpreter anymore");
+        return -1;
+    }
+    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
         return -1;
     }
     PyThreadState *tstate = current_fast_get();
