@@ -1838,9 +1838,8 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
             os.rmdir(sub21_path)
 
     def tearDown(self):
-        if not is_emscripten:
-            sub21_path = self.sub2_path / "SUB21"
-            os.chmod(sub21_path, stat.S_IRWXU)
+        if 'SUB21' in self.sub2_tree[1]:
+            os.chmod(self.sub2_path / "SUB21", stat.S_IRWXU)
         super().tearDown()
 
     def test_walk_bad_dir(self):
