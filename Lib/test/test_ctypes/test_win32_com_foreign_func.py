@@ -19,6 +19,7 @@ PyInstanceMethod_Type = type(PyInstanceMethod_New(id))
 
 
 class GUID(ctypes.Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/guiddef/ns-guiddef-guid
     _fields_ = [
         ("Data1", DWORD),
         ("Data2", WORD),
@@ -64,11 +65,13 @@ class ProtoComMethod:
 
 def create_guid(name):
     guid = GUID()
+    # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-clsidfromstring
     ole32.CLSIDFromString(name, byref(guid))
     return guid
 
 
 def is_equal_guid(guid1, guid2):
+    # https://learn.microsoft.com/en-us/windows/win32/api/objbase/nf-objbase-isequalguid
     return ole32.IsEqualGUID(byref(guid1), byref(guid2))
 
 
@@ -83,26 +86,33 @@ if sys.platform == "win32":
     IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
     CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
 
+    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
     proto_query_interface = ProtoComMethod(
         0, HRESULT, POINTER(GUID), POINTER(c_void_p)
     )
+    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
     proto_add_ref = ProtoComMethod(1, ctypes.c_long)
+    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
     proto_release = ProtoComMethod(2, ctypes.c_long)
+    # https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid
     proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
 class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
     def setUp(self):
+        # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex
         ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
 
     def tearDown(self):
+        # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
         ole32.CoUninitialize()
         gc.collect()
 
     @staticmethod
     def create_shelllink_persist(typ):
         ppst = typ()
+        # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
         ole32.CoCreateInstance(
             byref(CLSID_ShellLink),
             None,
