@@ -1,5 +1,27 @@
-Pending Removal in Python 3.16
+Pending removal in Python 3.16
 ------------------------------
+
+* The import system:
+
+  * Setting :attr:`~module.__loader__` on a module while
+    failing to set :attr:`__spec__.loader <importlib.machinery.ModuleSpec.loader>`
+    is deprecated. In Python 3.16, :attr:`!__loader__` will cease to be set or
+    taken into consideration by the import system or the standard library.
+
+* :mod:`array`:
+
+  * The ``'u'`` format code (:c:type:`wchar_t`)
+    has been deprecated in documentation since Python 3.3
+    and at runtime since Python 3.13.
+    Use the ``'w'`` format code (:c:type:`Py_UCS4`)
+    for Unicode characters instead.
+
+* :mod:`asyncio`:
+
+  * :func:`!asyncio.iscoroutinefunction` is deprecated
+    and will be removed in Python 3.16,
+    use :func:`inspect.iscoroutinefunction` instead.
+    (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
 * :mod:`builtins`:
 
@@ -9,14 +31,6 @@ Pending Removal in Python 3.16
     Use ``not x`` instead for the logical negation of a Boolean.
     In the rare case that you need the bitwise inversion of
     the underlying integer, convert to ``int`` explicitly (``~int(x)``).
-
-* :mod:`array`:
-
-  * The ``'u'`` format code (:c:type:`wchar_t`)
-    has been deprecated in documentation since Python 3.3
-    and at runtime since Python 3.13.
-    Use the ``'w'`` format code (:c:type:`Py_UCS4`)
-    for Unicode characters instead.
 
 * :mod:`shutil`:
 
