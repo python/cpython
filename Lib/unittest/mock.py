@@ -1482,17 +1482,33 @@ class _patch(object):
     def is_local(self):
         return self._context.is_local
 
+    @is_local.setter
+    def is_local(self, value):
+        self._context.is_local = value
+
     @property
     def original(self):
         return self._context.original
+
+    @original.setter
+    def original(self, value):
+        self._context.original = value
 
     @property
     def target(self):
         return self._context.target
 
+    @target.setter
+    def target(self, value):
+        self._context.target = value
+
     @property
     def temp_original(self):  # backwards compatibility
         return self.original
+
+    @temp_original.setter
+    def temp_original(self, value):  # backwards compatibility
+        self.original = value
 
     def __enter__(self):
         """Perform the patch."""
