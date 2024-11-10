@@ -359,7 +359,7 @@ multiprocessing
   on its control sockets so that it isn't solely reliant on filesystem
   permissions to control what other processes can cause the fork server to
   spawn workers and run code.
-  This improves the security story behind gh:`97514`.
+  This improves the security story behind :gh:`97514`.
   (Contributed by Gregory P. Smith.)
 
 
