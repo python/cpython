@@ -2645,9 +2645,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
-#if defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0)
     SYS__JIT_ENABLED_METHODDEF
-#endif
     {NULL, NULL}  // sentinel
 };
 
