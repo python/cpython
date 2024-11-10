@@ -722,22 +722,23 @@ m_log10(double x)
 /*[clinic input]
 math.gcd
 
-    *integers as args: object
+    *integers as args: array
 
 Greatest Common Divisor.
 [clinic start generated code]*/
 
 static PyObject *
-math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=b57687fcf431c1b8 input=94e675b7ceeaf0c9]*/
+math_gcd_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length)
+/*[clinic end generated code: output=a26c95907374ffb4 input=ded7f0ea3850c05c]*/
 {
     // Fast-path for the common case: gcd(int, int)
-    if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
+    if (args_length == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
     {
         return _PyLong_GCD(args[0], args[1]);
     }
 
-    if (nargs == 0) {
+    if (args_length == 0) {
         return PyLong_FromLong(0);
     }
 
@@ -745,13 +746,13 @@ math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
     if (res == NULL) {
         return NULL;
     }
-    if (nargs == 1) {
+    if (args_length == 1) {
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
 
     PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (Py_ssize_t i = 1; i < nargs; i++) {
+    for (Py_ssize_t i = 1; i < args_length; i++) {
         PyObject *x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
@@ -804,32 +805,33 @@ long_lcm(PyObject *a, PyObject *b)
 /*[clinic input]
 math.lcm
 
-    *integers as args: object
+    *integers as args: array
 
 Least Common Multiple.
 [clinic start generated code]*/
 
 static PyObject *
-math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=f3eff0c25e4d7030 input=e64c33e85f4c47c6]*/
+math_lcm_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length)
+/*[clinic end generated code: output=c8a59a5c2e55c816 input=3e4f4b7cdf948a98]*/
 {
     PyObject *res, *x;
     Py_ssize_t i;
 
-    if (nargs == 0) {
+    if (args_length == 0) {
         return PyLong_FromLong(1);
     }
     res = PyNumber_Index(args[0]);
     if (res == NULL) {
         return NULL;
     }
-    if (nargs == 1) {
+    if (args_length == 1) {
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
 
     PyObject *zero = _PyLong_GetZero();  // borrowed ref
-    for (i = 1; i < nargs; i++) {
+    for (i = 1; i < args_length; i++) {
         x = PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
@@ -2629,7 +2631,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 /*[clinic input]
 math.hypot
 
-    *coordinates as args: object
+    *coordinates as args: array
 
 Multidimensional Euclidean distance from the origin to a point.
 
@@ -2646,8 +2648,9 @@ For example, the hypotenuse of a 3/4/5 right triangle is:
 [clinic start generated code]*/
 
 static PyObject *
-math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=dcb6d4b7a1102ee1 input=5c0061a2d11235ed]*/
+math_hypot_impl(PyObject *module, PyObject * const *args,
+                Py_ssize_t args_length)
+/*[clinic end generated code: output=c9de404e24370068 input=1bceaf7d4fdcd9c2]*/
 {
     Py_ssize_t i;
     PyObject *item;
@@ -2657,13 +2660,13 @@ math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
     double coord_on_stack[NUM_STACK_ELEMS];
     double *coordinates = coord_on_stack;
 
-    if (nargs > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyMem_Malloc(nargs * sizeof(double));
+    if (args_length > NUM_STACK_ELEMS) {
+        coordinates = (double *) PyMem_Malloc(args_length * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();
         }
     }
-    for (i = 0; i < nargs; i++) {
+    for (i = 0; i < args_length; i++) {
         item = args[i];
         ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
@@ -2673,7 +2676,7 @@ math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args)
             max = x;
         }
     }
-    result = vector_norm(nargs, coordinates, max, found_nan);
+    result = vector_norm(args_length, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
         PyMem_Free(coordinates);
     }
@@ -2710,7 +2713,7 @@ Return the sum of products of values from two iterables p and q.
 
 Roughly equivalent to:
 
-    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+    sum(map(operator.mul, p, q, strict=True))
 
 For float and mixed int/float inputs, the intermediate products
 and sums are computed with extended precision.
@@ -2718,7 +2721,7 @@ and sums are computed with extended precision.
 
 static PyObject *
 math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=6722dbfe60664554 input=82be54fe26f87e30]*/
+/*[clinic end generated code: output=6722dbfe60664554 input=a2880317828c61d2]*/
 {
     PyObject *p_i = NULL, *q_i = NULL, *term_i = NULL, *new_total = NULL;
     PyObject *p_it, *q_it, *total;

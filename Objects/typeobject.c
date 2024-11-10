@@ -7656,6 +7656,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
     return 0;
 }
 
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
+}
+
 
 /* Add the methods from tp_methods to the __dict__ in a type object */
 static int
@@ -8607,7 +8613,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        if (self->tp_version_tag == 0) {
+            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        }
     }
     else {
         assert(!initial);
