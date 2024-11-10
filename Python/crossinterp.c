@@ -999,6 +999,10 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
     case _PyXI_ERR_NOT_SHAREABLE:
         _set_xid_lookup_failure(interp, NULL, NULL);
         break;
+    case _PyXI_ERR_SHUTTING_DOWN:
+        PyErr_SetString(PyExc_InterpreterError,
+                        "interpreter is shutting down");
+        break;
     default:
 #ifdef Py_DEBUG
         Py_UNREACHABLE();
@@ -1715,9 +1719,17 @@ _PyXI_Enter(_PyXI_session *session,
         // In the case where we didn't switch interpreters, it would
         // be more efficient to leave the exception in place and return
         // immediately.  However, life is simpler if we don't.
+#ifdef Py_GIL_DISABLED
+        errcode = _PyInterpreterState_IsRunningAllowed(interp)
+            ? _PyXI_ERR_ALREADY_RUNNING
+            : _PyXI_ERR_SHUTTING_DOWN;
+#else
         errcode = _PyXI_ERR_ALREADY_RUNNING;
+#endif
         goto error;
     }
+
+    assert(_PyInterpreterState_IsRunningAllowed(interp));
     session->running = 1;
 
     // Cache __main__.__dict__.
@@ -1871,6 +1883,7 @@ void
 _PyXI_EndInterpreter(PyInterpreterState *interp,
                      PyThreadState *tstate, PyThreadState **p_save_tstate)
 {
+    assert(!_PyInterpreterState_IsRunningAllowed(interp));
 #ifndef NDEBUG
     long whence = _PyInterpreterState_GetWhence(interp);
 #endif

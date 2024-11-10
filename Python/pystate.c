@@ -1048,9 +1048,67 @@ get_main_thread(PyInterpreterState *interp)
 }
 
 int
+_PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+#ifdef Py_GIL_DISABLED
+    return !_Py_atomic_load_int_relaxed(&interp->threads.prevented);
+#else
+    return 1;
+#endif
+}
+
+#define _PyInterpreterState_RUNNING_OK 0
+#define _PyInterpreterState_RUNNING_PREVENTED 1
+
+int
+_PyInterpreterState_PreventMain(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+#ifdef Py_GIL_DISABLED
+    PyThreadState *expected = get_main_thread(interp);
+    if (expected != NULL)
+    {
+        // Interpreter is running, can't prevent it yet.
+        return 0;
+    }
+    int expected_prevented = _PyInterpreterState_RUNNING_OK;
+    if (_Py_atomic_compare_exchange_int(&interp->threads.prevented,
+                                        &expected_prevented,
+                                        _PyInterpreterState_RUNNING_PREVENTED) == 0)
+    {
+        // Another thread beat us!
+        return 0;
+    }
+    assert(!_PyInterpreterState_IsRunningAllowed(interp));
+    if (_Py_atomic_compare_exchange_ptr(
+                                        &interp->threads.main,
+                                        &expected,
+                                        NULL) == 0)
+    {
+        // It started running again, can't finish.
+        // Though, the next call will already be prevented.
+        return 0;
+    }
+    assert(!_PyInterpreterState_IsRunningMain(interp));
+    return 1;
+#else
+    // The GIL protects us on the default build, so this
+    // case shouldn't be possible.
+    assert(!_PyInterpreterState_IsRunningMain(interp));
+    return 1;
+#endif
+}
+
+int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
     if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
+        return -1;
+    }
+    if (!_PyInterpreterState_IsRunningAllowed(interp))
+    {
+        PyErr_SetString(PyExc_RuntimeError, "cannot run this interpreter anymore");
         return -1;
     }
     PyThreadState *tstate = current_fast_get();
@@ -3079,3 +3137,4 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
     }
 #endif
 }
+

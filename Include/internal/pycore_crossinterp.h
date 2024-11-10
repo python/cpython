@@ -232,6 +232,7 @@ typedef enum error_code {
     _PyXI_ERR_MAIN_NS_FAILURE = -5,
     _PyXI_ERR_APPLY_NS_FAILURE = -6,
     _PyXI_ERR_NOT_SHAREABLE = -7,
+    _PyXI_ERR_SHUTTING_DOWN = -8,
 } _PyXI_errcode;
 
 

@@ -139,6 +139,9 @@ struct _is {
            or the size specified by the THREAD_STACK_SIZE macro. */
         /* Used in Python/thread.c. */
         size_t stacksize;
+#ifdef Py_GIL_DISABLED
+        int prevented;
+#endif
     } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists
@@ -403,6 +406,11 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
     PyInterpreterState **pinterp);
 
+PyAPI_FUNC(int)
+_PyInterpreterState_PreventMain(PyInterpreterState *interp);
+
+PyAPI_FUNC(int)
+_PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp);
 
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \

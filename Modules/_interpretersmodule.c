@@ -706,6 +706,21 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    if (_PyInterpreterState_PreventMain(interp) == 0) {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "interpreter started running during shutdown");
+        return NULL;
+    }
+#endif
+
+    /*
+     * Running main has now been prevented, the interpreter will
+     * never run again (GH-126644).
+     */
+    assert(!is_running_main(interp));
+    assert(!_PyInterpreterState_IsRunningAllowed(interp));
+
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);
 
