@@ -204,6 +204,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
         authkey = b''
 
     if preload:
+        if sys_path is not None:
+            sys.path[:] = sys_path
         if '__main__' in preload and main_path is not None:
             process.current_process()._inheriting = True
             try:

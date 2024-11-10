@@ -562,8 +562,8 @@ attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
 namespaces for ``obj``.  If the search finds a descriptor outside of the
-instance ``__dict__``, its :meth:`__get__` method is invoked according to the
-precedence rules listed below.
+instance :attr:`~object.__dict__`, its :meth:`~object.__get__` method is
+invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.

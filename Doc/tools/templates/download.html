@@ -1,17 +1,19 @@
 {% extends "layout.html" %}
 {% set title = _('Download') %}
 {% if daily is defined %}
-  {% set dlbase = pathto('archives', 1) %}
+  {% set dl_base = pathto('archives', resource=True) %}
+  {% set dl_version = version %}
 {% else %}
   {#
     The link below returns HTTP 404 until the first related alpha release.
     This is expected; use daily documentation builds for CPython development.
   #}
-  {% set dlbase = 'https://www.python.org/ftp/python/doc/' + release %}
+  {% set dl_base = 'https://www.python.org/ftp/python/doc/' + release %}
+  {% set dl_version = release %}
 {% endif %}
 
 {% block body %}
-<h1>{% trans %}Download Python {{ release }} Documentation{% endtrans %}</h1>
+<h1>{% trans %}Download Python {{ dl_version }} Documentation{% endtrans %}</h1>
 
 {% if last_updated %}<p><b>{% trans %}Last updated on: {{ last_updated }}.{% endtrans %}</b></p>{% endif %}
 
@@ -26,27 +28,27 @@ Python in one of various formats, follow one of links in this table.{% endtrans 
   </tr>
   <tr>
     <td>{% trans %}PDF{% endtrans %}</td>
-    <td>{% trans download_size="17" %}<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="17" %}<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="17" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-pdf-a4.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="17" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-pdf-a4.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
   </tr>
   <tr>
     <td>{% trans %}HTML{% endtrans %}</td>
-    <td>{% trans download_size="13" %}<a href="{{ dlbase }}/python-{{ release }}-docs-html.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="8" %}<a href="{{ dlbase }}/python-{{ release }}-docs-html.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="13" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="8" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
   </tr>
   <tr>
     <td>{% trans %}Plain text{% endtrans %}</td>
-    <td>{% trans download_size="4" %}<a href="{{ dlbase }}/python-{{ release }}-docs-text.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="3" %}<a href="{{ dlbase }}/python-{{ release }}-docs-text.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="4" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="3" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
   </tr>
   <tr>
     <td>{% trans %}Texinfo{% endtrans %}</td>
-    <td>{% trans download_size="9" %}<a href="{{ dlbase }}/python-{{ release }}-docs-texinfo.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="7" %}<a href="{{ dlbase }}/python-{{ release }}-docs-texinfo.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="9" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="7" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
  </tr>
  <tr>
     <td>{% trans %}EPUB{% endtrans %}</td>
-    <td>{% trans download_size="6" %}<a href="{{ dlbase }}/python-{{ release }}-docs.epub">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans download_size="6" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs.epub">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
     <td></td>
   </tr>
 </table>
