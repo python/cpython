@@ -1321,7 +1321,7 @@ init_interp_main(PyThreadState *tstate)
             }
             Py_DECREF(opt);
         }
-}
+    }
 #endif // Py_TIER2
 
     if (!is_main_interp) {
