@@ -21,7 +21,9 @@ standard library.  They are documented here to help people find replacements.
    cgitb.rst
    chunk.rst
    crypt.rst
+   distutils.rst
    imghdr.rst
+   imp.rst
    mailcap.rst
    msilib.rst
    nis.rst
