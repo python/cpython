@@ -1,1 +1,1 @@
-Mention the turtle module in Tcl/Tk installation option in Windows installer. Exclude turtle.py from stdlib if this option is not set.
+Makes the presence of the :mod:`turtle` module dependent on the Tcl/Tk installer option. Previously, the module was always installed but would be unusable without Tcl/Tk.
