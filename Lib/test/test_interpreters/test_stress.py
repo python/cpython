@@ -32,6 +32,14 @@ class StressTests(TestBase):
         with threading_helper.start_threads(threads):
             pass
 
+    @support.requires_resource('cpu')
+    def test_subinterpreter_thread_safety(self):
+        interp = interpreters.create()
+        threads = [threading.Thread(target=interpreters.run_string, args=(interp,)) for _ in range(200)]
+        threads.extend([threading.Thread(target=interpreters.destroy, args=(interp,)) for _ in range(200)])
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
