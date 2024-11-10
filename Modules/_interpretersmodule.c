@@ -472,6 +472,15 @@ _run_in_interpreter(PyInterpreterState *interp,
     int res = _run_script(session.main_ns, codestr, codestrlen, flags);
 
     // Clean up and switch back.
+
+#ifdef Py_GIL_DISABLED
+    /*
+     * GH-126644: Prevent other threads
+     * from messing with the exception state while we
+     * apply it.
+     */
+    PyMutex_Lock(&interp->threads.can_switch);
+#endif
     _PyXI_Exit(&session);
 
     // Propagate any exception out to the caller.
@@ -485,6 +494,10 @@ _run_in_interpreter(PyInterpreterState *interp,
     else {
         assert(!_PyXI_HasCapturedException(&session));
     }
+
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->threads.can_switch);
+#endif
 
     return res;
 }

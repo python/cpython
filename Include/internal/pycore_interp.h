@@ -140,7 +140,17 @@ struct _is {
         /* Used in Python/thread.c. */
         size_t stacksize;
 #ifdef Py_GIL_DISABLED
+        /*
+         * Whether setting the main thread should be prevented.
+         * This stops any data race problems during interpreter
+         * finalization, because it ensures that no other threads
+         * can be trying to access the subinterpreter on the free-threaded
+         * build.
+         *
+         * (See GH-126644)
+         */
         int prevented;
+        PyMutex can_switch;
 #endif
     } threads;
 

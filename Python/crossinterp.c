@@ -1712,7 +1712,13 @@ _PyXI_Enter(_PyXI_session *session,
     }
 
     // Switch to the requested interpreter (if necessary).
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->threads.can_switch);
+#endif
     _enter_session(session, interp);
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->threads.can_switch);
+#endif
     _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
 
     // Ensure this thread owns __main__.
