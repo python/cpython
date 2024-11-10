@@ -914,8 +914,8 @@ class _TestProcess(BaseTestCase):
         addr = forkserver._forkserver_address
         self.assertTrue(addr)
 
-        # First, demonstrate that a raw auth handshake as Client makes
-        # does not raise an error.
+        # Demonstrate that a raw auth handshake, as Client performs, does not
+        # raise an error.
         client = multiprocessing.connection.Client(addr, authkey=authkey)
         client.close()
 

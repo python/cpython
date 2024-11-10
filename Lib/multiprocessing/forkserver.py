@@ -97,17 +97,19 @@ class ForkServer(object):
                       resource_tracker.getfd()]
             allfds += fds
             try:
-                if self._forkserver_authkey:
-                    client.setblocking(True)
-                    wrapped_client = connection.Connection(client.fileno())
-                    try:
-                        connection.answer_challenge(
-                                wrapped_client, self._forkserver_authkey)
-                        connection.deliver_challenge(
-                                wrapped_client, self._forkserver_authkey)
-                    finally:
-                        wrapped_client._detach()
-                        del wrapped_client
+                assert self._forkserver_authkey
+                client.setblocking(True)
+                wrapped_client = connection.Connection(client.fileno())
+                # The other side of this exchange happens in the child as
+                # implemented in main().
+                try:
+                    connection.answer_challenge(
+                            wrapped_client, self._forkserver_authkey)
+                    connection.deliver_challenge(
+                            wrapped_client, self._forkserver_authkey)
+                finally:
+                    wrapped_client._detach()
+                    del wrapped_client
                 reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
@@ -296,6 +298,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                         try:
                             if authkey:
                                 wrapped_s = connection.Connection(s.fileno())
+                                # The other side of this exchange happens in
+                                # in connect_to_new_process().
                                 try:
                                     connection.deliver_challenge(
                                             wrapped_s, authkey)
