@@ -150,6 +150,15 @@ struct _is {
          * (See GH-126644)
          */
         int prevented;
+
+        /*
+         * Lock to be held while switching to the interpreter.
+         * This is used to prevent threads from changing the
+         * exception state during the short time period that
+         * we unlock the interpreter.
+         *
+         * (See GH-126644)
+         */
         PyMutex can_switch;
 #endif
     } threads;
