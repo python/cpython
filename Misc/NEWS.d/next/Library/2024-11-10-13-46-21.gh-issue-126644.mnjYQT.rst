@@ -1,0 +1,2 @@
+Fix crash when using subinterpreters in multiple threads on the
+:term:`free-threaded <free threading>` build.
