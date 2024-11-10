@@ -723,7 +723,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
                         "interpreter started running during shutdown");
         return NULL;
     }
-#endif
 
     /*
      * Running main has now been prevented, the interpreter will
@@ -731,6 +730,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
      */
     assert(!is_running_main(interp));
     assert(!_PyInterpreterState_IsRunningAllowed(interp));
+#endif
 
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);

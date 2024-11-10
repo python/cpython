@@ -1896,7 +1896,9 @@ void
 _PyXI_EndInterpreter(PyInterpreterState *interp,
                      PyThreadState *tstate, PyThreadState **p_save_tstate)
 {
+#ifdef Py_GIL_DISABLED
     assert(!_PyInterpreterState_IsRunningAllowed(interp));
+#endif
 #ifndef NDEBUG
     long whence = _PyInterpreterState_GetWhence(interp);
 #endif
