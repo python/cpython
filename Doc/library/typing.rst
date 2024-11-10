@@ -1730,7 +1730,7 @@ without the dedicated syntax, as documented below.
    variables::
 
       class StrSequence[S: str]:  # S is a TypeVar with a `str` upper bound;
-          ...                     # We can say that S is "bounded by `str`"
+          ...                     # we can say that S is "bounded by `str`"
 
 
       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
