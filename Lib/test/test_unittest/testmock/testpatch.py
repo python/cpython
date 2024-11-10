@@ -774,6 +774,25 @@ class PatchTest(unittest.TestCase):
         patcher.stop()
 
 
+    def test_property_setters(self):
+        mock_object = Mock()
+        mock_bar = mock_object.bar
+        patcher = patch.object(mock_object, 'bar', 'x')
+        with patcher:
+            self.assertEqual(patcher.is_local, False)
+            self.assertIs(patcher.target, mock_object)
+            self.assertEqual(patcher.temp_original, mock_bar)
+            patcher.is_local = True
+            patcher.target = mock_bar
+            patcher.temp_original = mock_object
+            self.assertEqual(patcher.is_local, True)
+            self.assertIs(patcher.target, mock_bar)
+            self.assertEqual(patcher.temp_original, mock_object)
+        # if changes are left intact, they may lead to disruption as shown below (it might be what someone needs though)
+        self.assertEqual(mock_bar.bar, mock_object)
+        self.assertEqual(mock_object.bar, 'x')
+
+
     def test_patchobject_start_stop(self):
         original = something
         patcher = patch.object(PTModule, 'something', 'foo')
