@@ -297,6 +297,16 @@ General Options
 
    .. versionadded:: 3.13
 
+.. option:: --enable-experimental-jit
+   Enables :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+   Possible values:
+      * ``no`` - build the interpreter without the JIT.
+      * ``yes`` - build the interpreter with the JIT.
+      * ``yes-off`` - build the interpreter with the JIT but disable it by default.
+      * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+
+   .. versionadded:: 3.13
+
 .. option:: PKG_CONFIG
 
    Path to ``pkg-config`` utility.
