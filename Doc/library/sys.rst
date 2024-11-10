@@ -1235,6 +1235,13 @@ always available.
 
    .. versionadded:: 3.13
 
+.. function:: _jit_enabled()
+   Return :const:`True` if :ref:`JIT compiler <whatsnew313-jit-compiler>` is active.
+   Return :const:`False` otherwise.
+
+   .. availability:: JIT builds, tier 2 interpreter doesn't count here.
+
+   .. versionadded:: next
 
 .. function:: is_finalizing()
 

@@ -1,1 +1,1 @@
-Allow to determine whether the JIT is enabled at runtime via :func:`!sys._jit_enabled`.
+Allow to determine whether the JIT is enabled at runtime via :func:`sys._jit_enabled`.

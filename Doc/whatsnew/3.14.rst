@@ -443,6 +443,9 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+* Add a :func:`sys._jit_enabled` which helps to determine in runtime if
+  :ref:`JIT compiler <whatsnew313-jit-compiler>` is active.
+
 
 unicodedata
 -----------
