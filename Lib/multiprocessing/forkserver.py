@@ -26,7 +26,7 @@ __all__ = ['ensure_running', 'get_inherited_fds', 'connect_to_new_process',
 
 MAXFDS_TO_SEND = 256
 SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
-_authkey_len = 32  # <= PIPEBUF so it fits a single write to an empty pipe.
+_AUTHKEY_LEN = 32  # <= PIPEBUF so it fits a single write to an empty pipe.
 
 #
 # Forkserver class
@@ -87,6 +87,7 @@ class ForkServer(object):
         process data.
         '''
         self.ensure_running()
+        assert self._forkserver_authkey
         if len(fds) + 4 >= MAXFDS_TO_SEND:
             raise ValueError('too many fds')
         with socket.socket(socket.AF_UNIX) as client:
@@ -97,7 +98,6 @@ class ForkServer(object):
                       resource_tracker.getfd()]
             allfds += fds
             try:
-                assert self._forkserver_authkey
                 client.setblocking(True)
                 wrapped_client = connection.Connection(client.fileno())
                 # The other side of this exchange happens in the child as
@@ -183,7 +183,7 @@ class ForkServer(object):
                 # Authenticate our control socket to prevent access from
                 # processes we have not shared this key with.
                 try:
-                    self._forkserver_authkey = os.urandom(_authkey_len)
+                    self._forkserver_authkey = os.urandom(_AUTHKEY_LEN)
                     os.write(authkey_w, self._forkserver_authkey)
                 finally:
                     os.close(authkey_w)
@@ -199,9 +199,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
          *, authkey_r=None):
     """Run forkserver."""
     if authkey_r is not None:
-        authkey = os.read(authkey_r, _authkey_len)
-        assert len(authkey) == _authkey_len, f'{len(authkey)} < {_authkey_len}'
-        os.close(authkey_r)
+        try:
+            authkey = os.read(authkey_r, _AUTHKEY_LEN)
+            assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
+        finally:
+            os.close(authkey_r)
     else:
         authkey = b''
 

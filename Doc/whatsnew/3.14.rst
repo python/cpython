@@ -355,12 +355,11 @@ json
 multiprocessing
 ---------------
 
-* :mod:`multiprocessing`'s ``"forkserver"`` start method gains authentication
-  on its control sockets so that it isn't solely reliant on filesystem
-  permissions to control what other processes can cause the fork server to
-  spawn workers and run code.
-  This improves the security story behind :gh:`97514`.
-  (Contributed by Gregory P. Smith.)
+* :mod:`multiprocessing`'s ``"forkserver"`` start method now authenticates
+  its control socket to avoid solely relying on filesystem permissions
+  to restrict what other processes could cause the forkserver to spawn workers
+  and run code.
+  (Contributed by Gregory P. Smith for :gh:`97514`.)
 
 
 operator

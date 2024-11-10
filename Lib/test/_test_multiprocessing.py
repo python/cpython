@@ -895,10 +895,6 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
-    @staticmethod
-    def _exit_process():
-        sys.exit(0)
-
     def test_forkserver_auth_is_enabled(self):
         if self.TYPE == "threads":
             self.skipTest(f"test not appropriate for {self.TYPE}")
@@ -920,7 +916,7 @@ class _TestProcess(BaseTestCase):
         client.close()
 
         # That worked, now launch a quick process.
-        proc = self.Process(target=self._exit_process)
+        proc = self.Process(target=sys.exit)
         proc.start()
         proc.join()
         self.assertEqual(proc.exitcode, 0)
@@ -939,14 +935,14 @@ class _TestProcess(BaseTestCase):
                 forkserver, '_forkserver_authkey', None):
             # With an incorrect authkey we should get an auth rejection
             # rather than the above protocol error.
-            forkserver._forkserver_authkey = b'T'*authkey_len
-            proc = self.Process(target=self._exit_process)
+            forkserver._forkserver_authkey = b'T' * authkey_len
+            proc = self.Process(target=sys.exit)
             with self.assertRaises(multiprocessing.AuthenticationError):
                 proc.start()
             del proc
 
         # authkey restored, launching processes should work again.
-        proc = self.Process(target=self._exit_process)
+        proc = self.Process(target=sys.exit)
         proc.start()
         proc.join()
 
