@@ -2264,12 +2264,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic end generated code: output=5783cdeb51874b43 input=a12df928758a82b4]*/
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
-#ifdef _Py_JIT
-    _PyOptimizerObject* optimizer = _Py_GetOptimizer();
-    if (optimizer != NULL) {
-        Py_DECREF(optimizer);
-        PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
-        return NULL;
+#if defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0)
+    if (_PySys_JITEnabled()) {
+        _PyOptimizerObject* optimizer = _Py_GetOptimizer();
+        if (optimizer != NULL) {
+            Py_DECREF(optimizer);
+            PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
+            return NULL;
+        }
     }
 #endif
 
@@ -2533,6 +2535,46 @@ close_and_release:
 }
 
 
+#ifdef _Py_TIER2
+// _Py_TIER2 is set to 4 or 6 in tier 2 builds.
+#if _Py_TIER2 % 2 != 0
+int
+_PySys_JITEnabled(void)
+{
+    char *env = Py_GETENV("PYTHON_JIT");
+    if (_Py_TIER2 == 1) {
+        // Interpreter was built with enabled jit, but it can be disabled via PYTHON_JIT=0
+        if (env && *env != '\0') {
+            return *env != '0';
+        }
+        return 1;
+    }
+    else if (_Py_TIER2 == 3) {
+        // Interpreter was built with disabled jit, but it can be enabled via PYTHON_JIT=1
+        if (env && *env != '\0') {
+            return *env == '1';
+        }
+        return 0;
+    }
+    Py_UNREACHABLE();
+}
+
+/*[clinic input]
+sys._jit_enabled -> bool
+
+Returns True if JIT is enabled, False otherwise.
+[clinic start generated code]*/
+
+static int
+sys__jit_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=e8adca3fa5011880 input=f2bdfa820c11f65b]*/
+{
+    return _PySys_JITEnabled();
+}
+#endif
+#endif // _Py_TIER2
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2603,6 +2645,9 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
+#ifdef _Py_TIER2
+    SYS__JIT_ENABLED_METHODDEF
+#endif
     {NULL, NULL}  // sentinel
 };
 

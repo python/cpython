@@ -1296,43 +1296,34 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
-    // Turn on experimental tier 2 (uops-based) optimizer
-    // This is also needed when the JIT is enabled
+// Turn on experimental tier 2 (uops-based) optimizer
+// This is also needed when the JIT is enabled
 #ifdef _Py_TIER2
     if (is_main_interp) {
-        int enabled = 1;
-#if _Py_TIER2 & 2
-        enabled = 0;
+// perf profiler works fine with tier 2 interpreter, so
+// only checking for a "real JIT".
+#if _Py_TIER % 2 != 0
+        int enabled = _PySys_JITEnabled();
+        printf("enabled = %d\n", enabled);
+        if (enabled && config->perf_profiling > 0) {
+            (void)PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "JIT deactivated as perf profiling support is active",
+            0);
+        } else
 #endif
-        char *env = Py_GETENV("PYTHON_JIT");
-        if (env && *env != '\0') {
-            // PYTHON_JIT=0|1 overrides the default
-            enabled = *env != '0';
+    {
+        PyObject *opt = _PyOptimizer_NewUOpOptimizer();
+        if (opt == NULL) {
+            return _PyStatus_ERR("can't initialize optimizer");
         }
-        if (enabled) {
-#ifdef _Py_JIT
-            // perf profiler works fine with tier 2 interpreter, so
-            // only checking for a "real JIT".
-            if (config->perf_profiling > 0) {
-                (void)PyErr_WarnEx(
-                    PyExc_RuntimeWarning,
-                    "JIT deactivated as perf profiling support is active",
-                    0);
-            } else
-#endif
-            {
-                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-                if (opt == NULL) {
-                    return _PyStatus_ERR("can't initialize optimizer");
-                }
-                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                    return _PyStatus_ERR("can't install optimizer");
-                }
-                Py_DECREF(opt);
-            }
+        if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+            return _PyStatus_ERR("can't install optimizer");
         }
+        Py_DECREF(opt);
     }
-#endif
+}
+#endif // Py_TIER2
 
     if (!is_main_interp) {
         // The main interpreter is handled in Py_Main(), for now.

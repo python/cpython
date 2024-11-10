@@ -22,6 +22,10 @@ extern int _PySys_ClearAttrString(PyInterpreterState *interp,
 extern int _PySys_SetFlagObj(Py_ssize_t pos, PyObject *new_value);
 extern int _PySys_SetIntMaxStrDigits(int maxdigits);
 
+#if defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0)
+extern int _PySys_JITEnabled(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
