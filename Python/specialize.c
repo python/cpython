@@ -2690,6 +2690,25 @@ to_bool_fail_kind(PyObject *value)
     return SPEC_FAIL_OTHER;
 }
 
+static int
+check_type_always_true(PyTypeObject *ty)
+{
+    PyNumberMethods *nb = ty->tp_as_number;
+    if (nb && nb->nb_bool) {
+        return SPEC_FAIL_TO_BOOL_NUMBER;
+    }
+    PyMappingMethods *mp = ty->tp_as_mapping;
+    if (mp && mp->mp_length) {
+        return SPEC_FAIL_TO_BOOL_MAPPING;
+    }
+    PySequenceMethods *sq = ty->tp_as_sequence;
+    if (sq && sq->sq_length) {
+      return SPEC_FAIL_TO_BOOL_SEQUENCE;
+    }
+    return 0;
+}
+
+
 void
 _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
 {
@@ -2718,33 +2737,25 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         return;
     }
     if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
-        PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
-        if (nb && nb->nb_bool) {
-            unspecialize(instr, SPEC_FAIL_TO_BOOL_NUMBER);
-            return;
-        }
-        PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
-        if (mp && mp->mp_length) {
-            unspecialize(instr, SPEC_FAIL_TO_BOOL_MAPPING);
-            return;
-        }
-        PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
-        if (sq && sq->sq_length) {
-            unspecialize(instr, SPEC_FAIL_TO_BOOL_SEQUENCE);
-            return;
-        }
-        if (!PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
+        unsigned int version = 0;
+        int err = _PyType_Validate(Py_TYPE(value), check_type_always_true, &version);
+        if (err < 0) {
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
         }
-        uint32_t version = Py_TYPE(value)->tp_version_tag;
+        else if (err > 0) {
+            unspecialize(instr, err);
+            return;
+        }
+
+        assert(err == 0);
         if (version == 0) {
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
         }
-        specialize(instr, TO_BOOL_ALWAYS_TRUE);
-        write_u32(cache->version, version);
         assert(version);
+        write_u32(cache->version, version);
+        specialize(instr, TO_BOOL_ALWAYS_TRUE);
         return;
     }
     unspecialize(instr, to_bool_fail_kind(value));
