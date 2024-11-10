@@ -3,7 +3,7 @@ import gc
 import sys
 import unittest
 from ctypes import POINTER, byref, c_void_p
-from ctypes.wintypes import BOOL, BYTE, DWORD, WORD
+from ctypes.wintypes import BYTE, DWORD, WORD
 
 COINIT_APARTMENTTHREADED = 0x2
 CLSCTX_SERVER = 5
@@ -62,13 +62,13 @@ class ProtoComMethod:
         return self.mth.__get__(instance)
 
 
-def CLSIDFromString(name):
+def create_guid(name):
     guid = GUID()
     ole32.CLSIDFromString(name, byref(guid))
     return guid
 
 
-def IsEqualGUID(guid1, guid2):
+def is_equal_guid(guid1, guid2):
     return ole32.IsEqualGUID(byref(guid1), byref(guid2))
 
 
@@ -78,13 +78,15 @@ if sys.platform == "win32":
 
     ole32 = ctypes.oledll.ole32
 
-    IID_IUnknown = CLSIDFromString("{00000000-0000-0000-C000-000000000046}")
-    IID_IStream = CLSIDFromString("{0000000C-0000-0000-C000-000000000046}")
-    IID_IPersist = CLSIDFromString("{0000010C-0000-0000-C000-000000000046}")
-    CLSID_ShellLink = CLSIDFromString("{00021401-0000-0000-C000-000000000046}")
+    IID_IUnknown = create_guid("{00000000-0000-0000-C000-000000000046}")
+    IID_IStream = create_guid("{0000000C-0000-0000-C000-000000000046}")
+    IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
+    CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
 
-    proto_qi = ProtoComMethod(0, HRESULT, POINTER(GUID), POINTER(c_void_p))
-    proto_addref = ProtoComMethod(1, ctypes.c_long)
+    proto_query_interface = ProtoComMethod(
+        0, HRESULT, POINTER(GUID), POINTER(c_void_p)
+    )
+    proto_add_ref = ProtoComMethod(1, ctypes.c_long)
     proto_release = ProtoComMethod(2, ctypes.c_long)
     proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
 
@@ -112,8 +114,8 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
 
     def test_without_paramflags_and_iid(self):
         class IUnknown(c_void_p):
-            QueryInterface = proto_qi()
-            AddRef = proto_addref()
+            QueryInterface = proto_query_interface()
+            AddRef = proto_add_ref()
             Release = proto_release()
 
         class IPersist(IUnknown):
@@ -124,7 +126,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         clsid = GUID()
         hr_getclsid = ppst.GetClassID(byref(clsid))
         self.assertEqual(S_OK, hr_getclsid)
-        self.assertEqual(TRUE, IsEqualGUID(CLSID_ShellLink, clsid))
+        self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
 
         self.assertEqual(2, ppst.AddRef())
         self.assertEqual(3, ppst.AddRef())
@@ -144,8 +146,8 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
 
     def test_with_paramflags_and_without_iid(self):
         class IUnknown(c_void_p):
-            QueryInterface = proto_qi(None)
-            AddRef = proto_addref()
+            QueryInterface = proto_query_interface(None)
+            AddRef = proto_add_ref()
             Release = proto_release()
 
         class IPersist(IUnknown):
@@ -154,7 +156,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         ppst = self.create_shelllink_persist(IPersist)
 
         clsid = ppst.GetClassID()
-        self.assertEqual(TRUE, IsEqualGUID(CLSID_ShellLink, clsid))
+        self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
 
         punk = IUnknown()
         hr_qi = ppst.QueryInterface(IID_IUnknown, punk)
@@ -169,8 +171,8 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
 
     def test_with_paramflags_and_iid(self):
         class IUnknown(c_void_p):
-            QueryInterface = proto_qi(None, IID_IUnknown)
-            AddRef = proto_addref()
+            QueryInterface = proto_query_interface(None, IID_IUnknown)
+            AddRef = proto_add_ref()
             Release = proto_release()
 
         class IPersist(IUnknown):
@@ -179,7 +181,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         ppst = self.create_shelllink_persist(IPersist)
 
         clsid = ppst.GetClassID()
-        self.assertEqual(TRUE, IsEqualGUID(CLSID_ShellLink, clsid))
+        self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
 
         punk = IUnknown()
         hr_qi = ppst.QueryInterface(IID_IUnknown, punk)
