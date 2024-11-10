@@ -1425,84 +1425,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(TypeError):
             self.cls(foo="bar")
 
-    def setUpWalk(self):
-        super().setUpWalk()
-        sub21_path= self.sub2_path / "SUB21"
-        tmp5_path = sub21_path / "tmp3"
-        broken_link3_path = self.sub2_path / "broken_link3"
-
-        os.makedirs(sub21_path)
-        tmp5_path.write_text("I am tmp5, blame test_pathlib.")
-        if self.can_symlink:
-            os.symlink(tmp5_path, broken_link3_path)
-            self.sub2_tree[2].append('broken_link3')
-            self.sub2_tree[2].sort()
-        if not is_emscripten:
-            # Emscripten fails with inaccessible directories.
-            os.chmod(sub21_path, 0)
-        try:
-            os.listdir(sub21_path)
-        except PermissionError:
-            self.sub2_tree[1].append('SUB21')
-        else:
-            os.chmod(sub21_path, stat.S_IRWXU)
-            os.unlink(tmp5_path)
-            os.rmdir(sub21_path)
-
-    def test_walk_bad_dir(self):
-        self.setUpWalk()
-        errors = []
-        walk_it = self.walk_path.walk(on_error=errors.append)
-        root, dirs, files = next(walk_it)
-        self.assertEqual(errors, [])
-        dir1 = 'SUB1'
-        path1 = root / dir1
-        path1new = (root / dir1).with_suffix(".new")
-        path1.rename(path1new)
-        try:
-            roots = [r for r, _, _ in walk_it]
-            self.assertTrue(errors)
-            self.assertNotIn(path1, roots)
-            self.assertNotIn(path1new, roots)
-            for dir2 in dirs:
-                if dir2 != dir1:
-                    self.assertIn(root / dir2, roots)
-        finally:
-            path1new.rename(path1)
-
-    def test_walk_many_open_files(self):
-        depth = 30
-        base = self.cls(self.base, 'deep')
-        path = self.cls(base, *(['d']*depth))
-        path.mkdir(parents=True)
-
-        iters = [base.walk(top_down=False) for _ in range(100)]
-        for i in range(depth + 1):
-            expected = (path, ['d'] if i else [], [])
-            for it in iters:
-                self.assertEqual(next(it), expected)
-            path = path.parent
-
-        iters = [base.walk(top_down=True) for _ in range(100)]
-        path = base
-        for i in range(depth + 1):
-            expected = (path, ['d'] if i < depth else [], [])
-            for it in iters:
-                self.assertEqual(next(it), expected)
-            path = path / 'd'
-
-    def test_walk_above_recursion_limit(self):
-        recursion_limit = 40
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with infinite_recursion(recursion_limit):
-            list(base.walk())
-            list(base.walk(top_down=False))
-
     def test_glob_empty_pattern(self):
         p = self.cls('')
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
@@ -1884,6 +1806,84 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         P = self.cls
         with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').group()
+
+    def setUpWalk(self):
+        super().setUpWalk()
+        sub21_path= self.sub2_path / "SUB21"
+        tmp5_path = sub21_path / "tmp3"
+        broken_link3_path = self.sub2_path / "broken_link3"
+
+        os.makedirs(sub21_path)
+        tmp5_path.write_text("I am tmp5, blame test_pathlib.")
+        if self.can_symlink:
+            os.symlink(tmp5_path, broken_link3_path)
+            self.sub2_tree[2].append('broken_link3')
+            self.sub2_tree[2].sort()
+        if not is_emscripten:
+            # Emscripten fails with inaccessible directories.
+            os.chmod(sub21_path, 0)
+        try:
+            os.listdir(sub21_path)
+        except PermissionError:
+            self.sub2_tree[1].append('SUB21')
+        else:
+            os.chmod(sub21_path, stat.S_IRWXU)
+            os.unlink(tmp5_path)
+            os.rmdir(sub21_path)
+
+    def test_walk_bad_dir(self):
+        self.setUpWalk()
+        errors = []
+        walk_it = self.walk_path.walk(on_error=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertEqual(errors, [])
+        dir1 = 'SUB1'
+        path1 = root / dir1
+        path1new = (root / dir1).with_suffix(".new")
+        path1.rename(path1new)
+        try:
+            roots = [r for r, _, _ in walk_it]
+            self.assertTrue(errors)
+            self.assertNotIn(path1, roots)
+            self.assertNotIn(path1new, roots)
+            for dir2 in dirs:
+                if dir2 != dir1:
+                    self.assertIn(root / dir2, roots)
+        finally:
+            path1new.rename(path1)
+
+    def test_walk_many_open_files(self):
+        depth = 30
+        base = self.cls(self.base, 'deep')
+        path = self.cls(base, *(['d']*depth))
+        path.mkdir(parents=True)
+
+        iters = [base.walk(top_down=False) for _ in range(100)]
+        for i in range(depth + 1):
+            expected = (path, ['d'] if i else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            path = path.parent
+
+        iters = [base.walk(top_down=True) for _ in range(100)]
+        path = base
+        for i in range(depth + 1):
+            expected = (path, ['d'] if i < depth else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with infinite_recursion(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 @unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')
