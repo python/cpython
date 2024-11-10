@@ -16,7 +16,7 @@ def str_width(c: str) -> int:
 
 
 def wlen(s: str) -> int:
-    if len(s) == 1:
+    if len(s) == 1 and s != '\x1a':
         return str_width(s)
     length = sum(str_width(i) for i in s)
     # remove lengths of any escape sequences
