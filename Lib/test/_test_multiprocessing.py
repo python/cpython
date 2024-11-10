@@ -258,7 +258,7 @@ class TimingWrapper(object):
 class BaseTestCase(object):
 
     ALLOWED_TYPES = ('processes', 'manager', 'threads')
-    # If not empty, limit which start method suits run this class.
+    # If not empty, limit which start method suites run this class.
     START_METHODS: set[str] = set()
     start_method = None  # set by install_tests_in_module_dict()
 
@@ -6406,7 +6406,7 @@ class _TestAtExit(BaseTestCase):
 class _TestSpawnedSysPath(BaseTestCase):
     """Test that sys.path is setup in forkserver and spawn processes."""
 
-    ALLOWED_TYPES = ('processes',)
+    ALLOWED_TYPES = {'processes'}
     # Not applicable to fork which inherits everything from the process as is.
     START_METHODS = {"forkserver", "spawn"}
 
@@ -6422,11 +6422,6 @@ class _TestSpawnedSysPath(BaseTestCase):
         sys.path.insert(0, "")  # Replaced with an abspath in child.
         self.assertIn(self.start_method, self.START_METHODS)
         self._ctx = multiprocessing.get_context(self.start_method)
-        try:
-            self._ctx_forkserver = multiprocessing.get_context("forkserver")
-        except ValueError:
-            self._ctx_forkserver = None
-        self._ctx_spawn = multiprocessing.get_context("spawn")
 
     def tearDown(self):
         sys.path[:] = self._orig_sys_path
