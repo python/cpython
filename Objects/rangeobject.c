@@ -64,8 +64,6 @@ make_range_object(PyTypeObject *type, PyObject *start,
             Py_DECREF(length);
             return NULL;
         }
-    } else {
-        //printf("rangeobject from freelist!\n");
     }
     obj->start = start;
     obj->stop = stop;
