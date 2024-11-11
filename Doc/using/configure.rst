@@ -1097,7 +1097,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform is either ``wasm32-wasi`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
