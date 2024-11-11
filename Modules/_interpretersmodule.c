@@ -717,7 +717,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
          * We're in a weird limbo where the main thread isn't set but
          * the thread states haven't fully cleared yet.
          */
-        PyErr_SetString(PyExc_InterpreterError, "interpreter running");
+        PyErr_SetString(PyExc_InterpreterError, "interpreter is still finishing");
         return NULL;
     }
 
