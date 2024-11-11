@@ -472,7 +472,6 @@ _run_in_interpreter(PyInterpreterState *interp,
     int res = _run_script(session.main_ns, codestr, codestrlen, flags);
 
     // Clean up and switch back.
-
     _PyXI_Exit(&session);
 
     // Propagate any exception out to the caller.
