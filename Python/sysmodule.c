@@ -2266,7 +2266,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #if defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0)
     if (_PySys_JITEnabled()) {
-        _PyOptimizerObject* optimizer = _Py_GetOptimizer();
+        _PyOptimizerObject *optimizer = _Py_GetOptimizer();
         if (optimizer != NULL) {
             Py_DECREF(optimizer);
             PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
