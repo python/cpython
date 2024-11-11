@@ -314,6 +314,11 @@ functools
   to reserve a place for positional arguments.
   (Contributed by Dominykas Grigonis in :gh:`119127`.)
 
+getopt
+------
+
+* Add support for options with optional arguments.
+  (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
 http
 ----
