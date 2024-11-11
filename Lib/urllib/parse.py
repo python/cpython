@@ -247,11 +247,11 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         return hostname, port
 
 
-_DefragResultBase = namedtuple('DefragResult', 'url fragment')
+_DefragResultBase = namedtuple('_DefragResultBase', 'url fragment')
 _SplitResultBase = namedtuple(
-    'SplitResult', 'scheme netloc path query fragment')
+    '_SplitResultBase', 'scheme netloc path query fragment')
 _ParseResultBase = namedtuple(
-    'ParseResult', 'scheme netloc path params query fragment')
+    '_ParseResultBase', 'scheme netloc path params query fragment')
 
 _DefragResultBase.__doc__ = """
 DefragResult(url, fragment)
