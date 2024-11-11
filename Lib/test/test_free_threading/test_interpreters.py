@@ -12,9 +12,12 @@ class StressTests(unittest.TestCase):
 
     @support.requires_resource('cpu')
     def test_subinterpreter_thread_safety(self):
+        # GH-126644: _interpreters had thread safety problems on the free-threaded build
         interp = _interpreters.create()
         threads = [threading.Thread(target=_interpreters.run_string, args=(interp, "1")) for _ in range(1000)]
         threads.extend([threading.Thread(target=_interpreters.destroy, args=(interp,)) for _ in range(1000)])
+        # This will spam all kinds of subinterpreter errors, but we don't care.
+        # We just want to make sure that it doesn't crash.
         with threading_helper.start_threads(threads):
             pass
 
