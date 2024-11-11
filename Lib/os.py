@@ -1118,7 +1118,7 @@ if not _exists('fspath'):
     fspath.__name__ = "fspath"
 
 
-class PathLike(abc.ABC):
+class PathLike(metaclass=abc.ABCMeta):
 
     """Abstract base class for implementing the file system path protocol."""
 
