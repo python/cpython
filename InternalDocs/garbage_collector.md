@@ -351,6 +351,29 @@ follows these steps in order:
    the reference counts fall to 0, triggering the destruction of all unreachable
    objects.
 
+
+Optimization: marking
+=====================
+
+Only objects that cannot be reached, can be garbage.
+To avoid performing the complex algorithm above on the whole heap, we first
+mark all objects that can be reached either from a frame stack or from global
+objects like the modules or builtin classes.
+
+This marking step does much less work per object, so reduces the time spent
+performing garbage collection by at least half.
+
+This mark phase marks all object that are transitively reachable from the
+roots as follows:
+* All objects directly referred by any builtin class, the `sys` module, the `builtins`
+module or any frame stack are added to a working set of reachable objects.
+* Until this working set is empty:
+   * Pop an object from the set and move it to the reachable set
+   * For each object directly reachable from that object:
+      * If it is not already reachable and it is a GC object, then move it to
+        the working set
+
+
 Optimization: generations
 =========================
 
@@ -588,9 +611,9 @@ heap.
   be more difficult.
 
 
-> [!NOTE] 
+> [!NOTE]
 > **Document history**
->   
+>
 >   Pablo Galindo Salgado - Original author
-> 
+>
 >   Irit Katriel - Convert to Markdown
