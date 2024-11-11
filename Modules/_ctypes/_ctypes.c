@@ -972,7 +972,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
 	 * Clear the previous value before calling dlsym(),
 	 * to ensure we can tell if our call resulted in an error.
 	 */
-    dlerror();
+    (void)dlerror();
     address = (void *)dlsym(handle, name);
 #ifdef __CYGWIN__
     if (!address) {
