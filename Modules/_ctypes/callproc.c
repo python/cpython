@@ -1629,7 +1629,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 	 * Clear the previous value before calling dlsym(),
 	 * to ensure we can tell if our call resulted in an error.
 	 */
-	dlerror();
+	(void)dlerror();
     ptr = dlsym((void*)handle, name);
 	char *dlerr = dlerror();
     if (dlerr) {
