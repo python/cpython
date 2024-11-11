@@ -10,9 +10,9 @@ FOO_C = r"""
    dlsym() to resolve the symbol "foo" to an address. Typically, such
    a function would return the address of an actual function, but it
    can also just return NULL.  For some background on IFUNCs, see
-   https://willnewton.name/uncategorized/using-gnu-indirect-functions/
+   https://willnewton.name/uncategorized/using-gnu-indirect-functions.
 
-   Adapted from Michael Kerrisk's answer: https://stackoverflow.com/a/53590014
+   Adapted from Michael Kerrisk's answer: https://stackoverflow.com/a/53590014.
 */
 
 asm (".type foo, @gnu_indirect_function");
