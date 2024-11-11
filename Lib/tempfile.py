@@ -499,7 +499,7 @@ class _TemporaryFileWrapper:
             name,
             delete,
             delete_on_close,
-            warn_message="Implicitly cleaning up {self!r}",
+            warn_message=f"Implicitly cleaning up {self!r}",
         )
 
     def __repr__(self):
