@@ -223,31 +223,38 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_preferred_extension(self):
         def check_extensions():
-            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
-            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-fontobject'), '.eot')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
-            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
-            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
-            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
-            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
-            self.assertEqual(mimetypes.guess_extension('font/otf'), '.otf')
-            self.assertEqual(mimetypes.guess_extension('font/ttf'), '.ttf')
-            self.assertEqual(mimetypes.guess_extension('font/woff'), '.woff')
-            self.assertEqual(mimetypes.guess_extension('font/woff2'), '.woff2')
-            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
-            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
-            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
-            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
-            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
-            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
-            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
-            self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
-            self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
-            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
-            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
+            for mime_type, ext in (
+                ("application/octet-stream", ".bin"),
+                ("application/postscript", ".ps"),
+                ("application/vnd.apple.mpegurl", ".m3u"),
+                ("application/vnd.ms-excel", ".xls"),
+                ("application/vnd.ms-fontobject", ".eot"),
+                ("application/vnd.ms-powerpoint", ".ppt"),
+                ("application/x-texinfo", ".texi"),
+                ("application/x-troff", ".roff"),
+                ("application/xml", ".xsl"),
+                ("audio/matroska", ".mka"),
+                ("audio/mpeg", ".mp3"),
+                ("font/otf", ".otf"),
+                ("font/ttf", ".ttf"),
+                ("font/woff", ".woff"),
+                ("font/woff2", ".woff2"),
+                ("image/avif", ".avif"),
+                ("image/webp", ".webp"),
+                ("image/jpeg", ".jpg"),
+                ("image/tiff", ".tiff"),
+                ("message/rfc822", ".eml"),
+                ("text/html", ".html"),
+                ("text/plain", ".txt"),
+                ("text/rtf", ".rtf"),
+                ("text/x-rst", ".rst"),
+                ("video/matroska", ".mkv"),
+                ("video/matroska-3d", ".mk3d"),
+                ("video/mpeg", ".mpeg"),
+                ("video/quicktime", ".mov"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
         check_extensions()
         mimetypes.init()
