@@ -1431,6 +1431,8 @@ _PyGC_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
     }
 }
 
+/* TO DO -- Move this into pycore_stackref.h */
+
 void
 _PyFrame_MoveToReachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int visited_space)
 {
@@ -1441,26 +1443,20 @@ _PyFrame_MoveToReachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int v
     _PyGC_MoveToReachable(func, reachable, visited_space);
     while (sp > locals) {
         sp--;
-        if (PyStackRef_IsNull(*sp)) {
-            continue;
-        }
-        PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
-        if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
-            PyGC_Head *gc = AS_GC(op);
-            if (_PyObject_GC_IS_TRACKED(op) &&
-                gc_old_space(gc) != visited_space) {
-                gc_flip_old_space(gc);
-                gc_list_move(gc, reachable);
+        _PyStackRef ref = *sp;
+        if (PyStackRef_IsNonNullMortal(ref)) {
+            PyObject *op = PyStackRef_AsPyObjectBorrow(ref);
+            if (_PyObject_IS_GC(op)) {
+                PyGC_Head *gc = AS_GC(op);
+                if (_PyObject_GC_IS_TRACKED(op) &&
+                    gc_old_space(gc) != visited_space) {
+                    gc_flip_old_space(gc);
+                    gc_list_move(gc, reachable);
+                }
             }
         }
     }
 }
-
-/* This should be refactored:
- * 1. Make `move_to_reachable` an inline "private API" function
- * 2. Move bodies of each case below into a _PyXXX_MarkReachable function in file for type XXX.
- * 3. Trust lto to inline those functions.
- */
 
 extern void _PySet_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
 extern void _PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);

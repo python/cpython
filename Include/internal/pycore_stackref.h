@@ -190,6 +190,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 
 #endif // Py_GIL_DISABLED
 
+#define PyStackRef_IsNonNullMortal(stackref) (!PyStackRef_IsNull(stackref) && !_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)))
+
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
 #define PyStackRef_Is(a, b) ((a).bits == (b).bits)
