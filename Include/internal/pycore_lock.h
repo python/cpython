@@ -164,6 +164,13 @@ extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t t
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
 extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
 
+static inline void
+_PyRecursiveMutex_at_fork_reinit(_PyRecursiveMutex *m)
+{
+    memset(m, 0, sizeof(*m));
+}
+
+
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
 // the lock is read-locked then, new readers will be blocked. This avoids

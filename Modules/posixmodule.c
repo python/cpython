@@ -678,7 +678,8 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    _PyImport_ReleaseLock(tstate->interp);
+    // gh-126688: Reinit lock because thread id may differ in child process.
+    _PyRecursiveMutex_at_fork_reinit(&tstate->interp->imports.lock);
 
     _PySignal_AfterFork();
 
