@@ -248,7 +248,8 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/mpeg", ".mpeg"),
                 ("video/quicktime", ".mov"),
             ):
-                self.assertEqual(mimetypes.guess_extension(mime_type), ext)
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
         check_extensions()
         mimetypes.init()
