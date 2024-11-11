@@ -3,7 +3,6 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import warnings as _warnings
 try:
     import _hashlib as _hashopenssl
 except ImportError:
@@ -84,11 +83,15 @@ class HMAC:
         if hasattr(self._inner, 'block_size'):
             blocksize = self._inner.block_size
             if blocksize < 16:
+                import warnings as _warnings
+
                 _warnings.warn('block_size of %d seems too small; using our '
                                'default of %d.' % (blocksize, self.blocksize),
                                RuntimeWarning, 2)
                 blocksize = self.blocksize
         else:
+            import warnings as _warnings
+
             _warnings.warn('No block_size attribute on given digest object; '
                            'Assuming %d.' % (self.blocksize),
                            RuntimeWarning, 2)
