@@ -460,7 +460,7 @@ class Regrtest:
             raise ValueError(
                 "Should never call `display_summary()` before calling `_run_test()`"
             )
-        
+
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
 
