@@ -1584,15 +1584,19 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
+
+    /* _Py_ReserveTLBCIndex has thread safety issues */
+    HEAD_LOCK(runtime);
+
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         PyMem_RawFree(new_tstate);
         return NULL;
     }
-#endif
-
+#else
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
+#endif
 
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
