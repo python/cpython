@@ -936,6 +936,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;
