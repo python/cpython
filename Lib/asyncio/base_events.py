@@ -303,6 +303,8 @@ class Server(events.AbstractServer):
             self._wakeup()
 
     def _wakeup(self):
+        if self._waiters is None:
+            return
         waiters = self._waiters
         self._waiters = None
         for waiter in waiters:
