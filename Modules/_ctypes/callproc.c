@@ -1631,7 +1631,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 	 */
 	(void)dlerror();
     ptr = dlsym((void*)handle, name);
-	char *dlerr = dlerror();
+	const char *dlerr = dlerror();
     if (dlerr) {
         PyErr_SetString(PyExc_OSError, dlerr);
         return NULL;
