@@ -263,6 +263,10 @@
    don't. */
 #undef HAVE_DECL_RTLD_NOW
 
+/* Define to 1 if you have the declaration of 'SSL_ECH_STATUS_GREASE_ECH', and
+   to 0 if you don't. */
+#undef HAVE_DECL_SSL_ECH_STATUS_GREASE_ECH
+
 /* Define to 1 if you have the declaration of 'tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
@@ -925,6 +929,9 @@
 
 /* Define to 1 if you have the 'openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define to 1 if you have the <openssl/ech.h> header file. */
+#undef HAVE_OPENSSL_ECH_H
 
 /* Define if you have the 'panel' library */
 #undef HAVE_PANEL
@@ -1674,6 +1681,12 @@
 
 /* Define if mvwdelch in curses.h is an expression. */
 #undef MVWDELCH_IS_EXPRESSION
+
+/* Define if OpenSSL has ECH support */
+#undef OPENSSL_ECH
+
+/* Define if OpenSSL does not have ECH support */
+#undef OPENSSL_NO_ECH
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
