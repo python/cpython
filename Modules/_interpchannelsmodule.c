@@ -63,7 +63,7 @@ _globals (static struct globals):
                             data (void *)
                             obj (PyObject *)
                             interpid (int64_t)
-                            new_object (xid_newobjectfunc)
+                            new_object (xid_newobjfunc)
                             free (xid_freefunc)
                     last (struct _channelitem *):
                         ...
