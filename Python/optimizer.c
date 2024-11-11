@@ -1410,18 +1410,6 @@ PyTypeObject _PyCounterOptimizer_Type = {
     .tp_dealloc = (destructor)PyObject_Free,
 };
 
-PyObject *
-_PyOptimizer_NewCounter(void)
-{
-    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
-    opt->base.optimize = counter_optimize;
-    opt->count = 0;
-    return (PyObject *)opt;
-}
-
 
 /*****************************************
  *        Executor management
