@@ -332,7 +332,7 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
         GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);                 \
         if (!has_uint32_t_buffer_length(&keyview)) {                \
             PyBuffer_Release(&keyview);                             \
-            PyErr_SetString(PyExc_ValueError,                       \
+            PyErr_SetString(PyExc_OverflowError,                    \
                             "key length exceeds UINT32_MAX");       \
             return NULL;                                            \
         }                                                           \
@@ -340,7 +340,7 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
         if (!has_uint32_t_buffer_length(&msgview)) {                \
             PyBuffer_Release(&msgview);                             \
             PyBuffer_Release(&keyview);                             \
-            PyErr_SetString(PyExc_ValueError,                       \
+            PyErr_SetString(PyExc_OverflowError,                    \
                             "message length exceeds UINT32_MAX");   \
             return NULL;                                            \
         }                                                           \
