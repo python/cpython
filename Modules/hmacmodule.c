@@ -11,8 +11,7 @@
 #include "_hacl/Hacl_HMAC.h"
 #include "hashlib.h"
 
-
-// HMAC underlying hash function static information.
+// --- HMAC underlying hash function static information -----------------------
 
 #define Py_hmac_hash_max_digest_size            64
 
@@ -23,12 +22,16 @@
 
 #define Py_hmac_md5_compute_func                Hacl_HMAC_compute_md5
 
+#define Py_OpenSSL_LN_md5                       LN_md5
+
 /* SHA-1 family */
 // HACL_HID = sha1
 #define Py_hmac_sha1_block_size                 64
 #define Py_hmac_sha1_digest_size                20
 
 #define Py_hmac_sha1_compute_func               Hacl_HMAC_compute_sha1
+
+#define Py_OpenSSL_LN_sha1                      LN_sha1
 
 /* SHA-2 family */
 // HACL_HID = sha2_224
@@ -37,11 +40,15 @@
 
 #define Py_hmac_sha2_224_compute_func           Hacl_HMAC_compute_sha2_224
 
+#define Py_OpenSSL_LN_sha2_224                  LN_sha224
+
 // HACL_HID = sha2_256
 #define Py_hmac_sha2_256_block_size             64
 #define Py_hmac_sha2_256_digest_size            32
 
 #define Py_hmac_sha2_256_compute_func           Hacl_HMAC_compute_sha2_256
+
+#define Py_OpenSSL_LN_sha2_256                  LN_sha256
 
 // HACL_HID = sha2_384
 #define Py_hmac_sha2_384_block_size             128
@@ -49,11 +56,15 @@
 
 #define Py_hmac_sha2_384_compute_func           Hacl_HMAC_compute_sha2_384
 
+#define Py_OpenSSL_LN_sha2_384                  LN_sha384
+
 // HACL_HID = sha2_512
 #define Py_hmac_sha2_512_block_size             128
 #define Py_hmac_sha2_512_digest_size            64
 
 #define Py_hmac_sha2_512_compute_func           Hacl_HMAC_compute_sha2_512
+
+#define Py_OpenSSL_LN_sha2_512                  LN_sha512
 
 /* SHA-3 family */
 // HACL_HID = sha3_224
@@ -62,11 +73,23 @@
 
 #define Py_hmac_sha3_224_compute_func           Hacl_HMAC_compute_sha3_224
 
+#if defined(LN_sha3_224)
+#  define Py_OpenSSL_LN_sha3_224                LN_sha3_224
+#else
+#  define Py_OpenSSL_LN_sha3_224                "sha3_224"
+#endif
+
 // HACL_HID = sha3_256
 #define Py_hmac_sha3_256_block_size             136
 #define Py_hmac_sha3_256_digest_size            32
 
 #define Py_hmac_sha3_256_compute_func           Hacl_HMAC_compute_sha3_256
+
+#if defined(LN_sha3_256)
+#  define Py_OpenSSL_LN_sha3_256                LN_sha3_256
+#else
+#  define Py_OpenSSL_LN_sha3_256                "sha3_256"
+#endif
 
 // HACL_HID = sha3_384
 #define Py_hmac_sha3_384_block_size             104
@@ -74,11 +97,23 @@
 
 #define Py_hmac_sha3_384_compute_func           Hacl_HMAC_compute_sha3_384
 
+#if defined(LN_sha3_384)
+#  define Py_OpenSSL_LN_sha3_384                LN_sha3_384
+#else
+#  define Py_OpenSSL_LN_sha3_384                "sha3_384"
+#endif
+
 // HACL_HID = sha3_512
 #define Py_hmac_sha3_512_block_size             72
 #define Py_hmac_sha3_512_digest_size            64
 
 #define Py_hmac_sha3_512_compute_func           Hacl_HMAC_compute_sha3_512
+
+#if defined(LN_sha3_512)
+#  define Py_OpenSSL_LN_sha3_512                LN_sha3_512
+#else
+#  define Py_OpenSSL_LN_sha3_512                "sha3_512"
+#endif
 
 /* Blake family */
 // HACL_HID = blake2s_32
@@ -87,11 +122,23 @@
 
 #define Py_hmac_blake2s_32_compute_func         Hacl_HMAC_compute_blake2s_32
 
+#if defined(LN_blake2s256)
+#  define Py_OpenSSL_LN_blake2s_32              LN_blake2s256
+#else
+#  define Py_OpenSSL_LN_blake2s_32              "blake2s256"
+#endif
+
 // HACL_HID = blake2b_32
 #define Py_hmac_blake2b_32_block_size           128
 #define Py_hmac_blake2b_32_digest_size          64
 
 #define Py_hmac_blake2b_32_compute_func         Hacl_HMAC_compute_blake2b_32
+
+#if defined(LN_blake2b512)
+#  define Py_OpenSSL_LN_blake2b_32              LN_blake2b512
+#else
+#  define Py_OpenSSL_LN_blake2b_32              "blake2b512"
+#endif
 
 /* Enumeration indicating the underlying hash function used by HMAC. */
 typedef enum HMAC_Hash_Kind {
@@ -167,11 +214,12 @@ typedef struct py_hmac_hinfo {
     py_hmac_hacl_api api;
 
     const char *hashlib_name;   /* hashlib preferred name (default: name) */
-    const char *hashlib_altn;   /* hashlib alias (default: hashlib_name) */
     const char *openssl_name;   /* hashlib preferred OpenSSL alias (if any) */
 
     Py_ssize_t refcnt;
 } py_hmac_hinfo;
+
+// --- HMAC module state ------------------------------------------------------
 
 typedef struct hmacmodule_state {
     _Py_hashtable_t *hinfo_table;
@@ -196,6 +244,8 @@ module _hmac
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
 
 #include "clinic/hmacmodule.c.h"
+
+// --- Helpers ----------------------------------------------------------------
 
 static inline int
 find_hash_info_by_utf8name(hmacmodule_state *state,
@@ -230,7 +280,7 @@ find_hash_info_by_name(hmacmodule_state *state,
 }
 
 /*
- * Find the corresponding HMAC static information.
+ * Find the corresponding HMAC hash function static information.
  *
  * If an error occurs or if nothing can be found, this
  * returns -1 or 0 respectively, and sets 'info' to NULL.
@@ -573,46 +623,6 @@ static PyMethodDef hmacmodule_methods[] = {
 
 // --- HMAC static information table ------------------------------------------
 
-#define Py_OpenSSL_LN_md5               LN_md5
-#define Py_OpenSSL_LN_sha1              LN_sha1
-
-#define Py_OpenSSL_LN_sha2_224          LN_sha224
-#define Py_OpenSSL_LN_sha2_256          LN_sha256
-#define Py_OpenSSL_LN_sha2_384          LN_sha384
-#define Py_OpenSSL_LN_sha2_512          LN_sha512
-
-#if defined(LN_sha3_224)
-#  define Py_OpenSSL_LN_sha3_224        LN_sha3_224
-#else
-#  define Py_OpenSSL_LN_sha3_224        "sha3_224"
-#endif
-#if defined(LN_sha3_256)
-#  define Py_OpenSSL_LN_sha3_256        LN_sha3_256
-#else
-#  define Py_OpenSSL_LN_sha3_256        "sha3_256"
-#endif
-#if defined(LN_sha3_384)
-#  define Py_OpenSSL_LN_sha3_384        LN_sha3_384
-#else
-#  define Py_OpenSSL_LN_sha3_384        "sha3_384"
-#endif
-#if defined(LN_sha3_512)
-#  define Py_OpenSSL_LN_sha3_512        LN_sha3_512
-#else
-#  define Py_OpenSSL_LN_sha3_512        "sha3_512"
-#endif
-
-#if defined(LN_blake2s256)
-#  define Py_OpenSSL_LN_blake2s_32      LN_blake2s256
-#else
-#  define Py_OpenSSL_LN_blake2s_32      "blake2s256"
-#endif
-#if defined(LN_blake2b512)
-#  define Py_OpenSSL_LN_blake2b_32      LN_blake2b512
-#else
-#  define Py_OpenSSL_LN_blake2b_32      "blake2b512"
-#endif
-
 /* Static information used to construct the hash table. */
 static const py_hmac_hinfo py_hmac_static_hinfo[] = {
 #define Py_HMAC_HINFO_HACL_API(HACL_HID)                                \
@@ -621,7 +631,7 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
         .compute_py = &_hmac_compute_## HACL_HID ##_impl,               \
     }
 
-#define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME, HLIB_ALTN) \
+#define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME)            \
     {                                                       \
         .name = Py_STRINGIFY(HACL_HID),                     \
         .p_name = NULL,                                     \
@@ -630,27 +640,26 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
         .digest_size = Py_hmac_## HACL_HID ##_digest_size,  \
         .api = Py_HMAC_HINFO_HACL_API(HACL_HID),            \
         .hashlib_name = HLIB_NAME,                          \
-        .hashlib_altn = HLIB_ALTN,                          \
         .openssl_name = Py_OpenSSL_LN_ ## HACL_HID,         \
         .refcnt = 0,                                        \
     }
     /* MD5 */
-    Py_HMAC_HINFO_ENTRY(md5, "md5", "MD5"),
+    Py_HMAC_HINFO_ENTRY(md5, "md5"),
     /* SHA-1 */
-    Py_HMAC_HINFO_ENTRY(sha1, "sha1", "SHA1"),
+    Py_HMAC_HINFO_ENTRY(sha1, "sha1"),
     /* SHA-2 family */
-    Py_HMAC_HINFO_ENTRY(sha2_224, "sha224", "SHA224"),
-    Py_HMAC_HINFO_ENTRY(sha2_256, "sha256", "SHA256"),
-    Py_HMAC_HINFO_ENTRY(sha2_384, "sha384", "SHA384"),
-    Py_HMAC_HINFO_ENTRY(sha2_512, "sha512", "SHA512"),
+    Py_HMAC_HINFO_ENTRY(sha2_224, "sha224"),
+    Py_HMAC_HINFO_ENTRY(sha2_256, "sha256"),
+    Py_HMAC_HINFO_ENTRY(sha2_384, "sha384"),
+    Py_HMAC_HINFO_ENTRY(sha2_512, "sha512"),
     /* SHA-3 family */
-    Py_HMAC_HINFO_ENTRY(sha3_224, NULL, NULL),
-    Py_HMAC_HINFO_ENTRY(sha3_256, NULL, NULL),
-    Py_HMAC_HINFO_ENTRY(sha3_384, NULL, NULL),
-    Py_HMAC_HINFO_ENTRY(sha3_512, NULL, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_224, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_256, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_384, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_512, NULL),
     /* Blake family */
-    Py_HMAC_HINFO_ENTRY(blake2s_32, "blake2s256", NULL),
-    Py_HMAC_HINFO_ENTRY(blake2b_32, "blake2b512", NULL),
+    Py_HMAC_HINFO_ENTRY(blake2s_32, "blake2s256"),
+    Py_HMAC_HINFO_ENTRY(blake2b_32, "blake2b512"),
 #undef Py_HMAC_HINFO_ENTRY
 #undef Py_HMAC_HINFO_HACL_API
     /* sentinel */
@@ -658,7 +667,7 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
         NULL, NULL,
         Py_hmac_kind_unknown, 0, 0,
         {NULL, NULL},
-        NULL, NULL, NULL,
+        NULL, NULL,
         0
     },
 };
@@ -734,7 +743,6 @@ py_hmac_hinfo_ht_new(void)
         } while (0)
         Py_HMAC_HINFO_LINK(e->name);
         Py_HMAC_HINFO_LINK(e->hashlib_name);
-        Py_HMAC_HINFO_LINK(e->hashlib_altn);
         Py_HMAC_HINFO_LINK(e->openssl_name);
 #undef Py_HMAC_HINFO_LINK
         assert(value->refcnt > 0);
