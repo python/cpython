@@ -711,18 +711,17 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    HEAD_LOCK(&_PyRuntime);
-    if (interp->threads.head != NULL)
+    // It would be nice if we could just lock the runtime here, but
+    // unfortunately we don't have access to private PyMutex functions from this module.
+    if (_PyInterpreterState_ThreadHeadSafe(interp) != NULL)
     {
         /*
          * We're in a weird limbo where the main thread isn't set but
          * the thread states haven't fully cleared yet.
          */
-        HEAD_UNLOCK(&_PyRuntime);
         PyErr_SetString(PyExc_InterpreterError, "interpreter is still finishing");
         return NULL;
     }
-    HEAD_UNLOCK(&_PyRuntime);
 
     /*
      * Running main has now been prevented, the interpreter will

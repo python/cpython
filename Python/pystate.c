@@ -2557,6 +2557,16 @@ PyThreadState_Next(PyThreadState *tstate) {
 }
 
 
+PyThreadState *
+_PyInterpreterState_ThreadHeadSafe(PyInterpreterState *interp)
+{
+    HEAD_LOCK(&_PyRuntime);
+    PyThreadState *tstate = interp->threads.head;
+    HEAD_UNLOCK(&_PyRuntime);
+    return tstate;
+}
+
+
 /********************************************/
 /* reporting execution state of all threads */
 /********************************************/

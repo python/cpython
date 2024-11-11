@@ -421,6 +421,9 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp);
 PyAPI_FUNC(int)
 _PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp);
 
+PyAPI_FUNC(PyThreadState *)
+_PyInterpreterState_ThreadHeadSafe(PyInterpreterState *interp);
+
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
