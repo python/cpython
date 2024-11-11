@@ -13,6 +13,14 @@ else:
     compare_digest = _hashopenssl.compare_digest
     _functype = type(_hashopenssl.openssl_sha256)  # builtin type
 
+try:
+    import _hmac
+except ImportError:
+    _hmac = None
+    _functype = None
+else:
+    _functype = type(_hmac.compute_md5)  # builtin type
+
 import hashlib as _hashlib
 
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
@@ -196,6 +204,12 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
+    if _hmac is not None and isinstance(digest, (str, _functype)):
+        try:
+            return _hmac.compute_digest(key, msg, digest)
+        except (OverflowError, _hashopenssl.UnsupportedDigestmodError):
+            pass
+
     if _hashopenssl is not None and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
