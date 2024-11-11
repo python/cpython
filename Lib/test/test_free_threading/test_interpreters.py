@@ -13,8 +13,8 @@ class StressTests(unittest.TestCase):
     @support.requires_resource('cpu')
     def test_subinterpreter_thread_safety(self):
         interp = _interpreters.create()
-        threads = [threading.Thread(target=_interpreters.run_string, args=(interp, "1")) for _ in range(100)]
-        threads.extend([threading.Thread(target=_interpreters.destroy, args=(interp,)) for _ in range(100)])
+        threads = [threading.Thread(target=_interpreters.run_string, args=(interp, "1")) for _ in range(1000)]
+        threads.extend([threading.Thread(target=_interpreters.destroy, args=(interp,)) for _ in range(1000)])
         with threading_helper.start_threads(threads):
             pass
 
