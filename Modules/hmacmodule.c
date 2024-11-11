@@ -573,6 +573,45 @@ static PyMethodDef hmacmodule_methods[] = {
 
 // --- HMAC static information table ------------------------------------------
 
+#define Py_OpenSSL_LN_md5               LN_md5
+#define Py_OpenSSL_LN_sha1              LN_sha1
+
+#define Py_OpenSSL_LN_sha2_224          LN_sha224
+#define Py_OpenSSL_LN_sha2_256          LN_sha256
+#define Py_OpenSSL_LN_sha2_384          LN_sha384
+#define Py_OpenSSL_LN_sha2_512          LN_sha512
+
+#if defined(LN_sha3_224)
+#  define Py_OpenSSL_LN_sha3_224        LN_sha3_224
+#else
+#  define Py_OpenSSL_LN_sha3_224        "sha3_224"
+#endif
+#if defined(LN_sha3_256)
+#  define Py_OpenSSL_LN_sha3_256        LN_sha3_256
+#else
+#  define Py_OpenSSL_LN_sha3_256        "sha3_256"
+#endif
+#if defined(LN_sha3_384)
+#  define Py_OpenSSL_LN_sha3_384        LN_sha3_384
+#else
+#  define Py_OpenSSL_LN_sha3_384        "sha3_384"
+#endif
+#if defined(LN_sha3_512)
+#  define Py_OpenSSL_LN_sha3_512        LN_sha3_512
+#else
+#  define Py_OpenSSL_LN_sha3_512        "sha3_512"
+#endif
+
+#if defined(LN_blake2s256)
+#  define Py_OpenSSL_LN_blake2s_32      LN_blake2s256
+#else
+#  define Py_OpenSSL_LN_blake2s_32      "blake2s256"
+#endif
+#if defined(LN_blake2b512)
+#  define Py_OpenSSL_LN_blake2b_32      LN_blake2b512
+#else
+#  define Py_OpenSSL_LN_blake2b_32      "blake2b512"
+#endif
 
 /* Static information used to construct the hash table. */
 static const py_hmac_hinfo py_hmac_static_hinfo[] = {
@@ -582,36 +621,36 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
         .compute_py = &_hmac_compute_## HACL_HID ##_impl,               \
     }
 
-#define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME, HLIB_ALTN, OSSL_NAME)  \
-    {                                                                   \
-        .name = Py_STRINGIFY(HACL_HID),                                 \
-        .p_name = NULL,                                                 \
-        .kind = Py_hmac_kind_hmac_ ## HACL_HID,                         \
-        .block_size = Py_hmac_## HACL_HID ##_block_size,                \
-        .digest_size = Py_hmac_## HACL_HID ##_digest_size,              \
-        .api = Py_HMAC_HINFO_HACL_API(HACL_HID),                        \
-        .hashlib_name = HLIB_NAME,                                      \
-        .hashlib_altn = HLIB_ALTN,                                      \
-        .openssl_name = OSSL_NAME,                                      \
-        .refcnt = 0,                                                    \
+#define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME, HLIB_ALTN) \
+    {                                                       \
+        .name = Py_STRINGIFY(HACL_HID),                     \
+        .p_name = NULL,                                     \
+        .kind = Py_hmac_kind_hmac_ ## HACL_HID,             \
+        .block_size = Py_hmac_## HACL_HID ##_block_size,    \
+        .digest_size = Py_hmac_## HACL_HID ##_digest_size,  \
+        .api = Py_HMAC_HINFO_HACL_API(HACL_HID),            \
+        .hashlib_name = HLIB_NAME,                          \
+        .hashlib_altn = HLIB_ALTN,                          \
+        .openssl_name = Py_OpenSSL_LN_ ## HACL_HID,         \
+        .refcnt = 0,                                        \
     }
     /* MD5 */
-    Py_HMAC_HINFO_ENTRY(md5, "md5", "MD5", LN_md5),
+    Py_HMAC_HINFO_ENTRY(md5, "md5", "MD5"),
     /* SHA-1 */
-    Py_HMAC_HINFO_ENTRY(sha1, "sha1", "SHA1", LN_sha1),
+    Py_HMAC_HINFO_ENTRY(sha1, "sha1", "SHA1"),
     /* SHA-2 family */
-    Py_HMAC_HINFO_ENTRY(sha2_224, "sha224", "SHA224", LN_sha224),
-    Py_HMAC_HINFO_ENTRY(sha2_256, "sha256", "SHA256", LN_sha256),
-    Py_HMAC_HINFO_ENTRY(sha2_384, "sha384", "SHA384", LN_sha384),
-    Py_HMAC_HINFO_ENTRY(sha2_512, "sha512", "SHA512", LN_sha512),
+    Py_HMAC_HINFO_ENTRY(sha2_224, "sha224", "SHA224"),
+    Py_HMAC_HINFO_ENTRY(sha2_256, "sha256", "SHA256"),
+    Py_HMAC_HINFO_ENTRY(sha2_384, "sha384", "SHA384"),
+    Py_HMAC_HINFO_ENTRY(sha2_512, "sha512", "SHA512"),
     /* SHA-3 family */
-    Py_HMAC_HINFO_ENTRY(sha3_224, NULL, NULL, LN_sha3_224),
-    Py_HMAC_HINFO_ENTRY(sha3_256, NULL, NULL, LN_sha3_256),
-    Py_HMAC_HINFO_ENTRY(sha3_384, NULL, NULL, LN_sha3_384),
-    Py_HMAC_HINFO_ENTRY(sha3_512, NULL, NULL, LN_sha3_512),
+    Py_HMAC_HINFO_ENTRY(sha3_224, NULL, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_256, NULL, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_384, NULL, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_512, NULL, NULL),
     /* Blake family */
-    Py_HMAC_HINFO_ENTRY(blake2s_32, "blake2s256", NULL, LN_blake2s256),
-    Py_HMAC_HINFO_ENTRY(blake2b_32, "blake2b512", NULL, LN_blake2b512),
+    Py_HMAC_HINFO_ENTRY(blake2s_32, "blake2s256", NULL),
+    Py_HMAC_HINFO_ENTRY(blake2b_32, "blake2b512", NULL),
 #undef Py_HMAC_HINFO_ENTRY
 #undef Py_HMAC_HINFO_HACL_API
     /* sentinel */

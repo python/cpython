@@ -7387,6 +7387,18 @@ WITH_SAVE_ENV([
   ])
 ])
 
+WITH_SAVE_ENV([
+  LIBS="$LIBS $LIBCRYPTO_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+  AC_CACHE_CHECK([whether OpenSSL provides LN_* macros], [ac_cv_working_openssl_hmac], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      #include <openssl/obj_mac.h>  // for LN_* macros
+    ], [])], [ac_cv_working_openssl_hmac=yes], [ac_cv_working_openssl_hmac=no])
+  ])
+])
+
 # ssl module default cipher suite string
 AH_TEMPLATE([PY_SSL_DEFAULT_CIPHERS],
   [Default cipher suites list for ssl module.
@@ -7801,7 +7813,8 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
-PY_STDLIB_MOD_SIMPLE([_hmac])
+PY_STDLIB_MOD([_hmac], [], [test "$ac_cv_working_openssl_hmac" = yes],
+  [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in

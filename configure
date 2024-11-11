@@ -28957,6 +28957,56 @@ LIBS=$save_LIBS
 
 
 
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  LIBS="$LIBS $LIBCRYPTO_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides LN_* macros" >&5
+printf %s "checking whether OpenSSL provides LN_* macros... " >&6; }
+if test ${ac_cv_working_openssl_hmac+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/obj_mac.h>  // for LN_* macros
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_working_openssl_hmac=yes
+else $as_nop
+  ac_cv_working_openssl_hmac=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl_hmac" >&5
+printf "%s\n" "$ac_cv_working_openssl_hmac" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 # ssl module default cipher suite string
 
 
@@ -30730,9 +30780,31 @@ printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
+printf %s "checking for stdlib extension module _hmac... " >&6; }
         if test "$py_cv_module__hmac" != "n/a"
 then :
+
+    if true
+then :
+  if test "$ac_cv_working_openssl_hmac" = yes
+then :
   py_cv_module__hmac=yes
+else $as_nop
+  py_cv_module__hmac=missing
+fi
+else $as_nop
+  py_cv_module__hmac=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__HMAC_STATE=$py_cv_module__hmac$as_nl"
+  if test "x$py_cv_module__hmac" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+
 fi
    if test "$py_cv_module__hmac" = yes; then
   MODULE__HMAC_TRUE=
@@ -30742,14 +30814,8 @@ else
   MODULE__HMAC_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__HMAC_STATE=$py_cv_module__hmac$as_nl"
-  if test "x$py_cv_module__hmac" = xyes
-then :
-
-
-
-
-fi
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hmac" >&5
+printf "%s\n" "$py_cv_module__hmac" >&6; }
 
 
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
