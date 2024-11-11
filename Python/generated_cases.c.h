@@ -192,7 +192,7 @@
                 assert(next_instr->op.code == STORE_FAST);
                 next_oparg = next_instr->op.arg;
                 #else
-                next_oparg = CURRENT_OPERAND();
+                next_oparg = CURRENT_OPERAND0();
                 #endif
                 _PyStackRef *target_local = &GETLOCAL(next_oparg);
                 DEOPT_IF(!PyStackRef_Is(*target_local, left), BINARY_OP);
@@ -3395,7 +3395,7 @@
                 right = stack_pointer[-1];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4304,11 +4304,12 @@
                 else {
                     /* `iterable` is not a generator. */
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                    PyObject *iter_o = PyObject_GetIter(iterable_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (PyStackRef_IsNull(iter)) {
+                    if (iter_o == NULL) {
                         goto error;
                     }
+                    iter = PyStackRef_FromPyObjectSteal(iter_o);
                     PyStackRef_CLOSE(iterable);
                 }
             }
@@ -4841,7 +4842,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) goto error;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;
@@ -6898,7 +6899,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) goto error;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;

@@ -1054,19 +1054,20 @@ set_update_internal(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.update
     so: setobject
-    *others as args: object
+    *others: array
 
 Update the set, adding elements from all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_update_impl(PySetObject *so, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=050e2a21f8d7d16a input=df4fe486e38cd337]*/
+set_update_impl(PySetObject *so, PyObject * const *others,
+                Py_ssize_t others_length)
+/*[clinic end generated code: output=017c781c992d5c23 input=ed5d78885b076636]*/
 {
     Py_ssize_t i;
 
-    for (i = 0; i < nargs; i++) {
-        PyObject *other = args[i];
+    for (i = 0; i < others_length; i++) {
+        PyObject *other = others[i];
         if (set_update_internal(so, other))
             return NULL;
     }
@@ -1283,14 +1284,15 @@ set_clear_impl(PySetObject *so)
 /*[clinic input]
 set.union
     so: setobject
-    *others as args: object
+    *others: array
 
 Return a new set with elements from the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_union_impl(PySetObject *so, Py_ssize_t nargs, PyObject *const *args)
-/*[clinic end generated code: output=f68ec24d5c19d404 input=ddf088706e9577b2]*/
+set_union_impl(PySetObject *so, PyObject * const *others,
+               Py_ssize_t others_length)
+/*[clinic end generated code: output=b1bfa3d74065f27e input=55a2e81db6347a4f]*/
 {
     PySetObject *result;
     PyObject *other;
@@ -1300,8 +1302,8 @@ set_union_impl(PySetObject *so, Py_ssize_t nargs, PyObject *const *args)
     if (result == NULL)
         return NULL;
 
-    for (i = 0; i < nargs; i++) {
-        other = args[i];
+    for (i = 0; i < others_length; i++) {
+        other = others[i];
         if ((PyObject *)so == other)
             continue;
         if (set_update_local(result, other)) {
@@ -1434,25 +1436,25 @@ set_intersection(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.intersection as set_intersection_multi
     so: setobject
-    *others as args: object
+    *others: array
 
 Return a new set with elements common to the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_multi_impl(PySetObject *so, Py_ssize_t nargs,
-                            PyObject *const *args)
-/*[clinic end generated code: output=ef0756ddb5f2dee9 input=0d9f3805ccbba6a4]*/
+set_intersection_multi_impl(PySetObject *so, PyObject * const *others,
+                            Py_ssize_t others_length)
+/*[clinic end generated code: output=db9ff9f875132b6b input=36c7b615694cadae]*/
 {
     Py_ssize_t i;
 
-    if (nargs == 0) {
+    if (others_length == 0) {
         return set_copy(so, NULL);
     }
 
     PyObject *result = Py_NewRef(so);
-    for (i = 0; i < nargs; i++) {
-        PyObject *other = args[i];
+    for (i = 0; i < others_length; i++) {
+        PyObject *other = others[i];
         PyObject *newresult;
         Py_BEGIN_CRITICAL_SECTION2(result, other);
         newresult = set_intersection((PySetObject *)result, other);
@@ -1482,19 +1484,19 @@ set_intersection_update(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.intersection_update as set_intersection_update_multi
     so: setobject
-    *others as args: object
+    *others: array
 
 Update the set, keeping only elements found in it and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_update_multi_impl(PySetObject *so, Py_ssize_t nargs,
-                                   PyObject *const *args)
-/*[clinic end generated code: output=808d7ad1935b1dfe input=223c1e086aa669a9]*/
+set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
+                                   Py_ssize_t others_length)
+/*[clinic end generated code: output=d768b5584675b48d input=782e422fc370e4fc]*/
 {
     PyObject *tmp;
 
-    tmp = set_intersection_multi_impl(so, nargs, args);
+    tmp = set_intersection_multi_impl(so, others, others_length);
     if (tmp == NULL)
         return NULL;
     Py_BEGIN_CRITICAL_SECTION(so);
@@ -1672,20 +1674,20 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.difference_update
     so: setobject
-    *others as args: object
+    *others: array
 
 Update the set, removing elements found in others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_update_impl(PySetObject *so, Py_ssize_t nargs,
-                           PyObject *const *args)
-/*[clinic end generated code: output=55f850c27748d312 input=024e6baa6fbcbb3d]*/
+set_difference_update_impl(PySetObject *so, PyObject * const *others,
+                           Py_ssize_t others_length)
+/*[clinic end generated code: output=04a22179b322cfe6 input=93ac28ba5b233696]*/
 {
     Py_ssize_t i;
 
-    for (i = 0; i < nargs; i++) {
-        PyObject *other = args[i];
+    for (i = 0; i < others_length; i++) {
+        PyObject *other = others[i];
         int rv;
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_difference_update_internal(so, other);
@@ -1790,32 +1792,32 @@ set_difference(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.difference as set_difference_multi
     so: setobject
-    *others as args: object
+    *others: array
 
 Return a new set with elements in the set that are not in the others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_multi_impl(PySetObject *so, Py_ssize_t nargs,
-                          PyObject *const *args)
-/*[clinic end generated code: output=8150d008c00523f3 input=ba78ea5f099e58df]*/
+set_difference_multi_impl(PySetObject *so, PyObject * const *others,
+                          Py_ssize_t others_length)
+/*[clinic end generated code: output=b0d33fb05d5477a7 input=c1eb448d483416ad]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
 
-    if (nargs == 0) {
+    if (others_length == 0) {
         return set_copy(so, NULL);
     }
 
-    other = args[0];
+    other = others[0];
     Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_difference(so, other);
     Py_END_CRITICAL_SECTION2();
     if (result == NULL)
         return NULL;
 
-    for (i = 1; i < nargs; i++) {
-        other = args[i];
+    for (i = 1; i < others_length; i++) {
+        other = others[i];
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);
         rv = set_difference_update_internal((PySetObject *)result, other);
@@ -2518,6 +2520,7 @@ PyTypeObject PySet_Type = {
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = set_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_SET,
 };
 
 /* frozenset object ********************************************************/
@@ -2608,6 +2611,7 @@ PyTypeObject PyFrozenSet_Type = {
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = frozenset_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FROZEN_SET,
 };
 
 

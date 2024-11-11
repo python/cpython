@@ -18,6 +18,7 @@ import sys
 import threading
 import signal
 import array
+import collections.abc
 import queue
 import time
 import types
@@ -1167,8 +1168,9 @@ class ListProxy(BaseListProxy):
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
+collections.abc.MutableSequence.register(BaseListProxy)
 
-_BaseDictProxy = MakeProxyType('DictProxy', (
+_BaseDictProxy = MakeProxyType('_BaseDictProxy', (
     '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
     '__len__', '__or__', '__reversed__', '__ror__',
     '__setitem__', 'clear', 'copy', 'fromkeys', 'get', 'items',
@@ -1183,6 +1185,8 @@ class DictProxy(_BaseDictProxy):
         return self
 
     __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseDictProxy)
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'

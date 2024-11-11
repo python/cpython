@@ -250,6 +250,12 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
+* The default ``ProcessPoolExecutor`` start method (see
+  :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
+  platforms other than macOS & Windows. If you require the threading
+  incompatible *fork* start method you must explicitly request it by
+  supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
+  (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
 ctypes
 ------
@@ -314,6 +320,11 @@ functools
   to reserve a place for positional arguments.
   (Contributed by Dominykas Grigonis in :gh:`119127`.)
 
+getopt
+------
+
+* Add support for options with optional arguments.
+  (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
 http
 ----
@@ -365,6 +376,26 @@ mimetypes
   (Contributed by Hugo van Kemenade in :gh:`89416`.)
 
 
+multiprocessing
+---------------
+
+* The default start method (see :ref:`multiprocessing-start-methods`) changed
+  from *fork* to *forkserver* on platforms other than macOS & Windows where
+  it was already *spawn*. If you require the threading incompatible *fork*
+  start method you must explicitly request it using a context from
+  :func:`multiprocessing.get_context` (preferred) or change the default via
+  :func:`multiprocessing.set_start_method`.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
+* The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
+  for *list* and *dict* types gain previously overlooked missing methods:
+
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
+     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+
+  (Contributed by Roy Hyunjin Han for :gh:`103134`)
+
+
 operator
 --------
 
@@ -378,9 +409,10 @@ operator
 os
 --
 
-* Add the :data:`os.environ.refresh() <os.environ>` method to update
-  :data:`os.environ` with changes to the environment made by :func:`os.putenv`,
-  by :func:`os.unsetenv`, or made outside Python in the same process.
+* Add the :func:`os.reload_environ` function to update :data:`os.environ` and
+  :data:`os.environb` with changes to the environment made by
+  :func:`os.putenv`, by :func:`os.unsetenv`, or made outside Python in the
+  same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
 
@@ -483,6 +515,15 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+io
+---
+* :mod:`io` which provides the built-in :func:`open` makes less system calls
+  when opening regular files as well as reading whole files. Reading a small
+  operating system cached file in full is up to 15% faster.
+  :func:`pathlib.Path.read_bytes` has the most optimizations for reading a
+  file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
+  :gh:`120754` and :gh:`90102`.)
+
 Deprecated
 ==========
 
@@ -508,14 +549,6 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
-
-* :mod:`multiprocessing` and :mod:`concurrent.futures`:
-  The default start method (see :ref:`multiprocessing-start-methods`) changed
-  away from *fork* to *forkserver* on platforms where it was not already
-  *spawn* (Windows & macOS). If you require the threading incompatible *fork*
-  start method you must explicitly specify it when using :mod:`multiprocessing`
-  or :mod:`concurrent.futures` APIs.
-  (Contributed by Gregory P. Smith in :gh:`84559`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and

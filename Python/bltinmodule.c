@@ -2127,7 +2127,7 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
 /*[clinic input]
 print as builtin_print
 
-    *args: object
+    *args: array
     sep: object(c_default="Py_None") = ' '
         string inserted between values, default a space.
     end: object(c_default="Py_None") = '\n'
@@ -2142,9 +2142,10 @@ Prints the values to a stream, or to sys.stdout by default.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
-                   PyObject *end, PyObject *file, int flush)
-/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
+builtin_print_impl(PyObject *module, PyObject * const *args,
+                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+                   PyObject *file, int flush)
+/*[clinic end generated code: output=3cb7e5b66f1a8547 input=66ea4de1605a2437]*/
 {
     int i, err;
 
@@ -2181,7 +2182,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         return NULL;
     }
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+    for (i = 0; i < args_length; i++) {
         if (i > 0) {
             if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
@@ -2193,7 +2194,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
             return NULL;
         }
