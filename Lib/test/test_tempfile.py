@@ -1119,8 +1119,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             with self.assertWarnsRegex(
-                ResourceWarning,
-                msg=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+                expected_warning=ResourceWarning,
+                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
             ):
                 tmp_name = my_func(dir)
                 support.gc_collect()
