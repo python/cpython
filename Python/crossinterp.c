@@ -17,11 +17,11 @@
 /* exceptions */
 /**************/
 
-static int init_exceptions(PyInterpreterState *);
-static void fini_exceptions(PyInterpreterState *);
-static int _init_not_shareable_error_type(PyInterpreterState *);
-static void _fini_not_shareable_error_type(PyInterpreterState *);
-static PyObject * _get_not_shareable_error_type(PyInterpreterState *);
+typedef struct xi_exceptions exceptions_t;
+static int init_static_exctypes(exceptions_t *, PyInterpreterState *);
+static void fini_static_exctypes(exceptions_t *, PyInterpreterState *);
+static int init_heap_exctypes(exceptions_t *);
+static void fini_heap_exctypes(exceptions_t *);
 #include "crossinterp_exceptions.h"
 
 
@@ -205,7 +205,8 @@ static inline void
 _set_xid_lookup_failure(PyInterpreterState *interp,
                         PyObject *obj, const char *msg)
 {
-    PyObject *exctype = _get_not_shareable_error_type(interp);
+    exceptions_t *state = &_PyInterpreterState_GetXIState(interp)->exceptions;
+    PyObject *exctype = state->PyExc_NotShareableError;
     assert(exctype != NULL);
     if (msg != NULL) {
         assert(obj == NULL);
@@ -1605,7 +1606,9 @@ _propagate_not_shareable_error(_PyXI_session *session)
         return;
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
-    if (PyErr_ExceptionMatches(_get_not_shareable_error_type(interp))) {
+    exceptions_t *state = &_PyInterpreterState_GetXIState(interp)->exceptions;
+    assert(state->PyExc_NotShareableError != NULL);
+    if (PyErr_ExceptionMatches(state->PyExc_NotShareableError)) {
         // We want to propagate the exception directly.
         session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
         session->error_override = &session->_error_override;
@@ -1782,9 +1785,11 @@ _PyXI_Init(PyInterpreterState *interp)
     }
     xid_lookup_init(&_PyXI_GET_STATE(interp)->data_lookup);
 
-    // Initialize exceptions (heap types).
-    if (_init_not_shareable_error_type(interp) < 0) {
-        return _PyStatus_ERR("failed to initialize NotShareableError");
+    // Initialize exceptions.(heap types).
+    // See _PyXI_InitTypes() for the static types.
+    if (init_heap_exctypes(&_PyXI_GET_STATE(interp)->exceptions) < 0) {
+        PyErr_PrintEx(0);
+        return _PyStatus_ERR("failed to initialize exceptions");
     }
 
     return _PyStatus_OK();
@@ -1797,7 +1802,8 @@ void
 _PyXI_Fini(PyInterpreterState *interp)
 {
     // Finalize exceptions (heap types).
-    _fini_not_shareable_error_type(interp);
+    // See _PyXI_FiniTypes() for the static types.
+    fini_heap_exctypes(&_PyXI_GET_STATE(interp)->exceptions);
 
     // Finalize the XID lookup state (e.g. registry).
     xid_lookup_fini(&_PyXI_GET_STATE(interp)->data_lookup);
@@ -1809,17 +1815,21 @@ _PyXI_Fini(PyInterpreterState *interp)
 PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
-    if (init_exceptions(interp) < 0) {
+    if (init_static_exctypes(&_PyXI_GET_STATE(interp)->exceptions, interp) < 0) {
         PyErr_PrintEx(0);
         return _PyStatus_ERR("failed to initialize an exception type");
     }
+    // We would initialize heap types here too but that leads to ref leaks.
+    // Instead, we intialize them in _PyXI_Init().
     return _PyStatus_OK();
 }
 
 void
 _PyXI_FiniTypes(PyInterpreterState *interp)
 {
-    fini_exceptions(interp);
+    // We would finalize heap types here too but that leads to ref leaks.
+    // Instead, we finalize them in _PyXI_Fini().
+    fini_static_exctypes(&_PyXI_GET_STATE(interp)->exceptions, interp);
 }
 
 

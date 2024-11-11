@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
+
 /**************/
 /* exceptions */
 /**************/
@@ -163,8 +164,13 @@ struct _xi_state {
     // heap types
     _PyXIData_lookup_t data_lookup;
 
-    // heap types
-    PyObject *PyExc_NotShareableError;
+    struct xi_exceptions {
+        // static types
+        PyObject *PyExc_InterpreterError;
+        PyObject *PyExc_InterpreterNotFoundError;
+        // heap types
+        PyObject *PyExc_NotShareableError;
+    } exceptions;
 };
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
