@@ -1,22 +1,33 @@
 from contextlib import contextmanager
 import linecache
 import os
+import importlib
+import inspect
 from io import StringIO
 import re
 import sys
 import textwrap
+import types
+from typing import overload, get_overloads
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+from test.support import warnings_helper
+from test.support import force_not_colorized
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
+from test.test_warnings.data import package_helper
 from test.test_warnings.data import stacklevel as warning_tests
 
 import warnings as original_warnings
+from warnings import deprecated
 
-py_warnings = support.import_fresh_module('warnings', blocked=['_warnings'])
-c_warnings = support.import_fresh_module('warnings', fresh=['_warnings'])
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+py_warnings = import_helper.import_fresh_module('warnings',
+                                                blocked=['_warnings'])
+c_warnings = import_helper.import_fresh_module('warnings',
+                                               fresh=['_warnings'])
 
 @contextmanager
 def warnings_state(module):
@@ -85,7 +96,7 @@ class PublicAPITests(BaseTest):
         self.assertTrue(hasattr(self.module, '__all__'))
         target_api = ["warn", "warn_explicit", "showwarning",
                       "formatwarning", "filterwarnings", "simplefilter",
-                      "resetwarnings", "catch_warnings"]
+                      "resetwarnings", "catch_warnings", "deprecated"]
         self.assertSetEqual(set(self.module.__all__),
                             set(target_api))
 
@@ -146,40 +157,42 @@ class FilterTests(BaseTest):
             f()
             self.assertEqual(len(w), 1)
 
-    def test_always(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            self.module.filterwarnings("always", category=UserWarning)
-            message = "FilterTests.test_always"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                self.module.filterwarnings(mode, category=UserWarning)
+                message = "FilterTests.test_always_and_all"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
 
-    def test_always_after_default(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            message = "FilterTests.test_always_after_ignore"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 1)
-            self.module.filterwarnings("always", category=UserWarning)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 3)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all_after_default(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                message = "FilterTests.test_always_and_all_after_ignore"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 1)
+                self.module.filterwarnings(mode, category=UserWarning)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 3)
+                self.assertEqual(w[-1].message.args[0], message)
 
     def test_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -367,6 +380,51 @@ class FilterTests(BaseTest):
                 "appended duplicate changed order of filters"
             )
 
+    def test_argument_validation(self):
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', message=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=int)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', module=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings('ignore', lineno=-1)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.simplefilter('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter('ignore', lineno=-1)
+
+    def test_catchwarnings_with_simplefilter_ignore(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.simplefilter("error")
+            with self.module.catch_warnings(
+                module=self.module, action="ignore"
+            ):
+                self.module.warn("This will be ignored")
+
+    def test_catchwarnings_with_simplefilter_error(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            with self.module.catch_warnings(
+                module=self.module, action="error", category=FutureWarning
+            ):
+                with support.captured_stderr() as stderr:
+                    error_msg = "Other types of warnings are not errors"
+                    self.module.warn(error_msg)
+                    self.assertRaises(FutureWarning,
+                                      self.module.warn, FutureWarning("msg"))
+                    stderr = stderr.getvalue()
+                    self.assertIn(error_msg, stderr)
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
@@ -436,18 +494,54 @@ class WarnTests(BaseTest):
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "sys")
+                                    "<sys>")
 
     def test_stacklevel_import(self):
         # Issue #24305: With stacklevel=2, module-level warnings should work.
-        support.unload('test.test_warnings.data.import_warning')
+        import_helper.unload('test.test_warnings.data.import_warning')
         with warnings_state(self.module):
             with original_warnings.catch_warnings(record=True,
                     module=self.module) as w:
                 self.module.simplefilter('always')
-                import test.test_warnings.data.import_warning
+                import test.test_warnings.data.import_warning  # noqa: F401
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].filename, __file__)
+
+    def test_skip_file_prefixes(self):
+        with warnings_state(self.module):
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.simplefilter('always')
+
+                # Warning never attributed to the data/ package.
+                package_helper.inner_api(
+                        "inner_api", stacklevel=2,
+                        warnings_module=warning_tests.warnings)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api", stacklevel=2)
+                self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-2].filename, w[-1].filename)
+                # Low stacklevels are overridden to 2 behavior.
+                warning_tests.package("package api 1", stacklevel=1)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api 0", stacklevel=0)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api -99", stacklevel=-99)
+                self.assertEqual(w[-1].filename, __file__)
+
+                # The stacklevel still goes up out of the package.
+                warning_tests.package("prefix02", stacklevel=3)
+                self.assertIn("unittest", w[-1].filename)
+
+    def test_skip_file_prefixes_type_errors(self):
+        with warnings_state(self.module):
+            warn = warning_tests.warnings.warn
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes=[])
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes=(b"bytes",))
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes="a sequence of strs")
 
     def test_exec_filename(self):
         filename = "<warnings-test>"
@@ -464,7 +558,14 @@ class WarnTests(BaseTest):
                 module=self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-            for filename in ("nonascii\xe9\u20ac", "surrogate\udc80"):
+            filenames = ["nonascii\xe9\u20ac"]
+            if not support.is_emscripten:
+                # JavaScript does not like surrogates.
+                # Invalid UTF-8 leading byte 0x80 encountered when
+                # deserializing a UTF-8 string in wasm memory to a JS
+                # string!
+                filenames.append("surrogate\udc80")
+            for filename in filenames:
                 try:
                     os.fsencode(filename)
                 except UnicodeEncodeError:
@@ -539,11 +640,102 @@ class WarnTests(BaseTest):
                 self.module.warn('good warning category', MyWarningClass)
             self.assertIsInstance(cm.warning, Warning)
 
+    def check_module_globals(self, module_globals):
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('default')
+            self.module.warn_explicit(
+                'eggs', UserWarning, 'bar', 1,
+                module_globals=module_globals)
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(str(w[0].message), 'eggs')
+
+    def check_module_globals_error(self, module_globals, errmsg, errtype=ValueError):
+        if self.module is py_warnings:
+            self.check_module_globals(module_globals)
+            return
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('always')
+            with self.assertRaisesRegex(errtype, re.escape(errmsg)):
+                self.module.warn_explicit(
+                    'eggs', UserWarning, 'bar', 1,
+                    module_globals=module_globals)
+        self.assertEqual(len(w), 0)
+
+    def check_module_globals_deprecated(self, module_globals, msg):
+        if self.module is py_warnings:
+            self.check_module_globals(module_globals)
+            return
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('always')
+            self.module.warn_explicit(
+                'eggs', UserWarning, 'bar', 1,
+                module_globals=module_globals)
+        self.assertEqual(len(w), 2)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(str(w[0].message), msg)
+        self.assertEqual(w[1].category, UserWarning)
+        self.assertEqual(str(w[1].message), 'eggs')
+
+    def test_gh86298_no_loader_and_no_spec(self):
+        self.check_module_globals({'__name__': 'bar'})
+
+    def test_gh86298_loader_is_none_and_no_spec(self):
+        self.check_module_globals({'__name__': 'bar', '__loader__': None})
+
+    def test_gh86298_no_loader_and_spec_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_is_none_and_spec_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__loader__': None, '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_is_none_and_spec_loader_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__loader__': None,
+             '__spec__': types.SimpleNamespace(loader=None)},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_no_spec(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object()},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_spec_is_none(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(), '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_no_spec_loader(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(),
+             '__spec__': types.SimpleNamespace()},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_and_spec_loader_disagree(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(),
+             '__spec__': types.SimpleNamespace(loader=object())},
+            'Module globals; __loader__ != __spec__.loader')
+
+    def test_gh86298_no_loader_and_no_spec_loader(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__spec__': types.SimpleNamespace()},
+            'Module globals is missing a __spec__.loader', AttributeError)
+
+    def test_gh86298_no_loader_with_spec_loader_okay(self):
+        self.check_module_globals(
+            {'__name__': 'bar',
+             '__spec__': types.SimpleNamespace(loader=object())})
+
 class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
 
     # As an early adopter, we sanity check the
-    # test.support.import_fresh_module utility function
+    # test.import_helper.import_fresh_module utility function
     def test_accelerated(self):
         self.assertIsNot(original_warnings, self.module)
         self.assertFalse(hasattr(self.module.warn, '__code__'))
@@ -552,7 +744,7 @@ class PyWarnTests(WarnTests, unittest.TestCase):
     module = py_warnings
 
     # As an early adopter, we sanity check the
-    # test.support.import_fresh_module utility function
+    # test.import_helper.import_fresh_module utility function
     def test_pure_python(self):
         self.assertIsNot(original_warnings, self.module)
         self.assertTrue(hasattr(self.module.warn, '__code__'))
@@ -787,37 +979,46 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
-        def get_bad_loader(splitlines_ret_val):
+        get_source_called = []
+        def get_module_globals(*, splitlines_ret_val):
+            class BadSource(str):
+                def splitlines(self):
+                    return splitlines_ret_val
+
             class BadLoader:
                 def get_source(self, fullname):
-                    class BadSource(str):
-                        def splitlines(self):
-                            return splitlines_ret_val
+                    get_source_called.append(splitlines_ret_val)
                     return BadSource('spam')
-            return BadLoader()
+
+            loader = BadLoader()
+            spec = importlib.machinery.ModuleSpec('foobar', loader)
+            return {'__loader__': loader,
+                    '__spec__': spec,
+                    '__name__': 'foobar'}
+
 
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
             wmod.filterwarnings('default', category=UserWarning)
 
+            linecache.clearcache()
             with support.captured_stderr() as stderr:
                 wmod.warn_explicit(
                     'foo', UserWarning, 'bar', 1,
-                    module_globals={'__loader__': get_bad_loader(42),
-                                    '__name__': 'foobar'})
+                    module_globals=get_module_globals(splitlines_ret_val=42))
             self.assertIn('UserWarning: foo', stderr.getvalue())
+            self.assertEqual(get_source_called, [42])
 
-            show = wmod._showwarnmsg
-            try:
+            linecache.clearcache()
+            with support.swap_attr(wmod, '_showwarnmsg', None):
                 del wmod._showwarnmsg
                 with support.captured_stderr() as stderr:
                     wmod.warn_explicit(
                         'eggs', UserWarning, 'bar', 1,
-                        module_globals={'__loader__': get_bad_loader([42]),
-                                        '__name__': 'foobar'})
+                        module_globals=get_module_globals(splitlines_ret_val=[42]))
                 self.assertIn('UserWarning: eggs', stderr.getvalue())
-            finally:
-                wmod._showwarnmsg = show
+            self.assertEqual(get_source_called, [42, [42]])
+            linecache.clearcache()
 
     @support.cpython_only
     def test_issue31411(self):
@@ -865,7 +1066,7 @@ class WarningsDisplayTests(BaseTest):
         message = "msg"
         category = Warning
         file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
-        line_num = 3
+        line_num = 5
         file_line = linecache.getline(file_name, line_num).strip()
         format = "%s:%s: %s: %s\n  %s\n"
         expect = format % (file_name, line_num, category.__name__, message,
@@ -927,12 +1128,12 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
     def test_tracemalloc(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        with open(support.TESTFN, 'w') as fp:
+        with open(os_helper.TESTFN, 'w', encoding="utf-8") as fp:
             fp.write(textwrap.dedent("""
                 def func():
-                    f = open(__file__)
+                    f = open(__file__, "rb")
                     # Emit ResourceWarning
                     f = None
 
@@ -940,8 +1141,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             """))
 
         def run(*args):
-            res = assert_python_ok(*args)
-            stderr = res.err.decode('ascii', 'replace')
+            res = assert_python_ok(*args, PYTHONIOENCODING='utf-8')
+            stderr = res.err.decode('utf-8', 'replace')
             stderr = '\n'.join(stderr.splitlines())
 
             # normalize newlines
@@ -949,8 +1150,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             return stderr
 
         # tracemalloc disabled
-        filename = os.path.abspath(support.TESTFN)
-        stderr = run('-Wd', support.TESTFN)
+        filename = os.path.abspath(os_helper.TESTFN)
+        stderr = run('-Wd', os_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -959,7 +1160,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
-        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        stderr = run('-Wd', '-X', 'tracemalloc=2', os_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -967,7 +1168,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
               File "{filename}", lineno 7
                 func()
               File "{filename}", lineno 3
-                f = open(__file__)
+                f = open(__file__, "rb")
         ''').strip()
         self.assertEqual(stderr, expected)
 
@@ -1093,7 +1294,7 @@ class CatchWarningTests(BaseTest):
         wmod = self.module
         if wmod is not sys.modules['warnings']:
             self.skipTest('module to test is not loaded warnings module')
-        with support.check_warnings(quiet=False) as w:
+        with warnings_helper.check_warnings(quiet=False) as w:
             self.assertEqual(w.warnings, [])
             wmod.simplefilter("always")
             wmod.warn("foo")
@@ -1105,18 +1306,18 @@ class CatchWarningTests(BaseTest):
             w.reset()
             self.assertEqual(w.warnings, [])
 
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             # defaults to quiet=True without argument
             pass
-        with support.check_warnings(('foo', UserWarning)):
+        with warnings_helper.check_warnings(('foo', UserWarning)):
             wmod.warn("foo")
 
         with self.assertRaises(AssertionError):
-            with support.check_warnings(('', RuntimeWarning)):
+            with warnings_helper.check_warnings(('', RuntimeWarning)):
                 # defaults to quiet=False with argument
                 pass
         with self.assertRaises(AssertionError):
-            with support.check_warnings(('foo', RuntimeWarning)):
+            with warnings_helper.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
 
 class CCatchWarningTests(CatchWarningTests, unittest.TestCase):
@@ -1143,6 +1344,7 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
+    @force_not_colorized
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
@@ -1151,6 +1353,7 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
+    @force_not_colorized
     def test_conflicting_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
@@ -1162,11 +1365,15 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stderr.splitlines(),
             [b"Traceback (most recent call last):",
              b"  File \"<string>\", line 1, in <module>",
+             b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
+             b"arn('Message', DeprecationWarning)",
+             b'                                                                  ~~~~~~~~~~'
+             b'~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):
         pure_python_api = self.module is py_warnings
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_default_filters = []
         else:
             if pure_python_api:
@@ -1198,13 +1405,13 @@ class EnvironmentVariableTests(BaseTest):
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
+        PYTHONWARNINGS="ignore:DeprecationWarning" + os_helper.FS_NONASCII
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONWARNINGS=PYTHONWARNINGS,
             PYTHONDEVMODE="")
-        self.assertEqual(stdout,
-            "['ignore:DeprecaciónWarning']".encode('utf-8'))
+        self.assertEqual(stdout, str([PYTHONWARNINGS]).encode())
 
 class CEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = c_warnings
@@ -1213,12 +1420,52 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
+class _DeprecatedTest(BaseTest, unittest.TestCase):
+
+    """Test _deprecated()."""
+
+    module = original_warnings
+
+    def test_warning(self):
+        version = (3, 11, 0, "final", 0)
+        test = [(4, 12), (4, 11), (4, 0), (3, 12)]
+        for remove in test:
+            msg = rf".*test_warnings.*{remove[0]}\.{remove[1]}"
+            filter = msg, DeprecationWarning
+            with self.subTest(remove=remove):
+                with warnings_helper.check_warnings(filter, quiet=False):
+                    self.module._deprecated("test_warnings", remove=remove,
+                                            _version=version)
+
+        version = (3, 11, 0, "alpha", 0)
+        msg = r".*test_warnings.*3\.11"
+        with warnings_helper.check_warnings((msg, DeprecationWarning), quiet=False):
+            self.module._deprecated("test_warnings", remove=(3, 11),
+                                    _version=version)
+
+    def test_RuntimeError(self):
+        version = (3, 11, 0, "final", 0)
+        test = [(2, 0), (2, 12), (3, 10)]
+        for remove in test:
+            with self.subTest(remove=remove):
+                with self.assertRaises(RuntimeError):
+                    self.module._deprecated("test_warnings", remove=remove,
+                                            _version=version)
+        for level in ["beta", "candidate", "final"]:
+            version = (3, 11, 0, level, 0)
+            with self.subTest(releaselevel=level):
+                with self.assertRaises(RuntimeError):
+                    self.module._deprecated("test_warnings", remove=(3, 11),
+                                            _version=version)
+
+
 class BootstrapTest(unittest.TestCase):
+
     def test_issue_8766(self):
         # "import encodings" emits a warning whereas the warnings is not loaded
         # or not completely loaded (warnings imports indirectly encodings by
         # importing linecache) yet
-        with support.temp_cwd() as cwd, support.temp_cwd('encodings'):
+        with os_helper.temp_cwd() as cwd, os_helper.temp_cwd('encodings'):
             # encodings loaded by initfsencoding()
             assert_python_ok('-c', 'pass', PYTHONPATH=cwd)
 
@@ -1248,7 +1495,7 @@ a=A()
         # Issue #21925: Emitting a ResourceWarning late during the Python
         # shutdown must be logged.
 
-        expected = b"sys:1: ResourceWarning: unclosed file "
+        expected = b"<sys>:0: ResourceWarning: unclosed file "
 
         # don't import the warnings module
         # (_warnings will try to import it)
@@ -1261,6 +1508,306 @@ a=A()
         rc, out, err = assert_python_ok("-Wd", "-c", code)
         self.assertTrue(err.startswith(expected), ascii(err))
 
+
+class DeprecatedTests(unittest.TestCase):
+    def test_dunder_deprecated(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+
+        self.assertEqual(A.__deprecated__, "A will go away soon")
+        self.assertIsInstance(A, type)
+
+        @deprecated("b will go away soon")
+        def b():
+            pass
+
+        self.assertEqual(b.__deprecated__, "b will go away soon")
+        self.assertIsInstance(b, types.FunctionType)
+
+        @overload
+        @deprecated("no more ints")
+        def h(x: int) -> int: ...
+        @overload
+        def h(x: str) -> str: ...
+        def h(x):
+            return x
+
+        overloads = get_overloads(h)
+        self.assertEqual(len(overloads), 2)
+        self.assertEqual(overloads[0].__deprecated__, "no more ints")
+
+    def test_class(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            A()
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            with self.assertRaises(TypeError):
+                A(42)
+
+    def test_class_with_init(self):
+        @deprecated("HasInit will go away soon")
+        class HasInit:
+            def __init__(self, x):
+                self.x = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasInit will go away soon"):
+            instance = HasInit(42)
+        self.assertEqual(instance.x, 42)
+
+    def test_class_with_new(self):
+        has_new_called = False
+
+        @deprecated("HasNew will go away soon")
+        class HasNew:
+            def __new__(cls, x):
+                nonlocal has_new_called
+                has_new_called = True
+                return super().__new__(cls)
+
+            def __init__(self, x) -> None:
+                self.x = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasNew will go away soon"):
+            instance = HasNew(42)
+        self.assertEqual(instance.x, 42)
+        self.assertTrue(has_new_called)
+
+    def test_class_with_inherited_new(self):
+        new_base_called = False
+
+        class NewBase:
+            def __new__(cls, x):
+                nonlocal new_base_called
+                new_base_called = True
+                return super().__new__(cls)
+
+            def __init__(self, x) -> None:
+                self.x = x
+
+        @deprecated("HasInheritedNew will go away soon")
+        class HasInheritedNew(NewBase):
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasInheritedNew will go away soon"):
+            instance = HasInheritedNew(42)
+        self.assertEqual(instance.x, 42)
+        self.assertTrue(new_base_called)
+
+    def test_class_with_new_but_no_init(self):
+        new_called = False
+
+        @deprecated("HasNewNoInit will go away soon")
+        class HasNewNoInit:
+            def __new__(cls, x):
+                nonlocal new_called
+                new_called = True
+                obj = super().__new__(cls)
+                obj.x = x
+                return obj
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasNewNoInit will go away soon"):
+            instance = HasNewNoInit(42)
+        self.assertEqual(instance.x, 42)
+        self.assertTrue(new_called)
+
+    def test_mixin_class(self):
+        @deprecated("Mixin will go away soon")
+        class Mixin:
+            pass
+
+        class Base:
+            def __init__(self, a) -> None:
+                self.a = a
+
+        with self.assertWarnsRegex(DeprecationWarning, "Mixin will go away soon"):
+            class Child(Base, Mixin):
+                pass
+
+        instance = Child(42)
+        self.assertEqual(instance.a, 42)
+
+    def test_existing_init_subclass(self):
+        @deprecated("C will go away soon")
+        class C:
+            def __init_subclass__(cls) -> None:
+                cls.inited = True
+
+        with self.assertWarnsRegex(DeprecationWarning, "C will go away soon"):
+            C()
+
+        with self.assertWarnsRegex(DeprecationWarning, "C will go away soon"):
+            class D(C):
+                pass
+
+        self.assertTrue(D.inited)
+        self.assertIsInstance(D(), D)  # no deprecation
+
+    def test_existing_init_subclass_in_base(self):
+        class Base:
+            def __init_subclass__(cls, x) -> None:
+                cls.inited = x
+
+        @deprecated("C will go away soon")
+        class C(Base, x=42):
+            pass
+
+        self.assertEqual(C.inited, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "C will go away soon"):
+            C()
+
+        with self.assertWarnsRegex(DeprecationWarning, "C will go away soon"):
+            class D(C, x=3):
+                pass
+
+        self.assertEqual(D.inited, 3)
+
+    def test_init_subclass_has_correct_cls(self):
+        init_subclass_saw = None
+
+        @deprecated("Base will go away soon")
+        class Base:
+            def __init_subclass__(cls) -> None:
+                nonlocal init_subclass_saw
+                init_subclass_saw = cls
+
+        self.assertIsNone(init_subclass_saw)
+
+        with self.assertWarnsRegex(DeprecationWarning, "Base will go away soon"):
+            class C(Base):
+                pass
+
+        self.assertIs(init_subclass_saw, C)
+
+    def test_init_subclass_with_explicit_classmethod(self):
+        init_subclass_saw = None
+
+        @deprecated("Base will go away soon")
+        class Base:
+            @classmethod
+            def __init_subclass__(cls) -> None:
+                nonlocal init_subclass_saw
+                init_subclass_saw = cls
+
+        self.assertIsNone(init_subclass_saw)
+
+        with self.assertWarnsRegex(DeprecationWarning, "Base will go away soon"):
+            class C(Base):
+                pass
+
+        self.assertIs(init_subclass_saw, C)
+
+    def test_function(self):
+        @deprecated("b will go away soon")
+        def b():
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "b will go away soon"):
+            b()
+
+    def test_method(self):
+        class Capybara:
+            @deprecated("x will go away soon")
+            def x(self):
+                pass
+
+        instance = Capybara()
+        with self.assertWarnsRegex(DeprecationWarning, "x will go away soon"):
+            instance.x()
+
+    def test_property(self):
+        class Capybara:
+            @property
+            @deprecated("x will go away soon")
+            def x(self):
+                pass
+
+            @property
+            def no_more_setting(self):
+                return 42
+
+            @no_more_setting.setter
+            @deprecated("no more setting")
+            def no_more_setting(self, value):
+                pass
+
+        instance = Capybara()
+        with self.assertWarnsRegex(DeprecationWarning, "x will go away soon"):
+            instance.x
+
+        with py_warnings.catch_warnings():
+            py_warnings.simplefilter("error")
+            self.assertEqual(instance.no_more_setting, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "no more setting"):
+            instance.no_more_setting = 42
+
+    def test_category(self):
+        @deprecated("c will go away soon", category=RuntimeWarning)
+        def c():
+            pass
+
+        with self.assertWarnsRegex(RuntimeWarning, "c will go away soon"):
+            c()
+
+    def test_turn_off_warnings(self):
+        @deprecated("d will go away soon", category=None)
+        def d():
+            pass
+
+        with py_warnings.catch_warnings():
+            py_warnings.simplefilter("error")
+            d()
+
+    def test_only_strings_allowed(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Expected an object of type str for 'message', not 'type'"
+        ):
+            @deprecated
+            class Foo: ...
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "Expected an object of type str for 'message', not 'function'"
+        ):
+            @deprecated
+            def foo(): ...
+
+    def test_no_retained_references_to_wrapper_instance(self):
+        @deprecated('depr')
+        def d(): pass
+
+        self.assertFalse(any(
+            isinstance(cell.cell_contents, deprecated) for cell in d.__closure__
+        ))
+
+    def test_inspect(self):
+        @deprecated("depr")
+        def sync():
+            pass
+
+        @deprecated("depr")
+        async def coro():
+            pass
+
+        class Cls:
+            @deprecated("depr")
+            def sync(self):
+                pass
+
+            @deprecated("depr")
+            async def coro(self):
+                pass
+
+        self.assertFalse(inspect.iscoroutinefunction(sync))
+        self.assertTrue(inspect.iscoroutinefunction(coro))
+        self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
+        self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
 def setUpModule():
     py_warnings.onceregistry.clear()

@@ -35,7 +35,7 @@ os.chdir(os.path.expanduser('~/Documents'))
 #       idlemain.py running under the symlinked python.
 #       This is the magic step.
 # 4. During interpreter initialization, because PYTHONEXECUTABLE is defined,
-#    sys.executable may get set to an unuseful value.
+#    sys.executable may get set to an useless value.
 #
 # (Note that the IDLE script and the setting of PYTHONEXECUTABLE is
 #  generated automatically by bundlebuilder in the Python 2.x build.

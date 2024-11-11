@@ -4,10 +4,18 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{6f67c8db-7de7-4714-a967-2b0d4bc71f2e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{83fe502d-eca2-4505-b626-eddec9b6ea9f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\overlapped.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

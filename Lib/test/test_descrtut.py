@@ -1,15 +1,17 @@
 # This contains most of the executable examples from Guido's descr
 # tutorial, once at
 #
-#     http://www.python.org/2.2/descrintro.html
+#     https://www.python.org/download/releases/2.2.3/descrintro/
 #
 # A few examples left implicit in the writeup were fleshed out, a few were
 # skipped due to lack of interest (e.g., faking super() by hand isn't
 # of much interest anymore), and a few were fiddled to make the output
 # deterministic.
 
-from test.support import sortdict
-import pprint
+from test.support import sortdict  # noqa: F401
+import doctest
+import unittest
+
 
 class defaultdict(dict):
     def __init__(self, default=None):
@@ -37,16 +39,16 @@ test_1 = """
 Here's the new type at work:
 
     >>> print(defaultdict)              # show our type
-    <class 'test.test_descrtut.defaultdict'>
+    <class '%(modname)s.defaultdict'>
     >>> print(type(defaultdict))        # its metatype
     <class 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print(a)                        # show the instance
     {}
     >>> print(type(a))                  # show its type
-    <class 'test.test_descrtut.defaultdict'>
+    <class '%(modname)s.defaultdict'>
     >>> print(a.__class__)              # show its class
-    <class 'test.test_descrtut.defaultdict'>
+    <class '%(modname)s.defaultdict'>
     >>> print(type(a) is a.__class__)   # its type is its class
     True
     >>> a[1] = 3.25                     # modify the instance
@@ -97,7 +99,7 @@ just like classic classes:
     >>> print(sortdict(a.__dict__))
     {'default': -1000, 'x1': 100, 'x2': 200}
     >>>
-"""
+""" % {'modname': __name__}
 
 class defaultdict2(dict):
     __slots__ = ['default']
@@ -137,7 +139,7 @@ instance variables cannot be assigned to:
     >>> a.x1 = 1
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
-    AttributeError: 'defaultdict2' object has no attribute 'x1'
+    AttributeError: 'defaultdict2' object has no attribute 'x1' and no __dict__ for setting new attributes
     >>>
 
 """
@@ -164,9 +166,11 @@ For instance of built-in types, x.__class__ is now the same as type(x):
 
 You can get the information from the list type:
 
+    >>> import pprint
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',
      '__class__',
+     '__class_getitem__',
      '__contains__',
      '__delattr__',
      '__delitem__',
@@ -177,6 +181,7 @@ You can get the information from the list type:
      '__ge__',
      '__getattribute__',
      '__getitem__',
+     '__getstate__',
      '__gt__',
      '__hash__',
      '__iadd__',
@@ -259,19 +264,19 @@ implicit first argument that is the *class* for which they are invoked.
     ...         print("classmethod", cls, y)
 
     >>> C.foo(1)
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod <class '%(modname)s.C'> 1
     >>> c = C()
     >>> c.foo(1)
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod <class '%(modname)s.C'> 1
 
     >>> class D(C):
     ...     pass
 
     >>> D.foo(1)
-    classmethod <class 'test.test_descrtut.D'> 1
+    classmethod <class '%(modname)s.D'> 1
     >>> d = D()
     >>> d.foo(1)
-    classmethod <class 'test.test_descrtut.D'> 1
+    classmethod <class '%(modname)s.D'> 1
 
 This prints "classmethod __main__.D 1" both times; in other words, the
 class passed as the first argument of foo() is the class involved in the
@@ -287,18 +292,18 @@ But notice this:
 
     >>> E.foo(1)
     E.foo() called
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod <class '%(modname)s.C'> 1
     >>> e = E()
     >>> e.foo(1)
     E.foo() called
-    classmethod <class 'test.test_descrtut.C'> 1
+    classmethod <class '%(modname)s.C'> 1
 
 In this example, the call to C.foo() from E.foo() will see class C as its
 first argument, not class E. This is to be expected, since the call
 specifies the class C. But it stresses the difference between these class
 methods and methods defined in metaclasses (where an upcall to a metamethod
 would pass the target class as an explicit first argument).
-"""
+""" % {'modname': __name__}
 
 test_5 = """
 
@@ -468,19 +473,10 @@ __test__ = {"tut1": test_1,
             "tut7": test_7,
             "tut8": test_8}
 
-# Magic test name that regrtest.py invokes *after* importing this module.
-# This worms around a bootstrap problem.
-# Note that doctest and regrtest both look in sys.argv for a "-v" argument,
-# so this works as expected in both ways of running regrtest.
-def test_main(verbose=None):
-    # Obscure:  import this module as test.test_descrtut instead of as
-    # plain test_descrtut because the name of this module works its way
-    # into the doctest examples, and unless the full test.test_descrtut
-    # business is used the name can change depending on how the test is
-    # invoked.
-    from test import support, test_descrtut
-    support.run_doctest(test_descrtut, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-# This part isn't needed for regrtest, but for running the test directly.
+
 if __name__ == "__main__":
-    test_main(1)
+    unittest.main()

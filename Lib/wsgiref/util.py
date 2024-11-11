@@ -4,7 +4,7 @@ import posixpath
 
 __all__ = [
     'FileWrapper', 'guess_scheme', 'application_uri', 'request_uri',
-    'shift_path_info', 'setup_testing_defaults',
+    'shift_path_info', 'setup_testing_defaults', 'is_hop_by_hop',
 ]
 
 
@@ -16,19 +16,6 @@ class FileWrapper:
         self.blksize = blksize
         if hasattr(filelike,'close'):
             self.close = filelike.close
-
-    def __getitem__(self,key):
-        import warnings
-        warnings.warn(
-            "FileWrapper's __getitem__ method ignores 'key' parameter. "
-            "Use iterator protocol instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        data = self.filelike.read(self.blksize)
-        if data:
-            return data
-        raise IndexError
 
     def __iter__(self):
         return self

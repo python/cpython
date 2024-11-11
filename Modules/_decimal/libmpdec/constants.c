@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,7 +27,7 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
+#include "basearith.h"
 #include "constants.h"
 
 
@@ -112,7 +112,7 @@
   #error "CONFIG_64 or CONFIG_32 must be defined."
 #endif
 
-const char *mpd_round_string[MPD_ROUND_GUARD] = {
+const char * const mpd_round_string[MPD_ROUND_GUARD] = {
     "ROUND_UP",          /* round away from 0               */
     "ROUND_DOWN",        /* round toward 0 (truncate)       */
     "ROUND_CEILING",     /* round toward +infinity          */
@@ -124,9 +124,7 @@ const char *mpd_round_string[MPD_ROUND_GUARD] = {
     "ROUND_TRUNC",       /* truncate, but set infinity      */
 };
 
-const char *mpd_clamp_string[MPD_CLAMP_GUARD] = {
+const char * const mpd_clamp_string[MPD_CLAMP_GUARD] = {
     "CLAMP_DEFAULT",
     "CLAMP_IEEE_754"
 };
-
-

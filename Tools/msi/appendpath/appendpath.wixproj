@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{12B59A06-37CC-4558-A9C8-DAE922E64EF3}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>appendpath</OutputName>
+        <OutputType>Package</OutputType>
+        <SuppressIces>ICE71</SuppressIces>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="*.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>

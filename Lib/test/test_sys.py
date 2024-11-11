@@ -1,25 +1,38 @@
-from test import support
-from test.support.script_helper import assert_python_ok, assert_python_failure
 import builtins
 import codecs
+import _datetime
 import gc
 import locale
 import operator
 import os
+import random
 import struct
 import subprocess
 import sys
 import sysconfig
 import test.support
+from test import support
+from test.support import os_helper
+from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import threading_helper
+from test.support import import_helper
+from test.support import force_not_colorized
+try:
+    from test.support import interpreters
+except ImportError:
+    interpreters = None
 import textwrap
 import unittest
 import warnings
 
 
-# count the number of test runs, used to create unique
-# strings to intern in test_intern()
-INTERN_NUMRUNS = 0
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
+
+DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
 class DisplayHookTest(unittest.TestCase):
 
@@ -67,9 +80,73 @@ class DisplayHookTest(unittest.TestCase):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
 
+class ActiveExceptionTests(unittest.TestCase):
+    def test_exc_info_no_exception(self):
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
+    def test_sys_exception_no_exception(self):
+        self.assertEqual(sys.exception(), None)
+
+    def test_exc_info_with_exception_instance(self):
+        def f():
+            raise ValueError(42)
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc_info = sys.exc_info()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc_info[0], ValueError)
+        self.assertIs(exc_info[1], e)
+        self.assertIs(exc_info[2], e.__traceback__)
+
+    def test_exc_info_with_exception_type(self):
+        def f():
+            raise ValueError
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc_info = sys.exc_info()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc_info[0], ValueError)
+        self.assertIs(exc_info[1], e)
+        self.assertIs(exc_info[2], e.__traceback__)
+
+    def test_sys_exception_with_exception_instance(self):
+        def f():
+            raise ValueError(42)
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc = sys.exception()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc, e)
+
+    def test_sys_exception_with_exception_type(self):
+        def f():
+            raise ValueError
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc = sys.exception()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc, e)
+
 
 class ExceptHookTest(unittest.TestCase):
 
+    @force_not_colorized
     def test_original_excepthook(self):
         try:
             raise ValueError(42)
@@ -81,6 +158,7 @@ class ExceptHookTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.__excepthook__)
 
+    @force_not_colorized
     def test_excepthook_bytes_filename(self):
         # bpo-37467: sys.excepthook() must not crash if a filename
         # is a bytes string
@@ -100,7 +178,8 @@ class ExceptHookTest(unittest.TestCase):
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
-            sys.excepthook(1, '1', 1)
+            with test.support.catch_unraisable_exception():
+                sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
                          "value, str found" in stderr.getvalue())
 
@@ -124,6 +203,20 @@ class SysModuleTest(unittest.TestCase):
 
         rc, out, err = assert_python_ok('-c', 'import sys; sys.exit()')
         self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # Overflow results in a -1 exit code, which may be converted to 0xff
+        # or 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
@@ -202,24 +295,33 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setswitchinterval(orig)
 
-    def test_recursionlimit(self):
+    def test_getrecursionlimit(self):
+        limit = sys.getrecursionlimit()
+        self.assertIsInstance(limit, int)
+        self.assertGreater(limit, 1)
+
         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
-        oldlimit = sys.getrecursionlimit()
-        self.assertRaises(TypeError, sys.setrecursionlimit)
-        self.assertRaises(ValueError, sys.setrecursionlimit, -42)
-        sys.setrecursionlimit(10000)
-        self.assertEqual(sys.getrecursionlimit(), 10000)
-        sys.setrecursionlimit(oldlimit)
+
+    def test_setrecursionlimit(self):
+        old_limit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(10_005)
+            self.assertEqual(sys.getrecursionlimit(), 10_005)
+
+            self.assertRaises(TypeError, sys.setrecursionlimit)
+            self.assertRaises(ValueError, sys.setrecursionlimit, -42)
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     def test_recursionlimit_recovery(self):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')
 
-        oldlimit = sys.getrecursionlimit()
+        old_limit = sys.getrecursionlimit()
         def f():
             f()
         try:
-            for depth in (10, 25, 50, 75, 100, 250, 1000):
+            for depth in (50, 75, 100, 250, 1000):
                 try:
                     sys.setrecursionlimit(depth)
                 except RecursionError:
@@ -229,69 +331,36 @@ class SysModuleTest(unittest.TestCase):
 
                 # Issue #5392: test stack overflow after hitting recursion
                 # limit twice
-                self.assertRaises(RecursionError, f)
-                self.assertRaises(RecursionError, f)
+                with self.assertRaises(RecursionError):
+                    f()
+                with self.assertRaises(RecursionError):
+                    f()
         finally:
-            sys.setrecursionlimit(oldlimit)
+            sys.setrecursionlimit(old_limit)
 
     @test.support.cpython_only
-    def test_setrecursionlimit_recursion_depth(self):
+    def test_setrecursionlimit_to_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
-        # current recursion depth is already higher than the "lower-water
-        # mark". Otherwise, it may not be possible anymore to
-        # reset the overflowed flag to 0.
+        # current recursion depth is already higher than limit.
 
-        from _testcapi import get_recursion_depth
-
-        def set_recursion_limit_at_depth(depth, limit):
-            recursion_depth = get_recursion_depth()
-            if recursion_depth >= depth:
-                with self.assertRaises(RecursionError) as cm:
-                    sys.setrecursionlimit(limit)
-                self.assertRegex(str(cm.exception),
-                                 "cannot set the recursion limit to [0-9]+ "
-                                 "at the recursion depth [0-9]+: "
-                                 "the limit is too low")
-            else:
-                set_recursion_limit_at_depth(depth, limit)
-
-        oldlimit = sys.getrecursionlimit()
+        old_limit = sys.getrecursionlimit()
         try:
-            sys.setrecursionlimit(1000)
+            depth = support.get_recursion_depth()
+            with self.subTest(limit=sys.getrecursionlimit(), depth=depth):
+                # depth + 1 is OK
+                sys.setrecursionlimit(depth + 1)
 
-            for limit in (10, 25, 50, 75, 100, 150, 200):
-                # formula extracted from _Py_RecursionLimitLowerWaterMark()
-                if limit > 200:
-                    depth = limit - 50
-                else:
-                    depth = limit * 3 // 4
-                set_recursion_limit_at_depth(depth, limit)
+                # reset the limit to be able to call self.assertRaises()
+                # context manager
+                sys.setrecursionlimit(old_limit)
+                with self.assertRaises(RecursionError) as cm:
+                    sys.setrecursionlimit(depth)
+            self.assertRegex(str(cm.exception),
+                             "cannot set the recursion limit to [0-9]+ "
+                             "at the recursion depth [0-9]+: "
+                             "the limit is too low")
         finally:
-            sys.setrecursionlimit(oldlimit)
-
-    def test_recursionlimit_fatalerror(self):
-        # A fatal error occurs if a second recursion limit is hit when recovering
-        # from a first one.
-        code = textwrap.dedent("""
-            import sys
-
-            def f():
-                try:
-                    f()
-                except RecursionError:
-                    f()
-
-            sys.setrecursionlimit(%d)
-            f()""")
-        with test.support.SuppressCrashReport():
-            for i in (50, 1000):
-                sub = subprocess.Popen([sys.executable, '-c', code % i],
-                    stderr=subprocess.PIPE)
-                err = sub.communicate()[1]
-                self.assertTrue(sub.returncode, sub.returncode)
-                self.assertIn(
-                    b"Fatal Python error: Cannot recover from stack overflow",
-                    err)
+            sys.setrecursionlimit(old_limit)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
@@ -339,15 +408,21 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.refcount_test
     def test_refcount(self):
-        # n here must be a global in order for this test to pass while
-        # tracing with a python function.  Tracing calls PyFrame_FastToLocals
-        # which will add a copy of any locals to the frame object, causing
-        # the reference count to increase by 2 instead of 1.
+        # n here originally had to be a global in order for this test to pass
+        # while tracing with a python function. Tracing used to call
+        # PyFrame_FastToLocals, which would add a copy of any locals to the
+        # frame object, causing the ref count to increase by 2 instead of 1.
+        # While that no longer happens (due to PEP 667), this test case retains
+        # its original global-based implementation
+        # PEP 683's immortal objects also made this point moot, since the
+        # refcount for None doesn't change anyway. Maybe this test should be
+        # using a different constant value? (e.g. an integer)
         global n
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
-        self.assertEqual(sys.getrefcount(None), c+1)
+        # Singleton refcnts don't change
+        self.assertEqual(sys.getrefcount(None), c)
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
@@ -361,8 +436,29 @@ class SysModuleTest(unittest.TestCase):
             is sys._getframe().f_code
         )
 
+    def test_getframemodulename(self):
+        # Default depth gets ourselves
+        self.assertEqual(__name__, sys._getframemodulename())
+        self.assertEqual("unittest.case", sys._getframemodulename(1))
+        i = 0
+        f = sys._getframe(i)
+        while f:
+            self.assertEqual(
+                f.f_globals['__name__'],
+                sys._getframemodulename(i) or '__main__'
+            )
+            i += 1
+            f2 = f.f_back
+            try:
+                f = sys._getframe(i)
+            except ValueError:
+                break
+            self.assertIs(f, f2)
+        self.assertIsNone(sys._getframemodulename(i))
+
     # sys._current_frames() is a CPython-only gimmick.
-    @test.support.reap_threads
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_frames(self):
         import threading
         import traceback
@@ -386,50 +482,123 @@ class SysModuleTest(unittest.TestCase):
         t.start()
         entered_g.wait()
 
-        # At this point, t has finished its entered_g.set(), although it's
-        # impossible to guess whether it's still on that line or has moved on
-        # to its leave_g.wait().
-        self.assertEqual(len(thread_info), 1)
-        thread_id = thread_info[0]
+        try:
+            # At this point, t has finished its entered_g.set(), although it's
+            # impossible to guess whether it's still on that line or has moved on
+            # to its leave_g.wait().
+            self.assertEqual(len(thread_info), 1)
+            thread_id = thread_info[0]
 
-        d = sys._current_frames()
-        for tid in d:
-            self.assertIsInstance(tid, int)
-            self.assertGreater(tid, 0)
+            d = sys._current_frames()
+            for tid in d:
+                self.assertIsInstance(tid, int)
+                self.assertGreater(tid, 0)
 
-        main_id = threading.get_ident()
-        self.assertIn(main_id, d)
-        self.assertIn(thread_id, d)
+            main_id = threading.get_ident()
+            self.assertIn(main_id, d)
+            self.assertIn(thread_id, d)
 
-        # Verify that the captured main-thread frame is _this_ frame.
-        frame = d.pop(main_id)
-        self.assertTrue(frame is sys._getframe())
+            # Verify that the captured main-thread frame is _this_ frame.
+            frame = d.pop(main_id)
+            self.assertTrue(frame is sys._getframe())
 
-        # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
-        # threading.py are also in the thread's call stack.
-        frame = d.pop(thread_id)
-        stack = traceback.extract_stack(frame)
-        for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
-            if funcname == "f123":
-                break
-        else:
-            self.fail("didn't find f123() on thread's call stack")
+            # Verify that the captured thread frame is blocked in g456, called
+            # from f123.  This is a little tricky, since various bits of
+            # threading.py are also in the thread's call stack.
+            frame = d.pop(thread_id)
+            stack = traceback.extract_stack(frame)
+            for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+                if funcname == "f123":
+                    break
+            else:
+                self.fail("didn't find f123() on thread's call stack")
 
-        self.assertEqual(sourceline, "g456()")
+            self.assertEqual(sourceline, "g456()")
 
-        # And the next record must be for g456().
-        filename, lineno, funcname, sourceline = stack[i+1]
-        self.assertEqual(funcname, "g456")
-        self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
+            # And the next record must be for g456().
+            filename, lineno, funcname, sourceline = stack[i+1]
+            self.assertEqual(funcname, "g456")
+            self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
+        finally:
+            # Reap the spawned thread.
+            leave_g.set()
+            t.join()
 
-        # Reap the spawned thread.
-        leave_g.set()
-        t.join()
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_current_exceptions(self):
+        import threading
+        import traceback
+
+        # Spawn a thread that blocks at a known place.  Then the main
+        # thread does sys._current_frames(), and verifies that the frames
+        # returned make sense.
+        g_raised = threading.Event()
+        leave_g = threading.Event()
+        thread_info = []  # the thread's id
+
+        def f123():
+            g456()
+
+        def g456():
+            thread_info.append(threading.get_ident())
+            while True:
+                try:
+                    raise ValueError("oops")
+                except ValueError:
+                    g_raised.set()
+                    if leave_g.wait(timeout=support.LONG_TIMEOUT):
+                        break
+
+        t = threading.Thread(target=f123)
+        t.start()
+        g_raised.wait(timeout=support.LONG_TIMEOUT)
+
+        try:
+            self.assertEqual(len(thread_info), 1)
+            thread_id = thread_info[0]
+
+            d = sys._current_exceptions()
+            for tid in d:
+                self.assertIsInstance(tid, int)
+                self.assertGreater(tid, 0)
+
+            main_id = threading.get_ident()
+            self.assertIn(main_id, d)
+            self.assertIn(thread_id, d)
+            self.assertEqual(None, d.pop(main_id))
+
+            # Verify that the captured thread frame is blocked in g456, called
+            # from f123.  This is a little tricky, since various bits of
+            # threading.py are also in the thread's call stack.
+            exc_value = d.pop(thread_id)
+            stack = traceback.extract_stack(exc_value.__traceback__.tb_frame)
+            for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+                if funcname == "f123":
+                    break
+            else:
+                self.fail("didn't find f123() on thread's call stack")
+
+            self.assertEqual(sourceline, "g456()")
+
+            # And the next record must be for g456().
+            filename, lineno, funcname, sourceline = stack[i+1]
+            self.assertEqual(funcname, "g456")
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
+        finally:
+            # Reap the spawned thread.
+            leave_g.set()
+            t.join()
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
+        for arg in sys.argv:
+            self.assertIsInstance(arg, str)
+        self.assertIsInstance(sys.orig_argv, list)
+        for arg in sys.orig_argv:
+            self.assertIsInstance(arg, str)
         self.assertIn(sys.byteorder, ("little", "big"))
         self.assertIsInstance(sys.builtin_module_names, tuple)
         self.assertIsInstance(sys.copyright, str)
@@ -438,11 +607,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.executable, str)
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
-        self.assertEqual(len(sys.int_info), 2)
+        self.assertEqual(len(sys.int_info), 4)
         self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
         self.assertTrue(sys.int_info.sizeof_digit >= 1)
+        self.assertGreaterEqual(sys.int_info.default_max_str_digits, 500)
+        self.assertGreaterEqual(sys.int_info.str_digits_check_threshold, 100)
+        self.assertGreater(sys.int_info.default_max_str_digits,
+                           sys.int_info.str_digits_check_threshold)
         self.assertEqual(type(sys.int_info.bits_per_digit), int)
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
+        self.assertIsInstance(sys.int_info.default_max_str_digits, int)
+        self.assertIsInstance(sys.int_info.str_digits_check_threshold, int)
         self.assertIsInstance(sys.hexversion, int)
 
         self.assertEqual(len(sys.hash_info), 9)
@@ -461,7 +636,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.hash_info.nan, int)
         self.assertIsInstance(sys.hash_info.imag, int)
         algo = sysconfig.get_config_var("Py_HASH_ALGORITHM")
-        if sys.hash_info.algorithm in {"fnv", "siphash24"}:
+        if sys.hash_info.algorithm in {"fnv", "siphash13", "siphash24"}:
             self.assertIn(sys.hash_info.hash_bits, {32, 64})
             self.assertIn(sys.hash_info.seed_bits, {32, 64, 128})
 
@@ -469,8 +644,10 @@ class SysModuleTest(unittest.TestCase):
                 self.assertEqual(sys.hash_info.algorithm, "siphash24")
             elif algo == 2:
                 self.assertEqual(sys.hash_info.algorithm, "fnv")
+            elif algo == 3:
+                self.assertEqual(sys.hash_info.algorithm, "siphash13")
             else:
-                self.assertIn(sys.hash_info.algorithm, {"fnv", "siphash24"})
+                self.assertIn(sys.hash_info.algorithm, {"fnv", "siphash13", "siphash24"})
         else:
             # PY_HASH_EXTERNAL
             self.assertEqual(algo, 0)
@@ -483,6 +660,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.platform, str)
         self.assertIsInstance(sys.prefix, str)
         self.assertIsInstance(sys.base_prefix, str)
+        self.assertIsInstance(sys.platlibdir, str)
         self.assertIsInstance(sys.version, str)
         vi = sys.version_info
         self.assertIsInstance(vi[:], tuple)
@@ -511,8 +689,24 @@ class SysModuleTest(unittest.TestCase):
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
-        self.assertIn(info.name, ('nt', 'pthread', 'solaris', None))
+        self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+        if sys.platform.startswith(("linux", "android", "freebsd")):
+            self.assertEqual(info.name, "pthread")
+        elif sys.platform == "win32":
+            self.assertEqual(info.name, "nt")
+        elif sys.platform == "emscripten":
+            self.assertIn(info.name, {"pthread", "pthread-stubs"})
+        elif sys.platform == "wasi":
+            self.assertEqual(info.name, "pthread-stubs")
+
+    @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
+    def test_emscripten_info(self):
+        self.assertEqual(len(sys._emscripten_info), 4)
+        self.assertIsInstance(sys._emscripten_info.emscripten_version, tuple)
+        self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
+        self.assertIsInstance(sys._emscripten_info.pthreads, bool)
+        self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -520,13 +714,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        self.assertRaises(TypeError, sys.intern, b'abc')
+        if has_is_interned:
+            self.assertRaises(TypeError, sys._is_interned)
+            self.assertRaises(TypeError, sys._is_interned, b'abc')
+        s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), True)
         s2 = s.swapcase().swapcase()
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -538,17 +742,85 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+        if has_is_interned:
+            self.assertIs(sys._is_interned(S("abc")), False)
+
+    @support.cpython_only
+    @requires_subinterpreters
+    def test_subinterp_intern_dynamically_allocated(self):
+        # Implementation detail: Dynamically allocated strings
+        # are distinct between interpreters
+        s = "never interned before" + str(random.randrange(0, 10**9))
+        t = sys.intern(s)
+        self.assertIs(t, s)
+
+        interp = interpreters.create()
+        interp.exec(textwrap.dedent(f'''
+            import sys
+
+            # set `s`, avoid parser interning & constant folding
+            s = str({s.encode()!r}, 'utf-8')
+
+            t = sys.intern(s)
+
+            assert id(t) != {id(s)}, (id(t), {id(s)})
+            assert id(t) != {id(t)}, (id(t), {id(t)})
+            '''))
+
+    @support.cpython_only
+    @requires_subinterpreters
+    def test_subinterp_intern_statically_allocated(self):
+        # Implementation detail: Statically allocated strings are shared
+        # between interpreters.
+        # See Tools/build/generate_global_objects.py for the list
+        # of strings that are always statically allocated.
+        for s in ('__init__', 'CANCELLED', '<module>', 'utf-8',
+                  '{{', '', '\n', '_', 'x', '\0', '\N{CEDILLA}', '\xff',
+                  ):
+            with self.subTest(s=s):
+                t = sys.intern(s)
+
+                interp = interpreters.create()
+                interp.exec(textwrap.dedent(f'''
+                    import sys
+
+                    # set `s`, avoid parser interning & constant folding
+                    s = str({s.encode()!r}, 'utf-8')
+
+                    t = sys.intern(s)
+                    assert id(t) == {id(t)}, (id(t), {id(t)})
+                    '''))
+
+    @support.cpython_only
+    @requires_subinterpreters
+    def test_subinterp_intern_singleton(self):
+        # Implementation detail: singletons are used for 0- and 1-character
+        # latin1 strings.
+        for s in '', '\n', '_', 'x', '\0', '\N{CEDILLA}', '\xff':
+            with self.subTest(s=s):
+                interp = interpreters.create()
+                interp.exec(textwrap.dedent(f'''
+                    import sys
+
+                    # set `s`, avoid parser interning & constant folding
+                    s = str({s.encode()!r}, 'utf-8')
+
+                    assert id(s) == {id(s)}
+                    t = sys.intern(s)
+                    '''))
+                self.assertTrue(sys._is_interned(s))
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
         attrs = ("debug",
-                 "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated",
-                 "dev_mode", "utf8_mode")
+                 "inspect", "interactive", "optimize",
+                 "dont_write_bytecode", "no_user_site", "no_site",
+                 "ignore_environment", "verbose", "bytes_warning", "quiet",
+                 "hash_randomization", "isolated", "dev_mode", "utf8_mode",
+                 "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            attr_type = bool if attr == "dev_mode" else int
+            attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
@@ -558,11 +830,12 @@ class SysModuleTest(unittest.TestCase):
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
+        arg = sys_attr
         attr_type = type(sys_attr)
         with self.assertRaises(TypeError):
-            attr_type()
+            attr_type(arg)
         with self.assertRaises(TypeError):
-            attr_type.__new__(attr_type)
+            attr_type.__new__(attr_type, arg)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)
@@ -579,6 +852,8 @@ class SysModuleTest(unittest.TestCase):
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
+    @force_not_colorized
+    @support.requires_subprocess()
     def test_ioencoding(self):
         env = dict(os.environ)
 
@@ -622,22 +897,24 @@ class SysModuleTest(unittest.TestCase):
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'\xbd')
 
-    @unittest.skipUnless(test.support.FS_NONASCII,
+    @unittest.skipUnless(os_helper.FS_NONASCII,
                          'requires OS support of non-ASCII encodings')
     @unittest.skipUnless(sys.getfilesystemencoding() == locale.getpreferredencoding(False),
                          'requires FS encoding to match locale')
+    @support.requires_subprocess()
     def test_ioencoding_nonascii(self):
         env = dict(os.environ)
 
         env["PYTHONIOENCODING"] = ""
         p = subprocess.Popen([sys.executable, "-c",
-                                'print(%a)' % test.support.FS_NONASCII],
+                                'print(%a)' % os_helper.FS_NONASCII],
                                 stdout=subprocess.PIPE, env=env)
         out = p.communicate()[0].strip()
-        self.assertEqual(out, os.fsencode(test.support.FS_NONASCII))
+        self.assertEqual(out, os.fsencode(os_helper.FS_NONASCII))
 
     @unittest.skipIf(sys.base_prefix != sys.prefix,
                      'Test is not venv-compatible')
+    @support.requires_subprocess()
     def test_executable(self):
         # sys.executable should be absolute
         self.assertEqual(os.path.abspath(sys.executable), sys.executable)
@@ -739,9 +1016,11 @@ class SysModuleTest(unittest.TestCase):
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
+    @support.requires_subprocess()
     def test_c_locale_surrogateescape(self):
         self.check_locale_surrogateescape('C')
 
+    @support.requires_subprocess()
     def test_posix_locale_surrogateescape(self):
         self.check_locale_surrogateescape('POSIX')
 
@@ -773,7 +1052,14 @@ class SysModuleTest(unittest.TestCase):
         from test.support.script_helper import assert_python_ok
         args = ['-c', 'import sys; sys._debugmallocstats()']
         ret, out, err = assert_python_ok(*args)
-        self.assertIn(b"free PyDictObjects", err)
+
+        # Output of sys._debugmallocstats() depends on configure flags.
+        # The sysconfig vars are not available on Windows.
+        if sys.platform != "win32":
+            with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            self.assertIn(b"free PyDictObjects", err)
+            if with_pymalloc:
+                self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
@@ -782,12 +1068,12 @@ class SysModuleTest(unittest.TestCase):
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
             try:
-                alloc_name = _testcapi.pymem_getallocatorsname()
+                alloc_name = _testinternalcapi.pymem_getallocatorsname()
             except RuntimeError as exc:
                 # "cannot get allocators name" (ex: tracemalloc is used)
                 with_pymalloc = True
@@ -808,7 +1094,14 @@ class SysModuleTest(unittest.TestCase):
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
             # it is unlikely to happen in a normal test run.
-            self.assertLess(a, sys.gettotalrefcount())
+            #
+            # In free-threaded builds each code object owns an array of
+            # pointers to copies of the bytecode. When the number of
+            # code objects is a large fraction of the total number of
+            # references, this can cause the total number of allocated
+            # blocks to exceed the total number of references.
+            if not support.Py_GIL_DISABLED:
+                self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -818,6 +1111,12 @@ class SysModuleTest(unittest.TestCase):
         gc.collect()
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
+
+    def test_is_gil_enabled(self):
+        if support.Py_GIL_DISABLED:
+            self.assertIs(type(sys._is_gil_enabled()), bool)
+        else:
+            self.assertTrue(sys._is_gil_enabled())
 
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
@@ -872,13 +1171,14 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
         self.assertGreater(level, 0)
 
+    @force_not_colorized
+    @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
             import sys
@@ -898,14 +1198,20 @@ class SysModuleTest(unittest.TestCase):
         traceback = [
             b'Traceback (most recent call last):',
             b'  File "<string>", line 8, in <module>',
+            b'    f2()',
+            b'    ~~^^',
             b'  File "<string>", line 6, in f2',
+            b'    f1()',
+            b'    ~~^^',
             b'  File "<string>", line 4, in f1',
+            b'    1 / 0',
+            b'    ~~^~~',
             b'ZeroDivisionError: division by zero'
         ]
         check(10, traceback)
         check(3, traceback)
-        check(2, traceback[:1] + traceback[2:])
-        check(1, traceback[:1] + traceback[3:])
+        check(2, traceback[:1] + traceback[4:])
+        check(1, traceback[:1] + traceback[7:])
         check(0, [traceback[-1]])
         check(-1, [traceback[-1]])
         check(1<<1000, traceback)
@@ -925,41 +1231,106 @@ class SysModuleTest(unittest.TestCase):
         out = out.decode('ascii', 'replace').rstrip()
         self.assertEqual(out, 'mbcs replace')
 
+    @support.requires_subprocess()
+    def test_orig_argv(self):
+        code = textwrap.dedent('''
+            import sys
+            print(sys.argv)
+            print(sys.orig_argv)
+        ''')
+        args = [sys.executable, '-I', '-X', 'utf8', '-c', code, 'arg']
+        proc = subprocess.run(args, check=True, capture_output=True, text=True)
+        expected = [
+            repr(['-c', 'arg']),  # sys.argv
+            repr(args),  # sys.orig_argv
+        ]
+        self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
+                         proc)
+
+    def test_module_names(self):
+        self.assertIsInstance(sys.stdlib_module_names, frozenset)
+        for name in sys.stdlib_module_names:
+            self.assertIsInstance(name, str)
+
+    def test_stdlib_dir(self):
+        os = import_helper.import_fresh_module('os')
+        marker = getattr(os, '__file__', None)
+        if marker and not os.path.exists(marker):
+            marker = None
+        expected = os.path.dirname(marker) if marker else None
+        self.assertEqual(os.path.normpath(sys._stdlib_dir),
+                         os.path.normpath(expected))
+
+    @unittest.skipUnless(hasattr(sys, 'getobjects'), 'need sys.getobjects()')
+    def test_getobjects(self):
+        # sys.getobjects(0)
+        all_objects = sys.getobjects(0)
+        self.assertIsInstance(all_objects, list)
+        self.assertGreater(len(all_objects), 0)
+
+        # sys.getobjects(0, MyType)
+        class MyType:
+            pass
+        size = 100
+        my_objects = [MyType() for _ in range(size)]
+        get_objects = sys.getobjects(0, MyType)
+        self.assertEqual(len(get_objects), size)
+        for obj in get_objects:
+            self.assertIsInstance(obj, MyType)
+
+        # sys.getobjects(3, MyType)
+        get_objects = sys.getobjects(3, MyType)
+        self.assertEqual(len(get_objects), 3)
+
+    @unittest.skipUnless(hasattr(sys, '_stats_on'), 'need Py_STATS build')
+    def test_pystats(self):
+        # Call the functions, just check that they don't crash
+        # Cannot save/restore state.
+        sys._stats_on()
+        sys._stats_off()
+        sys._stats_clear()
+        sys._stats_dump()
+
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    def test_disable_gil_abi(self):
+        self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
-    def write_unraisable_exc(self, exc, err_msg, obj):
-        import _testcapi
-        import types
-        err_msg2 = f"Exception ignored {err_msg}"
-        try:
-            _testcapi.write_unraisable_exc(exc, err_msg, obj)
-            return types.SimpleNamespace(exc_type=type(exc),
-                                         exc_value=exc,
-                                         exc_traceback=exc.__traceback__,
-                                         err_msg=err_msg2,
-                                         object=obj)
-        finally:
-            # Explicitly break any reference cycle
-            exc = None
-
     def test_original_unraisablehook(self):
-        for err_msg in (None, "original hook"):
-            with self.subTest(err_msg=err_msg):
-                obj = "an object"
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable, err_formatunraisable
+        obj = hex
 
-                with test.support.captured_output("stderr") as stderr:
-                    with test.support.swap_attr(sys, 'unraisablehook',
-                                                sys.__unraisablehook__):
-                        self.write_unraisable_exc(ValueError(42), err_msg, obj)
+        with support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with support.captured_stderr() as stderr:
+                err_writeunraisable(ValueError(42), obj)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], f'Exception ignored in: {obj!r}')
+            self.assertEqual(lines[1], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
 
-                err = stderr.getvalue()
-                if err_msg is not None:
-                    self.assertIn(f'Exception ignored {err_msg}: {obj!r}\n', err)
-                else:
-                    self.assertIn(f'Exception ignored in: {obj!r}\n', err)
-                self.assertIn('Traceback (most recent call last):\n', err)
-                self.assertIn('ValueError: 42\n', err)
+            with support.captured_stderr() as stderr:
+                err_writeunraisable(ValueError(42), None)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
+
+            with support.captured_stderr() as stderr:
+                err_formatunraisable(ValueError(42), 'Error in %R', obj)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], f'Error in {obj!r}:')
+            self.assertEqual(lines[1], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
+
+            with support.captured_stderr() as stderr:
+                err_formatunraisable(ValueError(42), None)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
 
     def test_original_unraisablehook_err(self):
         # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
@@ -1001,6 +1372,31 @@ class UnraisableHookTest(unittest.TestCase):
                     self.assertIn("del is broken", report)
                 self.assertTrue(report.endswith("\n"))
 
+    def test_original_unraisablehook_exception_qualname(self):
+        # See bpo-41031, bpo-45083.
+        # Check that the exception is printed with its qualified name
+        # rather than just classname, and the module names appears
+        # unless it is one of the hard-coded exclusions.
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable
+        class A:
+            class B:
+                class X(Exception):
+                    pass
+
+        for moduleName in 'builtins', '__main__', 'some_module':
+            with self.subTest(moduleName=moduleName):
+                A.B.X.__module__ = moduleName
+                with test.support.captured_stderr() as stderr, test.support.swap_attr(
+                    sys, 'unraisablehook', sys.__unraisablehook__
+                ):
+                    err_writeunraisable(A.B.X(), "obj")
+                report = stderr.getvalue()
+                self.assertIn(A.B.X.__qualname__, report)
+                if moduleName in ['builtins', '__main__']:
+                    self.assertNotIn(moduleName + '.', report)
+                else:
+                    self.assertIn(moduleName + '.', report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)
@@ -1010,34 +1406,45 @@ class UnraisableHookTest(unittest.TestCase):
                 sys.unraisablehook(exc)
 
     def test_custom_unraisablehook(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable, err_formatunraisable
         hook_args = None
 
         def hook_func(args):
             nonlocal hook_args
             hook_args = args
 
-        obj = object()
+        obj = hex
         try:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                expected = self.write_unraisable_exc(ValueError(42),
-                                                     "custom hook", obj)
-                for attr in "exc_type exc_value exc_traceback err_msg object".split():
-                    self.assertEqual(getattr(hook_args, attr),
-                                     getattr(expected, attr),
-                                     (hook_args, expected))
+                exc = ValueError(42)
+                err_writeunraisable(exc, obj)
+                self.assertIs(hook_args.exc_type, type(exc))
+                self.assertIs(hook_args.exc_value, exc)
+                self.assertIs(hook_args.exc_traceback, exc.__traceback__)
+                self.assertIsNone(hook_args.err_msg)
+                self.assertEqual(hook_args.object, obj)
+
+                err_formatunraisable(exc, "custom hook %R", obj)
+                self.assertIs(hook_args.exc_type, type(exc))
+                self.assertIs(hook_args.exc_value, exc)
+                self.assertIs(hook_args.exc_traceback, exc.__traceback__)
+                self.assertEqual(hook_args.err_msg, f'custom hook {obj!r}')
+                self.assertIsNone(hook_args.object)
         finally:
             # expected and hook_args contain an exception: break reference cycle
             expected = None
             hook_args = None
 
     def test_custom_unraisablehook_fail(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable
         def hook_func(*args):
             raise Exception("hook_func failed")
 
         with test.support.captured_output("stderr") as stderr:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                self.write_unraisable_exc(ValueError(42),
-                                          "custom hook fail", None)
+                err_writeunraisable(ValueError(42), "custom hook fail")
 
         err = stderr.getvalue()
         self.assertIn(f'Exception ignored in sys.unraisablehook: '
@@ -1053,8 +1460,9 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testcapi
-        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
+        self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 
     check_sizeof = test.support.check_sizeof
 
@@ -1090,7 +1498,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize)
+                         sys.maxsize + self.gc_headsize + self.managed_pre_header_size)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1111,6 +1519,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # bool
         check(True, vsize('') + self.longdigit)
+        check(False, vsize('') + self.longdigit)
         # buffer
         # XXX
         # builtin_function_or_method
@@ -1160,10 +1569,14 @@ class SizeofTest(unittest.TestCase):
         check({}.__iter__, size('2P'))
         # empty dict
         check({}, size('nQ2P'))
-        # dict
-        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        # dict (string key)
+        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('2P'))
+        longdict = {str(i): i for i in range(8)}
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('2P'))
+        # dict (non-string key)
+        check({1: 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
@@ -1182,13 +1595,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('5Pb'))
+        check(BaseException(), size('6Pb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('5Pb 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('5Pb 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('5Pb 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('6Pb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
@@ -1196,7 +1609,7 @@ class SizeofTest(unittest.TestCase):
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
         check(x, size('32B2iB'))
         # enumerate
-        check(enumerate([]), size('n3P'))
+        check(enumerate([]), size('n4P'))
         # reverse
         check(reversed(''), size('nP'))
         # float
@@ -1204,17 +1617,17 @@ class SizeofTest(unittest.TestCase):
         # sys.floatinfo
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
-        import inspect
-        CO_MAXBLOCKS = 20
-        x = inspect.currentframe()
-        ncells = len(x.f_code.co_cellvars)
-        nfrees = len(x.f_code.co_freevars)
-        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees - 1
-        check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        def func():
+            return sys._getframe()
+        x = func()
+        if support.Py_GIL_DISABLED:
+            INTERPRETER_FRAME = '10PhcP'
+        else:
+            INTERPRETER_FRAME = '9PhcP'
+        check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
-        check(func, size('13P'))
+        check(func, size('16Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1228,16 +1641,17 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('Pb2PPP4P'))
+        check(get_gen(), size('6P4c' + INTERPRETER_FRAME + 'P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
         check(re.finditer('',''), size('2P'))
         # list
-        samples = [[], [1,2,3], ['1', '2', '3']]
-        for sample in samples:
-            check(list(sample), vsize('Pn') + len(sample)*self.P)
+        check(list([]), vsize('Pn'))
+        check(list([1]), vsize('Pn') + 2*self.P)
+        check(list([1, 2]), vsize('Pn') + 2*self.P)
+        check(list([1, 2, 3]), vsize('Pn') + 4*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
@@ -1247,7 +1661,7 @@ class SizeofTest(unittest.TestCase):
         # listreverseiterator (list)
         check(reversed([]), size('nP'))
         # int
-        check(0, vsize(''))
+        check(0, vsize('') + self.longdigit)
         check(1, vsize('') + self.longdigit)
         check(-1, vsize('') + self.longdigit)
         PyLong_BASE = 2**sys.int_info.bits_per_digit
@@ -1255,7 +1669,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2-1), vsize('') + 2*self.longdigit)
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
-        check(unittest, size('PnPPP'))
+        if support.Py_GIL_DISABLED:
+            check(unittest, size('PPPPPP'))
+        else:
+            check(unittest, size('PPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -1268,11 +1685,12 @@ class SizeofTest(unittest.TestCase):
             def setx(self, value): self.__x = value
             def delx(self): del self.__x
             x = property(getx, setx, delx, "")
-            check(x, size('4Pi'))
+            check(x, size('5Pi'))
         # PyCapsule
-        # XXX
+        check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
-        check(iter(range(1)), size('4l'))
+        check(iter(range(1)), size('3l'))
+        check(iter(range(2**65)), size('3P'))
         # reverse
         check(reversed(''), size('nP'))
         # range
@@ -1309,28 +1727,33 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
+        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
         s = vsize(fmt)
         check(int, s)
+        typeid = 'n' if support.Py_GIL_DISABLED else ''
         # class
         s = vsize(fmt +                 # PyTypeObject
-                  '3P'                  # PyAsyncMethods
+                  '4P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '4P')
+                  '7P'
+                  '1PIP'                # Specializer cache
+                  + typeid              # heap type id (free-threaded only)
+                  )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
+        [newstyleclass() for _ in range(100)]
+        check(newstyleclass().__dict__, size('nQ2P') + self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
+        check(newstyleclass().__dict__, size('nQ2P') + self.P)
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain
@@ -1338,8 +1761,9 @@ class SizeofTest(unittest.TestCase):
         samples = ['1'*100, '\xff'*50,
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
-        asciifields = "nnbP"
-        compactfields = asciifields + "nPn"
+        # also update field definitions in test_unicode.test_raiseMemError
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
         unicodefields = compactfields + "P"
         for s in samples:
             maxchar = ord(max(s))
@@ -1363,11 +1787,15 @@ class SizeofTest(unittest.TestCase):
         # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
-        check(weakref.ref(int), size('2Pn2P'))
+        if support.Py_GIL_DISABLED:
+            expected = size('2Pn4P')
+        else:
+            expected = size('2Pn3P')
+        check(weakref.ref(int), expected)
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), size('2Pn2P'))
+        check(weakref.proxy(int), expected)
 
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)
@@ -1409,15 +1837,16 @@ class SizeofTest(unittest.TestCase):
         check(_ast.AST(), size('P'))
         try:
             raise TypeError
-        except TypeError:
-            tb = sys.exc_info()[2]
+        except TypeError as e:
+            tb = e.__traceback__
             # traceback
             if tb is not None:
                 check(tb, size('2P2i'))
         # symtable entry
         # XXX
         # sys.flags
-        check(sys.flags, vsize('') + self.P * len(sys.flags))
+        # FIXME: The +1 will not be necessary once gh-122575 is fixed
+        check(sys.flags, vsize('') + self.P * (1 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -1425,6 +1854,21 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(old.finalizer)
 
         firstiter = lambda *a: None
+        finalizer = lambda *a: None
+
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(firstiter=firstiter, finalizer="invalid")
+        cur = sys.get_asyncgen_hooks()
+        self.assertIsNone(cur.firstiter)
+        self.assertIsNone(cur.finalizer)
+
+        # gh-118473
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(firstiter="invalid", finalizer=finalizer)
+        cur = sys.get_asyncgen_hooks()
+        self.assertIsNone(cur.firstiter)
+        self.assertIsNone(cur.finalizer)
+
         sys.set_asyncgen_hooks(firstiter=firstiter)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
@@ -1432,7 +1876,6 @@ class SizeofTest(unittest.TestCase):
         self.assertIs(hooks.finalizer, None)
         self.assertIs(hooks[1], None)
 
-        finalizer = lambda *a: None
         sys.set_asyncgen_hooks(finalizer=finalizer)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
@@ -1445,6 +1888,21 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
 
+    def test_changing_sys_stderr_and_removing_reference(self):
+        # If the default displayhook doesn't take a strong reference
+        # to sys.stderr the following code can crash. See bpo-43660
+        # for more details.
+        code = textwrap.dedent('''
+            import sys
+            class MyStderr:
+                def write(self, s):
+                    sys.stderr = None
+            sys.stderr = MyStderr()
+            1/0
+        ''')
+        rc, out, err = assert_python_failure('-c', code)
+        self.assertEqual(out, b"")
+        self.assertEqual(err, b"")
 
 if __name__ == "__main__":
     unittest.main()

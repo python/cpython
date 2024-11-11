@@ -4,12 +4,12 @@ import random
 import unittest
 import doctest
 
-from test import support
+from test.support import import_helper
 from unittest import TestCase, skipUnless
 from operator import itemgetter
 
-py_heapq = support.import_fresh_module('heapq', blocked=['_heapq'])
-c_heapq = support.import_fresh_module('heapq', fresh=['_heapq'])
+py_heapq = import_helper.import_fresh_module('heapq', blocked=['_heapq'])
+c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
@@ -145,11 +145,11 @@ class TestHeap:
         self.assertEqual(type(h[0]), int)
         self.assertEqual(type(x), float)
 
-        h = [10];
+        h = [10]
         x = self.module.heappushpop(h, 9)
         self.assertEqual((h, x), ([10], 9))
 
-        h = [10];
+        h = [10]
         x = self.module.heappushpop(h, 11)
         self.assertEqual((h, x), ([11], 10))
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,22 +26,21 @@
  */
 
 
-#ifndef CRT_H
-#define CRT_H
+#ifndef LIBMPDEC_CRT_H_
+#define LIBMPDEC_CRT_H_
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 
 
 /* Internal header file: all symbols have local scope in the DSO */
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
 
 
-void crt3(mpd_uint_t *x1, mpd_uint_t *x2, mpd_uint_t *x3, mpd_size_t nmemb);
+void crt3(mpd_uint_t *x1, mpd_uint_t *x2, mpd_uint_t *x3, mpd_size_t rsize);
 
 
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
-#endif
+#endif /* LIBMPDEC_CRT_H_ */

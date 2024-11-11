@@ -8,8 +8,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
-            'SharedMemoryManager' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 #
 # Imports
@@ -19,8 +18,10 @@ import sys
 import threading
 import signal
 import array
+import collections.abc
 import queue
 import time
+import types
 import os
 from os import getpid
 
@@ -34,9 +35,11 @@ from . import util
 from . import get_context
 try:
     from . import shared_memory
-    HAS_SHMEM = True
 except ImportError:
     HAS_SHMEM = False
+else:
+    HAS_SHMEM = True
+    __all__.append('SharedMemoryManager')
 
 #
 # Register some things for pickling
@@ -47,11 +50,11 @@ def reduce_array(a):
 reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # only needed in Py3.0
-    def rebuild_as_list(obj):
-        return list, (list(obj),)
-    for view_type in view_types:
-        reduction.register(view_type, rebuild_as_list)
+def rebuild_as_list(obj):
+    return list, (list(obj),)
+for view_type in view_types:
+    reduction.register(view_type, rebuild_as_list)
+del view_type, view_types
 
 #
 # Type for identifying shared objects
@@ -59,7 +62,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -88,7 +91,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -151,7 +157,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=16)
+        self.listener = Listener(address=address, backlog=128)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
@@ -191,11 +197,8 @@ class Server(object):
             t.daemon = True
             t.start()
 
-    def handle_request(self, c):
-        '''
-        Handle a new connection
-        '''
-        funcname = result = request = None
+    def _handle_request(self, c):
+        request = None
         try:
             connection.deliver_challenge(c, self.authkey)
             connection.answer_challenge(c, self.authkey)
@@ -212,6 +215,7 @@ class Server(object):
                 msg = ('#TRACEBACK', format_exc())
             else:
                 msg = ('#RETURN', result)
+
         try:
             c.send(msg)
         except Exception as e:
@@ -223,7 +227,17 @@ class Server(object):
             util.info(' ... request was %r', request)
             util.info(' ... exception was %r', e)
 
-        c.close()
+    def handle_request(self, conn):
+        '''
+        Handle a new connection
+        '''
+        try:
+            self._handle_request(conn)
+        except SystemExit:
+            # Server.serve_client() calls sys.exit(0) on EOF
+            pass
+        finally:
+            conn.close()
 
     def serve_client(self, conn):
         '''
@@ -423,7 +437,6 @@ class Server(object):
                     self.id_to_refcount[ident] = 1
                     self.id_to_obj[ident] = \
                         self.id_to_local_proxy_obj[ident]
-                    obj, exposed, gettypeid = self.id_to_obj[ident]
                     util.debug('Server re-enabled tracking & INCREF %r', ident)
                 else:
                     raise ke
@@ -487,7 +500,7 @@ class BaseManager(object):
     _Server = Server
 
     def __init__(self, address=None, authkey=None, serializer='pickle',
-                 ctx=None):
+                 ctx=None, *, shutdown_timeout=1.0):
         if authkey is None:
             authkey = process.current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
@@ -497,6 +510,7 @@ class BaseManager(object):
         self._serializer = serializer
         self._Listener, self._Client = listener_client[serializer]
         self._ctx = ctx or get_context()
+        self._shutdown_timeout = shutdown_timeout
 
     def get_server(self):
         '''
@@ -560,8 +574,8 @@ class BaseManager(object):
         self._state.value = State.STARTED
         self.shutdown = util.Finalize(
             self, type(self)._finalize_manager,
-            args=(self._process, self._address, self._authkey,
-                  self._state, self._Client),
+            args=(self._process, self._address, self._authkey, self._state,
+                  self._Client, self._shutdown_timeout),
             exitpriority=0
             )
 
@@ -646,7 +660,8 @@ class BaseManager(object):
         self.shutdown()
 
     @staticmethod
-    def _finalize_manager(process, address, authkey, state, _Client):
+    def _finalize_manager(process, address, authkey, state, _Client,
+                          shutdown_timeout):
         '''
         Shutdown the manager process; will be registered as a finalizer
         '''
@@ -661,15 +676,17 @@ class BaseManager(object):
             except Exception:
                 pass
 
-            process.join(timeout=1.0)
+            process.join(timeout=shutdown_timeout)
             if process.is_alive():
                 util.info('manager still alive')
                 if hasattr(process, 'terminate'):
                     util.info('trying to `terminate()` manager process')
                     process.terminate()
-                    process.join(timeout=0.1)
+                    process.join(timeout=shutdown_timeout)
                     if process.is_alive():
                         util.info('manager still alive after terminate')
+                        process.kill()
+                        process.join()
 
         state.value = State.SHUTDOWN
         try:
@@ -794,7 +811,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection
@@ -820,7 +837,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''
@@ -958,7 +978,7 @@ def MakeProxyType(name, exposed, _cache={}):
 
 
 def AutoProxy(token, serializer, manager=None, authkey=None,
-              exposed=None, incref=True):
+              exposed=None, incref=True, manager_owned=False):
     '''
     Return an auto-proxy for `token`
     '''
@@ -978,7 +998,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)
     proxy = ProxyType(token, serializer, manager=manager, authkey=authkey,
-                      incref=incref)
+                      incref=incref, manager_owned=manager_owned)
     proxy._isauto = True
     return proxy
 
@@ -1129,12 +1149,14 @@ class ValueProxy(BaseProxy):
         return self._callmethod('set', (value,))
     value = property(get, set)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__mul__', '__reversed__', '__rmul__', '__setitem__',
-    'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-    'reverse', 'sort', '__imul__'
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
+    'remove', 'reverse', 'sort',
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1144,16 +1166,27 @@ class ListProxy(BaseListProxy):
         self._callmethod('__imul__', (value,))
         return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
-DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'items',
+collections.abc.MutableSequence.register(BaseListProxy)
+
+_BaseDictProxy = MakeProxyType('_BaseDictProxy', (
+    '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
+    '__len__', '__or__', '__reversed__', '__ror__',
+    '__setitem__', 'clear', 'copy', 'fromkeys', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
-DictProxy._method_to_typeid_ = {
+_BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
     }
+class DictProxy(_BaseDictProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseDictProxy)
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'
@@ -1262,8 +1295,12 @@ if HAS_SHMEM:
 
         def __init__(self, *args, **kwargs):
             Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
         def create(self, c, typeid, /, *args, **kwargs):
@@ -1322,7 +1359,6 @@ if HAS_SHMEM:
 
         def __del__(self):
             util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
-            pass
 
         def get_server(self):
             'Better than monkeypatching for now; merge into Server ultimately'
