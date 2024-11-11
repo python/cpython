@@ -61,18 +61,15 @@ class TestNullDlsym(unittest.TestCase):
             self.skipTest("gcc is missing")
 
         with tempfile.TemporaryDirectory() as d:
-            # Create a source file foo.c, that uses
-            # a GNU Indirect Function. See FOO_C.
+            # Create a C file with a GNU Indirect Function (FOO_C)
+            # and compile it into a shared library.
             srcname = os.path.join(d, 'foo.c')
-            libname = 'py_ctypes_test_null_dlsym'
-            dstname = os.path.join(d, 'lib%s.so' % libname)
+            dstname = os.path.join(d, 'libfoo.so')
             with open(srcname, 'w') as f:
                 f.write(FOO_C)
-            self.assertTrue(os.path.exists(srcname))
-            # Compile the file to a shared library
-            cmd = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
-            out = subprocess.check_output(cmd)
-            self.assertTrue(os.path.exists(dstname))
+            args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
+            p = subprocess.run(args, capture_output=True)
+            self.assertEqual(p.returncode, 0, p)
             # Load the shared library
             L = CDLL(dstname)
 
