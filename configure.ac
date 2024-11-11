@@ -7460,15 +7460,6 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
 done
 IFS=$as_save_IFS
 
-# builtin HACL* HMAC module
-AC_MSG_CHECKING([for --with-builtin-hashlib-hmac=yes,no])
-AC_ARG_WITH([builtin-hashlib-hmac],
-  [AS_HELP_STRING([--with-builtin-hashlib-hmac],
-    [use builtin HACL* HMAC when possible @<:@default is yes@:>@])],
-  [with_builtin_hashlib_hmac=$with_val],
-  [with_builtin_hashlib_hmac=yes])
-AC_MSG_RESULT([$with_builtin_hashlib_hmac])
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 AC_MSG_CHECKING([for --disable-test-modules])
@@ -7810,9 +7801,7 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
-dnl We always build the '_hmac' extension module but falls back
-dnl to the Python implementation if needs arise.
-PY_STDLIB_MOD([_hmac], [test "$with_builtin_hashlib_hmac" = yes])
+PY_STDLIB_MOD_SIMPLE([_hmac])
 
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in
