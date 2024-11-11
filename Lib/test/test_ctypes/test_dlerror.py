@@ -53,6 +53,17 @@ class TestNullDlsym(unittest.TestCase):
         import subprocess
         import tempfile
 
+        # When using 'shell=True', Python invokes
+        # /bin/sh -c 'args[0]' args[1] ...
+        #
+        # The shell uses arg[0] as the
+        # command to execute,
+        # while the rest are arguments
+        # to the shell itself.
+        #
+        # To avoid mistakes, pass a single string
+        # (equivalent to a single-elem list),
+        # with the shell command to execute.
         retcode = subprocess.call(["gcc --version"],
                                   stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL,
