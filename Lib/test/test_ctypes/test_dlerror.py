@@ -64,7 +64,7 @@ class TestNullDlsym(unittest.TestCase):
         # To avoid mistakes, pass a single string
         # (equivalent to a single-elem list),
         # with the shell command to execute.
-        retcode = subprocess.call(["gcc --version"],
+        retcode = subprocess.call("gcc --version",
                                   stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL,
                                   shell=True)
