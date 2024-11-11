@@ -975,12 +975,6 @@ The global statement applies to the entire scope of a function or
 class body. A :exc:`SyntaxError` is raised if a variable is used or
 assigned to prior to its global declaration in the scope.
 
-.. impl-detail::
-
-   The current implementation does not enforce some of these restrictions, but
-   programs should not abuse this freedom, as future implementations may enforce
-   them or silently change the meaning of the program.
-
 .. index::
    pair: built-in function; exec
    pair: built-in function; eval
