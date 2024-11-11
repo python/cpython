@@ -2491,6 +2491,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tracedmodules \
 		test/translationdata \
 		test/translationdata/argparse \
+		test/translationdata/getopt \
+		test/translationdata/optparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
