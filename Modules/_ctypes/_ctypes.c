@@ -3797,7 +3797,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	 * Clear the previous value before calling dlsym(),
 	 * to ensure we can tell if our call resulted in an error.
 	 */
-    dlerror();
+    (void)dlerror();
     address = (PPROC)dlsym(handle, name);
 #ifdef __CYGWIN__
     if (!address) {
