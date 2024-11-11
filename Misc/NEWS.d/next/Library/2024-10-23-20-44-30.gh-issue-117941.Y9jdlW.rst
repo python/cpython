@@ -1,0 +1,2 @@
+:class:`!argparse.BooleanOptionalAction` now rejects option names starting
+with ``--no-``.
