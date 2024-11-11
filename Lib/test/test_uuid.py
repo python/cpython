@@ -707,8 +707,8 @@ class BaseTestUUID:
                 equal(u.int & 0x3fffffffffffffff, lo)
 
     def test_uuid8_uniqueness(self):
-        """Test that UUIDv8-generated values are unique (up to a negligible
-        probability of failure)."""
+        # Test that UUIDv8-generated values are unique
+        # (up to a negligible probability of failure).
         u1 = self.uuid.uuid8()
         u2 = self.uuid.uuid8()
         self.assertNotEqual(u1.int, u2.int)
