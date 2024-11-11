@@ -456,6 +456,11 @@ class Regrtest:
             self.results.write_junit(self.junit_filename)
 
     def display_summary(self) -> None:
+        if self.first_runtests is None:
+            raise ValueError(
+                "Should never call `display_summary()` before calling `_run_test()`"
+            )
+        
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
 
@@ -463,9 +468,6 @@ class Regrtest:
         print()
         print("Total duration: %s" % format_duration(duration))
 
-        assert self.first_runtests, (
-            "Should never call `display_summary()` before calling `_run_test()`"
-        )
         self.results.display_summary(self.first_runtests, filtered)
 
         # Result
@@ -717,9 +719,10 @@ class Regrtest:
 
     @property
     def tmp_dir(self) -> StrPath:
-        assert self._tmp_dir is not None, (
-            "Should never use `.tmp_dir` before calling `.main()`"
-        )
+        if self._tmp_dir is None:
+            raise ValueError(
+                "Should never use `.tmp_dir` before calling `.main()`"
+            )
         return self._tmp_dir
 
     def main(self, tests: TestList | None = None) -> NoReturn:
