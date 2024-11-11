@@ -425,8 +425,6 @@ defined by the module.  The specific list of defined symbols is available as
      - Capabilities insufficient. This error is mapped to the exception
        :exc:`PermissionError`.
 
-       .. availability:: WASI, FreeBSD
-
    * - .. data:: ECANCELED
      - Operation canceled
 
