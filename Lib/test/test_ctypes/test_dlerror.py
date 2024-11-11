@@ -1,4 +1,4 @@
-import os.path
+import os
 import sys
 import unittest
 from ctypes import CDLL
