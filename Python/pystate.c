@@ -3139,4 +3139,3 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
     }
 #endif
 }
-
