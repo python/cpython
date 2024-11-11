@@ -25,7 +25,6 @@ __all__ = (
 
 
 import asyncio
-from collections import namedtuple
 import contextlib
 import io
 import inspect
@@ -1321,7 +1320,14 @@ def _check_spec_arg_typos(kwargs_to_check):
             )
 
 
-_PatchContext = namedtuple("_PatchContext", "exit_stack is_local original target")
+class _PatchContext:
+    __slots__ = ('exit_stack', 'is_local', 'original', 'target')
+
+    def __init__(self, exit_stack, is_local, original, target):
+        self.exit_stack = exit_stack
+        self.is_local = is_local
+        self.original = original
+        self.target = target
 
 
 class _patch(object):
@@ -1482,40 +1488,25 @@ class _patch(object):
     def is_local(self):
         return self._context.is_local
 
+    @is_local.setter
+    def is_local(self, value):
+        self._context.is_local = value
+
     @property
     def target(self):
         return self._context.target
+
+    @target.setter
+    def target(self, value):
+        self._context.target = value
 
     @property
     def temp_original(self):
         return self._context.original
 
-    @is_local.setter
-    def is_local(self, value):
-        self._context = _PatchContext(
-            exit_stack=self._context.exit_stack,
-            is_local=value,
-            original=self._context.original,
-            target=self._context.target,
-        )
-
-    @target.setter
-    def target(self, value):
-        self._context = _PatchContext(
-            exit_stack=self._context.exit_stack,
-            is_local=self._context.is_local,
-            original=self._context.original,
-            target=value,
-        )
-
     @temp_original.setter
     def temp_original(self, value):
-        self._context = _PatchContext(
-            exit_stack=self._context.exit_stack,
-            is_local=self._context.is_local,
-            original=value,
-            target=self._context.target,
-        )
+        self._context.original = value
 
     def __enter__(self):
         """Perform the patch."""
