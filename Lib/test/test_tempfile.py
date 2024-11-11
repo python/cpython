@@ -1116,11 +1116,14 @@ class TestNamedTemporaryFile(BaseTestCase):
             # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
-        # Make sure that the garbage collector has finalized the file object.
-        gc.collect()
         dir = tempfile.mkdtemp()
         try:
-            tmp_name = my_func(dir)
+            with self.assertWarnsRegex(
+                ResourceWarning,
+                msg=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+            ):
+                tmp_name = my_func(dir)
+                support.gc_collect()
             self.assertFalse(os.path.exists(tmp_name),
                         f"NamedTemporaryFile {tmp_name!r} "
                         f"exists after finalizer ")
