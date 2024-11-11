@@ -712,6 +712,16 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    if (_Py_atomic_load_ptr_relaxed(&interp->threads.head) != NULL)
+    {
+        /*
+         * We're in a weird limbo where the main thread isn't set but
+         * the thread states haven't fully cleared yet.
+         */
+        PyErr_SetString(PyExc_InterpreterError, "interpreter running");
+        return NULL;
+    }
+
     /*
      * Running main has now been prevented, the interpreter will
      * never run again (GH-126644).

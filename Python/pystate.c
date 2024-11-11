@@ -1066,8 +1066,7 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp)
 {
     assert(interp != NULL);
 #ifdef Py_GIL_DISABLED
-    PyThreadState *expected = get_main_thread(interp);
-    if (expected != NULL)
+    if (_PyInterpreterState_IsRunningMain(interp))
     {
         // Interpreter is running, can't prevent it yet.
         return 0;
@@ -1079,6 +1078,16 @@ _PyInterpreterState_PreventMain(PyInterpreterState *interp)
                                         _PyInterpreterState_RUNNING_PREVENTED) == 0)
     {
         // Another thread beat us!
+        return 0;
+    }
+
+    if (_PyInterpreterState_IsRunningMain(interp))
+    {
+        // Another thread started right in between the
+        // prevention period!
+
+        // XXX Is having the prevented flag set a problem for a
+        // running interpreter?
         return 0;
     }
 
