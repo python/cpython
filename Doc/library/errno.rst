@@ -810,6 +810,13 @@ defined by the module.  The specific list of defined symbols is available as
    .. versionadded:: 3.2
 
 
+.. data:: EBADRPC
+
+   RPC struct is bad
+
+   .. versionadded:: 3.2
+
+
 .. data:: ERPCMISMATCH
 
    RPC version wrong
