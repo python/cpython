@@ -540,11 +540,10 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     data += group->data_size;
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
-    int status = mark_executable(memory, total_size);
 #ifdef MAP_JIT
     pthread_jit_write_protect_np(1);
 #endif
-    if (status) {
+    if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;
     }
