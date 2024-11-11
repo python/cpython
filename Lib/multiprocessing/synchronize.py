@@ -329,34 +329,34 @@ class Event(object):
 
     def __init__(self, *, ctx):
         self._cond = ctx.Condition(ctx.Lock())
-        self._flag = ctx.Semaphore(0)
+        self._flag = ctx.Value('i', 0)
 
     def is_set(self):
-        with self._cond:
-            if self._flag.acquire(False):
-                self._flag.release()
-                return True
-            return False
+        return self._flag.value == 1
 
     def set(self):
+        assert not self._cond._lock._semlock._is_mine(), \
+            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
         with self._cond:
-            self._flag.acquire(False)
-            self._flag.release()
+            self._flag.value = 1
             self._cond.notify_all()
 
     def clear(self):
+        assert not self._cond._lock._semlock._is_mine(), \
+            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
         with self._cond:
-            self._flag.acquire(False)
+            self._flag.value = 0
 
     def wait(self, timeout=None):
+        assert not self._cond._lock._semlock._is_mine(), \
+            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
         with self._cond:
-            if self._flag.acquire(False):
-                self._flag.release()
+            if self._flag.value == 1:
+                return True
             else:
                 self._cond.wait(timeout)
 
-            if self._flag.acquire(False):
-                self._flag.release()
+            if self._flag.value == 1:
                 return True
             return False
 

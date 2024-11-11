@@ -1,0 +1,1 @@
+Use :mod:`multiprocessing` ``Value`` for :mod:`multiprocessing` ``Event`` to avoid deadlock when reetrant usage of `set` from `is_set`, e.g. when handling system signals
