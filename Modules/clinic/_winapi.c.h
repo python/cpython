@@ -793,7 +793,8 @@ _winapi_GetLongPathName(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *argsbuf[1];
     LPCWSTR path = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -897,7 +898,8 @@ _winapi_GetShortPathName(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *argsbuf[1];
     LPCWSTR path = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2004,7 +2006,8 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
     PyObject *argsbuf[1];
     PyObject *on_type_read;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2124,4 +2127,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2304c62187a90140 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2a178bde6868e88 input=a9049054013a1b77]*/

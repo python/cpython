@@ -56,7 +56,8 @@ _functools_cmp_to_key(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[1];
     PyObject *mycmp;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -122,7 +123,8 @@ _functools_reduce(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *seq;
     PyObject *result = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -186,4 +188,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=088c7e8d8d662ccb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6edcc01f0720daf input=a9049054013a1b77]*/
