@@ -3809,7 +3809,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
-    char *dlerr = dlerror();
+    const char *dlerr = dlerror();
     if (dlerr) {
         PyErr_SetString(PyExc_AttributeError, dlerr);
         Py_DECREF(ftuple);
