@@ -1,1 +1,2 @@
-Add ``None`` check for :meth:`asyncio.Server._wakeup`. Patch by Jamie Phan.
+Add ``None`` check for :class:`asyncio.base_events.Server` internal ``_wakeup``
+method. Patch by Jamie Phan.
