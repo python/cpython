@@ -1050,6 +1050,9 @@ get_main_thread(PyInterpreterState *interp)
 #define _PyInterpreterState_RUNNING_OK 0
 #define _PyInterpreterState_RUNNING_PREVENTED 1
 
+/*
+ * Is this interpreter allowed to set the main thread anymore?
+ */
 int
 _PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp)
 {
@@ -1061,6 +1064,14 @@ _PyInterpreterState_IsRunningAllowed(PyInterpreterState *interp)
 #endif
 }
 
+/*
+ * Atomically prevent future setting of the main thread.
+ *
+ * If something goes wrong, then this returns 0 without
+ * an exception, and 1 otherwise.
+ *
+ * On the GIL-ful build, this is a no-op.
+ */
 int
 _PyInterpreterState_PreventMain(PyInterpreterState *interp)
 {
