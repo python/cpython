@@ -355,9 +355,10 @@ follows these steps in order:
 Optimization: marking
 =====================
 
-Only objects that cannot be reached, can be garbage.
+An object cannot be garbage if it can be reached.
+
 To avoid performing the complex algorithm above on the whole heap, we first
-mark all objects that can be reached either from a frame stack or from global
+mark all objects that can be reached from any frame stack or from global
 objects like the modules or builtin classes.
 
 This marking step does much less work per object, so reduces the time spent
