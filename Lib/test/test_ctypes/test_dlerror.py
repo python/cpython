@@ -58,7 +58,7 @@ class TestNullDlsym(unittest.TestCase):
                                  stderr=subprocess.DEVNULL)
             out, _ = p.communicate()
         except OSError:
-            raise unittest.SkipTest('gcc, needed for test, not available')
+            self.skipTest('gcc is missing')
         with tempfile.TemporaryDirectory() as d:
             # Create a source file foo.c, that uses
             # a GNU Indirect Function. See FOO_C.
