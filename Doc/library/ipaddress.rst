@@ -131,6 +131,10 @@ write code that handles both IP versions correctly.  Address objects are
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
 
+      .. versionchanged:: 3.14
+
+         Made available on the class.
+
    .. attribute:: max_prefixlen
 
       The total number of bits in the address representation for this
@@ -139,6 +143,10 @@ write code that handles both IP versions correctly.  Address objects are
       The prefix defines the number of leading bits in an  address that
       are compared to determine whether or not an address is part of a
       network.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: compressed
    .. attribute:: exploded
@@ -1010,7 +1018,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the *key* argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.
 

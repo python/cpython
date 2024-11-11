@@ -14,6 +14,21 @@ extern "C" {
 
 /* state */
 
+#define _Py_TYPE_VERSION_INT 1
+#define _Py_TYPE_VERSION_FLOAT 2
+#define _Py_TYPE_VERSION_LIST 3
+#define _Py_TYPE_VERSION_TUPLE 4
+#define _Py_TYPE_VERSION_STR 5
+#define _Py_TYPE_VERSION_SET 6
+#define _Py_TYPE_VERSION_FROZEN_SET 7
+#define _Py_TYPE_VERSION_DICT 8
+#define _Py_TYPE_VERSION_BYTEARRAY 9
+#define _Py_TYPE_VERSION_BYTES 10
+#define _Py_TYPE_VERSION_COMPLEX 11
+
+#define _Py_TYPE_VERSION_NEXT 16
+
+
 #define _Py_TYPE_BASE_VERSION_TAG (2<<16)
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
@@ -33,7 +48,6 @@ struct _types_runtime_state {
     struct {
         struct {
             PyTypeObject *type;
-            PyTypeObject def;
             int64_t interp_count;
         } types[_Py_MAX_MANAGED_STATIC_TYPES];
     } managed_static;
@@ -183,6 +197,9 @@ PyAPI_FUNC(int) _PyStaticType_InitForExtension(
     PyInterpreterState *interp,
      PyTypeObject *self);
 
+// Export for _testinternalcapi extension.
+PyAPI_FUNC(PyObject *) _PyStaticType_GetBuiltins(void);
+
 
 /* Like PyType_GetModuleState, but skips verification
  * that type is a heap type with an associated module */
@@ -207,7 +224,9 @@ extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
-PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef2(PyTypeObject *, PyTypeObject *, PyModuleDef *);
+
+// Export for _testinternalcapi extension.
+PyAPI_FUNC(PyObject *) _PyType_GetSlotWrapperNames(void);
 
 // PyType_Ready() must be called if _PyType_IsReady() is false.
 // See also the Py_TPFLAGS_READY flag.
@@ -239,6 +258,7 @@ extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 // self->tp_flags = (self->tp_flags & ~mask) | flags;
 extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
                              unsigned long flags);
+extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 
 // Like _PyType_SetFlags(), but apply the operation to self and any of its
 // subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
