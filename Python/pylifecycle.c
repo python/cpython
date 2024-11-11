@@ -1317,6 +1317,7 @@ init_interp_main(PyThreadState *tstate)
                 return _PyStatus_ERR("can't initialize optimizer");
             }
             if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+                Py_DECREF(opt);
                 return _PyStatus_ERR("can't install optimizer");
             }
             Py_DECREF(opt);
