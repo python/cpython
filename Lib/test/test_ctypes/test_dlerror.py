@@ -53,12 +53,13 @@ class TestNullDlsym(unittest.TestCase):
         import subprocess
         import tempfile
 
-        try:
-            p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
-                                 stderr=subprocess.DEVNULL)
-            out, _ = p.communicate()
-        except OSError:
-            self.skipTest('gcc is missing')
+        retcode = subprocess.call(["gcc --version"],
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL,
+                                  shell=True)
+        if retcode != 0:
+            self.skipTest("gcc is missing")
+
         with tempfile.TemporaryDirectory() as d:
             # Create a source file foo.c, that uses
             # a GNU Indirect Function. See FOO_C.
