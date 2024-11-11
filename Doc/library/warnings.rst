@@ -1,5 +1,5 @@
-:mod:`warnings` --- Warning control
-===================================
+:mod:`!warnings` --- Warning control
+====================================
 
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
@@ -145,6 +145,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
   +---------------+----------------------------------------------+
+  | ``"all"``     | alias to "always"                            |
+  +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |
   |               | is issued (regardless of line number)        |
@@ -176,6 +178,19 @@ class, to turn a warning into an error we simply raise ``category(message)``.
 
 If a warning is reported and doesn't match any registered filter then the
 "default" action is applied (hence its name).
+
+
+
+.. _repeated-warning-suppression-criteria:
+
+Repeated Warning Suppression Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The filters that suppress repeated warnings apply the following criteria to determine if a warning is considered a repeat:
+
+- ``"default"``: A warning is considered a repeat only if the (*message*, *category*, *module*, *lineno*) are all the same.
+- ``"module"``: A warning is considered a repeat if the (*message*, *category*, *module*) are the same, ignoring the line number.
+- ``"once"``: A warning is considered a repeat if the (*message*, *category*) are the same, ignoring the module and line number.
 
 
 .. _describing-warning-filters:
@@ -396,7 +411,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None, \*, skip_file_prefixes=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=())
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
@@ -522,6 +537,56 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
+.. decorator:: deprecated(msg, *, category=DeprecationWarning, stacklevel=1)
+
+   Decorator to indicate that a class, function or overload is deprecated.
+
+   When this decorator is applied to an object,
+   deprecation warnings may be emitted at runtime when the object is used.
+   :term:`static type checkers <static type checker>`
+   will also generate a diagnostic on usage of the deprecated object.
+
+   Usage::
+
+      from warnings import deprecated
+      from typing import overload
+
+      @deprecated("Use B instead")
+      class A:
+          pass
+
+      @deprecated("Use g instead")
+      def f():
+          pass
+
+      @overload
+      @deprecated("int support is deprecated")
+      def g(x: int) -> int: ...
+      @overload
+      def g(x: str) -> int: ...
+
+   The warning specified by *category* will be emitted at runtime
+   on use of deprecated objects. For functions, that happens on calls;
+   for classes, on instantiation and on creation of subclasses.
+   If the *category* is ``None``, no warning is emitted at runtime.
+   The *stacklevel* determines where the
+   warning is emitted. If it is ``1`` (the default), the warning
+   is emitted at the direct caller of the deprecated object; if it
+   is higher, it is emitted further up the stack.
+   Static type checker behavior is not affected by the *category*
+   and *stacklevel* arguments.
+
+   The deprecation message passed to the decorator is saved in the
+   ``__deprecated__`` attribute on the decorated object.
+   If applied to an overload, the decorator
+   must be after the :func:`@overload <typing.overload>` decorator
+   for the attribute to exist on the overload as returned by
+   :func:`typing.get_overloads`.
+
+   .. versionadded:: 3.13
+      See :pep:`702`.
+
+
 Available Context Managers
 --------------------------
 
@@ -544,6 +609,9 @@ Available Context Managers
     If the *action* argument is not ``None``, the remaining arguments are
     passed to :func:`simplefilter` as if it were called immediately on
     entering the context.
+
+    See :ref:`warning-filter` for the meaning of the *category* and *lineno*
+    parameters.
 
     .. note::
 

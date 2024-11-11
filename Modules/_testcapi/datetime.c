@@ -22,10 +22,17 @@ test_datetime_capi(PyObject *self, PyObject *args)
     test_run_counter++;
     PyDateTime_IMPORT;
 
-    if (PyDateTimeAPI) {
-        Py_RETURN_NONE;
+    if (PyDateTimeAPI == NULL) {
+        return NULL;
     }
-    return NULL;
+    // The following C API types need to outlive interpreters, since the
+    // borrowed references to them can be held by users without being updated.
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
+    Py_RETURN_NONE;
 }
 
 /* Functions exposing the C API type checking for testing */
@@ -85,17 +92,25 @@ make_timezones_capi(PyObject *self, PyObject *args)
 {
     PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
     PyObject *name = PyUnicode_FromString("EST");
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
     PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
     PyObject *est_zone_macro_noname = PyTimeZone_FromOffset(offset);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
-
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (est_zone_capi == NULL || est_zone_macro == NULL ||
+        est_zone_macro_noname == NULL)
+    {
+        goto error;
+    }
     PyObject *rv = PyTuple_New(3);
     if (rv == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(rv, 0, est_zone_capi);
@@ -103,13 +118,23 @@ make_timezones_capi(PyObject *self, PyObject *args)
     PyTuple_SET_ITEM(rv, 2, est_zone_macro_noname);
 
     return rv;
+error:
+    Py_XDECREF(est_zone_capi);
+    Py_XDECREF(est_zone_macro);
+    Py_XDECREF(est_zone_macro_noname);
+    return NULL;
 }
 
 static PyObject *
 get_timezones_offset_zero(PyObject *self, PyObject *args)
 {
     PyObject *offset = PyDelta_FromDSU(0, 0, 0);
-    PyObject *name = PyUnicode_FromString("");
+    PyObject *name = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     // These two should return the UTC singleton
     PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
@@ -117,16 +142,28 @@ get_timezones_offset_zero(PyObject *self, PyObject *args)
 
     // This one will return +00:00 zone, but not the UTC singleton
     PyObject *non_utc_zone = PyTimeZone_FromOffsetAndName(offset, name);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (utc_singleton_0 == NULL || utc_singleton_1 == NULL ||
+        non_utc_zone == NULL)
+    {
+        goto error;
+    }
 
     PyObject *rv = PyTuple_New(3);
+    if (rv == NULL) {
+        goto error;
+    }
     PyTuple_SET_ITEM(rv, 0, utc_singleton_0);
     PyTuple_SET_ITEM(rv, 1, utc_singleton_1);
     PyTuple_SET_ITEM(rv, 2, non_utc_zone);
 
     return rv;
+error:
+    Py_XDECREF(utc_singleton_0);
+    Py_XDECREF(utc_singleton_1);
+    Py_XDECREF(non_utc_zone);
+    return NULL;
 }
 
 static PyObject *
@@ -448,4 +485,39 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
         return -1;
     }
     return 0;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Test module for subinterpreters.
+ */
+
+static int
+_testcapi_datetime_exec(PyObject *mod)
+{
+    if (test_datetime_capi(NULL, NULL) == NULL)  {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot _testcapi_datetime_slots[] = {
+    {Py_mod_exec, _testcapi_datetime_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static struct PyModuleDef _testcapi_datetime_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testcapi_datetime",
+    .m_size = 0,
+    .m_methods = test_methods,
+    .m_slots = _testcapi_datetime_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__testcapi_datetime(void)
+{
+    return PyModuleDef_Init(&_testcapi_datetime_module);
 }

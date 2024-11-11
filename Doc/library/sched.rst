@@ -1,5 +1,5 @@
-:mod:`sched` --- Event scheduler
-================================
+:mod:`!sched` --- Event scheduler
+=================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
@@ -115,7 +115,7 @@ Scheduler Objects
 
 .. method:: scheduler.run(blocking=True)
 
-   Run all scheduled events. This method will wait  (using the :func:`delayfunc`
+   Run all scheduled events. This method will wait  (using the *delayfunc*
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 

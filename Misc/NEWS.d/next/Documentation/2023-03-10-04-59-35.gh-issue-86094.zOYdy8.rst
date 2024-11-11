@@ -1,2 +1,0 @@
-Add support for Unicode Path Extra Field in ZipFile. Patch by Yeojin Kim
-and Andrea Giudiceandrea

@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=13e0c6721ac9206c4249ecc1dc04ed617ad1e262
+expected_hacl_star_rev=315a9e491d2bc347b9dae99e0ea506995ea84d9d
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,16 +40,35 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Streaming_SHA2.h
   Hacl_Streaming_Types.h
-  Hacl_Hash_SHA1.h
-  internal/Hacl_Hash_SHA1.h
   Hacl_Hash_MD5.h
+  Hacl_Hash_SHA1.h
+  Hacl_Hash_SHA2.h
+  Hacl_Hash_SHA3.h
+  Hacl_Hash_Blake2b.h
+  Hacl_Hash_Blake2s.h
+  Hacl_Hash_Blake2b_Simd256.h
+  Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Hash_MD5.h
-  internal/Hacl_SHA2_Generic.h
-  Hacl_Streaming_SHA2.c
-  Hacl_Hash_SHA1.c
+  internal/Hacl_Hash_SHA1.h
+  internal/Hacl_Hash_SHA2.h
+  internal/Hacl_Hash_SHA3.h
+  internal/Hacl_Hash_Blake2b.h
+  internal/Hacl_Hash_Blake2s.h
+  internal/Hacl_Hash_Blake2b_Simd256.h
+  internal/Hacl_Hash_Blake2s_Simd128.h
+  internal/Hacl_Impl_Blake2_Constants.h
   Hacl_Hash_MD5.c
+  Hacl_Hash_SHA1.c
+  Hacl_Hash_SHA2.c
+  Hacl_Hash_SHA3.c
+  Hacl_Hash_Blake2b.c
+  Hacl_Hash_Blake2s.c
+  Hacl_Hash_Blake2b_Simd256.c
+  Hacl_Hash_Blake2s_Simd128.c
+  libintvector.h
+  lib_memzero0.h
+  Lib_Memzero0.c
 )
 
 declare -a include_files
@@ -123,20 +142,18 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 # compilation, but this is not necessary.
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
-# This header is useful for *other* algorithms that refer to SHA2, e.g. Ed25519
-# which needs to compute a digest of a message before signing it. Here, since no
-# other algorithm builds upon SHA2, this internal header is useless (and is not
-# included in $dist_files).
-$sed -i 's!#include.*internal/Hacl_Streaming_SHA2.h"!#include "Hacl_Streaming_SHA2.h"!g' "${all_files[@]}"
-
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Streaming_SHA2.h
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_*.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(HOST_PRINTF\|HOST_EXIT\|PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
+$sed -z -i 's!#ifndef KRML_\(HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|CHECK_SIZE_PRAGMA\|HOST_EPRINTF\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+
+# Step 3: trim whitespace (for the linter)
+
+find . -name '*.c' -or -name '*.h' | xargs $sed -i 's![[:space:]]\+$!!'
 
 echo "Updated; verify all is okay using git diff and git status."

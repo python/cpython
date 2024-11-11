@@ -1,5 +1,5 @@
-:mod:`copyreg` --- Register :mod:`pickle` support functions
-===========================================================
+:mod:`!copyreg` --- Register :mod:`!pickle` support functions
+=============================================================
 
 .. module:: copyreg
    :synopsis: Register pickle support functions.
@@ -7,8 +7,8 @@
 **Source code:** :source:`Lib/copyreg.py`
 
 .. index::
-   module: pickle
-   module: copy
+   pair: module; pickle
+   pair: module; copy
 
 --------------
 
@@ -28,8 +28,8 @@ Such constructors may be factory functions or class instances.
 .. function:: pickle(type, function, constructor_ob=None)
 
    Declares that *function* should be used as a "reduction" function for objects
-   of type *type*.  *function* should return either a string or a tuple
-   containing two or three elements. See the :attr:`~pickle.Pickler.dispatch_table`
+   of type *type*.  *function* must return either a string or a tuple
+   containing between two and six elements. See the :attr:`~pickle.Pickler.dispatch_table`
    for more details on the interface of *function*.
 
    The *constructor_ob* parameter is a legacy feature and is now ignored, but if

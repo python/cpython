@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_wmi_exec_query__doc__,
 "exec_query($module, /, query)\n"
@@ -55,15 +55,13 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *argsbuf[1];
     PyObject *query;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("exec_query", "argument 'query'", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     query = args[0];
@@ -72,4 +70,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7fdf0c0579ddb566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ac5fd7faf889e52 input=a9049054013a1b77]*/

@@ -42,7 +42,7 @@ non-existing elements are considered to be infinite.  The interesting
 property of a heap is that a[0] is always its smallest element.
 
 The strange invariant above is meant to be an efficient memory
-representation for a tournament.  The numbers below are `k', not a[k]:
+representation for a tournament.  The numbers below are 'k', not a[k]:
 
                                    0
 
@@ -55,7 +55,7 @@ representation for a tournament.  The numbers below are `k', not a[k]:
     15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
 
 
-In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In
+In the tree above, each cell 'k' is topping '2*k+1' and '2*k+2'.  In
 a usual binary tournament we see in sports, each cell is the winner
 over the two cells it tops, and we can trace the winner down the tree
 to see all opponents s/he had.  However, in many computer applications
@@ -78,7 +78,7 @@ items while the sort is going on, provided that the inserted items are
 not "better" than the last 0'th element you extracted.  This is
 especially useful in simulation contexts, where the tree holds all
 incoming events, and the "win" condition means the smallest scheduled
-time.  When an event schedule other events for execution, they are
+time.  When an event schedules other events for execution, they are
 scheduled into the future, so they can easily go into the heap.  So, a
 heap is a good structure for implementing schedulers (this is what I
 used for my MIDI sequencer :-).
@@ -91,14 +91,14 @@ are more efficient overall, yet the worst cases might be terrible.
 
 Heaps are also very useful in big disk sorts.  You most probably all
 know that a big sort implies producing "runs" (which are pre-sorted
-sequences, which size is usually related to the amount of CPU memory),
+sequences, whose size is usually related to the amount of CPU memory),
 followed by a merging passes for these runs, which merging is often
 very cleverly organised[1].  It is very important that the initial
 sort produces the longest runs possible.  Tournaments are a good way
-to that.  If, using all the memory available to hold a tournament, you
-replace and percolate items that happen to fit the current run, you'll
-produce runs which are twice the size of the memory for random input,
-and much better for input fuzzily ordered.
+to achieve that.  If, using all the memory available to hold a
+tournament, you replace and percolate items that happen to fit the
+current run, you'll produce runs which are twice the size of the
+memory for random input, and much better for input fuzzily ordered.
 
 Moreover, if you output the 0'th item on disk and get an input which
 may not fit in the current tournament (because the value "wins" over
@@ -110,7 +110,7 @@ vanishes, you switch heaps and start a new run.  Clever and quite
 effective!
 
 In a word, heaps are useful memory structures to know.  I use them in
-a few applications, and I think it is good to keep a `heap' module
+a few applications, and I think it is good to keep a 'heap' module
 around. :-)
 
 --------------------

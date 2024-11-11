@@ -3,8 +3,6 @@
  * APIs that parse and build arguments.
  */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "parts.h"
 
 static PyObject *
@@ -15,9 +13,9 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     const char *sub_format;
     PyObject *sub_keywords;
 
-    double buffers[8][4]; /* double ensures alignment where necessary */
-    PyObject *converted[8];
-    char *keywords[8 + 1]; /* space for NULL at end */
+#define MAX_PARAMS 8
+    double buffers[MAX_PARAMS][4]; /* double ensures alignment where necessary */
+    char *keywords[MAX_PARAMS + 1]; /* space for NULL at end */
 
     PyObject *return_value = NULL;
 
@@ -37,11 +35,10 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     }
 
     memset(buffers, 0, sizeof(buffers));
-    memset(converted, 0, sizeof(converted));
     memset(keywords, 0, sizeof(keywords));
 
     Py_ssize_t size = PySequence_Fast_GET_SIZE(sub_keywords);
-    if (size > 8) {
+    if (size > MAX_PARAMS) {
         PyErr_SetString(PyExc_ValueError,
             "parse_tuple_and_keywords: too many keywords in sub_keywords");
         goto exit;
@@ -49,29 +46,60 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 
     for (Py_ssize_t i = 0; i < size; i++) {
         PyObject *o = PySequence_Fast_GET_ITEM(sub_keywords, i);
-        if (!PyUnicode_FSConverter(o, (void *)(converted + i))) {
-            PyErr_Format(PyExc_ValueError,
+        if (PyUnicode_Check(o)) {
+            keywords[i] = (char *)PyUnicode_AsUTF8(o);
+            if (keywords[i] == NULL) {
+                goto exit;
+            }
+        }
+        else if (PyBytes_Check(o)) {
+            keywords[i] = PyBytes_AS_STRING(o);
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError,
                 "parse_tuple_and_keywords: "
-                "could not convert keywords[%zd] to narrow string", i);
+                "keywords must be str or bytes");
             goto exit;
         }
-        keywords[i] = PyBytes_AS_STRING(converted[i]);
     }
 
+    assert(MAX_PARAMS == 8);
     int result = PyArg_ParseTupleAndKeywords(sub_args, sub_kwargs,
         sub_format, keywords,
         buffers + 0, buffers + 1, buffers + 2, buffers + 3,
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
     if (result) {
-        return_value = Py_NewRef(Py_None);
+        int objects_only = 1;
+        int count = 0;
+        for (const char *f = sub_format; *f; f++) {
+            if (Py_ISALNUM(*f)) {
+                if (strchr("OSUY", *f) == NULL) {
+                    objects_only = 0;
+                    break;
+                }
+                count++;
+            }
+        }
+        if (objects_only) {
+            return_value = PyTuple_New(count);
+            if (return_value == NULL) {
+                goto exit;
+            }
+            for (Py_ssize_t i = 0; i < count; i++) {
+                PyObject *arg = *(PyObject **)(buffers + i);
+                if (arg == NULL) {
+                    arg = Py_None;
+                }
+                PyTuple_SET_ITEM(return_value, i, Py_NewRef(arg));
+            }
+        }
+        else {
+            return_value = Py_NewRef(Py_None);
+        }
     }
 
 exit:
-    size = sizeof(converted) / sizeof(converted[0]);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        Py_XDECREF(converted[i]);
-    }
     return return_value;
 }
 
@@ -114,32 +142,141 @@ getargs_w_star(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_empty_argparse(PyObject *self, PyObject *Py_UNUSED(ignored))
+getargs_w_star_opt(PyObject *self, PyObject *args)
 {
-    /* Test that formats can begin with '|'. See issue #4720. */
-    PyObject *dict = NULL;
-    static char *kwlist[] = {NULL};
-    PyObject *tuple = PyTuple_New(0);
-    if (!tuple) {
+    Py_buffer buffer;
+    Py_buffer buf2;
+    int number = 1;
+
+    if (!PyArg_ParseTuple(args, "w*|w*i:getargs_w_star",
+                          &buffer, &buf2, &number)) {
         return NULL;
     }
+
+    if (2 <= buffer.len) {
+        char *str = buffer.buf;
+        str[0] = '[';
+        str[buffer.len-1] = ']';
+    }
+
+    PyObject *result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
+/* Test the old w and w# codes that no longer work */
+static PyObject *
+test_w_code_invalid(PyObject *self, PyObject *arg)
+{
+    static const char * const keywords[] = {"a", "b", "c", "d", NULL};
+    char *formats_3[] = {"O|w#$O",
+                         "O|w$O",
+                         "O|w#O",
+                         "O|wO",
+                         NULL};
+    char *formats_4[] = {"O|w#O$O",
+                         "O|wO$O",
+                         "O|Ow#O",
+                         "O|OwO",
+                         "O|Ow#$O",
+                         "O|Ow$O",
+                         NULL};
+    size_t n;
+    PyObject *args;
+    PyObject *kwargs;
+    PyObject *tmp;
+
+    if (!(args = PyTuple_Pack(1, Py_None))) {
+        return NULL;
+    }
+
+    kwargs = PyDict_New();
+    if (!kwargs) {
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(kwargs, "c", Py_None)) {
+        Py_DECREF(args);
+        Py_XDECREF(kwargs);
+        return NULL;
+    }
+
+    for (n = 0; formats_3[n]; ++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_3[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_3[n]);
+            return NULL;
+        }
+        else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+    }
+
+    if (PyDict_DelItemString(kwargs, "c") ||
+        PyDict_SetItemString(kwargs, "d", Py_None)) {
+
+        Py_DECREF(kwargs);
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    for (n = 0; formats_4[n]; ++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_4[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_4[n]);
+            return NULL;
+        }
+        else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+    }
+
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+getargs_empty(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    /* Test that formats can begin with '|'. See issue #4720. */
+    assert(PyTuple_CheckExact(args));
+    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+
     int result;
-    if (!(result = PyArg_ParseTuple(tuple, "|:test_empty_argparse"))) {
-        goto done;
+    if (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0) {
+        static char *kwlist[] = {NULL};
+        result = PyArg_ParseTupleAndKeywords(args, kwargs, "|:getargs_empty",
+                                             kwlist);
     }
-    dict = PyDict_New();
-    if (!dict) {
-        goto done;
+    else {
+        result = PyArg_ParseTuple(args, "|:getargs_empty");
     }
-    result = PyArg_ParseTupleAndKeywords(tuple, dict, "|:test_empty_argparse",
-                                         kwlist);
-  done:
-    Py_DECREF(tuple);
-    Py_XDECREF(dict);
     if (!result) {
         return NULL;
     }
-    Py_RETURN_NONE;
+    return PyLong_FromLong(result);
 }
 
 /* Test tuple argument processing */
@@ -328,75 +465,6 @@ getargs_K(PyObject *self, PyObject *args)
         return NULL;
     }
     return PyLong_FromUnsignedLongLong(value);
-}
-
-/* This function not only tests the 'k' getargs code, but also the
-   PyLong_AsUnsignedLongMask() function. */
-static PyObject *
-test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple, *num;
-    unsigned long value;
-
-    tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    /* a number larger than ULONG_MAX even on 64-bit platforms */
-    num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL) {
-        return NULL;
-    }
-
-    value = PyLong_AsUnsignedLongMask(num);
-    if (value != ULONG_MAX) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: "
-            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
-    }
-    if (value != ULONG_MAX) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: k code returned wrong value for long 0xFFF...FFF");
-        return NULL;
-    }
-
-    Py_DECREF(num);
-    num = PyLong_FromString("-FFFFFFFF000000000000000042", NULL, 16);
-    if (num == NULL) {
-        return NULL;
-    }
-
-    value = PyLong_AsUnsignedLongMask(num);
-    if (value != (unsigned long)-0x42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: "
-            "PyLong_AsUnsignedLongMask() returned wrong value for long -0xFFF..000042");
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
-    }
-    if (value != (unsigned long)-0x42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: k code returned wrong value for long -0xFFF..000042");
-        return NULL;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -592,54 +660,6 @@ getargs_y_hash(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-getargs_u(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    if (!PyArg_ParseTuple(args, "u", &str)) {
-        return NULL;
-    }
-    return PyUnicode_FromWideChar(str, -1);
-}
-
-static PyObject *
-getargs_u_hash(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "u#", &str, &size)) {
-        return NULL;
-    }
-    return PyUnicode_FromWideChar(str, size);
-}
-
-static PyObject *
-getargs_Z(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    if (!PyArg_ParseTuple(args, "Z", &str)) {
-        return NULL;
-    }
-    if (str != NULL) {
-        return PyUnicode_FromWideChar(str, -1);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-getargs_Z_hash(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "Z#", &str, &size)) {
-        return NULL;
-    }
-    if (str != NULL) {
-        return PyUnicode_FromWideChar(str, size);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 getargs_es(PyObject *self, PyObject *args)
 {
     PyObject *arg;
@@ -727,133 +747,6 @@ getargs_et_hash(PyObject *self, PyObject *args)
     return result;
 }
 
-/* Test the L code for PyArg_ParseTuple.  This should deliver a long long
-   for both long and int arguments.  The test may leak a little memory if
-   it fails.
-*/
-static PyObject *
-test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple, *num;
-    long long value;
-
-    tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    num = PyLong_FromLong(42);
-    if (num == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = -1;
-    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
-    }
-    if (value != 42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_L_code: L code returned wrong value for long 42");
-        return NULL;
-    }
-
-    Py_DECREF(num);
-    num = PyLong_FromLong(42);
-    if (num == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = -1;
-    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
-    }
-    if (value != 42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_L_code: L code returned wrong value for int 42");
-        return NULL;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-}
-
-/* Test the s and z codes for PyArg_ParseTuple.
-*/
-static PyObject *
-test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    /* Unicode strings should be accepted */
-    PyObject *tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    PyObject *obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
-                                     "latin-1", NULL);
-    if (obj == NULL) {
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, obj);
-
-    /* These two blocks used to raise a TypeError:
-     * "argument must be string without null bytes, not str"
-     */
-    char *value;
-    if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
-        return NULL;
-    }
-
-    if (!PyArg_ParseTuple(tuple, "z:test_s_code2", &value)) {
-        return NULL;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-}
-
-#undef PyArg_ParseTupleAndKeywords
-PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                            const char *, char **, ...);
-
-static PyObject *
-getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|s#i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|(s#)i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
 static PyObject *
 gh_99240_clear_args(PyObject *self, PyObject *args)
 {
@@ -885,8 +778,6 @@ static PyMethodDef test_methods[] = {
     {"getargs_S",               getargs_S,                       METH_VARARGS},
     {"getargs_U",               getargs_U,                       METH_VARARGS},
     {"getargs_Y",               getargs_Y,                       METH_VARARGS},
-    {"getargs_Z",               getargs_Z,                       METH_VARARGS},
-    {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_c",               getargs_c,                       METH_VARARGS},
     {"getargs_d",               getargs_d,                       METH_VARARGS},
@@ -906,13 +797,11 @@ static PyMethodDef test_methods[] = {
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
-    {"getargs_s_hash_int", _PyCFunction_CAST(getargs_s_hash_int), METH_VARARGS|METH_KEYWORDS},
-    {"getargs_s_hash_int2", _PyCFunction_CAST(getargs_s_hash_int2), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
-    {"getargs_u",               getargs_u,                       METH_VARARGS},
-    {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
+    {"getargs_w_star_opt",      getargs_w_star_opt,              METH_VARARGS},
+    {"getargs_empty",           _PyCFunction_CAST(getargs_empty), METH_VARARGS|METH_KEYWORDS},
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
     {"getargs_y_star",          getargs_y_star,                  METH_VARARGS},
@@ -920,11 +809,8 @@ static PyMethodDef test_methods[] = {
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords,       METH_VARARGS},
-    {"test_L_code",             test_L_code,                     METH_NOARGS},
-    {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
-    {"test_k_code",             test_k_code,                     METH_NOARGS},
-    {"test_s_code",             test_s_code,                     METH_NOARGS},
     {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
+    {"test_w_code_invalid",     test_w_code_invalid,             METH_NOARGS},
     {NULL},
 };
 

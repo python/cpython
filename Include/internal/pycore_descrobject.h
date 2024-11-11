@@ -20,6 +20,8 @@ typedef struct {
 
 typedef propertyobject _PyPropertyObject;
 
+extern PyTypeObject _PyMethodWrapper_Type;
+
 #ifdef __cplusplus
 }
 #endif
