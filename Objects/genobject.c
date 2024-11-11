@@ -79,6 +79,22 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 void
+_PyGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyGenObject *gen = (PyGenObject *)op;
+    if (gen->gi_frame_state == FRAME_CLEARED) {
+        return;
+    }
+    _PyGC_MoveToReachable(gen->gi_exc_state.exc_value, reachable, visited_space);
+    if (gen->gi_frame_state == FRAME_EXECUTING) {
+        /* if executing we already traversed it on the stack */
+        return;
+    }
+    _PyInterpreterFrame *frame = &gen->gi_iframe;
+   _PyFrame_MoveToReachable(frame, reachable, visited_space);
+}
+
+void
 _PyGen_Finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
@@ -1426,6 +1442,14 @@ typedef struct _PyAsyncGenWrappedValue {
      _Py_CAST(_PyAsyncGenWrappedValue*, (op)))
 
 
+void
+_PyAsyncGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyAsyncGenObject *ag = _PyAsyncGenObject_CAST(op);
+    _PyGC_MoveToReachable(ag->ag_origin_or_finalizer, reachable, visited_space);
+    _PyGen_MoveToReachable(op, reachable, visited_space);
+}
+
 static int
 async_gen_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1634,24 +1658,8 @@ PyTypeObject PyAsyncGen_Type = {
     async_gen_methods,                          /* tp_methods */
     async_gen_memberlist,                       /* tp_members */
     async_gen_getsetlist,                       /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
+    .tp_version_tag = _Py_TYPE_VERSION_ASYNC_GENERATOR,
 };
 
 
@@ -1722,6 +1730,14 @@ async_gen_asend_dealloc(PyObject *self)
     _PyGC_CLEAR_FINALIZED(self);
 
     _Py_FREELIST_FREE(async_gen_asends, self, PyObject_GC_Del);
+}
+
+void
+_PyAsyncAsend_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(op);
+    _PyGC_MoveToReachable((PyObject *)ags->ags_sendval, reachable, visited_space);
+    _PyAsyncGen_MoveToReachable((PyObject *)ags->ags_gen, reachable, visited_space);
 }
 
 static int
@@ -1896,17 +1912,8 @@ PyTypeObject _PyAsyncGenASend_Type = {
     PyObject_SelfIter,                          /* tp_iter */
     async_gen_asend_iternext,                   /* tp_iternext */
     async_gen_asend_methods,                    /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
     .tp_finalize = async_gen_asend_finalize,
+    .tp_version_tag = _Py_TYPE_VERSION_ASYNC_ASEND,
 };
 
 

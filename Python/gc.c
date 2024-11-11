@@ -1418,8 +1418,8 @@ completed_cycle(GCState *gcstate)
     gcstate->phase = GC_PHASE_MARK;
 }
 
-static Py_ssize_t
-move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+void
+_PyGC_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
 {
     if (op != NULL && !_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -1427,20 +1427,18 @@ move_to_reachable(PyObject *op, PyGC_Head *reachable, int visited_space)
             gc_old_space(gc) != visited_space) {
             gc_flip_old_space(gc);
             gc_list_move(gc, reachable);
-            return 1;
         }
     }
-    return 0;
 }
 
-static Py_ssize_t
-move_frame_to_reachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int visited_space)
+void
+_PyFrame_MoveToReachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int visited_space)
 {
     _PyStackRef *locals = frame->localsplus;
     _PyStackRef *sp = frame->stackpointer;
-    Py_ssize_t objects_marked = move_to_reachable(frame->f_locals, reachable, visited_space);
+    _PyGC_MoveToReachable(frame->f_locals, reachable, visited_space);
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    objects_marked += move_to_reachable(func, reachable, visited_space);
+    _PyGC_MoveToReachable(func, reachable, visited_space);
     while (sp > locals) {
         sp--;
         if (PyStackRef_IsNull(*sp)) {
@@ -1452,12 +1450,10 @@ move_frame_to_reachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int vi
             if (_PyObject_GC_IS_TRACKED(op) &&
                 gc_old_space(gc) != visited_space) {
                 gc_flip_old_space(gc);
-                objects_marked++;
                 gc_list_move(gc, reachable);
             }
         }
     }
-    return objects_marked;
 }
 
 /* This should be refactored:
@@ -1466,7 +1462,15 @@ move_frame_to_reachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int vi
  * 3. Trust lto to inline those functions.
  */
 
-extern int _PyTemporary_SetNext(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr);
+extern void _PySet_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyAsyncGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyAsyncAsend_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyList_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyTuple_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+extern void _PyType_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+
 
 static Py_ssize_t
 mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
@@ -1479,31 +1483,20 @@ mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
     };
     Py_ssize_t objects_marked = 0;
     while (!gc_list_is_empty(reachable)) {
-        PyGC_Head *gc = _PyGCHead_NEXT(reachable);
+        /* Pop from the back of the list, to do depth first traversal */
+        PyGC_Head *gc = _PyGCHead_PREV(reachable);
         assert(gc_old_space(gc) == visited_space);
         gc_list_move(gc, visited);
+        objects_marked++;
         PyObject *op = FROM_GC(gc);
         assert(PyObject_IS_GC(op));
         switch(Py_TYPE(op)->tp_version_tag) {
             case _Py_TYPE_VERSION_LIST:
-            {
-                PyListObject *o = (PyListObject *)op;
-                Py_ssize_t i;
-                for (i = Py_SIZE(o); --i >= 0; ) {
-                    PyObject *item = o->ob_item[i];
-                    objects_marked += move_to_reachable(item, reachable, visited_space);
-                }
+                _PyList_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
             case _Py_TYPE_VERSION_TUPLE:
-            {
-                PyTupleObject *o = (PyTupleObject *)op;
-                for (Py_ssize_t i = Py_SIZE(o); --i >= 0; ) {
-                    PyObject *item = o->ob_item[i];
-                    objects_marked += move_to_reachable(item, reachable, visited_space);
-                }
+                _PyTuple_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
             case _Py_TYPE_VERSION_MODULE:
             {
                 PyModuleObject *m = (PyModuleObject *)op;
@@ -1518,77 +1511,25 @@ mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
             }
             /* fall through */
             case _Py_TYPE_VERSION_DICT:
-            {
-                PyDictObject *mp = (PyDictObject *)op;
-                PyDictKeysObject *keys = mp->ma_keys;
-                Py_ssize_t i, n = keys->dk_nentries;
-                if (DK_IS_UNICODE(keys)) {
-                    if (_PyDict_HasSplitTable(mp)) {
-                        if (!mp->ma_values->embedded) {
-                            for (i = 0; i < n; i++) {
-                                PyObject *value = mp->ma_values->values[i];
-                                objects_marked += move_to_reachable(value, reachable, visited_space);
-                            }
-                        }
-                    }
-                    else {
-                        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
-                        for (i = 0; i < n; i++) {
-                            PyObject *value = entries[i].me_value;
-                            objects_marked += move_to_reachable(value, reachable, visited_space);
-                        }
-                    }
-                }
-                else {
-                    PyDictKeyEntry *entries = DK_ENTRIES(keys);
-                    for (i = 0; i < n; i++) {
-                        if (entries[i].me_value != NULL) {
-                            PyObject *key = entries[i].me_key;
-                            objects_marked += move_to_reachable(key, reachable, visited_space);
-                            PyObject *value = entries[i].me_value;
-                            objects_marked += move_to_reachable(value, reachable, visited_space);
-                        }
-                    }
-                }
+                _PyDict_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
             case _Py_TYPE_VERSION_SET:
             case _Py_TYPE_VERSION_FROZEN_SET:
-            {
-                PySetObject *so = (PySetObject *)op;
-                Py_ssize_t pos = 0;
-                setentry *entry;
-                while (_PyTemporary_SetNext(so, &pos, &entry)) {
-                    objects_marked += move_to_reachable(entry->key, reachable, visited_space);
-                }
+                _PySet_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
+            case _Py_TYPE_VERSION_ASYNC_GENERATOR:
+                _PyAsyncGen_MoveToReachable(op, reachable, visited_space);
+                break;
+            case _Py_TYPE_VERSION_ASYNC_ASEND:
+                _PyAsyncAsend_MoveToReachable(op, reachable, visited_space);
+                break;
             case _Py_TYPE_VERSION_COROUTINE:
             case _Py_TYPE_VERSION_GENERATOR:
-            {
-                PyGenObject *gen = (PyGenObject *)op;
-                if (gen->gi_frame_state == FRAME_CLEARED) {
-                    break;
-                }
-                objects_marked += move_to_reachable(gen->gi_exc_state.exc_value, reachable, visited_space);
-                if (gen->gi_frame_state != FRAME_EXECUTING) {
-                    /* if executing we already traversed it on the stack */
-                    _PyInterpreterFrame *frame = &gen->gi_iframe;
-                    objects_marked += move_frame_to_reachable(frame, reachable, visited_space);
-                }
+                _PyGen_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
             case _Py_TYPE_VERSION_TYPE:
-            {
-                PyTypeObject *type = (PyTypeObject *)op;
-                objects_marked += move_to_reachable(type->tp_dict, reachable, visited_space);
-                objects_marked += move_to_reachable(type->tp_cache, reachable, visited_space);
-                objects_marked += move_to_reachable(type->tp_mro, reachable, visited_space);
-                objects_marked += move_to_reachable(type->tp_bases, reachable, visited_space);
-                objects_marked += move_to_reachable((PyObject *)type->tp_base, reachable, visited_space);
-                objects_marked += move_to_reachable(((PyHeapTypeObject *)type)->ht_module, reachable, visited_space);
+                _PyType_MoveToReachable(op, reachable, visited_space);
                 break;
-            }
             default:
             {
                 traverseproc traverse = Py_TYPE(op)->tp_traverse;
@@ -1597,7 +1538,7 @@ mark_all_reachable(PyGC_Head *reachable, PyGC_Head *visited, int visited_space)
         }
     }
     gc_list_validate_space(visited, visited_space);
-    return objects_marked + arg.size;
+    return objects_marked;
 }
 
 static Py_ssize_t
@@ -1606,21 +1547,21 @@ mark_global_roots(PyInterpreterState *interp, PyGC_Head *visited, int visited_sp
     PyGC_Head reachable;
     gc_list_init(&reachable);
     Py_ssize_t objects_marked = 0;
-    objects_marked += move_to_reachable(interp->sysdict, &reachable, visited_space);
-    objects_marked += move_to_reachable(interp->builtins, &reachable, visited_space);
-    objects_marked += move_to_reachable(interp->dict, &reachable, visited_space);
+    _PyGC_MoveToReachable(interp->sysdict, &reachable, visited_space);
+    _PyGC_MoveToReachable(interp->builtins, &reachable, visited_space);
+    _PyGC_MoveToReachable(interp->dict, &reachable, visited_space);
     struct types_state *types = &interp->types;
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES; i++) {
-        objects_marked += move_to_reachable(types->builtins.initialized[i].tp_dict, &reachable, visited_space);
-        objects_marked += move_to_reachable(types->builtins.initialized[i].tp_subclasses, &reachable, visited_space);
+         _PyGC_MoveToReachable(types->builtins.initialized[i].tp_dict, &reachable, visited_space);
+        _PyGC_MoveToReachable(types->builtins.initialized[i].tp_subclasses, &reachable, visited_space);
     }
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
-        objects_marked += move_to_reachable(types->for_extensions.initialized[i].tp_dict, &reachable, visited_space);
-        objects_marked += move_to_reachable(types->for_extensions.initialized[i].tp_subclasses, &reachable, visited_space);
+        _PyGC_MoveToReachable(types->for_extensions.initialized[i].tp_dict, &reachable, visited_space);
+        _PyGC_MoveToReachable(types->for_extensions.initialized[i].tp_subclasses, &reachable, visited_space);
     }
     objects_marked += mark_all_reachable(&reachable, visited, visited_space);
     assert(gc_list_is_empty(&reachable));
-    return objects_marked;
+    return objects_marked + 20;
 }
 
 static Py_ssize_t
@@ -1628,7 +1569,6 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
 {
     PyGC_Head reachable;
     gc_list_init(&reachable);
-    Py_ssize_t objects_marked = 0;
     // Move all objects on stacks to reachable
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
@@ -1641,7 +1581,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
                 frame = frame->previous;
                 continue;
             }
-            objects_marked += move_frame_to_reachable(frame, &reachable, visited_space);
+            _PyFrame_MoveToReachable(frame, &reachable, visited_space);
             if (!start && frame->visited) {
                 // If this frame has already been visited, then the lower frames
                 // will have already been visited and will not have changed
@@ -1654,7 +1594,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
         ts = PyThreadState_Next(ts);
         HEAD_UNLOCK(runtime);
     }
-    objects_marked += mark_all_reachable(&reachable, visited, visited_space);
+    Py_ssize_t objects_marked = mark_all_reachable(&reachable, visited, visited_space);
     assert(gc_list_is_empty(&reachable));
     return objects_marked;
 }

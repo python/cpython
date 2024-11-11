@@ -623,6 +623,16 @@ tuple_count(PyTupleObject *self, PyObject *value)
     return PyLong_FromSsize_t(count);
 }
 
+void
+_PyTuple_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyTupleObject *o = (PyTupleObject *)op;
+    for (Py_ssize_t i = Py_SIZE(o); --i >= 0; ) {
+        PyObject *item = o->ob_item[i];
+        _PyGC_MoveToReachable(item, reachable, visited_space);
+    }
+}
+
 static int
 tuple_traverse(PyObject *self, visitproc visit, void *arg)
 {

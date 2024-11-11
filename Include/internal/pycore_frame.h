@@ -409,6 +409,9 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
 
+void
+_PyFrame_MoveToReachable(_PyInterpreterFrame *frame, PyGC_Head *reachable, int visited_space);
+
 #ifdef __cplusplus
 }
 #endif

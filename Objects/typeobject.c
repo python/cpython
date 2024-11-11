@@ -6214,6 +6214,19 @@ PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
 "type(name, bases, dict, **kwds) -> a new type");
 
+
+void
+_PyType_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyTypeObject *type = (PyTypeObject *)op;
+    _PyGC_MoveToReachable(type->tp_dict, reachable, visited_space);
+    _PyGC_MoveToReachable(type->tp_cache, reachable, visited_space);
+    _PyGC_MoveToReachable(type->tp_mro, reachable, visited_space);
+    _PyGC_MoveToReachable(type->tp_bases, reachable, visited_space);
+    _PyGC_MoveToReachable((PyObject *)type->tp_base, reachable, visited_space);
+    _PyGC_MoveToReachable(((PyHeapTypeObject *)type)->ht_module, reachable, visited_space);
+}
+
 static int
 type_traverse(PyObject *self, visitproc visit, void *arg)
 {

@@ -4475,6 +4475,42 @@ dict_popitem_impl(PyDictObject *self)
     return res;
 }
 
+void
+_PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PyDictObject *mp = (PyDictObject *)op;
+    PyDictKeysObject *keys = mp->ma_keys;
+    Py_ssize_t i, n = keys->dk_nentries;
+    if (DK_IS_UNICODE(keys)) {
+        if (_PyDict_HasSplitTable(mp)) {
+            if (!mp->ma_values->embedded) {
+                for (i = 0; i < n; i++) {
+                    PyObject *value = mp->ma_values->values[i];
+                    _PyGC_MoveToReachable(value, reachable, visited_space);
+                }
+            }
+        }
+        else {
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+            for (i = 0; i < n; i++) {
+                PyObject *value = entries[i].me_value;
+                _PyGC_MoveToReachable(value, reachable, visited_space);
+            }
+        }
+    }
+    else {
+        PyDictKeyEntry *entries = DK_ENTRIES(keys);
+        for (i = 0; i < n; i++) {
+            if (entries[i].me_value != NULL) {
+                PyObject *key = entries[i].me_key;
+                _PyGC_MoveToReachable(key, reachable, visited_space);
+                PyObject *value = entries[i].me_value;
+                _PyGC_MoveToReachable(value, reachable, visited_space);
+            }
+        }
+    }
+}
+
 static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {

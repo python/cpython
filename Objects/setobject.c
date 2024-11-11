@@ -492,11 +492,6 @@ set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
     return 1;
 }
 
-int _PyTemporary_SetNext(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
-{
-    return set_next(so, pos_ptr, entry_ptr);
-}
-
 static void
 set_dealloc(PyObject *self)
 {
@@ -703,6 +698,17 @@ set_traverse(PyObject *self, visitproc visit, void *arg)
     while (set_next(so, &pos, &entry))
         Py_VISIT(entry->key);
     return 0;
+}
+
+void
+_PySet_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+{
+    PySetObject *so = (PySetObject *)op;
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next(so, &pos, &entry)) {
+        _PyGC_MoveToReachable(entry->key, reachable, visited_space);
+    }
 }
 
 /* Work to increase the bit dispersion for closely spaced hash values.
