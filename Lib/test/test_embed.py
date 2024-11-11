@@ -1,5 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
@@ -168,7 +169,8 @@ class EmbeddingTestsMixin:
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose > 1:
+            if support.verbose > 2:
+                # 5 lines per pass is super-spammy, so limit that to -vvv
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
@@ -279,6 +281,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
@@ -296,6 +302,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
         out, err = self.run_embedded_interpreter(
                         "test_pre_initialization_sys_options", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
@@ -379,6 +389,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
+                        # LOAD_CONST_IMMORTAL is "specialized", but is
+                        # inserted during quickening.
+                        and opname != "LOAD_CONST_IMMORTAL"
                     ):
                         return True
                 return False
@@ -631,6 +644,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['run_presite'] = None
     if support.Py_GIL_DISABLED:
         CONFIG_COMPAT['enable_gil'] = -1
+        CONFIG_COMPAT['tlbc_enabled'] = GET_DEFAULT_CONFIG
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': False,
@@ -1768,8 +1782,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
+        # Temporarily enable ignore_stderr=True to ignore warnings on JIT builds
+        # See gh-126255 for more information
         self.check_all_configs("test_initconfig_api", config, preconfig,
-                               api=API_ISOLATED)
+                               api=API_ISOLATED, ignore_stderr=True)
 
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")

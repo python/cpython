@@ -1289,6 +1289,35 @@ Reading directories
    raised.
 
 
+.. method:: Path.scandir()
+
+   When the path points to a directory, return an iterator of
+   :class:`os.DirEntry` objects corresponding to entries in the directory. The
+   returned iterator supports the :term:`context manager` protocol. It is
+   implemented using :func:`os.scandir` and gives the same guarantees.
+
+   Using :meth:`~Path.scandir` instead of :meth:`~Path.iterdir` can
+   significantly increase the performance of code that also needs file type or
+   file attribute information, because :class:`os.DirEntry` objects expose
+   this information if the operating system provides it when scanning a
+   directory.
+
+   The following example displays the names of subdirectories. The
+   ``entry.is_dir()`` check will generally not make an additional system call::
+
+      >>> p = Path('docs')
+      >>> with p.scandir() as entries:
+      ...     for entry in entries:
+      ...         if entry.is_dir():
+      ...             entry.name
+      ...
+      '_templates'
+      '_build'
+      '_static'
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    Glob the given relative *pattern* in the directory represented by this path,
@@ -1563,7 +1592,12 @@ Copying, moving and deleting
    This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
-   .. versionadded:: next
+   .. note::
+      Where supported by the operating system and file system, this method
+      performs a lightweight copy, where data blocks are only copied when
+      modified. This is known as copy-on-write.
+
+   .. versionadded:: 3.14
 
 
 .. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
@@ -1574,7 +1608,7 @@ Copying, moving and deleting
    :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
    copy.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. method:: Path.rename(target)

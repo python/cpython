@@ -141,6 +141,13 @@ prefix=		@prefix@
 # Install prefix for architecture-dependent files
 exec_prefix=	@exec_prefix@
 
+# For cross compilation, we distinguish between "prefix" (where we install the
+# files) and "host_prefix" (where getpath.c expects to find the files at
+# runtime)
+host_prefix= 	@host_prefix@
+host_exec_prefix= 	@host_exec_prefix@
+
+
 # Install prefix for data files
 datarootdir=    @datarootdir@
 
@@ -453,6 +460,7 @@ PYTHON_OBJS=	\
 		Python/hashtable.o \
 		Python/import.o \
 		Python/importdl.o \
+		Python/index_pool.o \
 		Python/initconfig.o \
 		Python/interpconfig.o \
 		Python/instrumentation.o \
@@ -897,7 +905,7 @@ coverage-report: regen-token regen-frozen
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --force --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
@@ -1032,6 +1040,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 PYTHON_HEADERS= \
 		$(srcdir)/Include/Python.h \
 		$(srcdir)/Include/abstract.h \
+		$(srcdir)/Include/audit.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
@@ -1110,6 +1119,7 @@ PYTHON_HEADERS= \
 		$(PARSER_HEADERS) \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
+		$(srcdir)/Include/cpython/audit.h \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
 		$(srcdir)/Include/cpython/cellobject.h \
@@ -1159,7 +1169,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
-		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tracemalloc.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
@@ -1174,6 +1183,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
+		$(srcdir)/Include/internal/pycore_audit.h \
 		$(srcdir)/Include/internal/pycore_backoff.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_blocks_output_buffer.h \
@@ -1193,6 +1203,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_critical_section.h \
 		$(srcdir)/Include/internal/pycore_crossinterp.h \
+		$(srcdir)/Include/internal/pycore_crossinterp_data_registry.h \
+		$(srcdir)/Include/internal/pycore_debug_offsets.h \
 		$(srcdir)/Include/internal/pycore_descrobject.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
@@ -1218,6 +1230,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_importdl.h \
+		$(srcdir)/Include/internal/pycore_index_pool.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_instruments.h \
 		$(srcdir)/Include/internal/pycore_instruction_sequence.h \
@@ -1737,8 +1750,8 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
-		-DPREFIX='"$(prefix)"' \
-		-DEXEC_PREFIX='"$(exec_prefix)"' \
+		-DPREFIX='"$(host_prefix)"' \
+		-DEXEC_PREFIX='"$(host_exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
@@ -2094,6 +2107,12 @@ cleantest: all
 # Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
+	$(TESTRUNNER) --fast-ci -u-gui --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+
+# Run a basic set of regression tests inside the CI.
+# This excludes some tests that are particularly resource-intensive.
+# Similar to test, but also runs GUI tests.
+ci: all
 	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
@@ -2529,8 +2548,13 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
 		test/test_ttk \
 		test/test_unittest \
+		test/test_unittest/namespace_test_pkg \
+		test/test_unittest/namespace_test_pkg/bar \
+		test/test_unittest/namespace_test_pkg/noop \
+		test/test_unittest/namespace_test_pkg/noop/no2 \
 		test/test_unittest/testmock \
 		test/test_warnings \
 		test/test_warnings/data \
@@ -2541,6 +2565,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tkinterdata \
 		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \

@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-Python 3.13 will be released on October 7, 2024.
+Python 3.13 was released on October 7, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 will be the latest stable release of the Python programming
+Python 3.13 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -274,7 +274,7 @@ Improved error messages
        File "/home/me/random.py", line 3, in <module>
          print(random.randint(5))
                ^^^^^^^^^^^^^^
-     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and prevents importing that standard library module)
 
   Similarly, if a script has the same name as a third-party
   module that it attempts to import and this results in errors,
@@ -289,7 +289,7 @@ Improved error messages
        File "/home/me/numpy.py", line 3, in <module>
          np.array([1, 2, 3])
          ^^^^^^^^
-     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a third-party module you intended to import)
+     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a library you intended to import)
 
   (Contributed by Shantanu Jain in :gh:`95754`.)
 
@@ -814,6 +814,10 @@ ctypes
   See :gh:`124520` for discussion and links to changes in some affected
   projects.
 
+* :class:`ctypes.Structure` objects have a new :attr:`~ctypes.Structure._align_`
+  attribute which allows the alignment of the structure being packed to/from
+  memory to be specified explicitly.
+  (Contributed by Matt Sanderson in :gh:`112433`)
 
 dbm
 ---
@@ -918,12 +922,12 @@ importlib
   * :func:`~importlib.resources.read_text`
 
   These functions are no longer deprecated and are not scheduled for removal.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 * :func:`~importlib.resources.contents` remains deprecated in favor of
   the fully-featured :class:`~importlib.resources.abc.Traversable` API.
   However, there is now no plan to remove it.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 
 io
@@ -2491,9 +2495,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.5 are now required to regenerate
   the :file:`configure` script.
-  (Contributed by Christian Heimes in :gh:`89886`.)
+  (Contributed by Christian Heimes in :gh:`89886` and by Victor Stinner in :gh:`112090`.)
 
 * SQLite 3.15.2 or newer is required to build
   the :mod:`sqlite3` extension module.

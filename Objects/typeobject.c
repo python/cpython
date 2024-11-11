@@ -476,7 +476,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
             assert(PyTuple_GET_SIZE(bases) == 1);
             assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
             assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-            assert(_Py_IsImmortalLoose(self->tp_base));
+            assert(_Py_IsImmortal(self->tp_base));
         }
         _Py_SetImmortal(bases);
     }
@@ -493,7 +493,7 @@ clear_tp_bases(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_bases);
                 }
                 else {
-                    assert(_Py_IsImmortalLoose(self->tp_bases));
+                    assert(_Py_IsImmortal(self->tp_bases));
                     _Py_ClearImmortal(self->tp_bases);
                 }
             }
@@ -558,7 +558,7 @@ clear_tp_mro(PyTypeObject *self, int final)
                     Py_CLEAR(self->tp_mro);
                 }
                 else {
-                    assert(_Py_IsImmortalLoose(self->tp_mro));
+                    assert(_Py_IsImmortal(self->tp_mro));
                     _Py_ClearImmortal(self->tp_mro);
                 }
             }
@@ -4637,6 +4637,32 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
+static int
+check_immutable_bases(const char *type_name, PyObject *bases, int skip_first)
+{
+    Py_ssize_t i = 0;
+    if (skip_first) {
+        // When testing the MRO, skip the type itself
+        i = 1;
+    }
+    for (; i<PyTuple_GET_SIZE(bases); i++) {
+        PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
+        if (!b) {
+            return -1;
+        }
+        if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "Creating immutable type %s from mutable base %N",
+                type_name, b
+            );
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 /* Set *dest to the offset specified by a special "__*offset__" member.
  * Return 0 on success, -1 on failure.
  */
@@ -4820,19 +4846,8 @@ PyType_FromMetaclass(
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        for (int i=0; i<PyTuple_GET_SIZE(bases); i++) {
-            PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
-            if (!b) {
-                goto finally;
-            }
-            if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "Creating immutable type %s from mutable base %N",
-                    spec->name, b
-                );
-                goto finally;
-            }
+        if (check_immutable_bases(spec->name, bases, 0) < 0) {
+            goto finally;
         }
     }
 
@@ -5025,7 +5040,7 @@ PyType_FromMetaclass(
     type->tp_dictoffset = dictoffset;
 
 #ifdef Py_GIL_DISABLED
-    // Assign a type id to enable thread-local refcounting
+    // Assign a unique id to enable per-thread refcounting
     res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
@@ -5269,11 +5284,10 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 
 
 static PyTypeObject *
-get_base_by_token_recursive(PyTypeObject *type, void *token)
+get_base_by_token_recursive(PyObject *bases, void *token)
 {
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-    PyObject *bases = lookup_tp_bases(type);
     assert(bases != NULL);
+    PyTypeObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
@@ -5281,112 +5295,76 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
+            res = base;
+            break;
         }
-        base = get_base_by_token_recursive(base, token);
+        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
         if (base != NULL) {
-            return base;
+            res = base;
+            break;
         }
     }
-    return NULL;
-}
-
-static inline PyTypeObject *
-get_base_by_token_from_mro(PyTypeObject *type, void *token)
-{
-    // Bypass lookup_tp_mro() as PyType_IsSubtype() does
-    PyObject *mro = type->tp_mro;
-    assert(mro != NULL);
-    assert(PyTuple_Check(mro));
-    // mro_invoke() ensures that the type MRO cannot be empty.
-    assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which is supposed
-    // to be already checked by the caller. We skip it in the loop.
-    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-
-    Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = 1; i < n; i++) {
-        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
-        }
-    }
-    return NULL;
-}
-
-static int
-check_base_by_token(PyTypeObject *type, void *token) {
-    // Chain the branches, which will be optimized exclusive here
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        return -1;
-    }
-    else if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a type, got a '%T' object", type);
-        return -1;
-    }
-    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        return 0;
-    }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return 1;
-    }
-    else if (type->tp_mro != NULL) {
-        // This will not be inlined
-        return get_base_by_token_from_mro(type, token) ? 1 : 0;
-    }
-    else {
-        return get_base_by_token_recursive(type, token)  ? 1 : 0;
-    }
+    return res;  // Prefer to return recursively from one place
 }
 
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
-    if (result == NULL) {
-        // If the `result` is checked only once here, the subsequent
-        // branches will become trivial to optimize.
-        return check_base_by_token(type, token);
-    }
-    if (token == NULL || !PyType_Check(type)) {
+    if (result != NULL) {
         *result = NULL;
-        return check_base_by_token(type, token);
     }
 
-    // Chain the branches, which will be optimized exclusive here
-    PyTypeObject *base;
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
-        *result = NULL;
         return 0;
     }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
-        *result = (PyTypeObject *)Py_NewRef(type);
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+found:
+        if (result != NULL) {
+            *result = (PyTypeObject *)Py_NewRef(type);
+        }
         return 1;
-    }
-    else if (type->tp_mro != NULL) {
-        // Expect this to be inlined
-        base = get_base_by_token_from_mro(type, token);
-    }
-    else {
-        base = get_base_by_token_recursive(type, token);
     }
 
-    if (base != NULL) {
-        *result = (PyTypeObject *)Py_NewRef(base);
-        return 1;
-    }
-    else {
-        *result = NULL;
+    PyObject *mro = type->tp_mro;  // No lookup, following PyType_IsSubtype()
+    if (mro == NULL) {
+        PyTypeObject *base;
+        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
+        if (base != NULL) {
+            // Copying the given type can cause a slowdown,
+            // unlike the overwrite below.
+            type = base;
+            goto found;
+        }
         return 0;
     }
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+        if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
+            && ((PyHeapTypeObject*)base)->ht_token == token) {
+            type = base;
+            goto found;
+        }
+    }
+    return 0;
 }
 
 
@@ -6003,7 +5981,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
                  int isbuiltin, int final)
 {
     assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-    assert(_Py_IsImmortalLoose((PyObject *)type));
+    assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
 
@@ -6080,7 +6058,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyObject_ReleaseUniqueId(et->unique_id);
+    assert(et->unique_id == -1);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
@@ -7396,18 +7374,7 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-#define objreduce \
-    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_GET(), objreduce))
-    PyObject *reduce, *res;
-
-    if (objreduce == NULL) {
-        PyObject *dict = lookup_tp_dict(&PyBaseObject_Type);
-        objreduce = PyDict_GetItemWithError(dict, &_Py_ID(__reduce__));
-        if (objreduce == NULL && PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-
+    PyObject *reduce;
     if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
         return NULL;
     }
@@ -7421,10 +7388,12 @@ object___reduce_ex___impl(PyObject *self, int protocol)
             Py_DECREF(reduce);
             return NULL;
         }
-        override = (clsreduce != objreduce);
+
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        override = (clsreduce != _Py_INTERP_CACHED_OBJECT(interp, objreduce));
         Py_DECREF(clsreduce);
         if (override) {
-            res = _PyObject_CallNoArgs(reduce);
+            PyObject *res = _PyObject_CallNoArgs(reduce);
             Py_DECREF(reduce);
             return res;
         }
@@ -7433,7 +7402,6 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     }
 
     return _common_reduce(self, protocol);
-#undef objreduce
 }
 
 static PyObject *
@@ -7686,6 +7654,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         return -1;
     }
     return 0;
+}
+
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
 }
 
 
@@ -8639,7 +8613,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        if (self->tp_version_tag == 0) {
+            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        }
     }
     else {
         assert(!initial);
@@ -11366,6 +11342,30 @@ add_operators(PyTypeObject *type)
 }
 
 
+int
+PyType_Freeze(PyTypeObject *type)
+{
+    // gh-121654: Check the __mro__ instead of __bases__
+    PyObject *mro = type_get_mro(type, NULL);
+    if (!PyTuple_Check(mro)) {
+        Py_DECREF(mro);
+        PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
+        return -1;
+    }
+
+    int check = check_immutable_bases(type->tp_name, mro, 1);
+    Py_DECREF(mro);
+    if (check < 0) {
+        return -1;
+    }
+
+    type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    PyType_Modified(type);
+
+    return 0;
+}
+
+
 /* Cooperative 'super' */
 
 typedef struct {
@@ -11646,9 +11646,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
-                        PyTypeObject **type_p, PyObject **obj_p)
+super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
+                        PyObject **obj_p)
 {
+    PyCodeObject *co = _PyFrame_GetCode(cframe);
     if (co->co_argcount == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): no arguments");
@@ -11748,7 +11749,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(frame, _PyFrame_GetCode(frame), &type, &obj);
+        int res = super_init_without_args(frame, &type, &obj);
 
         if (res < 0) {
             return -1;
