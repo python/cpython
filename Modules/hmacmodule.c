@@ -145,7 +145,7 @@
 #  define Py_OpenSSL_NID_sha3_512               Py_OpenSSL_NID_MISSING
 #endif
 
-/* Blake family */
+/* Blake2 family */
 // HACL_HID = blake2s_32
 #define Py_hmac_blake2s_32_block_size           64
 #define Py_hmac_blake2s_32_digest_size          32
