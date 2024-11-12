@@ -7392,10 +7392,21 @@ WITH_SAVE_ENV([
   CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
   LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
 
-  AC_CACHE_CHECK([whether OpenSSL provides LN_* macros], [ac_cv_working_openssl_hmac], [
+  AC_CACHE_CHECK([whether OpenSSL provides required hmac module APIs], [ac_cv_working_openssl_hmac], [
     AC_LINK_IFELSE([AC_LANG_PROGRAM([
-      #include <openssl/obj_mac.h>  // for LN_* macros
-    ], [])], [ac_cv_working_openssl_hmac=yes], [ac_cv_working_openssl_hmac=no])
+      #include <openssl/evp.h>
+      #include <openssl/objects.h>
+      #if OPENSSL_VERSION_NUMBER < 0x10101000L
+        #error "OpenSSL >= 1.1.1 is required"
+      #endif
+    ], [
+      OBJ_nid2sn(NID_md5);
+      OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha224);
+      OBJ_nid2sn(NID_sha256);
+      OBJ_nid2sn(NID_sha384);
+      OBJ_nid2sn(NID_sha512);
+    ])], [ac_cv_working_openssl_hmac=yes], [ac_cv_working_openssl_hmac=no])
   ])
 ])
 
@@ -7813,9 +7824,6 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
-PY_STDLIB_MOD([_hmac], [], [test "$ac_cv_working_openssl_hmac" = yes],
-  [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
-
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in
   Linux*)
@@ -7931,6 +7939,9 @@ PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
+PY_STDLIB_MOD([_hmac], [], [test "$ac_cv_working_openssl_hmac" = yes],
+  [$LIBHACL_CFLAGS $OPENSSL_INCLUDES],
+  [$LIBHACL_CFLAGS $srcdir/Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],
