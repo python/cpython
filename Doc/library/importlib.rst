@@ -249,7 +249,7 @@ ABC hierarchy::
       An abstract method for finding a :term:`spec <module spec>` for
       the specified module.  If this is a top-level import, *path* will
       be ``None``.  Otherwise, this is a search for a subpackage or
-      module and *path* will be the value of :attr:`__path__` from the
+      module and *path* will be the value of :attr:`~module.__path__` from the
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
@@ -265,7 +265,7 @@ ABC hierarchy::
       when invalidating the caches of all finders on :data:`sys.meta_path`.
 
       .. versionchanged:: 3.4
-         Returns ``None`` when called instead of ``NotImplemented``.
+         Returns ``None`` when called instead of :data:`NotImplemented`.
 
 
 .. class:: PathEntryFinder
@@ -355,34 +355,12 @@ ABC hierarchy::
         (note that some of these attributes can change when a module is
         reloaded):
 
-        - :attr:`__name__`
-            The module's fully qualified name.
-            It is ``'__main__'`` for an executed module.
-
-        - :attr:`__file__`
-            The location the :term:`loader` used to load the module.
-            For example, for modules loaded from a .py file this is the filename.
-            It is not set on all modules (e.g. built-in modules).
-
-        - :attr:`__cached__`
-            The filename of a compiled version of the module's code.
-            It is not set on all modules (e.g. built-in modules).
-
-        - :attr:`__path__`
-            The list of locations where the package's submodules will be found.
-            Most of the time this is a single directory.
-            The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :data:`sys.path` but just for the package.
-            It is not set on non-package modules so it can be used
-            as an indicator that the module is a package.
-
-        - :attr:`__package__`
-            The fully qualified name of the package the module is in (or the
-            empty string for a top-level module).
-            If the module is a package then this is the same as :attr:`__name__`.
-
-        - :attr:`__loader__`
-            The :term:`loader` used to load the module.
+        - :attr:`module.__name__`
+        - :attr:`module.__file__`
+        - :attr:`module.__cached__` *(deprecated)*
+        - :attr:`module.__path__`
+        - :attr:`module.__package__` *(deprecated)*
+        - :attr:`module.__loader__` *(deprecated)*
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
@@ -418,7 +396,8 @@ ABC hierarchy::
         can implement this abstract method to give direct access
         to the data stored. :exc:`OSError` is to be raised if the *path* cannot
         be found. The *path* is expected to be constructed using a module's
-        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
+        :attr:`~module.__file__` attribute or an item from a package's
+        :attr:`~module.__path__`.
 
         .. versionchanged:: 3.4
            Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
@@ -505,9 +484,9 @@ ABC hierarchy::
 
     .. abstractmethod:: get_filename(fullname)
 
-        An abstract method that is to return the value of :attr:`__file__` for
-        the specified module. If no path is available, :exc:`ImportError` is
-        raised.
+        An abstract method that is to return the value of
+        :attr:`~module.__file__` for the specified module. If no path is
+        available, :exc:`ImportError` is raised.
 
         If source code is available, then the method should return the path to
         the source file, regardless of whether a bytecode was used to load the
@@ -657,7 +636,7 @@ ABC hierarchy::
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
@@ -1166,79 +1145,137 @@ find and load modules.
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
    A specification for a module's import-system-related state.  This is
-   typically exposed as the module's :attr:`__spec__` attribute.  In the
-   descriptions below, the names in parentheses give the corresponding
-   attribute available directly on the module object,
-   e.g. ``module.__spec__.origin == module.__file__``.  Note, however, that
+   typically exposed as the module's :attr:`~module.__spec__` attribute.  Many
+   of these attributes are also available directly on a module: for example,
+   ``module.__spec__.origin == module.__file__``.  Note, however, that
    while the *values* are usually equivalent, they can differ since there is
-   no synchronization between the two objects.  For example, it is possible to update
-   the module's :attr:`__file__` at runtime and this will not be automatically
-   reflected in the module's :attr:`__spec__.origin`, and vice versa.
+   no synchronization between the two objects.  For example, it is possible to
+   update the module's :attr:`~module.__file__` at runtime and this will not be
+   automatically reflected in the module's
+   :attr:`__spec__.origin <ModuleSpec.origin>`, and vice versa.
 
    .. versionadded:: 3.4
 
    .. attribute:: name
 
-   (:attr:`__name__`)
-
-   The module's fully qualified name.
-   The :term:`finder` should always set this attribute to a non-empty string.
+      The module's fully qualified name (see :attr:`module.__name__`).
+      The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
 
-   (:attr:`__loader__`)
-
-   The :term:`loader` used to load the module.
-   The :term:`finder` should always set this attribute.
+      The :term:`loader` used to load the module (see :attr:`module.__loader__`).
+      The :term:`finder` should always set this attribute.
 
    .. attribute:: origin
 
-   (:attr:`__file__`)
-
-   The location the :term:`loader` should use to load the module.
-   For example, for modules loaded from a .py file this is the filename.
-   The :term:`finder` should always set this attribute to a meaningful value
-   for the :term:`loader` to use.  In the uncommon case that there is not one
-   (like for namespace packages), it should be set to ``None``.
+      The location the :term:`loader` should use to load the module
+      (see :attr:`module.__file__`).
+      For example, for modules loaded from a ``.py`` file this is the filename.
+      The :term:`finder` should always set this attribute to a meaningful value
+      for the :term:`loader` to use.  In the uncommon case that there is not one
+      (like for namespace packages), it should be set to ``None``.
 
    .. attribute:: submodule_search_locations
 
-   (:attr:`__path__`)
+      A (possibly empty) :term:`sequence` of strings enumerating the locations
+      in which a package's submodules will be found
+      (see :attr:`module.__path__`). Most of the time there will only be a
+      single directory in this list.
 
-   The list of locations where the package's submodules will be found.
-   Most of the time this is a single directory.
-   The :term:`finder` should set this attribute to a list, even an empty one, to indicate
-   to the import system that the module is a package.  It should be set to ``None`` for
-   non-package modules.  It is set automatically later to a special object for
-   namespace packages.
+      The :term:`finder` should set this attribute to a sequence, even an empty
+      one, to indicate
+      to the import system that the module is a package.  It should be set to ``None`` for
+      non-package modules.  It is set automatically later to a special object for
+      namespace packages.
 
    .. attribute:: loader_state
 
-   The :term:`finder` may set this attribute to an object containing additional,
-   module-specific data to use when loading the module.  Otherwise it should be
-   set to ``None``.
+      The :term:`finder` may set this attribute to an object containing additional,
+      module-specific data to use when loading the module.  Otherwise it should be
+      set to ``None``.
 
    .. attribute:: cached
 
-   (:attr:`__cached__`)
-
-   The filename of a compiled version of the module's code.
-   The :term:`finder` should always set this attribute but it may be ``None``
-   for modules that do not need compiled code stored.
+      The filename of a compiled version of the module's code
+      (see :attr:`module.__cached__`).
+      The :term:`finder` should always set this attribute but it may be ``None``
+      for modules that do not need compiled code stored.
 
    .. attribute:: parent
 
-   (:attr:`__package__`)
-
-   (Read-only) The fully qualified name of the package the module is in (or the
-   empty string for a top-level module).
-   If the module is a package then this is the same as :attr:`name`.
+      (Read-only) The fully qualified name of the package the module is in (or the
+      empty string for a top-level module).
+      See :attr:`module.__package__`.
+      If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location
 
-   ``True`` if the spec's :attr:`origin` refers to a loadable location,
-    ``False`` otherwise.  This value impacts how :attr:`origin` is interpreted
-    and how the module's :attr:`__file__` is populated.
+      ``True`` if the spec's :attr:`origin` refers to a loadable location,
+      ``False`` otherwise.  This value impacts how :attr:`!origin` is interpreted
+      and how the module's :attr:`~module.__file__` is populated.
+
+
+.. class:: AppleFrameworkLoader(name, path)
+
+   A specialization of :class:`importlib.machinery.ExtensionFileLoader` that
+   is able to load extension modules in Framework format.
+
+   For compatibility with the iOS App Store, *all* binary modules in an iOS app
+   must be dynamic libraries, contained in a framework with appropriate
+   metadata, stored in the ``Frameworks`` folder of the packaged app. There can
+   be only a single binary per framework, and there can be no executable binary
+   material outside the Frameworks folder.
+
+   To accommodate this requirement, when running on iOS, extension module
+   binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
+   individual standalone frameworks. To discover those frameworks, this loader
+   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   file acting as a placeholder in the original location of the binary on
+   ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
+   the ``Frameworks`` folder, relative to the app bundle. To allow for
+   resolving a framework-packaged binary back to the original location, the
+   framework is expected to contain a ``.origin`` file that contains the
+   location of the ``.fwork`` file, relative to the app bundle.
+
+   For example, consider the case of an import ``from foo.bar import _whiz``,
+   where ``_whiz`` is implemented with the binary module
+   ``sources/foo/bar/_whiz.abi3.so``, with ``sources`` being the location
+   registered on ``sys.path``, relative to the application bundle. This module
+   *must* be distributed as
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz`` (creating the framework
+   name from the full import path of the module), with an ``Info.plist`` file
+   in the ``.framework`` directory identifying the binary as a framework. The
+   ``foo.bar._whiz`` module would be represented in the original location with
+   a ``sources/foo/bar/_whiz.abi3.fwork`` marker file, containing the path
+   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The framework would also contain
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz.origin``, containing the
+   path to the ``.fwork`` file.
+
+   When a module is loaded with this loader, the ``__file__`` for the module
+   will report as the location of the ``.fwork`` file. This allows code to use
+   the ``__file__`` of a  module as an anchor for file system traversal.
+   However, the spec origin will reference the location of the *actual* binary
+   in the ``.framework`` folder.
+
+   The Xcode project building the app is responsible for converting any ``.so``
+   files from wherever they exist in the ``PYTHONPATH`` into frameworks in the
+   ``Frameworks`` folder (including stripping extensions from the module file,
+   the addition of framework metadata, and signing the resulting framework),
+   and creating the ``.fwork`` and ``.origin`` files. This will usually be done
+   with a build step in the Xcode project; see the iOS documentation for
+   details on how to construct this build step.
+
+   .. versionadded:: 3.13
+
+   .. availability:: iOS.
+
+   .. attribute:: name
+
+      Name of the module the loader supports.
+
+   .. attribute:: path
+
+      Path to the ``.fwork`` file for the extension module.
 
 
 :mod:`importlib.util` -- Utility code for importers
@@ -1360,8 +1397,8 @@ an :term:`importer`.
 
    .. versionchanged:: 3.7
       Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
-      **package** is in fact not a package (i.e. lacks a :attr:`__path__`
-      attribute).
+      **package** is in fact not a package (i.e. lacks a
+      :attr:`~module.__path__` attribute).
 
 .. function:: module_from_spec(spec)
 
@@ -1521,20 +1558,34 @@ Note that if ``name`` is a submodule (contains a dot),
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-To import a Python source file directly, use the following recipe::
+This recipe should be used with caution: it is an approximation of an import
+statement where the file path is specified directly, rather than
+:data:`sys.path` being searched. Alternatives should first be considered first,
+such as modifying :data:`sys.path` when a proper module is required, or using
+:func:`runpy.run_path` when the global namespace resulting from running a Python
+file is appropriate.
 
-  import importlib.util
-  import sys
+To import a Python source file directly from a path, use the following recipe::
 
-  # For illustrative purposes.
-  import tokenize
-  file_path = tokenize.__file__
-  module_name = tokenize.__name__
+    import importlib.util
+    import sys
 
-  spec = importlib.util.spec_from_file_location(module_name, file_path)
-  module = importlib.util.module_from_spec(spec)
-  sys.modules[module_name] = module
-  spec.loader.exec_module(module)
+
+    def import_from_path(module_name, file_path):
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        return module
+
+
+    # For illustrative purposes only (use of `json` is arbitrary).
+    import json
+    file_path = json.__file__
+    module_name = json.__name__
+
+    # Similar outcome as `import json`.
+    json = import_from_path(module_name, file_path)
 
 
 Implementing lazy imports
@@ -1558,7 +1609,6 @@ The example below shows how to implement lazy imports::
     >>> #but it is not loaded in memory yet.
     >>> lazy_typing.TYPE_CHECKING
     False
-
 
 
 Setting up an importer

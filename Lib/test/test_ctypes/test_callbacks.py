@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import functools
 import gc
@@ -14,6 +13,8 @@ from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     c_float, c_double, c_longdouble, py_object)
 from ctypes.util import find_library
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class Callbacks(unittest.TestCase):
@@ -106,7 +107,7 @@ class Callbacks(unittest.TestCase):
 
     def test_unsupported_restype_1(self):
         # Only "fundamental" result types are supported for callback
-        # functions, the type must have a non-NULL stgdict->setfunc.
+        # functions, the type must have a non-NULL stginfo->setfunc.
         # POINTER(c_double), for example, is not supported.
 
         prototype = self.functype.__func__(POINTER(c_double))

@@ -4,11 +4,12 @@
 
 exit_with_usage ()
 {
-    local USAGE="Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
-    if [[ "$1" -eq 0 ]]; then
-        echo "$USAGE"
+    local usage
+    usage="Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
+    if [ "$1" -eq 0 ]; then
+        echo "$usage"
     else
-        echo "$USAGE" >&2
+        echo "$usage" >&2
     fi
     exit $1
 }

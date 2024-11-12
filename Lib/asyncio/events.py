@@ -10,7 +10,6 @@ __all__ = (
     'Handle', 'TimerHandle',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
-    'get_child_watcher', 'set_child_watcher',
     '_set_running_loop', 'get_running_loop',
     '_get_running_loop',
 )
@@ -54,7 +53,8 @@ class Handle:
             info.append('cancelled')
         if self._callback is not None:
             info.append(format_helpers._format_callback_source(
-                self._callback, self._args))
+                self._callback, self._args,
+                debug=self._loop.get_debug()))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -90,7 +90,8 @@ class Handle:
             raise
         except BaseException as exc:
             cb = format_helpers._format_callback_source(
-                self._callback, self._args)
+                self._callback, self._args,
+                debug=self._loop.get_debug())
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
@@ -171,6 +172,14 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
+        raise NotImplementedError
+
+    def close_clients(self):
+        """Close all active connections."""
+        raise NotImplementedError
+
+    def abort_clients(self):
+        """Close all active connections immediately."""
         raise NotImplementedError
 
     def get_loop(self):
@@ -642,17 +651,6 @@ class AbstractEventLoopPolicy:
         the current context, set_event_loop must be called explicitly."""
         raise NotImplementedError
 
-    # Child processes handling (Unix only).
-
-    def get_child_watcher(self):
-        "Get the watcher for child processes."
-        raise NotImplementedError
-
-    def set_child_watcher(self, watcher):
-        """Set the watcher for child processes."""
-        raise NotImplementedError
-
-
 class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     """Default policy implementation for accessing the event loop.
 
@@ -670,7 +668,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     class _Local(threading.local):
         _loop = None
-        _set_called = False
 
     def __init__(self):
         self._local = self._Local()
@@ -680,28 +677,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
         Returns an instance of EventLoop or raises an exception.
         """
-        if (self._local._loop is None and
-                not self._local._set_called and
-                threading.current_thread() is threading.main_thread()):
-            stacklevel = 2
-            try:
-                f = sys._getframe(1)
-            except AttributeError:
-                pass
-            else:
-                # Move up the call stack so that the warning is attached
-                # to the line outside asyncio itself.
-                while f:
-                    module = f.f_globals.get('__name__')
-                    if not (module == 'asyncio' or module.startswith('asyncio.')):
-                        break
-                    f = f.f_back
-                    stacklevel += 1
-            import warnings
-            warnings.warn('There is no current event loop',
-                          DeprecationWarning, stacklevel=stacklevel)
-            self.set_event_loop(self.new_event_loop())
-
         if self._local._loop is None:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
@@ -710,7 +685,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     def set_event_loop(self, loop):
         """Set the event loop."""
-        self._local._set_called = True
         if loop is not None and not isinstance(loop, AbstractEventLoop):
             raise TypeError(f"loop must be an instance of AbstractEventLoop or None, not '{type(loop).__name__}'")
         self._local._loop = loop
@@ -825,17 +799,6 @@ def set_event_loop(loop):
 def new_event_loop():
     """Equivalent to calling get_event_loop_policy().new_event_loop()."""
     return get_event_loop_policy().new_event_loop()
-
-
-def get_child_watcher():
-    """Equivalent to calling get_event_loop_policy().get_child_watcher()."""
-    return get_event_loop_policy().get_child_watcher()
-
-
-def set_child_watcher(watcher):
-    """Equivalent to calling
-    get_event_loop_policy().set_child_watcher(watcher)."""
-    return get_event_loop_policy().set_child_watcher(watcher)
 
 
 # Alias pure-Python implementations for testing purposes.

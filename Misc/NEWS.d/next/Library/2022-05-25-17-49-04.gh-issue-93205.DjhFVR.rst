@@ -1,1 +1,0 @@
-Fixed a bug in :class:`logging.handlers.TimedRotatingFileHandler` where multiple rotating handler instances pointing to files with the same name but different extensions would conflict and not delete the correct files.

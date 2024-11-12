@@ -12,8 +12,8 @@ __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
 import _opcode
 from _opcode import stack_effect
 
-from _opcode_metadata import (_specializations, _specialized_opmap, opmap,
-                              HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)
+from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # noqa: F401
+                              HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)  # noqa: F401
 EXTENDED_ARG = opmap['EXTENDED_ARG']
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
@@ -36,6 +36,8 @@ hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
 
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
+_special_method_names = _opcode.get_special_method_names()
+_common_constants = [AssertionError, NotImplementedError]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
@@ -54,6 +56,9 @@ _cache_format = {
         "counter": 1,
     },
     "COMPARE_OP": {
+        "counter": 1,
+    },
+    "CONTAINS_OP": {
         "counter": 1,
     },
     "BINARY_SUBSCR": {
@@ -77,6 +82,10 @@ _cache_format = {
         "index": 1,
     },
     "CALL": {
+        "counter": 1,
+        "func_version": 2,
+    },
+    "CALL_KW": {
         "counter": 1,
         "func_version": 2,
     },

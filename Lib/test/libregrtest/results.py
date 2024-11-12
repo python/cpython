@@ -18,7 +18,7 @@ EXITCODE_INTERRUPTED = 130   # 128 + signal.SIGINT=2
 
 
 class TestResults:
-    def __init__(self):
+    def __init__(self) -> None:
         self.bad: TestList = []
         self.good: TestList = []
         self.rerun_bad: TestList = []
@@ -38,22 +38,22 @@ class TestResults:
         # used by -T with -j
         self.covered_lines: set[Location] = set()
 
-    def is_all_good(self):
+    def is_all_good(self) -> bool:
         return (not self.bad
                 and not self.skipped
                 and not self.interrupted
                 and not self.worker_bug)
 
-    def get_executed(self):
+    def get_executed(self) -> set[TestName]:
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denied) | set(self.env_changed)
                 | set(self.run_no_tests))
 
-    def no_tests_run(self):
+    def no_tests_run(self) -> bool:
         return not any((self.good, self.bad, self.skipped, self.interrupted,
                         self.env_changed))
 
-    def get_state(self, fail_env_changed):
+    def get_state(self, fail_env_changed: bool) -> str:
         state = []
         if self.bad:
             state.append("FAILURE")
@@ -71,7 +71,7 @@ class TestResults:
 
         return ', '.join(state)
 
-    def get_exitcode(self, fail_env_changed, fail_rerun):
+    def get_exitcode(self, fail_env_changed: bool, fail_rerun: bool) -> int:
         exitcode = 0
         if self.bad:
             exitcode = EXITCODE_BAD_TEST
@@ -87,7 +87,7 @@ class TestResults:
             exitcode = EXITCODE_BAD_TEST
         return exitcode
 
-    def accumulate_result(self, result: TestResult, runtests: RunTests):
+    def accumulate_result(self, result: TestResult, runtests: RunTests) -> None:
         test_name = result.test_name
         rerun = runtests.rerun
         fail_env_changed = runtests.fail_env_changed
@@ -135,7 +135,7 @@ class TestResults:
         counts = {loc: 1 for loc in self.covered_lines}
         return trace.CoverageResults(counts=counts)
 
-    def need_rerun(self):
+    def need_rerun(self) -> bool:
         return bool(self.rerun_results)
 
     def prepare_rerun(self, *, clear: bool = True) -> tuple[TestTuple, FilterDict]:
@@ -158,7 +158,7 @@ class TestResults:
 
         return (tuple(tests), match_tests_dict)
 
-    def add_junit(self, xml_data: list[str]):
+    def add_junit(self, xml_data: list[str]) -> None:
         import xml.etree.ElementTree as ET
         for e in xml_data:
             try:
@@ -167,7 +167,7 @@ class TestResults:
                 print(xml_data, file=sys.__stderr__)
                 raise
 
-    def write_junit(self, filename: StrPath):
+    def write_junit(self, filename: StrPath) -> None:
         if not self.testsuite_xml:
             # Don't create empty XML file
             return
@@ -192,7 +192,7 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
+    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool) -> None:
         if print_slowest:
             self.test_times.sort(reverse=True)
             print()
@@ -204,7 +204,7 @@ class TestResults:
         omitted = set(tests) - self.get_executed()
 
         # less important
-        all_tests.append((omitted, "test", "{} omitted:"))
+        all_tests.append((sorted(omitted), "test", "{} omitted:"))
         if not quiet:
             all_tests.append((self.skipped, "test", "{} skipped:"))
             all_tests.append((self.resource_denied, "test", "{} skipped (resource denied):"))
@@ -234,7 +234,7 @@ class TestResults:
             print()
             print("Test suite interrupted by signal SIGINT.")
 
-    def display_summary(self, first_runtests: RunTests, filtered: bool):
+    def display_summary(self, first_runtests: RunTests, filtered: bool) -> None:
         # Total tests
         stats = self.stats
         text = f'run={stats.tests_run:,}'

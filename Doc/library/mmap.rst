@@ -1,5 +1,5 @@
-:mod:`mmap` --- Memory-mapped file support
-==========================================
+:mod:`!mmap` --- Memory-mapped file support
+===========================================
 
 .. module:: mmap
    :synopsis: Interface to memory-mapped files for Unix and Windows.

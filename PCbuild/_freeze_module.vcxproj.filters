@@ -94,6 +94,12 @@
     <ClCompile Include="..\Python\perf_trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\codegen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -226,7 +232,14 @@
     <ClCompile Include="..\Python\importdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\index_pool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\instruction_sequence.c">
+    <ClCompile Include="..\Python\interpconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
@@ -239,9 +252,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\lock.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">
@@ -458,6 +468,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\tupleobject.c">

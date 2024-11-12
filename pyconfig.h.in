@@ -47,12 +47,14 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Define to 1 if your system stores words within floats with the most
-   significant word first */
-#undef FLOAT_WORDS_BIGENDIAN
-
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
+
+/* HACL* library can compile SIMD128 implementations */
+#undef HACL_CAN_COMPILE_SIMD128
+
+/* HACL* library can compile SIMD256 implementations */
+#undef HACL_CAN_COMPILE_SIMD256
 
 /* Define if you have the 'accept' function. */
 #undef HAVE_ACCEPT
@@ -156,6 +158,9 @@
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
+
+/* Define to 1 if the system has the type `clock_t'. */
+#undef HAVE_CLOCK_T
 
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
@@ -667,9 +672,6 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you want to build _blake2 module with libb2 */
-#undef HAVE_LIBB2
-
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -684,9 +686,6 @@
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
-
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-#undef HAVE_LIBRESOLV
 
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
@@ -732,6 +731,9 @@
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
+#undef HAVE_LINUX_NETFILTER_IPV4_H
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
@@ -826,11 +828,32 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
-/* Define to 1 if you have the `ncursesw' library. */
+/* Define if you have the 'ncurses' library */
+#undef HAVE_NCURSES
+
+/* Define if you have the 'ncursesw' library */
 #undef HAVE_NCURSESW
+
+/* Define to 1 if you have the <ncursesw/curses.h> header file. */
+#undef HAVE_NCURSESW_CURSES_H
+
+/* Define to 1 if you have the <ncursesw/ncurses.h> header file. */
+#undef HAVE_NCURSESW_NCURSES_H
+
+/* Define to 1 if you have the <ncursesw/panel.h> header file. */
+#undef HAVE_NCURSESW_PANEL_H
+
+/* Define to 1 if you have the <ncurses/curses.h> header file. */
+#undef HAVE_NCURSES_CURSES_H
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/ncurses.h> header file. */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/panel.h> header file. */
+#undef HAVE_NCURSES_PANEL_H
 
 /* Define to 1 if you have the <ndbm.h> header file. */
 #undef HAVE_NDBM_H
@@ -874,6 +897,12 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define if you have the 'panel' library */
+#undef HAVE_PANEL
+
+/* Define if you have the 'panelw' library */
+#undef HAVE_PANELW
 
 /* Define to 1 if you have the <panel.h> header file. */
 #undef HAVE_PANEL_H
@@ -932,6 +961,9 @@
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
+
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
@@ -1646,6 +1678,9 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
+/* Defined if _Complex C type can be used with libffi. */
+#undef Py_FFI_SUPPORT_C_COMPLEX
+
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED
 
@@ -1653,8 +1688,20 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Defined if _Complex C type is available. */
+#undef Py_HAVE_C_COMPLEX
+
+/* Define if year with century should be normalized for strftime. */
+#undef Py_NORMALIZE_CENTURY
+
+/* Define if rl_startup_hook takes arguments */
+#undef Py_RL_STARTUP_HOOK_TAKES_ARGS
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
+
+/* Define if C99-specific strftime specifiers are supported. */
+#undef Py_STRFTIME_C99_SUPPORT
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
@@ -1853,9 +1900,6 @@
 /* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
 
-/* Define if you want to compile in object freelists optimization */
-#undef WITH_FREELISTS
-
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
 
@@ -1938,7 +1982,7 @@
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
 
-/* Define to 'long' if <time.h> doesn't define. */
+/* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
 /* Define to empty if `const' does not conform to ANSI C. */

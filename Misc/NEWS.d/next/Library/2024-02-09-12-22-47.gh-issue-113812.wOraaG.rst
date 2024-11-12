@@ -1,3 +1,0 @@
-:meth:`DatagramTransport.sendto` will now send zero-length datagrams if
-called with an empty bytes object. The transport flow control also now
-accounts for the datagram header when calculating the buffer size.

@@ -1,2 +1,0 @@
-On macOS show a proxy icon in the title bar of editor windows to match
-platform behaviour.

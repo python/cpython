@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -7,6 +7,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+
+#include <stdbool.h>
 
 #include "clinic/_warnings.c.h"
 
@@ -234,14 +236,12 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
-    PyObject *registry;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -264,14 +264,12 @@ get_once_registry(PyInterpreterState *interp)
 static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
-    PyObject *default_action;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -298,15 +296,12 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -323,7 +318,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
 
     /* WarningsState.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
@@ -383,7 +378,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         Py_DECREF(tmp_item);
     }
 
-    action = get_default_action(interp);
+    PyObject *action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -397,23 +392,26 @@ static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
                int should_set)
 {
-    PyObject *version_obj, *already_warned;
+    PyObject *already_warned;
 
     if (key == NULL)
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
+    assert(st != NULL);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *version_obj;
+    if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
     }
-    version_obj = _PyDict_GetItemWithError(registry, &_Py_ID(version));
-    if (version_obj == NULL
+    bool should_update_version = (
+        version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != st->filters_version)
-    {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
+        || PyLong_AsLong(version_obj) != st->filters_version
+    );
+    Py_XDECREF(version_obj);
+    if (should_update_version) {
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
@@ -571,10 +569,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
 
-    /* If the source parameter is set, try to get the Python implementation.
-       The Python implementation is able to log the traceback where the source
+    /* The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, source != NULL);
+    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, 1);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -707,9 +704,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
 
     /* Store in the registry that we've been here, *except* when the action
-       is "always". */
+       is "always" or "all". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
         if (registry != NULL && registry != Py_None &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {
@@ -806,7 +803,8 @@ is_filename_to_skip(PyObject *filename, PyTupleObject *skip_file_prefixes)
         for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
         {
             PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
-            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix, 0, -1, -1);
+            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix,
+                                                   0, PY_SSIZE_T_MAX, -1);
             if (found == 1) {
                 return true;
             }
@@ -896,8 +894,8 @@ setup_context(Py_ssize_t stack_level,
 
     if (f == NULL) {
         globals = interp->sysdict;
-        *filename = PyUnicode_FromString("sys");
-        *lineno = 1;
+        *filename = PyUnicode_FromString("<sys>");
+        *lineno = 0;
     }
     else {
         globals = f->f_frame->f_globals;
@@ -911,13 +909,12 @@ setup_context(Py_ssize_t stack_level,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    *registry = _PyDict_GetItemWithError(globals, &_Py_ID(__warningregistry__));
+    int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
+                               registry);
+    if (rc < 0) {
+        goto handle_error;
+    }
     if (*registry == NULL) {
-        int rc;
-
-        if (_PyErr_Occurred(tstate)) {
-            goto handle_error;
-        }
         *registry = PyDict_New();
         if (*registry == NULL)
             goto handle_error;
@@ -926,21 +923,21 @@ setup_context(Py_ssize_t stack_level,
          if (rc < 0)
             goto handle_error;
     }
-    else
-        Py_INCREF(*registry);
 
     /* Setup module. */
-    *module = _PyDict_GetItemWithError(globals, &_Py_ID(__name__));
-    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
-        Py_INCREF(*module);
-    }
-    else if (_PyErr_Occurred(tstate)) {
+    rc = PyDict_GetItemRef(globals, &_Py_ID(__name__), module);
+    if (rc < 0) {
         goto handle_error;
     }
-    else {
-        *module = PyUnicode_FromString("<string>");
-        if (*module == NULL)
-            goto handle_error;
+    if (rc > 0) {
+        if (Py_IsNone(*module) || PyUnicode_Check(*module)) {
+            return 1;
+        }
+        Py_DECREF(*module);
+    }
+    *module = PyUnicode_FromString("<string>");
+    if (*module == NULL) {
+        goto handle_error;
     }
 
     return 1;
@@ -997,8 +994,15 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1063,12 +1067,12 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
 
-    module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
-    if (!module_name) {
+    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                               &module_name);
+    if (rc < 0 || rc == 0) {
         Py_DECREF(loader);
         return NULL;
     }
-    Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
     (void)PyObject_GetOptionalAttr(loader, &_Py_ID(get_source), &get_source);
@@ -1146,8 +1150,16 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
     }
+
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
+    Py_END_CRITICAL_SECTION();
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1165,11 +1177,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
@@ -1287,8 +1302,16 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     if (tstate == NULL) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
+    Py_END_CRITICAL_SECTION();
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1353,8 +1376,15 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+#ifdef Py_GIL_DISABLED
+            WarningsState *st = warnings_get_state(tstate->interp);
+            assert(st != NULL);
+#endif
+
+            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
+            Py_END_CRITICAL_SECTION();
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
@@ -1468,6 +1498,7 @@ warnings_module_exec(PyObject *module)
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

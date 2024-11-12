@@ -14,7 +14,7 @@ import weakref
 import atexit
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
-from subprocess import _args_from_interpreter_flags
+from subprocess import _args_from_interpreter_flags  # noqa: F401
 
 from . import process
 
@@ -102,11 +102,7 @@ def log_to_stderr(level=None):
 # Abstract socket support
 
 def _platform_supports_abstract_sockets():
-    if sys.platform == "linux":
-        return True
-    if hasattr(sys, 'getandroidapilevel'):
-        return True
-    return False
+    return sys.platform in ("linux", "android")
 
 
 def is_abstract_socket_namespace(address):
@@ -442,15 +438,13 @@ def _flush_std_streams():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
-    import subprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
             args, [path], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, -1, None, None, None, -1, None,
-            subprocess._USE_VFORK)
+            False, False, -1, None, None, None, -1, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
