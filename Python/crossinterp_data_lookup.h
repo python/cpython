@@ -59,7 +59,7 @@ _PyXIData_GetLookupContext(PyInterpreterState *interp,
     };
     return 0;
 }
- 
+
 xidatafunc
 _PyXIData_Lookup(_PyXIData_lookup_context_t *ctx, PyObject *obj)
 {
