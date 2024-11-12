@@ -1,0 +1,2 @@
+Fix issue where :func:`urllib.request.pathname2url` mishandled Windows paths
+with embedded forward slashes.
