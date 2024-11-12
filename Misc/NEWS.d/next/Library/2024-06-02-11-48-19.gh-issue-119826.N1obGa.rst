@@ -1,0 +1,1 @@
+Always return an absolute path for :func:`os.path.abspath` on Windows.
