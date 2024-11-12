@@ -688,9 +688,9 @@ VOID_HANDLER(EndDoctypeDecl, (void *userData), ("()"))
 
 /* ---------------------------------------------------------------- */
 /*[clinic input]
-class pyexpat.xmlparser "xmlparseobject *" "&Xmlparsetype"
+class pyexpat.XMLParserType "xmlparseobject *" "&Xmlparsetype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2393162385232e1c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8c2756d92062c835]*/
 
 
 static PyObject *
@@ -711,7 +711,7 @@ get_parse_result(pyexpat_state *state, xmlparseobject *self, int rv)
 #define MAX_CHUNK_SIZE (1 << 20)
 
 /*[clinic input]
-pyexpat.xmlparser.SetReparseDeferralEnabled
+pyexpat.XMLParserType.SetReparseDeferralEnabled
 
     enabled: bool
     /
@@ -720,9 +720,9 @@ Enable/Disable reparse deferral; enabled by default with Expat >=2.6.0.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
-                                                 int enabled)
-/*[clinic end generated code: output=5ec539e3b63c8c49 input=021eb9e0bafc32c5]*/
+pyexpat_XMLParserType_SetReparseDeferralEnabled_impl(xmlparseobject *self,
+                                                     int enabled)
+/*[clinic end generated code: output=9096684b583f2e09 input=df2809c8f1c00a56]*/
 {
 #if XML_COMBINED_VERSION >= 20600
     XML_SetReparseDeferralEnabled(self->itself, enabled ? XML_TRUE : XML_FALSE);
@@ -732,20 +732,20 @@ pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
 }
 
 /*[clinic input]
-pyexpat.xmlparser.GetReparseDeferralEnabled
+pyexpat.XMLParserType.GetReparseDeferralEnabled
 
 Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self)
-/*[clinic end generated code: output=4e91312e88a595a8 input=54b5f11d32b20f3e]*/
+pyexpat_XMLParserType_GetReparseDeferralEnabled_impl(xmlparseobject *self)
+/*[clinic end generated code: output=9787b845dcad7655 input=5e6bd748de87a192]*/
 {
     return PyBool_FromLong(self->reparse_deferral_enabled);
 }
 
 /*[clinic input]
-pyexpat.xmlparser.Parse
+pyexpat.XMLParserType.Parse
 
     cls: defining_class
     data: object
@@ -758,9 +758,9 @@ Parse XML data.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
-                             PyObject *data, int isfinal)
-/*[clinic end generated code: output=8faffe07fe1f862a input=053e0f047e55c05a]*/
+pyexpat_XMLParserType_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
+                                 PyObject *data, int isfinal)
+/*[clinic end generated code: output=2871a4863ff36115 input=b4626b0268d178fa]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -847,7 +847,7 @@ error:
 }
 
 /*[clinic input]
-pyexpat.xmlparser.ParseFile
+pyexpat.XMLParserType.ParseFile
 
     cls: defining_class
     file: object
@@ -857,9 +857,9 @@ Parse XML data from file-like object.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
-                                 PyObject *file)
-/*[clinic end generated code: output=34780a094c8ca3ae input=ba4bc9c541684793]*/
+pyexpat_XMLParserType_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
+                                     PyObject *file)
+/*[clinic end generated code: output=696afaba97fb9c63 input=10851bcd5db378ec]*/
 {
     int rv = 1;
     PyObject *readmethod = NULL;
@@ -901,7 +901,7 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
-pyexpat.xmlparser.SetBase
+pyexpat.XMLParserType.SetBase
 
     base: str
     /
@@ -910,8 +910,8 @@ Set the base URL for the parser.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_SetBase_impl(xmlparseobject *self, const char *base)
-/*[clinic end generated code: output=c212ddceb607b539 input=c684e5de895ee1a8]*/
+pyexpat_XMLParserType_SetBase_impl(xmlparseobject *self, const char *base)
+/*[clinic end generated code: output=1713c8a44ca3ed99 input=c1bab540c5319b06]*/
 {
     if (!XML_SetBase(self->itself, base)) {
         return PyErr_NoMemory();
@@ -920,20 +920,20 @@ pyexpat_xmlparser_SetBase_impl(xmlparseobject *self, const char *base)
 }
 
 /*[clinic input]
-pyexpat.xmlparser.GetBase
+pyexpat.XMLParserType.GetBase
 
 Return base URL string for the parser.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
-/*[clinic end generated code: output=2886cb21f9a8739a input=918d71c38009620e]*/
+pyexpat_XMLParserType_GetBase_impl(xmlparseobject *self)
+/*[clinic end generated code: output=75a6a73ec83bf289 input=07ad9c39dde3ccda]*/
 {
     return conv_string_to_unicode(XML_GetBase(self->itself));
 }
 
 /*[clinic input]
-pyexpat.xmlparser.GetInputContext
+pyexpat.XMLParserType.GetInputContext
 
 Return the untranslated text of the input that caused the current event.
 
@@ -942,8 +942,8 @@ for an element with many attributes), not all of the text may be available.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
-/*[clinic end generated code: output=a88026d683fc22cc input=034df8712db68379]*/
+pyexpat_XMLParserType_GetInputContext_impl(xmlparseobject *self)
+/*[clinic end generated code: output=2733f450a6ff30a2 input=4b6004450c1a05db]*/
 {
     if (self->in_callback) {
         int offset, size;
@@ -961,7 +961,7 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
-pyexpat.xmlparser.ExternalEntityParserCreate
+pyexpat.XMLParserType.ExternalEntityParserCreate
 
     cls: defining_class
     context: str(accept={str, NoneType})
@@ -972,11 +972,11 @@ Create a parser for parsing an external entity based on the information passed t
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
-                                                  PyTypeObject *cls,
-                                                  const char *context,
-                                                  const char *encoding)
-/*[clinic end generated code: output=01d4472b49cb3f92 input=ec70c6b9e6e9619a]*/
+pyexpat_XMLParserType_ExternalEntityParserCreate_impl(xmlparseobject *self,
+                                                      PyTypeObject *cls,
+                                                      const char *context,
+                                                      const char *encoding)
+/*[clinic end generated code: output=7ed6bcf7c4ce354c input=ea9ebb87800c05af]*/
 {
     xmlparseobject *new_parser;
     int i;
@@ -1040,7 +1040,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
 }
 
 /*[clinic input]
-pyexpat.xmlparser.SetParamEntityParsing
+pyexpat.XMLParserType.SetParamEntityParsing
 
     flag: int
     /
@@ -1054,8 +1054,9 @@ was successful.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag)
-/*[clinic end generated code: output=18668ee8e760d64c input=8aea19b4b15e9af1]*/
+pyexpat_XMLParserType_SetParamEntityParsing_impl(xmlparseobject *self,
+                                                 int flag)
+/*[clinic end generated code: output=0831fe5d1be5f3a9 input=5fedf97c504cb580]*/
 {
     flag = XML_SetParamEntityParsing(self->itself, flag);
     return PyLong_FromLong(flag);
@@ -1064,7 +1065,7 @@ pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag)
 
 #if XML_COMBINED_VERSION >= 19505
 /*[clinic input]
-pyexpat.xmlparser.UseForeignDTD
+pyexpat.XMLParserType.UseForeignDTD
 
     cls: defining_class
     flag: bool = True
@@ -1078,9 +1079,9 @@ information to the parser. 'flag' defaults to True if not provided.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
-                                     int flag)
-/*[clinic end generated code: output=d7d98252bd25a20f input=23440ecb0573fb29]*/
+pyexpat_XMLParserType_UseForeignDTD_impl(xmlparseobject *self,
+                                         PyTypeObject *cls, int flag)
+/*[clinic end generated code: output=c76149399c6a77e3 input=3a758cf97b6aeaa9]*/
 {
     pyexpat_state *state = PyType_GetModuleState(cls);
     enum XML_Error rc;
@@ -1094,18 +1095,18 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 #endif
 
 static struct PyMethodDef xmlparse_methods[] = {
-    PYEXPAT_XMLPARSER_PARSE_METHODDEF
-    PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF
-    PYEXPAT_XMLPARSER_SETBASE_METHODDEF
-    PYEXPAT_XMLPARSER_GETBASE_METHODDEF
-    PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF
-    PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
-    PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_PARSE_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_PARSEFILE_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_SETBASE_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_GETBASE_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_GETINPUTCONTEXT_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_EXTERNALENTITYPARSERCREATE_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_SETPARAMENTITYPARSING_METHODDEF
 #if XML_COMBINED_VERSION >= 19505
-    PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_USEFOREIGNDTD_METHODDEF
 #endif
-    PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
-    PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_SETREPARSEDEFERRALENABLED_METHODDEF
+    PYEXPAT_XMLPARSERTYPE_GETREPARSEDEFERRALENABLED_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
