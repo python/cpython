@@ -1470,6 +1470,7 @@ class _patch(object):
             )
         return original, local
 
+
     def __enter__(self):
         """Perform the patch."""
         if self.is_started:
@@ -1494,7 +1495,7 @@ class _patch(object):
             spec_set not in (True, None)):
             raise TypeError("Can't provide explicit spec_set *and* spec or autospec")
 
-        original, is_local = self.get_original()
+        original, local = self.get_original()
 
         if new is DEFAULT and autospec is None:
             inherit = False
@@ -1604,7 +1605,7 @@ class _patch(object):
         new_attr = new
 
         self.temp_original = original
-        self.is_local = is_local
+        self.is_local = local
         self._exit_stack = contextlib.ExitStack()
         self.is_started = True
         try:
@@ -1640,12 +1641,12 @@ class _patch(object):
                 # needed for proxy objects like django settings
                 setattr(self.target, self.attribute, self.temp_original)
 
-        self.is_started = False
+        del self.temp_original
+        del self.is_local
+        del self.target
         exit_stack = self._exit_stack
         del self._exit_stack
-        del self.is_local
-        del self.temp_original
-        del self.target
+        self.is_started = False
         return exit_stack.__exit__(*exc_info)
 
 
