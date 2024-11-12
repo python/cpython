@@ -1,8 +1,6 @@
 import os
 import sys
 import unittest
-from ctypes import CDLL, c_int
-from _ctypes import dlopen, dlsym
 
 FOO_C = r"""
 #include <unistd.h>
@@ -53,6 +51,8 @@ class TestNullDlsym(unittest.TestCase):
     def test_null_dlsym(self):
         import subprocess
         import tempfile
+        from ctypes import CDLL, c_int
+        from _ctypes import dlopen, dlsym
 
         retcode = subprocess.call(["gcc", "--version"],
                                   stdout=subprocess.DEVNULL,
