@@ -2749,10 +2749,6 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         }
 
         assert(err == 0);
-        if (version == 0) {
-            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
-            return;
-        }
         assert(version);
         write_u32(cache->version, version);
         specialize(instr, TO_BOOL_ALWAYS_TRUE);
