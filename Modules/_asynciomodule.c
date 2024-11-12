@@ -1017,8 +1017,10 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
 
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
+        Py_INCREF(cb_tup);
         int cmp = PyObject_RichCompareBool(
             PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
+        Py_DECREF(cb_tup);
         if (cmp == -1) {
             return NULL;
         }
