@@ -811,7 +811,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             if not qs:
                 warnings.warn(f"Accepting {type(qs).__name__} objects with "
                               f"false value in urllib.parse.parse_qsl() is "
-                              f"deprecated as of 3.13",
+                              f"deprecated as of 3.14",
                               DeprecationWarning, stacklevel=_stacklevel + 1)
                 return []
             raise
