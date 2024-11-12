@@ -27,8 +27,13 @@ typedef struct {
     _PyXIData_regitem_t *head;
 } _PyXIData_registry_t;
 
-PyAPI_FUNC(int) _PyXIData_RegisterClass(PyTypeObject *, xidatafunc);
-PyAPI_FUNC(int) _PyXIData_UnregisterClass(PyTypeObject *);
+PyAPI_FUNC(int) _PyXIData_RegisterClass(
+    _PyXIData_lookup_context_t *,
+    PyTypeObject *,
+    xidatafunc);
+PyAPI_FUNC(int) _PyXIData_UnregisterClass(
+    _PyXIData_lookup_context_t *,
+    PyTypeObject *);
 
 struct _xid_lookup_state {
     // XXX Remove this field once we have a tp_* slot.

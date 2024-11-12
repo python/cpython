@@ -100,9 +100,26 @@ typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
 typedef struct _xid_lookup_state _PyXIData_lookup_t;
 
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(PyObject *);
-PyAPI_FUNC(int) _PyObject_CheckXIData(PyObject *);
-PyAPI_FUNC(int) _PyObject_GetXIData(PyObject *, _PyXIData_t *);
+typedef struct {
+    _PyXIData_lookup_t *global;
+    _PyXIData_lookup_t *local;
+    PyObject *PyExc_NotShareableError;
+} _PyXIData_lookup_context_t;
+
+PyAPI_FUNC(int) _PyXIData_GetLookupContext(
+        PyInterpreterState *,
+        _PyXIData_lookup_context_t *);
+
+PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_CheckXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_GetXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *,
+        _PyXIData_t *);
 
 
 /* using cross-interpreter data */
@@ -173,12 +190,20 @@ typedef struct {
     } exceptions;
 } _PyXI_state_t;
 
+#define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
+#define _PyXI_GET_STATE(interp) (&(interp)->xi)
+
+#ifndef Py_BUILD_CORE_MODULE
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
+#endif  // Py_BUILD_CORE_MODULE
 
-#define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
+int _Py_xi_global_state_init(_PyXI_global_state_t *);
+void _Py_xi_global_state_fini(_PyXI_global_state_t *);
+int _Py_xi_state_init(_PyXI_state_t *, PyInterpreterState *);
+void _Py_xi_state_fini(_PyXI_state_t *, PyInterpreterState *);
 
 
 /***************************/

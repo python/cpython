@@ -1797,6 +1797,12 @@ _xid_capsule_destructor(PyObject *capsule)
 static PyObject *
 get_crossinterp_data(PyObject *self, PyObject *args)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
     PyObject *obj = NULL;
     if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
         return NULL;
@@ -1806,7 +1812,7 @@ get_crossinterp_data(PyObject *self, PyObject *args)
     if (data == NULL) {
         return NULL;
     }
-    if (_PyObject_GetXIData(obj, data) != 0) {
+    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
         _PyXIData_Free(data);
         return NULL;
     }
