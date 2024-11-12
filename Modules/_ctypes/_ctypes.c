@@ -3778,6 +3778,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     address = FindAddress(handle, name, (PyObject *)type);
     if (!address) {
@@ -3793,30 +3794,39 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
-	/* dlerror() always returns the latest error.
-	 *
-	 * Clear the previous value before calling dlsym(),
-	 * to ensure we can tell if our call resulted in an error.
-	 */
-    (void)dlerror();
+    #ifdef __CYGWIN__
+        //dlerror() isn't very helpful on cygwin */
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (PPROC)dlsym(handle, name);
-#ifdef __CYGWIN__
-    if (!address) {
-        /* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
-                     name);
-        Py_DECREF(ftuple);
-        return NULL;
+
+    if (address) {
+        goto dlsym_ok;
     }
-#else
-    const char *dlerr = dlerror();
-    if (dlerr) {
-        PyErr_SetString(PyExc_AttributeError, dlerr);
-        Py_DECREF(ftuple);
-        return NULL;
-    }
-    else if (!address) {
+    else {
+#ifdef USE_DLERROR
+        // This assumes the error message is UTF-8 (or ASCII).
+        // Investigate if this can cause problems.
+        const char *dlerr = dlerror();
+        if (dlerr) {
+            PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
+            if (message) {
+                PyErr_SetObject(PyExc_AttributeError, message);
+                Py_DECREF(ftuple);
+                return NULL;
+            }
+            // Ignore errors from converting the message to str
+            PyErr_Clear();
+        }
+#endif
+#undef USE_DLERROR
         PyErr_Format(PyExc_AttributeError,
                      "function '%s' not found",
                      name);
@@ -3824,7 +3834,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #endif
-#endif
+
+dlsym_ok:
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {
         Py_DECREF(ftuple);
