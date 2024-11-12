@@ -273,150 +273,351 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
 In its basic form, :func:`~pprint.pp` shows the whole object::
 
    >>> pprint.pp(project_info)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': ['Development Status :: 3 - Alpha',
-                    'Intended Audience :: Developers',
-                    'License :: OSI Approved :: MIT License',
-                    'Programming Language :: Python :: 2',
-                    'Programming Language :: Python :: 2.6',
-                    'Programming Language :: Python :: 2.7',
-                    'Programming Language :: Python :: 3',
-                    'Programming Language :: Python :: 3.2',
-                    'Programming Language :: Python :: 3.3',
-                    'Programming Language :: Python :: 3.4',
-                    'Topic :: Software Development :: Build Tools'],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be written using '
-                   'ReStructured Text. It\n'
-                   'will be used to generate the project webpage on PyPI, and '
-                   'should be written for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would include an overview of '
-                   'the project, basic\n'
-                   'usage examples, etc. Generally, including the project '
-                   'changelog in here is not\n'
-                   'a good idea, although a simple "What\'s New" section for the '
-                   'most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {'Download': 'UNKNOWN',
-                     'Homepage': 'https://github.com/pypa/sampleproject'},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
+   {'author': None,
+   'author_email': '"A. Random Developer" <author@example.com>',
+   'bugtrack_url': None,
+   'classifiers': ['Development Status :: 3 - Alpha',
+                  'Intended Audience :: Developers',
+                  'License :: OSI Approved :: MIT License',
+                  'Programming Language :: Python :: 3',
+                  'Programming Language :: Python :: 3 :: Only',
+                  'Programming Language :: Python :: 3.10',
+                  'Programming Language :: Python :: 3.11',
+                  'Programming Language :: Python :: 3.12',
+                  'Programming Language :: Python :: 3.13',
+                  'Programming Language :: Python :: 3.9',
+                  'Topic :: Software Development :: Build Tools'],
+   'description': '# A sample Python project\n'
+                  '\n'
+                  '![Python '
+                  'Logo](https://www.python.org/static/community_logos/python-logo.png '
+                  '"Sample inline image")\n'
+                  '\n'
+                  'A sample project that exists as an aid to the [Python '
+                  'Packaging User\n'
+                  "Guide][packaging guide]'s [Tutorial on Packaging and "
+                  'Distributing\n'
+                  'Projects][distribution tutorial].\n'
+                  '\n'
+                  'This project does not aim to cover best practices for Python '
+                  'project\n'
+                  'development as a whole. For example, it does not provide '
+                  'guidance or tool\n'
+                  'recommendations for version control, documentation, or '
+                  'testing.\n'
+                  '\n'
+                  '[The source for this project is available here][src].\n'
+                  '\n'
+                  'The metadata for a Python project is defined in the '
+                  '`pyproject.toml` file,\n'
+                  'an example of which is included in this project. You should '
+                  'edit this file\n'
+                  'accordingly to adapt this sample project to your needs.\n'
+                  '\n'
+                  '----\n'
+                  '\n'
+                  'This is the README file for the project.\n'
+                  '\n'
+                  'The file should use UTF-8 encoding and can be written using\n'
+                  '[reStructuredText][rst] or [markdown][md use] with the '
+                  'appropriate [key set][md\n'
+                  'use]. It will be used to generate the project webpage on PyPI '
+                  'and will be\n'
+                  'displayed as the project homepage on common code-hosting '
+                  'services, and should be\n'
+                  'written for that purpose.\n'
+                  '\n'
+                  'Typical contents for this file would include an overview of '
+                  'the project, basic\n'
+                  'usage examples, etc. Generally, including the project '
+                  'changelog in here is not a\n'
+                  "good idea, although a simple “What's New” section for the "
+                  'most recent version\n'
+                  'may be appropriate.\n'
+                  '\n'
+                  '[packaging guide]: https://packaging.python.org\n'
+                  '[distribution tutorial]: '
+                  'https://packaging.python.org/tutorials/packaging-projects/\n'
+                  '[src]: https://github.com/pypa/sampleproject\n'
+                  '[rst]: http://docutils.sourceforge.net/rst.html\n'
+                  '[md]: https://tools.ietf.org/html/rfc7764#section-3.5 '
+                  '"CommonMark variant"\n'
+                  '[md use]: '
+                  'https://packaging.python.org/specifications/core-metadata/#description-content-type-optional\n',
+   'description_content_type': 'text/markdown',
+   'docs_url': None,
+   'download_url': None,
+   'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
+   'dynamic': None,
+   'home_page': None,
+   'keywords': 'sample, setuptools, development',
+   'license': 'Copyright (c) 2016 The Python Packaging Authority (PyPA)  '
+               'Permission is hereby granted, free of charge, to any person '
+               'obtaining a copy of this software and associated documentation '
+               'files (the "Software"), to deal in the Software without '
+               'restriction, including without limitation the rights to use, '
+               'copy, modify, merge, publish, distribute, sublicense, and/or sell '
+               'copies of the Software, and to permit persons to whom the '
+               'Software is furnished to do so, subject to the following '
+               'conditions:  The above copyright notice and this permission '
+               'notice shall be included in all copies or substantial portions of '
+               'the Software.  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY '
+               'OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE '
+               'WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE '
+               'AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT '
+               'HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, '
+               'WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING '
+               'FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR '
+               'OTHER DEALINGS IN THE SOFTWARE. ',
+   'maintainer': None,
+   'maintainer_email': '"A. Great Maintainer" <maintainer@example.com>',
+   'name': 'sampleproject',
+   'package_url': 'https://pypi.org/project/sampleproject/',
+   'platform': None,
+   'project_url': 'https://pypi.org/project/sampleproject/',
+   'project_urls': {'Bug Reports': 'https://github.com/pypa/sampleproject/issues',
+                     'Funding': 'https://donate.pypi.org',
+                     'Homepage': 'https://github.com/pypa/sampleproject',
+                     'Say Thanks!': 'http://saythanks.io/to/example',
+                     'Source': 'https://github.com/pypa/sampleproject/'},
+   'provides_extra': ['dev', 'test'],
+   'release_url': 'https://pypi.org/project/sampleproject/4.0.0/',
+   'requires_dist': ['peppercorn',
+                     'check-manifest; extra == "dev"',
+                     'coverage; extra == "test"'],
+   'requires_python': '>=3.9',
+   'summary': 'A sample Python project',
+   'version': '4.0.0',
+   'yanked': False,
+   'yanked_reason': None}
 
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
 
    >>> pprint.pp(project_info, depth=1)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': [...],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be written using '
-                   'ReStructured Text. It\n'
-                   'will be used to generate the project webpage on PyPI, and '
-                   'should be written for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would include an overview of '
-                   'the project, basic\n'
-                   'usage examples, etc. Generally, including the project '
-                   'changelog in here is not\n'
-                   'a good idea, although a simple "What\'s New" section for the '
-                   'most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {...},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {...},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
+   {'author': None,
+   'author_email': '"A. Random Developer" <author@example.com>',
+   'bugtrack_url': None,
+   'classifiers': [...],
+   'description': '# A sample Python project\n'
+                  '\n'
+                  '![Python '
+                  'Logo](https://www.python.org/static/community_logos/python-logo.png '
+                  '"Sample inline image")\n'
+                  '\n'
+                  'A sample project that exists as an aid to the [Python '
+                  'Packaging User\n'
+                  "Guide][packaging guide]'s [Tutorial on Packaging and "
+                  'Distributing\n'
+                  'Projects][distribution tutorial].\n'
+                  '\n'
+                  'This project does not aim to cover best practices for Python '
+                  'project\n'
+                  'development as a whole. For example, it does not provide '
+                  'guidance or tool\n'
+                  'recommendations for version control, documentation, or '
+                  'testing.\n'
+                  '\n'
+                  '[The source for this project is available here][src].\n'
+                  '\n'
+                  'The metadata for a Python project is defined in the '
+                  '`pyproject.toml` file,\n'
+                  'an example of which is included in this project. You should '
+                  'edit this file\n'
+                  'accordingly to adapt this sample project to your needs.\n'
+                  '\n'
+                  '----\n'
+                  '\n'
+                  'This is the README file for the project.\n'
+                  '\n'
+                  'The file should use UTF-8 encoding and can be written using\n'
+                  '[reStructuredText][rst] or [markdown][md use] with the '
+                  'appropriate [key set][md\n'
+                  'use]. It will be used to generate the project webpage on PyPI '
+                  'and will be\n'
+                  'displayed as the project homepage on common code-hosting '
+                  'services, and should be\n'
+                  'written for that purpose.\n'
+                  '\n'
+                  'Typical contents for this file would include an overview of '
+                  'the project, basic\n'
+                  'usage examples, etc. Generally, including the project '
+                  'changelog in here is not a\n'
+                  "good idea, although a simple “What's New” section for the "
+                  'most recent version\n'
+                  'may be appropriate.\n'
+                  '\n'
+                  '[packaging guide]: https://packaging.python.org\n'
+                  '[distribution tutorial]: '
+                  'https://packaging.python.org/tutorials/packaging-projects/\n'
+                  '[src]: https://github.com/pypa/sampleproject\n'
+                  '[rst]: http://docutils.sourceforge.net/rst.html\n'
+                  '[md]: https://tools.ietf.org/html/rfc7764#section-3.5 '
+                  '"CommonMark variant"\n'
+                  '[md use]: '
+                  'https://packaging.python.org/specifications/core-metadata/#description-content-type-optional\n',
+   'description_content_type': 'text/markdown',
+   'docs_url': None,
+   'download_url': None,
+   'downloads': {...},
+   'dynamic': None,
+   'home_page': None,
+   'keywords': 'sample, setuptools, development',
+   'license': 'Copyright (c) 2016 The Python Packaging Authority (PyPA)  '
+               'Permission is hereby granted, free of charge, to any person '
+               'obtaining a copy of this software and associated documentation '
+               'files (the "Software"), to deal in the Software without '
+               'restriction, including without limitation the rights to use, '
+               'copy, modify, merge, publish, distribute, sublicense, and/or sell '
+               'copies of the Software, and to permit persons to whom the '
+               'Software is furnished to do so, subject to the following '
+               'conditions:  The above copyright notice and this permission '
+               'notice shall be included in all copies or substantial portions of '
+               'the Software.  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY '
+               'OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE '
+               'WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE '
+               'AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT '
+               'HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, '
+               'WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING '
+               'FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR '
+               'OTHER DEALINGS IN THE SOFTWARE. ',
+   'maintainer': None,
+   'maintainer_email': '"A. Great Maintainer" <maintainer@example.com>',
+   'name': 'sampleproject',
+   'package_url': 'https://pypi.org/project/sampleproject/',
+   'platform': None,
+   'project_url': 'https://pypi.org/project/sampleproject/',
+   'project_urls': {...},
+   'provides_extra': [...],
+   'release_url': 'https://pypi.org/project/sampleproject/4.0.0/',
+   'requires_dist': [...],
+   'requires_python': '>=3.9',
+   'summary': 'A sample Python project',
+   'version': '4.0.0',
+   'yanked': False,
+   'yanked_reason': None}
 
 Additionally, maximum character *width* can be suggested. If a long object
 cannot be split, the specified width will be exceeded::
 
    >>> pprint.pp(project_info, depth=1, width=60)
-   {'author': 'The Python Packaging Authority',
-    'author_email': 'pypa-dev@googlegroups.com',
-    'bugtrack_url': None,
-    'classifiers': [...],
-    'description': 'A sample Python project\n'
-                   '=======================\n'
-                   '\n'
-                   'This is the description file for the '
-                   'project.\n'
-                   '\n'
-                   'The file should use UTF-8 encoding and be '
-                   'written using ReStructured Text. It\n'
-                   'will be used to generate the project '
-                   'webpage on PyPI, and should be written '
-                   'for\n'
-                   'that purpose.\n'
-                   '\n'
-                   'Typical contents for this file would '
-                   'include an overview of the project, '
-                   'basic\n'
-                   'usage examples, etc. Generally, including '
-                   'the project changelog in here is not\n'
-                   'a good idea, although a simple "What\'s '
-                   'New" section for the most recent version\n'
-                   'may be appropriate.',
-    'description_content_type': None,
-    'docs_url': None,
-    'download_url': 'UNKNOWN',
-    'downloads': {...},
-    'home_page': 'https://github.com/pypa/sampleproject',
-    'keywords': 'sample setuptools development',
-    'license': 'MIT',
-    'maintainer': None,
-    'maintainer_email': None,
-    'name': 'sampleproject',
-    'package_url': 'https://pypi.org/project/sampleproject/',
-    'platform': 'UNKNOWN',
-    'project_url': 'https://pypi.org/project/sampleproject/',
-    'project_urls': {...},
-    'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
-    'requires_dist': None,
-    'requires_python': None,
-    'summary': 'A sample Python project',
-    'version': '1.2.0'}
+   {'author': None,
+   'author_email': '"A. Random Developer" '
+                  '<author@example.com>',
+   'bugtrack_url': None,
+   'classifiers': [...],
+   'description': '# A sample Python project\n'
+                  '\n'
+                  '![Python '
+                  'Logo](https://www.python.org/static/community_logos/python-logo.png '
+                  '"Sample inline image")\n'
+                  '\n'
+                  'A sample project that exists as an aid to '
+                  'the [Python Packaging User\n'
+                  "Guide][packaging guide]'s [Tutorial on "
+                  'Packaging and Distributing\n'
+                  'Projects][distribution tutorial].\n'
+                  '\n'
+                  'This project does not aim to cover best '
+                  'practices for Python project\n'
+                  'development as a whole. For example, it '
+                  'does not provide guidance or tool\n'
+                  'recommendations for version control, '
+                  'documentation, or testing.\n'
+                  '\n'
+                  '[The source for this project is available '
+                  'here][src].\n'
+                  '\n'
+                  'The metadata for a Python project is '
+                  'defined in the `pyproject.toml` file,\n'
+                  'an example of which is included in this '
+                  'project. You should edit this file\n'
+                  'accordingly to adapt this sample project '
+                  'to your needs.\n'
+                  '\n'
+                  '----\n'
+                  '\n'
+                  'This is the README file for the project.\n'
+                  '\n'
+                  'The file should use UTF-8 encoding and '
+                  'can be written using\n'
+                  '[reStructuredText][rst] or [markdown][md '
+                  'use] with the appropriate [key set][md\n'
+                  'use]. It will be used to generate the '
+                  'project webpage on PyPI and will be\n'
+                  'displayed as the project homepage on '
+                  'common code-hosting services, and should '
+                  'be\n'
+                  'written for that purpose.\n'
+                  '\n'
+                  'Typical contents for this file would '
+                  'include an overview of the project, '
+                  'basic\n'
+                  'usage examples, etc. Generally, including '
+                  'the project changelog in here is not a\n'
+                  "good idea, although a simple “What's New” "
+                  'section for the most recent version\n'
+                  'may be appropriate.\n'
+                  '\n'
+                  '[packaging guide]: '
+                  'https://packaging.python.org\n'
+                  '[distribution tutorial]: '
+                  'https://packaging.python.org/tutorials/packaging-projects/\n'
+                  '[src]: '
+                  'https://github.com/pypa/sampleproject\n'
+                  '[rst]: '
+                  'http://docutils.sourceforge.net/rst.html\n'
+                  '[md]: '
+                  'https://tools.ietf.org/html/rfc7764#section-3.5 '
+                  '"CommonMark variant"\n'
+                  '[md use]: '
+                  'https://packaging.python.org/specifications/core-metadata/#description-content-type-optional\n',
+   'description_content_type': 'text/markdown',
+   'docs_url': None,
+   'download_url': None,
+   'downloads': {...},
+   'dynamic': None,
+   'home_page': None,
+   'keywords': 'sample, setuptools, development',
+   'license': 'Copyright (c) 2016 The Python Packaging '
+               'Authority (PyPA)  Permission is hereby '
+               'granted, free of charge, to any person '
+               'obtaining a copy of this software and '
+               'associated documentation files (the '
+               '"Software"), to deal in the Software without '
+               'restriction, including without limitation the '
+               'rights to use, copy, modify, merge, publish, '
+               'distribute, sublicense, and/or sell copies of '
+               'the Software, and to permit persons to whom '
+               'the Software is furnished to do so, subject '
+               'to the following conditions:  The above '
+               'copyright notice and this permission notice '
+               'shall be included in all copies or '
+               'substantial portions of the Software.  THE '
+               'SOFTWARE IS PROVIDED "AS IS", WITHOUT '
+               'WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, '
+               'INCLUDING BUT NOT LIMITED TO THE WARRANTIES '
+               'OF MERCHANTABILITY, FITNESS FOR A PARTICULAR '
+               'PURPOSE AND NONINFRINGEMENT. IN NO EVENT '
+               'SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE '
+               'LIABLE FOR ANY CLAIM, DAMAGES OR OTHER '
+               'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, '
+               'TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
+               'CONNECTION WITH THE SOFTWARE OR THE USE OR '
+               'OTHER DEALINGS IN THE SOFTWARE. ',
+   'maintainer': None,
+   'maintainer_email': '"A. Great Maintainer" '
+                        '<maintainer@example.com>',
+   'name': 'sampleproject',
+   'package_url': 'https://pypi.org/project/sampleproject/',
+   'platform': None,
+   'project_url': 'https://pypi.org/project/sampleproject/',
+   'project_urls': {...},
+   'provides_extra': [...],
+   'release_url': 'https://pypi.org/project/sampleproject/4.0.0/',
+   'requires_dist': [...],
+   'requires_python': '>=3.9',
+   'summary': 'A sample Python project',
+   'version': '4.0.0',
+   'yanked': False,
+   'yanked_reason': None}
