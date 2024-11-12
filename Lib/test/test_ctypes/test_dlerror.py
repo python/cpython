@@ -1,7 +1,8 @@
 import os
 import sys
 import unittest
-from ctypes import CDLL
+from ctypes import CDLL, c_int
+from _ctypes import dlopen, dlsym
 
 FOO_C = r"""
 #include <unistd.h>
@@ -76,9 +77,9 @@ class TestNullDlsym(unittest.TestCase):
             args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
             p = subprocess.run(args, capture_output=True)
             self.assertEqual(p.returncode, 0, p)
-            # Load the shared library
-            L = CDLL(dstname)
 
+            # Case #1: Test 'PyCFuncPtr_FromDll' from Modules/_ctypes/_ctypes.c
+            L = CDLL(dstname)
             with self.assertRaisesRegex(AttributeError, "function 'foo' not found"):
                 # Try accessing the 'foo' symbol.
                 # It should resolve via dlsym() to NULL,
@@ -87,8 +88,23 @@ class TestNullDlsym(unittest.TestCase):
                 # an error.
                 L.foo
 
-        # Assert that the IFUNC was called
-        self.assertEqual(os.read(pipe_r, 2), b'OK')
+            # Assert that the IFUNC was called
+            self.assertEqual(os.read(pipe_r, 2), b'OK')
+
+            # Case #2: Test 'CDataType_in_dll_impl' from Modules/_ctypes/_ctypes.c
+            with self.assertRaisesRegex(ValueError, "symbol 'foo' not found"):
+                c_int.in_dll(L, "foo")
+
+            # Assert that the IFUNC was called
+            self.assertEqual(os.read(pipe_r, 2), b'OK')
+
+            # Case #3: Test 'py_dl_sym' from Modules/_ctypes/callproc.c
+            L = dlopen(dstname)
+            with self.assertRaisesRegex(OSError, "symbol 'foo' not found"):
+                dlsym(L, "foo")
+
+            # Assert that the IFUNC was called
+            self.assertEqual(os.read(pipe_r, 2), b'OK')
 
 
 if __name__ == "__main__":
