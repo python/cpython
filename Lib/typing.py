@@ -1944,6 +1944,7 @@ _PROTO_ALLOWLIST = {
         'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'os': ['PathLike'],
 }
 
 
