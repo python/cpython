@@ -51,6 +51,12 @@ class TestNullDlsym(unittest.TestCase):
     def test_null_dlsym(self):
         import subprocess
         import tempfile
+
+        # To avoid ImportErrors on Windows, where _ctypes does not have
+        # dlopen and dlsym,
+        # import here, i.e., inside the test function.
+        # The skipUnless('linux') decorator ensures that we're on linux
+        # if we're executing these statements.
         from ctypes import CDLL, c_int
         from _ctypes import dlopen, dlsym
 
