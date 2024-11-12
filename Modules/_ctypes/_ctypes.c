@@ -956,50 +956,46 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
     Py_END_ALLOW_THREADS
-    if (!address) {
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
 #else
-	/* dlerror() always returns the latest error.
-	 *
-	 * Clear the previous value before calling dlsym(),
-	 * to ensure we can tell if our call resulted in an error.
-	 */
-    (void)dlerror();
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (void *)dlsym(handle, name);
-#ifdef __CYGWIN__
-    if (!address) {
-        /* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
+#endif
+
+    if (address) {
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+        return PyCData_AtAddress(st, type, address);
     }
-#else
+
+#ifdef USE_DLERROR
+    // This assumes the error message is UTF-8 (or ASCII).
+    // Investigate if this can cause problems.
     const char *dlerr = dlerror();
     if (dlerr) {
-        // XXX: This assumes that UTF-8 is the default locale.
-        // Investigate if this can cause problems.
         PyErr_SetString(PyExc_ValueError, dlerr);
         return NULL;
     }
-    else if (!address) {
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
 #endif
-#endif
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-    return PyCData_AtAddress(st, type, address);
+#undef USE_DLERROR
+
+    PyErr_Format(PyExc_ValueError,
+                    "symbol '%s' not found",
+                    name);
+    return NULL;
 }
 
 /*[clinic input]
