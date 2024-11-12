@@ -1638,8 +1638,6 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (ptr)
         return PyLong_FromVoidPtr(ptr);
 #ifdef USE_DLERROR
-    // This assumes the error message is UTF-8 (or ASCII).
-    // Investigate if this can cause problems.
     const char *dlerr = dlerror();
     if (dlerr) {
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");

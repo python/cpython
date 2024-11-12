@@ -982,8 +982,6 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     }
 
 #ifdef USE_DLERROR
-    // This assumes the error message is UTF-8 (or ASCII).
-    // Investigate if this can cause problems.
     const char *dlerr = dlerror();
     if (dlerr) {
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
@@ -3807,13 +3805,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     #endif
     address = (PPROC)dlsym(handle, name);
 
-    if (address) {
-        goto dlsym_ok;
-    }
-    else {
-#ifdef USE_DLERROR
-        // This assumes the error message is UTF-8 (or ASCII).
-        // Investigate if this can cause problems.
+    if (!address) {
+	#ifdef USE_DLERROR
         const char *dlerr = dlerror();
         if (dlerr) {
             PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
@@ -3825,22 +3818,15 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
             // Ignore errors from converting the message to str
             PyErr_Clear();
         }
-#endif
-#undef USE_DLERROR
+	#endif
         PyErr_Format(PyExc_AttributeError,
                      "function '%s' not found",
                      name);
         Py_DECREF(ftuple);
         return NULL;
     }
-dlsym_ok:
-    /* Add an empty statement (;) to placate some C compilers
-     that do not allow declarations after labels.
-
-     See https://stackoverflow.com/a/18496437.
-    */
-    ;
 #endif
+#undef USE_DLERROR
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {
         Py_DECREF(ftuple);
