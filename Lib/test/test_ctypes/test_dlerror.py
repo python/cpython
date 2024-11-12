@@ -4,7 +4,7 @@ import unittest
 from ctypes import CDLL
 
 FOO_C = r"""
-#include <stdio.h>
+#include <unistd.h>
 
 /* This is a 'GNU indirect function' (IFUNC) that will be called by
    dlsym() to resolve the symbol "foo" to an address. Typically, such
@@ -19,7 +19,7 @@ asm (".type foo, @gnu_indirect_function");
 
 void *foo(void)
 {
-    fprintf(stderr, "foo IFUNC called\n");
+    write($DESCRIPTOR, "OK", 2);
     return NULL;
 }
 """
@@ -62,13 +62,17 @@ class TestNullDlsym(unittest.TestCase):
         if retcode != 0:
             self.skipTest("gcc is missing")
 
+        pipe_r, pipe_w = os.pipe()
+        self.addCleanup(os.close, pipe_r)
+        self.addCleanup(os.close, pipe_w)
+
         with tempfile.TemporaryDirectory() as d:
             # Create a C file with a GNU Indirect Function (FOO_C)
             # and compile it into a shared library.
             srcname = os.path.join(d, 'foo.c')
             dstname = os.path.join(d, 'libfoo.so')
             with open(srcname, 'w') as f:
-                f.write(FOO_C)
+                f.write(FOO_C.replace('$DESCRIPTOR', str(pipe_w)))
             args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
             p = subprocess.run(args, capture_output=True)
             self.assertEqual(p.returncode, 0, p)
@@ -82,6 +86,9 @@ class TestNullDlsym(unittest.TestCase):
                 # addresses as errors, we should get
                 # an error.
                 L.foo
+
+        # Assert that the IFUNC was called
+        self.assertEqual(os.read(pipe_r, 2), b'OK')
 
 
 if __name__ == "__main__":
