@@ -393,6 +393,12 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`89416`.)
 
+* Add MIME types for images with RFCs:
+
+  * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
+
+  (Contributed by Hugo van Kemenade in :gh:`85957`.)
+
 
 multiprocessing
 ---------------
