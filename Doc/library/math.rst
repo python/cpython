@@ -291,6 +291,11 @@ Floating point arithmetic
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
 
+   Note that :func:`modf` has a different call/return pattern
+   than its C equivalents: it takes a single argument and return a pair of
+   values, rather than returning its second return value through an 'output
+   parameter' (there is no such thing in Python).
+
 
 .. function:: remainder(x, y)
 
@@ -328,11 +333,6 @@ Python floats typically carry no more than 53 bits of precision (the same as the
 platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
 necessarily has no fractional bits.
 
-Note that :func:`modf` has a different call/return pattern
-than its C equivalents: it takes a single argument and return a pair of
-values, rather than returning its second return value through an 'output
-parameter' (there is no such thing in Python).
-
 
 Floating point manipulation functions
 -------------------------------------
@@ -351,6 +351,10 @@ Floating point manipulation functions
    returns ``(0.0, 0)``, otherwise ``0.5 <= abs(m) < 1``.  This is used to "pick
    apart" the internal representation of a float in a portable way.
 
+   Note that :func:`frexp` has a different call/return pattern
+   than its C equivalents: it takes a single argument and return a pair of
+   values, rather than returning its second return value through an 'output
+   parameter' (there is no such thing in Python).
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
 
@@ -455,12 +459,6 @@ Floating point manipulation functions
    <sys.float_info>`.
 
    .. versionadded:: 3.9
-
-
-Note that :func:`frexp` has a different call/return pattern
-than its C equivalents: it takes a single argument and return a pair of
-values, rather than returning its second return value through an 'output
-parameter' (there is no such thing in Python).
 
 
 Power, exponential and logarithmic functions
