@@ -522,8 +522,10 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(count(maxsize)), f'count({maxsize})')
         c = count(maxsize - 1)
         self.assertEqual(repr(c), f'count({maxsize - 1})')
-        next(c)  # now c is at maxsize
+        next(c)  # c is now at masize
         self.assertEqual(repr(c), f'count({maxsize})')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 1})')
 
         self.assertEqual(type(next(count(10.0))), float)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
@@ -585,10 +587,19 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
 
+        c = count(maxsize -2, 2)
+        self.assertEqual(repr(c), f'count({maxsize - 2}, 2)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, 2)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 2}, 2)')
+
         c = count(maxsize + 1, -1)
         self.assertEqual(repr(c), f'count({maxsize + 1}, -1)')
-        next(c)  # now c is at maxsize
+        next(c)  # c is now at masize
         self.assertEqual(repr(c), f'count({maxsize}, -1)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize - 1}, -1)')
 
     @threading_helper.requires_working_threading()
     def test_count_threading(self, step=1):
