@@ -2449,6 +2449,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/leakers \
 		test/libregrtest \
 		test/mathdata \
+		test/multiprocessingdata \
 		test/regrtestdata \
 		test/regrtestdata/import_from_tests \
 		test/regrtestdata/import_from_tests/test_regrtest_b \
@@ -2519,6 +2520,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_interpreters \
 		test/test_json \
 		test/test_module \
+		test/test_multiprocessing_event \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
 		test/test_multiprocessing_spawn \
