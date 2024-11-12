@@ -224,7 +224,7 @@ Kumar Aditya.
 .. nonce: ZI05b5
 .. section: Core and Builtins
 
-Improved the performance of :meth:`list.append()` and list comprehensions by
+Improved the performance of :meth:`list.append` and list comprehensions by
 optimizing for the common case, where no resize is needed. Patch by Dennis
 Sweeney.
 
@@ -1127,7 +1127,7 @@ Raise more accurate and :pep:`249` compatible exceptions in :mod:`sqlite3`.
 * Don't overwrite :exc:`BufferError` with :exc:`ValueError` when conversion to
   BLOB fails.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`~sqlite3.Warning` if
-  user tries to :meth:`~sqlite3.Cursor.execute()` more than one SQL statement.
+  user tries to :meth:`~sqlite3.Cursor.execute` more than one SQL statement.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`ValueError` if an SQL
   query contains null characters.
 

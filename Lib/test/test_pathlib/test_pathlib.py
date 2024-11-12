@@ -1,3 +1,4 @@
+import contextlib
 import io
 import os
 import sys
@@ -16,20 +17,43 @@ from urllib.request import pathname2url
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
 from test.support import infinite_recursion
+from test.support import swap_attr
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
 from test.test_pathlib.test_pathlib_abc import needs_posix, needs_windows, needs_symlinks
 
 try:
+    import fcntl
+except ImportError:
+    fcntl = None
+try:
     import grp, pwd
 except ImportError:
     grp = pwd = None
+try:
+    import posix
+except ImportError:
+    posix = None
 
 
 root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
+
+
+def patch_replace(old_test):
+    def new_replace(self, target):
+        raise OSError(errno.EXDEV, "Cross-device link", self, target)
+
+    def new_test(self):
+        old_replace = self.cls.replace
+        self.cls.replace = new_replace
+        try:
+            old_test(self)
+        finally:
+            self.cls.replace = old_replace
+    return new_test
 
 #
 # Tests for the pure classes.
@@ -107,6 +131,15 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
 
+    @needs_windows
+    def test_constructor_nested_foreign_flavour(self):
+        # See GH-125069.
+        p1 = pathlib.PurePosixPath('b/c:\\d')
+        p2 = pathlib.PurePosixPath('b/', 'c:\\d')
+        self.assertEqual(p1, p2)
+        self.assertEqual(self.cls(p1), self.cls('b/c:/d'))
+        self.assertEqual(self.cls(p2), self.cls('b/c:/d'))
+
     def _check_parse_path(self, raw_path, *expected):
         sep = self.parser.sep
         actual = self.cls._parse_path(raw_path.replace('/', sep))
@@ -138,15 +171,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(str(p), '.')
         # Special case for the empty path.
         self._check_str('.', ('',))
-
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
 
     def test_join_nested(self):
         P = self.cls
@@ -702,19 +726,162 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
+    def test_copy_error_handling(self):
+        def make_raiser(err):
+            def raiser(*args, **kwargs):
+                raise OSError(err, os.strerror(err))
+            return raiser
+
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+
+        # Raise non-fatal OSError from all available fast copy functions.
+        with contextlib.ExitStack() as ctx:
+            if fcntl and hasattr(fcntl, 'FICLONE'):
+                ctx.enter_context(mock.patch('fcntl.ioctl', make_raiser(errno.EXDEV)))
+            if posix and hasattr(posix, '_fcopyfile'):
+                ctx.enter_context(mock.patch('posix._fcopyfile', make_raiser(errno.ENOTSUP)))
+            if hasattr(os, 'copy_file_range'):
+                ctx.enter_context(mock.patch('os.copy_file_range', make_raiser(errno.EXDEV)))
+            if hasattr(os, 'sendfile'):
+                ctx.enter_context(mock.patch('os.sendfile', make_raiser(errno.ENOTSOCK)))
+
+            source.copy(target)
+            self.assertTrue(target.exists())
+            self.assertEqual(source.read_text(), target.read_text())
+
+        # Raise fatal OSError from first available fast copy function.
+        if fcntl and hasattr(fcntl, 'FICLONE'):
+            patchpoint = 'fcntl.ioctl'
+        elif posix and hasattr(posix, '_fcopyfile'):
+            patchpoint = 'posix._fcopyfile'
+        elif hasattr(os, 'copy_file_range'):
+            patchpoint = 'os.copy_file_range'
+        elif hasattr(os, 'sendfile'):
+            patchpoint = 'os.sendfile'
+        else:
+            return
+        with mock.patch(patchpoint, make_raiser(errno.ENOENT)):
+            self.assertRaises(FileNotFoundError, source.copy, target)
+
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
     @unittest.skipIf(root_in_posix, "test fails with root privilege")
-    def test_copytree_no_read_permission(self):
+    def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
         target = base / 'copyE'
-        self.assertRaises(PermissionError, source.copytree, target)
+        self.assertRaises(PermissionError, source.copy, target)
         self.assertFalse(target.exists())
-        errors = []
-        source.copytree(target, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], PermissionError)
-        self.assertFalse(target.exists())
+
+    def test_copy_dir_preserve_metadata(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        if hasattr(os, 'chmod'):
+            os.chmod(source / 'dirD', stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
+            os.chflags(source / 'fileC', stat.UF_NODUMP)
+        target = base / 'copyA'
+        source.copy(target, preserve_metadata=True)
+
+        for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
+            source_st = source.joinpath(subpath).stat()
+            target_st = target.joinpath(subpath).stat()
+            self.assertLessEqual(source_st.st_atime, target_st.st_atime)
+            self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
+            self.assertEqual(source_st.st_mode, target_st.st_mode)
+            if hasattr(source_st, 'st_flags'):
+                self.assertEqual(source_st.st_flags, target_st.st_flags)
+
+    @os_helper.skip_unless_xattr
+    def test_copy_dir_preserve_metadata_xattrs(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        source_file = source.joinpath('dirD', 'fileD')
+        os.setxattr(source_file, b'user.foo', b'42')
+        target = base / 'copyA'
+        source.copy(target, preserve_metadata=True)
+        target_file = target.joinpath('dirD', 'fileD')
+        self.assertEqual(os.getxattr(target_file, b'user.foo'), b'42')
+
+    @patch_replace
+    def test_move_file_other_fs(self):
+        self.test_move_file()
+
+    @patch_replace
+    def test_move_file_to_file_other_fs(self):
+        self.test_move_file_to_file()
+
+    @patch_replace
+    def test_move_file_to_dir_other_fs(self):
+        self.test_move_file_to_dir()
+
+    @patch_replace
+    def test_move_dir_other_fs(self):
+        self.test_move_dir()
+
+    @patch_replace
+    def test_move_dir_to_dir_other_fs(self):
+        self.test_move_dir_to_dir()
+
+    @patch_replace
+    def test_move_dir_into_itself_other_fs(self):
+        self.test_move_dir_into_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_other_fs(self):
+        self.test_move_file_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_to_itself_other_fs(self):
+        self.test_move_file_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_other_fs(self):
+        self.test_move_dir_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_to_itself_other_fs(self):
+        self.test_move_dir_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dangling_symlink_other_fs(self):
+        self.test_move_dangling_symlink()
+
+    @patch_replace
+    def test_move_into_other_os(self):
+        self.test_move_into()
+
+    @patch_replace
+    def test_move_into_empty_name_other_os(self):
+        self.test_move_into_empty_name()
+
+    def _check_complex_symlinks(self, link0_target):
+        super()._check_complex_symlinks(link0_target)
+        P = self.cls(self.base)
+        # Resolve relative paths.
+        old_path = os.getcwd()
+        os.chdir(self.base)
+        try:
+            p = self.cls('link0').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link1').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link2').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link3').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+        finally:
+            os.chdir(old_path)
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
@@ -826,6 +993,108 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
+
+    @unittest.skipIf(sys.platform[:6] == 'cygwin',
+                     "This test can't be run on Cygwin (issue #1071513).")
+    @os_helper.skip_if_dac_override
+    @os_helper.skip_unless_working_chmod
+    def test_delete_unwritable(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        child_file_path = tmp / 'a'
+        child_dir_path = tmp / 'b'
+        child_file_path.write_text("")
+        child_dir_path.mkdir()
+        old_dir_mode = tmp.stat().st_mode
+        old_child_file_mode = child_file_path.stat().st_mode
+        old_child_dir_mode = child_dir_path.stat().st_mode
+        # Make unwritable.
+        new_mode = stat.S_IREAD | stat.S_IEXEC
+        try:
+            child_file_path.chmod(new_mode)
+            child_dir_path.chmod(new_mode)
+            tmp.chmod(new_mode)
+
+            self.assertRaises(PermissionError, tmp._delete)
+        finally:
+            tmp.chmod(old_dir_mode)
+            child_file_path.chmod(old_child_file_mode)
+            child_dir_path.chmod(old_child_dir_mode)
+
+    @needs_windows
+    def test_delete_inner_junction(self):
+        import _winapi
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        dir1 = tmp / 'dir1'
+        dir2 = dir1 / 'dir2'
+        dir3 = tmp / 'dir3'
+        for d in dir1, dir2, dir3:
+            d.mkdir()
+        file1 = tmp / 'file1'
+        file1.write_text('foo')
+        link1 = dir1 / 'link1'
+        _winapi.CreateJunction(str(dir2), str(link1))
+        link2 = dir1 / 'link2'
+        _winapi.CreateJunction(str(dir3), str(link2))
+        link3 = dir1 / 'link3'
+        _winapi.CreateJunction(str(file1), str(link3))
+        # make sure junctions are removed but not followed
+        dir1._delete()
+        self.assertFalse(dir1.exists())
+        self.assertTrue(dir3.exists())
+        self.assertTrue(file1.exists())
+
+    @needs_windows
+    def test_delete_outer_junction(self):
+        import _winapi
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        src = tmp / 'cheese'
+        dst = tmp / 'shop'
+        src.mkdir()
+        spam = src / 'spam'
+        spam.write_text('')
+        _winapi.CreateJunction(str(src), str(dst))
+        dst._delete()
+        self.assertFalse(dst.exists())
+        self.assertTrue(spam.exists())
+        self.assertTrue(src.exists())
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "fifo requires special path on VxWorks")
+    def test_delete_on_named_pipe(self):
+        p = self.cls(self.base, 'pipe')
+        os.mkfifo(p)
+        p._delete()
+        self.assertFalse(p.exists())
+
+        p = self.cls(self.base, 'dir')
+        p.mkdir()
+        os.mkfifo(p / 'mypipe')
+        p._delete()
+        self.assertFalse(p.exists())
+
+    def test_delete_does_not_choke_on_failing_lstat(self):
+        try:
+            orig_lstat = os.lstat
+            tmp = self.cls(self.base, 'delete')
+
+            def raiser(fn, *args, **kwargs):
+                if fn != tmp:
+                    raise OSError()
+                else:
+                    return orig_lstat(fn)
+
+            os.lstat = raiser
+
+            tmp.mkdir()
+            foo = tmp / 'foo'
+            foo.write_text('')
+            tmp._delete()
+        finally:
+            os.lstat = orig_lstat
 
     @os_helper.skip_unless_hardlink
     def test_hardlink_to(self):
@@ -1327,18 +1596,20 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_open_mode(self):
-        old_mask = os.umask(0)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         with (p / 'new_file').open('wb'):
             pass
         st = os.stat(self.parser.join(self.base, 'new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
-        os.umask(0o022)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o664)
+        os.umask(0o026)
         with (p / 'other_new_file').open('wb'):
             pass
         st = os.stat(self.parser.join(self.base, 'other_new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o640)
 
     @needs_posix
     def test_resolve_root(self):
@@ -1356,16 +1627,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     )
     @needs_posix
     def test_touch_mode(self):
-        old_mask = os.umask(0)
+        # Unmask all permissions except world-write, which may
+        # not be supported on some filesystems (see GH-85633.)
+        old_mask = os.umask(0o002)
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         (p / 'new_file').touch()
         st = os.stat(self.parser.join(self.base, 'new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
-        os.umask(0o022)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o664)
+        os.umask(0o026)
         (p / 'other_new_file').touch()
         st = os.stat(self.parser.join(self.base, 'other_new_file'))
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0o640)
         (p / 'masked_new_file').touch(mode=0o750)
         st = os.stat(self.parser.join(self.base, 'masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)

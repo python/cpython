@@ -92,7 +92,7 @@ another rational number, or from a string.
 
    .. versionchanged:: 3.9
       The :func:`math.gcd` function is now used to normalize the *numerator*
-      and *denominator*. :func:`math.gcd` always return a :class:`int` type.
+      and *denominator*. :func:`math.gcd` always returns an :class:`int` type.
       Previously, the GCD type depended on *numerator* and *denominator*.
 
    .. versionchanged:: 3.11
@@ -164,6 +164,16 @@ another rational number, or from a string.
          From Python 3.2 onwards, you can also construct a
          :class:`Fraction` instance directly from a :class:`decimal.Decimal`
          instance.
+
+
+   .. classmethod:: from_number(number)
+
+      Alternative constructor which only accepts instances of
+      :class:`numbers.Integral`, :class:`numbers.Rational`,
+      :class:`float` or :class:`decimal.Decimal`, and objects with
+      the :meth:`!as_integer_ratio` method, but not strings.
+
+      .. versionadded:: 3.14
 
 
    .. method:: limit_denominator(max_denominator=1000000)
