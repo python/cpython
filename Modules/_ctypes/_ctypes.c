@@ -3833,8 +3833,6 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(ftuple);
         return NULL;
     }
-#endif
-
 dlsym_ok:
     /* Add an empty statement (;) to placate some C compilers
      that do not allow declarations after labels.
@@ -3842,6 +3840,7 @@ dlsym_ok:
      See https://stackoverflow.com/a/18496437.
     */
     ;
+#endif
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {
         Py_DECREF(ftuple);
