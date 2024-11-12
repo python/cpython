@@ -27,8 +27,8 @@
 
 The :mod:`xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
-:class:`xmlparser`, that represents the current state of an XML parser.  After
-an :class:`xmlparser` object has been created, various attributes of the object
+:class:`XMLParserType`, that represents the current state of an XML parser.  After
+an :class:`XMLParserType` object has been created, various attributes of the object
 can be set to handler functions.  When an XML document is then fed to the
 parser, the handler functions are called for the character data and markup in
 the XML document.
@@ -66,7 +66,7 @@ The :mod:`xml.parsers.expat` module contains two functions:
 
 .. function:: ParserCreate(encoding=None, namespace_separator=None)
 
-   Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
+   Creates and returns a new :class:`XMLParserType` object.   *encoding*, if specified,
    must be a string naming the encoding  used by the XML data.  Expat doesn't
    support as many encodings as Python does, and its repertoire of encodings can't
    be extended; it supports UTF-8, UTF-16, ISO-8859-1 (Latin1), and ASCII.  If
@@ -105,7 +105,7 @@ The :mod:`xml.parsers.expat` module contains two functions:
       elem2
 
    Due to limitations in the ``Expat`` library used by :mod:`pyexpat`,
-   the :class:`xmlparser` instance returned can only be used to parse a single
+   the :class:`XMLParserType` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
 
@@ -121,10 +121,10 @@ The :mod:`xml.parsers.expat` module contains two functions:
 XMLParser Objects
 -----------------
 
-:class:`xmlparser` objects have the following methods:
+:class:`XMLParserType` objects have the following methods:
 
 
-.. method:: xmlparser.Parse(data[, isfinal])
+.. method:: XMLParserType.Parse(data[, isfinal])
 
    Parses the contents of the string *data*, calling the appropriate handler
    functions to process the parsed data.  *isfinal* must be true on the final call
@@ -133,14 +133,14 @@ XMLParser Objects
    *data* can be the empty string at any time.
 
 
-.. method:: xmlparser.ParseFile(file)
+.. method:: XMLParserType.ParseFile(file)
 
    Parse XML data reading from the object *file*.  *file* only needs to provide
    the ``read(nbytes)`` method, returning the empty string when there's no more
    data.
 
 
-.. method:: xmlparser.SetBase(base)
+.. method:: XMLParserType.SetBase(base)
 
    Sets the base to be used for resolving relative URIs in system identifiers in
    declarations.  Resolving relative identifiers is left to the application: this
@@ -149,20 +149,20 @@ XMLParser Objects
    :func:`UnparsedEntityDeclHandler` functions.
 
 
-.. method:: xmlparser.GetBase()
+.. method:: XMLParserType.GetBase()
 
    Returns a string containing the base set by a previous call to :meth:`SetBase`,
    or ``None`` if  :meth:`SetBase` hasn't been called.
 
 
-.. method:: xmlparser.GetInputContext()
+.. method:: XMLParserType.GetInputContext()
 
    Returns the input data that generated the current event as a string. The data is
    in the encoding of the entity which contains the text. When called while an
    event handler is not active, the return value is ``None``.
 
 
-.. method:: xmlparser.ExternalEntityParserCreate(context[, encoding])
+.. method:: XMLParserType.ExternalEntityParserCreate(context[, encoding])
 
    Create a "child" parser which can be used to parse an external parsed entity
    referred to by content parsed by the parent parser.  The *context* parameter
@@ -171,7 +171,7 @@ XMLParser Objects
    :attr:`ordered_attributes` and :attr:`specified_attributes` set to the values of
    this parser.
 
-.. method:: xmlparser.SetParamEntityParsing(flag)
+.. method:: XMLParserType.SetParamEntityParsing(flag)
 
    Control parsing of parameter entities (including the external DTD subset).
    Possible *flag* values are :const:`XML_PARAM_ENTITY_PARSING_NEVER`,
@@ -179,7 +179,7 @@ XMLParser Objects
    :const:`XML_PARAM_ENTITY_PARSING_ALWAYS`.  Return true if setting the flag
    was successful.
 
-.. method:: xmlparser.UseForeignDTD([flag])
+.. method:: XMLParserType.UseForeignDTD([flag])
 
    Calling this with a true value for *flag* (the default) will cause Expat to call
    the :attr:`ExternalEntityRefHandler` with :const:`None` for all arguments to
@@ -196,7 +196,7 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
-.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
+.. method:: XMLParserType.SetReparseDeferralEnabled(enabled)
 
    .. warning::
 
@@ -224,7 +224,7 @@ XMLParser Objects
 
    .. versionadded:: 3.13
 
-.. method:: xmlparser.GetReparseDeferralEnabled()
+.. method:: XMLParserType.GetReparseDeferralEnabled()
 
    Returns whether reparse deferral is currently enabled for the given
    Expat parser instance.
@@ -232,10 +232,10 @@ XMLParser Objects
    .. versionadded:: 3.13
 
 
-:class:`xmlparser` objects have the following attributes:
+:class:`XMLParserType` objects have the following attributes:
 
 
-.. attribute:: xmlparser.buffer_size
+.. attribute:: XMLParserType.buffer_size
 
    The size of the buffer used when :attr:`buffer_text` is true.
    A new buffer size can be set by assigning a new integer value
@@ -243,9 +243,9 @@ XMLParser Objects
    When the size is changed, the buffer will be flushed.
 
 
-.. attribute:: xmlparser.buffer_text
+.. attribute:: XMLParserType.buffer_text
 
-   Setting this to true causes the :class:`xmlparser` object to buffer textual
+   Setting this to true causes the :class:`XMLParserType` object to buffer textual
    content returned by Expat to avoid multiple calls to the
    :meth:`CharacterDataHandler` callback whenever possible.  This can improve
    performance substantially since Expat normally breaks character data into chunks
@@ -254,14 +254,14 @@ XMLParser Objects
    may be chunked too.
 
 
-.. attribute:: xmlparser.buffer_used
+.. attribute:: XMLParserType.buffer_used
 
    If :attr:`buffer_text` is enabled, the number of bytes stored in the buffer.
    These bytes represent UTF-8 encoded text.  This attribute has no meaningful
    interpretation when :attr:`buffer_text` is false.
 
 
-.. attribute:: xmlparser.ordered_attributes
+.. attribute:: XMLParserType.ordered_attributes
 
    Setting this attribute to a non-zero integer causes the attributes to be
    reported as a list rather than a dictionary.  The attributes are presented in
@@ -271,7 +271,7 @@ XMLParser Objects
    changed at any time.
 
 
-.. attribute:: xmlparser.specified_attributes
+.. attribute:: XMLParserType.specified_attributes
 
    If set to a non-zero integer, the parser will report only those attributes which
    were specified in the document instance and not those which were derived from
@@ -282,62 +282,62 @@ XMLParser Objects
 
 
 The following attributes contain values relating to the most recent error
-encountered by an :class:`xmlparser` object, and will only have correct values
+encountered by an :class:`XMLParserType` object, and will only have correct values
 once a call to :meth:`Parse` or :meth:`ParseFile` has raised an
 :exc:`xml.parsers.expat.ExpatError` exception.
 
 
-.. attribute:: xmlparser.ErrorByteIndex
+.. attribute:: XMLParserType.ErrorByteIndex
 
    Byte index at which an error occurred.
 
 
-.. attribute:: xmlparser.ErrorCode
+.. attribute:: XMLParserType.ErrorCode
 
    Numeric code specifying the problem.  This value can be passed to the
    :func:`ErrorString` function, or compared to one of the constants defined in the
    ``errors`` object.
 
 
-.. attribute:: xmlparser.ErrorColumnNumber
+.. attribute:: XMLParserType.ErrorColumnNumber
 
    Column number at which an error occurred.
 
 
-.. attribute:: xmlparser.ErrorLineNumber
+.. attribute:: XMLParserType.ErrorLineNumber
 
    Line number at which an error occurred.
 
 The following attributes contain values relating to the current parse location
-in an :class:`xmlparser` object.  During a callback reporting a parse event they
+in an :class:`XMLParserType` object.  During a callback reporting a parse event they
 indicate the location of the first of the sequence of characters that generated
 the event.  When called outside of a callback, the position indicated will be
 just past the last parse event (regardless of whether there was an associated
 callback).
 
 
-.. attribute:: xmlparser.CurrentByteIndex
+.. attribute:: XMLParserType.CurrentByteIndex
 
    Current byte index in the parser input.
 
 
-.. attribute:: xmlparser.CurrentColumnNumber
+.. attribute:: XMLParserType.CurrentColumnNumber
 
    Current column number in the parser input.
 
 
-.. attribute:: xmlparser.CurrentLineNumber
+.. attribute:: XMLParserType.CurrentLineNumber
 
    Current line number in the parser input.
 
 Here is the list of handlers that can be set.  To set a handler on an
-:class:`xmlparser` object *o*, use ``o.handlername = func``.  *handlername* must
+:class:`XMLParserType` object *o*, use ``o.handlername = func``.  *handlername* must
 be taken from the following list, and *func* must be a callable object accepting
 the correct number of arguments.  The arguments are all strings, unless
 otherwise stated.
 
 
-.. method:: xmlparser.XmlDeclHandler(version, encoding, standalone)
+.. method:: XMLParserType.XmlDeclHandler(version, encoding, standalone)
 
    Called when the XML declaration is parsed.  The XML declaration is the
    (optional) declaration of the applicable version of the XML recommendation, the
@@ -348,7 +348,7 @@ otherwise stated.
    Expat version 1.95.0 or newer.
 
 
-.. method:: xmlparser.StartDoctypeDeclHandler(doctypeName, systemId, publicId, has_internal_subset)
+.. method:: XMLParserType.StartDoctypeDeclHandler(doctypeName, systemId, publicId, has_internal_subset)
 
    Called when Expat begins parsing the document type declaration (``<!DOCTYPE
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
@@ -358,19 +358,19 @@ otherwise stated.
    1.2 or newer.
 
 
-.. method:: xmlparser.EndDoctypeDeclHandler()
+.. method:: XMLParserType.EndDoctypeDeclHandler()
 
    Called when Expat is done parsing the document type declaration. This requires
    Expat version 1.2 or newer.
 
 
-.. method:: xmlparser.ElementDeclHandler(name, model)
+.. method:: XMLParserType.ElementDeclHandler(name, model)
 
    Called once for each element type declaration.  *name* is the name of the
    element type, and *model* is a representation of the content model.
 
 
-.. method:: xmlparser.AttlistDeclHandler(elname, attname, type, default, required)
+.. method:: XMLParserType.AttlistDeclHandler(elname, attname, type, default, required)
 
    Called for each declared attribute for an element type.  If an attribute list
    declaration declares three attributes, this handler is called three times, once
@@ -384,7 +384,7 @@ otherwise stated.
    true. This requires Expat version 1.95.0 or newer.
 
 
-.. method:: xmlparser.StartElementHandler(name, attributes)
+.. method:: XMLParserType.StartElementHandler(name, attributes)
 
    Called for the start of every element.  *name* is a string containing the
    element name, and *attributes* is the element attributes. If
@@ -393,17 +393,17 @@ otherwise stated.
    dictionary mapping names to values.
 
 
-.. method:: xmlparser.EndElementHandler(name)
+.. method:: XMLParserType.EndElementHandler(name)
 
    Called for the end of every element.
 
 
-.. method:: xmlparser.ProcessingInstructionHandler(target, data)
+.. method:: XMLParserType.ProcessingInstructionHandler(target, data)
 
    Called for every processing instruction.
 
 
-.. method:: xmlparser.CharacterDataHandler(data)
+.. method:: XMLParserType.CharacterDataHandler(data)
 
    Called for character data.  This will be called for normal character data, CDATA
    marked content, and ignorable whitespace.  Applications which must distinguish
@@ -415,7 +415,7 @@ otherwise stated.
    to ``True`` to avoid that.
 
 
-.. method:: xmlparser.UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)
+.. method:: XMLParserType.UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)
 
    Called for unparsed (NDATA) entity declarations.  This is only present for
    version 1.2 of the Expat library; for more recent versions, use
@@ -423,7 +423,7 @@ otherwise stated.
    library has been declared obsolete.)
 
 
-.. method:: xmlparser.EntityDeclHandler(entityName, is_parameter_entity, value, base, systemId, publicId, notationName)
+.. method:: XMLParserType.EntityDeclHandler(entityName, is_parameter_entity, value, base, systemId, publicId, notationName)
 
    Called for all entity declarations.  For parameter and internal entities,
    *value* will be a string giving the declared contents of the entity; this will
@@ -435,21 +435,21 @@ otherwise stated.
    Expat library.
 
 
-.. method:: xmlparser.NotationDeclHandler(notationName, base, systemId, publicId)
+.. method:: XMLParserType.NotationDeclHandler(notationName, base, systemId, publicId)
 
    Called for notation declarations.  *notationName*, *base*, and *systemId*, and
    *publicId* are strings if given.  If the public identifier is omitted,
    *publicId* will be ``None``.
 
 
-.. method:: xmlparser.StartNamespaceDeclHandler(prefix, uri)
+.. method:: XMLParserType.StartNamespaceDeclHandler(prefix, uri)
 
    Called when an element contains a namespace declaration.  Namespace declarations
    are processed before the :attr:`StartElementHandler` is called for the element
    on which declarations are placed.
 
 
-.. method:: xmlparser.EndNamespaceDeclHandler(prefix)
+.. method:: XMLParserType.EndNamespaceDeclHandler(prefix)
 
    Called when the closing tag is reached for an element  that contained a
    namespace declaration.  This is called once for each namespace declaration on
@@ -459,39 +459,39 @@ otherwise stated.
    corresponding :attr:`EndElementHandler` for the end of the element.
 
 
-.. method:: xmlparser.CommentHandler(data)
+.. method:: XMLParserType.CommentHandler(data)
 
    Called for comments.  *data* is the text of the comment, excluding the leading
    ``'<!-``\ ``-'`` and trailing ``'-``\ ``->'``.
 
 
-.. method:: xmlparser.StartCdataSectionHandler()
+.. method:: XMLParserType.StartCdataSectionHandler()
 
    Called at the start of a CDATA section.  This and :attr:`EndCdataSectionHandler`
    are needed to be able to identify the syntactical start and end for CDATA
    sections.
 
 
-.. method:: xmlparser.EndCdataSectionHandler()
+.. method:: XMLParserType.EndCdataSectionHandler()
 
    Called at the end of a CDATA section.
 
 
-.. method:: xmlparser.DefaultHandler(data)
+.. method:: XMLParserType.DefaultHandler(data)
 
    Called for any characters in the XML document for which no applicable handler
    has been specified.  This means characters that are part of a construct which
    could be reported, but for which no handler has been supplied.
 
 
-.. method:: xmlparser.DefaultHandlerExpand(data)
+.. method:: XMLParserType.DefaultHandlerExpand(data)
 
    This is the same as the :func:`DefaultHandler`,  but doesn't inhibit expansion
    of internal entities. The entity reference will not be passed to the default
    handler.
 
 
-.. method:: xmlparser.NotStandaloneHandler()
+.. method:: XMLParserType.NotStandaloneHandler()
 
    Called if the XML document hasn't been declared as being a standalone document.
    This happens when there is an external subset or a reference to a parameter
@@ -501,7 +501,7 @@ otherwise stated.
    exception is raised by the parser for this condition.
 
 
-.. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
+.. method:: XMLParserType.ExternalEntityRefHandler(context, base, systemId, publicId)
 
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
@@ -947,4 +947,3 @@ The ``errors`` module has the following attributes:
    appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
    not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
-

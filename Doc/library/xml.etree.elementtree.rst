@@ -1397,7 +1397,7 @@ XMLParser Objects
       The implementation of :meth:`flush` temporarily disables reparse deferral
       with Expat (if currently enabled) and triggers a reparse.
       Disabling reparse deferral has security consequences; please see
-      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+      :meth:`xml.parsers.expat.XMLParserType.SetReparseDeferralEnabled` for details.
 
       Note that :meth:`flush` has been backported to some prior releases of
       CPython as a security fix.  Check for availability of :meth:`flush`
@@ -1475,7 +1475,7 @@ XMLPullParser Objects
       The implementation of :meth:`flush` temporarily disables reparse deferral
       with Expat (if currently enabled) and triggers a reparse.
       Disabling reparse deferral has security consequences; please see
-      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+      :meth:`xml.parsers.expat.XMLParserType.SetReparseDeferralEnabled` for details.
 
       Note that :meth:`flush` has been backported to some prior releases of
       CPython as a security fix.  Check for availability of :meth:`flush`
