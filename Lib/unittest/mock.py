@@ -1320,16 +1320,6 @@ def _check_spec_arg_typos(kwargs_to_check):
             )
 
 
-class _PatchContext:
-    __slots__ = ('exit_stack', 'is_local', 'original', 'target')
-
-    def __init__(self, exit_stack, is_local, original, target):
-        self.exit_stack = exit_stack
-        self.is_local = is_local
-        self.original = original
-        self.target = target
-
-
 class _patch(object):
 
     attribute_name = None
@@ -1370,7 +1360,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
-        self._context = None
+        self.is_started = False
 
 
     def copy(self):
@@ -1480,34 +1470,6 @@ class _patch(object):
             )
         return original, local
 
-    @property
-    def is_started(self):
-        return self._context is not None
-
-    @property
-    def is_local(self):
-        return self._context.is_local
-
-    @is_local.setter
-    def is_local(self, value):
-        self._context.is_local = value
-
-    @property
-    def target(self):
-        return self._context.target
-
-    @target.setter
-    def target(self, value):
-        self._context.target = value
-
-    @property
-    def temp_original(self):
-        return self._context.original
-
-    @temp_original.setter
-    def temp_original(self, value):
-        self._context.original = value
-
     def __enter__(self):
         """Perform the patch."""
         if self.is_started:
@@ -1516,7 +1478,7 @@ class _patch(object):
         new, spec, spec_set = self.new, self.spec, self.spec_set
         autospec, kwargs = self.autospec, self.kwargs
         new_callable = self.new_callable
-        target = self.getter()
+        self.target = self.getter()
 
         # normalise False to None
         if spec is False:
@@ -1620,17 +1582,17 @@ class _patch(object):
             if autospec is True:
                 autospec = original
 
-            if _is_instance_mock(target):
+            if _is_instance_mock(self.target):
                 raise InvalidSpecError(
                     f'Cannot autospec attr {self.attribute!r} as the patch '
                     f'target has already been mocked out. '
-                    f'[target={target!r}, attr={autospec!r}]')
+                    f'[target={self.target!r}, attr={autospec!r}]')
             if _is_instance_mock(autospec):
-                target_name = getattr(target, '__name__', target)
+                target_name = getattr(self.target, '__name__', self.target)
                 raise InvalidSpecError(
                     f'Cannot autospec attr {self.attribute!r} from target '
                     f'{target_name!r} as it has already been mocked out. '
-                    f'[target={target!r}, attr={autospec!r}]')
+                    f'[target={self.target!r}, attr={autospec!r}]')
 
             new = create_autospec(autospec, spec_set=spec_set,
                                   _name=self.attribute, **kwargs)
@@ -1641,13 +1603,10 @@ class _patch(object):
 
         new_attr = new
 
-        exit_stack = contextlib.ExitStack()
-        self._context = _PatchContext(
-            exit_stack=exit_stack,
-            is_local=is_local,
-            original=original,
-            target=target,
-        )
+        self.temp_original = original
+        self.is_local = is_local
+        self._exit_stack = contextlib.ExitStack()
+        self.is_started = True
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1655,7 +1614,7 @@ class _patch(object):
                 if self.new is DEFAULT:
                     extra_args[self.attribute_name] =  new
                 for patching in self.additional_patchers:
-                    arg = exit_stack.enter_context(patching)
+                    arg = self._exit_stack.enter_context(patching)
                     if patching.new is DEFAULT:
                         extra_args.update(arg)
                 return extra_args
@@ -1681,8 +1640,12 @@ class _patch(object):
                 # needed for proxy objects like django settings
                 setattr(self.target, self.attribute, self.temp_original)
 
-        exit_stack = self._context.exit_stack
-        self._context = None
+        self.is_started = False
+        exit_stack = self._exit_stack
+        del self._exit_stack
+        del self.is_local
+        del self.temp_original
+        del self.target
         return exit_stack.__exit__(*exc_info)
 
 
