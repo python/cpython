@@ -1,1 +1,1 @@
-Added a check to require that a memoryview object is not released before iterating through it. Previously, iterating through a memoryview object caused a SystemError.
+Fixed :class:`SystemError` when trying to iterate over a released :class:`memoryview` object.
