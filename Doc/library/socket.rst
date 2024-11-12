@@ -971,14 +971,18 @@ The :mod:`socket` module also offers various network-related services:
       :data:`SOCK_DGRAM`) and/or *proto* (e.g. :data:`IPPROTO_TCP` or
       :data:`IPPROTO_UDP`) that your application can handle.
 
-      With default values of *family*, *type*, *proto* and/or *flags*,
-      many systems will return a sorted list of all matching addresses,
-      which should generally be tried in order until a connection succeeds
+      The behavior with default values of *family*, *type*, *proto*
+      and *flags* is system-specific.
+  
+      Many systems (for example, most Linux configurations) will return a sorted
+      list of all matching addresses.
+      These addresses should generally be tried in order until a connection succeeds
       (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
       In these cases, limiting the *type* and/or *proto* can help eliminate
       unsuccessful or unusable connecton attempts.
 
       Some systems will, however, only return a single address.
+      (For example, this was reported on Solaris and AIX configurations.)
       On these systems, limiting the *type* and/or *proto* helps ensure that
       this address is usable.
 
