@@ -583,6 +583,13 @@ Deprecated
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
 
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.15.rst
