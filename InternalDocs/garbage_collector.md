@@ -406,10 +406,9 @@ We can exclude scanned objects, as they must have been reachable when scanned.
 If a scanned object becomes part of an unreachable cycle after being scanned, it
 will not be collected this cycle, but it will be collected next full scavenge.
 
-.. note::
-
-   The GC implementation for the free-threaded build does not use incremental collection.
-   Every collection operates on the entire heap.
+> [!NOTE]
+> The GC implementation for the free-threaded build does not use incremental collection.
+> Every collection operates on the entire heap.
 
 In order to decide when to run, the collector keeps track of the number of object
 allocations and deallocations since the last collection. When the number of
