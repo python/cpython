@@ -996,8 +996,8 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
 #undef USE_DLERROR
 
     PyErr_Format(PyExc_ValueError,
-                    "symbol '%s' not found",
-                    name);
+                 "symbol '%s' not found",
+                 name);
     return NULL;
 }
 
