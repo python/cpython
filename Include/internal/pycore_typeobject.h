@@ -275,8 +275,8 @@ PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 typedef int (*_py_validate_type)(PyTypeObject *);
 
 // It will verify the ``ty`` through user-defined validation function ``validate``,
-// and if the validation is passed, it will set the ``tp_version`` to the next
-// available version and return 0. Otherwise, it will return an error code.
+// and if the validation is passed, it will set the ``tp_version`` as valid
+// tp_version_tag from the ``ty``.
 extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 
 #ifdef __cplusplus
