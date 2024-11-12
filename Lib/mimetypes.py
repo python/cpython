@@ -551,6 +551,7 @@ def _default_mime_types():
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
+        '.fits'   : 'image/fits',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
         '.jpg'    : 'image/jpeg',

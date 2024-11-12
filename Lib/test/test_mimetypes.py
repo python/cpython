@@ -241,6 +241,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("font/woff2", ".woff2"),
                 ("image/avif", ".avif"),
                 ("image/emf", ".emf"),
+                ("image/fits", ".fits"),
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("image/jpeg", ".jpg"),

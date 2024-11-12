@@ -395,6 +395,7 @@ mimetypes
 
 * Add MIME types for images with RFCs:
 
+  * :rfc:`4047`: Flexible Image Transport System (``.fits``)
   * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
 
   (Contributed by Hugo van Kemenade in :gh:`85957`.)
