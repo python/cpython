@@ -1,2 +1,1 @@
-Fix ``urllib.parse.urljoin``.
-In RFC 3986, ``base``'s fragment is always discarded.
+The fragment of the base URI is now always discarded in :func:`urllib.parse.urljoin` in accordance to :rfc:`3986`.

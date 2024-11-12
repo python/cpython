@@ -587,8 +587,6 @@ def urljoin(base, url, allow_fragments=True):
         path = bpath
         if query is None:
             query = bquery
-            if fragment is None:
-                fragment = bfragment
         return _coerce_result(_urlunsplit(scheme, netloc, path,
                                           query, fragment))
 
