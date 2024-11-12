@@ -8,6 +8,7 @@ import gc
 import inspect
 import itertools
 import operator
+import os
 import pickle
 import re
 import sys
@@ -4251,6 +4252,9 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             class CustomProtocol(TestCase, Protocol):
                 pass
+
+        class CustomPathLikeProtocol(os.PathLike, Protocol):
+            pass
 
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
