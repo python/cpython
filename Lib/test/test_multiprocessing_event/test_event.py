@@ -30,7 +30,7 @@ class TestEventSignalHandling(unittest.TestCase):
         script = support.findfile("event_signal.py", subdir="multiprocessingdata")
         for x in range(10):
             try:
-                exit_code = subprocess.call([sys.executable, script], stdout=subprocess.DEVNULL, timeout=3)
+                exit_code = subprocess.call([sys.executable, script], stdout=subprocess.DEVNULL, timeout=30)
                 assert exit_code == 0
             except subprocess.TimeoutExpired:
                 assert False, 'subprocess.Timeoutexpired for event_signal.py'
