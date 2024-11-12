@@ -1623,26 +1623,39 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
-
-	/* dlerror() always returns the latest error.
-	 *
-	 * Clear the previous value before calling dlsym(),
-	 * to ensure we can tell if our call resulted in an error.
-	 */
-	(void)dlerror();
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     ptr = dlsym((void*)handle, name);
-	const char *dlerr = dlerror();
+    if (ptr)
+        return PyLong_FromVoidPtr(ptr);
+#ifdef USE_DLERROR
+    // This assumes the error message is UTF-8 (or ASCII).
+    // Investigate if this can cause problems.
+    const char *dlerr = dlerror();
     if (dlerr) {
-        PyErr_SetString(PyExc_OSError, dlerr);
-        return NULL;
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
+        if (message) {
+            PyErr_SetObject(PyExc_OSError, message);
+            return NULL;
+        }
+        // Ignore errors from converting the message to str
+        PyErr_Clear();
     }
-    else if (!ptr) {
-        PyErr_Format(PyExc_OSError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
-    return PyLong_FromVoidPtr(ptr);
+#endif
+#undef USE_DLERROR
+    PyErr_Format(PyExc_OSError,
+                 "symbol '%s' not found",
+                 name);
+    return NULL;
 }
 #endif
 
