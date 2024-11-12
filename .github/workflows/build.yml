@@ -119,7 +119,7 @@ jobs:
           # Check for changes in regenerated files
           if test -n "$changes"; then
             echo "Generated files not up to date."
-            echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
+            echo "Perhaps you forgot to run make regen-configure ;)"
             echo "configure files must be regenerated with a specific version of autoconf."
             echo "$changes"
             echo ""
