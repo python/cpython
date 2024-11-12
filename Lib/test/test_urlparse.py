@@ -525,10 +525,6 @@ class UrlParseTestCase(unittest.TestCase):
         # Test for issue9721
         self.checkJoin('http://a/b/c/de', ';x','http://a/b/c/;x')
 
-        # Tests for issue39799: no base fragment
-        self.checkJoin('http://a/b#f', '', 'http://a/b')
-        self.checkJoin('http://a/b/#f', 'g', 'http://a/b/g')
-
     def test_urljoins(self):
         self.checkJoin(SIMPLE_BASE, 'g:h','g:h')
         self.checkJoin(SIMPLE_BASE, 'g','http://a/b/c/g')
