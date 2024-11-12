@@ -547,7 +547,7 @@ reference count of an object and are safe in the presence of ``NULL`` pointers
 (but note that *temp* will not be  ``NULL`` in this context).  More info on them
 in section :ref:`refcounts`.
 
-.. index:: single: PyObject_CallObject()
+.. index:: single: PyObject_CallObject (C function)
 
 Later, when it is time to call the function, you call the C function
 :c:func:`PyObject_CallObject`.  This function has two arguments, both pointers to
@@ -638,7 +638,7 @@ the above example, we use :c:func:`Py_BuildValue` to construct the dictionary. :
 Extracting Parameters in Extension Functions
 ============================================
 
-.. index:: single: PyArg_ParseTuple()
+.. index:: single: PyArg_ParseTuple (C function)
 
 The :c:func:`PyArg_ParseTuple` function is declared as follows::
 
@@ -730,12 +730,12 @@ Some example calls::
 Keyword Parameters for Extension Functions
 ==========================================
 
-.. index:: single: PyArg_ParseTupleAndKeywords()
+.. index:: single: PyArg_ParseTupleAndKeywords (C function)
 
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                   const char *format, char *kwlist[], ...);
+                                   const char *format, char * const *kwlist, ...);
 
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of
@@ -868,7 +868,7 @@ It is important to call :c:func:`free` at the right time.  If a block's address
 is forgotten but :c:func:`free` is not called for it, the memory it occupies
 cannot be reused until the program terminates.  This is called a :dfn:`memory
 leak`.  On the other hand, if a program calls :c:func:`free` for a block and then
-continues to use the block, it creates a conflict with re-use of the block
+continues to use the block, it creates a conflict with reuse of the block
 through another :c:func:`malloc` call.  This is called :dfn:`using freed memory`.
 It has the same bad consequences as referencing uninitialized data --- core
 dumps, wrong results, mysterious crashes.

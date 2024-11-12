@@ -94,9 +94,12 @@ PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
 "\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
+"Create a complex number from a string or numbers.\n"
 "\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
+"If a string is given, parse it as a complex number.\n"
+"If a single number is given, convert it to a complex number.\n"
+"If the \'real\' or \'imag\' arguments are given, create a complex number\n"
+"with the specified real and imaginary components.");
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
@@ -137,7 +140,8 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *r = NULL;
     PyObject *i = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -157,4 +161,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=04e6261649967b30 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(complex_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert number to a complex floating-point number.");
+
+#define COMPLEX_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
+/*[clinic end generated code: output=8c49a41c5a7f0aee input=a9049054013a1b77]*/

@@ -214,7 +214,7 @@ helper methods that can be used instead ``_dump_registry``,
 .. nonce: bvHDOc
 .. section: Library
 
-Fixed `asyncio.Condition` issue which silently ignored cancellation after
+Fixed ``asyncio.Condition`` issue which silently ignored cancellation after
 notifying and cancelling a conditional lock. Patch by Bar Harel.
 
 ..
@@ -274,7 +274,7 @@ collections.ChainMap() preserves the order of the underlying mappings.
 .. nonce: -T77_c
 .. section: Library
 
-:func:`fnmatch.translate()` no longer produces patterns which contain set
+:func:`fnmatch.translate` no longer produces patterns which contain set
 operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
 will be interpreted differently in regular expressions in future versions.
 Currently they emit warnings. fnmatch.translate() now avoids producing
@@ -497,7 +497,7 @@ deprecation.
 .. nonce: w1m_8r
 .. section: Documentation
 
-Improve docstrings for `pathlib.PurePath` subclasses.
+Improve docstrings for ``pathlib.PurePath`` subclasses.
 
 ..
 

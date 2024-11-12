@@ -40,7 +40,7 @@ except ImportError:
 
 __all__ = [
     "knownfiles", "inited", "MimeTypes",
-    "guess_type", "guess_all_extensions", "guess_extension",
+    "guess_type", "guess_file_type", "guess_all_extensions", "guess_extension",
     "add_type", "init", "read_mime_types",
     "suffix_map", "encodings_map", "types_map", "common_types"
 ]
@@ -116,11 +116,17 @@ class MimeTypes:
         mapped to '.tar.gz'.  (This is table-driven too, using the
         dictionary suffix_map.)
 
-        Optional `strict' argument when False adds a bunch of commonly found,
+        Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
+        # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
-        scheme, url = urllib.parse._splittype(url)
+        p = urllib.parse.urlparse(url)
+        if p.scheme and len(p.scheme) > 1:
+            scheme = p.scheme
+            url = p.path
+        else:
+            return self.guess_file_type(url, strict=strict)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -140,13 +146,25 @@ class MimeTypes:
             if '=' in type or '/' not in type:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
-        base, ext = posixpath.splitext(url)
+        return self._guess_file_type(url, strict, posixpath.splitext)
+
+    def guess_file_type(self, path, *, strict=True):
+        """Guess the type of a file based on its path.
+
+        Similar to guess_type(), but takes file path instead of URL.
+        """
+        path = os.fsdecode(path)
+        path = os.path.splitdrive(path)[1]
+        return self._guess_file_type(path, strict, os.path.splitext)
+
+    def _guess_file_type(self, path, strict, splitext):
+        base, ext = splitext(path)
         while (ext_lower := ext.lower()) in self.suffix_map:
-            base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
+            base, ext = splitext(base + self.suffix_map[ext_lower])
         # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
-            base, ext = posixpath.splitext(base)
+            base, ext = splitext(base)
         else:
             encoding = None
         ext = ext.lower()
@@ -167,9 +185,9 @@ class MimeTypes:
         Return value is a list of strings giving the possible filename
         extensions, including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data stream,
-        but would be mapped to the MIME type `type' by guess_type().
+        but would be mapped to the MIME type 'type' by guess_type().
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         type = type.lower()
@@ -186,11 +204,11 @@ class MimeTypes:
         Return value is a string giving a filename extension,
         including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data
-        stream, but would be mapped to the MIME type `type' by
-        guess_type().  If no extension can be guessed for `type', None
+        stream, but would be mapped to the MIME type 'type' by
+        guess_type().  If no extension can be guessed for 'type', None
         is returned.
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         extensions = self.guess_all_extensions(type, strict)
@@ -296,12 +314,22 @@ def guess_type(url, strict=True):
     to ".tar.gz".  (This is table-driven too, using the dictionary
     suffix_map).
 
-    Optional `strict' argument when false adds a bunch of commonly found, but
+    Optional 'strict' argument when false adds a bunch of commonly found, but
     non-standard types.
     """
     if _db is None:
         init()
     return _db.guess_type(url, strict)
+
+
+def guess_file_type(path, *, strict=True):
+    """Guess the type of a file based on its path.
+
+    Similar to guess_type(), but takes file path instead of URL.
+    """
+    if _db is None:
+        init()
+    return _db.guess_file_type(path, strict=strict)
 
 
 def guess_all_extensions(type, strict=True):
@@ -310,11 +338,11 @@ def guess_all_extensions(type, strict=True):
     Return value is a list of strings giving the possible filename
     extensions, including the leading dot ('.').  The extension is not
     guaranteed to have been associated with any particular data
-    stream, but would be mapped to the MIME type `type' by
-    guess_type().  If no extension can be guessed for `type', None
+    stream, but would be mapped to the MIME type 'type' by
+    guess_type().  If no extension can be guessed for 'type', None
     is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
@@ -327,10 +355,10 @@ def guess_extension(type, strict=True):
     Return value is a string giving a filename extension, including the
     leading dot ('.').  The extension is not guaranteed to have been
     associated with any particular data stream, but would be mapped to the
-    MIME type `type' by guess_type().  If no extension can be guessed for
-    `type', None is returned.
+    MIME type 'type' by guess_type().  If no extension can be guessed for
+    'type', None is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
@@ -451,6 +479,7 @@ def _default_mime_types():
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
+        '.eot'    : 'application/vnd.ms-fontobject',
         '.ppt'    : 'application/vnd.ms-powerpoint',
         '.pot'    : 'application/vnd.ms-powerpoint',
         '.ppa'    : 'application/vnd.ms-powerpoint',
@@ -506,6 +535,7 @@ def _default_mime_types():
         '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
+        '.mka'    : 'audio/matroska',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
         '.opus'   : 'audio/opus',
@@ -514,6 +544,10 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.otf'    : 'font/otf',
+        '.ttf'    : 'font/ttf',
+        '.woff'   : 'font/woff',
+        '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
@@ -528,6 +562,7 @@ def _default_mime_types():
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
+        '.webp'   : 'image/webp',
         '.ras'    : 'image/x-cmu-raster',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
@@ -545,6 +580,8 @@ def _default_mime_types():
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
+        '.md'     : 'text/markdown',
+        '.markdown': 'text/markdown',
         '.n3'     : 'text/n3',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
@@ -554,14 +591,18 @@ def _default_mime_types():
         '.pl'     : 'text/plain',
         '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
+        '.rtf'    : 'text/rtf',
         '.tsv'    : 'text/tab-separated-values',
         '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
+        '.rst'    : 'text/x-rst',
         '.etx'    : 'text/x-setext',
         '.sgm'    : 'text/x-sgml',
         '.sgml'   : 'text/x-sgml',
         '.vcf'    : 'text/x-vcard',
         '.xml'    : 'text/xml',
+        '.mkv'    : 'video/matroska',
+        '.mk3d'   : 'video/matroska-3d',
         '.mp4'    : 'video/mp4',
         '.mpeg'   : 'video/mpeg',
         '.m1v'    : 'video/mpeg',
@@ -587,7 +628,6 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
-        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 

@@ -443,25 +443,17 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
     PyObject *unicode           /* Unicode object */
     );
 
-// Returns a pointer to the UTF-8 encoding of the Unicode object unicode.
-//
-// Raise an exception if the string contains embedded null characters.
-// Use PyUnicode_AsUTF8AndSize() to accept embedded null characters.
-//
-// This function caches the UTF-8 encoded string in the Unicode object
-// and subsequent calls will return the same string. The memory is released
-// when the Unicode object is deallocated.
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
+/* Returns a pointer to the default encoding (UTF-8) of the
+   Unicode object unicode and the size of the encoded representation
+   in bytes stored in *size.
 
-// Returns a pointer to the UTF-8 encoding of the
-// Unicode object unicode and the size of the encoded representation
-// in bytes stored in `*size` (if size is not NULL).
-//
-// On error, `*size` is set to 0 (if size is not NULL).
-//
-// This function caches the UTF-8 encoded string in the Unicode object
-// and subsequent calls will return the same string. The memory is released
-// when the Unicode object is deallocated.
+   In case of an error, no *size is set.
+
+   This function caches the UTF-8 encoded string in the unicodeobject
+   and subsequent calls will return the same string.  The memory is released
+   when the unicodeobject is deallocated.
+*/
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
     PyObject *unicode,
@@ -972,6 +964,10 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
 
 PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
 PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyUnicode_Equal(PyObject *str1, PyObject *str2);
 #endif
 
 /* Rich compare two strings and return one of the following:

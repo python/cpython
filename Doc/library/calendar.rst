@@ -1,5 +1,5 @@
-:mod:`calendar` --- General calendar-related functions
-======================================================
+:mod:`!calendar` --- General calendar-related functions
+=======================================================
 
 .. module:: calendar
    :synopsis: Functions for working with calendars, including some emulation
@@ -196,6 +196,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       output (defaulting to the system default encoding).
 
 
+   .. method:: formatmonthname(theyear, themonth, withyear=True)
+
+      Return a month name as an HTML table row. If *withyear* is true the year
+      will be included in the row, otherwise just the month name will be
+      used.
+
+
    :class:`!HTMLCalendar` has the following attributes you can override to
    customize the CSS classes used by the calendar:
 
@@ -289,7 +296,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. note::
 
-   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   The constructor, :meth:`!formatweekday` and :meth:`!formatmonthname` methods
    of these two classes temporarily change the ``LC_TIME`` locale to the given
    *locale*. Because the current locale is a process-wide setting, they are
    not thread-safe.
@@ -358,7 +365,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: month(theyear, themonth, w=0, l=0)
 
-   Returns a month's calendar in a multi-line string using the :meth:`formatmonth`
+   Returns a month's calendar in a multi-line string using the :meth:`~TextCalendar.formatmonth`
    of the :class:`TextCalendar` class.
 
 
@@ -370,7 +377,7 @@ For simple text calendars this module provides the following functions.
 .. function:: calendar(year, w=2, l=1, c=6, m=3)
 
    Returns a 3-column calendar for an entire year as a multi-line string using
-   the :meth:`formatyear` of the :class:`TextCalendar` class.
+   the :meth:`~TextCalendar.formatyear` of the :class:`TextCalendar` class.
 
 
 .. function:: timegm(tuple)
@@ -386,13 +393,22 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   An array that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current locale,
+   where Monday is day number 0.
+
+       >>> import calendar
+       >>> list(calendar.day_name)
+       ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
 .. data:: day_abbr
 
-   An array that represents the abbreviated days of the week in the current locale.
+   A sequence that represents the abbreviated days of the week in the current locale,
+   where Mon is day number 0.
 
+       >>> import calendar
+       >>> list(calendar.day_abbr)
+       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 .. data:: MONDAY
           TUESDAY
@@ -419,17 +435,24 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: month_name
 
-   An array that represents the months of the year in the current locale.  This
+   A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
    13 and  ``month_name[0]`` is the empty string.
+
+       >>> import calendar
+       >>> list(calendar.month_name)
+       ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 
 .. data:: month_abbr
 
-   An array that represents the abbreviated months of the year in the current
+   A sequence that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+       >>> import calendar
+       >>> list(calendar.month_abbr)
+       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 .. data:: JANUARY
           FEBRUARY
@@ -505,7 +528,7 @@ to interactively print a calendar.
 
    python -m calendar [-h] [-L LOCALE] [-e ENCODING] [-t {text,html}]
                       [-w WIDTH] [-l LINES] [-s SPACING] [-m MONTHS] [-c CSS]
-                      [year] [month]
+                      [-f FIRST_WEEKDAY] [year] [month]
 
 
 For example, to print a calendar for the year 2000:
@@ -579,10 +602,17 @@ The following options are accepted:
    or as an HTML document.
 
 
+.. option:: --first-weekday FIRST_WEEKDAY, -f FIRST_WEEKDAY
+
+   The weekday to start each week.
+   Must be a number between 0 (Monday) and 6 (Sunday).
+   Defaults to 0.
+
+   .. versionadded:: 3.13
+
 .. option:: year
 
    The year to print the calendar for.
-   Must be a number between 1 and 9999.
    Defaults to the current year.
 
 

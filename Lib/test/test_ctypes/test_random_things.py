@@ -51,9 +51,9 @@ class CallbackTracbackTestCase(unittest.TestCase):
             if exc_msg is not None:
                 self.assertEqual(str(cm.unraisable.exc_value), exc_msg)
             self.assertEqual(cm.unraisable.err_msg,
-                             "Exception ignored on calling ctypes "
-                             "callback function")
-            self.assertIs(cm.unraisable.object, callback_func)
+                             f"Exception ignored on calling ctypes "
+                             f"callback function {callback_func!r}")
+            self.assertIsNone(cm.unraisable.object)
 
     def test_ValueError(self):
         cb = CFUNCTYPE(c_int, c_int)(callback_func)

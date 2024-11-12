@@ -9,7 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-PyDoc_STRVAR(Struct__doc__,
+PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -20,13 +20,13 @@ PyDoc_STRVAR(Struct__doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static PyObject *
-Struct_impl(PyTypeObject *type, PyObject *format);
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format);
 
-static PyObject *
-Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+static int
+Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *return_value = NULL;
+    int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 1
@@ -57,12 +57,13 @@ Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct_impl(type, format);
+    return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
     return return_value;
@@ -159,7 +160,8 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -357,7 +359,8 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -436,4 +439,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6a20e87f9b298b14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=faff90f99c6bd09f input=a9049054013a1b77]*/

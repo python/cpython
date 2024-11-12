@@ -72,7 +72,7 @@ without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
     if (PyType_IS_GC(tp)) {
         // Don't try this at home, kids:
         tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
-        tp->tp_free = PyObject_Del;
+        tp->tp_free = PyObject_Free;
         tp->tp_traverse = NULL;
         tp->tp_clear = NULL;
     }
@@ -99,10 +99,11 @@ slot_tp_del(PyObject *self)
         return;
     }
     /* Execute __del__ method, if any. */
-    del = _PyType_Lookup(Py_TYPE(self), tp_del);
+    del = _PyType_LookupRef(Py_TYPE(self), tp_del);
     Py_DECREF(tp_del);
     if (del != NULL) {
         res = PyObject_CallOneArg(del, self);
+        Py_DECREF(del);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
@@ -126,9 +127,7 @@ slot_tp_del(PyObject *self)
      * never happened.
      */
     {
-        Py_ssize_t refcnt = Py_REFCNT(self);
-        _Py_NewReferenceNoTotal(self);
-        Py_SET_REFCNT(self, refcnt);
+        _Py_ResurrectReference(self);
     }
     assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
 }

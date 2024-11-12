@@ -2,6 +2,7 @@
 #define PYTESTCAPI_NEED_INTERNAL_API
 
 #include "parts.h"
+#include "util.h"
 #include "clinic/float.c.h"
 
 

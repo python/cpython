@@ -1,4 +1,3 @@
-import doctest
 import faulthandler
 import gc
 import importlib
@@ -58,7 +57,10 @@ def _run_suite(suite):
     result = runner.run(suite)
 
     if support.junit_xml_list is not None:
-        support.junit_xml_list.append(result.get_xml_element())
+        import xml.etree.ElementTree as ET
+        xml_elem = result.get_xml_element()
+        xml_str = ET.tostring(xml_elem).decode('ascii')
+        support.junit_xml_list.append(xml_str)
 
     if not result.testsRun and not result.skipped and not result.errors:
         raise support.TestDidNotRun
@@ -99,14 +101,18 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
             stats = test_result
         case unittest.TestResult():
             stats = TestStats.from_unittest(test_result)
-        case doctest.TestResults():
-            stats = TestStats.from_doctest(test_result)
         case None:
             print_warning(f"{result.test_name} test runner returned None: {test_func}")
             stats = None
         case _:
-            print_warning(f"Unknown test result type: {type(test_result)}")
-            stats = None
+            # Don't import doctest at top level since only few tests return
+            # a doctest.TestResult instance.
+            import doctest
+            if isinstance(test_result, doctest.TestResults):
+                stats = TestStats.from_doctest(test_result)
+            else:
+                print_warning(f"Unknown test result type: {type(test_result)}")
+                stats = None
 
     result.stats = stats
 
@@ -119,10 +125,6 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
     # Load the test module and run the tests.
     test_name = result.test_name
     module_name = abs_module_name(test_name, runtests.test_dir)
-
-    # Remove the module from sys.module to reload it if it was already imported
-    sys.modules.pop(module_name, None)
-
     test_mod = importlib.import_module(module_name)
 
     if hasattr(test_mod, "test_main"):
@@ -234,11 +236,11 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     output_on_failure = runtests.output_on_failure
     timeout = runtests.timeout
 
-    use_timeout = (
-        timeout is not None and threading_helper.can_start_thread
-    )
-    if use_timeout:
+    if timeout is not None and threading_helper.can_start_thread:
+        use_timeout = True
         faulthandler.dump_traceback_later(timeout, exit=True)
+    else:
+        use_timeout = False
 
     try:
         setup_tests(runtests)
@@ -281,9 +283,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
 
         xml_list = support.junit_xml_list
         if xml_list:
-            import xml.etree.ElementTree as ET
-            result.xml_data = [ET.tostring(x).decode('us-ascii')
-                               for x in xml_list]
+            result.xml_data = xml_list
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()

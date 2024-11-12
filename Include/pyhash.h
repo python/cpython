@@ -4,19 +4,6 @@
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-/* hash function definition */
-typedef struct {
-    Py_hash_t (*const hash)(const void *, Py_ssize_t);
-    const char *name;
-    const int hash_bits;
-    const int seed_bits;
-} PyHash_FuncDef;
-
-PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
-#endif
-
-
 /* Cutoff for small string DJBX33A optimization in range [1, cutoff).
  *
  * About 50% of the strings in a typical Python application are smaller than
@@ -59,6 +46,12 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 #    define Py_HASH_ALGORITHM Py_HASH_FNV
 #  endif /* uint64_t && uint32_t && aligned */
 #endif /* Py_HASH_ALGORITHM */
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_HASH_H
+#  include "cpython/pyhash.h"
+#  undef Py_CPYTHON_HASH_H
+#endif
 
 #ifdef __cplusplus
 }

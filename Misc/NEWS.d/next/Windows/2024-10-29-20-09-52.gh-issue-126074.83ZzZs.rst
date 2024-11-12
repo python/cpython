@@ -1,0 +1,1 @@
+Removed unnecessary DLLs from Windows embeddable package

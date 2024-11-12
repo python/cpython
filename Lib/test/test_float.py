@@ -8,6 +8,7 @@ import time
 import unittest
 
 from test import support
+from test.support.testcase import FloatsAreIdenticalMixin
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -18,7 +19,6 @@ try:
 except ImportError:
     _testcapi = None
 
-HAVE_IEEE_754 = float.__getformat__("double").startswith("IEEE")
 INF = float("inf")
 NAN = float("nan")
 
@@ -32,6 +32,28 @@ class FloatSubclass(float):
 
 class OtherFloatSubclass(float):
     pass
+
+class MyIndex:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
+class FloatLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return self.value
+
 
 class GeneralFloatCases(unittest.TestCase):
 
@@ -153,7 +175,7 @@ class GeneralFloatCases(unittest.TestCase):
         # non-UTF-8 byte string
         check(b'123\xa0')
 
-    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE', '')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
@@ -182,10 +204,6 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
-        class Foo1(object):
-            def __float__(self):
-                return 42.
-
         class Foo2(float):
             def __float__(self):
                 return 42.
@@ -207,45 +225,29 @@ class GeneralFloatCases(unittest.TestCase):
             def __float__(self):
                 return float(str(self)) + 1
 
-        self.assertEqual(float(Foo1()), 42.)
+        self.assertEqual(float(FloatLike(42.)), 42.)
         self.assertEqual(float(Foo2()), 42.)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(float(Foo3(21)), 42.)
         self.assertRaises(TypeError, float, Foo4(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
-        class Foo5:
-            def __float__(self):
-                return ""
-        self.assertRaises(TypeError, time.sleep, Foo5())
+        self.assertRaises(TypeError, time.sleep, FloatLike(""))
 
         # Issue #24731
-        class F:
-            def __float__(self):
-                return OtherFloatSubclass(42.)
+        f = FloatLike(OtherFloatSubclass(42.))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(F()), 42.)
+            self.assertEqual(float(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(float(F())), float)
+            self.assertIs(type(float(f)), float)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(FloatSubclass(F()), 42.)
+            self.assertEqual(FloatSubclass(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(FloatSubclass(F())), FloatSubclass)
-
-        class MyIndex:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
+            self.assertIs(type(FloatSubclass(f)), FloatSubclass)
 
         self.assertEqual(float(MyIndex(42)), 42.0)
         self.assertRaises(OverflowError, float, MyIndex(2**2000))
-
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, float, MyInt())
+        self.assertRaises(TypeError, float, MyInt(42))
 
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
@@ -277,6 +279,37 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertIs(type(u), subclass_with_new)
         self.assertEqual(float(u), 2.5)
         self.assertEqual(u.newarg, 3)
+
+    def assertEqualAndType(self, actual, expected_value, expected_type):
+        self.assertEqual(actual, expected_value)
+        self.assertIs(type(actual), expected_type)
+
+    def test_from_number(self, cls=float):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14)
+        eq(cls.from_number(314), 314.0)
+        eq(cls.from_number(OtherFloatSubclass(3.14)), 3.14)
+        eq(cls.from_number(FloatLike(3.14)), 3.14)
+        eq(cls.from_number(MyIndex(314)), 314.0)
+
+        x = cls.from_number(NAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is float:
+            self.assertIs(cls.from_number(NAN), NAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, 3.14j)
+        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(FloatSubclass)
 
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
@@ -830,7 +863,7 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(repr(float(negs)), str(float(negs)))
 
 @support.requires_IEEE_754
-class RoundTestCase(unittest.TestCase):
+class RoundTestCase(unittest.TestCase, FloatsAreIdenticalMixin):
 
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
@@ -860,10 +893,10 @@ class RoundTestCase(unittest.TestCase):
 
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
-            self.assertEqual(round(123.456, n), 0.0)
-            self.assertEqual(round(-123.456, n), -0.0)
-            self.assertEqual(round(1e300, n), 0.0)
-            self.assertEqual(round(1e-320, n), 0.0)
+            self.assertFloatsAreIdentical(round(123.456, n), 0.0)
+            self.assertFloatsAreIdentical(round(-123.456, n), -0.0)
+            self.assertFloatsAreIdentical(round(1e300, n), 0.0)
+            self.assertFloatsAreIdentical(round(1e-320, n), 0.0)
 
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)
@@ -950,6 +983,13 @@ class RoundTestCase(unittest.TestCase):
             self.assertEqual(x, 2)
             self.assertIsInstance(x, int)
 
+    @support.cpython_only
+    def test_round_with_none_arg_direct_call(self):
+        for val in [(1.0).__round__(None),
+                    round(1.0),
+                    round(1.0, None)]:
+            self.assertEqual(val, 1)
+            self.assertIs(type(val), int)
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan
@@ -1054,21 +1094,14 @@ class InfNanTest(unittest.TestCase):
 
 fromHex = float.fromhex
 toHex = float.hex
-class HexFloatTestCase(unittest.TestCase):
+class HexFloatTestCase(FloatsAreIdenticalMixin, unittest.TestCase):
     MAX = fromHex('0x.fffffffffffff8p+1024')  # max normal
     MIN = fromHex('0x1p-1022')                # min normal
     TINY = fromHex('0x0.0000000000001p-1022') # min subnormal
     EPS = fromHex('0x0.0000000000001p0') # diff between 1.0 and next float up
 
     def identical(self, x, y):
-        # check that floats x and y are identical, or that both
-        # are NaNs
-        if isnan(x) or isnan(y):
-            if isnan(x) == isnan(y):
-                return
-        elif x == y and (x != 0.0 or copysign(1.0, x) == copysign(1.0, y)):
-            return
-        self.fail('%r not identical to %r' % (x, y))
+        self.assertFloatsAreIdentical(x, y)
 
     def test_ends(self):
         self.identical(self.MIN, ldexp(1.0, -1022))
@@ -1503,70 +1536,6 @@ class HexFloatTestCase(unittest.TestCase):
         self.assertIs(type(f), F2)
         self.assertEqual(f, 1.5)
         self.assertEqual(getattr(f, 'foo', 'none'), 'bar')
-
-
-# Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
-# Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
-BIG_ENDIAN = 0
-LITTLE_ENDIAN = 1
-EPSILON = {
-    2: 2.0 ** -11,  # binary16
-    4: 2.0 ** -24,  # binary32
-    8: 2.0 ** -53,  # binary64
-}
-
-@unittest.skipIf(_testcapi is None, 'needs _testcapi')
-class PackTests(unittest.TestCase):
-    def test_pack(self):
-        self.assertEqual(_testcapi.float_pack(2, 1.5, BIG_ENDIAN),
-                         b'>\x00')
-        self.assertEqual(_testcapi.float_pack(4, 1.5, BIG_ENDIAN),
-                         b'?\xc0\x00\x00')
-        self.assertEqual(_testcapi.float_pack(8, 1.5, BIG_ENDIAN),
-                         b'?\xf8\x00\x00\x00\x00\x00\x00')
-        self.assertEqual(_testcapi.float_pack(2, 1.5, LITTLE_ENDIAN),
-                         b'\x00>')
-        self.assertEqual(_testcapi.float_pack(4, 1.5, LITTLE_ENDIAN),
-                         b'\x00\x00\xc0?')
-        self.assertEqual(_testcapi.float_pack(8, 1.5, LITTLE_ENDIAN),
-                         b'\x00\x00\x00\x00\x00\x00\xf8?')
-
-    def test_unpack(self):
-        self.assertEqual(_testcapi.float_unpack(b'>\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'?\xc0\x00\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'?\xf8\x00\x00\x00\x00\x00\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00>', LITTLE_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\xc0?', LITTLE_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
-                         1.5)
-
-    def test_roundtrip(self):
-        large = 2.0 ** 100
-        values = [1.0, 1.5, large, 1.0/7, math.pi]
-        if HAVE_IEEE_754:
-            values.extend((INF, NAN))
-        for value in values:
-            for size in (2, 4, 8,):
-                if size == 2 and value == large:
-                    # too large for 16-bit float
-                    continue
-                rel_tol = EPSILON[size]
-                for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
-                    with self.subTest(value=value, size=size, endian=endian):
-                        data = _testcapi.float_pack(size, value, endian)
-                        value2 = _testcapi.float_unpack(data, endian)
-                        if isnan(value):
-                            self.assertTrue(isnan(value2), (value, value2))
-                        elif size < 8:
-                            self.assertTrue(math.isclose(value2, value, rel_tol=rel_tol),
-                                            (value, value2))
-                        else:
-                            self.assertEqual(value2, value)
 
 
 if __name__ == '__main__':

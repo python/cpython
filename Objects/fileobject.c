@@ -80,13 +80,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (Py_REFCNT(result) == 1)
-                _PyBytes_Resize(&result, len-1);
-            else {
-                PyObject *v;
-                v = PyBytes_FromStringAndSize(s, len-1);
-                Py_SETREF(result, v);
-            }
+            (void) _PyBytes_Resize(&result, len-1);
         }
     }
     if (n < 0 && result != NULL && PyUnicode_Check(result)) {
@@ -174,6 +168,13 @@ PyObject_AsFileDescriptor(PyObject *o)
     PyObject *meth;
 
     if (PyLong_Check(o)) {
+        if (PyBool_Check(o)) {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                    "bool is used as a file descriptor", 1))
+            {
+                return -1;
+            }
+        }
         fd = PyLong_AsInt(o);
     }
     else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
@@ -461,7 +462,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 

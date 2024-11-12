@@ -6,7 +6,7 @@ The CPython interpreter is defined in C, meaning that the semantics of the
 bytecode instructions, the dispatching mechanism, error handling, and
 tracing and instrumentation are all intermixed.
 
-This document proposes defining a custom C-like DSL for defining the 
+This document proposes defining a custom C-like DSL for defining the
 instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
@@ -15,6 +15,7 @@ These tools would be used to:
 * Generate the tier 2 interpreter
 * Generate documentation for instructions
 * Generate metadata about instructions, such as stack use (done).
+* Generate the tier 2 optimizer's abstract interpreter.
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -45,7 +46,7 @@ passes from the semantic definition, reducing errors.
 
 As we improve the performance of CPython, we need to optimize larger regions
 of code, use more complex optimizations and, ultimately, translate to machine
-code. 
+code.
 
 All of these steps introduce the possibility of more bugs, and require more code
 to be written. One way to mitigate this is through the use of code generators.
@@ -61,7 +62,7 @@ blocks as the instructions for the tier 1 (PEP 659) interpreter.
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
 
-By using a code generator and using a common source for the instructions, or 
+By using a code generator and using a common source for the instructions, or
 parts of instructions, we can reduce the potential for errors considerably.
 
 
@@ -73,8 +74,8 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
- 
+and a piece of C code describing its semantics:
+
 ```
   file:
     (definition | family | pseudo)+
@@ -85,7 +86,7 @@ and a piece of C code describing its semantics::
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
- 
+
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
 
@@ -123,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -139,6 +146,7 @@ The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
 end of the instruction.
+
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the
@@ -158,16 +166,29 @@ By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
 
+### Special instruction annotations
+
+Instruction headers may be prefixed by one or more annotations. The non-exhaustive
+list of annotations and their meanings are as follows:
+
+* `override`. For external use by other interpreter definitions to override the current
+   instruction definition.
+* `pure`. This instruction has no side effects.
+* 'tierN'. This instruction only used by tier N interpreter.
+
 ### Special functions/macros
 
-The C code may include special functions that are understood by the tools as
+The C code may include special functions and macros that are understood by the tools as
 part of the DSL.
 
-Those functions include:
+Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
 * `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+* `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
+* `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
+to `1 + INLINE_CACHE_ENTRIES`.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -226,7 +247,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 
@@ -412,7 +434,7 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
                 stack_pointer += 1;
             }
             s1 = res;
-        }   
+        }
         next_instr += (1 + 1 + 2 + 1 + 4);
         stack_pointer[-1] = s1;
         DISPATCH();
