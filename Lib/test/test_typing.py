@@ -4254,6 +4254,9 @@ class ProtocolTests(BaseTestCase):
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
 
+        class CustomAsyncIterator(typing.AsyncIterator, Protocol):
+            pass
+
     def test_non_runtime_protocol_isinstance_check(self):
         class P(Protocol):
             x: int
