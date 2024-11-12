@@ -1,2 +1,1 @@
-Add ``None`` check for :class:`asyncio.base_events.Server` internal ``_wakeup``
-method. Patch by Jamie Phan.
+Fix race condition in :meth:`asyncio.Server.close`. Patch by Jamie Phan.
