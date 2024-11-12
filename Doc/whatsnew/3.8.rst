@@ -428,9 +428,9 @@ Other Language Changes
   normal assignment syntax::
 
     >>> def parse(family):
-            lastname, *members = family.split()
-            return lastname.upper(), *members
-
+    ...     lastname, *members = family.split()
+    ...     return lastname.upper(), *members
+    ...
     >>> parse('simpsons homer marge bart lisa maggie')
     ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig`
+Added a *force* keyword argument to :func:`logging.basicConfig`.
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.

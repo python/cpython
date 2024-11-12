@@ -131,6 +131,15 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
 
+    @needs_windows
+    def test_constructor_nested_foreign_flavour(self):
+        # See GH-125069.
+        p1 = pathlib.PurePosixPath('b/c:\\d')
+        p2 = pathlib.PurePosixPath('b/', 'c:\\d')
+        self.assertEqual(p1, p2)
+        self.assertEqual(self.cls(p1), self.cls('b/c:/d'))
+        self.assertEqual(self.cls(p2), self.cls('b/c:/d'))
+
     def _check_parse_path(self, raw_path, *expected):
         sep = self.parser.sep
         actual = self.cls._parse_path(raw_path.replace('/', sep))
@@ -851,6 +860,28 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     @patch_replace
     def test_move_into_empty_name_other_os(self):
         self.test_move_into_empty_name()
+
+    def _check_complex_symlinks(self, link0_target):
+        super()._check_complex_symlinks(link0_target)
+        P = self.cls(self.base)
+        # Resolve relative paths.
+        old_path = os.getcwd()
+        os.chdir(self.base)
+        try:
+            p = self.cls('link0').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link1').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link2').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link3').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+        finally:
+            os.chdir(old_path)
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')

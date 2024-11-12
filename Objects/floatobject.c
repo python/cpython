@@ -134,6 +134,41 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
+#ifdef Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyStackRef_CLOSE(left);
+    PyStackRef_CLOSE(right);
+    return PyFloat_FromDouble(value);
+}
+
+#else // Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+    if (Py_REFCNT(left_o) == 1) {
+        ((PyFloatObject *)left_o)->ob_fval = value;
+        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
+        return left_o;
+    }
+    else if (Py_REFCNT(right_o) == 1)  {
+        ((PyFloatObject *)right_o)->ob_fval = value;
+        _Py_DECREF_NO_DEALLOC(left_o);
+        return right_o;
+    }
+    else {
+        PyObject *result = PyFloat_FromDouble(value);
+        _Py_DECREF_NO_DEALLOC(left_o);
+        _Py_DECREF_NO_DEALLOC(right_o);
+        return result;
+    }
+}
+
+#endif // Py_GIL_DISABLED
+
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
@@ -406,19 +441,16 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* The signs are the same. */
         /* Convert w to a double if it fits.  In particular, 0 fits. */
-        uint64_t nbits64 = _PyLong_NumBits(w);
-        if (nbits64 > (unsigned int)DBL_MAX_EXP) {
+        int64_t nbits64 = _PyLong_NumBits(w);
+        assert(nbits64 >= 0);
+        assert(!PyErr_Occurred());
+        if (nbits64 > DBL_MAX_EXP) {
             /* This Python integer is larger than any finite C double.
              * Replace with little doubles
              * that give the same outcome -- w is so large that
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            if (nbits64 == (uint64_t)-1 && PyErr_Occurred()) {
-                /* This Python integer is so large that uint64_t isn't
-                 * big enough to hold the # of bits. */
-                PyErr_Clear();
-            }
             i = (double)vsign;
             assert(wsign != 0);
             j = wsign * 2.0;
@@ -1884,6 +1916,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 
 static void
@@ -2358,7 +2391,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+            return sign ? -Py_INFINITY : Py_INFINITY;
         }
         else {
             /* NaN */
