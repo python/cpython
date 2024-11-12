@@ -1,3 +1,4 @@
+import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -38,8 +39,22 @@ def code_to_events(code: str):
         yield Event(evt="key", data=c, raw=bytearray(c.encode("utf-8")))
 
 
+def clean_screen(screen: Iterable[str]):
+    """Cleans color and console characters out of a screen output.
+
+    This is useful for screen testing, it increases the test readability since
+    it strips out all the unreadable side of the screen.
+    """
+    output = []
+    for line in screen:
+        if line.startswith(">>>") or line.startswith("..."):
+            line = line[3:]
+        output.append(line)
+    return "\n".join(output).strip()
+
+
 def prepare_reader(console: Console, **kwargs):
-    config = ReadlineConfig(readline_completer=None)
+    config = ReadlineConfig(readline_completer=kwargs.pop("readline_completer", None))
     reader = ReadlineAlikeReader(console=console, config=config)
     reader.more_lines = partial(more_lines, namespace=None)
     reader.paste_mode = True  # Avoid extra indents
@@ -75,6 +90,8 @@ def handle_all_events(
             reader.handle1()
     except StopIteration:
         pass
+    except KeyboardInterrupt:
+        pass
     return reader, console
 
 
@@ -84,8 +101,18 @@ handle_events_narrow_console = partial(
 )
 
 
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
+
+
 class FakeConsole(Console):
-    def __init__(self, events, encoding="utf-8"):
+    def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)
         self.encoding = encoding
         self.screen = []
@@ -134,8 +161,8 @@ class FakeConsole(Console):
     def forgetinput(self) -> None:
         pass
 
-    def wait(self) -> None:
-        pass
+    def wait(self, timeout: float | None = None) -> bool:
+        return True
 
     def repaint(self) -> None:
         pass

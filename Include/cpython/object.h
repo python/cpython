@@ -269,7 +269,11 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    void *ht_token;  // Storage for the "Py_tp_token" slot
     struct _specialization_cache _spec_cache; // For use by the specializer.
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t unique_id;  // ID used for per-thread refcounting
+#endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -287,6 +291,8 @@ PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
+
+PyAPI_FUNC(void) PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
@@ -313,7 +319,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * Temporary variables are used to only evalutate macro arguments once and so
+ * Temporary variables are used to only evaluate macro arguments once and so
  * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
  * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
  * implementation details about type punning.

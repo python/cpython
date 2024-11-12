@@ -424,7 +424,7 @@ def localcontext(ctx=None, **kwargs):
 # numbers.py for more detail.
 
 class Decimal(object):
-    """Floating point class for decimal arithmetic."""
+    """Floating-point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
     # Generally, the value of the Decimal instance is given by
@@ -581,6 +581,21 @@ class Decimal(object):
             return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a real number to a decimal number, exactly.
+
+        >>> Decimal.from_number(314)              # int
+        Decimal('314')
+        >>> Decimal.from_number(0.1)              # float
+        Decimal('0.1000000000000000055511151231257827021181583404541015625')
+        >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance
+        Decimal('3.14')
+        """
+        if isinstance(number, (int, Decimal, float)):
+            return cls(number)
+        raise TypeError("Cannot convert %r to Decimal" % number)
 
     @classmethod
     def from_float(cls, f):

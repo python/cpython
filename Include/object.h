@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
@@ -137,17 +137,13 @@ struct _object {
 // fields have been merged.
 #define _Py_UNOWNED_TID             0
 
-// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
-// pycore_lock.h. See pycore_lock.h for more details.
-struct _PyMutex { uint8_t v; };
-
 struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
     uintptr_t ob_tid;
     uint16_t _padding;
-    struct _PyMutex ob_mutex;   // per-object lock
+    PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
@@ -184,13 +180,19 @@ _Py_ThreadId(void)
     tid = __readfsdword(24);
 #elif defined(_MSC_VER) && defined(_M_ARM64)
     tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
+    tid = __getReg(18);
 #elif defined(__i386__)
     __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
     __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
    __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
+#elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
@@ -244,12 +246,22 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
-// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* Py_TYPE(PyObject *ob) {
-    return ob->ob_type;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
+// Py_TYPE() implementation for the stable ABI
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+    // Stable ABI implements Py_TYPE() as a function call
+    // on limited C API version 3.14 and newer.
+#else
+    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
+    {
+        return ob->ob_type;
+    }
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
+    #else
+    #   define Py_TYPE(ob) _Py_TYPE(ob)
+    #endif
 #endif
 
 PyAPI_DATA(PyTypeObject) PyLong_Type;
@@ -257,8 +269,8 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
-    assert(ob->ob_type != &PyLong_Type);
-    assert(ob->ob_type != &PyBool_Type);
+    assert(Py_TYPE(ob) != &PyLong_Type);
+    assert(Py_TYPE(ob) != &PyBool_Type);
     return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -281,8 +293,8 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
-    assert(ob->ob_base.ob_type != &PyLong_Type);
-    assert(ob->ob_base.ob_type != &PyBool_Type);
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyLong_Type);
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyBool_Type);
 #ifdef Py_GIL_DISABLED
     _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
 #else
@@ -384,6 +396,10 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+#define Py_TP_USE_SPEC NULL
 #endif
 
 /* Generic type check */
@@ -548,7 +564,7 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Object has up-to-date type attribute cache */
+/* Unused. Legacy flag */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
@@ -748,7 +764,11 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-    flags = type->tp_flags;
+#   ifdef Py_GIL_DISABLED
+        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
+#   else
+        flags = type->tp_flags;
+#   endif
 #endif
     return ((flags & feature) != 0);
 }
@@ -774,6 +794,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #ifdef __cplusplus

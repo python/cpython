@@ -90,6 +90,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 # Internal constant list
 Python/initconfig.c	-	PYCONFIG_SPEC	-
+Python/initconfig.c	-	PYPRECONFIG_SPEC	-
 
 
 ##-----------------------
@@ -217,6 +218,7 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
+Modules/_datetimemodule.c	-	capi_types	-
 Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
@@ -343,9 +345,9 @@ Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodec_InitRegistry	methods	-
-Python/compile.c	-	NO_LABEL	-
 Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
 Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
@@ -387,10 +389,8 @@ Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 Python/optimizer.c	-	_ColdExit_Type	-
-Python/optimizer.c	-	COLD_EXITS	-
 Python/optimizer.c	-	Py_FatalErrorExecutor	-
 Python/optimizer.c	-	EMPTY_FILTER	-
-Python/optimizer.c	-	cold_exits_initialized	-
 
 ##-----------------------
 ## test code
@@ -454,6 +454,9 @@ Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
 Modules/_testcapi/watchers.c	-	func_watcher_ids	-
 Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapi/watchers.c	-	context_watcher_ids	-
+Modules/_testcapi/watchers.c	-	context_switches	-
+Modules/_testcapi/watchers.c	add_context_watcher	callbacks	-
 Modules/_testcapimodule.c	-	BasicStaticTypes	-
 Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
@@ -591,6 +594,7 @@ Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
 Modules/_testsinglephase.c	-	global_state	-
+Modules/_testsinglephase.c	-	static_module_circular	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
 Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
@@ -625,8 +629,6 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITI
 Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
-Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
-Modules/_blake2/blake2module.c	-	blake2s_type_spec	-
 Modules/_io/fileio.c	-	_Py_open_cloexec_works	-
 Modules/_io/_iomodule.h	-	PyIOBase_Type	-
 Modules/_io/_iomodule.h	-	PyRawIOBase_Type	-
@@ -743,3 +745,7 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+
+
+## False positives
+Python/specialize.c	-	_Py_InitCleanup	-

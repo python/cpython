@@ -3,7 +3,6 @@
 
 """Fraction, infinite-precision, rational numbers."""
 
-from decimal import Decimal
 import functools
 import math
 import numbers
@@ -244,7 +243,9 @@ class Fraction(numbers.Rational):
                 self._denominator = numerator.denominator
                 return self
 
-            elif isinstance(numerator, (float, Decimal)):
+            elif (isinstance(numerator, float) or
+                  (not isinstance(numerator, type) and
+                   hasattr(numerator, 'as_integer_ratio'))):
                 # Exact conversion
                 self._numerator, self._denominator = numerator.as_integer_ratio()
                 return self
@@ -278,8 +279,8 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                raise TypeError("argument should be a string or a Rational "
+                                "instance or have the as_integer_ratio() method")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
@@ -304,6 +305,28 @@ class Fraction(numbers.Rational):
         self._numerator = numerator
         self._denominator = denominator
         return self
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a finite real number to a rational number, exactly.
+
+        Beware that Fraction.from_number(0.3) != Fraction(3, 10).
+
+        """
+        if type(number) is int:
+            return cls._from_coprime_ints(number, 1)
+
+        elif isinstance(number, numbers.Rational):
+            return cls._from_coprime_ints(number.numerator, number.denominator)
+
+        elif (isinstance(number, float) or
+              (not isinstance(number, type) and
+               hasattr(number, 'as_integer_ratio'))):
+            return cls._from_coprime_ints(*number.as_integer_ratio())
+
+        else:
+            raise TypeError("argument should be a Rational instance or "
+                            "have the as_integer_ratio() method")
 
     @classmethod
     def from_float(cls, f):
@@ -668,7 +691,7 @@ class Fraction(numbers.Rational):
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif handle_complex and isinstance(b, complex):
-                return fallback_operator(complex(a), b)
+                return fallback_operator(float(a), b)
             else:
                 return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
@@ -681,7 +704,7 @@ class Fraction(numbers.Rational):
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif handle_complex and isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
+                return fallback_operator(complex(a), float(b))
             else:
                 return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'

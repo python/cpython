@@ -1,7 +1,7 @@
-This is Python version 3.14.0 alpha 0
+This is Python version 3.14.0 alpha 1
 =====================================
 
-.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+.. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
 
@@ -14,7 +14,7 @@ This is Python version 3.14.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -215,7 +215,7 @@ Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 

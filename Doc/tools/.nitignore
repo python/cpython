@@ -17,7 +17,6 @@ Doc/howto/descriptor.rst
 Doc/howto/enum.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
-Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/collections.rst
 Doc/library/dbm.rst

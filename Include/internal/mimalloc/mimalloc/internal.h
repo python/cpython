@@ -10,7 +10,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 // --------------------------------------------------------------------------
-// This file contains the interal API's of mimalloc and various utility
+// This file contains the internal API's of mimalloc and various utility
 // functions and macros.
 // --------------------------------------------------------------------------
 

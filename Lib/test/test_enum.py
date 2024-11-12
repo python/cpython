@@ -1495,6 +1495,27 @@ class TestSpecial(unittest.TestCase):
             spam = nonmember(SpamEnumIsInner)
         self.assertTrue(SpamEnum.spam is SpamEnumIsInner)
 
+    def test_using_members_as_nonmember(self):
+        class Example(Flag):
+            A = 1
+            B = 2
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
+        class Example(Flag):
+            A = auto()
+            B = auto()
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
     def test_nested_classes_in_enum_with_member(self):
         """Support locally-defined nested classes."""
         class Outer(Enum):
@@ -1866,6 +1887,25 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaises(TypeError):
             class Wrong(Enum, str):
                 NotHere = 'error before this point'
+
+    def test_raise_custom_error_on_creation(self):
+        class InvalidRgbColorError(ValueError):
+            def __init__(self, r, g, b):
+                self.r = r
+                self.g = g
+                self.b = b
+                super().__init__(f'({r}, {g}, {b}) is not a valid RGB color')
+
+        with self.assertRaises(InvalidRgbColorError):
+            class RgbColor(Enum):
+                RED = (255, 0, 0)
+                GREEN = (0, 255, 0)
+                BLUE = (0, 0, 255)
+                INVALID = (256, 0, 0)
+
+                def __init__(self, r, g, b):
+                    if not all(0 <= val <= 255 for val in (r, g, b)):
+                        raise InvalidRgbColorError(r, g, b)
 
     def test_intenum_transitivity(self):
         class number(IntEnum):
@@ -3438,6 +3478,13 @@ class TestSpecial(unittest.TestCase):
                 self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
+
+    def test_nonhashable_matches_hashable(self):    # issue 125710
+        class Directions(Enum):
+            DOWN_ONLY = frozenset({"sc"})
+            UP_ONLY = frozenset({"cs"})
+            UNRESTRICTED = frozenset({"sc", "cs"})
+        self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
 
 
 class TestOrder(unittest.TestCase):
@@ -5307,7 +5354,7 @@ class TestConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
-        # report the first lexigraphical name in that case.
+        # report the first lexicographical name in that case.
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert_int(self):
