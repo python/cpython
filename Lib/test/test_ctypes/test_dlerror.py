@@ -1,8 +1,6 @@
 import os
 import sys
 import unittest
-from ctypes import CDLL, c_int
-from _ctypes import dlopen, dlsym
 
 FOO_C = r"""
 #include <unistd.h>
@@ -49,10 +47,11 @@ class TestNullDlsym(unittest.TestCase):
     This test case ensures that we correctly enforce
     this 'dlsym returned NULL -> throw Error' rule.
     """
-
     def test_null_dlsym(self):
         import subprocess
         import tempfile
+        from ctypes import CDLL, c_int
+        from _ctypes import dlopen, dlsym
 
         # Recall: using shell=True is equivalent to: /bin/sh -c 'args[0]' args[1] ...,
         # so we need to pass a list with a single item, namely the command to run.
