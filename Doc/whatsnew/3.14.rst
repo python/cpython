@@ -807,6 +807,11 @@ New features
   an interned string and deallocate it during module shutdown.
   (Contributed by Eddie Elizondo in :gh:`113601`.)
 
+* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
+  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
+  is positive, negative, or zero, respectively.
+  (Contribued by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:
 
