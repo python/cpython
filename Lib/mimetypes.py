@@ -552,6 +552,7 @@ def _default_mime_types():
         '.bmp'    : 'image/bmp',
         '.emf'    : 'image/emf',
         '.fits'   : 'image/fits',
+        '.g3'     : 'image/g3fax',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
         '.jpg'    : 'image/jpeg',

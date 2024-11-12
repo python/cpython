@@ -242,6 +242,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/avif", ".avif"),
                 ("image/emf", ".emf"),
                 ("image/fits", ".fits"),
+                ("image/g3fax", ".g3"),
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("image/jpeg", ".jpg"),
