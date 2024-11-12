@@ -239,6 +239,10 @@ or on combining URL components into a URL string.
       query parameter separator. This has been changed to allow only a single
       separator key, with ``&`` as the default separator.
 
+   .. deprecated:: 3.14
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings and byte-like objects and ``None`` is now deprecated.
+
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
 
@@ -744,6 +748,10 @@ task isn't already covered by the URL parsing functions above.
 
    .. versionchanged:: 3.5
       Added the *quote_via* parameter.
+
+   .. deprecated:: 3.14
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings and byte-like objects and ``None`` is now deprecated.
 
 
 .. seealso::
