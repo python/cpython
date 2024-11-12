@@ -54,12 +54,9 @@ class TestNullDlsym(unittest.TestCase):
         import subprocess
         import tempfile
 
-        # Recall: using shell=True is equivalent to: /bin/sh -c 'args[0]' args[1] ...,
-        # so we need to pass a list with a single item, namely the command to run.
-        retcode = subprocess.call(["gcc --version"],
+        retcode = subprocess.call(["gcc", "--version"],
                                   stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL,
-                                  shell=True)
+                                  stderr=subprocess.DEVNULL)
         if retcode != 0:
             self.skipTest("gcc is missing")
 
