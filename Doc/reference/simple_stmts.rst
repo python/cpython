@@ -966,25 +966,14 @@ The :keyword:`!global` statement
 .. productionlist:: python-grammar
    global_stmt: "global" `identifier` ("," `identifier`)*
 
-The :keyword:`global` statement is a declaration which holds for the entire
-current code block.  It means that the listed identifiers are to be interpreted
-as globals.  It would be impossible to assign to a global variable without
+The :keyword:`global` causes the listed identifiers to be interpreted
+as globals. It would be impossible to assign to a global variable without
 :keyword:`!global`, although free variables may refer to globals without being
 declared global.
 
-Names listed in a :keyword:`global` statement must not be used in the same code
-block textually preceding that :keyword:`!global` statement.
-
-Names listed in a :keyword:`global` statement must not be defined as formal
-parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
-definition, function definition, :keyword:`import` statement, or
-:term:`variable annotations <variable annotation>`.
-
-.. impl-detail::
-
-   The current implementation does not enforce some of these restrictions, but
-   programs should not abuse this freedom, as future implementations may enforce
-   them or silently change the meaning of the program.
+The global statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its global declaration in the scope.
 
 .. index::
    pair: built-in function; exec
