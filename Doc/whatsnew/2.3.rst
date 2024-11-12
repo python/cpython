@@ -1405,7 +1405,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The parser objects provided by the :mod:`pyexpat <xml.parsers.expat>` module can now optionally
   buffer character data, resulting in fewer calls to your character data handler
   and therefore faster performance.  Setting the parser object's
-  :attr:`~xml.parsers.expat.xmlparser.buffer_text` attribute to :const:`True` will enable buffering.
+  :attr:`~xml.parsers.expat.XMLParserType.buffer_text` attribute to :const:`True` will enable buffering.
 
 * The ``sample(population, k)`` function was added to the :mod:`random`
   module.  *population* is a sequence or :class:`!xrange` object containing the

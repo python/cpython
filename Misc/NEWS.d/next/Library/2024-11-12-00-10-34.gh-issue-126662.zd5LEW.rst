@@ -1,1 +1,1 @@
-Update :class:`pyexpat.XMLParserType` to use that name consisently.
+Update :class:`xml.parsers.expat.XMLParserType` to use that name consisently.

@@ -104,7 +104,7 @@ The :mod:`xml.parsers.expat` module contains two functions:
       http://www.python.org/ns/ elem1
       elem2
 
-   Due to limitations in the ``Expat`` library used by :mod:`pyexpat`,
+   Due to limitations in the ``Expat`` library used by :mod:`!pyexpat`,
    the :class:`XMLParserType` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
@@ -283,7 +283,7 @@ XMLParser Objects
 
 The following attributes contain values relating to the most recent error
 encountered by an :class:`XMLParserType` object, and will only have correct values
-once a call to :meth:`Parse` or :meth:`ParseFile` has raised an
+once a call to :meth:`~XMLParserType.Parse` or :meth:`~XMLParserType.ParseFile` has raised an
 :exc:`xml.parsers.expat.ExpatError` exception.
 
 

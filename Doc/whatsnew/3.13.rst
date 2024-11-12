@@ -1438,8 +1438,8 @@ xml
 
   * :meth:`xml.etree.ElementTree.XMLParser.flush`
   * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
-  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
-  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.XMLParserType.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.XMLParserType.SetReparseDeferralEnabled`
   * :meth:`!xml.sax.expatreader.ExpatParser.flush`
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
