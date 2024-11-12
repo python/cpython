@@ -301,6 +301,23 @@ PyErr_SetString(PyObject *exception, const char *string)
     _PyErr_SetString(tstate, exception, string);
 }
 
+void
+_PyErr_SetLocaleStringTstate(PyThreadState *tstate, PyObject *exception,
+                             const char *string)
+{
+    PyObject *value = PyUnicode_DecodeLocale(string, "strict");
+    if (value != NULL) {
+        _PyErr_SetObject(tstate, exception, value);
+        Py_DECREF(value);
+    }
+}
+
+void
+_PyErr_SetLocaleString(PyObject *exception, const char *string)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetLocaleStringTstate(tstate, exception, string);
+}
 
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)

@@ -130,6 +130,25 @@ PyAPI_FUNC(void) _PyErr_SetString(
     PyObject *exception,
     const char *string);
 
+/*
+ * Similar to _PyErr_SetString but decodes 'string' into the current locale.
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ */
+extern void _PyErr_SetLocaleStringTstate(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *string);
+
+/*
+ * Similar to PyErr_SetString but decodes 'string' into the current locale.
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ */
+extern void _PyErr_SetLocaleString(
+    PyObject *exception,
+    const char *string);
+
 PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
