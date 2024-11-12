@@ -986,8 +986,13 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     // Investigate if this can cause problems.
     const char *dlerr = dlerror();
     if (dlerr) {
-        PyErr_SetString(PyExc_ValueError, dlerr);
-        return NULL;
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
+        if (message) {
+            PyErr_SetObject(PyExc_ValueError, message);
+            return NULL;
+        }
+        // Ignore errors from converting the message to str
+        PyErr_Clear();
     }
 #endif
 #undef USE_DLERROR
