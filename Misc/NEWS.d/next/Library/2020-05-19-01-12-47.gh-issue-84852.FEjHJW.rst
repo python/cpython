@@ -1,0 +1,2 @@
+Add MIME types for MS Embedded OpenType, OpenType Layout, TrueType,
+WOFF 1.0 and 2.0 fonts. Patch by Sahil Prajapati and Hugo van Kemenade.
