@@ -516,7 +516,8 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("_CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = CacheInfo
 
 class _HashedSeq(list):
     """ This class guarantees that hash() will be called no more than once
@@ -598,7 +599,7 @@ def lru_cache(maxsize=128, typed=False):
     elif callable(maxsize) and isinstance(typed, bool):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
@@ -606,7 +607,7 @@ def lru_cache(maxsize=128, typed=False):
             'Expected first argument to be an integer, a callable, or None')
 
     def decorating_function(user_function):
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 
