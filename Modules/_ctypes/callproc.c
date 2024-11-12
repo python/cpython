@@ -1640,13 +1640,11 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
-        PyObject *message = PyUnicode_DecodeLocale(dlerr, "strict");
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
         if (message) {
             PyErr_SetObject(PyExc_OSError, message);
             return NULL;
         }
-        // Ignore errors from converting the message to str
-        PyErr_Clear();
     }
 #endif
 #undef USE_DLERROR
