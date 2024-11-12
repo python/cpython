@@ -7941,7 +7941,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 PY_STDLIB_MOD([_hmac], [], [test "$ac_cv_working_openssl_hmac" = yes],
   [$LIBHACL_CFLAGS $OPENSSL_INCLUDES],
-  [$LIBHACL_CFLAGS $srcdir/Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
+  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],

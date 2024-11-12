@@ -31559,7 +31559,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS $OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$LIBHACL_CFLAGS $srcdir/Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
