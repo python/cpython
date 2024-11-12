@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
+
 /**************/
 /* exceptions */
 /**************/
@@ -38,14 +39,14 @@ extern int _Py_CallInInterpreterAndRawFree(
 /* cross-interpreter data */
 /**************************/
 
-typedef struct _xid _PyXIData_t;
-typedef PyObject *(*xid_newobjectfunc)(_PyXIData_t *);
+typedef struct _xidata _PyXIData_t;
+typedef PyObject *(*xid_newobjfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
 // _PyXIData_t is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
-struct _xid {
+struct _xidata {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetXIData).  It will be NULL if the
     // new_object func (below) encodes the data.
@@ -71,7 +72,7 @@ struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    xid_newobjectfunc new_object;
+    xid_newobjfunc new_object;
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -116,11 +117,11 @@ PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
 PyAPI_FUNC(void) _PyXIData_Init(
         _PyXIData_t *data,
         PyInterpreterState *interp, void *shared, PyObject *obj,
-        xid_newobjectfunc new_object);
+        xid_newobjfunc new_object);
 PyAPI_FUNC(int) _PyXIData_InitWithSize(
         _PyXIData_t *,
         PyInterpreterState *interp, const size_t, PyObject *,
-        xid_newobjectfunc);
+        xid_newobjfunc);
 PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 
 // Normally the Init* functions are sufficient.  The only time
@@ -154,18 +155,23 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 /* runtime state & lifecycle */
 /*****************************/
 
-struct _xi_runtime_state {
+typedef struct {
     // builtin types
     _PyXIData_lookup_t data_lookup;
-};
+} _PyXI_global_state_t;
 
-struct _xi_state {
+typedef struct {
     // heap types
     _PyXIData_lookup_t data_lookup;
 
-    // heap types
-    PyObject *PyExc_NotShareableError;
-};
+    struct xi_exceptions {
+        // static types
+        PyObject *PyExc_InterpreterError;
+        PyObject *PyExc_InterpreterNotFoundError;
+        // heap types
+        PyObject *PyExc_NotShareableError;
+    } exceptions;
+} _PyXI_state_t;
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
