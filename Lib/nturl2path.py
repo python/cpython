@@ -43,17 +43,23 @@ def pathname2url(p):
     #   ///C:/foo/bar/spam.foo
     import ntpath
     import urllib.parse
-    # First, clean up some special forms. We are going to sacrifice
-    # the additional information anyway
-    p = p.replace('\\', '/')
-    if p[:4] == '//?/':
-        p = p[4:]
-        if p[:4].upper() == 'UNC/':
-            p = '//' + p[4:]
-    drive, tail = ntpath.splitdrive(p)
-    if drive[1:2] != ':':
-        # No DOS drive specified, just quote the pathname
-        return urllib.parse.quote(p)
-    drive = urllib.parse.quote(drive[0].upper())
-    tail = urllib.parse.quote(tail)
-    return '///' + drive + ':' + tail
+    drive, tail = ntpath.splitdrive(p.replace('\\', '/'))
+    if drive:
+        # First, clean up some special forms. We are going to sacrifice the
+        # additional information anyway.
+        if drive[:4] == '//?/':
+            drive = drive[4:]
+            if drive[:4].upper() == 'UNC/':
+                drive = '//' + drive[4:]
+
+        if drive[1:2] == ':':
+            # DOS drive specified. Add three slashes to the start, producing
+            # an authority section with a zero-length authority, and a path
+            # section starting with a single slash. The colon is *not* quoted.
+            letter = urllib.parse.quote(drive[0].upper())
+            drive = f'///{letter}:'
+        else:
+            # No DOS drive specified, just quote the pathname.
+            drive = urllib.parse.quote(drive)
+
+    return drive + urllib.parse.quote(tail)
