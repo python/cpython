@@ -93,6 +93,20 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Summary
+-------
+
+.. autosummary::
+
+   PurePath
+   PurePosixPath
+   PureWindowsPath
+   Path
+   PosixPath
+   WindowsPath
+   PurePath.as_posix
+
+
 Exceptions
 ----------
 
