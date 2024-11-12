@@ -76,6 +76,7 @@ module marshal
 #define TYPE_UNKNOWN            '?'
 #define TYPE_SET                '<'
 #define TYPE_FROZENSET          '>'
+#define TYPE_SLICE              ':'
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 #define TYPE_ASCII              'a'
@@ -612,6 +613,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         W_TYPE(TYPE_STRING, p);
         w_pstring(view.buf, view.len, p);
         PyBuffer_Release(&view);
+    }
+    else if (PySlice_Check(v)) {
+        PySliceObject *slice = (PySliceObject *)v;
+        W_TYPE(TYPE_SLICE, p);
+        w_object(slice->start, p);
+        w_object(slice->stop, p);
+        w_object(slice->step, p);
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
@@ -1156,7 +1164,7 @@ r_object(RFILE *p)
 
     case TYPE_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_ASCII:
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
@@ -1170,7 +1178,7 @@ r_object(RFILE *p)
 
     case TYPE_SHORT_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_SHORT_ASCII:
         n = r_byte(p);
         if (n == EOF) {
@@ -1198,7 +1206,7 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_UNICODE:
         {
         const char *buffer;
@@ -1218,7 +1226,7 @@ r_object(RFILE *p)
             v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
         }
         else {
-            v = PyUnicode_New(0, 0);
+            v = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
         if (v == NULL)
             break;
@@ -1533,6 +1541,32 @@ r_object(RFILE *p)
         }
         retval = Py_NewRef(v);
         break;
+
+    case TYPE_SLICE:
+    {
+        Py_ssize_t idx = r_ref_reserve(flag, p);
+        PyObject *stop = NULL;
+        PyObject *step = NULL;
+        PyObject *start = r_object(p);
+        if (start == NULL) {
+            goto cleanup;
+        }
+        stop = r_object(p);
+        if (stop == NULL) {
+            goto cleanup;
+        }
+        step = r_object(p);
+        if (step == NULL) {
+            goto cleanup;
+        }
+        retval = PySlice_New(start, stop, step);
+        r_ref_insert(retval, idx, flag, p);
+    cleanup:
+        Py_XDECREF(start);
+        Py_XDECREF(stop);
+        Py_XDECREF(step);
+        break;
+    }
 
     default:
         /* Bogus data got written, which isn't ideal.
@@ -1927,7 +1961,7 @@ machine architecture issues.\n\
 Not all Python object types are supported; in general, only objects\n\
 whose value is independent from a particular invocation of Python can be\n\
 written and read by this module. The following types are supported:\n\
-None, integers, floating point numbers, strings, bytes, bytearrays,\n\
+None, integers, floating-point numbers, strings, bytes, bytearrays,\n\
 tuples, lists, sets, dictionaries, and code objects, where it\n\
 should be understood that tuples, lists and dictionaries are only\n\
 supported as long as the values contained therein are themselves\n\
@@ -1938,7 +1972,7 @@ Variables:\n\
 \n\
 version -- indicates the format that the module uses. Version 0 is the\n\
     historical format, version 1 shares interned strings and version 2\n\
-    uses a binary format for floating point numbers.\n\
+    uses a binary format for floating-point numbers.\n\
     Version 3 shares common object references (New in version 3.4).\n\
 \n\
 Functions:\n\

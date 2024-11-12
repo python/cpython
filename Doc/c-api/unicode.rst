@@ -317,7 +317,7 @@ These APIs can be used to work with surrogates:
 
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
-   Join two surrogate characters and return a single :c:type:`Py_UCS4` value.
+   Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
    surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
    be in the range [0xDC00; 0xDFFF].
@@ -337,6 +337,8 @@ APIs:
 
    This is the recommended way to allocate a new Unicode object.  Objects
    created using this function are not resizable.
+
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: 3.3
 
@@ -614,6 +616,8 @@ APIs:
 
    Return the length of the Unicode object, in code points.
 
+   On error, set an exception and return ``-1``.
+
    .. versionadded:: 3.3
 
 
@@ -657,6 +661,8 @@ APIs:
    not out of bounds, and that the object can be modified safely (i.e. that it
    its reference count is one).
 
+   Return ``0`` on success, ``-1`` on error with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -666,6 +672,8 @@ APIs:
    Unicode object and the index is not out of bounds, in contrast to
    :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
+   Return character on success, ``-1`` on error with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -674,6 +682,7 @@ APIs:
 
    Return a substring of *unicode*, from character index *start* (included) to
    character index *end* (excluded).  Negative indices are not supported.
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: 3.3
 
@@ -990,6 +999,9 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return ``NULL`` if an exception was
    raised by the codec.
 
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
+
 
 .. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
@@ -1001,6 +1013,9 @@ These are the UTF-8 codec APIs:
 
    On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
    return ``NULL``.
+
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -1423,14 +1438,40 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    This function returns ``-1`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
 
+   .. seealso::
+
+      The :c:func:`PyUnicode_Equal` function.
+
+
+.. c:function:: int PyUnicode_Equal(PyObject *a, PyObject *b)
+
+   Test if two strings are equal:
+
+   * Return ``1`` if *a* is equal to *b*.
+   * Return ``0`` if *a* is not equal to *b*.
+   * Set a :exc:`TypeError` exception and return ``-1`` if *a* or *b* is not a
+     :class:`str` object.
+
+   The function always succeeds if *a* and *b* are :class:`str` objects.
+
+   The function works for :class:`str` subclasses, but does not honor custom
+   ``__eq__()`` method.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_Compare` function.
+
+   .. versionadded:: 3.14
+
 
 .. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
 
    Compare a Unicode object with a char buffer which is interpreted as
    being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
    or false (``0``) otherwise.
-   If the Unicode object contains surrogate characters or
-   the C string is not valid UTF-8, false (``0``) is returned.
+   If the Unicode object contains surrogate code points
+   (``U+D800`` - ``U+DFFF``) or the C string is not valid UTF-8,
+   false (``0``) is returned.
 
    This function does not raise exceptions.
 
@@ -1490,18 +1531,43 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    existing interned string that is the same as :c:expr:`*p_unicode`, it sets :c:expr:`*p_unicode` to
    it (releasing the reference to the old string object and creating a new
    :term:`strong reference` to the interned string object), otherwise it leaves
-   :c:expr:`*p_unicode` alone and interns it (creating a new :term:`strong reference`).
+   :c:expr:`*p_unicode` alone and interns it.
+
    (Clarification: even though there is a lot of talk about references, think
-   of this function as reference-neutral; you own the object after the call
-   if and only if you owned it before the call.)
+   of this function as reference-neutral. You must own the object you pass in;
+   after the call you no longer own the passed-in reference, but you newly own
+   the result.)
+
+   This function never raises an exception.
+   On error, it leaves its argument unchanged without interning it.
+
+   Instances of subclasses of :py:class:`str` may not be interned, that is,
+   :c:expr:`PyUnicode_CheckExact(*p_unicode)` must be true. If it is not,
+   then -- as with any other error -- the argument is left unchanged.
+
+   Note that interned strings are not “immortal”.
+   You must keep a reference to the result to benefit from interning.
 
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)
 
    A combination of :c:func:`PyUnicode_FromString` and
-   :c:func:`PyUnicode_InternInPlace`, returning either a new Unicode string
-   object that has been interned, or a new ("owned") reference to an earlier
-   interned string object with the same value.
+   :c:func:`PyUnicode_InternInPlace`, meant for statically allocated strings.
+
+   Return a new ("owned") reference to either a new Unicode string object
+   that has been interned, or an earlier interned string object with the
+   same value.
+
+   Python may keep a reference to the result, or make it :term:`immortal`,
+   preventing it from being garbage-collected promptly.
+   For interning an unbounded number of different strings, such as ones coming
+   from user input, prefer calling :c:func:`PyUnicode_FromString` and
+   :c:func:`PyUnicode_InternInPlace` directly.
+
+   .. impl-detail::
+
+      Strings interned this way are made :term:`immortal`.
+
 
 PyUnicodeWriter
 ^^^^^^^^^^^^^^^
@@ -1534,6 +1600,8 @@ object.
 
    Discard the internal Unicode buffer and destroy the writer instance.
 
+   If *writer* is ``NULL``, no operation is performed.
+
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
    Write the single Unicode character *ch* into *writer*.
@@ -1559,6 +1627,15 @@ object.
 
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+
+   Writer the UCS4 string *str* into *writer*.
+
+   *size* is a number of UCS4 characters.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.

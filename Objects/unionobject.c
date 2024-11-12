@@ -1,9 +1,8 @@
 // types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
-#include "pycore_typevarobject.h"  // _PyTypeAlias_Type
+#include "pycore_typevarobject.h"  // _PyTypeAlias_Type, _Py_typing_type_repr
 #include "pycore_unionobject.h"
-
 
 
 static PyObject *make_union(PyObject *);
@@ -81,7 +80,7 @@ is_same(PyObject *left, PyObject *right)
 static int
 contains(PyObject **items, Py_ssize_t size, PyObject *obj)
 {
-    for (int i = 0; i < size; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         int is_duplicate = is_same(items[i], obj);
         if (is_duplicate) {  // -1 or 1
             return is_duplicate;
@@ -97,7 +96,7 @@ merge(PyObject **items1, Py_ssize_t size1,
     PyObject *tuple = NULL;
     Py_ssize_t pos = 0;
 
-    for (int i = 0; i < size2; i++) {
+    for (Py_ssize_t i = 0; i < size2; i++) {
         PyObject *arg = items2[i];
         int is_duplicate = contains(items1, size1, arg);
         if (is_duplicate < 0) {
@@ -181,67 +180,6 @@ _Py_union_type_or(PyObject* self, PyObject* other)
     return new_union;
 }
 
-static int
-union_repr_item(PyUnicodeWriter *writer, PyObject *p)
-{
-    PyObject *qualname = NULL;
-    PyObject *module = NULL;
-    int rc;
-
-    if (p == (PyObject *)&_PyNone_Type) {
-        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
-    }
-
-    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
-        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
-    {
-        // It looks like a GenericAlias
-        goto use_repr;
-    }
-    if (rc < 0) {
-        goto error;
-    }
-
-    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
-        goto error;
-    }
-    if (qualname == NULL) {
-        goto use_repr;
-    }
-    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
-        goto error;
-    }
-    if (module == NULL || module == Py_None) {
-        goto use_repr;
-    }
-
-    // Looks like a class
-    if (PyUnicode_Check(module) &&
-        _PyUnicode_EqualToASCIIString(module, "builtins"))
-    {
-        // builtins don't need a module name
-        rc = PyUnicodeWriter_WriteStr(writer, qualname);
-        goto done;
-    }
-    else {
-        rc = PyUnicodeWriter_Format(writer, "%S.%S", module, qualname);
-        goto done;
-    }
-
-error:
-    rc = -1;
-    goto done;
-
-use_repr:
-    rc = PyUnicodeWriter_WriteRepr(writer, p);
-    goto done;
-
-done:
-    Py_XDECREF(qualname);
-    Py_XDECREF(module);
-    return rc;
-}
-
 static PyObject *
 union_repr(PyObject *self)
 {
@@ -260,7 +198,7 @@ union_repr(PyObject *self)
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
-        if (union_repr_item(writer, p) < 0) {
+        if (_Py_typing_type_repr(writer, p) < 0) {
             goto error;
         }
     }

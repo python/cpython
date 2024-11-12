@@ -10,7 +10,6 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
-#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_global_objects.h"  // _Py_SINGLETON
 
@@ -253,11 +252,7 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Fast equality check when the inputs are known to be exact unicode types
-   and where the hash values are equal (i.e. a very probable match) */
-extern int _PyUnicode_EQ(PyObject *, PyObject *);
-
-// Equality check.
+// Fast equality check when the inputs are known to be exact unicode types.
 // Export for '_pickle' shared extension.
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 

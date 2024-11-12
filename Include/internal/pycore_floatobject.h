@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_unicodeobject.h" // _PyUnicodeWriter
 
 /* runtime lifecycle */

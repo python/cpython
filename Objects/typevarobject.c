@@ -116,6 +116,204 @@ PyTypeObject _PyNoDefault_Type = {
 
 PyObject _Py_NoDefaultStruct = _PyObject_HEAD_INIT(&_PyNoDefault_Type);
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *value;
+} constevaluatorobject;
+
+static void
+constevaluator_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    constevaluatorobject *ce = (constevaluatorobject *)self;
+
+    _PyObject_GC_UNTRACK(self);
+
+    Py_XDECREF(ce->value);
+
+    Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static int
+constevaluator_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    constevaluatorobject *ce = (constevaluatorobject *)self;
+    Py_VISIT(ce->value);
+    return 0;
+}
+
+static int
+constevaluator_clear(PyObject *self)
+{
+    Py_CLEAR(((constevaluatorobject *)self)->value);
+    return 0;
+}
+
+static PyObject *
+constevaluator_repr(PyObject *self)
+{
+    PyObject *value = ((constevaluatorobject *)self)->value;
+    return PyUnicode_FromFormat("<constevaluator %R>", value);
+}
+
+static PyObject *
+constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoKeywords("constevaluator.__call__", kwargs)) {
+        return NULL;
+    }
+    int format;
+    if (!PyArg_ParseTuple(args, "i:constevaluator.__call__", &format)) {
+        return NULL;
+    }
+    PyObject *value = ((constevaluatorobject *)self)->value;
+    if (format == 3) { // STRING
+        PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
+        if (writer == NULL) {
+            return NULL;
+        }
+        if (PyTuple_Check(value)) {
+            if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+                PyUnicodeWriter_Discard(writer);
+                return NULL;
+            }
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
+                PyObject *item = PyTuple_GET_ITEM(value, i);
+                if (i > 0) {
+                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                        PyUnicodeWriter_Discard(writer);
+                        return NULL;
+                    }
+                }
+                if (_Py_typing_type_repr(writer, item) < 0) {
+                    PyUnicodeWriter_Discard(writer);
+                    return NULL;
+                }
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+                PyUnicodeWriter_Discard(writer);
+                return NULL;
+            }
+        }
+        else {
+            if (_Py_typing_type_repr(writer, value) < 0) {
+                PyUnicodeWriter_Discard(writer);
+                return NULL;
+            }
+        }
+        return PyUnicodeWriter_Finish(writer);
+    }
+    return Py_NewRef(value);
+}
+
+static PyObject *
+constevaluator_alloc(PyObject *value)
+{
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.constevaluator_type;
+    assert(tp != NULL);
+    constevaluatorobject *ce = PyObject_GC_New(constevaluatorobject, tp);
+    if (ce == NULL) {
+        return NULL;
+    }
+    ce->value = Py_NewRef(value);
+    _PyObject_GC_TRACK(ce);
+    return (PyObject *)ce;
+
+}
+
+PyDoc_STRVAR(constevaluator_doc,
+"_ConstEvaluator()\n"
+"--\n\n"
+"Internal type for implementing evaluation functions.");
+
+static PyType_Slot constevaluator_slots[] = {
+    {Py_tp_doc, (void *)constevaluator_doc},
+    {Py_tp_dealloc, constevaluator_dealloc},
+    {Py_tp_traverse, constevaluator_traverse},
+    {Py_tp_clear, constevaluator_clear},
+    {Py_tp_repr, constevaluator_repr},
+    {Py_tp_call, constevaluator_call},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+PyType_Spec constevaluator_spec = {
+    .name = "_typing._ConstEvaluator",
+    .basicsize = sizeof(constevaluatorobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = constevaluator_slots,
+};
+
+int
+_Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
+{
+    PyObject *qualname = NULL;
+    PyObject *module = NULL;
+    PyObject *r = NULL;
+    int rc;
+
+    if (p == Py_Ellipsis) {
+        // The Ellipsis object
+        r = PyUnicode_FromString("...");
+        goto exit;
+    }
+
+    if (p == (PyObject *)&_PyNone_Type) {
+        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
+    }
+
+    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
+        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
+    {
+        // It looks like a GenericAlias
+        goto use_repr;
+    }
+    if (rc < 0) {
+        goto exit;
+    }
+
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
+        goto exit;
+    }
+    if (qualname == NULL) {
+        goto use_repr;
+    }
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
+        goto exit;
+    }
+    if (module == NULL || module == Py_None) {
+        goto use_repr;
+    }
+
+    // Looks like a class
+    if (PyUnicode_Check(module) &&
+        _PyUnicode_EqualToASCIIString(module, "builtins"))
+    {
+        // builtins don't need a module name
+        r = PyObject_Str(qualname);
+        goto exit;
+    }
+    else {
+        r = PyUnicode_FromFormat("%S.%S", module, qualname);
+        goto exit;
+    }
+
+use_repr:
+    r = PyObject_Repr(p);
+exit:
+    Py_XDECREF(qualname);
+    Py_XDECREF(module);
+    if (r == NULL) {
+        return -1;
+    }
+    rc = PyUnicodeWriter_WriteStr(writer, r);
+    Py_DECREF(r);
+    return rc;
+}
+
 
 static PyObject *
 call_typing_func_object(const char *name, PyObject **args, size_t nargs)
@@ -175,10 +373,10 @@ caller(void)
     if (f == NULL) {
         Py_RETURN_NONE;
     }
-    if (f == NULL || f->f_funcobj == NULL) {
+    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
     if (!r) {
         PyErr_Clear();
         Py_RETURN_NONE;
@@ -364,10 +562,49 @@ typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
     return constraints;
 }
 
+static PyObject *
+typevar_evaluate_bound(typevarobject *self, void *Py_UNUSED(ignored))
+{
+    if (self->evaluate_bound != NULL) {
+        return Py_NewRef(self->evaluate_bound);
+    }
+    if (self->bound != NULL) {
+        return constevaluator_alloc(self->bound);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+typevar_evaluate_constraints(typevarobject *self, void *Py_UNUSED(ignored))
+{
+    if (self->evaluate_constraints != NULL) {
+        return Py_NewRef(self->evaluate_constraints);
+    }
+    if (self->constraints != NULL) {
+        return constevaluator_alloc(self->constraints);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+typevar_evaluate_default(typevarobject *self, void *Py_UNUSED(ignored))
+{
+    if (self->evaluate_default != NULL) {
+        return Py_NewRef(self->evaluate_default);
+    }
+    if (self->default_value != NULL) {
+        return constevaluator_alloc(self->default_value);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef typevar_getset[] = {
     {"__bound__", (getter)typevar_bound, NULL, NULL, NULL},
     {"__constraints__", (getter)typevar_constraints, NULL, NULL, NULL},
     {"__default__", (getter)typevar_default, NULL, NULL, NULL},
+    {"evaluate_bound", (getter)typevar_evaluate_bound, NULL, NULL, NULL},
+    {"evaluate_constraints", (getter)typevar_evaluate_constraints, NULL, NULL, NULL},
+    {"evaluate_default", (getter)typevar_evaluate_default, NULL, NULL, NULL},
     {0}
 };
 
@@ -414,7 +651,7 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
 typevar.__new__ as typevar_new
 
     name: object(subclass_of="&PyUnicode_Type")
-    *constraints: object
+    *constraints: tuple
     bound: object = None
     default as default_value: object(c_default="&_Py_NoDefaultStruct") = typing.NoDefault
     covariant: bool = False
@@ -428,7 +665,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, PyObject *default_value, int covariant,
                  int contravariant, int infer_variance)
-/*[clinic end generated code: output=d2b248ff074eaab6 input=836f97f631d7293a]*/
+/*[clinic end generated code: output=d2b248ff074eaab6 input=1b5b62e40c92c167]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -995,10 +1232,23 @@ paramspec_default(paramspecobject *self, void *unused)
     return default_value;
 }
 
+static PyObject *
+paramspec_evaluate_default(paramspecobject *self, void *unused)
+{
+    if (self->evaluate_default != NULL) {
+        return Py_NewRef(self->evaluate_default);
+    }
+    if (self->default_value != NULL) {
+        return constevaluator_alloc(self->default_value);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef paramspec_getset[] = {
     {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
     {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
     {"__default__", (getter)paramspec_default, NULL, "The default value for this ParamSpec.", NULL},
+    {"evaluate_default", (getter)paramspec_evaluate_default, NULL, NULL, NULL},
     {0},
 };
 
@@ -1437,8 +1687,21 @@ typevartuple_default(typevartupleobject *self, void *unused)
     return default_value;
 }
 
+static PyObject *
+typevartuple_evaluate_default(typevartupleobject *self, void *unused)
+{
+    if (self->evaluate_default != NULL) {
+        return Py_NewRef(self->evaluate_default);
+    }
+    if (self->default_value != NULL) {
+        return constevaluator_alloc(self->default_value);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef typevartuple_getset[] = {
     {"__default__", (getter)typevartuple_default, NULL, "The default value for this TypeVarTuple.", NULL},
+    {"evaluate_default", (getter)typevartuple_evaluate_default, NULL, NULL, NULL},
     {0},
 };
 
@@ -1536,6 +1799,24 @@ _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
     return (PyObject *)typevartuple_alloc(v, NULL, NULL);
 }
 
+static PyObject *
+get_type_param_default(PyThreadState *ts, PyObject *typeparam) {
+    // Does not modify refcount of existing objects.
+    if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
+        return typevar_default((typevarobject *)typeparam, NULL);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
+        return paramspec_default((paramspecobject *)typeparam, NULL);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
+        return typevartuple_default((typevartupleobject *)typeparam, NULL);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
+        return NULL;
+    }
+}
+
 static void
 typealias_dealloc(PyObject *self)
 {
@@ -1585,6 +1866,17 @@ typealias_value(PyObject *self, void *unused)
 }
 
 static PyObject *
+typealias_evaluate_value(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->compute_value != NULL) {
+        return Py_NewRef(ta->compute_value);
+    }
+    assert(ta->value != NULL);
+    return constevaluator_alloc(ta->value);
+}
+
+static PyObject *
 typealias_parameters(PyObject *self, void *unused)
 {
     typealiasobject *ta = (typealiasobject *)self;
@@ -1627,9 +1919,69 @@ static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, (setter)NULL, NULL, NULL},
     {"__value__", typealias_value, (setter)NULL, NULL, NULL},
+    {"evaluate_value", typealias_evaluate_value, (setter)NULL, NULL, NULL},
     {"__module__", typealias_module, (setter)NULL, NULL, NULL},
     {0}
 };
+
+static PyObject *
+typealias_check_type_params(PyObject *type_params, int *err) {
+    // Can return type_params or NULL without exception set.
+    // Does not change the reference count of type_params,
+    // sets `*err` to 1 when error happens and sets an exception,
+    // otherwise `*err` is set to 0.
+    *err = 0;
+    if (type_params == NULL) {
+        return NULL;
+    }
+
+    assert(PyTuple_Check(type_params));
+    Py_ssize_t length = PyTuple_GET_SIZE(type_params);
+    if (!length) {  // 0-length tuples are the same as `NULL`.
+        return NULL;
+    }
+
+    PyThreadState *ts = _PyThreadState_GET();
+    int default_seen = 0;
+    for (Py_ssize_t index = 0; index < length; index++) {
+        PyObject *type_param = PyTuple_GET_ITEM(type_params, index);
+        PyObject *dflt = get_type_param_default(ts, type_param);
+        if (dflt == NULL) {
+            *err = 1;
+            return NULL;
+        }
+        if (dflt == &_Py_NoDefaultStruct) {
+            if (default_seen) {
+                *err = 1;
+                PyErr_Format(PyExc_TypeError,
+                                "non-default type parameter '%R' "
+                                "follows default type parameter",
+                                type_param);
+                return NULL;
+            }
+        } else {
+            default_seen = 1;
+            Py_DECREF(dflt);
+        }
+    }
+
+    return type_params;
+}
+
+static PyObject *
+typelias_convert_type_params(PyObject *type_params)
+{
+    if (
+        type_params == NULL
+        || Py_IsNone(type_params)
+        || (PyTuple_Check(type_params) && PyTuple_GET_SIZE(type_params) == 0)
+    ) {
+        return NULL;
+    }
+    else {
+        return type_params;
+    }
+}
 
 static typealiasobject *
 typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
@@ -1640,7 +1992,7 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
         return NULL;
     }
     ta->name = Py_NewRef(name);
-    ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
+    ta->type_params = Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
     ta->module = Py_XNewRef(module);
@@ -1718,11 +2070,18 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
         return NULL;
     }
+
+    int err = 0;
+    PyObject *checked_params = typealias_check_type_params(type_params, &err);
+    if (err) {
+        return NULL;
+    }
+
     PyObject *module = caller();
     if (module == NULL) {
         return NULL;
     }
-    PyObject *ta = (PyObject *)typealias_alloc(name, type_params, NULL, value,
+    PyObject *ta = (PyObject *)typealias_alloc(name, checked_params, NULL, value,
                                                module);
     Py_DECREF(module);
     return ta;
@@ -1788,7 +2147,7 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyTuple_GET_SIZE(args) == 3);
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     assert(PyUnicode_Check(name));
-    PyObject *type_params = PyTuple_GET_ITEM(args, 1);
+    PyObject *type_params = typelias_convert_type_params(PyTuple_GET_ITEM(args, 1));
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
     assert(PyFunction_Check(compute_value));
     return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL, NULL);
@@ -1952,6 +2311,7 @@ int _Py_initialize_generic(PyInterpreterState *interp)
     MAKE_TYPE(paramspec);
     MAKE_TYPE(paramspecargs);
     MAKE_TYPE(paramspeckwargs);
+    MAKE_TYPE(constevaluator);
 #undef MAKE_TYPE
     return 0;
 }
@@ -1964,6 +2324,7 @@ void _Py_clear_generic_types(PyInterpreterState *interp)
     Py_CLEAR(interp->cached_objects.paramspec_type);
     Py_CLEAR(interp->cached_objects.paramspecargs_type);
     Py_CLEAR(interp->cached_objects.paramspeckwargs_type);
+    Py_CLEAR(interp->cached_objects.constevaluator_type);
 }
 
 PyObject *
