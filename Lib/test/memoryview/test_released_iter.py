@@ -13,7 +13,7 @@ class TestMemoryViewErrors(TestCase):
 
     def test_memoryview_direct_iter_no_error(self):
         av = memoryview(b"something")
-        
+
         try:
             iterator = av.__iter__()
             list(iterator)
