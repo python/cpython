@@ -6,7 +6,7 @@
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"              // _Py_strhex()
 
-#include <openssl/obj_mac.h>            // LN_* macros
+#include <openssl/objects.h>
 
 #include "_hacl/Hacl_HMAC.h"
 #include "hashlib.h"
@@ -76,7 +76,7 @@
 #if defined(LN_sha3_224)
 #  define Py_OpenSSL_LN_sha3_224                LN_sha3_224
 #else
-#  define Py_OpenSSL_LN_sha3_224                "sha3_224"
+#  define Py_OpenSSL_LN_sha3_224                "sha3-224"
 #endif
 
 // HACL_HID = sha3_256
@@ -88,7 +88,7 @@
 #if defined(LN_sha3_256)
 #  define Py_OpenSSL_LN_sha3_256                LN_sha3_256
 #else
-#  define Py_OpenSSL_LN_sha3_256                "sha3_256"
+#  define Py_OpenSSL_LN_sha3_256                "sha3-256"
 #endif
 
 // HACL_HID = sha3_384
@@ -100,7 +100,7 @@
 #if defined(LN_sha3_384)
 #  define Py_OpenSSL_LN_sha3_384                LN_sha3_384
 #else
-#  define Py_OpenSSL_LN_sha3_384                "sha3_384"
+#  define Py_OpenSSL_LN_sha3_384                "sha3-384"
 #endif
 
 // HACL_HID = sha3_512
@@ -112,7 +112,7 @@
 #if defined(LN_sha3_512)
 #  define Py_OpenSSL_LN_sha3_512                LN_sha3_512
 #else
-#  define Py_OpenSSL_LN_sha3_512                "sha3_512"
+#  define Py_OpenSSL_LN_sha3_512                "sha3-512"
 #endif
 
 /* Blake family */
