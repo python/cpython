@@ -516,7 +516,7 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("_CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 class _HashedSeq(list):
     """ This class guarantees that hash() will be called no more than once
