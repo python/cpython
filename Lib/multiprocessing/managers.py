@@ -761,7 +761,7 @@ class BaseProxy(object):
 
     # Each instance gets a `_serial` number. Unlike `id(...)`, this number
     # is never reused.
-    _next_serial = 0
+    _next_serial = 1
 
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
