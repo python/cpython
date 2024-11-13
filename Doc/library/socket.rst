@@ -973,7 +973,7 @@ The :mod:`socket` module also offers various network-related services:
 
       The behavior with default values of *family*, *type*, *proto*
       and *flags* is system-specific.
-  
+
       Many systems (for example, most Linux configurations) will return a sorted
       list of all matching addresses.
       These addresses should generally be tried in order until a connection succeeds
