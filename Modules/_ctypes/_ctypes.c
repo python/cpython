@@ -987,6 +987,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
         if (message) {
             PyErr_SetObject(PyExc_ValueError, message);
+            Py_DECREF(message);
             return NULL;
         }
         // Ignore errors from PyUnicode_DecodeLocale,
@@ -3813,6 +3814,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (message) {
                 PyErr_SetObject(PyExc_AttributeError, message);
                 Py_DECREF(ftuple);
+                Py_DECREF(message);
                 return NULL;
             }
             // Ignore errors from PyUnicode_DecodeLocale,

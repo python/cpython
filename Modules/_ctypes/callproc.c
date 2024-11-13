@@ -1644,6 +1644,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
         if (message) {
             PyErr_SetObject(PyExc_OSError, message);
+            Py_DECREF(message);
             return NULL;
         }
         // Ignore errors from PyUnicode_DecodeLocale,
