@@ -2514,11 +2514,10 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
     _Py_skiproot(path, size, &drvsize, &rootsize);
     if (p1[0] == L'.' && IS_SEP(&p1[1])) {
         // Skip leading '.\'
-        path = &path[2];
-        while (IS_SEP(path)) {
-            path++;
+        p1 = &path[2];
+        while (IS_SEP(p1)) {
+            p1++;
         }
-        p1 = p2 = minP2 = path;
         lastC = SEP;
         explicit = 1;
     }
