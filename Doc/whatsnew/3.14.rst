@@ -250,6 +250,12 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
+* The default ``ProcessPoolExecutor`` start method (see
+  :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
+  platforms other than macOS & Windows. If you require the threading
+  incompatible *fork* start method you must explicitly request it by
+  supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
+  (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
 ctypes
 ------
@@ -314,6 +320,19 @@ functools
   to reserve a place for positional arguments.
   (Contributed by Dominykas Grigonis in :gh:`119127`.)
 
+* Allow the *initial* parameter of :func:`functools.reduce` to be passed
+  as a keyword argument.
+  (Contributed by Sayandip Dutta in :gh:`125916`.)
+
+
+getopt
+------
+
+* Add support for options with optional arguments.
+  (Contributed by Serhiy Storchaka in :gh:`126374`.)
+
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 http
 ----
@@ -350,6 +369,49 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+
+mimetypes
+---------
+
+* Add MS and :rfc:`8081` MIME types for fonts:
+
+  * Embedded OpenType: ``application/vnd.ms-fontobject``
+  * OpenType Layout (OTF) ``font/otf``
+  * TrueType: ``font/ttf``
+  * WOFF 1.0 ``font/woff``
+  * WOFF 2.0 ``font/woff2``
+
+  (Contributed by Sahil Prajapati and Hugo van Kemenade in :gh:`84852`.)
+
+* Add :rfc:`9559` MIME types for Matroska audiovisual data container
+  structures, containing:
+
+  * audio with no video: ``audio/matroska`` (``.mka``)
+  * video: ``video/matroska`` (``.mkv``)
+  * stereoscopic video: ``video/matroska-3d`` (``.mk3d``)
+
+  (Contributed by Hugo van Kemenade in :gh:`89416`.)
+
+
+multiprocessing
+---------------
+
+* The default start method (see :ref:`multiprocessing-start-methods`) changed
+  from *fork* to *forkserver* on platforms other than macOS & Windows where
+  it was already *spawn*. If you require the threading incompatible *fork*
+  start method you must explicitly request it using a context from
+  :func:`multiprocessing.get_context` (preferred) or change the default via
+  :func:`multiprocessing.set_start_method`.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
+* The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
+  for *list* and *dict* types gain previously overlooked missing methods:
+
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
+     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+
+  (Contributed by Roy Hyunjin Han for :gh:`103134`)
 
 
 operator
@@ -458,6 +520,14 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+uuid
+----
+
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -506,14 +576,6 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :mod:`multiprocessing` and :mod:`concurrent.futures`:
-  The default start method (see :ref:`multiprocessing-start-methods`) changed
-  away from *fork* to *forkserver* on platforms where it was not already
-  *spawn* (Windows & macOS). If you require the threading incompatible *fork*
-  start method you must explicitly specify it when using :mod:`multiprocessing`
-  or :mod:`concurrent.futures` APIs.
-  (Contributed by Gregory P. Smith in :gh:`84559`.)
-
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
@@ -523,6 +585,13 @@ Deprecated
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -756,6 +825,11 @@ New features
   an interned string and deallocate it during module shutdown.
   (Contributed by Eddie Elizondo in :gh:`113601`.)
 
+* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
+  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
+  is positive, negative, or zero, respectively.
+  (Contribued by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:
 
@@ -818,6 +892,9 @@ New features
 
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------
