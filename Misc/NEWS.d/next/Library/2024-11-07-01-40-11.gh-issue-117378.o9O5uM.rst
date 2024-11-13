@@ -11,7 +11,7 @@ It could also have a side effect of ``""`` remaining in :data:`sys.path` during
 forkserver preload imports instead of the absolute path from :func:`os.getcwd`
 at multiprocessing import time used in the worker ``sys.path``.
 
-Potentially leading to incorrect imports from the wrong location during
-preload.  We are unaware of that actually happening.  The issue was discovered
-by someone observing unexpected preload performance gains.
+The ``sys.path`` differences between phases in the child process could
+potentially have caused preload to import incorrect things from the wrong
+location.  We are unaware of that actually having happened in practice.
 

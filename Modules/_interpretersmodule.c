@@ -936,6 +936,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;
@@ -1181,7 +1186,13 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckXIData(obj) == 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
+    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1480,6 +1491,11 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1501,9 +1517,7 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    PyObject *PyExc_NotShareableError = \
-                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
-    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
+    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
         goto error;
     }
 
