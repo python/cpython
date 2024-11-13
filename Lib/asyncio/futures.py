@@ -68,7 +68,7 @@ class Future:
     _asyncio_future_blocking = False
 
     # Used by the capture_call_stack() API.
-    _asyncio_awaited_by = None
+    __asyncio_awaited_by = None
 
     __log_traceback = False
 
@@ -118,6 +118,12 @@ class Future:
         if val:
             raise ValueError('_log_traceback can only be set to False')
         self.__log_traceback = False
+
+    @property
+    def _asyncio_awaited_by(self):
+        if self.__asyncio_awaited_by is None:
+            return None
+        return frozenset(self.__asyncio_awaited_by)
 
     def get_loop(self):
         """Return the event loop the Future is bound to."""
@@ -442,9 +448,9 @@ def future_add_to_awaited_by(fut, waiter, /):
     # Note that there's an accelerated version of this function
     # shadowing this implementation later in this file.
     if isinstance(fut, _PyFuture) and isinstance(waiter, _PyFuture):
-        if fut._asyncio_awaited_by is None:
-            fut._asyncio_awaited_by = set()
-        fut._asyncio_awaited_by.add(waiter)
+        if fut._Future__asyncio_awaited_by is None:
+            fut._Future__asyncio_awaited_by = set()
+        fut._Future__asyncio_awaited_by.add(waiter)
 
 
 def future_discard_from_awaited_by(fut, waiter, /):
@@ -455,8 +461,8 @@ def future_discard_from_awaited_by(fut, waiter, /):
     # Note that there's an accelerated version of this function
     # shadowing this implementation later in this file.
     if isinstance(fut, _PyFuture) and isinstance(waiter, _PyFuture):
-        if fut._asyncio_awaited_by is not None:
-            fut._asyncio_awaited_by.discard(waiter)
+        if fut._Future__asyncio_awaited_by is not None:
+            fut._Future__asyncio_awaited_by.discard(waiter)
 
 
 try:
