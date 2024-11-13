@@ -713,6 +713,7 @@ parse_coro_chain(
     if (PyList_Append(render_to, name)) {
         return -1;
     }
+    Py_DECREF(name);
 
     int gi_frame_state;
     err = read_int(
@@ -886,6 +887,7 @@ parse_task(
     if (PyList_Append(render_to, result)) {
         goto err;
     }
+    Py_DECREF(result);
 
     PyObject *awaited_by = PyList_New(0);
     if (awaited_by == NULL) {
@@ -1546,7 +1548,6 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         Py_DECREF(awaited_by);
         goto result_err;
     }
-
     Py_DECREF(awaited_by);
 
     if (parse_task_awaited_by(
