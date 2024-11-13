@@ -465,6 +465,13 @@ class TestTPen(unittest.TestCase):
             tpen.teleport(-100, -100, fill_gap=fill_gap_value)
             self.assertTrue(tpen.isdown())
 
+class TestRawTurtle(unittest.TestCase):
+    def test_clone(self):
+        a_turtle = self.Turtle()
+        another_turtle = a_turtle.clone()
+        self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
+        self.assertFalse(a_turtle.currentLineItem in another_turtle.items)
+
 
 class TestTurtleScreen(unittest.TestCase):
     def test_save_raises_if_wrong_extension(self) -> None:
