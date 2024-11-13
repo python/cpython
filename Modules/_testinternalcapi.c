@@ -1787,34 +1787,39 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
     if (data != NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        _PyCrossInterpreterData_Free(data);
+        assert(_PyXIData_Release(data) == 0);
+        _PyXIData_Free(data);
     }
 }
 
 static PyObject *
 get_crossinterp_data(PyObject *self, PyObject *args)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
     PyObject *obj = NULL;
     if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
         return NULL;
     }
 
-    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+    _PyXIData_t *data = _PyXIData_New();
     if (data == NULL) {
         return NULL;
     }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        _PyCrossInterpreterData_Free(data);
+    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
+        _PyXIData_Free(data);
         return NULL;
     }
     PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        _PyCrossInterpreterData_Free(data);
+        assert(_PyXIData_Release(data) == 0);
+        _PyXIData_Free(data);
     }
     return capsule;
 }
@@ -1827,12 +1832,11 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
     if (data == NULL) {
         return NULL;
     }
-    return _PyCrossInterpreterData_NewObject(data);
+    return _PyXIData_NewObject(data);
 }
 
 
@@ -2065,6 +2069,14 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _PyType_GetSlotWrapperNames();
 }
 
+
+static PyObject *
+has_deferred_refcount(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(_PyObject_HasDeferredRefcount(op));
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2161,6 +2173,7 @@ static PyMethodDef module_functions[] = {
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
+    {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
