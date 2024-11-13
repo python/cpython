@@ -366,33 +366,39 @@ To take advantage of this fact, all container objects are segregated into
 two generations: young and old. Every new object starts in the young generation.
 In order to keep pause times down, scanning of the old generation of the heap
 occurs in increments. To keep track of what has been scanned,
-the old generation contains two lists: scanned and unscanned heap.
+the old generation contains two lists:
+
+* Those objects that have not yet been scanned, referred to as the `pending` list.
+* Those objects that have been scanned, referred to as the `visited` list.
 
 To detect and collect all unreachable objects in the heap, the garbage collector
 must scan the whole heap. This whole heap scan is called a full scavenge.
 
-To limit the time each garbage collection takes, the detection and collection
-algorithm is executed only on a portion of the heap called an increment.
-For each full scavenge, the increments will cover the whole heap.
+Increments
+----------
 
-Each increment, the portion of the heap scanned by a single collection is made up
-of three parts:
+Each full scavenge is performed in a series of increments.
+For each full scavenge, the combined increments will cover the whole heap.
+
+For each increment, the portion of the heap scanned by a single collection is
+made up of three parts:
 
 * The young generation
-* The old generation's least recently objects
+* The old generation's least recently scanned objects
 * All objects reachable from those objects that have not yet been scanned this full scavenge
 
-Any young generation objects surviving this collection are moved to the old generation,
-and reachable objects in the old generation remain in the old generation.
-The old generation is composed of two lists: scanned and unscanned.
-(The implementation refers to the unscanned part as `pending` and the scanned part
-as `visited`).
-Survivors are moved to the back of the scanned list. The old part of increment is taken
-from the front of the unscanned list.
+The surviving objects (those that are not collected) are moved to the back of the
+`visited` list in the old generation.
 
-When a full scavenge starts, no objects in the heap are considered to have been scanned.
-When all objects in the heap have been scanned a cycle ends, and all objects are
-considered unscanned again.
+When a full scavenge starts, no objects in the heap are considered to have been scanned,
+so all objects in the old generation must be in the `pending` space.
+When all objects in the heap have been scanned a cycle ends, and all objects are moved
+to the `pending` list again. To avoid having to traverse the entire list, which list is
+`pending` and which is `visited` is determined by a field in the `GCState` struct.
+The `visited` and `pending` lists can be swapped by toggling this bit.
+
+Correctness
+-----------
 
 In order to collect all unreachable cycles, each increment must contain all of
 an unreachable cycle, or none of it.
@@ -404,7 +410,7 @@ Thus, to form a complete increment we perform a
 over reachable, unscanned objects from the initial increment.
 We can exclude scanned objects, as they must have been reachable when scanned.
 If a scanned object becomes part of an unreachable cycle after being scanned, it
-will not be collected this cycle, but it will be collected next full scavenge.
+will not be collected this cycle, but it will be collected in the next full scavenge.
 
 > [!NOTE]
 > The GC implementation for the free-threaded build does not use incremental collection.
@@ -417,7 +423,7 @@ collection starts. `threshold1` determines the fraction of the old
 collection that is included in the increment.
 The fraction is inversely proportional to `threshold1`,
 as historically a larger `threshold1` meant that old generation
-collections were performed less frequency.
+collections were performed less frequently.
 `threshold2` is ignored.
 
 These thresholds can be examined using the
@@ -441,7 +447,7 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
     ...
 
     # Move everything to the old generation so it's easier to inspect
-    # the young generations.
+    # the young generation.
 
     >>> gc.collect()
     0
