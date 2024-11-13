@@ -6216,15 +6216,15 @@ PyDoc_STRVAR(type_doc,
 
 
 void
-_PyType_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyType_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyTypeObject *type = (PyTypeObject *)op;
-    _PyGC_MoveToReachable(type->tp_dict, reachable, visited_space);
-    _PyGC_MoveToReachable(type->tp_cache, reachable, visited_space);
-    _PyGC_MoveToReachable(type->tp_mro, reachable, visited_space);
-    _PyGC_MoveToReachable(type->tp_bases, reachable, visited_space);
-    _PyGC_MoveToReachable((PyObject *)type->tp_base, reachable, visited_space);
-    _PyGC_MoveToReachable(((PyHeapTypeObject *)type)->ht_module, reachable, visited_space);
+    _PyGC_MoveUnvisited(type->tp_dict, to, visited_space);
+    _PyGC_MoveUnvisited(type->tp_cache, to, visited_space);
+    _PyGC_MoveUnvisited(type->tp_mro, to, visited_space);
+    _PyGC_MoveUnvisited(type->tp_bases, to, visited_space);
+    _PyGC_MoveUnvisited((PyObject *)type->tp_base, to, visited_space);
+    _PyGC_MoveUnvisited(((PyHeapTypeObject *)type)->ht_module, to, visited_space);
 }
 
 static int

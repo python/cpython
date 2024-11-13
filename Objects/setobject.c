@@ -701,13 +701,13 @@ set_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 void
-_PySet_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PySet_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PySetObject *so = (PySetObject *)op;
     Py_ssize_t pos = 0;
     setentry *entry;
     while (set_next(so, &pos, &entry)) {
-        _PyGC_MoveToReachable(entry->key, reachable, visited_space);
+        _PyGC_MoveUnvisited(entry->key, to, visited_space);
     }
 }
 

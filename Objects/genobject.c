@@ -79,19 +79,19 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 void
-_PyGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyGen_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyGenObject *gen = (PyGenObject *)op;
     if (gen->gi_frame_state == FRAME_CLEARED) {
         return;
     }
-    _PyGC_MoveToReachable(gen->gi_exc_state.exc_value, reachable, visited_space);
+    _PyGC_MoveUnvisited(gen->gi_exc_state.exc_value, to, visited_space);
     if (gen->gi_frame_state == FRAME_EXECUTING) {
         /* if executing we already traversed it on the stack */
         return;
     }
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-   _PyFrame_MoveToReachable(frame, reachable, visited_space);
+   _PyFrame_MoveUnvisited(frame, to, visited_space);
 }
 
 void
@@ -1443,11 +1443,11 @@ typedef struct _PyAsyncGenWrappedValue {
 
 
 void
-_PyAsyncGen_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyAsyncGen_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyAsyncGenObject *ag = _PyAsyncGenObject_CAST(op);
-    _PyGC_MoveToReachable(ag->ag_origin_or_finalizer, reachable, visited_space);
-    _PyGen_MoveToReachable(op, reachable, visited_space);
+    _PyGC_MoveUnvisited(ag->ag_origin_or_finalizer, to, visited_space);
+    _PyGen_MoveUnvisited(op, to, visited_space);
 }
 
 static int
@@ -1733,11 +1733,11 @@ async_gen_asend_dealloc(PyObject *self)
 }
 
 void
-_PyAsyncAsend_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyAsyncAsend_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(op);
-    _PyGC_MoveToReachable((PyObject *)ags->ags_sendval, reachable, visited_space);
-    _PyAsyncGen_MoveToReachable((PyObject *)ags->ags_gen, reachable, visited_space);
+    _PyGC_MoveUnvisited((PyObject *)ags->ags_sendval, to, visited_space);
+    _PyAsyncGen_MoveUnvisited((PyObject *)ags->ags_gen, to, visited_space);
 }
 
 static int

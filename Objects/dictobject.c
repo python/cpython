@@ -4476,7 +4476,7 @@ dict_popitem_impl(PyDictObject *self)
 }
 
 void
-_PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyDict_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyDictObject *mp = (PyDictObject *)op;
     PyDictKeysObject *keys = mp->ma_keys;
@@ -4486,7 +4486,7 @@ _PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
             if (!mp->ma_values->embedded) {
                 for (i = 0; i < n; i++) {
                     PyObject *value = mp->ma_values->values[i];
-                    _PyGC_MoveToReachable(value, reachable, visited_space);
+                    _PyGC_MoveUnvisited(value, to, visited_space);
                 }
             }
         }
@@ -4494,7 +4494,7 @@ _PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             for (i = 0; i < n; i++) {
                 PyObject *value = entries[i].me_value;
-                _PyGC_MoveToReachable(value, reachable, visited_space);
+                _PyGC_MoveUnvisited(value, to, visited_space);
             }
         }
     }
@@ -4503,9 +4503,9 @@ _PyDict_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
         for (i = 0; i < n; i++) {
             if (entries[i].me_value != NULL) {
                 PyObject *key = entries[i].me_key;
-                _PyGC_MoveToReachable(key, reachable, visited_space);
+                _PyGC_MoveUnvisited(key, to, visited_space);
                 PyObject *value = entries[i].me_value;
-                _PyGC_MoveToReachable(value, reachable, visited_space);
+                _PyGC_MoveUnvisited(value, to, visited_space);
             }
         }
     }

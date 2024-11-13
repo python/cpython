@@ -3277,13 +3277,13 @@ list_remove_impl(PyListObject *self, PyObject *value)
 }
 
 void
-_PyList_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space)
+_PyList_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
     PyListObject *o = (PyListObject *)op;
     Py_ssize_t i;
     for (i = Py_SIZE(o); --i >= 0; ) {
         PyObject *item = o->ob_item[i];
-        _PyGC_MoveToReachable(item, reachable, visited_space);
+        _PyGC_MoveUnvisited(item, to, visited_space);
     }
 }
 

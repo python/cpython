@@ -401,7 +401,7 @@ extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
                                            gcvisitobjects_t callback, void *arg);
 #endif
 
-void _PyGC_MoveToReachable(PyObject *op, PyGC_Head *reachable, int visited_space);
+void _PyGC_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space);
 
 #ifdef __cplusplus
 }
