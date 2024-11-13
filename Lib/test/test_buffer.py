@@ -3906,6 +3906,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
