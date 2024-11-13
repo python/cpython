@@ -5040,22 +5040,9 @@ codegen_visit_expr(compiler *c, expr_ty e)
 }
 
 static bool
-is_constant_slice(expr_ty s)
-{
-    return s->kind == Slice_kind &&
-        (s->v.Slice.lower == NULL ||
-         s->v.Slice.lower->kind == Constant_kind) &&
-        (s->v.Slice.upper == NULL ||
-         s->v.Slice.upper->kind == Constant_kind) &&
-        (s->v.Slice.step == NULL ||
-         s->v.Slice.step->kind == Constant_kind);
-}
-
-static bool
 should_apply_two_element_slice_optimization(expr_ty s)
 {
-    return !is_constant_slice(s) &&
-           s->kind == Slice_kind &&
+    return s->kind == Slice_kind &&
            s->v.Slice.step == NULL;
 }
 
@@ -5311,27 +5298,6 @@ codegen_slice(compiler *c, expr_ty s)
 {
     int n = 2;
     assert(s->kind == Slice_kind);
-
-    if (is_constant_slice(s)) {
-        PyObject *start = NULL;
-        if (s->v.Slice.lower) {
-            start = s->v.Slice.lower->v.Constant.value;
-        }
-        PyObject *stop = NULL;
-        if (s->v.Slice.upper) {
-            stop = s->v.Slice.upper->v.Constant.value;
-        }
-        PyObject *step = NULL;
-        if (s->v.Slice.step) {
-            step = s->v.Slice.step->v.Constant.value;
-        }
-        PyObject *slice = PySlice_New(start, stop, step);
-        if (slice == NULL) {
-            return ERROR;
-        }
-        ADDOP_LOAD_CONST_NEW(c, LOC(s), slice);
-        return SUCCESS;
-    }
 
     RETURN_IF_ERROR(codegen_slice_two_parts(c, s));
 
