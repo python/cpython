@@ -240,6 +240,7 @@ class TestTranforms(BytecodeTestCase):
             ('a = 2+3', 5),                     # binary add
             ('a = 13-4', 9),                    # binary subtract
             ('a = (12,13)[1]', 13),             # binary subscr
+            ('a = (12,13)[:1]', (12,)),         # binary subscr (slice)
             ('a = 13 << 2', 52),                # binary lshift
             ('a = 13 >> 2', 3),                 # binary rshift
             ('a = 13 & 7', 5),                  # binary and
@@ -282,8 +283,14 @@ class TestTranforms(BytecodeTestCase):
         self.assertInBytecode(code, 'LOAD_CONST', 'f')
         self.assertNotInBytecode(code, 'BINARY_SUBSCR')
         self.check_lnotab(code)
+
         code = compile('"\u0061\uffff"[1]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
+        self.assertNotInBytecode(code,'BINARY_SUBSCR')
+        self.check_lnotab(code)
+
+        code = compile('"\u0061\uffffxx"[1::2]', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', '\uffffx')
         self.assertNotInBytecode(code,'BINARY_SUBSCR')
         self.check_lnotab(code)
 

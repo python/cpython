@@ -586,6 +586,26 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
+static int
+fold_slice(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+{
+    expr_ty lower = node->v.Slice.lower;
+    expr_ty upper = node->v.Slice.upper;
+    expr_ty step = node->v.Slice.step;
+    if ((lower && lower->kind != Constant_kind) ||
+        (upper && upper->kind != Constant_kind) ||
+        (step && step->kind != Constant_kind))
+    {
+        return 1;
+    }
+
+    PyObject *newval = PySlice_New(
+        lower ? lower->v.Constant.value : Py_None,
+        upper ? upper->v.Constant.value : Py_None,
+        step ? step->v.Constant.value : Py_None);
+    return make_const(node, newval, arena);
+}
+
 /* Change literal list or set of constants into constant
    tuple or frozenset respectively.  Change literal list of
    non-constants into tuple.
@@ -831,6 +851,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.lower);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.upper);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.step);
+        CALL(fold_slice, expr_ty, node_);
         break;
     case List_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.List.elts);
