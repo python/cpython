@@ -1,0 +1,1 @@
+Now :exc:`ValueError` is raised instead of :exc:`SystemError` when trying to iterate over a released :class:`memoryview` object.
