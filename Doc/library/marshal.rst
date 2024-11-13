@@ -44,9 +44,9 @@ Not all Python object types are supported; in general, only objects whose value
 is independent from a particular invocation of Python can be written and read by
 this module.  The following types are supported: booleans, integers, floating-point
 numbers, complex numbers, strings, bytes, bytearrays, tuples, lists, sets,
-frozensets, dictionaries, and code objects (if *allow_code* is true),
+frozensets, dictionaries, slices, and code objects (if *allow_code* is true),
 where it should be understood that
-tuples, lists, sets, frozensets and dictionaries are only supported as long as
+tuples, lists, sets, frozensets, dictionaries, and slices are only supported as long as
 the values contained therein are themselves supported.  The
 singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration` can also be
 marshalled and unmarshalled.
@@ -154,4 +154,3 @@ In addition, the following constants are defined:
    around in a self-contained form. Strictly speaking, "to marshal" means to
    convert some data from internal to external form (in an RPC buffer for instance)
    and "unmarshalling" for the reverse process.
-
