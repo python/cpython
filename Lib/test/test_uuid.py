@@ -689,9 +689,9 @@ class BaseTestUUID:
         equal(u.variant, self.uuid.RFC_4122)
         equal(u.version, 6)
 
-        fake_nanoseconds = 1545052026752910643
-        fake_node_value = 93328246233727
-        fake_clock_seq = 5317
+        fake_nanoseconds = 0x1571_20a1_de1a_c533
+        fake_node_value = 0x54e1_acf6_da7f
+        fake_clock_seq = 0x14c5
         with (
             mock.patch.object(self.uuid, '_generate_time_safe', None),
             mock.patch.object(self.uuid, '_last_timestamp_v6', None),
@@ -701,25 +701,29 @@ class BaseTestUUID:
         ):
             u = self.uuid.uuid6()
             equal(u.variant, self.uuid.RFC_4122)
-            equal(u.version, 0b0110)  # 6
+            equal(u.version, 6)
 
-            timestamp = 137643448267529106
-            # 32 (hi) | 16 (mid) | 12 (lo) == 60 bits of timestamp
-            equal(timestamp, 0b_00011110100100000001111111001010_0111101001010101_101110010010)
-            equal(u.time, timestamp)
-            equal(u.fields[0], 0b00011110100100000001111111001010)  # 32 high bits of time
-            equal(u.fields[1], 0b0111101001010101)  # 16 bits of time (mid)
-            equal(u.fields[2], 0b0110_101110010010)  # 4 bits of version + 12 low bits of time
-            equal(u.fields[3], 0b10_010100)  # 2 bits of variant + 6 high bits of clock_seq
-            equal(u.fields[4], 0b11000101)  # 8 low bits of clock_seq
+            # 32 (top) | 16 (mid) | 12 (low) == 60 (timestamp)
+            equal(u.time, 0x1e901fca_7a55_b92)
+            equal(u.fields[0], 0x1e901fca)  # 32 top bits of time
+            equal(u.fields[1], 0x7a55)  # 16 mid bits of time
+            # 4 bits of version + 12 low bits of time
+            equal((u.fields[2] >> 12) & 0xf, 6)
+            equal((u.fields[2] & 0xfff), 0xb92)
+            # 2 bits of variant + 6 high bits of clock_seq
+            equal((u.fields[3] >> 6) & 0xf, 2)
+            equal(u.fields[3] & 0x3f, fake_clock_seq >> 8)
+            # 8 low bits of clock_seq
+            equal(u.fields[4], fake_clock_seq & 0xff)
             equal(u.fields[5], fake_node_value)
 
     def test_uuid6_test_vectors(self):
         # https://www.rfc-editor.org/rfc/rfc9562#name-test-vectors
-        fake_nanoseconds = (0x1EC9414C232AB00 - 0x01B21DD213814000) * 100
+        # (separators are put at the 12th and 28th bits)
+        fake_nanoseconds = (0x1ec9414c_232a_b00 - 0x1b21dd21_3814_000) * 100
         # https://www.rfc-editor.org/rfc/rfc9562#name-example-of-a-uuidv6-value
-        node = 0x9F6BDECED846
-        clock_seq = (0b11 << 12) | 0x3C8
+        node = 0x9f6bdeced846
+        clock_seq = (0b11 << 12) | 0x3c8
 
         with (
             mock.patch.object(self.uuid, '_generate_time_safe', None),
@@ -730,13 +734,13 @@ class BaseTestUUID:
             self.assertEqual(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
             #   32          16      4      12       2      14         48
             # time_hi | time_mid | ver | time_lo | var | clock_seq | node
-            self.assertEqual(u.int & 0xFFFFFFFFFFFF, node)
-            self.assertEqual((u.int >> 48) & 0x3FFF, clock_seq)
+            self.assertEqual(u.int & 0xffff_ffff_ffff, node)
+            self.assertEqual((u.int >> 48) & 0x3fff, clock_seq)
             self.assertEqual((u.int >> 62) & 0x3, 0b10)
-            self.assertEqual((u.int >> 64) & 0xFFF, 0xB00)
-            self.assertEqual((u.int >> 76) & 0xF, 0x6)
-            self.assertEqual((u.int >> 80) & 0xFFFF, 0x232A)
-            self.assertEqual((u.int >> 96) & 0xFFFFFFFF, 0x1EC9414C)
+            self.assertEqual((u.int >> 64) & 0xfff, 0xb00)
+            self.assertEqual((u.int >> 76) & 0xf, 0x6)
+            self.assertEqual((u.int >> 80) & 0xffff, 0x232a)
+            self.assertEqual((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
 
     def test_uuid8(self):
         equal = self.assertEqual
