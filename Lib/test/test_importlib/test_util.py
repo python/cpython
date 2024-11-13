@@ -6,12 +6,14 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
+from importlib import _bootstrap_external
 import os
 import pathlib
 import re
 import string
 import sys
 from test import support
+from test.support import os_helper
 import textwrap
 import types
 import unittest
@@ -777,30 +779,32 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
 class MiscTests(unittest.TestCase):
     def test_atomic_write_should_notice_incomplete_writes(self):
-        from importlib import _bootstrap_external
-        from test.support import os_helper
         import _pyio
-        import os
 
         oldwrite = os.write
         seen_write = False
 
-        # emulate an os.write that only writes partial data
+        truncate_at_length = 100
+
+        # Emulate an os.write that only writes partial data.
         def write(fd, data):
             nonlocal seen_write
             seen_write = True
-            return oldwrite(fd, data[:100])
+            return oldwrite(fd, data[:truncate_at_length])
 
-        # need to patch _io to be _pyio, so that io.FileIO is affected by the
-        # os.write patch
-        with (unittest.mock.patch('importlib._bootstrap_external._io', _pyio),
-              unittest.mock.patch('os.write', write)):
+        # Need to patch _io to be _pyio, so that io.FileIO is affected by the
+        # os.write patch.
+        with (support.swap_attr(_bootstrap_external, '_io', _pyio),
+              support.swap_attr(os, 'write', write)):
             with self.assertRaises(OSError):
-                _bootstrap_external._write_atomic(os_helper.TESTFN, b'x' * 10000)
+                # Make sure we write something longer than the point where we
+                # truncate.
+                content = b'x' * (truncate_at_length * 2)
+                _bootstrap_external._write_atomic(os_helper.TESTFN, content)
         assert seen_write
 
         with self.assertRaises(OSError):
-            os.stat(os_helper.TESTFN) # did not get written
+            os.stat(support.os_helper.TESTFN) # Check that the file did not get written.
 
 
 if __name__ == '__main__':
