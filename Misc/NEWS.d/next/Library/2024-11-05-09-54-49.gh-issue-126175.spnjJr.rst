@@ -1,0 +1,2 @@
+Add ``msg``, ``doc``, ``pos``, ``lineno`` and ``colno`` attributes to :exc:`tomllib.TOMLDecodeError`.
+Deprecate instantiating with free-form arguments.
