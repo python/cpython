@@ -148,11 +148,11 @@ def test_pdb_basic_commands():
     [EOF]
     (Pdb) bt
     ...
-    #28  <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
+    ...  <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
     -> test_function()
-    #29  <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
+    ...  <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
-    #30 > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
+    ... > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
     -> def test_function_2(foo, bar='default'):
     (Pdb) up
     > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
@@ -960,23 +960,23 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w
     ...
-    #28   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-    #29   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-    #30   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ...   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-    #31 > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ... > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) where
     ...
-    #28   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-    #29   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-    #30   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ...   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-    #31 > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ... > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w 1
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
@@ -988,13 +988,13 @@ def test_pdb_where_command():
     -> g()
     (Pdb) w
     ...
-    #28   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-    #29   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-    #30 > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ... > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-    #31   <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ...   <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w 0
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
@@ -1648,11 +1648,11 @@ def test_post_mortem():
     -> test_function_2()
     (Pdb) bt
     ...
-    #28   <doctest test.test_pdb.test_post_mortem[2]>(11)<module>()
+    ...   <doctest test.test_pdb.test_post_mortem[2]>(11)<module>()
     -> test_function()
-    #29 > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
+    ... > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
     -> test_function_2()
-    #30   <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
+    ...   <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
     -> 1/0
     (Pdb) list
       1         def test_function():
