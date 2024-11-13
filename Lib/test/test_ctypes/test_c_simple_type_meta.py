@@ -85,3 +85,68 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
 
         self.assertIsInstance(POINTER(Sub), p_meta)
         self.assertTrue(issubclass(POINTER(Sub), Sub))
+
+    def test_creating_pointer_in_dunder_init_1(self):
+        class ct_meta(type):
+            def __init__(self, name, bases, namespace):
+                super().__init__(name, bases, namespace)
+
+                # Avoid recursion.
+                # (See test_creating_pointer_in_dunder_new_1)
+                if bases == (c_void_p,):
+                    return
+                if issubclass(self, PtrBase):
+                    return
+                if bases == (object,):
+                    ptr_bases = (self, PtrBase)
+                else:
+                    ptr_bases = (self, POINTER(bases[0]))
+                p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
+                ctypes._pointer_type_cache[self] = p
+
+        class p_meta(PyCSimpleType, ct_meta):
+            pass
+
+        class PtrBase(c_void_p, metaclass=p_meta):
+            pass
+
+        class CtBase(object, metaclass=ct_meta):
+            pass
+
+        class Sub(CtBase):
+            pass
+
+        class Sub2(Sub):
+            pass
+
+        self.assertIsInstance(POINTER(Sub2), p_meta)
+        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
+        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
+        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
+
+    def test_creating_pointer_in_dunder_init_2(self):
+        class ct_meta(type):
+            def __init__(self, name, bases, namespace):
+                super().__init__(name, bases, namespace)
+
+                # Avoid recursion.
+                # (See test_creating_pointer_in_dunder_new_2)
+                if isinstance(self, p_meta):
+                    return
+                p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
+                ctypes._pointer_type_cache[self] = p
+
+        class p_meta(PyCSimpleType, ct_meta):
+            pass
+
+        class Core(object):
+            pass
+
+        class CtBase(Core, metaclass=ct_meta):
+            pass
+
+        class Sub(CtBase):
+            pass
+
+        self.assertIsInstance(POINTER(Sub), p_meta)
+        self.assertTrue(issubclass(POINTER(Sub), Sub))

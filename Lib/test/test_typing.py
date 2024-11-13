@@ -8,6 +8,7 @@ import gc
 import inspect
 import itertools
 import operator
+import os
 import pickle
 import re
 import sys
@@ -4252,7 +4253,13 @@ class ProtocolTests(BaseTestCase):
             class CustomProtocol(TestCase, Protocol):
                 pass
 
+        class CustomPathLikeProtocol(os.PathLike, Protocol):
+            pass
+
         class CustomContextManager(typing.ContextManager, Protocol):
+            pass
+
+        class CustomAsyncIterator(typing.AsyncIterator, Protocol):
             pass
 
     def test_non_runtime_protocol_isinstance_check(self):
