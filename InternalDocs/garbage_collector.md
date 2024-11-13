@@ -354,7 +354,7 @@ follows these steps in order:
 Optimization: incremental collection
 ====================================
 
-In order to limit the time each garbage collection takes, the GC implementation
+In order to bound the length of each garbage collection pause, the GC implementation
 for the default build uses incremental collection with two generations.
 
 Generational garbage collection takes advantage of what is known as the weak
@@ -364,9 +364,14 @@ programs as many temporary objects are created and destroyed very quickly.
 
 To take advantage of this fact, all container objects are segregated into
 two generations: young and old. Every new object starts in the young generation.
+Each garbage collection scans the entire young generation and part of the old generation.
+
+The time taken to scan the young generation can be controlled by controlling the
+size of the young, but the size of the old generation cannot be controlled.
 In order to keep pause times down, scanning of the old generation of the heap
-occurs in increments. To keep track of what has been scanned,
-the old generation contains two lists:
+occurs in increments.
+
+To keep track of what has been scanned, the old generation contains two lists:
 
 * Those objects that have not yet been scanned, referred to as the `pending` list.
 * Those objects that have been scanned, referred to as the `visited` list.
@@ -400,17 +405,21 @@ The `visited` and `pending` lists can be swapped by toggling this bit.
 Correctness
 -----------
 
-In order to collect all unreachable cycles, each increment must contain all of
-an unreachable cycle, or none of it.
-In order to make sure that the whole of any unreachable cycle is contained in an
-increment,  all unscanned objects reachable from any object in the increment must
-be included in the increment.
-Thus, to form a complete increment we perform a
+The [algorithm for identifying cycles](#Identifying-reference-cycles) will find all
+unreachable cycles in a list of objects, but will not find any cycles that are
+even partly outside of that list.
+Therefore, to be guaranteed that a full scavenge will find all unreachable cycles,
+each cycle must be fully contained within a single increment.
+
+To make sure that no partial cycles are included in the increment we perform a
 [transitive closure](https://en.wikipedia.org/wiki/Transitive_closure)
 over reachable, unscanned objects from the initial increment.
+Since the transitive closure of objects reachable from an object must be a (non-strict)
+superset of any unreachable cycle including that object, we are guaranteed that a
+transitive closure cannot contain any partial cycles.
 We can exclude scanned objects, as they must have been reachable when scanned.
-If a scanned object becomes part of an unreachable cycle after being scanned, it
-will not be collected this cycle, but it will be collected in the next full scavenge.
+If a scanned object becomes part of an unreachable cycle after being scanned, it will
+not be collected this at this time, but it will be collected in the next full scavenge.
 
 > [!NOTE]
 > The GC implementation for the free-threaded build does not use incremental collection.
