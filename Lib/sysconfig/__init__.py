@@ -556,8 +556,8 @@ def get_config_vars(*args):
         # initialized, a virtual environment might have been activated, resulting in
         # variables like sys.prefix changing their value, so we need to re-init the
         # config vars (see GH-126789).
-        with _CONFIG_VARS_LOCK:
-            if _CONFIG_VARS['base'] != os.path.normpath(sys.prefix):
+        if _CONFIG_VARS['base'] != os.path.normpath(sys.prefix):
+            with _CONFIG_VARS_LOCK:
                 _CONFIG_VARS_INITIALIZED = False
                 _init_config_vars()
 
