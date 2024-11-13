@@ -246,9 +246,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
 {
     int negative;
     PyObject *list;
-    if (!PyArg_ParseTuple(args, "iO!",
-                          &negative,
-                          &PyList_Type, &list))
+    if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list))
     {
         return NULL;
     }
@@ -256,8 +254,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
 
     digit *digits = PyMem_Malloc((size_t)ndigits * sizeof(digit));
     if (digits == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        return PyErr_NoMemory();
     }
 
     for (Py_ssize_t i=0; i < ndigits; i++) {
