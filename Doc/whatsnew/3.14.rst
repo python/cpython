@@ -525,6 +525,10 @@ uuid
 
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
