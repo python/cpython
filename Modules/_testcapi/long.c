@@ -106,6 +106,30 @@ pylong_getsign(PyObject *module, PyObject *arg)
 
 
 static PyObject *
+pylong_ispositive(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_INT(PyLong_IsPositive(arg));
+}
+
+
+static PyObject *
+pylong_isnegative(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_INT(PyLong_IsNegative(arg));
+}
+
+
+static PyObject *
+pylong_iszero(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    RETURN_INT(PyLong_IsZero(arg));
+}
+
+
+static PyObject *
 pylong_aspid(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
@@ -288,6 +312,9 @@ static PyMethodDef test_methods[] = {
     {"pylong_export",               pylong_export,              METH_O},
     {"pylongwriter_create",         pylongwriter_create,        METH_VARARGS},
     {"get_pylong_layout",           get_pylong_layout,          METH_NOARGS},
+    {"pylong_ispositive",           pylong_ispositive,          METH_O},
+    {"pylong_isnegative",           pylong_isnegative,          METH_O},
+    {"pylong_iszero",               pylong_iszero,              METH_O},
     {NULL},
 };
 

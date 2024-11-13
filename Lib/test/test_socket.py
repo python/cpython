@@ -1111,6 +1111,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
                          'socket.if_nameindex() not available.')
+    @support.skip_android_selinux('if_nameindex')
     def testInterfaceNameIndex(self):
         interfaces = socket.if_nameindex()
         for index, name in interfaces:
@@ -1127,6 +1128,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'if_indextoname'),
                          'socket.if_indextoname() not available.')
+    @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
         self.assertRaises(OverflowError, socket.if_indextoname, -1)
@@ -1146,6 +1148,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
                          'socket.if_nametoindex() not available.')
+    @support.skip_android_selinux('if_nametoindex')
     def testInvalidInterfaceNameToIndex(self):
         self.assertRaises(TypeError, socket.if_nametoindex, 0)
         self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
@@ -1878,6 +1881,7 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
+    @support.skip_android_selinux('if_nameindex')
     def test_getaddrinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface (Linux, Mac OS X)
         (ifindex, test_interface) = socket.if_nameindex()[0]
@@ -1911,6 +1915,7 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
+    @support.skip_android_selinux('if_nameindex')
     def test_getnameinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface.
         (ifindex, test_interface) = socket.if_nameindex()[0]
@@ -5329,6 +5334,8 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'),
+                         'test needs sys.getrefcount()')
     def testMakefileCloseSocketDestroy(self):
         refcount_before = sys.getrefcount(self.cli_conn)
         self.read_file.close()

@@ -2317,7 +2317,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
                                            BOOL wait_all, DWORD milliseconds)
 /*[clinic end generated code: output=d21c1a4ad0a252fd input=7e196f29005dc77b]*/
 {
-    Py_ssize_t thread_count = 0, handle_count = 0, i, j;
+    Py_ssize_t thread_count = 0, handle_count = 0, i;
     Py_ssize_t nhandles;
     BatchedWaitData *thread_data[MAXIMUM_WAIT_OBJECTS];
     HANDLE handles[MAXIMUM_WAIT_OBJECTS];
@@ -2378,7 +2378,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (data->handle_count > MAXIMUM_WAIT_OBJECTS - 1) {
             data->handle_count = MAXIMUM_WAIT_OBJECTS - 1;
         }
-        for (j = 0; j < data->handle_count; ++i, ++j) {
+        for (DWORD j = 0; j < data->handle_count; ++i, ++j) {
             PyObject *v = PySequence_GetItem(handle_seq, i);
             if (!v || !PyArg_Parse(v, F_HANDLE, &data->handles[j])) {
                 Py_XDECREF(v);
@@ -2526,7 +2526,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (triggered_indices) {
             for (i = 0; i < thread_count; ++i) {
                 Py_ssize_t triggered = (Py_ssize_t)thread_data[i]->result - WAIT_OBJECT_0;
-                if (triggered >= 0 && triggered < thread_data[i]->handle_count - 1) {
+                if (triggered >= 0 && (size_t)triggered < thread_data[i]->handle_count - 1) {
                     PyObject *v = PyLong_FromSsize_t(thread_data[i]->handle_base + triggered);
                     if (!v || PyList_Append(triggered_indices, v) < 0) {
                         Py_XDECREF(v);

@@ -290,6 +290,7 @@ Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Include/internal/pycore_crossinterp_data_registry.h	Py_CORE_CROSSINTERP_DATA_REGISTRY_H	1
 
 # @end=tsv@
 ''')[1:]

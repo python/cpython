@@ -1,3 +1,4 @@
+import collections.abc
 import concurrent.futures
 import contextvars
 import functools
@@ -59,6 +60,14 @@ class ContextTest(unittest.TestCase):
         self.assertNotIn(' used ', repr(t))
         c.reset(t)
         self.assertIn(' used ', repr(t))
+
+    @isolated_context
+    def test_token_repr_1(self):
+        c = contextvars.ContextVar('a')
+        tok = c.set(1)
+        self.assertRegex(repr(tok),
+                         r"^<Token var=<ContextVar name='a' "
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
@@ -341,6 +350,19 @@ class ContextTest(unittest.TestCase):
             self.assertEqual(c.get(), 30)
 
         ctx1.run(ctx1_fun)
+
+    def test_context_isinstance(self):
+        ctx = contextvars.Context()
+        self.assertIsInstance(ctx, collections.abc.Mapping)
+        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
+
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__', 'get', 'items', 'keys', 'values',
+        )
+        for name in mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
 
     @isolated_context
     @threading_helper.requires_working_threading()

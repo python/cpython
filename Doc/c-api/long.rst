@@ -159,7 +159,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
-.. XXX alias PyLong_AS_LONG (for now)
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
    .. index::
@@ -181,6 +180,16 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.10
       This function will no longer use :meth:`~object.__int__`.
 
+   .. c:namespace:: NULL
+
+   .. c:function:: long PyLong_AS_LONG(PyObject *obj)
+
+      A :term:`soft deprecated` alias.
+      Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
+      it can fail with :exc:`OverflowError` or another exception.
+
+      .. deprecated:: 3.14
+         The function is soft deprecated.
 
 .. c:function:: int PyLong_AsInt(PyObject *obj)
 
@@ -502,7 +511,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       free(bignum);
 
    *flags* is either ``-1`` (``Py_ASNATIVEBYTES_DEFAULTS``) to select defaults
-   that behave most like a C cast, or a combintation of the other flags in
+   that behave most like a C cast, or a combination of the other flags in
    the table below.
    Note that ``-1`` cannot be combined with other flags.
 
@@ -571,6 +580,39 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    if *obj* is a :c:type:`PyLongObject` or its subtype.
 
    .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_IsPositive(PyObject *obj)
+
+   Check if the integer object *obj* is positive (``obj > 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's positive and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: next
+
+
+.. c:function:: int PyLong_IsNegative(PyObject *obj)
+
+   Check if the integer object *obj* is negative (``obj < 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's negative and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: next
+
+
+.. c:function:: int PyLong_IsZero(PyObject *obj)
+
+   Check if the integer object *obj* is zero.
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's zero and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: next
 
 
 .. c:function:: PyObject* PyLong_GetInfo(void)

@@ -97,11 +97,9 @@ asyncio ships with the following built-in policies:
 
       On Windows, :class:`ProactorEventLoop` is now used by default.
 
-   .. deprecated:: 3.12
-      The :meth:`get_event_loop` method of the default asyncio policy now emits
-      a :exc:`DeprecationWarning` if there is no current event loop set and it
-      decides to create one.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      The :meth:`get_event_loop` method of the default asyncio policy now
+      raises a :exc:`RuntimeError` if there is no set event loop.
 
 
 .. class:: WindowsSelectorEventLoopPolicy
