@@ -6786,7 +6786,8 @@ static const PyLongLayout PyLong_LAYOUT = {
 };
 
 
-const PyLongLayout* PyLong_GetNativeLayout(void)
+const PyLongLayout*
+PyLong_GetNativeLayout(void)
 {
     return &PyLong_LAYOUT;
 }
@@ -6838,8 +6839,10 @@ void
 PyLong_FreeExport(PyLongExport *export_long)
 {
     PyObject *obj = (PyObject*)export_long->_reserved;
-    export_long->_reserved = 0;
-    Py_XDECREF(obj);
+    if (obj) {
+        export_long->_reserved = 0;
+        Py_DECREF(obj);
+    }
 }
 
 
