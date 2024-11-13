@@ -1547,6 +1547,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._select_frame(newframe)
     do_d = do_down
 
+    def do_frame(self, arg):
+        """f(rame) [frame index]
+
+        Move the current frame levels to the new stack frame
+        according to the argument (from bt command).
+        """
+        try:
+            new_frame_idx = int(arg)
+        except ValueError:
+            self.error("The 'frame' command requires a frame index (from bt command)")
+
+        if new_frame_idx >= len(self.stack) or new_frame_idx < 0:
+            self.error('Wrong frame index, it should be in range [0, {}]'.format(len(self.stack) - 1))
+            return
+
+        self._select_frame(new_frame_idx)
+    do_f = do_frame
+
     def do_until(self, arg):
         """unt(il) [lineno]
 
@@ -2122,17 +2140,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             stack_to_print = self.stack[-count:]
         try:
-            for frame_lineno in stack_to_print:
-                self.print_stack_entry(frame_lineno)
+            if count is None:
+                # only print frame idx when we print whole frame
+                for frame_idx, frame_lineno in enumerate(stack_to_print, start = 0):
+                    self.print_stack_entry(frame_lineno, frame_idx)
+                return
+            else:
+                for frame_lineno in stack_to_print:
+                    self.print_stack_entry(frame_lineno)
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, frame_idx = -1, prompt_prefix=line_prefix):
         frame, lineno = frame_lineno
+        prefix = ""
+        if frame_idx != -1:
+            prefix += '#' + str(frame_idx) + ' '
         if frame is self.curframe:
-            prefix = '> '
+            prefix += '> '
         else:
-            prefix = '  '
+            prefix += '  '
         self.message(prefix +
                      self.format_stack_entry(frame_lineno, prompt_prefix))
 
