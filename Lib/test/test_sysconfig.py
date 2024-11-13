@@ -635,7 +635,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertNotEqual(config_vars['before'], config_vars['after'])
         self.assertEqual(config_vars['after']['base'], venv.prefix)
         #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
-        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
+        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
 
     def test_paths_depend_on_site_initialization(self):
         script = textwrap.dedent("""
