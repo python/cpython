@@ -8,7 +8,6 @@
 */
 
 #include "Python.h"
-#include "pycore_bytesobject.h"         // _PyBytes_Join()
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
@@ -1284,7 +1283,7 @@ found:
         Py_CLEAR(res);
         goto end;
     }
-    Py_XSETREF(res, _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
+    Py_XSETREF(res, PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
 
 end:
     LEAVE_BUFFERED(self)
@@ -1737,7 +1736,7 @@ _bufferedreader_read_all(buffered *self)
                 goto cleanup;
             }
             else {
-                tmp = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
+                tmp = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
                 res = tmp;
                 goto cleanup;
             }

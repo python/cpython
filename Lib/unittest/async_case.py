@@ -5,6 +5,7 @@ import warnings
 
 from .case import TestCase
 
+__unittest = True
 
 class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
@@ -90,9 +91,13 @@ class IsolatedAsyncioTestCase(TestCase):
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
-        if self._callMaybeAsync(method) is not None:
-            warnings.warn(f'It is deprecated to return a value that is not None from a '
-                          f'test case ({method})', DeprecationWarning, stacklevel=4)
+        result = self._callMaybeAsync(method)
+        if result is not None:
+            msg = (
+                f'It is deprecated to return a value that is not None '
+                f'from a test case ({method} returned {type(result).__name__!r})',
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
