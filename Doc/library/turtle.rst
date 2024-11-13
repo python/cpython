@@ -1690,6 +1690,20 @@ Special Turtle methods
       >>> mick = Turtle()
       >>> joe = mick.clone()
 
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> mick = Turtle()
+      >>> mick.currentLineItem
+      4
+      >>> mick.items
+      [4]
+      >>> joe = mick.clone()
+      >>> joe.currentLineItem
+      7
+      >>> joe.items
+      [7]
+
 
 .. function:: getturtle()
               getpen()
