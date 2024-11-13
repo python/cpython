@@ -224,7 +224,16 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid6(node=None, clock_seq=None)
 
-   TODO
+   Generate a UUID from a sequence number and the current time according to
+   :rfc:`9562`.
+   This is an alternative to :func:`uuid1` to improve DB locality.
+
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
+
+   If *node* or *clock_seq* exceed their expected bit count, only their least
+   significant bits are kept.
 
    .. versionadded:: next
 
