@@ -14,7 +14,7 @@ from .locks import *
 from .protocols import *
 from .runners import *
 from .queues import *
-from .stack import *
+from .graph import *
 from .streams import *
 from .subprocess import *
 from .tasks import *
@@ -32,7 +32,7 @@ __all__ = (base_events.__all__ +
            protocols.__all__ +
            runners.__all__ +
            queues.__all__ +
-           stack.__all__ +
+           graph.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +

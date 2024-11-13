@@ -1,17 +1,17 @@
 .. currentmodule:: asyncio
 
 
-.. _asyncio-stack:
+.. _asyncio-graph:
 
 ===================
 Stack Introspection
 ===================
 
-**Source code:** :source:`Lib/asyncio/stack.py`
+**Source code:** :source:`Lib/asyncio/graph.py`
 
 -------------------------------------
 
-asyncio has powerful runtime call stack introspection utilities
+asyncio has powerful runtime call graph introspection utilities
 to trace the entire call graph of a running coroutine or task, or
 a suspended *future*.  These utilities and the underlying machinery
 can be used by users in their Python code or by external profilers

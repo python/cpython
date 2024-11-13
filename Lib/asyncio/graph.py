@@ -1,4 +1,4 @@
-"""Introspection utils for tasks call stacks."""
+"""Introspection utils for tasks call graphs."""
 
 import dataclasses
 import sys
@@ -18,7 +18,7 @@ __all__ = (
 
 # Sadly, we can't re-use the traceback's module datastructures as those
 # are tailored for error reporting, whereas we need to represent an
-# async call stack.
+# async call graph.
 #
 # Going with pretty verbose names as we'd like to export them to the
 # top level asyncio namespace, and want to avoid future name clashes.
@@ -36,7 +36,7 @@ class FutureCallGraph:
     awaited_by: list[FutureCallGraph]
 
 
-def _build_stack_for_future(future: futures.Future) -> FutureCallGraph:
+def _build_graph_for_future(future: futures.Future) -> FutureCallGraph:
     if not isinstance(future, futures.Future):
         raise TypeError(
             f"{future!r} object does not appear to be compatible "
@@ -64,7 +64,7 @@ def _build_stack_for_future(future: futures.Future) -> FutureCallGraph:
 
     if future._asyncio_awaited_by:
         for parent in future._asyncio_awaited_by:
-            awaited_by.append(_build_stack_for_future(parent))
+            awaited_by.append(_build_graph_for_future(parent))
 
     st.reverse()
     return FutureCallGraph(future, st, awaited_by)
@@ -75,9 +75,9 @@ def capture_call_graph(
     future: futures.Future | None = None,
     depth: int = 1,
 ) -> FutureCallGraph | None:
-    """Capture async call stack for the current task or the provided Future.
+    """Capture async call graph for the current task or the provided Future.
 
-    The stack is represented with three data structures:
+    The graph is represented with three data structures:
 
     * FutureCallGraph(future, call_stack, awaited_by)
 
@@ -109,7 +109,7 @@ def capture_call_graph(
         # if yes - check if the passed future is the currently
         # running task or not.
         if loop is None or future is not tasks.current_task(loop=loop):
-            return _build_stack_for_future(future)
+            return _build_graph_for_future(future)
         # else: future is the current task, move on.
     else:
         if loop is None:
@@ -151,7 +151,7 @@ def capture_call_graph(
     awaited_by = []
     if future._asyncio_awaited_by:
         for parent in future._asyncio_awaited_by:
-            awaited_by.append(_build_stack_for_future(parent))
+            awaited_by.append(_build_graph_for_future(parent))
 
     return FutureCallGraph(future, call_stack, awaited_by)
 
@@ -162,7 +162,7 @@ def print_call_graph(
     file: typing.TextIO | None = None,
     depth: int = 1,
 ) -> None:
-    """Print async call stack for the current task or the provided Future."""
+    """Print async call graph for the current task or the provided Future."""
 
     def render_level(st: FutureCallGraph, buf: list[str], level: int) -> None:
         def add_line(line: str) -> None:
@@ -221,16 +221,16 @@ def print_call_graph(
             for fut in st.awaited_by:
                 render_level(fut, buf, level + 1)
 
-    stack = capture_call_graph(future=future, depth=depth + 1)
-    if stack is None:
+    graph = capture_call_graph(future=future, depth=depth + 1)
+    if graph is None:
         return
 
     try:
         buf: list[str] = []
-        render_level(stack, buf, 0)
+        render_level(graph, buf, 0)
         rendered = '\n'.join(buf)
         print(rendered, file=file)
     finally:
-        # 'stack' has references to frames so we should
+        # 'graph' has references to frames so we should
         # make sure it's GC'ed as soon as we don't need it.
-        del stack
+        del graph
