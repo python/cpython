@@ -6,7 +6,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 
 #define REGISTERS_HEAP_TYPES
 #define HAS_UNBOUND_ITEMS
@@ -30,7 +30,7 @@
 #define XID_FREE 2
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int flags)
+_release_xid_data(_PyXIData_t *data, int flags)
 {
     int ignoreexc = flags & XID_IGNORE_EXC;
     PyObject *exc;
@@ -39,10 +39,10 @@ _release_xid_data(_PyCrossInterpreterData *data, int flags)
     }
     int res;
     if (flags & XID_FREE) {
-        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+        res = _PyXIData_ReleaseAndRawFree(data);
     }
     else {
-        res = _PyCrossInterpreterData_Release(data);
+        res = _PyXIData_Release(data);
     }
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
@@ -400,7 +400,7 @@ typedef struct _queueitem {
        This is necessary because item->data might be NULL,
        meaning the interpreter has been destroyed. */
     int64_t interpid;
-    _PyCrossInterpreterData *data;
+    _PyXIData_t *data;
     int fmt;
     int unboundop;
     struct _queueitem *next;
@@ -408,16 +408,15 @@ typedef struct _queueitem {
 
 static void
 _queueitem_init(_queueitem *item,
-                int64_t interpid, _PyCrossInterpreterData *data,
-                int fmt, int unboundop)
+                int64_t interpid, _PyXIData_t *data, int fmt, int unboundop)
 {
     if (interpid < 0) {
         interpid = _get_interpid(data);
     }
     else {
         assert(data == NULL
-               || _PyCrossInterpreterData_INTERPID(data) < 0
-               || interpid == _PyCrossInterpreterData_INTERPID(data));
+               || _PyXIData_INTERPID(data) < 0
+               || interpid == _PyXIData_INTERPID(data));
     }
     assert(check_unbound(unboundop));
     *item = (_queueitem){
@@ -447,8 +446,7 @@ _queueitem_clear(_queueitem *item)
 }
 
 static _queueitem *
-_queueitem_new(int64_t interpid, _PyCrossInterpreterData *data,
-               int fmt, int unboundop)
+_queueitem_new(int64_t interpid, _PyXIData_t *data, int fmt, int unboundop)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
@@ -478,7 +476,7 @@ _queueitem_free_all(_queueitem *item)
 
 static void
 _queueitem_popped(_queueitem *item,
-                  _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
+                  _PyXIData_t **p_data, int *p_fmt, int *p_unboundop)
 {
     *p_data = item->data;
     *p_fmt = item->fmt;
@@ -498,7 +496,7 @@ _queueitem_clear_interpreter(_queueitem *item)
         assert(item->unboundop != UNBOUND_REMOVE);
         return 0;
     }
-    assert(_PyCrossInterpreterData_INTERPID(item->data) == item->interpid);
+    assert(_PyXIData_INTERPID(item->data) == item->interpid);
 
     switch (item->unboundop) {
     case UNBOUND_REMOVE:
@@ -633,7 +631,7 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, int64_t interpid, _PyCrossInterpreterData *data,
+_queue_add(_queue *queue, int64_t interpid, _PyXIData_t *data,
            int fmt, int unboundop)
 {
     int err = _queue_lock(queue);
@@ -671,7 +669,7 @@ _queue_add(_queue *queue, int64_t interpid, _PyCrossInterpreterData *data,
 
 static int
 _queue_next(_queue *queue,
-            _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
+            _PyXIData_t **p_data, int *p_fmt, int *p_unboundop)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -845,28 +843,31 @@ typedef struct _queues {
 static void
 _queues_init(_queues *queues, PyThread_type_lock mutex)
 {
-    queues->mutex = mutex;
-    queues->head = NULL;
-    queues->count = 0;
-    queues->next_id = 1;
+    assert(mutex != NULL);
+    assert(queues->mutex == NULL);
+    *queues = (_queues){
+        .mutex = mutex,
+        .head = NULL,
+        .count = 0,
+        .next_id = 1,
+    };
 }
 
 static void
-_queues_fini(_queues *queues)
+_queues_fini(_queues *queues, PyThread_type_lock *p_mutex)
 {
+    PyThread_type_lock mutex = queues->mutex;
+    assert(mutex != NULL);
+
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
     if (queues->count > 0) {
-        PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-        assert((queues->count == 0) != (queues->head != NULL));
-        _queueref *head = queues->head;
-        queues->head = NULL;
-        queues->count = 0;
-        PyThread_release_lock(queues->mutex);
-        _queuerefs_clear(head);
+        assert(queues->head != NULL);
+        _queuerefs_clear(queues->head);
     }
-    if (queues->mutex != NULL) {
-        PyThread_free_lock(queues->mutex);
-        queues->mutex = NULL;
-    }
+    *queues = (_queues){0};
+    PyThread_release_lock(mutex);
+
+    *p_mutex = mutex;
 }
 
 static int64_t
@@ -1135,17 +1136,17 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
     assert(queue != NULL);
 
     // Convert the object to cross-interpreter data.
-    _PyCrossInterpreterData *data = GLOBAL_MALLOC(_PyCrossInterpreterData);
+    _PyXIData_t *data = GLOBAL_MALLOC(_PyXIData_t);
     if (data == NULL) {
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;
     }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+    if (_PyObject_GetXIData(obj, data) != 0) {
         _queue_unmark_waiter(queue, queues->mutex);
         GLOBAL_FREE(data);
         return -1;
     }
-    assert(_PyCrossInterpreterData_INTERPID(data) == \
+    assert(_PyXIData_INTERPID(data) == \
            PyInterpreterState_GetID(PyInterpreterState_Get()));
 
     // Add the data to the queue.
@@ -1181,7 +1182,7 @@ queue_get(_queues *queues, int64_t qid,
     assert(queue != NULL);
 
     // Pop off the next item from the queue.
-    _PyCrossInterpreterData *data = NULL;
+    _PyXIData_t *data = NULL;
     err = _queue_next(queue, &data, p_fmt, p_unboundop);
     _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
@@ -1193,7 +1194,7 @@ queue_get(_queues *queues, int64_t qid,
     }
 
     // Convert the data back to an object.
-    PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    PyObject *obj = _PyXIData_NewObject(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
         // It was allocated in queue_put(), so we free it.
@@ -1255,8 +1256,7 @@ queue_get_count(_queues *queues, int64_t qid, Py_ssize_t *p_count)
 
 /* external Queue objects ***************************************************/
 
-static int _queueobj_shared(PyThreadState *,
-                            PyObject *, _PyCrossInterpreterData *);
+static int _queueobj_shared(PyThreadState *, PyObject *, _PyXIData_t *);
 
 static int
 set_external_queue_type(module_state *state, PyTypeObject *queue_type)
@@ -1312,7 +1312,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_incref(queues, qid);
+        _queues_decref(queues, qid);
         return NULL;
     }
     data->qid = qid;
@@ -1336,9 +1336,9 @@ _queueid_xid_free(void *data)
 }
 
 static PyObject *
-_queueobj_from_xid(_PyCrossInterpreterData *data)
+_queueobj_from_xid(_PyXIData_t *data)
 {
-    int64_t qid = *(int64_t *)_PyCrossInterpreterData_DATA(data);
+    int64_t qid = *(int64_t *)_PyXIData_DATA(data);
     PyObject *qidobj = PyLong_FromLongLong(qid);
     if (qidobj == NULL) {
         return NULL;
@@ -1364,8 +1364,7 @@ _queueobj_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
-                 _PyCrossInterpreterData *data)
+_queueobj_shared(PyThreadState *tstate, PyObject *queueobj, _PyXIData_t *data)
 {
     PyObject *qidobj = PyObject_GetAttrString(queueobj, "_id");
     if (qidobj == NULL) {
@@ -1385,9 +1384,8 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
     if (raw == NULL) {
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, raw, NULL,
-                                 _queueobj_from_xid);
-    _PyCrossInterpreterData_SET_FREE(data, _queueid_xid_free);
+    _PyXIData_Init(data, tstate->interp, raw, NULL, _queueobj_from_xid);
+    _PyXIData_SET_FREE(data, _queueid_xid_free);
     return 0;
 }
 
@@ -1398,6 +1396,7 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
+    PyMutex mutex;
     int module_count;
     _queues queues;
 } _globals = {0};
@@ -1405,32 +1404,36 @@ static struct globals {
 static int
 _globals_init(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count >= 0);
     _globals.module_count++;
-    if (_globals.module_count > 1) {
-        // Already initialized.
-        return 0;
+    if (_globals.module_count == 1) {
+        // Called for the first time.
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            _globals.module_count--;
+            PyMutex_Unlock(&_globals.mutex);
+            return ERR_QUEUES_ALLOC;
+        }
+        _queues_init(&_globals.queues, mutex);
     }
-
-    assert(_globals.queues.mutex == NULL);
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        return ERR_QUEUES_ALLOC;
-    }
-    _queues_init(&_globals.queues, mutex);
+    PyMutex_Unlock(&_globals.mutex);
     return 0;
 }
 
 static void
 _globals_fini(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count > 0);
     _globals.module_count--;
-    if (_globals.module_count > 0) {
-        return;
+    if (_globals.module_count == 0) {
+        PyThread_type_lock mutex;
+        _queues_fini(&_globals.queues, &mutex);
+        assert(mutex != NULL);
+        PyThread_free_lock(mutex);
     }
-
-    _queues_fini(&_globals.queues);
+    PyMutex_Unlock(&_globals.mutex);
 }
 
 static _queues *
@@ -1518,7 +1521,7 @@ static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:destroy", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1579,7 +1582,7 @@ static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", "obj", "fmt", "unboundop", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     PyObject *obj;
     int fmt;
     int unboundop;
@@ -1615,7 +1618,7 @@ static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1651,7 +1654,7 @@ static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:bind", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1681,7 +1684,7 @@ queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:release", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1710,7 +1713,7 @@ static PyObject *
 queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_maxsize", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1735,7 +1738,7 @@ static PyObject *
 queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_queue_defaults", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1765,7 +1768,7 @@ static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:is_full", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1793,7 +1796,7 @@ static PyObject *
 queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_count", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1894,7 +1897,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_queue_error(err, mod, -1)) {
         return -1;
     }
 

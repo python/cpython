@@ -134,6 +134,41 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
+#ifdef Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyStackRef_CLOSE(left);
+    PyStackRef_CLOSE(right);
+    return PyFloat_FromDouble(value);
+}
+
+#else // Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+    if (Py_REFCNT(left_o) == 1) {
+        ((PyFloatObject *)left_o)->ob_fval = value;
+        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
+        return left_o;
+    }
+    else if (Py_REFCNT(right_o) == 1)  {
+        ((PyFloatObject *)right_o)->ob_fval = value;
+        _Py_DECREF_NO_DEALLOC(left_o);
+        return right_o;
+    }
+    else {
+        PyObject *result = PyFloat_FromDouble(value);
+        _Py_DECREF_NO_DEALLOC(left_o);
+        _Py_DECREF_NO_DEALLOC(right_o);
+        return result;
+    }
+}
+
+#endif // Py_GIL_DISABLED
+
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
@@ -235,15 +270,10 @@ static void
 float_dealloc(PyObject *op)
 {
     assert(PyFloat_Check(op));
-#ifdef WITH_FREELISTS
-    if (PyFloat_CheckExact(op)) {
+    if (PyFloat_CheckExact(op))
         _PyFloat_ExactDealloc(op);
-    }
     else
-#endif
-    {
         Py_TYPE(op)->tp_free(op);
-    }
 }
 
 double
@@ -399,7 +429,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
         int wsign = _PyLong_Sign(w);
-        size_t nbits;
         int exponent;
 
         if (vsign != wsign) {
@@ -412,20 +441,22 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* The signs are the same. */
         /* Convert w to a double if it fits.  In particular, 0 fits. */
-        nbits = _PyLong_NumBits(w);
-        if (nbits == (size_t)-1 && PyErr_Occurred()) {
-            /* This long is so large that size_t isn't big enough
-             * to hold the # of bits.  Replace with little doubles
+        int64_t nbits64 = _PyLong_NumBits(w);
+        assert(nbits64 >= 0);
+        assert(!PyErr_Occurred());
+        if (nbits64 > DBL_MAX_EXP) {
+            /* This Python integer is larger than any finite C double.
+             * Replace with little doubles
              * that give the same outcome -- w is so large that
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            PyErr_Clear();
             i = (double)vsign;
             assert(wsign != 0);
             j = wsign * 2.0;
             goto Compare;
         }
+        int nbits = (int)nbits64;
         if (nbits <= 48) {
             j = PyLong_AsDouble(w);
             /* It's impossible that <= 48 bits overflowed. */
@@ -449,12 +480,12 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         /* exponent is the # of bits in v before the radix point;
          * we know that nbits (the # of bits in w) > 48 at this point
          */
-        if (exponent < 0 || (size_t)exponent < nbits) {
+        if (exponent < nbits) {
             i = 1.0;
             j = 2.0;
             goto Compare;
         }
-        if ((size_t)exponent > nbits) {
+        if (exponent > nbits) {
             i = 2.0;
             j = 1.0;
             goto Compare;
@@ -1885,6 +1916,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 
 static void
@@ -1971,12 +2003,10 @@ _PyFloat_FiniType(PyInterpreterState *interp)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            _Py_FREELIST_SIZE(floats),
                            sizeof(PyFloatObject));
-#endif
 }
 
 
@@ -2361,7 +2391,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+            return sign ? -Py_INFINITY : Py_INFINITY;
         }
         else {
             /* NaN */
