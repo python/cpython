@@ -5,7 +5,7 @@
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 Jürgen Hermann <jh@web.de>
+# 2002-11-22 JÃ¼rgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -207,7 +207,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "HÃ¶he"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -306,6 +306,11 @@ def getFilesForName(name):
     return []
 
 
+def _is_def_or_class_keyword(token):
+    ttype, tstring, *_ = token
+    return ttype == tokenize.NAME and tstring in ('def', 'class')
+
+
 class TokenEater:
     def __init__(self, options):
         self.__options = options
@@ -316,13 +321,11 @@ class TokenEater:
         self.__freshmodule = 1
         self.__curfile = None
         self.__enclosurecount = 0
+        self.__prev_token = None
 
     def __call__(self, ttype, tstring, stup, etup, line):
-        # dispatch
-##        import token
-##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
-##              file=sys.stderr)
         self.__state(ttype, tstring, stup[0])
+        self.__prev_token = (ttype, tstring, stup, etup, line)
 
     def __waiting(self, ttype, tstring, lineno):
         opts = self.__options
@@ -341,7 +344,10 @@ class TokenEater:
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
-        if ttype == tokenize.NAME and tstring in opts.keywords:
+        if (
+            ttype == tokenize.NAME and tstring in opts.keywords
+            and (not self.__prev_token or not _is_def_or_class_keyword(self.__prev_token))
+        ):
             self.__state = self.__keywordseen
             return
         if ttype == tokenize.STRING:
