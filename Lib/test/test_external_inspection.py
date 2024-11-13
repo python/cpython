@@ -109,42 +109,55 @@ class TestGetStackTrace(unittest.TestCase):
                     tg.create_task(c1(task), name="sub_main_1")
                     tg.create_task(c1(task), name="sub_main_2")
 
-            asyncio.run(main())
+            def new_eager_loop():
+                loop = asyncio.new_event_loop()
+                eager_task_factory = asyncio.create_eager_task_factory(asyncio.Task)
+                loop.set_task_factory(eager_task_factory)
+                return loop
+
+            asyncio.run(main(), loop_factory={TASK_FACTORY})
             """)
         stack_trace = None
-        with os_helper.temp_dir() as work_dir:
-            script_dir = os.path.join(work_dir, "script_pkg")
-            os.mkdir(script_dir)
-            fifo = f"{work_dir}/the_fifo"
-            os.mkfifo(fifo)
-            script_name = _make_test_script(script_dir, 'script', script)
-            try:
-                p = subprocess.Popen([sys.executable, script_name,  str(fifo)])
-                with open(fifo, "r") as fifo_file:
-                    response = fifo_file.read()
-                self.assertEqual(response, "ready")
-                stack_trace = get_async_stack_trace(p.pid)
-            except PermissionError:
-                self.skipTest("Insufficient permissions to read the stack trace")
-            finally:
-                os.remove(fifo)
-                p.kill()
-                p.terminate()
-                p.wait(timeout=SHORT_TIMEOUT)
+        for task_factory_variant in "asyncio.new_event_loop", "new_eager_loop":
+            with (
+                self.subTest(task_factory_variant=task_factory_variant),
+                os_helper.temp_dir() as work_dir,
+            ):
+                script_dir = os.path.join(work_dir, "script_pkg")
+                os.mkdir(script_dir)
+                fifo = f"{work_dir}/the_fifo"
+                os.mkfifo(fifo)
+                script_name = _make_test_script(script_dir, 'script', script.format(TASK_FACTORY=task_factory_variant))
+                try:
+                    p = subprocess.Popen([sys.executable, script_name,  str(fifo)])
+                    with open(fifo, "r") as fifo_file:
+                        response = fifo_file.read()
+                    self.assertEqual(response, "ready")
+                    stack_trace = get_async_stack_trace(p.pid)
+                except PermissionError:
+                    self.skipTest("Insufficient permissions to read the stack trace")
+                finally:
+                    os.remove(fifo)
+                    p.kill()
+                    p.terminate()
+                    p.wait(timeout=SHORT_TIMEOUT)
 
-            # sets are unordered, so we want to sort "awaited_by"s
-            stack_trace[2].sort(key=lambda x: x[1])
+                # sets are unordered, so we want to sort "awaited_by"s
+                stack_trace[2].sort(key=lambda x: x[1])
 
-            expected_stack_trace = [
-                ["c5", "c4", "c3", "c2"],
-                "c2_root",
-                [
-                    [["main"], "Task-1", []],
-                    [["c1"], "sub_main_1", [[["main"], "Task-1", []]]],
-                    [["c1"], "sub_main_2", [[["main"], "Task-1", []]]],
-                ],
-            ]
-            self.assertEqual(stack_trace, expected_stack_trace)
+                root_task = "Task-1"
+                if task_factory_variant == "new_eager_loop":
+                    root_task = "None"
+                expected_stack_trace = [
+                    ["c5", "c4", "c3", "c2"],
+                    "c2_root",
+                    [
+                        [["main"], root_task, []],
+                        [["c1"], "sub_main_1", [[["main"], root_task, []]]],
+                        [["c1"], "sub_main_2", [[["main"], root_task, []]]],
+                    ],
+                ]
+                self.assertEqual(stack_trace, expected_stack_trace)
 
     @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
