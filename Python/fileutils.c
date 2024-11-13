@@ -2510,40 +2510,39 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
 #endif
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
 
-    Py_ssize_t drvsize, rootsize;
-    _Py_skiproot(path, size, &drvsize, &rootsize);
-    if (drvsize || rootsize) {
-        // Skip past root and update minP2
-        p1 = &path[drvsize + rootsize];
-#ifndef ALTSEP
-        p2 = p1;
-#else
-        for (; p2 < p1; ++p2) {
-            if (*p2 == ALTSEP) {
-                *p2 = SEP;
-            }
-        }
-#endif
-        minP2 = p2 - 1;
-        lastC = *minP2;
-#ifdef MS_WINDOWS
-        if (lastC != SEP) {
-            minP2++;
-        }
-#endif
-    }
-    if (p1[0] == L'.' && SEP_OR_END(&p1[1])) {
+    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
         // Skip leading '.\'
-        lastC = *++p1;
-#ifdef ALTSEP
-        if (lastC == ALTSEP) {
-            lastC = SEP;
+        path = &path[2];
+        while (IS_SEP(path)) {
+            path++;
         }
-#endif
-        while (IS_SEP(p1)) {
-            p1++;
-        }
+        p1 = p2 = minP2 = path;
+        lastC = SEP;
         explicit = 1;
+    }
+    else {
+        Py_ssize_t drvsize, rootsize;
+        _Py_skiproot(path, size, &drvsize, &rootsize);
+        if (drvsize || rootsize) {
+            // Skip past root and update minP2
+            p1 = &path[drvsize + rootsize];
+#ifndef ALTSEP
+            p2 = p1;
+#else
+            for (; p2 < p1; ++p2) {
+                if (*p2 == ALTSEP) {
+                    *p2 = SEP;
+                }
+            }
+#endif
+            minP2 = p2 - 1;
+            lastC = *minP2;
+#ifdef MS_WINDOWS
+            if (lastC != SEP) {
+                minP2++;
+            }
+#endif
+        }
     }
 
     /* if pEnd is specified, check that. Else, check for null terminator */
