@@ -527,3 +527,10 @@ typedef enum {
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
 PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
 PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
+
+/* Enable PEP-703 deferred reference counting on the object.
+ *
+ * Returns 1 if deferred reference counting was successfully enabled, and
+ * 0 if the runtime ignored it. This function cannot fail.
+ */
+PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
