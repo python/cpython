@@ -1,14 +1,17 @@
 import multiprocessing
-import os
 import signal
 import concurrent.futures
+import time
+import sys
+import os
 
 
 def send_sigint(pid):
+    time.sleep(1)
     os.kill(pid, signal.SIGINT)
 
 
-def run_signal_handler_test():
+def run_signal_handler_wait_set_test():
     shutdown_event = multiprocessing.Event()
 
     def sigterm_handler(_signo, _stack_frame):
@@ -18,10 +21,14 @@ def run_signal_handler_test():
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         f = executor.submit(send_sigint, os.getpid())
-        while not shutdown_event.is_set():
-            pass
+        shutdown_event.wait()
         f.result()
 
 
 if __name__ == '__main__':
-    run_signal_handler_test()
+    try:
+        run_signal_handler_wait_set_test()
+        sys.exit(1)
+    except AssertionError as e:
+        assert 'multiprocessing.Event.set() cannot be called from a thread that is already wait()-ing' in str(e)
+        sys.exit(0)
