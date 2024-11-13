@@ -63,19 +63,9 @@ and debuggers.
             |   File 'taskgroups.py', line 107, in async TaskGroup.__aexit__()
             |   File 't2.py', line 7, in async main()
 
-   For rendering the call stack to a string the following pattern
-   should be used:
+.. function:: format_call_graph(*, future=None, depth=1)
 
-   .. code-block:: python
-
-      import io
-
-      ...
-
-      buf = io.StringIO()
-      asyncio.print_call_graph(file=buf)
-      output = buf.getvalue()
-
+   Like :func:`print_call_graph`, but returns a string.
 
 .. function:: capture_call_graph(*, future=None)
 

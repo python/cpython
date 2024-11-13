@@ -11,6 +11,7 @@ from . import tasks
 
 __all__ = (
     'capture_call_graph',
+    'format_call_graph',
     'print_call_graph',
     'FrameCallGraphEntry',
     'FutureCallGraph',
@@ -156,13 +157,15 @@ def capture_call_graph(
     return FutureCallGraph(future, call_stack, awaited_by)
 
 
-def print_call_graph(
+def format_call_graph(
     *,
     future: futures.Future | None = None,
-    file: typing.TextIO | None = None,
     depth: int = 1,
-) -> None:
-    """Print async call graph for the current task or the provided Future."""
+) -> str:
+    """Return async call graph as a string for `future`.
+
+    If `future` is not provided, format the call graph for the current task.
+    """
 
     def render_level(st: FutureCallGraph, buf: list[str], level: int) -> None:
         def add_line(line: str) -> None:
@@ -228,9 +231,17 @@ def print_call_graph(
     try:
         buf: list[str] = []
         render_level(graph, buf, 0)
-        rendered = '\n'.join(buf)
-        print(rendered, file=file)
+        return '\n'.join(buf)
     finally:
         # 'graph' has references to frames so we should
         # make sure it's GC'ed as soon as we don't need it.
         del graph
+
+def print_call_graph(
+    *,
+    future: futures.Future | None = None,
+    file: typing.TextIO | None = None,
+    depth: int = 1,
+) -> None:
+    """Print async call graph for the current task or the provided Future."""
+    print(format_call_graph(future=future, depth=depth), file=file)
