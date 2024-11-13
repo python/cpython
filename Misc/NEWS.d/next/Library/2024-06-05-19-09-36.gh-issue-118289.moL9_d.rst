@@ -1,0 +1,2 @@
+:func:`!posixpath.realpath` now raises :exc:`NotADirectoryError` when *strict*
+mode is enabled and a non-directory path with a trailing slash is supplied.
