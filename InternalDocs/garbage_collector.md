@@ -366,8 +366,8 @@ To take advantage of this fact, all container objects are segregated into
 two generations: young and old. Every new object starts in the young generation.
 Each garbage collection scans the entire young generation and part of the old generation.
 
-The time taken to scan the young generation can be controlled by controlling the
-size of the young, but the size of the old generation cannot be controlled.
+The time taken to scan the young generation can be controlled by controlling its
+size, but the size of the old generation cannot be controlled.
 In order to keep pause times down, scanning of the old generation of the heap
 occurs in increments.
 
@@ -385,8 +385,7 @@ Increments
 Each full scavenge is performed in a series of increments.
 For each full scavenge, the combined increments will cover the whole heap.
 
-For each increment, the portion of the heap scanned by a single collection is
-made up of three parts:
+Each increment is made up of:
 
 * The young generation
 * The old generation's least recently scanned objects
