@@ -1623,6 +1623,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
+#undef USE_DLERROR
     #ifdef __CYGWIN__
         // dlerror() isn't very helpful on cygwin
     #else
