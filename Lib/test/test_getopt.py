@@ -173,6 +173,12 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, ['-'])
         self.assertEqual(opts, [('-a', ''), ('-b', '-')])
 
+        # Return positional arguments intermixed with options.
+        opts, args = getopt.gnu_getopt(cmdline, '-ab:', ['alpha', 'beta='])
+        self.assertEqual(args, ['arg2'])
+        self.assertEqual(opts, [('-a', ''), (None, ['arg1']), ('-b', '1'), ('--alpha', ''),
+                                ('--beta', '2'), ('--beta', '3')])
+
         # Posix style via +
         opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
