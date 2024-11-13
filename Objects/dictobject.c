@@ -34,7 +34,7 @@ layout:
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
-Size of indices is dk_size.  Type of each index in indices is vary on dk_size:
+Size of indices is dk_size.  Type of each index in indices varies with dk_size:
 
 * int8  for          dk_size <= 128
 * int16 for 256   <= dk_size <= 2**15
@@ -1636,6 +1636,24 @@ _PyDict_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
+void
+_PyDict_EnablePerThreadRefcounting(PyObject *op)
+{
+    assert(PyDict_Check(op));
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t id = _PyObject_AssignUniqueId(op);
+    if ((uint64_t)id >= (uint64_t)DICT_UNIQUE_ID_MAX) {
+        _PyObject_ReleaseUniqueId(id);
+        return;
+    }
+
+    PyDictObject *mp = (PyDictObject *)op;
+    assert((mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) == 0);
+    // Plus 1 so that _ma_watcher_tag=0 represents an unassigned id
+    mp->_ma_watcher_tag += ((uint64_t)id + 1) << DICT_UNIQUE_ID_SHIFT;
+#endif
+}
+
 static inline int
 is_unusable_slot(Py_ssize_t ix)
 {
@@ -2491,6 +2509,40 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     /* namespace 2: builtins */
     ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
     assert(ix >= 0 || PyStackRef_IsNull(*res));
+}
+
+PyObject *
+_PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
+{
+    if (!PyDict_Check(globals)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyDictObject *mp = (PyDictObject *)globals;
+    PyObject *key = &_Py_ID(__builtins__);
+    Py_hash_t hash = unicode_get_hash(key);
+
+    // Use the stackref variant to avoid reference count contention on the
+    // builtins module in the free threading build. It's important not to
+    // make any escaping calls between the lookup and the `PyStackRef_CLOSE()`
+    // because the `ref` is not visible to the GC.
+    _PyStackRef ref;
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(mp, key, hash, &ref);
+    if (ix == DKIX_ERROR) {
+        return NULL;
+    }
+    if (PyStackRef_IsNull(ref)) {
+        return Py_NewRef(PyEval_GetBuiltins());
+    }
+    PyObject *builtins = PyStackRef_AsPyObjectBorrow(ref);
+    if (PyModule_Check(builtins)) {
+        builtins = _PyModule_GetDict(builtins);
+        assert(builtins != NULL);
+    }
+    _Py_INCREF_BUILTINS(builtins);
+    PyStackRef_CLOSE(ref);
+    return builtins;
 }
 
 /* Consumes references to key and value */
@@ -4621,8 +4673,8 @@ PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
-If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
+"D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.\n\
+If E is present and has a .keys() method, then does:  for k in E.keys(): D[k] = E[k]\n\
 If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
 In either case, this is followed by: for k in F:  D[k] = F[k]");
 
@@ -4860,6 +4912,7 @@ PyTypeObject PyDict_Type = {
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_DICT,
 };
 
 /* For backward compatibility with old dictionary interface */
@@ -6835,15 +6888,24 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     PyObject *old_value = values->values[ix];
+    if (old_value == NULL && value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        Py_TYPE(obj)->tp_name, name);
+        return -1;
+    }
+
+    if (dict) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
+                                   value == NULL ? PyDict_EVENT_DELETED :
+                                   PyDict_EVENT_MODIFIED);
+        _PyDict_NotifyEvent(interp, event, dict, name, value);
+    }
+
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
 
     if (old_value == NULL) {
-        if (value == NULL) {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         Py_TYPE(obj)->tp_name, name);
-            return -1;
-        }
         _PyDictValues_AddToInsertionOrder(values, ix);
         if (dict) {
             assert(dict->ma_values == values);

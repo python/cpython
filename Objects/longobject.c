@@ -785,6 +785,39 @@ PyLong_AsUnsignedLongMask(PyObject *op)
 }
 
 int
+PyLong_IsPositive(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsPositive((PyLongObject *)obj);
+}
+
+int
+PyLong_IsNegative(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsNegative((PyLongObject *)obj);
+}
+
+int
+PyLong_IsZero(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsZero((PyLongObject *)obj);
+}
+
+int
 _PyLong_Sign(PyObject *vv)
 {
     PyLongObject *v = (PyLongObject *)vv;
@@ -6584,6 +6617,7 @@ PyTypeObject PyLong_Type = {
     long_new,                                   /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_INT,
 };
 
 static PyTypeObject Int_InfoType;

@@ -497,7 +497,8 @@ deque_init(PyObject *deque, PyObject *args, PyObject *kwargs)
     PyObject *iterable = NULL;
     PyObject *maxlenobj = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -629,4 +630,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64c32b16df7be07a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65f896fb13902f6d input=a9049054013a1b77]*/

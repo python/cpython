@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\abstract.h" />
+    <ClInclude Include="..\Include\audit.h" />
     <ClInclude Include="..\Include\boolobject.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
@@ -137,6 +138,7 @@
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\critical_section.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
+    <ClInclude Include="..\Include\cpython\audit.h" />
     <ClInclude Include="..\Include\cpython\bytearrayobject.h" />
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
     <ClInclude Include="..\Include\cpython\cellobject.h" />
@@ -185,7 +187,6 @@
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pythread.h" />
     <ClInclude Include="..\Include\cpython\setobject.h" />
-    <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tracemalloc.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
     <ClInclude Include="..\Include\internal\pycore_atexit.h" />
+    <ClInclude Include="..\Include\internal\pycore_audit.h" />
     <ClInclude Include="..\Include\internal\pycore_backoff.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
     <ClInclude Include="..\Include\internal\pycore_brc.h" />
@@ -227,6 +229,8 @@
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_critical_section.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
+    <ClInclude Include="..\Include\internal\pycore_crossinterp_data_registry.h" />
+    <ClInclude Include="..\Include\internal\pycore_debug_offsets.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
@@ -252,6 +256,7 @@
     <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_importdl.h" />
+    <ClInclude Include="..\Include\internal\pycore_index_pool.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_instruction_sequence.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
@@ -611,6 +616,7 @@
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\index_pool.c" />
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\interpconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />

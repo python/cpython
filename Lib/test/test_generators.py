@@ -268,6 +268,79 @@ class GeneratorTest(unittest.TestCase):
         #This should not raise
         loop()
 
+
+class ModifyUnderlyingIterableTest(unittest.TestCase):
+    iterables = [
+        range(0),
+        range(20),
+        [1, 2, 3],
+        (2,),
+        {13, 48, 211},
+        frozenset((15, 8, 6)),
+        {1: 2, 3: 4},
+    ]
+
+    non_iterables = [
+        None,
+        42,
+        3.0,
+        2j,
+    ]
+
+    def genexpr(self):
+        return (x for x in range(10))
+
+    def genfunc(self):
+        def gen(it):
+            for x in it:
+                yield x
+        return gen(range(10))
+
+    def process_tests(self, get_generator):
+        for obj in self.iterables:
+            g_obj = get_generator(obj)
+            with self.subTest(g_obj=g_obj, obj=obj):
+                self.assertListEqual(list(g_obj), list(obj))
+
+            g_iter = get_generator(iter(obj))
+            with self.subTest(g_iter=g_iter, obj=obj):
+                self.assertListEqual(list(g_iter), list(obj))
+
+        err_regex = "'.*' object is not iterable"
+        for obj in self.non_iterables:
+            g_obj = get_generator(obj)
+            with self.subTest(g_obj=g_obj):
+                self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+
+    def test_modify_f_locals(self):
+        def modify_f_locals(g, local, obj):
+            g.gi_frame.f_locals[local] = obj
+            return g
+
+        def get_generator_genexpr(obj):
+            return modify_f_locals(self.genexpr(), '.0', obj)
+
+        def get_generator_genfunc(obj):
+            return modify_f_locals(self.genfunc(), 'it', obj)
+
+        self.process_tests(get_generator_genexpr)
+        self.process_tests(get_generator_genfunc)
+
+    def test_new_gen_from_gi_code(self):
+        def new_gen_from_gi_code(g, obj):
+            generator_func = types.FunctionType(g.gi_code, {})
+            return generator_func(obj)
+
+        def get_generator_genexpr(obj):
+            return new_gen_from_gi_code(self.genexpr(), obj)
+
+        def get_generator_genfunc(obj):
+            return new_gen_from_gi_code(self.genfunc(), obj)
+
+        self.process_tests(get_generator_genexpr)
+        self.process_tests(get_generator_genfunc)
+
+
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
     # is correctly saved/restored in PyEval_EvalFrameEx().
