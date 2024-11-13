@@ -1003,6 +1003,8 @@ LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
+host_exec_prefix
+host_prefix
 MACHDEP
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
@@ -4060,7 +4062,7 @@ then
 	*-*-emscripten)
 	    ac_sys_system=Emscripten
 	    ;;
-	*-*-wasi)
+	*-*-wasi*)
 	    ac_sys_system=WASI
 	    ;;
 	*)
@@ -4104,6 +4106,29 @@ printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
+
+
+if test -z "$host_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_prefix=/ ;; #(
+  *) :
+    host_prefix='${prefix}'
+   ;;
+esac
+fi
+
+
+if test -z "$host_exec_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_exec_prefix=$host_prefix ;; #(
+  *) :
+    host_exec_prefix='${exec_prefix}'
+   ;;
+esac
+fi
+
 
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
@@ -6168,6 +6193,8 @@ printf "%s\n" "$ac_cv_path_EGREP" >&6; }
 
 
 
+CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for CC compiler name" >&5
 printf %s "checking for CC compiler name... " >&6; }
 if test ${ac_cv_cc_name+y}
@@ -6195,9 +6222,10 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
-    ac_cv_cc_name="mpicc"
-  fi
+  if test "x$CC_BASENAME" = xmpicc
+then :
+  ac_cv_cc_name=mpicc
+fi
 else
   ac_cv_cc_name="unknown"
 fi
@@ -6415,7 +6443,7 @@ printf "%s\n" "$ac_cv_gcc_compat" >&6; }
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$CC" in
+        case "$ac_cv_cc_name" in
         gcc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}g++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}g++; ac_word=$2
@@ -6632,7 +6660,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        clang|*/clang)     if test -n "$ac_tool_prefix"; then
+        clang)             if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}clang++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}clang++; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6740,7 +6768,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        icc|*/icc)         if test -n "$ac_tool_prefix"; then
+        icc)               if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}icpc; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7058,7 +7086,7 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=2 ;; #(
   powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
-    wasm32-unknown-wasi/clang) :
+    wasm32-unknown-wasip1/clang) :
     PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
@@ -7323,6 +7351,9 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
 printf "%s\n" "$EXEEXT" >&6; }
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+ac_exeext=$EXEEXT
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 
@@ -7346,7 +7377,7 @@ rmdir CaseSensitiveTestDir
 
 case $ac_sys_system in
 hp*|HP*)
-    case $CC in
+    case $ac_cv_cc_name in
     cc|*/cc) CC="$CC -Ae";;
     esac;;
 esac
@@ -7439,7 +7470,7 @@ printf "%s\n" "$EXPORTSYMS" >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GNU ld" >&5
 printf %s "checking for GNU ld... " >&6; }
 ac_prog=ld
-if test "$GCC" = yes; then
+if test "$ac_cv_cc_name" = "gcc"; then
        ac_prog=`$CC -print-prog-name=ld`
 fi
 case `"$ac_prog" -V 2>&1 < /dev/null` in
@@ -7755,68 +7786,13 @@ else
 fi
 
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bigint" >&5
-printf %s "checking for node --experimental-wasm-bigint... " >&6; }
-if test ${ac_cv_tool_node_wasm_bigint+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bigint" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bigint" >&6; }
-      if test "x$ac_cv_tool_node_wasm_bigint" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-bigint"
-
-fi
-
-      if test "x$enable_wasm_pthreads" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-threads"
-        # no longer available in Node 16
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bulk-memory" >&5
-printf %s "checking for node --experimental-wasm-bulk-memory... " >&6; }
-if test ${ac_cv_tool_node_wasm_bulk_memory+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bulk_memory" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bulk_memory" >&6; }
-        if test "x$ac_cv_tool_node_wasm_bulk_memory" = xyes
-then :
-
-          as_fn_append HOSTRUNNER " --experimental-wasm-bulk-memory"
-
-fi
-
-fi
-
       if test "x$host_cpu" = xwasm64
 then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8365,8 +8341,9 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
-  case $CC in
-    *gcc*)
+  if test "x$ac_cv_gcc_compat" = xyes
+then :
+
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
@@ -8408,8 +8385,8 @@ else $as_nop
   :
 fi
 
-      ;;
-  esac
+
+fi
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
       DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
@@ -8436,7 +8413,7 @@ printf "%s\n" "$PROFILE_TASK" >&6; }
 
 llvm_bin_dir=''
 llvm_path="${PATH}"
-if test "${CC}" = "clang"
+if test "${ac_cv_cc_name}" = "clang"
 then
   clang_bin=`which clang`
   # Some systems install clang elsewhere as a symlink to the real path
@@ -8494,8 +8471,8 @@ printf "%s\n" "no" >&6; }
 fi
 
 if test "$Py_LTO" = 'true' ; then
-  case $CC in
-    *clang*)
+  case $ac_cv_cc_name in
+    clang)
       LDFLAGS_NOLTO="-fno-lto"
                   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
 printf %s "checking whether C compiler accepts -flto=thin... " >&6; }
@@ -8775,14 +8752,14 @@ fi
           ;;
       esac
       ;;
-    *emcc*)
+    emcc)
       if test "$Py_LTO_POLICY" != "default"; then
         as_fn_error $? "emcc supports only default lto." "$LINENO" 5
       fi
       LTOFLAGS="-flto"
       LTOCFLAGS="-flto"
       ;;
-    *gcc*)
+    gcc)
       if test $Py_LTO_POLICY = thin
       then
         as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
@@ -8948,10 +8925,8 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
 fi
 LLVM_PROF_ERR=no
 
-# GNU Autoconf recommends the use of expr instead of basename.
-CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
-case "$CC_BASENAME" in
-  *clang*)
+case "$ac_cv_cc_name" in
+  clang)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -8966,31 +8941,13 @@ case "$CC_BASENAME" in
       fi
     fi
     ;;
-  *gcc*)
-    case $ac_sys_system in
-      Darwin*)
-        PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
-        LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
-        if test "${LLVM_PROF_FOUND}" = "not-found"
-        then
-          LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-	  fi
-        fi
-        ;;
-      *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
-        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
-        LLVM_PROF_MERGER="true"
-        LLVM_PROF_FILE=""
-        ;;
-    esac
+  gcc)
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+    PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
-  *icc*)
+  icc)
     PGO_PROF_GEN_FLAG="-prof-gen"
     PGO_PROF_USE_FLAG="-prof-use"
     LLVM_PROF_MERGER="true"
@@ -9356,19 +9313,6 @@ printf "%s\n" "$BOLT_APPLY_FLAGS" >&6; }
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
-case $CC in
-    *clang*)
-        cc_is_clang=1
-        ;;
-    *)
-        if $CC --version 2>&1 | grep -q clang
-        then
-            cc_is_clang=1
-        else
-            cc_is_clang=
-        fi
-esac
-
 save_CFLAGS=$CFLAGS
 CFLAGS="-fstrict-overflow -fno-strict-overflow"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
@@ -9492,7 +9436,7 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test -n "${cc_is_clang}"
+        if test "${ac_cv_cc_name}" != "clang"
         then
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
@@ -9575,6 +9519,7 @@ fi
 then :
   wasm_debug=yes
 fi
+        as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
         as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -9990,8 +9935,9 @@ fi
 
 fi
 
-case $GCC in
-yes)
+if test "x$ac_cv_gcc_compat" = xyes
+then :
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
 
@@ -10109,8 +10055,8 @@ fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case "$CC_BASENAME" in #(
-  *icc*) :
+    case "$ac_cv_cc_name" in #(
+  icc) :
     ac_cv_disable_unused_result_warning=no
 
 
@@ -10515,22 +10461,19 @@ fi
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
-        if test "${CC}" = gcc
-        then
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking which compiler should be used" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking which compiler should be used" >&5
 printf %s "checking which compiler should be used... " >&6; }
-            case "${UNIVERSALSDK}" in
-            */MacOSX10.4u.sdk)
-                # Build using 10.4 SDK, force usage of gcc when the
-                # compiler is gcc, otherwise the user will get very
-                # confusing error messages when building on OSX 10.6
-                CC=gcc-4.0
-                CPP=cpp-4.0
-                ;;
-            esac
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC" >&5
+        case "${UNIVERSALSDK}" in
+        */MacOSX10.4u.sdk)
+            # Build using 10.4 SDK, force usage of gcc when the
+            # compiler is gcc, otherwise the user will get very
+            # confusing error messages when building on OSX 10.6
+            CC=gcc-4.0
+            CPP=cpp-4.0
+            ;;
+        esac
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC" >&5
 printf "%s\n" "$CC" >&6; }
-        fi
 
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
@@ -10676,9 +10619,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
         # end of Darwin* tests
         ;;
     esac
-    ;;
 
-*)
+else $as_nop
+
     case $ac_sys_system in
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
@@ -10687,18 +10630,18 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
     esac
-    ;;
-esac
 
-case "$CC_BASENAME" in
-*mpicc*)
+fi
+
+case "$ac_cv_cc_name" in
+mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
-*icc*)
+icc)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
-*xlc*)
+xlc)
     CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
@@ -13221,7 +13164,7 @@ then
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -13229,7 +13172,7 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -13322,7 +13265,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -13366,13 +13309,13 @@ printf %s "checking CCSHARED... " >&6; }
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$GCC" = yes;
+	SunOS*) if test "$ac_cv_gcc_compat" = "yes";
 		then CCSHARED="-fPIC";
 		elif test `uname -p` = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
-	hp*|HP*) if test "$GCC" = yes;
+	hp*|HP*) if test "$ac_cv_gcc_compat" = "yes";
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
@@ -13387,12 +13330,12 @@ fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
 		fi;;
 	SCO_SV*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
@@ -13452,13 +13395,13 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $CC in
-		  *gcc*)
+    SunOS/5*) if test "$ac_cv_gcc_compat" = "yes"; then
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
-		  esac;;
+		    fi
+        fi
+		;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then
@@ -15063,8 +15006,15 @@ if test ${ac_cv_ffi_complex_double_supported+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_save_cc="$CC"
-CC="$CC -lffi"
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+ CPPFLAGS="$LIBFFI_CFLAGS $CPPFLAGS"
+ LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+ LIBS="$LIBFFI_LIBS $LIBS"
 if test "$cross_compiling" = yes
 then :
   ac_cv_ffi_complex_double_supported=no
@@ -15106,7 +15056,13 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
@@ -15336,7 +15292,7 @@ esac
        fi
    elif test $ac_cv_sizeof_size_t -eq 4; then
        if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           case $CC in #(
+           case $ac_cv_cc_name in #(
   *gcc*) :
     libmpdec_machine=ppro ;; #(
   *clang*) :
@@ -20491,10 +20447,89 @@ fi
 printf "%s\n" "$ac_cv_lib_resolv_inet_aton" >&6; }
 if test "x$ac_cv_lib_resolv_inet_aton" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBRESOLV 1" >>confdefs.h
+  SOCKET_LIBS="-lresolv"
+fi
 
-  LIBS="-lresolv $LIBS"
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lc" >&5
+printf %s "checking for hstrerror in -lc... " >&6; }
+if test ${ac_cv_lib_c_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_c_hstrerror=yes
+else $as_nop
+  ac_cv_lib_c_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_c_hstrerror" >&6; }
+if test "x$ac_cv_lib_c_hstrerror" = xyes
+then :
+  $ac_cv_prog_TRUE
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lresolv" >&5
+printf %s "checking for hstrerror in -lresolv... " >&6; }
+if test ${ac_cv_lib_resolv_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lresolv  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_resolv_hstrerror=yes
+else $as_nop
+  ac_cv_lib_resolv_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_resolv_hstrerror" >&6; }
+if test "x$ac_cv_lib_resolv_hstrerror" = xyes
+then :
+  SOCKET_LIBS="-lresolv"
 fi
 
 
@@ -24123,18 +24158,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest$EXEEXT >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest$EXEEXT >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -24144,7 +24187,8 @@ fi
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
 printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
@@ -24152,41 +24196,34 @@ printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
 case $ax_cv_c_float_words_bigendian in
   yes)
 
-printf "%s\n" "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
  ;;
   no)
-     ;;
+
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;;
   *)
-    as_fn_error $? "
+    case $host_cpu in #(
+  *arm*) :
+    # Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
 
-Unknown float word ordering. You need to manually preset
-ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  wasm*) :
 
-    " "$LINENO" 5 ;;
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  *) :
+    as_fn_error $? "Unknown float word ordering. You need to manually preset ax_cv_c_float_words_bigendian=no (or yes) according to your system." "$LINENO" 5 ;;
+esac ;;
 esac
 
 
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-
-printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
-
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-
-printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
-  # or little, then it must be this?
-
-printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
-
-fi
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -28016,7 +28053,6 @@ done
 
 SRCDIRS="\
   Modules \
-  Modules/_blake2 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
@@ -28139,8 +28175,8 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
     # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $CC in
-        *gcc*)
+    case $ac_cv_cc_name in
+        gcc)
             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc ipa-pure-const bug" >&5
 printf %s "checking for gcc ipa-pure-const bug... " >&6; }
             saved_cflags="$CFLAGS"
@@ -29179,7 +29215,7 @@ case $ac_sys_system in #(
 
     py_cv_module__scproxy=n/a
  ;; #(
-  Emscripten|WASI) :
+  Emscripten) :
 
 
 
@@ -29201,9 +29237,6 @@ case $ac_sys_system in #(
     py_cv_module_syslog=n/a
     py_cv_module_=n/a
 
-    case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-
 
 
     py_cv_module_fcntl=n/a
@@ -29211,10 +29244,28 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_=n/a
 
-       ;; #(
-  Emscripten/node*) :
-     ;; #(
-  WASI/*) :
+   ;; #(
+  WASI) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__interpreters=n/a
+    py_cv_module__interpchannels=n/a
+    py_cv_module__interpqueues=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
 
 
 
@@ -29230,11 +29281,6 @@ case $ac_sys_system in #(
     py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
-
-     ;; #(
-  *) :
-     ;;
-esac
    ;; #(
   *) :
 
@@ -29992,7 +30038,7 @@ fi
 then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET_LDFLAGS=$SOCKET_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__socket" = yes; then
@@ -30693,7 +30739,8 @@ esac
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
-if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
@@ -30760,11 +30807,12 @@ fi
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
 #
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}

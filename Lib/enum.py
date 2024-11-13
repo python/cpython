@@ -557,22 +557,16 @@ class EnumType(type):
         classdict['_all_bits_'] = 0
         classdict['_inverted_'] = None
         try:
-            exc = None
             classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
             classdict['_%s__in_progress' % cls] = False
             delattr(enum_class, '_%s__in_progress' % cls)
         except Exception as e:
-            # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
-            # is tacked on to the error instead of raising a RuntimeError
-            # recreate the exception to discard
-            exc = type(e)(str(e))
-            exc.__cause__ = e.__cause__
-            exc.__context__ = e.__context__
-            tb = e.__traceback__
-        if exc is not None:
-            raise exc.with_traceback(tb)
-        #
+            # since 3.12 the note "Error calling __set_name__ on '_proto_member' instance ..."
+            # is tacked on to the error instead of raising a RuntimeError, so discard it
+            if hasattr(e, '__notes__'):
+                del e.__notes__
+            raise
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
         #

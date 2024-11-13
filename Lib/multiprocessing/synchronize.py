@@ -21,22 +21,21 @@ from . import context
 from . import process
 from . import util
 
-# Try to import the mp.synchronize module cleanly, if it fails
-# raise ImportError for platforms lacking a working sem_open implementation.
-# See issue 3770
+# TODO: Do any platforms still lack a functioning sem_open?
 try:
     from _multiprocessing import SemLock, sem_unlink
-except (ImportError):
+except ImportError:
     raise ImportError("This platform lacks a functioning sem_open" +
-                      " implementation, therefore, the required" +
-                      " synchronization primitives needed will not" +
-                      " function, see issue 3770.")
+                      " implementation. https://github.com/python/cpython/issues/48020.")
 
 #
 # Constants
 #
 
-RECURSIVE_MUTEX, SEMAPHORE = list(range(2))
+# These match the enum in Modules/_multiprocessing/semaphore.c
+RECURSIVE_MUTEX = 0
+SEMAPHORE = 1
+
 SEM_VALUE_MAX = _multiprocessing.SemLock.SEM_VALUE_MAX
 
 #
@@ -174,7 +173,7 @@ class Lock(SemLock):
                 name = process.current_process().name
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name = 'None'
             elif self._semlock._count() > 0:
                 name = 'SomeOtherThread'
@@ -200,7 +199,7 @@ class RLock(SemLock):
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
                 count = self._semlock._count()
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name, count = 'None', 0
             elif self._semlock._count() > 0:
                 name, count = 'SomeOtherThread', 'nonzero'
