@@ -981,7 +981,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return PyCData_AtAddress(st, type, address);
     }
 
-#ifdef USE_DLERROR
+    #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
@@ -989,10 +989,12 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
             PyErr_SetObject(PyExc_ValueError, message);
             return NULL;
         }
+        // Ignore errors from PyUnicode_DecodeLocale,
+        // fall back to the generic error below.
+        PyErr_Clear();
     }
-#endif
+    #endif
 #undef USE_DLERROR
-
     PyErr_Format(PyExc_ValueError,
                  "symbol '%s' not found",
                  name);
@@ -3813,6 +3815,9 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(ftuple);
                 return NULL;
             }
+            // Ignore errors from PyUnicode_DecodeLocale,
+            // fall back to the generic error below.
+            PyErr_Clear();
         }
 	#endif
         PyErr_Format(PyExc_AttributeError,

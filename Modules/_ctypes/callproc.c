@@ -1638,7 +1638,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     ptr = dlsym((void*)handle, name);
     if (ptr)
         return PyLong_FromVoidPtr(ptr);
-#ifdef USE_DLERROR
+	#ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
         PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
@@ -1646,9 +1646,12 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
             PyErr_SetObject(PyExc_OSError, message);
             return NULL;
         }
+        // Ignore errors from PyUnicode_DecodeLocale,
+        // fall back to the generic error below.
+        PyErr_Clear();
     }
-#endif
-#undef USE_DLERROR
+	#endif
+	#undef USE_DLERROR
     PyErr_Format(PyExc_OSError,
                  "symbol '%s' not found",
                  name);
