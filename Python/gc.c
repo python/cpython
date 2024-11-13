@@ -1369,36 +1369,6 @@ visit_add_to_container(PyObject *op, void *arg)
     return 0;
 }
 
-static Py_ssize_t
-expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCState *gcstate)
-{
-    struct container_and_flag arg = {
-        .container = container,
-        .visited_space = gcstate->visited_space,
-        .size = 0
-    };
-    assert(GC_NEXT(gc) == container);
-    while (gc != container) {
-        /* Survivors will be moved to visited space, so they should
-         * have been marked as visited */
-        assert(IS_IN_VISITED(gc, gcstate->visited_space));
-        PyObject *op = FROM_GC(gc);
-        assert(_PyObject_GC_IS_TRACKED(op));
-        if (_Py_IsImmortal(op)) {
-            PyGC_Head *next = GC_NEXT(gc);
-            gc_list_move(gc, &get_gc_state()->permanent_generation.head);
-            gc = next;
-            continue;
-        }
-        traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-                        visit_add_to_container,
-                        &arg);
-        gc = GC_NEXT(gc);
-    }
-    return arg.size;
-}
-
 /* Do bookkeeping for a completed GC cycle */
 static void
 completed_cycle(GCState *gcstate)
@@ -1611,7 +1581,6 @@ mark_at_start(PyThreadState *tstate)
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     Py_ssize_t objects_marked = mark_global_roots(tstate->interp, visited, gcstate->visited_space);
     objects_marked += mark_stacks(tstate->interp, visited, gcstate->visited_space, true);
-    gcstate->work_to_do -= objects_marked;
     gcstate->phase = GC_PHASE_COLLECT;
     return objects_marked;
 }
@@ -1675,19 +1644,22 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
     PyGC_Head increment;
     gc_list_init(&increment);
-    gc_list_merge(&gcstate->young.head, &increment);
+    PyGC_Head working;
+    gc_list_init(&working);
+    gc_list_merge(&gcstate->young.head, &working);
     gc_list_validate_space(&increment, gcstate->visited_space);
-    Py_ssize_t increment_size = 0;
+    Py_ssize_t increment_size = move_all_transitively_reachable(&working, &increment, gcstate->visited_space);
+    assert(gc_list_is_empty(&working));
     while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
             break;
         }
         PyGC_Head *gc = _PyGCHead_NEXT(not_visited);
-        gc_list_move(gc, &increment);
-        increment_size++;
+        gc_list_move(gc, &working);
         assert(!_Py_IsImmortal(FROM_GC(gc)));
         gc_set_old_space(gc, gcstate->visited_space);
-        increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
+        increment_size += move_all_transitively_reachable(&working, &increment, gcstate->visited_space);
+        assert(gc_list_is_empty(&working));
     }
     GC_STAT_ADD(1, objects_not_transitively_reachable, increment_size);
     gc_list_validate_space(&increment, gcstate->visited_space);
