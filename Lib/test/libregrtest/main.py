@@ -123,7 +123,7 @@ class Regrtest:
             self.python_cmd = None
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
-        self.tmp_dir: StrPath | None = ns.tempdir
+        self._tmp_dir: StrPath | None = ns.tempdir
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -159,6 +159,8 @@ class Regrtest:
         self.logger.log(line)
 
     def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        if tests is None:
+            tests = []
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
@@ -454,6 +456,11 @@ class Regrtest:
             self.results.write_junit(self.junit_filename)
 
     def display_summary(self) -> None:
+        if self.first_runtests is None:
+            raise ValueError(
+                "Should never call `display_summary()` before calling `_run_test()`"
+            )
+
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
 
@@ -708,7 +715,15 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        self.tmp_dir = get_temp_dir(self.tmp_dir)
+        self._tmp_dir = get_temp_dir(self._tmp_dir)
+
+    @property
+    def tmp_dir(self) -> StrPath:
+        if self._tmp_dir is None:
+            raise ValueError(
+                "Should never use `.tmp_dir` before calling `.main()`"
+            )
+        return self._tmp_dir
 
     def main(self, tests: TestList | None = None) -> NoReturn:
         if self.want_add_python_opts:
