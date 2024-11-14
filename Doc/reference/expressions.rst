@@ -1156,7 +1156,7 @@ a user-defined function:
    first thing the code block will do is bind the formal parameters to the
    arguments; this is described in section :ref:`function`.  When the code block
    executes a :keyword:`return` statement, this specifies the return value of the
-   function call.  If execution falls off the end of the code block without
+   function call.  If execution reaches the end of the code block without
    executing a :keyword:`return` statement, the return value is ``None``.
 
 a built-in function or method:
