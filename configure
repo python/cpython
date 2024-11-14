@@ -9448,6 +9448,8 @@ then :
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
+    as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH"
+        as_fn_append LDFLAGS_NODIST " -sEXIT_RUNTIME"
     as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
