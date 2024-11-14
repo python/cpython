@@ -14,7 +14,7 @@ FOO_C = r"""
    Adapted from Michael Kerrisk's answer: https://stackoverflow.com/a/53590014.
 */
 
-asm (".type foo, @gnu_indirect_function");
+asm (".type foo STT_GNU_IFUNC");
 
 void *foo(void)
 {
