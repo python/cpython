@@ -504,7 +504,7 @@ performing garbage collection by at least half.
 
 We use the same technique of forming a transitive closure as the incremental
 collector does to find reachable objects, seeding the list with some global
-objects and the current frame of each stack.
+objects and the currently executing frames.
 
 This phase moves objects to the `visited` space, as follows:
 
@@ -515,10 +515,13 @@ set of reachable objects.
    1. Pop an object from the set and move it to the `visited` space
    2. For each object directly reachable from that object:
       * If it is not already in `visited` space and it is a GC object,
-        then add it to the working set
+        add it to the working set
 
-Before each increment of collection is performed, the working set is updated to
-include any new stack frames that have been created since the last increment.
+
+Before each increment of collection is performed, the stacks are scanned
+to check for any new stack frames that have been created since the last
+increment. All objects directly referred to from those stack frames are
+added to the working set.
 Then the above algorithm is repeated, starting from step 2.
 
 
@@ -570,8 +573,8 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
   currently in.  Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
 
-Optimization: delayed untracking containers
-===========================================
+Optimization: delayed untracking of containers
+==============================================
 
 Certain types of containers cannot participate in a reference cycle, and so do
 not need to be tracked by the garbage collector. Untracking these objects
