@@ -45,16 +45,20 @@ bytes-like objects.
 
 Not all Python object types are supported; in general, only objects whose value
 is independent from a particular invocation of Python can be written and read by
-this module.  The following types are supported: booleans, integers, floating-point
-numbers, complex numbers, strings, bytes, bytearrays, tuples, lists, sets,
-frozensets, dictionaries, slices, and code objects (if *allow_code* is true),
-where it should be understood that
-tuples, lists, sets, frozensets, dictionaries, and slices are only supported as long as
-the values contained therein are themselves supported.  The
-singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration` can also be
-marshalled and unmarshalled.
-Note that earlier versions of the format do not support all features,
-see :data:`version` or the changelog below for details.
+this module.  The following types are supported:
+
+* Numeric types: :class:`int`, :class:`bool`, :class:`float`, :class:`complex`.
+* Strings (:class:`str`) and :class:`bytes`.
+  :term:`Bytes-like objects <bytes-like object>` like :class:`bytearray` are
+  marshalled as :class:`!bytes`.
+* Containers: :class:`tuple`, :class:`list`, :class:`set`, :class:`frozenset`,
+  and (since :data:`version` 5), :class:`slice`.
+  It should be understood that these are supported only if the values contained
+  therein are themselves supported.
+  Recursive containers are supported since :data:`version` 3.
+* The singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration`.
+* :class:`code` objects, if *allow_code* is true. See note above about
+  version dependence.
 
 .. versionchanged:: 3.4
 
@@ -168,7 +172,7 @@ In addition, the following constants are defined:
    ------- --------------- ----------------------------------------------------
    4       Python 3.4      Efficient representation of short strings
    ------- --------------- ----------------------------------------------------
-   5       Python 3.14     Support for slice objects
+   5       Python 3.14     Support for :class:`slice` objects
    ======= =============== ====================================================
 
 
