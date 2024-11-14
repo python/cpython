@@ -1,0 +1,3 @@
+Limit starting a patcher (from :func:`unittest.mock.patch` or
+:func:`unittest.mock.patch.object`) more than
+once without stopping it
