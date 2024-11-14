@@ -306,11 +306,6 @@ def getFilesForName(name):
     return []
 
 
-def _is_def_or_class_keyword(token):
-    ttype, tstring, *_ = token
-    return ttype == tokenize.NAME and tstring in ('def', 'class')
-
-
 class TokenEater:
     def __init__(self, options):
         self.__options = options
