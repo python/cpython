@@ -3547,13 +3547,10 @@ class RawTurtle(TPen, TNavigator):
 
     @contextmanager
     def poly(self):
-        """Record the vertices of a polygon.
+        """A context manager for recording the vertices of a polygon.
 
-        No argument.
-
-        Record the vertices of a polygon. Current turtle position is first point
-        of polygon. This function sets up a context manager that will
-        automatically end recording once exited.
+        Implicitly ensures that the code block is wrapped with
+        begin_poly() and end_poly()
 
         Example (for a Turtle instance named turtle) where we create a
         triangle as the polygon and move the turtle 100 steps forward:

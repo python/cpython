@@ -216,10 +216,9 @@ useful when working with learners for whom typing is not a skill.
 Automatically begin and end filling
 -----------------------------------
 
-If you have Python 3.14 or later, you don't need to call :func:`begin_fill` and
-:func:`end_fill` for filling. Instead, you can use the :func:`fill`
-:term:`context manager` to automatically begin and end fill. Here is an
-example::
+Starting with Python 3.14, you can use the :func:`fill` :term:`context manager`
+instead of :func:`begin_fill` and :func:`end_fill` to automatically begin and
+end fill. Here is an example::
 
    with fill():
        for i in range(4):
@@ -2004,11 +2003,9 @@ Animation control
       :skipif: _tkinter is None
 
       >>> with screen.no_animation():
-      ...     dist = 2
-      ...     for i in range(200):
+      ...     for dist in range(2, 400, 2):
       ...         fd(dist)
       ...         rt(90)
-      ...         dist += 2
 
    .. versionadded:: next
 
