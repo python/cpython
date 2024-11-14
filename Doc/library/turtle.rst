@@ -1315,7 +1315,7 @@ Filling
       >>> with turtle.fill():
       ...     turtle.circle(80)
 
-   Using ``fill``  is equivalent to adding the :func:`begin_fill` before the
+   Using :func:`!fill` is equivalent to adding the :func:`begin_fill` before the
    fill-block and :func:`end_fill` after the fill-block:
 
    .. doctest::
@@ -1996,9 +1996,9 @@ Animation control
 
 .. function:: no_animation()
 
-   Temporarilly disable turtle animation. The code written inside the
-   ``no_animation`` block will not be animated, and once the code block is
-   exited, the drawing will appear.
+   Temporarily disable turtle animation. The code written inside the
+   ``no_animation`` block will not be animated;
+   once the code block is exited, the drawing will appear.
 
    .. doctest::
       :skipif: _tkinter is None
