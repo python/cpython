@@ -709,8 +709,11 @@ class BaseTestUUID:
             random_data = random_bits.to_bytes(10)
 
             with (
-                mock.patch.object(self.uuid, '_last_timestamp_v7', None),
-                mock.patch.object(self.uuid, '_last_counter_v7', 0),
+                mock.patch.multiple(
+                    self.uuid,
+                    _last_timestamp_v7=None,
+                    _last_counter_v7=0,
+                ),
                 mock.patch('time.time_ns', return_value=timestamp_ns),
                 mock.patch('os.urandom', return_value=random_data) as urand
             ):
@@ -722,13 +725,13 @@ class BaseTestUUID:
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 equal(self.uuid._last_counter_v7, counter)
 
-                unix_ts_ms = timestamp_ms & 0xffffffffffff
-                equal((u.int >> 80) & 0xffffffffffff, unix_ts_ms)
+                unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+                equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
 
-                equal((u.int >> 75) & 1, 0)   # check that the MSB is 0
+                equal((u.int >> 75) & 1, 0)  # check that the MSB is 0
                 equal((u.int >> 64) & 0xfff, counter_hi)
-                equal((u.int >> 32) & 0x3fffffff, counter_lo)
-                equal(u.int & 0xffffffff, tail)
+                equal((u.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u.int & 0xffff_ffff, tail)
 
     def test_uuid7_uniqueness(self):
         # Test that UUIDv7-generated values are unique.
@@ -748,13 +751,18 @@ class BaseTestUUID:
         us = [self.uuid.uuid7() for _ in range(10_000)]
         equal(us, sorted(us))
 
-        with mock.patch.multiple(self.uuid, _last_timestamp_v7=0, _last_counter_v7=0):
+        with mock.patch.multiple(
+            self.uuid,
+            _last_timestamp_v7=0,
+            _last_counter_v7=0
+        ):
             # 1 Jan 2023 12:34:56.123_456_789
             timestamp_ns = 1672533296_123_456_789  # ns precision
             timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
 
+            # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
             counter_hi = random.getrandbits(11)
-            counter_lo = random.getrandbits(29)  # make sure that +1 does not overflow
+            counter_lo = random.getrandbits(29)
             counter = (counter_hi << 30) | counter_lo
 
             tail = random.getrandbits(32)
@@ -770,10 +778,10 @@ class BaseTestUUID:
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 equal(self.uuid._last_counter_v7, counter)
                 equal((u1.int >> 64) & 0xfff, counter_hi)
-                equal((u1.int >> 32) & 0x3fffffff, counter_lo)
-                equal(u1.int & 0xffffffff, tail)
+                equal((u1.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u1.int & 0xffff_ffff, tail)
 
-            # 1 Jan 2023 12:34:56.123_457_032 (same millisecond but not same prec)
+            # 1 Jan 2023 12:34:56.123_457_032 (same millisecond but not same ns)
             next_timestamp_ns = 1672533296_123_457_032
             next_timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
             equal(timestamp_ms, next_timestamp_ms)
@@ -789,11 +797,11 @@ class BaseTestUUID:
                 urand.assert_called_once_with(4)
                 # same milli-second
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
-                # counter advanced by 1
+                # 42-bit counter advanced by 1
                 equal(self.uuid._last_counter_v7, counter + 1)
                 equal((u2.int >> 64) & 0xfff, counter_hi)
-                equal((u2.int >> 32) & 0x3fffffff, counter_lo + 1)
-                equal(u2.int & 0xffffffff, next_fail)
+                equal((u2.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+                equal(u2.int & 0xffff_ffff, next_fail)
 
             self.assertLess(u1, u2)
 
@@ -804,32 +812,36 @@ class BaseTestUUID:
         timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
         fake_last_timestamp_v7 = timestamp_ms + 1
 
+        # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
         counter_hi = random.getrandbits(11)
-        counter_lo = random.getrandbits(29)  # make sure that +1 does not overflow
+        counter_lo = random.getrandbits(29)
         counter = (counter_hi << 30) | counter_lo
 
         tail_bytes = os.urandom(4)
         tail = int.from_bytes(tail_bytes)
 
         with (
-            mock.patch.object(self.uuid, '_last_timestamp_v7', fake_last_timestamp_v7),
-            mock.patch.object(self.uuid, '_last_counter_v7', counter),
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=fake_last_timestamp_v7,
+                _last_counter_v7=counter,
+            ),
             mock.patch('time.time_ns', return_value=timestamp_ns),
-            mock.patch('os.urandom', return_value=tail_bytes) as os_urandom_fake
+            mock.patch('os.urandom', return_value=tail_bytes) as urand
         ):
             u = self.uuid.uuid7()
-            os_urandom_fake.assert_called_once_with(4)
+            urand.assert_called_once_with(4)
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 7)
             equal(self.uuid._last_timestamp_v7, fake_last_timestamp_v7 + 1)
-            unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffffffffffff
-            equal((u.int >> 80) & 0xffffffffffff, unix_ts_ms)
-            # counter advanced by 1
+            unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffff_ffff_ffff
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # 42-bit counter advanced by 1
             equal(self.uuid._last_counter_v7, counter + 1)
             equal((u.int >> 64) & 0xfff, counter_hi)
-            # counter advanced by 1 (constructed so that counter_hi is unchanged)
-            equal((u.int >> 32) & 0x3fffffff, counter_lo + 1)
-            equal(u.int & 0xffffffff, tail)
+            # 42-bit counter advanced by 1 (counter_hi is untouched)
+            equal((u.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+            equal(u.int & 0xffff_ffff, tail)
 
     def test_uuid7_overflow_counter(self):
         equal = self.assertEqual
@@ -846,9 +858,12 @@ class BaseTestUUID:
         random_data = random_bits.to_bytes(10)
 
         with (
-            mock.patch.object(self.uuid, '_last_timestamp_v7', timestamp_ms),
-            # same timestamp, but force an overflow on the counter
-            mock.patch.object(self.uuid, '_last_counter_v7', 0x3ffffffffff),
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=timestamp_ms,
+                # same timestamp, but force an overflow on the counter
+                _last_counter_v7=0x3ff_ffff_ffff,
+            ),
             mock.patch('time.time_ns', return_value=timestamp_ns),
             mock.patch('os.urandom', return_value=random_data) as urand
         ):
@@ -858,13 +873,13 @@ class BaseTestUUID:
             equal(u.version, 7)
             # timestamp advanced due to overflow
             equal(self.uuid._last_timestamp_v7, timestamp_ms + 1)
-            unix_ts_ms = (timestamp_ms + 1) & 0xffffffffffff
-            equal((u.int >> 80) & 0xffffffffffff, unix_ts_ms)
-            # counter overflow, so we picked a new one
+            unix_ts_ms = (timestamp_ms + 1) & 0xffff_ffff_ffff
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # counter overflowed, so we picked a new one
             equal(self.uuid._last_counter_v7, new_counter)
             equal((u.int >> 64) & 0xfff, new_counter_hi)
-            equal((u.int >> 32) & 0x3fffffff, new_counter_lo)
-            equal(u.int & 0xffffffff, tail)
+            equal((u.int >> 32) & 0x3fff_ffff, new_counter_lo)
+            equal(u.int & 0xffff_ffff, tail)
 
     def test_uuid8(self):
         equal = self.assertEqual
