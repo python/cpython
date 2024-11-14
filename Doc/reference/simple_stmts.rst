@@ -408,7 +408,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
-built-in variable :const:`__debug__` is ``True`` under normal circumstances,
+built-in variable ``__debug__`` is ``True`` under normal circumstances,
 ``False`` when optimization is requested (command line option :option:`-O`).  The current
 code generator emits no code for an :keyword:`assert` statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
@@ -533,7 +533,7 @@ The :keyword:`!yield` statement
    yield_stmt: `yield_expression`
 
 A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
-expression <yieldexpr>`. The :keyword:`yield` statement can be used to omit the
+expression <yieldexpr>`. The ``yield`` statement can be used to omit the
 parentheses that would otherwise be required in the equivalent yield expression
 statement. For example, the yield statements ::
 
