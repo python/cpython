@@ -1327,8 +1327,8 @@ Deprecated
 
 * Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
   Python 3.10 via :pep:`626`,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12,
-  therefore it will be removed in 3.14.
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.15.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 .. include:: ../deprecations/pending-removal-in-3.13.rst
@@ -1340,6 +1340,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. _whatsnew312-removed:
 
 Removed
 =======
@@ -1365,6 +1367,8 @@ configparser
     shorter :class:`~configparser.ConfigParser` name instead.
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+.. _whatsnew312-removed-distutils:
 
 distutils
 ---------
@@ -1446,6 +1450,8 @@ importlib
 
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+.. _whatsnew312-removed-imp:
 
 imp
 ---
