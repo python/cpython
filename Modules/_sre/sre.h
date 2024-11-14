@@ -34,6 +34,11 @@ typedef struct {
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
     int isbytes; /* pattern type (1 - bytes, 0 - string, -1 - None) */
+#ifdef Py_DEBUG
+    /* for simulation of user interruption */
+    int fail_after_count;
+    PyObject *fail_after_exc;
+#endif
     /* pattern code */
     Py_ssize_t codesize;
     SRE_CODE code[1];
@@ -68,6 +73,9 @@ typedef struct SRE_REPEAT_T {
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */
     const void* last_ptr; /* helper to check for infinite loops */
     struct SRE_REPEAT_T *prev; /* points to previous repeat context */
+    /* links for double-linked list of all repeat contexts */
+    struct SRE_REPEAT_T *nextlink;
+    struct SRE_REPEAT_T *prevlink;
 } SRE_REPEAT;
 
 typedef struct {
@@ -95,12 +103,18 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    /* linked list of all repeat contexts */
+    SRE_REPEAT *repeats;
     unsigned int sigcount;
+#ifdef Py_DEBUG
+    int fail_after_count;
+    PyObject *fail_after_exc;
+#endif
 } SRE_STATE;
 
 typedef struct {
     PyObject_HEAD
-    PyObject* pattern;
+    PatternObject* pattern;
     SRE_STATE state;
     int executing;
 } ScannerObject;
