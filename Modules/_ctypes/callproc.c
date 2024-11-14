@@ -1636,8 +1636,9 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
         (void)dlerror();
     #endif
     ptr = dlsym((void*)handle, name);
-    if (ptr)
+    if (ptr) {
         return PyLong_FromVoidPtr(ptr);
+    }
 	#ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
