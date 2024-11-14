@@ -10,11 +10,11 @@ extern "C" {
 
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
-    // Pointer to next object in the list.
+    // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
     uintptr_t _gc_next;
 
-    // Pointer to previous object in the list.
+    // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     uintptr_t _gc_prev;
 } PyGC_Head;
