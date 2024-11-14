@@ -343,7 +343,7 @@ class Event(object):
             return self._flag.value == 1
 
     def set(self):
-        # If `set` is called from a signal handler, this is fine as the lock is recursive (i.e. it won't deadlock).
+        # If set() is called from a signal handler, this is fine as the lock is recursive (i.e. it won't deadlock).
         # If the thread interrupted by the signal handler is wait()-ing and the signal handler calls set(),
         # this is fine as wait() spins on the value. Thus, after the signal handler is done, the thread will
         # return from wait()
@@ -351,18 +351,20 @@ class Event(object):
         with self._flag:
             with self._set_id:
                 if self._flag.value == 0:
-                    # There is a theoretical chance of race here. It requires the following conditions:
+                    # There is a theoretical chance of a race here. It requires the following conditions:
                     # The interrupted thread must be wait()ing.
-                    # Then set must be called reentrant for the maximum value of c_ulonglong times,
-                    # and all interruptions must happen exactly after `if self._flag.value == 0:`.
+                    # Then set() must be called reentrant for the maximum value of c_ulonglong + 1 times, i.e.
+                    # ./python.exe -c 'from ctypes import *; print(256**sizeof(c_ulonglong()))', which
+                    # evaluates to 18446744073709551616 on a 64 bit machine.
+                    # All interruptions must happen exactly after `if self._flag.value == 0:`.
                     # The _set_id value will then wrap around. Then clear() must be called
                     # before the original wait() code continues. The wait() code will then continue
-                    # to (incorrectly) wait. I think this case is safe to ignore. The stack
-                    # will grow too large before there is any chance of this actually happening.
+                    # to (incorrectly) wait. This case should be safe to ignore. The stack
+                    # will probably grow too large before there is any chance of this actually happening.
 
                     self._flag.value = 1
                     self._set_id.value += 1
-                    # There is no race here by reentrant set when reaching the maximum value for `self._set_id.value`.
+                    # There is no race here by reentrant set() when reaching the maximum value for `self._set_id.value`.
                     # ctypes.c_ulonglong will overflow without any exception:
                     # https://docs.python.org/3/library/ctypes.html#ctypes.c_ulonglong
                     # > no overflow checking is done.
