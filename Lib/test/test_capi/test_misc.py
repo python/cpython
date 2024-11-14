@@ -25,7 +25,6 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
-from test.support import suppress_immortalization
 from test.support import expected_failure_if_gil_disabled
 from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
@@ -481,7 +480,6 @@ class CAPITest(unittest.TestCase):
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -499,7 +497,6 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
         self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
         class A(_testcapi.HeapGcCType):
             def __init__(self):
@@ -1144,6 +1141,77 @@ class CAPITest(unittest.TestCase):
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
+    def test_get_base_by_token(self):
+        def get_base_by_token(src, key, comparable=True):
+            def run(use_mro):
+                find_first = _testcapi.pytype_getbasebytoken
+                ret1, result = find_first(src, key, use_mro, True)
+                ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertIn(ret1, (0, 1))
+                self.assertEqual(ret1, result is not None)
+                self.assertEqual(ret1, ret2)
+                self.assertIsNone(no_result)
+                return result
+
+            found_in_mro = run(True)
+            found_in_bases = run(False)
+            if comparable:
+                self.assertIs(found_in_mro, found_in_bases)
+                return found_in_mro
+            return found_in_mro, found_in_bases
+
+        create_type = _testcapi.create_type_with_token
+        get_token = _testcapi.get_tp_token
+
+        Py_TP_USE_SPEC = _testcapi.Py_TP_USE_SPEC
+        self.assertEqual(Py_TP_USE_SPEC, 0)
+
+        A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
+        self.assertTrue(get_token(A1) != Py_TP_USE_SPEC)
+
+        B1 = create_type('_testcapi.B1', id(self))
+        self.assertTrue(get_token(B1) == id(self))
+
+        tokenA1 = get_token(A1)
+        # find A1 from A1
+        found = get_base_by_token(A1, tokenA1)
+        self.assertIs(found, A1)
+
+        # no token in static types
+        STATIC = type(1)
+        self.assertEqual(get_token(STATIC), 0)
+        found = get_base_by_token(STATIC, tokenA1)
+        self.assertIs(found, None)
+
+        # no token in pure subtypes
+        class A2(A1): pass
+        self.assertEqual(get_token(A2), 0)
+        # find A1
+        class Z(STATIC, B1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, A1)
+
+        # searching for NULL token is an error
+        with self.assertRaises(SystemError):
+            get_base_by_token(Z, 0)
+        with self.assertRaises(SystemError):
+            get_base_by_token(STATIC, 0)
+
+        # share the token with A1
+        C1 = create_type('_testcapi.C1', tokenA1)
+        self.assertTrue(get_token(C1) == tokenA1)
+
+        # find C1 first by shared token
+        class Z(C1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, C1)
+        # B1 not found
+        found = get_base_by_token(Z, get_token(B1))
+        self.assertIs(found, None)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getbasebytoken(
+                'not a type', id(self), True, False)
 
     def test_gen_get_code(self):
         def genf(): yield

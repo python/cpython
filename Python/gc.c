@@ -1944,6 +1944,13 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
     }
 }
 
+static void
+finalize_unlink_gc_head(PyGC_Head *gc) {
+    PyGC_Head *prev = GC_PREV(gc);
+    PyGC_Head *next = GC_NEXT(gc);
+    _PyGCHead_SET_NEXT(prev, next);
+    _PyGCHead_SET_PREV(next, prev);
+}
 
 void
 _PyGC_Fini(PyInterpreterState *interp)
@@ -1952,9 +1959,25 @@ _PyGC_Fini(PyInterpreterState *interp)
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 
-    /* We expect that none of this interpreters objects are shared
-       with other interpreters.
-       See https://github.com/python/cpython/issues/90228. */
+    /* Prevent a subtle bug that affects sub-interpreters that use basic
+     * single-phase init extensions (m_size == -1).  Those extensions cause objects
+     * to be shared between interpreters, via the PyDict_Update(mdict, m_copy) call
+     * in import_find_extension().
+     *
+     * If they are GC objects, their GC head next or prev links could refer to
+     * the interpreter _gc_runtime_state PyGC_Head nodes.  Those nodes go away
+     * when the interpreter structure is freed and so pointers to them become
+     * invalid.  If those objects are still used by another interpreter and
+     * UNTRACK is called on them, a crash will happen.  We untrack the nodes
+     * here to avoid that.
+     *
+     * This bug was originally fixed when reported as gh-90228.  The bug was
+     * re-introduced in gh-94673.
+     */
+    finalize_unlink_gc_head(&gcstate->young.head);
+    finalize_unlink_gc_head(&gcstate->old[0].head);
+    finalize_unlink_gc_head(&gcstate->old[1].head);
+    finalize_unlink_gc_head(&gcstate->permanent_generation.head);
 }
 
 /* for debugging */

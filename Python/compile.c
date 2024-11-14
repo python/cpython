@@ -31,9 +31,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -901,7 +903,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;
@@ -911,7 +913,17 @@ PyObject *
 _PyCompile_StaticAttributesAsTuple(compiler *c)
 {
     assert(c->u->u_static_attributes);
-    return PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        return NULL;
+    }
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        Py_DECREF(static_attributes_unsorted);
+        return NULL;
+    }
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
+    return static_attributes;
 }
 
 int
@@ -1112,27 +1124,15 @@ _PyCompile_Error(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
-    if (loc_obj == NULL) {
-        loc_obj = Py_None;
-    }
-    PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
-                                   loc.lineno, loc.col_offset + 1, loc_obj,
-                                   loc.end_lineno, loc.end_col_offset + 1);
+    _PyErr_RaiseSyntaxError(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
+                            loc.end_lineno, loc.end_col_offset + 1);
     Py_DECREF(msg);
-    if (args == NULL) {
-        goto exit;
-    }
-    PyErr_SetObject(PyExc_SyntaxError, args);
- exit:
-    Py_DECREF(loc_obj);
-    Py_XDECREF(args);
     return ERROR;
 }
 
-/* Emits a SyntaxWarning and returns 1 on success.
+/* Emits a SyntaxWarning and returns 0 on success.
    If a SyntaxWarning raised as error, replaces it with a SyntaxError
-   and returns 0.
+   and returns -1.
 */
 int
 _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
@@ -1144,21 +1144,10 @@ _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
-                                 loc.lineno, NULL, NULL) < 0)
-    {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            /* Replace the SyntaxWarning exception with a SyntaxError
-               to get a more accurate error report */
-            PyErr_Clear();
-            assert(PyUnicode_AsUTF8(msg) != NULL);
-            _PyCompile_Error(c, loc, PyUnicode_AsUTF8(msg));
-        }
-        Py_DECREF(msg);
-        return ERROR;
-    }
+    int ret = _PyErr_EmitSyntaxWarning(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
+                                       loc.end_lineno, loc.end_col_offset + 1);
     Py_DECREF(msg);
-    return SUCCESS;
+    return ret;
 }
 
 PyObject *
@@ -1204,17 +1193,12 @@ _PyCompile_OptimizationLevel(compiler *c)
 }
 
 int
-_PyCompile_IsInteractive(compiler *c)
-{
-    return c->c_interactive;
-}
-
-int
-_PyCompile_IsNestedScope(compiler *c)
+_PyCompile_IsInteractiveTopLevel(compiler *c)
 {
     assert(c->c_stack != NULL);
     assert(PyList_CheckExact(c->c_stack));
-    return PyList_GET_SIZE(c->c_stack) > 0;
+    bool is_nested_scope = PyList_GET_SIZE(c->c_stack) > 0;
+    return c->c_interactive && !is_nested_scope;
 }
 
 int
@@ -1303,6 +1287,8 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {
@@ -1552,7 +1538,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     _PyCompile_CodeUnitMetadata *umd = &c->u->u_metadata;
 
-#define SET_MATADATA_INT(key, value) do { \
+#define SET_METADATA_INT(key, value) do { \
         PyObject *v = PyLong_FromLong((long)value); \
         if (v == NULL) goto finally; \
         int res = PyDict_SetItemString(metadata, key, v); \
@@ -1560,10 +1546,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         if (res < 0) goto finally; \
     } while (0);
 
-    SET_MATADATA_INT("argcount", umd->u_argcount);
-    SET_MATADATA_INT("posonlyargcount", umd->u_posonlyargcount);
-    SET_MATADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
-#undef SET_MATADATA_INT
+    SET_METADATA_INT("argcount", umd->u_argcount);
+    SET_METADATA_INT("posonlyargcount", umd->u_posonlyargcount);
+    SET_METADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
+#undef SET_METADATA_INT
 
     int addNone = mod->kind != Expression_kind;
     if (_PyCodegen_AddReturnAtEnd(c, addNone) < 0) {

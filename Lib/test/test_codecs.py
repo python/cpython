@@ -2,7 +2,6 @@ import codecs
 import contextlib
 import copy
 import io
-import locale
 import pickle
 import sys
 import unittest
@@ -1812,16 +1811,10 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.getwriter)
         self.assertRaises(LookupError, codecs.getwriter, "__spam__")
 
+    @support.run_with_locale('LC_CTYPE', 'tr_TR')
     def test_lookup_issue1813(self):
         # Issue #1813: under Turkish locales, lookup of some codecs failed
         # because 'I' is lowercased as "ı" (dotless i)
-        oldlocale = locale.setlocale(locale.LC_CTYPE)
-        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
-        except locale.Error:
-            # Unsupported locale on this system
-            self.skipTest('test needs Turkish locale')
         c = codecs.lookup('ASCII')
         self.assertEqual(c.name, 'ascii')
 

@@ -1,3 +1,4 @@
+from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
 import collections
@@ -22,7 +23,6 @@ import time
 import types
 import tempfile
 import textwrap
-from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -35,7 +35,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper, suppress_immortalization
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -46,11 +46,12 @@ from test import support
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_deferred_annotations
 
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
-# isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
+# isbuiltin, isroutine, isgenerator, ispackage, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
 # getclasstree, getargvalues, formatargvalues, currentframe,
 # stack, trace, ismethoddescriptor, isdatadescriptor, ismethodwrapper
@@ -104,7 +105,7 @@ unsorted_keyword_only_parameters = 'throw out the baby with_ the_ bathwater'.spl
 class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
-                      inspect.ismodule, inspect.istraceback,
+                      inspect.ismodule, inspect.istraceback, inspect.ispackage,
                       inspect.isgenerator, inspect.isgeneratorfunction,
                       inspect.iscoroutine, inspect.iscoroutinefunction,
                       inspect.isasyncgen, inspect.isasyncgenfunction,
@@ -120,7 +121,10 @@ class IsTestBase(unittest.TestCase):
                predicate == inspect.iscoroutinefunction) and \
                other == inspect.isfunction:
                 continue
-            self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
+            if predicate == inspect.ispackage and other == inspect.ismodule:
+                self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+            else:
+                self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
         support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
@@ -200,7 +204,17 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(int))
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
+    def test_ispackage(self):
+        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'importlib')
+        self.assertFalse(inspect.ispackage(inspect))
+        self.assertFalse(inspect.ispackage(mod))
+        self.assertFalse(inspect.ispackage(':)'))
 
+        class FakePackage:
+            __path__ = None
+
+        self.assertFalse(inspect.ispackage(FakePackage()))
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
@@ -770,7 +784,6 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
-    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -834,6 +847,47 @@ class TestRetrievingSourceCode(GetSourceBase):
         class C:
             nonlocal __firstlineno__
         self.assertRaises(OSError, inspect.getsource, C)
+
+class TestGetsourceStdlib(unittest.TestCase):
+    # Test Python implementations of the stdlib modules
+
+    def test_getsource_stdlib_collections_abc(self):
+        import collections.abc
+        lines, lineno = inspect.getsourcelines(collections.abc.Sequence)
+        self.assertEqual(lines[0], 'class Sequence(Reversible, Collection):\n')
+        src = inspect.getsource(collections.abc.Sequence)
+        self.assertEqual(src.splitlines(True), lines)
+
+    def test_getsource_stdlib_tomllib(self):
+        import tomllib
+        self.assertRaises(OSError, inspect.getsource, tomllib.TOMLDecodeError)
+        self.assertRaises(OSError, inspect.getsourcelines, tomllib.TOMLDecodeError)
+
+    def test_getsource_stdlib_abc(self):
+        # Pure Python implementation
+        abc = import_helper.import_fresh_module('abc', blocked=['_abc'])
+        with support.swap_item(sys.modules, 'abc', abc):
+            self.assertRaises(OSError, inspect.getsource, abc.ABCMeta)
+            self.assertRaises(OSError, inspect.getsourcelines, abc.ABCMeta)
+        # With C acceleration
+        import abc
+        try:
+            src = inspect.getsource(abc.ABCMeta)
+            lines, lineno = inspect.getsourcelines(abc.ABCMeta)
+        except OSError:
+            pass
+        else:
+            self.assertEqual(lines[0], '    class ABCMeta(type):\n')
+            self.assertEqual(src.splitlines(True), lines)
+
+    def test_getsource_stdlib_decimal(self):
+        # Pure Python implementation
+        decimal = import_helper.import_fresh_module('decimal', blocked=['_decimal'])
+        with support.swap_item(sys.modules, 'decimal', decimal):
+            src = inspect.getsource(decimal.Decimal)
+            lines, lineno = inspect.getsourcelines(decimal.Decimal)
+        self.assertEqual(lines[0], 'class Decimal(object):\n')
+        self.assertEqual(src.splitlines(True), lines)
 
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
@@ -947,6 +1001,11 @@ class TestOneliners(GetSourceBase):
         self.assertSourceEqual(mod2.td354, 354, 356)
         self.assertRaises(OSError, inspect.getsource, mod2.td359)
 
+    def test_dataclass(self):
+        self.assertSourceEqual(mod2.dc364, 364, 367)
+        self.assertRaises(OSError, inspect.getsource, mod2.dc370)
+        self.assertRaises(OSError, inspect.getsource, mod2.dc371)
+
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
 
@@ -1010,7 +1069,7 @@ class TestBuggyCases(GetSourceBase):
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
 
-    def test_findsource_with_out_of_bounds_lineno(self):
+    def test_findsource_on_func_with_out_of_bounds_lineno(self):
         mod_len = len(inspect.getsource(mod))
         src = '\n' * 2* mod_len + "def f(): pass"
         co = compile(src, mod.__file__, "exec")
@@ -1018,8 +1077,19 @@ class TestBuggyCases(GetSourceBase):
         eval(co, g, l)
         func = l['f']
         self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
-        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+        with self.assertRaisesRegex(OSError, "lineno is out of bounds"):
             inspect.findsource(func)
+
+    def test_findsource_on_class_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "class A: pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {'__name__': mod.__name__}, {}
+        eval(co, g, l)
+        cls = l['A']
+        self.assertEqual(cls.__firstlineno__, 1+2*mod_len)
+        with self.assertRaisesRegex(OSError, "lineno is out of bounds"):
+            inspect.findsource(cls)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
@@ -1890,6 +1960,19 @@ class TestGetClosureVars(unittest.TestCase):
                                        builtin_vars, unbound_names)
         self.assertEqual(inspect.getclosurevars(C().f(_arg)), expected)
 
+    def test_attribute_same_name_as_global_var(self):
+        class C:
+            _global_ref = object()
+        def f():
+            print(C._global_ref, _global_ref)
+        nonlocal_vars = {"C": C}
+        global_vars = {"_global_ref": _global_ref}
+        builtin_vars = {"print": print}
+        unbound_names = {"_global_ref"}
+        expected = inspect.ClosureVars(nonlocal_vars, global_vars,
+                                       builtin_vars, unbound_names)
+        self.assertEqual(inspect.getclosurevars(f), expected)
+
     def test_nonlocal_vars(self):
         # More complex tests of nonlocal resolution
         def _nonlocal_vars(f):
@@ -2518,7 +2601,6 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
-    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -3341,7 +3423,7 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_partial(self):
-        from functools import partial
+        from functools import partial, Placeholder
 
         def test():
             pass
@@ -3396,6 +3478,25 @@ class TestSignatureObject(unittest.TestCase):
                            ('d', ..., ..., "keyword_only")),
                           ...))
 
+        # With Placeholder
+        self.assertEqual(self.signature(partial(test, Placeholder, 1)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        self.assertEqual(self.signature(partial(test, Placeholder, 1, c=2)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        # Ensure unittest.mock.ANY & similar do not get picked up as a Placeholder
+        self.assertEqual(self.signature(partial(test, unittest.mock.ANY, 1, c=2)),
+                         ((('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
         def test(a, *args, b, **kwargs):
             pass
 
@@ -3438,6 +3539,15 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(test, b=0, test=1)),
                          ((('a', ..., ..., "positional_or_keyword"),
+                           ('args', ..., ..., "var_positional"),
+                           ('b', 0, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # With Placeholder
+        p = partial(test, Placeholder, Placeholder, 1, b=0, test=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
                            ('args', ..., ..., "var_positional"),
                            ('b', 0, ..., "keyword_only"),
                            ('kwargs', ..., ..., "var_keyword")),
@@ -3547,6 +3657,34 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., ..., 'var_keyword')),
                          ...))
 
+        # Positional only With Placeholder
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # Optionals Positional With Placeholder
+        def foo(a=0, b=1, /, c=2, d=3):
+            pass
+
+        # Positional
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only")),
+                          ...))
+
+        # Positional or Keyword - transformed to positional
+        p = partial(foo, Placeholder, 1, Placeholder, 1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "positional_only")),
+                          ...))
+
     def test_signature_on_partialmethod(self):
         from functools import partialmethod
 
@@ -3559,18 +3697,32 @@ class TestSignatureObject(unittest.TestCase):
             inspect.signature(Spam.ham)
 
         class Spam:
-            def test(it, a, *, c) -> 'spam':
+            def test(it, a, b, *, c) -> 'spam':
                 pass
             ham = partialmethod(test, c=1)
+            bar = partialmethod(test, functools.Placeholder, 1, c=1)
 
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
         self.assertEqual(self.signature(Spam().ham, eval_str=False),
                          ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
+        # With Placeholder
+        self.assertEqual(self.signature(Spam.bar, eval_str=False),
+                         ((('it', ..., ..., 'positional_only'),
+                           ('a', ..., ..., 'positional_only'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+        self.assertEqual(self.signature(Spam().bar, eval_str=False),
+                         ((('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
@@ -4495,6 +4647,18 @@ class TestSignatureObject(unittest.TestCase):
             expected_multiline,
         )
 
+    def test_signature_format_unquote(self):
+        def func(x: 'int') -> 'str': ...
+
+        self.assertEqual(
+            inspect.signature(func).format(),
+            "(x: 'int') -> 'str'"
+        )
+        self.assertEqual(
+            inspect.signature(func).format(quote_annotation_strings=False),
+            "(x: int) -> str"
+        )
+
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
             pass
@@ -4727,6 +4891,26 @@ class TestSignatureObject(unittest.TestCase):
                             par('b', PORK, annotation=tuple),
                         )))
 
+    def test_signature_annotation_format(self):
+        ida = inspect_deferred_annotations
+        sig = inspect.Signature
+        par = inspect.Parameter
+        PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func=signature_func):
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.STRING),
+                    sig([par("x", PORK, annotation="undefined")])
+                )
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.FORWARDREF),
+                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                )
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f, annotation_format=Format.VALUE)
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f)
+
     def test_signature_none_annotation(self):
         class funclike:
             # Has to be callable, and have correct
@@ -4751,38 +4935,6 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(signature_func = signature_func):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
-
-    def test_signature_as_str(self):
-        self.maxDiff = None
-        class S:
-            __signature__ = '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-    def test_signature_as_callable(self):
-        # __signature__ should be either a staticmethod or a bound classmethod
-        class S:
-            @classmethod
-            def __signature__(cls):
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-        class S:
-            @staticmethod
-            def __signature__():
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
 
     def test_signature_on_derived_classes(self):
         # gh-105080: Make sure that signatures are consistent on derived classes
@@ -5234,7 +5386,7 @@ class TestSignatureBind(unittest.TestCase):
         # Issue #19611: getcallargs should work with comprehensions
         def make_set():
             return set(z * z for z in range(5))
-        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_code = make_set.__code__.co_consts[0]
         gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
@@ -5569,8 +5721,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        no_signature = {'reduce'}
-        self._test_module_has_signatures(functools, no_signature)
+        unsupported_signature = {"reduce"}
+        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
 
     def test_gc_module_has_signatures(self):
         import gc

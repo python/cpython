@@ -13,11 +13,8 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_funcobj);
-    int err = _PyGC_VisitStackRef(&frame->f_executable, visit, arg);
-    if (err) {
-        return err;
-    }
+    _Py_VISIT_STACKREF(frame->f_funcobj);
+    _Py_VISIT_STACKREF(frame->f_executable);
     return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
@@ -66,7 +63,8 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        frame->instr_ptr =
+            _PyFrame_GetBytecode(frame) + code->_co_firsttraceable + 1;
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
@@ -126,7 +124,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         Py_DECREF(f);
     }
     _PyFrame_ClearLocals(frame);
-    Py_DECREF(frame->f_funcobj);
+    PyStackRef_CLEAR(frame->f_funcobj);
 }
 
 /* Unstable API functions */
