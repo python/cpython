@@ -3406,12 +3406,10 @@ class RawTurtle(TPen, TNavigator):
 
     @contextmanager
     def fill(self):
-        """Create a filled shape.
+        """A context manager for filling a shape.
 
-        No argument.
-
-        This function sets up a context manager that will automatically end
-        filling once exited.
+        Implicitly ensures the code block is wrapped with
+        begin_fill() and end_fill().
 
         Example (for a Turtle instance named turtle):
         >>> turtle.color("black", "red")
