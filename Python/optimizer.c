@@ -1699,4 +1699,47 @@ error:
     _Py_Executors_InvalidateAll(interp, 0);
 }
 
+
+static void
+dump_executor(_PyExecutorObject *executor, FILE *out)
+{
+    fprintf(out, "executor_%p [\n", executor);
+    fprintf(out, "    shape = none\n");
+    fprintf(out, "    label = <<table border=\"0\" cellspacing=\"0\">\n");
+    fprintf(out, "        <tr><td port=\"start\" border=\"1\" ><b>Executor</b></td></tr>\n");
+    for (int i = 0; i < executor->code_size; i++) {
+        _PyUOpInstruction *inst = &executor->trace[i];
+        const char *opname = _PyOpcode_uop_name[inst->opcode];
+        fprintf(out, "        <tr><td border=\"1\" >%s</td></tr>\n", opname);
+    }
+    for (int i = 0; i < executor->exit_count; i++) {
+        _PyExitData *exit = &executor->exits[i];
+        int temp = exit->temperature.value_and_backoff >> 4;
+        fprintf(out, "        <tr><td port=\"%d\" border=\"1\" >EXIT: temp %d</td></tr>\n", i, temp);
+    }
+
+    fprintf(out, "    label = </table>>\n");
+    fprintf(out, "]\n\n");
+    for (int i = 0; i < executor->exit_count; i++) {
+        _PyExitData *exit = &executor->exits[i];
+        if (exit->executor != NULL) {
+            fprintf(out, "executor_%p:%d -> executor_%p:start\n", executor, i, exit->executor);
+        }
+    }
+}
+
+void
+_PyDumpExecutors(FILE *out)
+{
+    fprintf(out, "digraph ideal {\n\n");
+    fprintf(out, "    rankdir = \"LR\"\n\n");
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        dump_executor(exec, out);
+        exec = exec->vm_data.links.next;
+    }
+    fprintf(out, "}\n\n");
+    fclose(out);
+}
+
 #endif /* _Py_TIER2 */

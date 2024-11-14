@@ -285,6 +285,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
+PyAPI_FUNC(void) _PyDumpExecutors(FILE *out);
+
 #ifdef __cplusplus
 }
 #endif
