@@ -4707,7 +4707,9 @@ static unsigned int psk_client_callback(SSL *s,
         goto error;
     }
 
-    if (identity_len_ + 1 > max_identity_len || psk_len_ > max_psk_len) {
+    if ((size_t)identity_len_ + 1 > max_identity_len
+        || (size_t)psk_len_ > max_psk_len)
+    {
         Py_DECREF(result);
         goto error;
     }
@@ -4819,7 +4821,7 @@ static unsigned int psk_server_callback(SSL *s,
         goto error;
     }
 
-    if (psk_len_ > max_psk_len) {
+    if ((size_t)psk_len_ > max_psk_len) {
         Py_DECREF(result);
         goto error;
     }
