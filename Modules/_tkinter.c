@@ -1239,7 +1239,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
 
     if (value->typePtr == tkapp->StringType ||
         value->typePtr == tkapp->UTF32StringType ||
-	value->typePtr == tkapp->PixelType)
+        value->typePtr == tkapp->PixelType)
     {
         return unicodeFromTclObj(tkapp, value);
     }

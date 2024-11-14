@@ -21,7 +21,7 @@
 
     <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->
     <tcltkSuffix Condition="'$(TclMajorVersion)' == '8'">t</tcltkSuffix>
-    <tkPrefix Condition="'$(TclMajorVersion)' == '9'">tcl9</tkPrefix> 
+    <tkPrefix Condition="'$(TclMajorVersion)' == '9'">tcl9</tkPrefix>
     <tclDLLName >tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tclDLLName>
     <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tclLibName>
     <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).exe</tclShExeName>
