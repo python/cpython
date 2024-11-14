@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+import platform
 
 FOO_C = r"""
 #include <unistd.h>
@@ -79,7 +80,15 @@ class TestNullDlsym(unittest.TestCase):
                 f.write(FOO_C.replace('$DESCRIPTOR', str(pipe_w)))
             args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
             p = subprocess.run(args, capture_output=True)
-            self.assertEqual(p.returncode, 0, p)
+
+            if p.returncode != 0:
+                # IFUNC is not supported on all architectures.
+                if platform.machine() == 'x86_64':
+                    # It should be supported here. Something else went wrong.
+                    p.check_returncode()
+                else:
+                    # IFUNC might not be supported on this machine.
+                    self.skipTest(f"could not compile indirect function: {p}")
 
             # Case #1: Test 'PyCFuncPtr_FromDll' from Modules/_ctypes/_ctypes.c
             L = CDLL(dstname)
