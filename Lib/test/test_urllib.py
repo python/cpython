@@ -529,7 +529,7 @@ Connection: close
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_fileurl = 'file://localhost' + tmp_file.replace(os.path.sep, '/')
+        tmp_fileurl = 'file:' + urllib.request.pathname2url(tmp_file)
         try:
             self.assertTrue(os.path.exists(tmp_file))
             with urlopen(tmp_fileurl) as fobj:
