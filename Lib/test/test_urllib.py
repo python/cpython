@@ -714,7 +714,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             filePath.encode("utf-8")
         except UnicodeEncodeError:
             raise unittest.SkipTest("filePath is not encodable to utf8")
-        return "file:%s" % urllib.request.pathname2url(filePath)
+        return "file://%s" % urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
