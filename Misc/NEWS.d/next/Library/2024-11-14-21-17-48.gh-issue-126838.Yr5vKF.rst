@@ -1,0 +1,4 @@
+Fix issue where :func:`urllib.request.url2pathname` included any URL
+authority in the resulting path, except on Windows. It now discards a local
+authority, and raises :exc:`urllib.error.URLError` for a non-local
+authority.

@@ -13,6 +13,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 import os
+import socket
 try:
     import ssl
 except ImportError:
@@ -713,7 +714,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             filePath.encode("utf-8")
         except UnicodeEncodeError:
             raise unittest.SkipTest("filePath is not encodable to utf8")
-        return "file://%s" % urllib.request.pathname2url(filePath)
+        return "file:%s" % urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
@@ -1607,10 +1608,12 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
-        self.assertEqual(fn('//foo/bar'), '//foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
-        self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
+        self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
+        self.assertEqual(fn('//127.0.0.1/foo/bar'), '/foo/bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), '/foo/bar')
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

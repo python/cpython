@@ -1448,16 +1448,6 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def file_open(self, req):
-        url = req.selector
-        if url[:2] == '//' and url[2:3] != '/' and (req.host and
-                req.host != 'localhost'):
-            if not req.host in self.get_names():
-                raise URLError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(req)
-
     # names for the localhost
     names = None
     def get_names(self):
@@ -1474,9 +1464,8 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        host = req.host
-        filename = req.selector
-        localfile = url2pathname(filename)
+        filename = req.full_url
+        localfile = url2pathname(filename.removeprefix('file:'))
         try:
             stats = os.stat(localfile)
             size = stats.st_size
@@ -1485,24 +1474,20 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            if host:
-                host, port = _splitport(host)
-            if not host or \
-                (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
-                return addinfourl(open(localfile, 'rb'), headers, origurl)
+            return addinfourl(open(localfile, 'rb'), headers, filename)
         except OSError as exp:
             raise URLError(exp)
-        raise URLError('file not on local host')
 
-def _safe_gethostbyname(host):
+    file_open = open_local_file
+
+def _is_local_host(host):
+    if not host or host == 'localhost':
+        return True
     try:
-        return socket.gethostbyname(host)
+        name = socket.gethostbyname(host)
     except socket.gaierror:
-        return None
+        return False
+    return name in FileHandler().get_names()
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1653,13 +1638,12 @@ MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 if os.name == 'nt':
     from nturl2path import url2pathname, pathname2url
 else:
-    def url2pathname(pathname):
+    def url2pathname(url):
         """OS-specific conversion from a relative URL of the 'file' scheme
         to a file system path; not recommended for general use."""
-        if pathname[:3] == '///':
-            # URL has an empty authority section, so the path begins on the
-            # third character.
-            pathname = pathname[2:]
+        authority, pathname = urlsplit(f'file:{url}')[1:3]
+        if not _is_local_host(authority):
+            raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
         return unquote(pathname)
 
     def pathname2url(pathname):
