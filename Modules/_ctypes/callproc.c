@@ -1654,9 +1654,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     }
 	#endif
 	#undef USE_DLERROR
-    PyErr_Format(PyExc_OSError,
-                 "symbol '%s' not found",
-                 name);
+    PyErr_Format(PyExc_OSError, "symbol '%s' not found", name);
     return NULL;
 }
 #endif

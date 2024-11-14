@@ -996,9 +996,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     }
     #endif
 #undef USE_DLERROR
-    PyErr_Format(PyExc_ValueError,
-                 "symbol '%s' not found",
-                 name);
+    PyErr_Format(PyExc_ValueError, "symbol '%s' not found", name);
     return NULL;
 }
 
@@ -3822,9 +3820,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyErr_Clear();
         }
 	#endif
-        PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
-                     name);
+        PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;
     }
