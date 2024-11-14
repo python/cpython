@@ -9,8 +9,10 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
 import weakref
+from itertools import product
 from unittest import mock
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -851,6 +853,37 @@ class BaseTestUUID:
             equal((u.int >> 64) & 0xfff, new_counter_hi)
             equal((u.int >> 32) & 0x3fffffff, new_counter_lo)
             equal(u.int & 0xffffffff, tail)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique
+        # (up to a negligible probability of failure).
+        u1 = self.uuid.uuid8()
+        u2 = self.uuid.uuid8()
+        self.assertNotEqual(u1.int, u2.int)
+        self.assertEqual(u1.version, u2.version)
 
     @support.requires_fork()
     def testIssue8621(self):

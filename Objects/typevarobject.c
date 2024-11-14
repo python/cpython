@@ -151,7 +151,7 @@ constevaluator_clear(PyObject *self)
 }
 
 static PyObject *
-constevaluator_repr(PyObject *self, PyObject *repr)
+constevaluator_repr(PyObject *self)
 {
     PyObject *value = ((constevaluatorobject *)self)->value;
     return PyUnicode_FromFormat("<constevaluator %R>", value);
@@ -168,7 +168,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *value = ((constevaluatorobject *)self)->value;
-    if (format == 3) { // SOURCE
+    if (format == 3) { // STRING
         PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
         if (writer == NULL) {
             return NULL;
@@ -242,7 +242,8 @@ static PyType_Slot constevaluator_slots[] = {
 PyType_Spec constevaluator_spec = {
     .name = "_typing._ConstEvaluator",
     .basicsize = sizeof(constevaluatorobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = constevaluator_slots,
 };
 
@@ -372,10 +373,10 @@ caller(void)
     if (f == NULL) {
         Py_RETURN_NONE;
     }
-    if (f == NULL || f->f_funcobj == NULL) {
+    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
     if (!r) {
         PyErr_Clear();
         Py_RETURN_NONE;
@@ -1798,6 +1799,24 @@ _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
     return (PyObject *)typevartuple_alloc(v, NULL, NULL);
 }
 
+static PyObject *
+get_type_param_default(PyThreadState *ts, PyObject *typeparam) {
+    // Does not modify refcount of existing objects.
+    if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
+        return typevar_default((typevarobject *)typeparam, NULL);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
+        return paramspec_default((paramspecobject *)typeparam, NULL);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
+        return typevartuple_default((typevartupleobject *)typeparam, NULL);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
+        return NULL;
+    }
+}
+
 static void
 typealias_dealloc(PyObject *self)
 {
@@ -1905,6 +1924,65 @@ static PyGetSetDef typealias_getset[] = {
     {0}
 };
 
+static PyObject *
+typealias_check_type_params(PyObject *type_params, int *err) {
+    // Can return type_params or NULL without exception set.
+    // Does not change the reference count of type_params,
+    // sets `*err` to 1 when error happens and sets an exception,
+    // otherwise `*err` is set to 0.
+    *err = 0;
+    if (type_params == NULL) {
+        return NULL;
+    }
+
+    assert(PyTuple_Check(type_params));
+    Py_ssize_t length = PyTuple_GET_SIZE(type_params);
+    if (!length) {  // 0-length tuples are the same as `NULL`.
+        return NULL;
+    }
+
+    PyThreadState *ts = _PyThreadState_GET();
+    int default_seen = 0;
+    for (Py_ssize_t index = 0; index < length; index++) {
+        PyObject *type_param = PyTuple_GET_ITEM(type_params, index);
+        PyObject *dflt = get_type_param_default(ts, type_param);
+        if (dflt == NULL) {
+            *err = 1;
+            return NULL;
+        }
+        if (dflt == &_Py_NoDefaultStruct) {
+            if (default_seen) {
+                *err = 1;
+                PyErr_Format(PyExc_TypeError,
+                                "non-default type parameter '%R' "
+                                "follows default type parameter",
+                                type_param);
+                return NULL;
+            }
+        } else {
+            default_seen = 1;
+            Py_DECREF(dflt);
+        }
+    }
+
+    return type_params;
+}
+
+static PyObject *
+typelias_convert_type_params(PyObject *type_params)
+{
+    if (
+        type_params == NULL
+        || Py_IsNone(type_params)
+        || (PyTuple_Check(type_params) && PyTuple_GET_SIZE(type_params) == 0)
+    ) {
+        return NULL;
+    }
+    else {
+        return type_params;
+    }
+}
+
 static typealiasobject *
 typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
                 PyObject *value, PyObject *module)
@@ -1914,7 +1992,7 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
         return NULL;
     }
     ta->name = Py_NewRef(name);
-    ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
+    ta->type_params = Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
     ta->module = Py_XNewRef(module);
@@ -1992,11 +2070,18 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
         return NULL;
     }
+
+    int err = 0;
+    PyObject *checked_params = typealias_check_type_params(type_params, &err);
+    if (err) {
+        return NULL;
+    }
+
     PyObject *module = caller();
     if (module == NULL) {
         return NULL;
     }
-    PyObject *ta = (PyObject *)typealias_alloc(name, type_params, NULL, value,
+    PyObject *ta = (PyObject *)typealias_alloc(name, checked_params, NULL, value,
                                                module);
     Py_DECREF(module);
     return ta;
@@ -2062,7 +2147,7 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyTuple_GET_SIZE(args) == 3);
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     assert(PyUnicode_Check(name));
-    PyObject *type_params = PyTuple_GET_ITEM(args, 1);
+    PyObject *type_params = typelias_convert_type_params(PyTuple_GET_ITEM(args, 1));
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
     assert(PyFunction_Check(compute_value));
     return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL, NULL);

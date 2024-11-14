@@ -12,7 +12,12 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
+<<<<<<< HEAD
 generating version 1, 3, 4, 5, and 7 UUIDs as specified in :rfc:`9562`.
+=======
+generating version 1, 3, 4, 5, and 8 UUIDs as specified in :rfc:`9562` (which
+supersedes :rfc:`4122`).
+>>>>>>> origin/uuid-v8-89083
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -149,8 +154,16 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.version
 
+<<<<<<< HEAD
    The UUID version number (1 through 7, meaningful only when the variant is
+=======
+   The UUID version number (1 through 8, meaningful only when the variant is
+>>>>>>> origin/uuid-v8-89083
    :const:`RFC_4122`).
+
+   .. versionchanged:: next
+      Added UUID version 8.
+
 
 .. attribute:: UUID.is_safe
 
@@ -219,9 +232,25 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid7()
 
-   TODO
+   .. versionadded:: next
 
 .. index:: single: uuid7
+
+
+.. function:: uuid8(a=None, b=None, c=None)
+
+   Generate a pseudo-random UUID according to
+   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
+
+   When specified, the parameters *a*, *b* and *c* are expected to be
+   positive integers of 48, 12 and 62 bits respectively. If they exceed
+   their expected bit count, only their least significant bits are kept;
+   non-specified arguments are substituted for a pseudo-random integer of
+   appropriate size.
+
+   .. versionadded:: next
+
+.. index:: single: uuid8
 
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
@@ -260,12 +289,9 @@ of the :attr:`~UUID.variant` attribute:
 
 .. data:: RFC_4122
 
-   Specifies the UUID layout given in :rfc:`9562`.
-
-   .. note::
-
-      For compatibility reasons, the content of the :data:`!RFC_4122` constant
-      is not updated to reflect the new RFC number.
+   Specifies the UUID layout given in :rfc:`4122`. This constant is kept
+   for backward compatibility even though :rfc:`4122` has been superseded
+   by :rfc:`9562`.
 
 
 .. data:: RESERVED_MICROSOFT
@@ -296,7 +322,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 

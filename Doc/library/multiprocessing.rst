@@ -8,7 +8,7 @@
 
 --------------
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Introduction
 ------------
@@ -124,11 +124,11 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on POSIX systems.  Currently the default on POSIX except macOS.
+    Available on POSIX systems.
 
-    .. note::
-       The default start method will change away from *fork* in Python 3.14.
-       Code that requires *fork* should explicitly specify that via
+    .. versionchanged:: 3.14
+       This is no longer the default start method on any platform.
+       Code that requires *fork* must explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
     .. versionchanged:: 3.12
@@ -146,9 +146,11 @@ to start a process.  These *start methods* are
     side-effect so it is generally safe for it to use :func:`os.fork`.
     No unnecessary resources are inherited.
 
-    Available on POSIX platforms which support passing file descriptors
-    over Unix pipes such as Linux.
+    Available on POSIX platforms which support passing file descriptors over
+    Unix pipes such as Linux.  The default on those.
 
+    .. versionchanged:: 3.14
+       This became the default start method on POSIX platforms.
 
 .. versionchanged:: 3.4
    *spawn* added on all POSIX platforms, and *forkserver* added for
@@ -161,6 +163,13 @@ to start a process.  These *start methods* are
    On macOS, the *spawn* start method is now the default.  The *fork* start
    method should be considered unsafe as it can lead to crashes of the
    subprocess as macOS system libraries may start threads. See :issue:`33725`.
+
+.. versionchanged:: 3.14
+
+   On POSIX platforms the default start method was changed from *fork* to
+   *forkserver* to retain the performance but avoid common multithreaded
+   process incompatibilities. See :gh:`84559`.
+
 
 On POSIX using the *spawn* or *forkserver* start methods will also
 start a *resource tracker* process which tracks the unlinked named
@@ -505,7 +514,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    The constructor should always be called with keyword arguments. *group*
    should always be ``None``; it exists solely for compatibility with
    :class:`threading.Thread`.  *target* is the callable object to be invoked by
-   the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
+   the :meth:`run` method.  It defaults to ``None``, meaning nothing is
    called. *name* is the process name (see :attr:`name` for more details).
    *args* is the argument tuple for the target invocation.  *kwargs* is a
    dictionary of keyword arguments for the target invocation.  If provided,
@@ -642,7 +651,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       You can use this value if you want to wait on several events at
       once using :func:`multiprocessing.connection.wait`.  Otherwise
-      calling :meth:`join()` is simpler.
+      calling :meth:`join` is simpler.
 
       On Windows, this is an OS handle usable with the ``WaitForSingleObject``
       and ``WaitForMultipleObjects`` family of API calls.  On POSIX, this is
@@ -669,7 +678,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. method:: kill()
 
-      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on POSIX.
+      Same as :meth:`terminate` but using the ``SIGKILL`` signal on POSIX.
 
       .. versionadded:: 3.7
 
@@ -712,7 +721,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
 .. exception:: BufferTooShort
 
-   Exception raised by :meth:`Connection.recv_bytes_into()` when the supplied
+   Exception raised by :meth:`Connection.recv_bytes_into` when the supplied
    buffer object is too small for the message read.
 
    If ``e`` is an instance of :exc:`BufferTooShort` then ``e.args[0]`` will give
@@ -2961,7 +2970,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
     resulting in a bad file descriptor error, but introduces a potential danger
     to applications which replace :func:`sys.stdin` with a "file-like object"
     with output buffering.  This danger is that if multiple processes call
-    :meth:`~io.IOBase.close()` on this file-like object, it could result in the same
+    :meth:`~io.IOBase.close` on this file-like object, it could result in the same
     data being flushed to the object multiple times, resulting in corruption.
 
     If you write a file-like object and implement your own caching, you can

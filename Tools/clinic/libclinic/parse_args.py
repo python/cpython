@@ -469,7 +469,11 @@ class ParseArgsCodeGen:
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
-        left_args = f"{nargs} - {self.max_pos}"
+        if self.vararg != NO_VARARG:
+            self.declarations = f"Py_ssize_t nvararg = {nargs} - {self.max_pos};"
+        else:
+            self.declarations = ""
+
         max_args = NO_VARARG if (self.vararg != NO_VARARG) else self.max_pos
         if self.limited_capi:
             parser_code = []
@@ -518,30 +522,13 @@ class ParseArgsCodeGen:
         use_parser_code = True
         for i, p in enumerate(self.parameters):
             if p.is_vararg():
+                var = p.converter.parser_name
                 if self.fastcall:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_New(%s);
-                        if (!%s) {{
-                            goto exit;
-                        }}
-                        for (Py_ssize_t i = 0; i < %s; ++i) {{
-                            PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
-                        }}
-                        """ % (
-                            p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            self.max_pos
-                        ), indent=4))
+                    code = f"{var} = args + {self.vararg};"
                 else:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_GetSlice(%d, -1);
-                        """ % (
-                            p.converter.parser_name,
-                            self.max_pos
-                        ), indent=4))
+                    code = f"{var} = _PyTuple_CAST(args)->ob_item;"
+                formatted_code = libclinic.normalize_snippet(code, indent=4)
+                parser_code.append(formatted_code)
                 continue
 
             displayname = p.get_displayname(i+1)
@@ -588,7 +575,7 @@ class ParseArgsCodeGen:
                         goto exit;
                     }}
                     """, indent=4)]
-        self.parser_body(*parser_code)
+        self.parser_body(*parser_code, declarations=self.declarations)
 
     def parse_general(self, clang: CLanguage) -> None:
         parsearg: str | None
