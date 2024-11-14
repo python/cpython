@@ -623,6 +623,24 @@ _Py_TryXGetRef(PyObject **ptr)
     return NULL;
 }
 
+// This belongs here rather than pycore_stackref.h because including pycore_object.h
+// there causes a circular include.
+static inline _PyStackRef
+_Py_TryXGetStackRef(PyObject **ptr)
+{
+    PyObject *value = _Py_atomic_load_ptr(ptr);
+    if (value == NULL) {
+        return PyStackRef_NULL;
+    }
+    if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+        return (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+    }
+    if (_Py_TryIncrefCompare(ptr, value)) {
+        return PyStackRef_FromPyObjectSteal(value);
+    }
+    return PyStackRef_NULL;
+}
+
 /* Like Py_NewRef but also optimistically sets _Py_REF_MAYBE_WEAKREF
    on objects owned by a different thread. */
 static inline PyObject *

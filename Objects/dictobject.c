@@ -2337,7 +2337,7 @@ _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, Py
 }
 
 int
-_PyDict_GetItem_KnownHash_StackRef(PyDictObject *op, PyObject *key, Py_hash_t hash, _PyStackRef *result)
+_PyDict_GetItemStackRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, _PyStackRef *result)
 {
     Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(op, key, hash, result);
     assert(ix >= 0 || PyStackRef_IsNull(*result));
@@ -2384,7 +2384,7 @@ _PyDict_GetItemStackRef(PyObject *op, PyObject *key, _PyStackRef *result)
         return -1;
     }
 
-    return _PyDict_GetItem_KnownHash_StackRef((PyDictObject *)op, key, hash, result);
+    return _PyDict_GetItemStackRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
 int
@@ -7148,14 +7148,8 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
     }
 
 #ifdef Py_GIL_DISABLED
-    PyObject *value = _Py_atomic_load_ptr_acquire(&values->values[ix]);
-    if (value == NULL) {
-        *attr = PyStackRef_NULL;
-    }
-    else {
-        *attr = PyStackRef_FromPyObjectNew(value);
-    }
-    if (value == _Py_atomic_load_ptr_acquire(&values->values[ix])) {
+    *attr = _Py_TryXGetStackRef(&values->values[ix]);
+    if (PyStackRef_AsPyObjectBorrow(*attr) == _Py_atomic_load_ptr_acquire(&values->values[ix])) {
         return true;
     }
 
@@ -7170,13 +7164,7 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
         if (dict == NULL) {
             // Still no dict, we can read from the values
             assert(values->valid);
-            value = values->values[ix];
-            if (value != NULL) {
-                *attr = PyStackRef_FromPyObjectNew(value);
-            }
-            else {
-                *attr = PyStackRef_NULL;
-            }
+            *attr = _Py_TryXGetStackRef(&values->values[ix]);
             success = true;
         }
 
@@ -7195,8 +7183,7 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
     Py_BEGIN_CRITICAL_SECTION(dict);
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-        *attr = PyStackRef_FromPyObjectNew(value);
+        *attr = _Py_TryXGetStackRef(&values->values[ix]);
         success = true;
     } else {
         // Caller needs to lookup from the dictionary

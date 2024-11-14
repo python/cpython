@@ -1636,7 +1636,13 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
-        *method = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(obj, name));
+        PyObject *attr_o = PyObject_GetAttr(obj, name);
+        if (attr_o != NULL) {
+            *method = PyStackRef_FromPyObjectSteal(attr_o);
+        }
+        else {
+            *method = PyStackRef_NULL;
+        }
         return 0;
     }
 

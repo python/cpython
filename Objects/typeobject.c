@@ -5489,11 +5489,12 @@ find_name_in_mro_stackref(PyTypeObject *type, PyObject *name, int *error, _PySta
         PyObject *base = PyTuple_GET_ITEM(mro, i);
         PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
         assert(dict && PyDict_Check(dict));
-        if (_PyDict_GetItem_KnownHash_StackRef((PyDictObject *)dict, name, hash, result) < 0) {
+        int code = _PyDict_GetItemStackRef_KnownHash((PyDictObject *)dict, name, hash, result);
+        if (code < 0) {
             *error = -1;
             goto done;
         }
-        if (!PyStackRef_IsNull(*result)) {
+        if (code == 1) {
             break;
         }
     }
