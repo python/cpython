@@ -2,12 +2,13 @@ import multiprocessing
 import signal
 import concurrent.futures
 import time
-import sys
 import os
 
 
+# Shows that https://github.com/python/cpython/issues/85772 is fixed
+
 def send_sigint(pid):
-    time.sleep(1)
+    time.sleep(1) # Make sure shutdown_event.wait() is called
     os.kill(pid, signal.SIGINT)
 
 
@@ -26,9 +27,4 @@ def run_signal_handler_wait_set_test():
 
 
 if __name__ == '__main__':
-    try:
-        run_signal_handler_wait_set_test()
-        sys.exit(1)
-    except AssertionError as e:
-        assert 'multiprocessing.Event.set() cannot be called from a thread that is already wait()-ing' in str(e)
-        sys.exit(0)
+    run_signal_handler_wait_set_test()

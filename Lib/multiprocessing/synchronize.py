@@ -328,46 +328,70 @@ class Condition(object):
 class Event(object):
 
     def __init__(self, *, ctx):
-        self._cond = ctx.Condition(ctx.Lock())
-        self._threadlocal_wait_lock = None
         self._flag = ctx.Value('i', 0)
+        # Allocate a ctypes.c_ulonglong to hold the set_id:
+        # Represents the C unsigned long long datatype.
+        # The constructor accepts an optional integer initializer; no overflow checking is done.
+        # From https://docs.python.org/3/library/ctypes.html#ctypes.c_ulonglong
+        # See multiprocessing/sharedctypes.py for typecode to ctypes definitions
+        self._set_id = ctx.Value('Q', 0)
 
     def is_set(self):
-        return self._flag.value == 1
+        # From https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value :
+        # If lock is True (the default) then a new recursive lock object is created to synchronize access to the value.
+        with self._flag:
+            return self._flag.value == 1
 
     def set(self):
-        assert not self._cond._lock._semlock._is_mine(), \
-            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
-        with self._cond:
-            if self._threadlocal_wait_lock is not None:
-                assert not self._threadlocal_wait_lock.v.locked(), \
-                    'multiprocessing.Event.set() cannot be called from a thread that is already wait()-ing'
-            self._flag.value = 1
-            self._cond.notify_all()
+        # If `set` is called from a signal handler, this is fine as the lock is recursive (i.e. it won't deadlock).
+        # If the thread interrupted by the signal handler is wait()-ing and the signal handler calls set(),
+        # this is fine as wait() spins on the value. Thus, after the signal handler is done, the thread will
+        # return from wait()
+        # Fixes https://github.com/python/cpython/issues/85772
+        with self._flag:
+            with self._set_id:
+                if self._flag.value == 0:
+                    # There is a theoretical chance of race here. It requires the following conditions:
+                    # The interrupted thread must be wait()ing.
+                    # Then set must be called reentrant for the maximum value of c_ulonglong times,
+                    # and all interruptions must happen exactly after `if self._flag.value == 0:`.
+                    # The _set_id value will then wrap around. Then clear() must be called
+                    # before the original wait() code continues. The wait() code will then continue
+                    # to (incorrectly) wait. I think this case is safe to ignore. The stack
+                    # will grow too large before there is any chance of this actually happening.
+
+                    self._flag.value = 1
+                    self._set_id.value += 1
+                    # There is no race here by reentrant set when reaching the maximum value for `self._set_id.value`.
+                    # ctypes.c_ulonglong will overflow without any exception:
+                    # https://docs.python.org/3/library/ctypes.html#ctypes.c_ulonglong
+                    # > no overflow checking is done.
+                    # This means that we do not need to check if some maximum value is reached:
+                    # C will wrap around the value for us.
 
     def clear(self):
-        assert not self._cond._lock._semlock._is_mine(), \
-            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
-        with self._cond:
+        with self._flag:
             self._flag.value = 0
 
     def wait(self, timeout=None):
-        assert not self._cond._lock._semlock._is_mine(), \
-            'multiprocessing.Event is not reentrant for clear(), set() and wait()'
-        with self._cond:
-            if self._threadlocal_wait_lock is None:
-                self._threadlocal_wait_lock = threading.local()
-                self._threadlocal_wait_lock.v = threading.Lock()
-
+        start_time = time.monotonic()
+        set_id = self._set_id.value
+        while True:
             if self._flag.value == 1:
                 return True
+            elif set_id != self._set_id.value:
+                return True # flag is unset, but set_id changed, so there must have been a `set` followed by a `clear`
+                            # during `time.sleep()`. Fixes https://github.com/python/cpython/issues/95826
+            elif timeout is not None and (time.monotonic() - start_time) > timeout:
+                return False
             else:
-                with self._threadlocal_wait_lock.v:
-                    return self._cond.wait(timeout)
+                # Fixes https://github.com/python/cpython/issues/85772 by spinning and sleeping.
+                time.sleep(0.000001) # sleep one microsecond
 
     def __repr__(self) -> str:
         set_status = 'set' if self.is_set() else 'unset'
         return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
+
 #
 # Barrier
 #

@@ -3,6 +3,8 @@ import sys
 
 
 # Reproduction code copied and modified from https://github.com/python/cpython/issues/95826
+# Fixes the issue above
+
 class SimpleRepro:
     def __init__(self):
         self.heartbeat_event = multiprocessing.Event()
