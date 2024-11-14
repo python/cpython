@@ -386,7 +386,7 @@ class Event(object):
                 return False
             else:
                 # Fixes https://github.com/python/cpython/issues/85772 by spinning and sleeping.
-                time.sleep(0.000001) # sleep one microsecond
+                time.sleep(0.010) # sleep 10 milliseconds
 
     def __repr__(self) -> str:
         set_status = 'set' if self.is_set() else 'unset'
