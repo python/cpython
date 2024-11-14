@@ -443,14 +443,12 @@ reference to the source code (filename, etc). All of this is implemented by
 Code objects
 ============
 
-The result of `PyAST_CompileObject()` is a `PyCodeObject` which is defined in
+The result of `_PyAST_Compile()` is a `PyCodeObject` which is defined in
 [Include/cpython/code.h](../Include/cpython/code.h).
 And with that you now have executable Python bytecode!
 
-The code objects (byte code) are executed in [Python/ceval.c](../Python/ceval.c).
-This file will also need a new case statement for the new opcode in the big switch
-statement in `_PyEval_EvalFrameDefault()`.
-
+The code objects (byte code) are executed in `_PyEval_EvalFrameDefault()`
+in [Python/ceval.c](../Python/ceval.c).
 
 Important files
 ===============
