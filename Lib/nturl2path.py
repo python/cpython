@@ -59,7 +59,7 @@ def pathname2url(p):
             letter = urllib.parse.quote(drive[0].upper())
             drive = f'///{letter}:'
         else:
-            # No DOS drive specified, just quote the pathname.
+            # UNC drive specified. The UNC server becomes the URL authority.
             drive = urllib.parse.quote(drive)
 
     return drive + urllib.parse.quote(tail)
