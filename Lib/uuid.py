@@ -760,10 +760,10 @@ def uuid7():
     else:
         if timestamp_ms < _last_timestamp_v7:
             timestamp_ms = _last_timestamp_v7 + 1
-        # advance the counter
+        # advance the 42-bit counter
         counter = _last_counter_v7 + 1
-        if counter > 0x3fff_ffff:
-            timestamp_ms += 1  # advance the timestamp
+        if counter > 0x3ff_ffff_ffff:
+            timestamp_ms += 1  # advance the 48-bit timestamp
             counter, tail = get_counter_and_tail()
         else:
             tail = int.from_bytes(os.urandom(4))
