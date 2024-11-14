@@ -743,9 +743,9 @@ def uuid7():
     def get_counter_and_tail():
         rand = int.from_bytes(os.urandom(10))
         # 42-bit counter with MSB set to 0
-        counter = (rand >> 32) & 0x1ffffffffff
+        counter = (rand >> 32) & 0x1ff_ffff_ffff
         # 32-bit random data
-        tail = rand & 0xffffffff
+        tail = rand & 0xffff_ffff
         return counter, tail
 
     global _last_timestamp_v7
@@ -762,7 +762,7 @@ def uuid7():
             timestamp_ms = _last_timestamp_v7 + 1
         # advance the counter
         counter = _last_counter_v7 + 1
-        if counter > 0x3ffffffffff:
+        if counter > 0x3fff_ffff:
             timestamp_ms += 1  # advance the timestamp
             counter, tail = get_counter_and_tail()
         else:
@@ -771,10 +771,10 @@ def uuid7():
     _last_timestamp_v7 = timestamp_ms
     _last_counter_v7 = counter
 
-    int_uuid_7 = (timestamp_ms & 0xffffffffffff) << 80
+    int_uuid_7 = (timestamp_ms & 0xffff_ffff_ffff) << 80
     int_uuid_7 |= ((counter >> 30) & 0xfff) << 64
-    int_uuid_7 |= (counter & 0x3fffffff) << 32
-    int_uuid_7 |= tail & 0xffffffff
+    int_uuid_7 |= (counter & 0x3fff_ffff) << 32
+    int_uuid_7 |= tail & 0xffff_ffff
     return UUID(int=int_uuid_7, version=7)
 
 def uuid8(a=None, b=None, c=None):
