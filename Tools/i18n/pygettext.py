@@ -321,7 +321,6 @@ class TokenEater:
         self.__freshmodule = 1
         self.__curfile = None
         self.__enclosurecount = 0
-        self.__prev_token = None
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
@@ -329,7 +328,6 @@ class TokenEater:
 ##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
 ##              file=sys.stderr)
         self.__state(ttype, tstring, stup[0])
-        self.__prev_token = (ttype, tstring, stup, etup, line)
 
     def __waiting(self, ttype, tstring, lineno):
         opts = self.__options
@@ -348,10 +346,10 @@ class TokenEater:
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
-        if (
-            ttype == tokenize.NAME and tstring in opts.keywords
-            and (not self.__prev_token or not _is_def_or_class_keyword(self.__prev_token))
-        ):
+        if ttype == tokenize.NAME and tstring in ('class', 'def'):
+            self.__state = self.__ignorenext
+            return
+        if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
             return
         if ttype == tokenize.STRING:
@@ -457,6 +455,9 @@ class TokenEater:
                 'lineno': self.__lineno
                 }, file=sys.stderr)
             self.__state = self.__waiting
+
+    def __ignorenext(self, ttype, tstring, lineno):
+        self.__state = self.__waiting
 
     def __addentry(self, msg, lineno=None, isdocstring=0):
         if lineno is None:
