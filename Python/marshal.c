@@ -626,6 +626,11 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         PyBuffer_Release(&view);
     }
     else if (PySlice_Check(v)) {
+        if (p->version < 5) {
+            w_byte(TYPE_UNKNOWN, p);
+            p->error = WFERR_UNMARSHALLABLE;
+            return;
+        }
         PySliceObject *slice = (PySliceObject *)v;
         W_TYPE(TYPE_SLICE, p);
         w_object(slice->start, p);
