@@ -506,20 +506,20 @@ We use the same technique of forming a transitive closure as the incremental
 collector does to find reachable objects, seeding the list with some global
 objects and the current frame of each stack.
 
-This mark phase moves all objects `visited` space, as follows:
+This phase moves objects to the `visited` space, as follows:
 
-1. All objects directly referred by any builtin class, the `sys` module, the `builtins`
+1. All objects directly referred to by any builtin class, the `sys` module, the `builtins`
 module and all objects directly referred to from stack frames are added to a working
 set of reachable objects.
 2. Until this working set is empty:
    1. Pop an object from the set and move it to the `visited` space
    2. For each object directly reachable from that object:
       * If it is not already in `visited` space and it is a GC object,
-        then move it to the working set
+        then add it to the working set
 
-Before each increment of collection is performed, any stack frames that have been created
-since the last increment are added to the working set and above algorithm is repeated,
-starting from step 2.
+Before each increment of collection is performed, the working set is updated to
+include any new stack frames that have been created since the last increment.
+Then the above algorithm is repeated, starting from step 2.
 
 
 Optimization: reusing fields to save memory
