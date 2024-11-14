@@ -1,0 +1,2 @@
+Fix extraction warnings in :program:`pygettext.py` caused by mistaking
+function definitions for function calls.
