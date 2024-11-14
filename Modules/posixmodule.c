@@ -678,6 +678,7 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
+    _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();

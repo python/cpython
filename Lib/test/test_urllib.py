@@ -1542,6 +1542,11 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
         self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
         self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
+        # Alternate path separator
+        self.assertEqual(fn('C:/a/b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('//some/share/a/b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('//?/C:/dir'), '///C:/dir')
+        self.assertEqual(fn('//?/unc/server/share/dir'), '//server/share/dir')
         # Round-tripping
         urls = ['///C:',
                 '///folder/test/',

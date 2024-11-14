@@ -205,6 +205,7 @@ class WorkerThread(threading.Thread):
                     # on reading closed stdout
                     raise ExitThread
                 raise
+            return None
         except:
             self._kill()
             raise
@@ -538,6 +539,7 @@ class RunWorkers:
                 running = get_running(self.workers)
                 if running:
                     self.log(running)
+        return None
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result
