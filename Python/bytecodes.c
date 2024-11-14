@@ -2054,19 +2054,19 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr[1], self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr[1], self_or_null[1] if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
                 *attr = PyStackRef_NULL;
-                int is_meth = _PyObject_GetMethodStackRef(PyStackRef_AsPyObjectBorrow(owner), name, attr);
+                int is_meth = _PyObject_GetMethodStackRef(PyStackRef_AsPyObjectBorrow(owner), name, attr, self_or_null);
                 if (is_meth) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
                     assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
-                    self_or_null = owner;  // Transfer ownership
+                    *self_or_null = owner;  // Transfer ownership
                     DEAD(owner);
                 }
                 else {
@@ -2078,7 +2078,7 @@ dummy_func(
                     */
                     DECREF_INPUTS();
                     ERROR_IF(PyStackRef_IsNull(*attr), error);
-                    self_or_null = PyStackRef_NULL;
+                    *self_or_null = PyStackRef_NULL;
                 }
             }
             else {
@@ -2090,10 +2090,10 @@ dummy_func(
                 else {
                     *attr = PyStackRef_FromPyObjectSteal(attr_o);
                 }
+                /* We need to define self_or_null on all paths */
+                *self_or_null = PyStackRef_NULL;
                 DECREF_INPUTS();
                 ERROR_IF(PyStackRef_IsNull(*attr), error);
-                /* We need to define self_or_null on all paths */
-                self_or_null = PyStackRef_NULL;
             }
         }
 

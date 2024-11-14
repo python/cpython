@@ -882,7 +882,7 @@ PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *at
 extern int _PyObject_IsAbstract(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
-PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method);
+PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method, _PyStackRef *spare);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 // Pickle support.

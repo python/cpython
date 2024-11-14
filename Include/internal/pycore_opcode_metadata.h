@@ -739,7 +739,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LIST_EXTEND:
             return 1 + (oparg-1);
         case LOAD_ATTR:
-            return 1 + (oparg & 1);
+            return 1 + ((oparg & 1) ? 1 : 0);
         case LOAD_ATTR_CLASS:
             return 1 + (oparg & 1);
         case LOAD_ATTR_CLASS_WITH_METACLASS_CHECK:

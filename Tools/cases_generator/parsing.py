@@ -270,8 +270,8 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
-        # | IDENTIFIER '[' expression ']'
+        # IDENTIFIER [':' IDENTIFIER [[TIMES]] ['if' '(' expression ')']
+        # | IDENTIFIER '[' expression ']' ['if' '(' expression ')']
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
             if self.expect(lx.COLON):
@@ -279,12 +279,6 @@ class Parser(PLexer):
                 if self.expect(lx.TIMES):
                     type_text += " *"
             cond_text = ""
-            if self.expect(lx.IF):
-                self.require(lx.LPAREN)
-                if not (cond := self.expression()):
-                    raise self.make_syntax_error("Expected condition")
-                self.require(lx.RPAREN)
-                cond_text = cond.text.strip()
             size_text = ""
             if self.expect(lx.LBRACKET):
                 if type_text or cond_text:
@@ -293,6 +287,12 @@ class Parser(PLexer):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
                 size_text = size.text.strip()
+            if self.expect(lx.IF):
+                self.require(lx.LPAREN)
+                if not (cond := self.expression()):
+                    raise self.make_syntax_error("Expected condition")
+                self.require(lx.RPAREN)
+                cond_text = cond.text.strip()
             return StackEffect(tkn.text, type_text, cond_text, size_text)
         return None
 

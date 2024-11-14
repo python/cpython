@@ -1621,7 +1621,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 }
 
 int
-_PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
+_PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method, _PyStackRef *spare)
 {
 #ifdef Py_GIL_DISABLED
     int meth_found = 0;
@@ -1647,6 +1647,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
     _PyType_LookupStackRef(tp, name, method);
+    *spare = *method;
     _PyStackRef descr_st = *method;
     descrgetfunc f = NULL;
     if (!PyStackRef_IsNull(descr_st)) {
