@@ -2,6 +2,7 @@ import contextlib
 import dis
 import io
 import itertools
+import marshal
 import math
 import opcode
 import os
@@ -340,6 +341,10 @@ class TestSpecifics(unittest.TestCase):
     def test_lambda_doc(self):
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
+
+    def test_lambda_consts(self):
+        l = lambda: "this is the only const"
+        self.assertEqual(l.__code__.co_consts, ("this is the only const",))
 
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'
@@ -789,10 +794,10 @@ class TestSpecifics(unittest.TestCase):
         # Merge constants in tuple or frozenset
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
-        self.assertIs(f1.__code__.co_consts[1],
-                      f2.__code__.co_consts[1][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[1])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f2.__code__.co_consts[0][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[0])),
+                      f2.__code__.co_consts[0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -901,6 +906,9 @@ class TestSpecifics(unittest.TestCase):
 
             def with_const_expression():
                 "also" + " not docstring"
+
+            def multiple_const_strings():
+                "not docstring " * 3
             """)
 
         for opt in [0, 1, 2]:
@@ -917,6 +925,7 @@ class TestSpecifics(unittest.TestCase):
                     self.assertIsNone(ns['two_strings'].__doc__)
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
+                self.assertIsNone(ns['multiple_const_strings'].__doc__)
 
     @support.cpython_only
     def test_docstring_interactive_mode(self):
@@ -1385,15 +1394,21 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(actual, expected)
 
         def check_consts(func, typ, expected):
-            slice_consts = 0
+            expected = set([repr(x) for x in expected])
+            all_consts = set()
             consts = func.__code__.co_consts
             for instr in dis.Bytecode(func):
                 if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
-                    slice_consts += 1
-            self.assertEqual(slice_consts, expected)
+                    all_consts.add(repr(consts[instr.oparg]))
+            self.assertEqual(all_consts, expected)
 
         def load():
             return x[a:b] + x [a:] + x[:b] + x[:]
+
+        check_op_count(load, "BINARY_SLICE", 3)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_consts(load, slice, [slice(None, None, None)])
+        check_op_count(load, "BINARY_SUBSCR", 1)
 
         def store():
             x[a:b] = y
@@ -1401,36 +1416,69 @@ class TestSpecifics(unittest.TestCase):
             x[:b] = y
             x[:] = y
 
+        check_op_count(store, "STORE_SLICE", 3)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_op_count(store, "STORE_SUBSCR", 1)
+        check_consts(store, slice, [slice(None, None, None)])
+
         def long_slice():
             return x[a:b:c]
+
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_consts(long_slice, slice, [])
+        check_op_count(long_slice, "BINARY_SUBSCR", 1)
 
         def aug():
             x[a:b] += y
 
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
+        check_op_count(aug, "BINARY_SUBSCR", 0)
+        check_op_count(aug, "STORE_SUBSCR", 0)
+        check_consts(aug, slice, [])
+
         def aug_const():
             x[1:2] += y
+
+        check_op_count(aug_const, "BINARY_SLICE", 0)
+        check_op_count(aug_const, "STORE_SLICE", 0)
+        check_op_count(aug_const, "BINARY_SUBSCR", 1)
+        check_op_count(aug_const, "STORE_SUBSCR", 1)
+        check_consts(aug_const, slice, [slice(1, 2)])
 
         def compound_const_slice():
             x[1:2:3, 4:5:6] = y
 
-        check_op_count(load, "BINARY_SLICE", 3)
-        check_op_count(load, "BUILD_SLICE", 0)
-        check_consts(load, slice, 1)
-        check_op_count(store, "STORE_SLICE", 3)
-        check_op_count(store, "BUILD_SLICE", 0)
-        check_consts(store, slice, 1)
-        check_op_count(long_slice, "BUILD_SLICE", 1)
-        check_op_count(long_slice, "BINARY_SLICE", 0)
-        check_op_count(aug, "BINARY_SLICE", 1)
-        check_op_count(aug, "STORE_SLICE", 1)
-        check_op_count(aug, "BUILD_SLICE", 0)
-        check_op_count(aug_const, "BINARY_SLICE", 0)
-        check_op_count(aug_const, "STORE_SLICE", 0)
-        check_consts(aug_const, slice, 1)
         check_op_count(compound_const_slice, "BINARY_SLICE", 0)
         check_op_count(compound_const_slice, "BUILD_SLICE", 0)
-        check_consts(compound_const_slice, slice, 0)
-        check_consts(compound_const_slice, tuple, 1)
+        check_op_count(compound_const_slice, "STORE_SLICE", 0)
+        check_op_count(compound_const_slice, "STORE_SUBSCR", 1)
+        check_consts(compound_const_slice, slice, [])
+        check_consts(compound_const_slice, tuple, [(slice(1, 2, 3), slice(4, 5, 6))])
+
+        def mutable_slice():
+            x[[]:] = y
+
+        check_consts(mutable_slice, slice, {})
+
+        def different_but_equal():
+            x[:0] = y
+            x[:0.0] = y
+            x[:False] = y
+            x[:None] = y
+
+        check_consts(
+            different_but_equal,
+            slice,
+            [
+                slice(None, 0, None),
+                slice(None, 0.0, None),
+                slice(None, False, None),
+                slice(None, None, None)
+            ]
+        )
 
     def test_compare_positions(self):
         for opname_prefix, op in [

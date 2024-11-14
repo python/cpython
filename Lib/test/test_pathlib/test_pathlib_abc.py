@@ -86,11 +86,6 @@ class PurePathBaseTest(unittest.TestCase):
             p.suffix
         with self.assertRaises(e):
             p.suffixes
-        with self.assertRaises(e):
-            p / 'bar'
-        with self.assertRaises(e):
-            'bar' / p
-        self.assertRaises(e, p.joinpath, 'bar')
         self.assertRaises(e, p.with_name, 'bar')
         self.assertRaises(e, p.with_stem, 'bar')
         self.assertRaises(e, p.with_suffix, '.txt')
@@ -153,6 +148,7 @@ class DummyPurePathTest(unittest.TestCase):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
+        P()
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
@@ -1633,8 +1629,10 @@ class DummyPathTest(DummyPurePathTest):
             p.joinpath('linkA').symlink_to('fileA')
             p.joinpath('brokenLink').symlink_to('non-existing')
             p.joinpath('linkB').symlink_to('dirB', target_is_directory=True)
-            p.joinpath('dirA', 'linkC').symlink_to(parser.join('..', 'dirB'))
-            p.joinpath('dirB', 'linkD').symlink_to(parser.join('..', 'dirB'))
+            p.joinpath('dirA', 'linkC').symlink_to(
+                parser.join('..', 'dirB'), target_is_directory=True)
+            p.joinpath('dirB', 'linkD').symlink_to(
+                parser.join('..', 'dirB'), target_is_directory=True)
             p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
 
     def tearDown(self):
@@ -1949,7 +1947,7 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             # Add some symlinks
             source.joinpath('linkC').symlink_to('fileC')
-            source.joinpath('linkD').symlink_to('dirD')
+            source.joinpath('linkD').symlink_to('dirD', target_is_directory=True)
 
         # Perform the copy
         target = base / 'copyC'
@@ -2479,7 +2477,7 @@ class DummyPathTest(DummyPurePathTest):
             if i % 2:
                 link.symlink_to(P(self.base, "dirE", "nonexistent"))
             else:
-                link.symlink_to(P(self.base, "dirC"))
+                link.symlink_to(P(self.base, "dirC"), target_is_directory=True)
 
         self.assertEqual(len(set(base.glob("*"))), 100)
         self.assertEqual(len(set(base.glob("*/"))), 50)
@@ -2494,6 +2492,23 @@ class DummyPathTest(DummyPurePathTest):
         bad_link = base / 'bad_link'
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
+
+    @needs_posix
+    def test_absolute_posix(self):
+        P = self.cls
+        # The default implementation uses '/' as the current directory
+        self.assertEqual(str(P('').absolute()), '/')
+        self.assertEqual(str(P('a').absolute()), '/a')
+        self.assertEqual(str(P('a/b').absolute()), '/a/b')
+
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     @needs_symlinks
     def test_readlink(self):
@@ -2812,29 +2827,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(p, P)
         self.assertEqualNormCase(str(p), self.base)
 
-        # Resolve relative paths.
-        try:
-            self.cls('').absolute()
-        except UnsupportedOperation:
-            return
-        old_path = os.getcwd()
-        os.chdir(self.base)
-        try:
-            p = self.cls('link0').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link1').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link2').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link3').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-        finally:
-            os.chdir(old_path)
-
     @needs_symlinks
     def test_complex_symlinks_absolute(self):
         self._check_complex_symlinks(self.base)
@@ -2967,7 +2959,7 @@ class DummyPathTest(DummyPurePathTest):
                 f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
 
         if self.can_symlink:
-            self.link_path.symlink_to(t2_path)
+            self.link_path.symlink_to(t2_path, target_is_directory=True)
             broken_link_path.symlink_to('broken')
             broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
             self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])

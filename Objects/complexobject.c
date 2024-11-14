@@ -1250,4 +1250,5 @@ PyTypeObject PyComplex_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     actual_complex_new,                         /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_COMPLEX,
 };
