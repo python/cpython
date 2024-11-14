@@ -1681,6 +1681,10 @@ else:
     def url2pathname(pathname):
         """OS-specific conversion from a relative URL of the 'file' scheme
         to a file system path; not recommended for general use."""
+        if pathname[:3] == '///':
+            # URL has an empty authority section, so the path begins on the
+            # third character.
+            pathname = pathname[2:]
         return unquote(pathname)
 
     def pathname2url(pathname):
