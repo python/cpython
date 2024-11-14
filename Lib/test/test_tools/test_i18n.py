@@ -88,6 +88,7 @@ class Test_pygettext(unittest.TestCase):
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
     def extract_from_str(self, module_content, *, args=(), strict=True):
+        """Return all msgids extracted from module_content."""
         filename = 'test.py'
         with temp_cwd(None):
             with open(filename, 'w', encoding='utf-8') as fp:
@@ -102,10 +103,6 @@ class Test_pygettext(unittest.TestCase):
     def extract_docstrings_from_str(self, module_content):
         """Return all docstrings extracted from module_content."""
         return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
-
-    def extract_messages_from_str(self, module_content):
-        """Return all msgids extracted from module_content."""
-        return self.extract_from_str(module_content)
 
     def test_header(self):
         """Make sure the required fields are in the header, according to:
@@ -355,7 +352,7 @@ class Test_pygettext(unittest.TestCase):
 
     def test_function_and_class_names(self):
         """Test that function and class names are not mistakenly extracted."""
-        msgids = self.extract_messages_from_str(dedent('''\
+        msgids = self.extract_from_str(dedent('''\
         def _(x):
             pass
 
