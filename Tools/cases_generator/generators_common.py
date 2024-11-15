@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Mapping, TextIO, Iterator
+from typing import TextIO
 
 from analyzer import (
     Instruction,
