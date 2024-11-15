@@ -119,7 +119,8 @@ PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 // Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(_PyOptimizerObject *) _Py_GetOptimizer(void);
 PyAPI_FUNC(int) _Py_SetTier2Optimizer(_PyOptimizerObject* optimizer);
-PyAPI_FUNC(void) _Py_SetUOpOptimize(_PyOptimizerObject* opt);
+PyAPI_FUNC(PyObject *) _PyOptimizer_NewCounter(void);
+PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6

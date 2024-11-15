@@ -1315,10 +1315,15 @@ PyTypeObject _PyUOpOptimizer_Type = {
     .tp_dealloc = uop_opt_dealloc,
 };
 
-void
-_Py_SetUOpOptimize(_PyOptimizerObject *opt)
+PyObject *
+_PyOptimizer_NewUOpOptimizer(void)
 {
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
+    if (opt == NULL) {
+        return NULL;
+    }
     opt->optimize = uop_optimize;
+    return (PyObject *)opt;
 }
 
 static void
@@ -1398,6 +1403,18 @@ PyTypeObject _PyCounterOptimizer_Type = {
     .tp_methods = counter_optimizer_methods,
     .tp_dealloc = (destructor)PyObject_Free,
 };
+
+PyObject *
+_PyOptimizer_NewCounter(void)
+{
+    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
+    if (opt == NULL) {
+        return NULL;
+    }
+    opt->base.optimize = counter_optimize;
+    opt->count = 0;
+    return (PyObject *)opt;
+}
 
 
 /*****************************************
