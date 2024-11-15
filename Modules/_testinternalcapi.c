@@ -990,12 +990,6 @@ get_co_framesize(PyObject *self, PyObject *arg)
 #ifdef _Py_TIER2
 
 static PyObject *
-new_uop_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewUOpOptimizer();
-}
-
-static PyObject *
 set_optimizer(PyObject *self, PyObject *opt)
 {
     if (opt == Py_None) {
@@ -2095,7 +2089,6 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
 #endif

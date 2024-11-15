@@ -140,7 +140,8 @@ def get_opnames(ex):
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer") and
+                     hasattr(_testinternalcapi, "new_uop_optimizer"),
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
@@ -588,7 +589,8 @@ class TestUops(unittest.TestCase):
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer") and
+                     hasattr(_testinternalcapi, "new_uop_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
