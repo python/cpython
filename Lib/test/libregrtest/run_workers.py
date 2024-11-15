@@ -501,7 +501,7 @@ class RunWorkers:
             self.worker_timeout: float | None = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
-        self._workers: list[WorkerThread] | None = None
+        self.workers: list[WorkerThread] = []
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -509,17 +509,9 @@ class RunWorkers:
             # these worker threads would never get anything to do.
             self.num_workers = min(self.num_workers, jobs)
 
-    @property
-    def workers(self) -> list[WorkerThread]:
-        if self._workers is None:
-            raise ValueError(
-                'Should never call `.workers` before `.start_workers()`',
-            )
-        return self._workers
-
     def start_workers(self) -> None:
-        self._workers = [WorkerThread(index, self)
-                         for index in range(1, self.num_workers + 1)]
+        self.workers = [WorkerThread(index, self)
+                        for index in range(1, self.num_workers + 1)]
         jobs = self.runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
