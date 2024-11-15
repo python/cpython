@@ -1,0 +1,2 @@
+Raise :class:`calendar.IllegalMonthError` (now a subclass of :class:`IndexError`) for :func:`calendar.month`
+when the input month is not correct.
