@@ -23,6 +23,10 @@ typedef struct _gc_runtime_state GCState;
 #  define GC_DEBUG
 #endif
 
+// Define this when debugging the GC
+// #define GC_EXTRA_DEBUG
+
+
 #define GC_NEXT _PyGCHead_NEXT
 #define GC_PREV _PyGCHead_PREV
 
@@ -421,6 +425,11 @@ validate_list(PyGC_Head *head, enum flagstates flags)
     assert(prev == GC_PREV(head));
 }
 
+#else
+#define validate_list(x, y) do{}while(0)
+#endif
+
+#ifdef GC_EXTRA_DEBUG
 static void
 validate_old(GCState *gcstate)
 {
@@ -464,7 +473,6 @@ gc_list_validate_space(PyGC_Head *head, int space) {
 }
 
 #else
-#define validate_list(x, y) do{}while(0)
 #define validate_old(g) do{}while(0)
 #define validate_consistent_old_space(l) do{}while(0)
 #define gc_list_validate_space(l, s) do{}while(0)
@@ -531,6 +539,13 @@ visit_decref(PyObject *op, void *parent)
             gc_decref(gc);
         }
     }
+    return 0;
+}
+
+int
+_PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
+{
+    Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
     return 0;
 }
 
@@ -1712,20 +1727,25 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
     GCState *gcstate = &interp->gc;
 
     PyObject *result = PyList_New(0);
-    if (result == NULL) {
-        return NULL;
+    /* Generation:
+     * -1: Return all objects
+     * 0: All young objects
+     * 1: No objects
+     * 2: All old objects
+     */
+    if (result == NULL || generation == 1) {
+        return result;
     }
-
-    if (generation == -1) {
-        /* If generation is -1, get all objects from all generations */
-        for (int i = 0; i < NUM_GENERATIONS; i++) {
-            if (append_objects(result, GEN_HEAD(gcstate, i))) {
-                goto error;
-            }
+    if (generation <= 0) {
+        if (append_objects(result, &gcstate->young.head)) {
+            goto error;
         }
     }
-    else {
-        if (append_objects(result, GEN_HEAD(gcstate, generation))) {
+    if (generation != 0) {
+        if (append_objects(result, &gcstate->old[0].head)) {
+            goto error;
+        }
+        if (append_objects(result, &gcstate->old[1].head)) {
             goto error;
         }
     }
@@ -1932,6 +1952,13 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
     }
 }
 
+static void
+finalize_unlink_gc_head(PyGC_Head *gc) {
+    PyGC_Head *prev = GC_PREV(gc);
+    PyGC_Head *next = GC_NEXT(gc);
+    _PyGCHead_SET_NEXT(prev, next);
+    _PyGCHead_SET_PREV(next, prev);
+}
 
 void
 _PyGC_Fini(PyInterpreterState *interp)
@@ -1940,9 +1967,25 @@ _PyGC_Fini(PyInterpreterState *interp)
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 
-    /* We expect that none of this interpreters objects are shared
-       with other interpreters.
-       See https://github.com/python/cpython/issues/90228. */
+    /* Prevent a subtle bug that affects sub-interpreters that use basic
+     * single-phase init extensions (m_size == -1).  Those extensions cause objects
+     * to be shared between interpreters, via the PyDict_Update(mdict, m_copy) call
+     * in import_find_extension().
+     *
+     * If they are GC objects, their GC head next or prev links could refer to
+     * the interpreter _gc_runtime_state PyGC_Head nodes.  Those nodes go away
+     * when the interpreter structure is freed and so pointers to them become
+     * invalid.  If those objects are still used by another interpreter and
+     * UNTRACK is called on them, a crash will happen.  We untrack the nodes
+     * here to avoid that.
+     *
+     * This bug was originally fixed when reported as gh-90228.  The bug was
+     * re-introduced in gh-94673.
+     */
+    finalize_unlink_gc_head(&gcstate->young.head);
+    finalize_unlink_gc_head(&gcstate->old[0].head);
+    finalize_unlink_gc_head(&gcstate->old[1].head);
+    finalize_unlink_gc_head(&gcstate->permanent_generation.head);
 }
 
 /* for debugging */

@@ -506,7 +506,7 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_SETTABLE: mask of owner changable flags\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
 UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\

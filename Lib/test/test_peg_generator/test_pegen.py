@@ -484,7 +484,7 @@ class TestPegen(unittest.TestCase):
 
     def test_python_expr(self) -> None:
         grammar = """
-        start: expr NEWLINE? $ { ast.Expression(expr, lineno=1, col_offset=0) }
+        start: expr NEWLINE? $ { ast.Expression(expr) }
         expr: ( expr '+' term { ast.BinOp(expr, ast.Add(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | expr '-' term { ast.BinOp(expr, ast.Sub(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | term { term }
@@ -505,6 +505,14 @@ class TestPegen(unittest.TestCase):
         code = compile(node, "", "eval")
         val = eval(code)
         self.assertEqual(val, 3.0)
+
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
 
     def test_nullable(self) -> None:
         grammar_source = """
@@ -893,7 +901,7 @@ class TestPegen(unittest.TestCase):
 
     def test_locations_in_alt_action_and_group(self) -> None:
         grammar = """
-        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        start: t=term NEWLINE? $ { ast.Expression(t) }
         term:
             | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
             | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }

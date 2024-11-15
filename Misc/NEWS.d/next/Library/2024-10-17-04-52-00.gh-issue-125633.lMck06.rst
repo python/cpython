@@ -1,0 +1,2 @@
+Add function :func:`inspect.ispackage` to determine whether an object is a
+:term:`package` or not.
