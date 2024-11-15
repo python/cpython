@@ -17,26 +17,26 @@ value returned by this function is always 1 more as the function also has a refe
 to the object when called):
 
 ```pycon
-    >>> x = object()
-    >>> sys.getrefcount(x)
-    2
-    >>> y = x
-    >>> sys.getrefcount(x)
-    3
-    >>> del y
-    >>> sys.getrefcount(x)
-    2
+>>> x = object()
+>>> sys.getrefcount(x)
+2
+>>> y = x
+>>> sys.getrefcount(x)
+3
+>>> del y
+>>> sys.getrefcount(x)
+2
 ```
 
 The main problem with the reference counting scheme is that it does not handle reference
 cycles. For instance, consider this code:
 
 ```pycon
-    >>> container = []
-    >>> container.append(container)
-    >>> sys.getrefcount(container)
-    3
-    >>> del container
+>>> container = []
+>>> container.append(container)
+>>> sys.getrefcount(container)
+3
+>>> del container
 ```
 
 In this example, `container` holds a reference to itself, so even when we remove
