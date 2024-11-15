@@ -1711,25 +1711,33 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            int should_deopt = 0;
+            #ifdef Py_GIL_DISABLED
+            PyCriticalSection cs;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_BEGIN_CRITICAL_SECTION(seq_o);
+            PyCriticalSection_Begin(&cs, seq_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            should_deopt = PyList_GET_SIZE(seq_o) != oparg;
-            if (!should_deopt) {
-                STAT_INC(UNPACK_SEQUENCE, hit);
-                PyObject **items = _PyList_ITEMS(seq_o);
-                for (int i = oparg; --i >= 0; ) {
-                    *values++ = PyStackRef_FromPyObjectNew(items[i]);
+            #endif
+            if (PyList_GET_SIZE(seq_o) != oparg) {
+                #ifdef Py_GIL_DISABLED
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCriticalSection_End(&cs);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                #endif
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
                 }
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_END_CRITICAL_SECTION();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (should_deopt) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyList_ITEMS(seq_o);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
+            #ifdef Py_GIL_DISABLED
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyCriticalSection_End(&cs);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #endif
             PyStackRef_CLOSE(seq);
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
