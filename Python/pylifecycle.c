@@ -1351,11 +1351,10 @@ init_interp_main(PyThreadState *tstate)
             } else
 #endif
             {
-                PyObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
+                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
                 if (opt == NULL) {
                     return _PyStatus_ERR("can't initialize optimizer");
                 }
-                _Py_SetUOpOptimize((_PyOptimizerObject *)opt);
                 if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
                     return _PyStatus_ERR("can't install optimizer");
                 }
