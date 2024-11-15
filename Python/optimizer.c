@@ -1750,9 +1750,8 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
     else {
         fprintf(out, "        <tr><td  border=\"1\" >");
         write_str(code->co_qualname, out);
-        fprintf(out, "</td></tr>\n");
         int line = find_line_number(code, executor);
-        fprintf(out, "        <tr><td border=\"1\" >line: %d</td></tr>\n", line);
+        fprintf(out, ": %d</td></tr>\n", line);
     }
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
@@ -1762,20 +1761,30 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
 #else
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
 #endif
+        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+            break;
+        }
     }
     fprintf(out, "    label = </table>>\n");
     fprintf(out, "]\n\n");
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t flags = _PyUop_Flags[inst->opcode];
-        if (flags & HAS_EXIT_FLAG) {
+        _PyExitData *exit = NULL;
+        if (inst->opcode == _EXIT_TRACE) {
+            exit = (_PyExitData *)inst->operand0;
+        }
+        else if (flags & HAS_EXIT_FLAG) {
             assert(inst->format == UOP_FORMAT_JUMP);
             _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
             assert(exit_inst->opcode == _EXIT_TRACE);
-            _PyExitData *exit = (_PyExitData *)exit_inst->operand0;
-            if (exit->executor != NULL) {
-                fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
-            }
+            exit = (_PyExitData *)exit_inst->operand0;
+        }
+        if (exit != NULL && exit->executor != NULL) {
+            fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+        }
+        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+            break;
         }
     }
 }
