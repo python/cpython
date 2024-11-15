@@ -2521,25 +2521,27 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
         lastC = SEP;
         explicit = 1;
     }
-    else if (drvsize || rootsize) {
-        // Skip past root and update minP2
-        p1 = &path[drvsize + rootsize];
+    else {
+        if (drvsize || rootsize) {
+            // Skip past root and update minP2
+            p1 = &path[drvsize + rootsize];
 #ifndef ALTSEP
-        p2 = p1;
+            p2 = p1;
 #else
-        for (; p2 < p1; ++p2) {
-            if (*p2 == ALTSEP) {
-                *p2 = SEP;
+            for (; p2 < p1; ++p2) {
+                if (*p2 == ALTSEP) {
+                    *p2 = SEP;
+                }
             }
-        }
 #endif
-        minP2 = p2 - 1;
-        lastC = *minP2;
+            minP2 = p2 - 1;
+            lastC = *minP2;
 #ifdef MS_WINDOWS
-        if (lastC != SEP) {
-            minP2++;
-        }
+            if (lastC != SEP) {
+                minP2++;
+            }
 #endif
+        }
     }
 
     /* if pEnd is specified, check that. Else, check for null terminator */
