@@ -738,7 +738,7 @@ def always_exits(op: parser.InstDef) -> bool:
             depth -= 1
         elif depth > 1:
             continue
-        elif tkn.kind == lx.GOTO or tkn.kind == lx.RETURN:
+        elif tkn.kind in {lx.GOTO, lx.RETURN}:
             return True
         elif tkn.kind == lx.KEYWORD:
             # XXX: This appears to be unreachable since we never

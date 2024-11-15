@@ -148,7 +148,7 @@ class Emitter:
         self.emit(lparen)
         assert lparen.kind == lx.LPAREN
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, lx.LPAREN)
+        emit_to(self.out, tkn_iter, lx.RPAREN)
         next(tkn_iter)  # Semi colon
         self.out.emit(", ")
         assert inst is not None
@@ -397,7 +397,7 @@ class Emitter:
         tkn = next(tkn_iter)
         assert tkn.kind == lx.LPAREN
         self.out.emit(tkn)
-        rparen = emit_to(self.out, tkn_iter, lx.LPAREN)
+        rparen = emit_to(self.out, tkn_iter, lx.RPAREN)
         self.emit(rparen)
         if_storage = storage.copy()
         reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
