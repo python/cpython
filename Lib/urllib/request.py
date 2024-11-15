@@ -1555,7 +1555,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            raise URLError(exp) from exp
+            raise URLError(f"ftp error: {exp}") from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1656,6 +1656,10 @@ else:
     def url2pathname(pathname):
         """OS-specific conversion from a relative URL of the 'file' scheme
         to a file system path; not recommended for general use."""
+        if pathname[:3] == '///':
+            # URL has an empty authority section, so the path begins on the
+            # third character.
+            pathname = pathname[2:]
         return unquote(pathname)
 
     def pathname2url(pathname):

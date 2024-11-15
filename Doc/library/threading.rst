@@ -567,6 +567,9 @@ All methods are executed atomically.
          Lock acquisition can now be interrupted by signals on POSIX if the
          underlying threading implementation supports it.
 
+      .. versionchanged:: 3.14
+         Lock acquisition can now be interrupted by signals on Windows.
+
 
    .. method:: release()
 
@@ -1018,7 +1021,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       has not expired. The return value represents the
       reason that this blocking method returned; ``True`` if returning because
       the internal flag is set to true, or ``False`` if a timeout is given and
-      the the internal flag did not become true within the given wait time.
+      the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
       floating-point number specifying a timeout for the operation in seconds,
