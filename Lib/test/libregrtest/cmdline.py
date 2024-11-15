@@ -148,7 +148,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources = None
+        self.use_resources: list[str] = []
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -403,8 +403,6 @@ def _parse_args(args, **kwargs):
             raise TypeError('%r is an invalid keyword argument '
                             'for this function' % k)
         setattr(ns, k, v)
-    if ns.use_resources is None:
-        ns.use_resources = []
 
     parser = _create_parser()
     # Issue #14191: argparse doesn't support "intermixed" positional and
@@ -428,9 +426,7 @@ def _parse_args(args, **kwargs):
     # Continuous Integration (CI): common options for fast/slow CI modes
     if ns.slow_ci or ns.fast_ci:
         # Similar to options:
-        #
-        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
-        #     --slowest --verbose3
+        #   -j0 --randomize --fail-env-changed --rerun --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
         ns.randomize = True

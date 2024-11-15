@@ -828,7 +828,7 @@ class UtimeTests(unittest.TestCase):
         return (ns * 1e-9) + 0.5e-9
 
     def test_utime_by_indexed(self):
-        # pass times as floating point seconds as the second indexed parameter
+        # pass times as floating-point seconds as the second indexed parameter
         def set_time(filename, ns):
             atime_ns, mtime_ns = ns
             atime = self.ns_to_sec(atime_ns)
@@ -1298,8 +1298,8 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self._test_underlying_process_env('_A_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
-    def test_refresh(self):
-        # Test os.environ.refresh()
+    def test_reload_environ(self):
+        # Test os.reload_environ()
         has_environb = hasattr(os, 'environb')
 
         # Test with putenv() which doesn't update os.environ
@@ -1309,7 +1309,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'python_value')
 
-        os.environ.refresh()
+        os.reload_environ()
         self.assertEqual(os.environ['test_env'], 'new_value')
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'new_value')
@@ -1320,28 +1320,28 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'new_value')
 
-        os.environ.refresh()
+        os.reload_environ()
         self.assertNotIn('test_env', os.environ)
         if has_environb:
             self.assertNotIn(b'test_env', os.environb)
 
         if has_environb:
-            # test os.environb.refresh() with putenv()
+            # test reload_environ() on os.environb with putenv()
             os.environb[b'test_env'] = b'python_value2'
             os.putenv("test_env", "new_value2")
             self.assertEqual(os.environb[b'test_env'], b'python_value2')
             self.assertEqual(os.environ['test_env'], 'python_value2')
 
-            os.environb.refresh()
+            os.reload_environ()
             self.assertEqual(os.environb[b'test_env'], b'new_value2')
             self.assertEqual(os.environ['test_env'], 'new_value2')
 
-            # test os.environb.refresh() with unsetenv()
+            # test reload_environ() on os.environb with unsetenv()
             os.unsetenv('test_env')
             self.assertEqual(os.environb[b'test_env'], b'new_value2')
             self.assertEqual(os.environ['test_env'], 'new_value2')
 
-            os.environb.refresh()
+            os.reload_environ()
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
@@ -2351,9 +2351,13 @@ class Win32ErrorTests(unittest.TestCase):
 
 @unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdatasync", "fstat",
-               "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
-    singles_fildes = {"fchdir", "fdatasync", "fsync"}
+    singles = ["fchdir", "dup", "fstat", "fstatvfs", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir"}
+    # systemd-nspawn --suppress-sync=true does not verify fd passed
+    # fdatasync() and fsync(), and always returns success
+    if not support.in_systemd_nspawn_sync_suppressed():
+        singles += ["fdatasync", "fsync"]
+        singles_fildes |= {"fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
@@ -3173,7 +3177,8 @@ class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.wintypes
+        # Ruff false positive -- it thinks we're redefining `ctypes` here
+        import ctypes.wintypes  # noqa: F811
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE

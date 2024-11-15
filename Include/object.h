@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
@@ -180,13 +180,19 @@ _Py_ThreadId(void)
     tid = __readfsdword(24);
 #elif defined(_MSC_VER) && defined(_M_ARM64)
     tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
+    tid = __getReg(18);
 #elif defined(__i386__)
     __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
     __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
    __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
+#elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
@@ -249,11 +255,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
 #else
     static inline PyTypeObject* _Py_TYPE(PyObject *ob)
     {
-    #if defined(Py_GIL_DISABLED)
-        return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
-    #else
         return ob->ob_type;
-    #endif
     }
     #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
     #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
@@ -284,11 +286,7 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ptr(&ob->ob_type, type);
-#else
     ob->ob_type = type;
-#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
@@ -398,6 +396,10 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+#define Py_TP_USE_SPEC NULL
 #endif
 
 /* Generic type check */
@@ -792,6 +794,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #ifdef __cplusplus

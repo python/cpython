@@ -1072,7 +1072,7 @@ class UnivariateCommonMixin:
     def test_order_doesnt_matter(self):
         # Test that the order of data points doesn't change the result.
 
-        # CAUTION: due to floating point rounding errors, the result actually
+        # CAUTION: due to floating-point rounding errors, the result actually
         # may depend on the order. Consider this test representing an ideal.
         # To avoid this test failing, only test with exact values such as ints
         # or Fractions.
@@ -2799,7 +2799,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                      "accuracy not guaranteed on machines with double rounding")
-    @support.cpython_only    # Allow for a weaker sumprod() implmentation
+    @support.cpython_only    # Allow for a weaker sumprod() implementation
     def test_sqrtprod_helper_function_improved_accuracy(self):
         # Test a known example where accuracy is improved
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661

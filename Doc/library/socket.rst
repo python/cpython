@@ -413,14 +413,14 @@ Constants
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
    .. versionchanged:: 3.6.5
-      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
 
-      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.10
       ``IP_RECVTOS`` was added.
@@ -451,8 +451,12 @@ Constants
       network interface instead of its name.
 
    .. versionchanged:: 3.14
-      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
-      on Linux.
+      Added missing ``IP_RECVERR``, ``IPV6_RECVERR``, ``IP_RECVTTL``, and
+      ``IP_RECVORIGDSTADDR`` on Linux.
+
+   .. versionchanged:: 3.14
+      Added support for ``TCP_QUICKACK`` on Windows platforms when available.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -704,6 +708,13 @@ Constants
 
    .. versionadded:: 3.12
 
+.. data:: SHUT_RD
+          SHUT_WR
+          SHUT_RDWR
+
+   These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
+
+   .. availability:: not WASI.
 
 Functions
 ^^^^^^^^^
@@ -733,7 +744,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
    :func:`socket.fromfd`, *fileno* will return the same socket and not a
    duplicate. This may help close a detached socket using
-   :meth:`socket.close()`.
+   :meth:`socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -917,7 +928,9 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionadded:: 3.7
 
-.. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
+.. function:: getaddrinfo(host, port, family=AF_UNSPEC, type=0, proto=0, flags=0)
+
+   This function wraps the C function ``getaddrinfo`` of the underlying system.
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
    all the necessary arguments for creating a socket connected to that service.
@@ -927,8 +940,10 @@ The :mod:`socket` module also offers various network-related services:
    and *port*, you can pass ``NULL`` to the underlying C API.
 
    The *family*, *type* and *proto* arguments can be optionally specified
-   in order to narrow the list of addresses returned.  Passing zero as a
-   value for each of these arguments selects the full range of results.
+   in order to provide options and limit the list of addresses returned.
+   Pass their default values (:data:`AF_UNSPEC`, 0, and 0, respectively)
+   to not limit the results. See the note below for details.
+
    The *flags* argument can be one or several of the ``AI_*`` constants,
    and will influence how results are computed and returned.
    For example, :const:`AI_NUMERICHOST` will disable domain name resolution
@@ -948,6 +963,29 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
+   .. note::
+
+      If you intend to use results from :func:`!getaddrinfo` to create a socket
+      (rather than, for example, retrieve *canonname*),
+      consider limiting the results by *type* (e.g. :data:`SOCK_STREAM` or
+      :data:`SOCK_DGRAM`) and/or *proto* (e.g. :data:`IPPROTO_TCP` or
+      :data:`IPPROTO_UDP`) that your application can handle.
+
+      The behavior with default values of *family*, *type*, *proto*
+      and *flags* is system-specific.
+
+      Many systems (for example, most Linux configurations) will return a sorted
+      list of all matching addresses.
+      These addresses should generally be tried in order until a connection succeeds
+      (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
+      In these cases, limiting the *type* and/or *proto* can help eliminate
+      unsuccessful or unusable connecton attempts.
+
+      Some systems will, however, only return a single address.
+      (For example, this was reported on Solaris and AIX configurations.)
+      On these systems, limiting the *type* and/or *proto* helps ensure that
+      this address is usable.
+
    .. audit-event:: socket.getaddrinfo host,port,family,type,protocol socket.getaddrinfo
 
    The following example fetches address information for a hypothetical TCP
@@ -966,6 +1004,8 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.7
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
+
+.. _Happy Eyeballs: https://en.wikipedia.org/wiki/Happy_Eyeballs
 
 .. function:: getfqdn([name])
 
@@ -1269,7 +1309,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android.
 
    .. versionadded:: 3.3
 
@@ -1412,7 +1452,7 @@ to sockets.
 .. method:: socket.close()
 
    Mark the socket closed.  The underlying system resource (e.g. a file
-   descriptor) is also closed when all file objects from :meth:`makefile()`
+   descriptor) is also closed when all file objects from :meth:`makefile`
    are closed.  Once that happens, all future operations on the socket
    object will fail. The remote end will receive no more data (after
    queued data is flushed).
@@ -1427,10 +1467,10 @@ to sockets.
 
    .. note::
 
-      :meth:`close()` releases the resource associated with a connection but
+      :meth:`close` releases the resource associated with a connection but
       does not necessarily close the connection immediately.  If you want
-      to close the connection in a timely fashion, call :meth:`shutdown()`
-      before :meth:`close()`.
+      to close the connection in a timely fashion, call :meth:`shutdown`
+      before :meth:`close`.
 
 
 .. method:: socket.connect(address)
@@ -1926,7 +1966,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating point number expressing seconds, or ``None``.
+   nonnegative floating-point number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in
@@ -2039,7 +2079,7 @@ can be changed by calling :func:`setdefaulttimeout`.
    in non-blocking mode.  Also, the blocking and timeout modes are shared between
    file descriptors and socket objects that refer to the same network endpoint.
    This implementation detail can have visible consequences if e.g. you decide
-   to use the :meth:`~socket.fileno()` of a socket.
+   to use the :meth:`~socket.fileno` of a socket.
 
 Timeouts and the ``connect`` method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
