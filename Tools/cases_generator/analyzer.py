@@ -903,7 +903,7 @@ def make_uop(
 
 
 def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
-    assert op.kind == OP
+    assert op.kind == "op"
     if op.name in uops:
         if ANN_OVERRIDE not in op.annotations:
             raise override_error(
@@ -924,7 +924,7 @@ def add_instruction(
 def desugar_inst(
     inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    assert inst.kind == INST
+    assert inst.kind == "inst"
     name = inst.name
     op_inputs: list[parser.InputEffect] = []
     parts: list[Part] = []
@@ -1124,10 +1124,10 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     for node in forest:
         match node:
             case parser.InstDef(name):
-                if node.kind == INST:
+                if node.kind == "inst":
                     desugar_inst(node, instructions, uops)
                 else:
-                    assert node.kind == OP
+                    assert node.kind == "op"
                     add_op(node, uops)
             case parser.Macro():
                 pass
