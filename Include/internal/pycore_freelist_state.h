@@ -14,6 +14,7 @@ extern "C" {
 #  define Py_dicts_MAXFREELIST 80
 #  define Py_dictkeys_MAXFREELIST 80
 #  define Py_floats_MAXFREELIST 100
+#  define Py_ints_MAXFREELIST 100
 #  define Py_slices_MAXFREELIST 1
 #  define Py_contexts_MAXFREELIST 255
 #  define Py_async_gens_MAXFREELIST 80
@@ -35,6 +36,7 @@ struct _Py_freelist {
 
 struct _Py_freelists {
     struct _Py_freelist floats;
+    struct _Py_freelist ints;
     struct _Py_freelist tuples[PyTuple_MAXSAVESIZE];
     struct _Py_freelist lists;
     struct _Py_freelist dicts;

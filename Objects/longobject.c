@@ -6,6 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
+#include "pycore_freelist.h" // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -221,10 +222,14 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
     /* We could use a freelist here */
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+
+    PyLongObject *v = _Py_FREELIST_POP(PyLongObject, ints);
     if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -3614,22 +3619,15 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 static void
 long_dealloc(PyObject *self)
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref small Ints out of existence. Instead,
-     * since small Ints are immortal, re-set the reference count.
-     */
-    PyLongObject *pylong = (PyLongObject*)self;
-    if (pylong && _PyLong_IsCompact(pylong)) {
-        stwodigits ival = medium_value(pylong);
-        if (IS_SMALL_INT(ival)) {
-            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
-            if (pylong == small_pylong) {
-                _Py_SetImmortal(self);
-                return;
-            }
-        }
-    }
     Py_TYPE(self)->tp_free(self);
+}
+
+void _PyLong_Free(PyLongObject *op) {
+    if (_PyLong_IsCompact(op)) {
+        _Py_FREELIST_FREE(ints, op, PyObject_Free);
+        return;
+    }
+    PyObject_Free(op);
 }
 
 static Py_hash_t
@@ -6615,7 +6613,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
-    PyObject_Free,                              /* tp_free */
+    _PyLong_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_INT,
 };
