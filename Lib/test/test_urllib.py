@@ -1557,13 +1557,13 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('/'), '/')
         self.assertEqual(fn('/a/b.c'), '/a/b.c')
         self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
-        try:
-            expect = os.fsencode('\xe9')
-        except UnicodeEncodeError:
-            pass
-        else:
-            expect = urllib.parse.quote_from_bytes(expect)
-            self.assertEqual(fn('\xe9'), expect)
+
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
+    def test_pathname2url_nonascii(self):
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
+        self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1614,12 +1614,13 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
-        try:
-            expect = os.fsdecode(b'\xe9')
-        except UnicodeDecodeError:
-            pass
-        else:
-            self.assertEqual(fn('%e9'), expect)
+
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
+    def test_url2pathname_nonascii(self):
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
+        self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
