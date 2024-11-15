@@ -111,27 +111,18 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self._test_name: TestName | None = None
-        self._start_time: float | None = None
+        self.test_name: TestName | None = None
+        self.start_time: float | None = None
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
 
-    @property
-    def test_name(self) -> TestName:
-        if self._test_name is None:
+    def current_test_name(self) -> TestName:
+        if self.test_name is None:
             raise ValueError(
                 'Should never call `.test_name` before calling `.run()`'
             )
-        return self._test_name
-
-    @property
-    def start_time(self) -> float:
-        if self._start_time is None:
-            raise ValueError(
-                'Should never call `.start_time` before calling `.run()`'
-            )
-        return self._start_time
+        return self.test_name
 
     def __repr__(self) -> str:
         info = [f'WorkerThread #{self.worker_id}']
@@ -143,7 +134,7 @@ class WorkerThread(threading.Thread):
         if test:
             info.append(f'test={test}')
         popen = self._popen
-        if popen is not None:
+        if popen is not None and self.start_time is not None:
             dt = time.monotonic() - self.start_time
             info.extend((f'pid={popen.pid}',
                          f'time={format_duration(dt)}'))
@@ -327,13 +318,14 @@ class WorkerThread(threading.Thread):
         except Exception as exc:
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
-            raise WorkerError(self.test_name,
+            raise WorkerError(self.current_test_name(),
                               f"Cannot read process stdout: {exc}",
                               stdout=None,
                               state=State.WORKER_BUG)
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
+        test_name = self.current_test_name()
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
@@ -348,11 +340,11 @@ class WorkerThread(threading.Thread):
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             err_msg = f"Failed to read worker process JSON: {exc}"
-            raise WorkerError(self.test_name, err_msg, stdout,
+            raise WorkerError(test_name, err_msg, stdout,
                               state=State.WORKER_BUG)
 
         if not worker_json:
-            raise WorkerError(self.test_name, "empty JSON", stdout,
+            raise WorkerError(test_name, "empty JSON", stdout,
                               state=State.WORKER_BUG)
 
         try:
@@ -361,7 +353,7 @@ class WorkerThread(threading.Thread):
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             err_msg = f"Failed to parse worker process JSON: {exc}"
-            raise WorkerError(self.test_name, err_msg, stdout,
+            raise WorkerError(test_name, err_msg, stdout,
                               state=State.WORKER_BUG)
 
         return (result, stdout)
@@ -379,14 +371,14 @@ class WorkerThread(threading.Thread):
             stdout = self.read_stdout(stdout_file)
 
             if retcode is None:
-                raise WorkerError(self.test_name, stdout=stdout,
+                raise WorkerError(test_name, stdout=stdout,
                                   err_msg=None,
                                   state=State.TIMEOUT)
             if retcode != 0:
                 name = support.get_signal_name(retcode)
                 if name:
                     retcode = f"{retcode} ({name})"
-                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout,
+                raise WorkerError(test_name, f"Exit code {retcode}", stdout,
                                   state=State.WORKER_FAILED)
 
             result, stdout = self.read_json(json_file, json_tmpfile, stdout)
@@ -410,15 +402,15 @@ class WorkerThread(threading.Thread):
                 except StopIteration:
                     break
 
-                self._start_time = time.monotonic()
-                self._test_name = test_name
+                self.start_time = start_time = time.monotonic()
+                self.test_name = test_name
                 try:
                     mp_result = self._runtest(test_name)
                 except WorkerError as exc:
                     mp_result = exc.mp_result
                 finally:
-                    self._test_name = None
-                mp_result.result.duration = time.monotonic() - self.start_time
+                    self.test_name = None
+                mp_result.result.duration = time.monotonic() - start_time
                 self.output.put((False, mp_result))
 
                 if mp_result.result.must_stop(fail_fast, fail_env_changed):
@@ -470,7 +462,7 @@ def get_running(workers: list[WorkerThread]) -> str | None:
     running: list[str] = []
     for worker in workers:
         test_name = worker.test_name
-        if not test_name:
+        if not test_name or worker.start_time is None:
             continue
         dt = time.monotonic() - worker.start_time
         if dt >= PROGRESS_MIN_TIME:
