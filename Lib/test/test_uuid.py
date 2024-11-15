@@ -1,7 +1,3 @@
-import unittest
-import uuid
-from test import support
-from test.support import import_helper
 import builtins
 import contextlib
 import copy
@@ -11,9 +7,13 @@ import os
 import pickle
 import random
 import sys
+import unittest
 import weakref
 from itertools import product
 from unittest import mock
+
+from test import support
+from test.support import import_helper
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
