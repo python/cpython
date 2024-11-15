@@ -1623,13 +1623,39 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
+#undef USE_DLERROR
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     ptr = dlsym((void*)handle, name);
-    if (!ptr) {
-        PyErr_SetString(PyExc_OSError,
-                               dlerror());
-        return NULL;
+    if (ptr) {
+        return PyLong_FromVoidPtr(ptr);
     }
-    return PyLong_FromVoidPtr(ptr);
+	#ifdef USE_DLERROR
+    const char *dlerr = dlerror();
+    if (dlerr) {
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
+        if (message) {
+            PyErr_SetObject(PyExc_OSError, message);
+            Py_DECREF(message);
+            return NULL;
+        }
+        // Ignore errors from PyUnicode_DecodeLocale,
+        // fall back to the generic error below.
+        PyErr_Clear();
+    }
+	#endif
+	#undef USE_DLERROR
+    PyErr_Format(PyExc_OSError, "symbol '%s' not found", name);
+    return NULL;
 }
 #endif
 

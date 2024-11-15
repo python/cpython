@@ -1,0 +1,2 @@
+Fix error handling in :class:`ctypes.CDLL` objects
+which could result in a crash in rare situations.
