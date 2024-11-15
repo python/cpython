@@ -1,0 +1,3 @@
+Ensures the experimental free-threaded install includes the ``_tkinter``
+module. The optional Tcl/Tk component must also be installed in order for
+the module to work.
