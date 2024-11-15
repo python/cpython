@@ -2557,6 +2557,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
                 int sep_at_1 = SEP_OR_END(&p1[1]);
                 int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
                 if (sep_at_2 && p1[1] == L'.') {
+                    // Parent directory
                     wchar_t *p3 = p2;
                     while (p3 != minP2 && *--p3 == SEP) { }
                     while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
@@ -2572,11 +2573,15 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
                         // Absolute path, so absorb segment
                         p2 = p3 + 1;
                     } else {
+                        // Alternative path for foo: foo/bar/..
+                        // Alternative path for bar: foo/../bar
                         p2 = p3;
                         explicit = 1;
                     }
                     p1 += 1;
                 } else if (sep_at_1) {
+                    // Current directory
+                    // Alternative path for foo: foo/.
                     explicit = 1;
                 } else {
                     *p2++ = lastC = c;
