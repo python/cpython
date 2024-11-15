@@ -1699,31 +1699,80 @@ error:
     _Py_Executors_InvalidateAll(interp, 0);
 }
 
+static void write_str(PyObject *str, FILE *out)
+{
+    // Encode the Unicode object to the specified encoding
+    PyObject *encoded_obj = PyUnicode_AsEncodedString(str, "utf8", "strict");
+    if (encoded_obj == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    const char *encoded_str = PyBytes_AsString(encoded_obj);
+    Py_ssize_t encoded_size = PyBytes_Size(encoded_obj);
+    fwrite(encoded_str, 1, encoded_size, out);
+    Py_DECREF(encoded_obj);
+}
+
+static int find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
+{
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0; i < code_len; i++) {
+        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+        int opcode = instr->op.code;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[instr->op.arg];
+            if (exec == executor) {
+                return PyCode_Addr2Line(code, i*2);
+            }
+        }
+        i += _PyOpcode_Caches[_Py_GetBaseCodeUnit(code, i).op.code];
+    }
+    return -1;
+}
 
 static void
 dump_executor(_PyExecutorObject *executor, FILE *out)
 {
+    PyCodeObject *code = executor->vm_data.code;
     fprintf(out, "executor_%p [\n", executor);
     fprintf(out, "    shape = none\n");
     fprintf(out, "    label = <<table border=\"0\" cellspacing=\"0\">\n");
     fprintf(out, "        <tr><td port=\"start\" border=\"1\" ><b>Executor</b></td></tr>\n");
+    if (code == NULL) {
+        fprintf(out, "        <tr><td border=\"1\" >No code object</td></tr>\n");
+    }
+    else {
+        fprintf(out, "        <tr><td  border=\"1\" >");
+        write_str(code->co_qualname, out);
+        fprintf(out, "</td></tr>\n");
+        int line = find_line_number(code, executor);
+        fprintf(out, "        <tr><td border=\"1\" >line: %d</td></tr>\n", line);
+    }
     for (int i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction *inst = &executor->trace[i];
         const char *opname = _PyOpcode_uop_name[inst->opcode];
-        fprintf(out, "        <tr><td border=\"1\" >%s</td></tr>\n", opname);
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
     }
     for (int i = 0; i < executor->exit_count; i++) {
         _PyExitData *exit = &executor->exits[i];
         int temp = exit->temperature.value_and_backoff >> 4;
-        fprintf(out, "        <tr><td port=\"%d\" border=\"1\" >EXIT: temp %d</td></tr>\n", i, temp);
+        fprintf(out, "        <tr><td port=\"e%d\" border=\"1\" >EXIT: temp %d</td></tr>\n", i, temp);
     }
 
     fprintf(out, "    label = </table>>\n");
     fprintf(out, "]\n\n");
+    for (int i = 0; i < executor->code_size; i++) {
+        _PyUOpInstruction *inst = &executor->trace[i];
+        if (inst->format == UOP_FORMAT_JUMP) {
+            int exit = inst->jump_target;
+            fprintf(out, "executor_%p:i%d -> executor_%p:i%d\n", executor, i,  executor, exit);
+        }
+    }
+
     for (int i = 0; i < executor->exit_count; i++) {
         _PyExitData *exit = &executor->exits[i];
         if (exit->executor != NULL) {
-            fprintf(out, "executor_%p:%d -> executor_%p:start\n", executor, i, exit->executor);
+            fprintf(out, "executor_%p:e%d -> executor_%p:start\n", executor, i, exit->executor);
         }
     }
 }
