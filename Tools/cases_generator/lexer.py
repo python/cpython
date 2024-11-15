@@ -76,7 +76,7 @@ opmap = {__pattern.replace("\\", "") or "\\": __opname
          for __opname, __pattern in operators.items()}
 
 # Macros
-macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
+macro = r"#.*\n"
 CMACRO = "CMACRO"
 __all__.append(CMACRO)
 
@@ -298,6 +298,9 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
                 line += newlines
         else:
             begin = line, start - linestart
+            if kind == CMACRO:
+                linestart = end
+                line += 1
         if kind != NEWLINE:
             yield Token(
                 filename, kind, text, begin, (line, start - linestart + len(text))

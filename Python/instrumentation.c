@@ -44,10 +44,24 @@
 
 #define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
 
+#define MODIFY_BYTECODE(code, func, ...)                       \
+    do {                                                       \
+        PyCodeObject *co = (code);                             \
+        for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) { \
+            char *bc = co->co_tlbc->entries[i];                \
+            if (bc == NULL) {                                  \
+                continue;                                      \
+            }                                                  \
+            (func)((_Py_CODEUNIT *)bc, __VA_ARGS__);           \
+        }                                                      \
+    } while (0)
+
 #else
 
 #define LOCK_CODE(code)
 #define UNLOCK_CODE()
+#define MODIFY_BYTECODE(code, func, ...) \
+    (func)(_PyCode_CODE(code), __VA_ARGS__)
 
 #endif
 
@@ -56,8 +70,6 @@ PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 PyObject _PyInstrumentation_MISSING = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
-    [RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
-    [INSTRUMENTED_RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
     [RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
     [INSTRUMENTED_RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
     [CALL] = PY_MONITORING_EVENT_CALL,
@@ -94,7 +106,6 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
 static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_RESUME] = RESUME,
     [INSTRUMENTED_RETURN_VALUE] = RETURN_VALUE,
-    [INSTRUMENTED_RETURN_CONST] = RETURN_CONST,
     [INSTRUMENTED_CALL] = CALL,
     [INSTRUMENTED_CALL_KW] = CALL_KW,
     [INSTRUMENTED_CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
@@ -112,8 +123,6 @@ static const uint8_t DE_INSTRUMENT[256] = {
 };
 
 static const uint8_t INSTRUMENTED_OPCODES[256] = {
-    [RETURN_CONST] = INSTRUMENTED_RETURN_CONST,
-    [INSTRUMENTED_RETURN_CONST] = INSTRUMENTED_RETURN_CONST,
     [RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [CALL] = INSTRUMENTED_CALL,
@@ -165,6 +174,7 @@ is_instrumented(int opcode)
 {
     assert(opcode != 0);
     assert(opcode != RESERVED);
+    assert(opcode != ENTER_EXECUTOR);
     return opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
@@ -313,7 +323,8 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
-    int opcode = _PyCode_CODE(code)[offset].op.code;
+    int opcode =
+        FT_ATOMIC_LOAD_UINT8_RELAXED(_PyCode_CODE(code)[offset].op.code);
     assert(opcode != 0);
     assert(opcode != RESERVED);
     if (opcode == INSTRUMENTED_LINE) {
@@ -330,13 +341,12 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
         opcode = _PyOpcode_Deopt[opcode];
     }
     assert(opcode != 0);
-    assert(!is_instrumented(opcode));
     if (opcode == ENTER_EXECUTOR) {
         int exec_index = _PyCode_CODE(code)[offset].op.arg;
         _PyExecutorObject *exec = code->co_executors->executors[exec_index];
         opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
-
     }
+    assert(!is_instrumented(opcode));
     assert(opcode != ENTER_EXECUTOR);
     assert(opcode == _PyOpcode_Deopt[opcode]);
     return 1 + _PyOpcode_Caches[opcode];
@@ -507,7 +517,7 @@ sanity_check_instrumentation(PyCodeObject *code)
     for (int i = 0; i < code_len;) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
-        int base_opcode = _Py_GetBaseOpcode(code, i);
+        int base_opcode = _Py_GetBaseCodeUnit(code, offset).op.code;
         CHECK(valid_opcode(opcode));
         CHECK(valid_opcode(base_opcode));
         if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -579,10 +589,28 @@ sanity_check_instrumentation(PyCodeObject *code)
 
 #endif
 
-/* Get the underlying opcode, stripping instrumentation */
-int _Py_GetBaseOpcode(PyCodeObject *code, int i)
+/* Get the underlying code unit, stripping instrumentation and ENTER_EXECUTOR */
+_Py_CODEUNIT
+_Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 {
-    int opcode = _PyCode_CODE(code)[i].op.code;
+    _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
+    _Py_CODEUNIT inst = {
+        .cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
+    int opcode = inst.op.code;
+    if (opcode < MIN_INSTRUMENTED_OPCODE) {
+        inst.op.code = _PyOpcode_Deopt[opcode];
+        assert(inst.op.code <= RESUME);
+        return inst;
+    }
+    if (opcode == ENTER_EXECUTOR) {
+        _PyExecutorObject *exec = code->co_executors->executors[inst.op.arg];
+        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
+        inst.op.code = opcode;
+        assert(opcode <= RESUME);
+        inst.op.arg = exec->vm_data.oparg;
+        assert(inst.op.code <= RESUME);
+        return inst;
+    }
     if (opcode == INSTRUMENTED_LINE) {
         opcode = code->_co_monitoring->lines[i].original_opcode;
     }
@@ -593,27 +621,32 @@ int _Py_GetBaseOpcode(PyCodeObject *code, int i)
     CHECK(opcode != INSTRUMENTED_LINE);
     int deinstrumented = DE_INSTRUMENT[opcode];
     if (deinstrumented) {
-        return deinstrumented;
+        inst.op.code = deinstrumented;
     }
-    return _PyOpcode_Deopt[opcode];
+    else {
+        inst.op.code = _PyOpcode_Deopt[opcode];
+    }
+    assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
+    return inst;
 }
 
 static void
-de_instrument(PyCodeObject *code, int i, int event)
+de_instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i,
+              int event)
 {
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(event != PY_MONITORING_EVENT_LINE);
 
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     assert(opcode != ENTER_EXECUTOR);
     if (opcode == INSTRUMENTED_LINE) {
-        opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
+        opcode_ptr = &monitoring->lines[i].original_opcode;
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
+        opcode_ptr = &monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
     }
     int deinstrumented = DE_INSTRUMENT[opcode];
@@ -623,71 +656,74 @@ de_instrument(PyCodeObject *code, int i, int event)
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
     FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, deinstrumented);
     if (_PyOpcode_Caches[deinstrumented]) {
-        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
-                                       adaptive_counter_warmup().as_counter);
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                       adaptive_counter_warmup().value_and_backoff);
     }
 }
 
 static void
-de_instrument_line(PyCodeObject *code, int i)
+de_instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring,
+                   int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     int opcode = instr->op.code;
     if (opcode != INSTRUMENTED_LINE) {
         return;
     }
-    _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
+    _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
     int original_opcode = lines->original_opcode;
     if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-        lines->original_opcode = code->_co_monitoring->per_instruction_opcodes[i];
+        lines->original_opcode = monitoring->per_instruction_opcodes[i];
     }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
-    instr->op.code = original_opcode;
+    FT_ATOMIC_STORE_UINT8(instr->op.code, original_opcode);
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                       adaptive_counter_warmup().value_and_backoff);
     }
     assert(instr->op.code != INSTRUMENTED_LINE);
 }
 
 static void
-de_instrument_per_instruction(PyCodeObject *code, int i)
+de_instrument_per_instruction(_Py_CODEUNIT *bytecode,
+                              _PyCoMonitoringData *monitoring, int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
+        opcode_ptr = &monitoring->lines[i].original_opcode;
         opcode = *opcode_ptr;
     }
     if (opcode != INSTRUMENTED_INSTRUCTION) {
         return;
     }
-    int original_opcode = code->_co_monitoring->per_instruction_opcodes[i];
+    int original_opcode = monitoring->per_instruction_opcodes[i];
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
-    *opcode_ptr = original_opcode;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, original_opcode);
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                       adaptive_counter_warmup().value_and_backoff);
     }
     assert(*opcode_ptr != INSTRUMENTED_INSTRUCTION);
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
 }
 
-
 static void
-instrument(PyCodeObject *code, int i)
+instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode =*opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
+        _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
         opcode_ptr = &lines->original_opcode;
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
+        opcode_ptr = &monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
         CHECK(opcode != INSTRUMENTED_INSTRUCTION && opcode != INSTRUMENTED_LINE);
         CHECK(opcode == _PyOpcode_Deopt[opcode]);
@@ -699,54 +735,54 @@ instrument(PyCodeObject *code, int i)
         assert(instrumented);
         FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
-          FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
-                                         adaptive_counter_warmup().as_counter);
-            instr[1].counter = adaptive_counter_warmup();
+            FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.value_and_backoff,
+                                           adaptive_counter_warmup().value_and_backoff);
         }
     }
 }
 
 static void
-instrument_line(PyCodeObject *code, int i)
+instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
 {
-    uint8_t *opcode_ptr = &_PyCode_CODE(code)[i].op.code;
+    uint8_t *opcode_ptr = &bytecode[i].op.code;
     int opcode = *opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
         return;
     }
-    _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
+    _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
     lines->original_opcode = _PyOpcode_Deopt[opcode];
     CHECK(lines->original_opcode > 0);
-    *opcode_ptr = INSTRUMENTED_LINE;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_LINE);
 }
 
 static void
-instrument_per_instruction(PyCodeObject *code, int i)
+instrument_per_instruction(_Py_CODEUNIT *bytecode,
+                           _PyCoMonitoringData *monitoring, int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+    _Py_CODEUNIT *instr = &bytecode[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
+        _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
         opcode_ptr = &lines->original_opcode;
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
-        assert(code->_co_monitoring->per_instruction_opcodes[i] > 0);
+        assert(monitoring->per_instruction_opcodes[i] > 0);
         return;
     }
     CHECK(opcode != 0);
     if (is_instrumented(opcode)) {
-        code->_co_monitoring->per_instruction_opcodes[i] = opcode;
+        monitoring->per_instruction_opcodes[i] = opcode;
     }
     else {
         assert(opcode != 0);
         assert(_PyOpcode_Deopt[opcode] != 0);
         assert(_PyOpcode_Deopt[opcode] != RESUME);
-        code->_co_monitoring->per_instruction_opcodes[i] = _PyOpcode_Deopt[opcode];
+        monitoring->per_instruction_opcodes[i] = _PyOpcode_Deopt[opcode];
     }
-    assert(code->_co_monitoring->per_instruction_opcodes[i] > 0);
-    *opcode_ptr = INSTRUMENTED_INSTRUCTION;
+    assert(monitoring->per_instruction_opcodes[i] > 0);
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_INSTRUCTION);
 }
 
 static void
@@ -756,21 +792,21 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
-    assert(opcode_has_event(_Py_GetBaseOpcode(code, offset)));
+    assert(opcode_has_event(_Py_GetBaseCodeUnit(code, offset).op.code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    bool should_de_instrument;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
-        if (monitoring->tools[offset] == 0) {
-            de_instrument(code, offset, event);
-        }
+        should_de_instrument = (monitoring->tools[offset] == 0);
     }
     else {
         /* Single tool */
         uint8_t single_tool = code->_co_monitoring->active_monitors.tools[event];
         assert(_Py_popcount32(single_tool) <= 1);
-        if (((single_tool & tools) == single_tool)) {
-            de_instrument(code, offset, event);
-        }
+        should_de_instrument = ((single_tool & tools) == single_tool);
+    }
+    if (should_de_instrument) {
+        MODIFY_BYTECODE(code, de_instrument, monitoring, offset, event);
     }
 }
 
@@ -789,22 +825,23 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
-    assert(code->_co_monitoring);
-    if (code->_co_monitoring->line_tools)
+    _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    assert(monitoring);
+    bool should_de_instrument;
+    if (monitoring->line_tools)
     {
-        uint8_t *toolsptr = &code->_co_monitoring->line_tools[offset];
+        uint8_t *toolsptr = &monitoring->line_tools[offset];
         *toolsptr &= ~tools;
-        if (*toolsptr == 0 ) {
-            de_instrument_line(code, offset);
-        }
+        should_de_instrument = (*toolsptr == 0);
     }
     else {
         /* Single tool */
-        uint8_t single_tool = code->_co_monitoring->active_monitors.tools[PY_MONITORING_EVENT_LINE];
+        uint8_t single_tool = monitoring->active_monitors.tools[PY_MONITORING_EVENT_LINE];
         assert(_Py_popcount32(single_tool) <= 1);
-        if (((single_tool & tools) == single_tool)) {
-            de_instrument_line(code, offset);
-        }
+        should_de_instrument = ((single_tool & tools) == single_tool);
+    }
+    if (should_de_instrument) {
+        MODIFY_BYTECODE(code, de_instrument_line, monitoring, offset);
     }
 }
 
@@ -826,7 +863,7 @@ add_tools(PyCodeObject * code, int offset, int event, int tools)
         assert(_Py_popcount32(tools) == 1);
         assert(tools_is_subset_for_event(code, event, tools));
     }
-    instrument(code, offset);
+    MODIFY_BYTECODE(code, instrument, code->_co_monitoring, offset);
 }
 
 static void
@@ -843,7 +880,7 @@ add_line_tools(PyCodeObject * code, int offset, int tools)
         /* Single tool */
         assert(_Py_popcount32(tools) == 1);
     }
-    instrument_line(code, offset);
+    MODIFY_BYTECODE(code, instrument_line, code->_co_monitoring, offset);
 }
 
 
@@ -861,7 +898,7 @@ add_per_instruction_tools(PyCodeObject * code, int offset, int tools)
         /* Single tool */
         assert(_Py_popcount32(tools) == 1);
     }
-    instrument_per_instruction(code, offset);
+    MODIFY_BYTECODE(code, instrument_per_instruction, code->_co_monitoring, offset);
 }
 
 
@@ -870,21 +907,22 @@ remove_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
+    _PyCoMonitoringData *monitoring = code->_co_monitoring;
     assert(code->_co_monitoring);
+    bool should_de_instrument;
     if (code->_co_monitoring->per_instruction_tools) {
         uint8_t *toolsptr = &code->_co_monitoring->per_instruction_tools[offset];
         *toolsptr &= ~tools;
-        if (*toolsptr == 0) {
-            de_instrument_per_instruction(code, offset);
-        }
+        should_de_instrument = (*toolsptr == 0);
     }
     else {
         /* Single tool */
         uint8_t single_tool = code->_co_monitoring->active_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION];
         assert(_Py_popcount32(single_tool) <= 1);
-        if (((single_tool & tools) == single_tool)) {
-            de_instrument_per_instruction(code, offset);
-        }
+        should_de_instrument = ((single_tool & tools) == single_tool);
+    }
+    if (should_de_instrument) {
+        MODIFY_BYTECODE(code, de_instrument_per_instruction, monitoring, offset);
     }
 }
 
@@ -1072,7 +1110,7 @@ call_instrumentation_vector(
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(args[1] == NULL);
     args[1] = (PyObject *)code;
-    int offset = (int)(instr - _PyCode_CODE(code));
+    int offset = (int)(instr - _PyFrame_GetBytecode(frame));
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
@@ -1158,8 +1196,7 @@ _Py_call_instrumentation_jump(
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
     assert(frame->instr_ptr == instr);
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    int to = (int)(target - _PyCode_CODE(code));
+    int to = (int)(target - _PyFrame_GetBytecode(frame));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
@@ -1225,7 +1262,8 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(tstate->tracing == 0);
     assert(debug_check_sanity(tstate->interp, code));
-    int i = (int)(instr - _PyCode_CODE(code));
+    _Py_CODEUNIT *bytecode = _PyFrame_GetBytecode(frame);
+    int i = (int)(instr - bytecode);
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
@@ -1241,10 +1279,10 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         line = compute_line(code, i, line_delta);
         assert(line >= 0);
         assert(prev != NULL);
-        int prev_index = (int)(prev - _PyCode_CODE(code));
+        int prev_index = (int)(prev - bytecode);
         int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
         if (prev_line == line) {
-            int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+            int prev_opcode = bytecode[prev_index].op.code;
             /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
              * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
              */
@@ -1344,7 +1382,7 @@ int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    int offset = (int)(instr - _PyCode_CODE(code));
+    int offset = (int)(instr - _PyFrame_GetBytecode(frame));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
     assert(instrumentation_data->per_instruction_opcodes);
     int next_opcode = instrumentation_data->per_instruction_opcodes[offset];
@@ -1479,7 +1517,7 @@ initialize_lines(PyCodeObject *code)
     }
     int current_line = -1;
     for (int i = code->_co_firsttraceable; i < code_len; ) {
-        int opcode = _Py_GetBaseOpcode(code, i);
+        int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
         int line = _PyCode_CheckLineNumber(i*(int)sizeof(_Py_CODEUNIT), &range);
         line_data[i].line_delta = compute_line_delta(code, i, line);
         int length = _PyInstruction_GetLength(code, i);
@@ -1522,14 +1560,16 @@ initialize_lines(PyCodeObject *code)
         i += length;
     }
     for (int i = code->_co_firsttraceable; i < code_len; ) {
-        int opcode = _Py_GetBaseOpcode(code, i);
+        _Py_CODEUNIT inst =_Py_GetBaseCodeUnit(code, i);
+        int opcode = inst.op.code;
         int oparg = 0;
         while (opcode == EXTENDED_ARG) {
-            oparg = (oparg << 8) | _PyCode_CODE(code)[i].op.arg;
+            oparg = (oparg << 8) | inst.op.arg;
             i++;
-            opcode = _Py_GetBaseOpcode(code, i);
+            inst =_Py_GetBaseCodeUnit(code, i);
+            opcode = inst.op.code;
         }
-        oparg = (oparg << 8) | _PyCode_CODE(code)[i].op.arg;
+        oparg = (oparg << 8) | inst.op.arg;
         i += _PyInstruction_GetLength(code, i);
         int target = -1;
         switch (opcode) {
@@ -1560,7 +1600,7 @@ initialize_lines(PyCodeObject *code)
         }
         assert(target >= 0);
         if (line_data[target].line_delta != NO_LINE) {
-            line_data[target].original_opcode = _Py_GetBaseOpcode(code, target);
+            line_data[target].original_opcode = _Py_GetBaseCodeUnit(code, target).op.code;
             if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
                 // If the line is a jump target, we are not sure if the line
                 // number changes, so we set it to COMPUTED_LINE.
@@ -1582,7 +1622,7 @@ initialize_lines(PyCodeObject *code)
         assert(handler >= 0 && handler < code_len);
         int depth_and_lasti;
         scan = parse_varint(scan, &depth_and_lasti);
-        int original_opcode = _Py_GetBaseOpcode(code, handler);
+        int original_opcode = _Py_GetBaseCodeUnit(code, handler).op.code;
         /* Skip if not the start of a line.
          * END_ASYNC_FOR is a bit special as it marks the end of
          * an `async for` loop, which should not generate its own
@@ -1638,6 +1678,16 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     if (allocate_instrumentation_data(code)) {
         return -1;
     }
+    // If the local monitors are out of date, clear them up
+    _Py_LocalMonitors *local_monitors = &code->_co_monitoring->local_monitors;
+    for (int i = 0; i < PY_MONITORING_TOOL_IDS; i++) {
+        if (code->_co_monitoring->tool_versions[i] != interp->monitoring_tool_versions[i]) {
+            for (int j = 0; j < _PY_MONITORING_LOCAL_EVENTS; j++) {
+                local_monitors->tools[j] &= ~(1 << i);
+            }
+        }
+    }
+
     _Py_LocalMonitors all_events = local_union(
         interp->monitors,
         code->_co_monitoring->local_monitors);
@@ -1740,15 +1790,14 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     }
     /* Insert instrumentation */
     for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
-        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-        CHECK(instr->op.code != 0);
-        assert(instr->op.code != ENTER_EXECUTOR);
-        int base_opcode = _Py_GetBaseOpcode(code, i);
-        assert(base_opcode != ENTER_EXECUTOR);
+        assert(_PyCode_CODE(code)[i].op.code != ENTER_EXECUTOR);
+        _Py_CODEUNIT instr = _Py_GetBaseCodeUnit(code, i);
+        CHECK(instr.op.code != 0);
+        int base_opcode = instr.op.code;
         if (opcode_has_event(base_opcode)) {
             int8_t event;
             if (base_opcode == RESUME) {
-                event = instr->op.arg > 0;
+                event = instr.op.arg > 0;
             }
             else {
                 event = EVENT_FOR_OPCODE[base_opcode];
@@ -1781,7 +1830,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     }
     if (removed_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            int opcode = _Py_GetBaseOpcode(code, i);
+            int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
             if (opcode == RESUME || opcode == END_FOR) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
@@ -1808,7 +1857,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     }
     if (new_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            int opcode = _Py_GetBaseOpcode(code, i);
+            int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
             if (opcode == RESUME || opcode == END_FOR) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
@@ -1983,6 +2032,8 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         goto done;
     }
 
+    code->_co_monitoring->tool_versions[tool_id] = interp->monitoring_tool_versions[tool_id];
+
     _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
     uint32_t existing_events = get_local_events(local, tool_id);
     if (existing_events == events) {
@@ -2013,6 +2064,43 @@ _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
     *events = get_local_events(local, tool_id);
     return 0;
+}
+
+int _PyMonitoring_ClearToolId(int tool_id)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (int i = 0; i < _PY_MONITORING_EVENTS; i++) {
+        PyObject *func = _PyMonitoring_RegisterCallback(tool_id, i, NULL);
+        if (func != NULL) {
+            Py_DECREF(func);
+        }
+    }
+
+    if (_PyMonitoring_SetEvents(tool_id, 0) < 0) {
+        return -1;
+    }
+
+    _PyEval_StopTheWorld(interp);
+    uint32_t version = global_version(interp) + MONITORING_VERSION_INCREMENT;
+    if (version == 0) {
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
+        _PyEval_StartTheWorld(interp);
+        return -1;
+    }
+
+    // monitoring_tool_versions[tool_id] is set to latest global version here to
+    //   1. invalidate local events on all existing code objects
+    //   2. be ready for the next call to set local events
+    interp->monitoring_tool_versions[tool_id] = version;
+
+    // Set the new global version so all the code objects can refresh the
+    // instrumentation.
+    set_global_version(_PyThreadState_GET(), version);
+    int res = instrument_all_executing_code_objects(interp);
+    _PyEval_StartTheWorld(interp);
+    return res;
 }
 
 /*[clinic input]
@@ -2063,6 +2151,33 @@ monitoring_use_tool_id_impl(PyObject *module, int tool_id, PyObject *name)
 }
 
 /*[clinic input]
+monitoring.clear_tool_id
+
+    tool_id: int
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+monitoring_clear_tool_id_impl(PyObject *module, int tool_id)
+/*[clinic end generated code: output=04defc23470b1be7 input=af643d6648a66163]*/
+{
+    if (check_valid_tool(tool_id))  {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (interp->monitoring_tool_names[tool_id] != NULL) {
+        if (_PyMonitoring_ClearToolId(tool_id) < 0) {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 monitoring.free_tool_id
 
     tool_id: int
@@ -2078,6 +2193,13 @@ monitoring_free_tool_id_impl(PyObject *module, int tool_id)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (interp->monitoring_tool_names[tool_id] != NULL) {
+        if (_PyMonitoring_ClearToolId(tool_id) < 0) {
+            return NULL;
+        }
+    }
+
     Py_CLEAR(interp->monitoring_tool_names[tool_id]);
     Py_RETURN_NONE;
 }
@@ -2355,6 +2477,7 @@ monitoring__all_events_impl(PyObject *module)
 
 static PyMethodDef methods[] = {
     MONITORING_USE_TOOL_ID_METHODDEF
+    MONITORING_CLEAR_TOOL_ID_METHODDEF
     MONITORING_FREE_TOOL_ID_METHODDEF
     MONITORING_GET_TOOL_METHODDEF
     MONITORING_REGISTER_CALLBACK_METHODDEF

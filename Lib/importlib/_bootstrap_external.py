@@ -209,7 +209,11 @@ def _write_atomic(path, data, mode=0o666):
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
         with _io.FileIO(fd, 'wb') as file:
-            file.write(data)
+            bytes_written = file.write(data)
+        if bytes_written != len(data):
+            # Raise an OSError so the 'except' below cleans up the partially
+            # written file.
+            raise OSError("os.write() didn't write the full pyc file")
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -1523,14 +1527,14 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    if sys.platform in {"ios", "tvos", "watchos"}:
-        extension_loaders = [(AppleFrameworkLoader, [
-            suffix.replace(".so", ".fwork")
-            for suffix in _imp.extension_suffixes()
-        ])]
-    else:
-        extension_loaders = []
-    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
+    extension_loaders = []
+    if hasattr(_imp, 'create_dynamic'):
+        if sys.platform in {"ios", "tvos", "watchos"}:
+            extension_loaders = [(AppleFrameworkLoader, [
+                suffix.replace(".so", ".fwork")
+                for suffix in _imp.extension_suffixes()
+            ])]
+        extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
     return extension_loaders + [source, bytecode]
