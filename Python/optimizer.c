@@ -1321,15 +1321,10 @@ PyTypeObject _PyUOpOptimizer_Type = {
     .tp_dealloc = uop_opt_dealloc,
 };
 
-PyObject *
-_PyOptimizer_NewUOpOptimizer(void)
+void
+_Py_SetUOpOptimize(_PyOptimizerObject *opt)
 {
-    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
     opt->optimize = uop_optimize;
-    return (PyObject *)opt;
 }
 
 static void
