@@ -1097,7 +1097,7 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (chosen if the host platform is either ``wasm32-wasi`` or
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
   ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
