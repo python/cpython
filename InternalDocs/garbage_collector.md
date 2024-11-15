@@ -16,7 +16,7 @@ count field can be examined using the `sys.getrefcount()` function (notice that 
 value returned by this function is always 1 more as the function also has a reference
 to the object when called):
 
-```pycon
+```python
 >>> x = object()
 >>> sys.getrefcount(x)
 2
@@ -31,7 +31,7 @@ to the object when called):
 The main problem with the reference counting scheme is that it does not handle reference
 cycles. For instance, consider this code:
 
-```pycon
+```python
 >>> container = []
 >>> container.append(container)
 >>> sys.getrefcount(container)
@@ -198,27 +198,27 @@ the case of a circular linked list which has one link referenced by a
 variable `A`, and one self-referencing object which is completely
 unreachable:
 
-```pycon
-    >>> import gc
+```python
+>>> import gc
 
-    >>> class Link:
-    ...    def __init__(self, next_link=None):
-    ...        self.next_link = next_link
+>>> class Link:
+...    def __init__(self, next_link=None):
+...        self.next_link = next_link
 
-    >>> link_3 = Link()
-    >>> link_2 = Link(link_3)
-    >>> link_1 = Link(link_2)
-    >>> link_3.next_link = link_1
-    >>> A = link_1
-    >>> del link_1, link_2, link_3
+>>> link_3 = Link()
+>>> link_2 = Link(link_3)
+>>> link_1 = Link(link_2)
+>>> link_3.next_link = link_1
+>>> A = link_1
+>>> del link_1, link_2, link_3
 
-    >>> link_4 = Link()
-    >>> link_4.next_link = link_4
-    >>> del link_4
+>>> link_4 = Link()
+>>> link_4.next_link = link_4
+>>> del link_4
 
-    # Collect the unreachable Link object (and its .__dict__ dict).
-    >>> gc.collect()
-    2
+# Collect the unreachable Link object (and its .__dict__ dict).
+>>> gc.collect()
+2
 ```
 
 The GC starts with a set of candidate objects it wants to scan.  In the
@@ -438,49 +438,49 @@ These thresholds can be examined using the
 [`gc.get_threshold()`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
 function:
 
-```pycon
-    >>> import gc
-    >>> gc.get_threshold()
-    (700, 10, 10)
+```python
+>>> import gc
+>>> gc.get_threshold()
+(700, 10, 10)
 ```
 
 The content of these generations can be examined using the
 `gc.get_objects(generation=NUM)` function and collections can be triggered
 specifically in a generation by calling `gc.collect(generation=NUM)`.
 
-```pycon
-    >>> import gc
-    >>> class MyObj:
-    ...     pass
-    ...
+```python
+>>> import gc
+>>> class MyObj:
+...     pass
+...
 
-    # Move everything to the old generation so it's easier to inspect
-    # the young generation.
+# Move everything to the old generation so it's easier to inspect
+# the young generation.
 
-    >>> gc.collect()
-    0
+>>> gc.collect()
+0
 
-    # Create a reference cycle.
+# Create a reference cycle.
 
-    >>> x = MyObj()
-    >>> x.self = x
+>>> x = MyObj()
+>>> x.self = x
 
-    # Initially the object is in the young generation.
+# Initially the object is in the young generation.
 
-    >>> gc.get_objects(generation=0)
-    [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
+>>> gc.get_objects(generation=0)
+[..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 
-    # After a collection of the youngest generation the object
-    # moves to the old generation.
+# After a collection of the youngest generation the object
+# moves to the old generation.
 
-    >>> gc.collect(generation=0)
-    0
-    >>> gc.get_objects(generation=0)
-    []
-    >>> gc.get_objects(generation=1)
-    []
-    >>> gc.get_objects(generation=2)
-    [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
+>>> gc.collect(generation=0)
+0
+>>> gc.get_objects(generation=0)
+[]
+>>> gc.get_objects(generation=1)
+[]
+>>> gc.get_objects(generation=2)
+[..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 ```
 
 
@@ -571,19 +571,19 @@ The garbage collector module provides the Python function `is_tracked(obj)`, whi
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
 
-```pycon
-      >>> gc.is_tracked(0)
-      False
-      >>> gc.is_tracked("a")
-      False
-      >>> gc.is_tracked([])
-      True
-      >>> gc.is_tracked({})
-      False
-      >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
-      True
+```python
+>>> gc.is_tracked(0)
+False
+>>> gc.is_tracked("a")
+False
+>>> gc.is_tracked([])
+True
+>>> gc.is_tracked({})
+False
+>>> gc.is_tracked({"a": 1})
+False
+>>> gc.is_tracked({"a": []})
+True
 ```
 
 Differences between GC implementations
