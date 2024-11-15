@@ -314,8 +314,8 @@ thread_run(void *boot_raw)
     // gh-108987: If _thread.start_new_thread() is called before or while
     // Python is being finalized, thread_run() can called *after*.
     // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
-    // threads must exit, except of the thread calling Py_Finalize() whch holds
-    // the GIL and must not exit.
+    // threads must exit, except of the thread calling Py_Finalize() which
+    // holds the GIL and must not exit.
     //
     // At this stage, tstate can be a dangling pointer (point to freed memory),
     // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
@@ -599,8 +599,9 @@ PyThreadHandleObject_traverse(PyThreadHandleObject *self, visitproc visit,
 }
 
 static void
-PyThreadHandleObject_dealloc(PyThreadHandleObject *self)
+PyThreadHandleObject_dealloc(PyObject *op)
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
     PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     ThreadHandle_decref(self->handle);
@@ -609,23 +610,26 @@ PyThreadHandleObject_dealloc(PyThreadHandleObject *self)
 }
 
 static PyObject *
-PyThreadHandleObject_repr(PyThreadHandleObject *self)
+PyThreadHandleObject_repr(PyObject *op)
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
     PyThread_ident_t ident = ThreadHandle_ident(self->handle);
     return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
                                 Py_TYPE(self)->tp_name, ident);
 }
 
 static PyObject *
-PyThreadHandleObject_get_ident(PyThreadHandleObject *self,
-                               PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
     return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
 }
 
 static PyObject *
-PyThreadHandleObject_join(PyThreadHandleObject *self, PyObject *args)
+PyThreadHandleObject_join(PyObject *op, PyObject *args)
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
         return NULL;
@@ -646,9 +650,9 @@ PyThreadHandleObject_join(PyThreadHandleObject *self, PyObject *args)
 }
 
 static PyObject *
-PyThreadHandleObject_is_done(PyThreadHandleObject *self,
-                             PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
         Py_RETURN_TRUE;
     }
@@ -658,9 +662,9 @@ PyThreadHandleObject_is_done(PyThreadHandleObject *self,
 }
 
 static PyObject *
-PyThreadHandleObject_set_done(PyThreadHandleObject *self,
-                              PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_set_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
     if (ThreadHandle_set_done(self->handle) < 0) {
         return NULL;
     }
@@ -668,20 +672,20 @@ PyThreadHandleObject_set_done(PyThreadHandleObject *self,
 }
 
 static PyGetSetDef ThreadHandle_getsetlist[] = {
-    {"ident", (getter)PyThreadHandleObject_get_ident, NULL, NULL},
+    {"ident", PyThreadHandleObject_get_ident, NULL, NULL},
     {0},
 };
 
 static PyMethodDef ThreadHandle_methods[] = {
-    {"join", (PyCFunction)PyThreadHandleObject_join, METH_VARARGS, NULL},
-    {"_set_done", (PyCFunction)PyThreadHandleObject_set_done, METH_NOARGS, NULL},
-    {"is_done", (PyCFunction)PyThreadHandleObject_is_done, METH_NOARGS, NULL},
+    {"join", PyThreadHandleObject_join, METH_VARARGS, NULL},
+    {"_set_done", PyThreadHandleObject_set_done, METH_NOARGS, NULL},
+    {"is_done", PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
 
 static PyType_Slot ThreadHandle_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)PyThreadHandleObject_dealloc},
-    {Py_tp_repr, (reprfunc)PyThreadHandleObject_repr},
+    {Py_tp_dealloc, PyThreadHandleObject_dealloc},
+    {Py_tp_repr, PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
     {Py_tp_traverse, PyThreadHandleObject_traverse},
     {Py_tp_methods, ThreadHandle_methods},
@@ -701,41 +705,27 @@ static PyType_Spec ThreadHandle_Type_spec = {
 
 typedef struct {
     PyObject_HEAD
-    PyThread_type_lock lock_lock;
-    PyObject *in_weakreflist;
-    char locked; /* for sanity checking */
+    PyMutex lock;
 } lockobject;
 
 static int
-lock_traverse(lockobject *self, visitproc visit, void *arg)
+lock_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-lock_dealloc(lockobject *self)
+lock_dealloc(PyObject *op)
 {
+    lockobject *self = (lockobject*)op;
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
-    if (self->lock_lock != NULL) {
-        /* Unlock the lock so it's safe to free it */
-        if (self->locked)
-            PyThread_release_lock(self->lock_lock);
-        PyThread_free_lock(self->lock_lock);
-    }
+    PyObject_ClearWeakRefs((PyObject *) self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
 }
 
-static inline PyLockStatus
-acquire_timed(PyThread_type_lock lock, PyTime_t timeout)
-{
-    return PyThread_acquire_lock_timed_with_retries(lock, timeout);
-}
 
 static int
 lock_acquire_parse_args(PyObject *args, PyObject *kwds,
@@ -784,19 +774,21 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 }
 
 static PyObject *
-lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
+lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    PyTime_t timeout;
-    if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
-        return NULL;
+    lockobject *self = (lockobject*)op;
 
-    PyLockStatus r = acquire_timed(self->lock_lock, timeout);
+    PyTime_t timeout;
+    if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
+        return NULL;
+    }
+
+    PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
+                                        _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
     if (r == PY_LOCK_INTR) {
         return NULL;
     }
 
-    if (r == PY_LOCK_ACQUIRED)
-        self->locked = 1;
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
@@ -824,16 +816,15 @@ PyDoc_STRVAR(enter_doc,
 Lock the lock.");
 
 static PyObject *
-lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
+lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    lockobject *self = (lockobject*)op;
     /* Sanity check: the lock must be locked */
-    if (!self->locked) {
+    if (_PyMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(ThreadError, "release unlocked lock");
         return NULL;
     }
 
-    self->locked = 0;
-    PyThread_release_lock(self->lock_lock);
     Py_RETURN_NONE;
 }
 
@@ -858,9 +849,10 @@ PyDoc_STRVAR(lock_exit_doc,
 Release the lock.");
 
 static PyObject *
-lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
+lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    return PyBool_FromLong((long)self->locked);
+    lockobject *self = (lockobject*)op;
+    return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
 }
 
 PyDoc_STRVAR(locked_doc,
@@ -876,23 +868,19 @@ PyDoc_STRVAR(locked_lock_doc,
 An obsolete synonym of locked().");
 
 static PyObject *
-lock_repr(lockobject *self)
+lock_repr(PyObject *op)
 {
+    lockobject *self = (lockobject*)op;
     return PyUnicode_FromFormat("<%s %s object at %p>",
-        self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
+        PyMutex_IsLocked(&self->lock) ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
 
 #ifdef HAVE_FORK
 static PyObject *
-lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
+lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
-    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
-        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
-        return NULL;
-    }
-
-    self->locked = 0;
-
+    lockobject *self = (lockobject *)op;
+    _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
 #endif  /* HAVE_FORK */
@@ -924,20 +912,20 @@ static PyMethodDef lock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, acquire_lock_doc},
     {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"release_lock", (PyCFunction)lock_PyThread_release_lock,
+    {"release_lock", lock_PyThread_release_lock,
      METH_NOARGS, release_lock_doc},
-    {"release",      (PyCFunction)lock_PyThread_release_lock,
+    {"release",      lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
-    {"locked_lock",  (PyCFunction)lock_locked_lock,
+    {"locked_lock",  lock_locked_lock,
      METH_NOARGS, locked_lock_doc},
-    {"locked",       (PyCFunction)lock_locked_lock,
+    {"locked",       lock_locked_lock,
      METH_NOARGS, locked_doc},
     {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, enter_doc},
-    {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
+    {"__exit__",    lock_PyThread_release_lock,
      METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
-    {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
+    {"_at_fork_reinit", lock__at_fork_reinit,
      METH_NOARGS, NULL},
 #endif
     {NULL,           NULL}              /* sentinel */
@@ -958,18 +946,12 @@ A lock is not owned by the thread that locked it; another thread may\n\
 unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
-static PyMemberDef lock_type_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(lockobject, in_weakreflist), Py_READONLY},
-    {NULL},
-};
-
 static PyType_Slot lock_type_slots[] = {
-    {Py_tp_dealloc, (destructor)lock_dealloc},
-    {Py_tp_repr, (reprfunc)lock_repr},
+    {Py_tp_dealloc, lock_dealloc},
+    {Py_tp_repr, lock_repr},
     {Py_tp_doc, (void *)lock_doc},
     {Py_tp_methods, lock_methods},
     {Py_tp_traverse, lock_traverse},
-    {Py_tp_members, lock_type_members},
     {Py_tp_new, lock_new},
     {0, 0}
 };
@@ -978,7 +960,7 @@ static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = lock_type_slots,
 };
 
@@ -986,10 +968,7 @@ static PyType_Spec lock_type_spec = {
 
 typedef struct {
     PyObject_HEAD
-    PyThread_type_lock rlock_lock;
-    PyThread_ident_t rlock_owner;
-    unsigned long rlock_count;
-    PyObject *in_weakreflist;
+    _PyRecursiveMutex lock;
 } rlockobject;
 
 static int
@@ -1001,61 +980,30 @@ rlock_traverse(rlockobject *self, visitproc visit, void *arg)
 
 
 static void
-rlock_dealloc(rlockobject *self)
+rlock_dealloc(PyObject *op)
 {
+    rlockobject *self = (rlockobject*)op;
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
-    /* self->rlock_lock can be NULL if PyThread_allocate_lock() failed
-       in rlock_new() */
-    if (self->rlock_lock != NULL) {
-        /* Unlock the lock so it's safe to free it */
-        if (self->rlock_count > 0)
-            PyThread_release_lock(self->rlock_lock);
-
-        PyThread_free_lock(self->rlock_lock);
-    }
+    PyObject_ClearWeakRefs((PyObject *) self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
-static bool
-rlock_is_owned_by(rlockobject *self, PyThread_ident_t tid)
-{
-    PyThread_ident_t owner_tid =
-        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
-    return owner_tid == tid && self->rlock_count > 0;
-}
 
 static PyObject *
-rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
+rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    rlockobject *self = (rlockobject*)op;
     PyTime_t timeout;
-    PyThread_ident_t tid;
-    PyLockStatus r = PY_LOCK_ACQUIRED;
 
-    if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
+    if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
         return NULL;
+    }
 
-    tid = PyThread_get_thread_ident_ex();
-    if (rlock_is_owned_by(self, tid)) {
-        unsigned long count = self->rlock_count + 1;
-        if (count <= self->rlock_count) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "Internal lock count overflowed");
-            return NULL;
-        }
-        self->rlock_count = count;
-        Py_RETURN_TRUE;
-    }
-    r = acquire_timed(self->rlock_lock, timeout);
-    if (r == PY_LOCK_ACQUIRED) {
-        assert(self->rlock_count == 0);
-        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, tid);
-        self->rlock_count = 1;
-    }
-    else if (r == PY_LOCK_INTR) {
+    PyLockStatus r = _PyRecursiveMutex_LockTimed(&self->lock, timeout,
+                                                 _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+    if (r == PY_LOCK_INTR) {
         return NULL;
     }
 
@@ -1086,18 +1034,14 @@ PyDoc_STRVAR(rlock_enter_doc,
 Lock the lock.");
 
 static PyObject *
-rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
+rlock_release(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
+    rlockobject *self = (rlockobject*)op;
 
-    if (!rlock_is_owned_by(self, tid)) {
+    if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
-    }
-    if (--self->rlock_count == 0) {
-        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
-        PyThread_release_lock(self->rlock_lock);
     }
     Py_RETURN_NONE;
 }
@@ -1122,28 +1066,19 @@ PyDoc_STRVAR(rlock_exit_doc,
 Release the lock.");
 
 static PyObject *
-rlock_acquire_restore(rlockobject *self, PyObject *args)
+rlock_acquire_restore(PyObject *op, PyObject *args)
 {
+    rlockobject *self = (rlockobject*)op;
     PyThread_ident_t owner;
-    unsigned long count;
-    int r = 1;
+    Py_ssize_t count;
 
-    if (!PyArg_ParseTuple(args, "(k" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
+    if (!PyArg_ParseTuple(args, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
             &count, &owner))
         return NULL;
 
-    if (!PyThread_acquire_lock(self->rlock_lock, 0)) {
-        Py_BEGIN_ALLOW_THREADS
-        r = PyThread_acquire_lock(self->rlock_lock, 1);
-        Py_END_ALLOW_THREADS
-    }
-    if (!r) {
-        PyErr_SetString(ThreadError, "couldn't acquire lock");
-        return NULL;
-    }
-    assert(self->rlock_count == 0);
-    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, owner);
-    self->rlock_count = count;
+    _PyRecursiveMutex_Lock(&self->lock);
+    _Py_atomic_store_ullong_relaxed(&self->lock.thread, owner);
+    self->lock.level = (size_t)count - 1;
     Py_RETURN_NONE;
 }
 
@@ -1154,23 +1089,21 @@ PyDoc_STRVAR(rlock_acquire_restore_doc,
 For internal use by `threading.Condition`.");
 
 static PyObject *
-rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
+rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThread_ident_t owner;
-    unsigned long count;
+    rlockobject *self = (rlockobject*)op;
 
-    if (self->rlock_count == 0) {
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
     }
 
-    owner = self->rlock_owner;
-    count = self->rlock_count;
-    self->rlock_count = 0;
-    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
-    PyThread_release_lock(self->rlock_lock);
-    return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
+    PyThread_ident_t owner = self->lock.thread;
+    Py_ssize_t count = self->lock.level + 1;
+    self->lock.level = 0;  // ensure the unlock releases the lock
+    _PyRecursiveMutex_Unlock(&self->lock);
+    return Py_BuildValue("n" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
@@ -1180,12 +1113,13 @@ PyDoc_STRVAR(rlock_release_save_doc,
 For internal use by `threading.Condition`.");
 
 static PyObject *
-rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
+rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
-    PyThread_ident_t owner =
-        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
-    return PyLong_FromUnsignedLong(owner == tid ? self->rlock_count : 0UL);
+    rlockobject *self = (rlockobject*)op;
+    if (_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
+        return PyLong_FromSize_t(self->lock.level + 1);
+    }
+    return PyLong_FromLong(0);
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
@@ -1195,14 +1129,11 @@ PyDoc_STRVAR(rlock_recursion_count_doc,
 For internal use by reentrancy checks.");
 
 static PyObject *
-rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
+rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
-
-    if (rlock_is_owned_by(self, tid)) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    rlockobject *self = (rlockobject*)op;
+    long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    return PyBool_FromLong(owned);
 }
 
 PyDoc_STRVAR(rlock_is_owned_doc,
@@ -1218,29 +1149,21 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self == NULL) {
         return NULL;
     }
-    self->in_weakreflist = NULL;
-    self->rlock_owner = 0;
-    self->rlock_count = 0;
-
-    self->rlock_lock = PyThread_allocate_lock();
-    if (self->rlock_lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(ThreadError, "can't allocate lock");
-        return NULL;
-    }
+    self->lock = (_PyRecursiveMutex){0};
     return (PyObject *) self;
 }
 
 static PyObject *
-rlock_repr(rlockobject *self)
+rlock_repr(PyObject *op)
 {
-    PyThread_ident_t owner =
-            _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
+    rlockobject *self = (rlockobject*)op;
+    PyThread_ident_t owner = self->lock.thread;
+    size_t count = self->lock.level + 1;
     return PyUnicode_FromFormat(
-        "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%lu at %p>",
-        self->rlock_count ? "locked" : "unlocked",
+        "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%zu at %p>",
+        owner ? "locked" : "unlocked",
         Py_TYPE(self)->tp_name, owner,
-        self->rlock_count, self);
+        count, self);
 }
 
 
@@ -1248,14 +1171,7 @@ rlock_repr(rlockobject *self)
 static PyObject *
 rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
 {
-    if (_PyThread_at_fork_reinit(&self->rlock_lock) < 0) {
-        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
-        return NULL;
-    }
-
-    self->rlock_owner = 0;
-    self->rlock_count = 0;
-
+    self->lock = (_PyRecursiveMutex){0};
     Py_RETURN_NONE;
 }
 #endif  /* HAVE_FORK */
@@ -1264,19 +1180,19 @@ rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
 static PyMethodDef rlock_methods[] = {
     {"acquire",      _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
-    {"release",      (PyCFunction)rlock_release,
+    {"release",      rlock_release,
      METH_NOARGS, rlock_release_doc},
-    {"_is_owned",     (PyCFunction)rlock_is_owned,
+    {"_is_owned",     rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
-    {"_acquire_restore", (PyCFunction)rlock_acquire_restore,
+    {"_acquire_restore", rlock_acquire_restore,
      METH_VARARGS, rlock_acquire_restore_doc},
-    {"_release_save", (PyCFunction)rlock_release_save,
+    {"_release_save", rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
-    {"_recursion_count", (PyCFunction)rlock_recursion_count,
+    {"_recursion_count", rlock_recursion_count,
      METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_enter_doc},
-    {"__exit__",    (PyCFunction)rlock_release,
+    {"__exit__",    rlock_release,
      METH_VARARGS, rlock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
@@ -1286,18 +1202,12 @@ static PyMethodDef rlock_methods[] = {
 };
 
 
-static PyMemberDef rlock_type_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rlockobject, in_weakreflist), Py_READONLY},
-    {NULL},
-};
-
 static PyType_Slot rlock_type_slots[] = {
-    {Py_tp_dealloc, (destructor)rlock_dealloc},
-    {Py_tp_repr, (reprfunc)rlock_repr},
+    {Py_tp_dealloc, rlock_dealloc},
+    {Py_tp_repr, rlock_repr},
     {Py_tp_methods, rlock_methods},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
-    {Py_tp_members, rlock_type_members},
     {Py_tp_traverse, rlock_traverse},
     {0, 0},
 };
@@ -1306,7 +1216,7 @@ static PyType_Spec rlock_type_spec = {
     .name = "_thread.RLock",
     .basicsize = sizeof(rlockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = rlock_type_slots,
 };
 
@@ -1320,16 +1230,7 @@ newlockobject(PyObject *module)
     if (self == NULL) {
         return NULL;
     }
-
-    self->lock_lock = PyThread_allocate_lock();
-    self->locked = 0;
-    self->in_weakreflist = NULL;
-
-    if (self->lock_lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(ThreadError, "can't allocate lock");
-        return NULL;
-    }
+    self->lock = (PyMutex){0};
     return self;
 }
 
@@ -1392,8 +1293,9 @@ typedef struct {
 } localdummyobject;
 
 static void
-localdummy_dealloc(localdummyobject *self)
+localdummy_dealloc(PyObject *op)
 {
+    localdummyobject *self = (localdummyobject*)op;
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     PyTypeObject *tp = Py_TYPE(self);
@@ -1407,7 +1309,7 @@ static PyMemberDef local_dummy_type_members[] = {
 };
 
 static PyType_Slot local_dummy_type_slots[] = {
-    {Py_tp_dealloc, (destructor)localdummy_dealloc},
+    {Py_tp_dealloc, localdummy_dealloc},
     {Py_tp_doc, "Thread-local dummy"},
     {Py_tp_members, local_dummy_type_members},
     {0, 0}

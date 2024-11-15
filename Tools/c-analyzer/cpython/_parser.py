@@ -290,6 +290,7 @@ Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Include/internal/pycore_crossinterp_data_registry.h	Py_CORE_CROSSINTERP_DATA_REGISTRY_H	1
 
 # @end=tsv@
 ''')[1:]
@@ -329,6 +330,7 @@ MAX_SIZES = {
     _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/initconfig.c'): (50_000, 500),
 
     # Generated files:
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),

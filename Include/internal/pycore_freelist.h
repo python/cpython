@@ -28,13 +28,6 @@ _Py_freelists_GET(void)
 #endif
 }
 
-#ifndef WITH_FREELISTS
-#define _Py_FREELIST_FREE(NAME, op, freefunc) freefunc(op)
-#define _Py_FREELIST_PUSH(NAME, op, limit) (0)
-#define _Py_FREELIST_POP(TYPE, NAME) (NULL)
-#define _Py_FREELIST_POP_MEM(NAME) (NULL)
-#define _Py_FREELIST_SIZE(NAME) (0)
-#else
 // Pushes `op` to the freelist, calls `freefunc` if the freelist is full
 #define _Py_FREELIST_FREE(NAME, op, freefunc) \
     _PyFreeList_Free(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), \
@@ -108,7 +101,6 @@ _PyFreeList_PopMem(struct _Py_freelist *fl)
     }
     return op;
 }
-#endif
 
 extern void _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization);
 
