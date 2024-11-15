@@ -1377,7 +1377,6 @@ visit_add_to_container(PyObject *op, void *arg)
 static Py_ssize_t
 expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCState *gcstate)
 {
-    validate_list(container, collecting_clear_unreachable_clear);
     struct container_and_flag arg = {
         .container = container,
         .visited_space = gcstate->visited_space,
@@ -1592,6 +1591,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GCState *gcstate = &tstate->interp->gc;
 
     gcstate->work_to_do += assess_work_to_do(gcstate);
+    untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
@@ -1606,7 +1606,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
     gcstate->work_to_do -= objects_marked;
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
-    untrack_tuples(&gcstate->young.head);
     gc_list_merge(&gcstate->young.head, &increment);
     gc_list_validate_space(&increment, gcstate->visited_space);
     Py_ssize_t increment_size = 0;
