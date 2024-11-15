@@ -102,6 +102,9 @@ class WorkerError(Exception):
         super().__init__()
 
 
+_NOT_RUNNING = "<not running>"
+
+
 class WorkerThread(threading.Thread):
     def __init__(self, worker_id: int, runner: "RunWorkers") -> None:
         super().__init__()
@@ -111,18 +114,11 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self.test_name: TestName | None = None
-        self.start_time: float | None = None
+        self.test_name = _NOT_RUNNING
+        self.start_time = 0.0
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
-
-    def current_test_name(self) -> TestName:
-        if self.test_name is None:
-            raise ValueError(
-                'Should never call `.current_test_name()` before calling `.run()`'
-            )
-        return self.test_name
 
     def __repr__(self) -> str:
         info = [f'WorkerThread #{self.worker_id}']
@@ -318,14 +314,14 @@ class WorkerThread(threading.Thread):
         except Exception as exc:
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
-            raise WorkerError(self.current_test_name(),
+            raise WorkerError(self.test_name,
                               f"Cannot read process stdout: {exc}",
                               stdout=None,
                               state=State.WORKER_BUG)
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
-        test_name = self.current_test_name()
+        test_name = self.test_name
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
@@ -402,15 +398,15 @@ class WorkerThread(threading.Thread):
                 except StopIteration:
                     break
 
-                self.start_time = start_time = time.monotonic()
+                self.start_time = time.monotonic()
                 self.test_name = test_name
                 try:
                     mp_result = self._runtest(test_name)
                 except WorkerError as exc:
                     mp_result = exc.mp_result
                 finally:
-                    self.test_name = None
-                mp_result.result.duration = time.monotonic() - start_time
+                    self.test_name = _NOT_RUNNING
+                mp_result.result.duration = time.monotonic() - self.start_time
                 self.output.put((False, mp_result))
 
                 if mp_result.result.must_stop(fail_fast, fail_env_changed):
