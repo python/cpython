@@ -31,6 +31,11 @@ except ImportError:
         return C
     ContainerNoGC = None
 
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
+
 ### Support code
 ###############################################################################
 
@@ -1092,6 +1097,7 @@ class IncrementalGCTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
     # Use small increments to emulate longer running process in a shorter time
     @gc_threshold(200, 10)
@@ -1117,32 +1123,18 @@ class IncrementalGCTests(unittest.TestCase):
             return head
 
         head = make_ll(1000)
-        count = 1000
-
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
 
         enabled = gc.isenabled()
         gc.enable()
         olds = []
+        initial_heap_size = _testinternalcapi.get_heap_size()
         for i in range(20_000):
             newhead = make_ll(20)
-            count += 20
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
-                stats = gc.get_stats()
-                young = stats[0]
-                incremental = stats[1]
-                old = stats[2]
-                collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
-                live = count - collected
-                self.assertLess(live, 27000)
+                new_objects = _testinternalcapi.get_heap_size() - initial_heap_size
+                self.assertLess(new_objects, 27_000)
                 del olds[:]
         if not enabled:
             gc.disable()

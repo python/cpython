@@ -185,6 +185,7 @@ _PyGC_Init(PyInterpreterState *interp)
     if (gcstate->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+    gcstate->prior_heap_size = 0;
     gcstate->heap_size = 0;
 
     return _PyStatus_OK();
@@ -1330,16 +1331,11 @@ gc_collect_young(PyThreadState *tstate,
             survivor_count++;
         }
     }
-    (void)survivor_count;  // Silence compiler warning
     gc_list_merge(&survivors, visited);
     validate_old(gcstate);
     gcstate->young.count = 0;
     gcstate->old[gcstate->visited_space].count++;
-    Py_ssize_t scale_factor = gcstate->old[0].threshold;
-    if (scale_factor < 1) {
-        scale_factor = 1;
-    }
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    gcstate->work_to_do += survivor_count * 4;
     add_stats(gcstate, 0, stats);
 }
 
@@ -1559,13 +1555,43 @@ mark_at_start(PyThreadState *tstate)
     return objects_marked;
 }
 
+static Py_ssize_t
+assess_work_to_do(GCState *gcstate)
+{
+    /* The amount of work we want to do depends on two things.
+     * 1. The number of new objects created
+     * 2. The growth in heap size since the last collection
+     * 3. The heap size (up to the number of new objects, to avoid quadratic effects)
+     */
+    Py_ssize_t scale_factor = gcstate->old[0].threshold;
+    if (scale_factor < 2) {
+        scale_factor = 2;
+    }
+    Py_ssize_t new_objects = gcstate->young.count;
+    Py_ssize_t growth = gcstate->heap_size - gcstate->prior_heap_size;
+    if (growth < 0) {
+        growth = 0;
+    }
+    if (gcstate->heap_size < new_objects * scale_factor) {
+        // Small heap: ignore growth
+        growth = 0;
+    }
+    Py_ssize_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    if (heap_fraction > new_objects) {
+        heap_fraction = new_objects;
+    }
+    gcstate->young.count = 0;
+    gcstate->prior_heap_size = gcstate->heap_size;
+    return new_objects*2 + growth*2 + heap_fraction;
+}
+
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 {
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
-    gcstate->work_to_do += gcstate->young.count;
-    gcstate->young.count = 0;
+
+    gcstate->work_to_do += assess_work_to_do(gcstate);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
@@ -1576,10 +1602,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     PyGC_Head increment;
     gc_list_init(&increment);
-    Py_ssize_t scale_factor = gcstate->old[0].threshold;
-    if (scale_factor < 1) {
-        scale_factor = 1;
-    }
     Py_ssize_t objects_marked = mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
     gcstate->work_to_do -= objects_marked;
@@ -1607,7 +1629,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     validate_old(gcstate);

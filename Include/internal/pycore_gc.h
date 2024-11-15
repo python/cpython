@@ -330,6 +330,7 @@ struct _gc_runtime_state {
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
+    Py_ssize_t prior_heap_size;
     Py_ssize_t heap_size;
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
