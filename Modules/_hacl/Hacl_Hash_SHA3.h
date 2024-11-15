@@ -78,49 +78,90 @@ uint32_t Hacl_Hash_SHA3_hash_len(Hacl_Hash_SHA3_state_t *s);
 
 bool Hacl_Hash_SHA3_is_shake(Hacl_Hash_SHA3_state_t *s);
 
+void Hacl_Hash_SHA3_absorb_inner_32(uint32_t rateInBytes, uint8_t *b, uint64_t *s);
+
 void
-Hacl_Hash_SHA3_shake128_hacl(
-  uint32_t inputByteLen,
-  uint8_t *input,
+Hacl_Hash_SHA3_shake128(
+  uint8_t *output,
   uint32_t outputByteLen,
-  uint8_t *output
+  uint8_t *input,
+  uint32_t inputByteLen
 );
 
 void
-Hacl_Hash_SHA3_shake256_hacl(
-  uint32_t inputByteLen,
-  uint8_t *input,
+Hacl_Hash_SHA3_shake256(
+  uint8_t *output,
   uint32_t outputByteLen,
-  uint8_t *output
+  uint8_t *input,
+  uint32_t inputByteLen
 );
 
-void Hacl_Hash_SHA3_sha3_224(uint8_t *output, uint8_t *input, uint32_t input_len);
+void Hacl_Hash_SHA3_sha3_224(uint8_t *output, uint8_t *input, uint32_t inputByteLen);
 
-void Hacl_Hash_SHA3_sha3_256(uint8_t *output, uint8_t *input, uint32_t input_len);
+void Hacl_Hash_SHA3_sha3_256(uint8_t *output, uint8_t *input, uint32_t inputByteLen);
 
-void Hacl_Hash_SHA3_sha3_384(uint8_t *output, uint8_t *input, uint32_t input_len);
+void Hacl_Hash_SHA3_sha3_384(uint8_t *output, uint8_t *input, uint32_t inputByteLen);
 
-void Hacl_Hash_SHA3_sha3_512(uint8_t *output, uint8_t *input, uint32_t input_len);
+void Hacl_Hash_SHA3_sha3_512(uint8_t *output, uint8_t *input, uint32_t inputByteLen);
 
-void Hacl_Hash_SHA3_absorb_inner(uint32_t rateInBytes, uint8_t *block, uint64_t *s);
+/**
+Allocate state buffer of 200-bytes
+*/
+uint64_t *Hacl_Hash_SHA3_state_malloc(void);
 
+/**
+Free state buffer
+*/
+void Hacl_Hash_SHA3_state_free(uint64_t *s);
+
+/**
+Absorb number of input blocks and write the output state
+
+  This function is intended to receive a hash state and input buffer.
+  It processes an input of multiple of 168-bytes (SHAKE128 block size),
+  any additional bytes of final partial block are ignored.
+
+  The argument `state` (IN/OUT) points to hash state, i.e., uint64_t[25]
+  The argument `input` (IN) points to `inputByteLen` bytes of valid memory,
+  i.e., uint8_t[inputByteLen]
+*/
 void
-Hacl_Hash_SHA3_squeeze0(
-  uint64_t *s,
-  uint32_t rateInBytes,
-  uint32_t outputByteLen,
-  uint8_t *output
-);
+Hacl_Hash_SHA3_shake128_absorb_nblocks(uint64_t *state, uint8_t *input, uint32_t inputByteLen);
 
+/**
+Absorb a final partial block of input and write the output state
+
+  This function is intended to receive a hash state and input buffer.
+  It processes a sequence of bytes at end of input buffer that is less
+  than 168-bytes (SHAKE128 block size),
+  any bytes of full blocks at start of input buffer are ignored.
+
+  The argument `state` (IN/OUT) points to hash state, i.e., uint64_t[25]
+  The argument `input` (IN) points to `inputByteLen` bytes of valid memory,
+  i.e., uint8_t[inputByteLen]
+
+  Note: Full size of input buffer must be passed to `inputByteLen` including
+  the number of full-block bytes at start of input buffer that are ignored
+*/
 void
-Hacl_Hash_SHA3_keccak(
-  uint32_t rate,
-  uint32_t capacity,
-  uint32_t inputByteLen,
-  uint8_t *input,
-  uint8_t delimitedSuffix,
-  uint32_t outputByteLen,
-  uint8_t *output
+Hacl_Hash_SHA3_shake128_absorb_final(uint64_t *state, uint8_t *input, uint32_t inputByteLen);
+
+/**
+Squeeze a hash state to output buffer
+
+  This function is intended to receive a hash state and output buffer.
+  It produces an output of multiple of 168-bytes (SHAKE128 block size),
+  any additional bytes of final partial block are ignored.
+
+  The argument `state` (IN) points to hash state, i.e., uint64_t[25]
+  The argument `output` (OUT) points to `outputByteLen` bytes of valid memory,
+  i.e., uint8_t[outputByteLen]
+*/
+void
+Hacl_Hash_SHA3_shake128_squeeze_nblocks(
+  uint64_t *state,
+  uint8_t *output,
+  uint32_t outputByteLen
 );
 
 #if defined(__cplusplus)

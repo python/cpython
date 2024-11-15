@@ -106,7 +106,7 @@ def checkcache(filename=None):
             return
         try:
             stat = os.stat(fullname)
-        except OSError:
+        except (OSError, ValueError):
             # a cached entry is now a failure
             assert filename not in failed_filenames
             failures[filename] = (None, None, fullname)
@@ -205,11 +205,13 @@ def updatecache(filename, module_globals=None):
             try:
                 stat = os.stat(fullname)
                 break
-            except OSError:
+            except (OSError, ValueError):
                 pass
         else:
             failures[filename] = (None, None, fullname)
             return []
+    except ValueError:  # may be raised by os.stat()
+        return []
     else:
         if filename in failures:
             size, mtime_ns, _ = failures[filename]

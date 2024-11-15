@@ -905,10 +905,10 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         os.mkdir(os.path.join(src_dir, 'test_dir', 'subdir'))
         write_file((src_dir, 'test_dir', 'subdir', 'test.txt'), '456')
 
-        invokations = []
+        invocations = []
 
         def _ignore(src, names):
-            invokations.append(src)
+            invocations.append(src)
             self.assertIsInstance(src, str)
             self.assertIsInstance(names, list)
             self.assertEqual(len(names), len(set(names)))
@@ -933,7 +933,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
                                     'test.txt')))
 
-        self.assertEqual(len(invokations), 9)
+        self.assertEqual(len(invocations), 9)
 
     def test_copytree_retains_permissions(self):
         tmp_dir = self.mkdtemp()
@@ -1909,7 +1909,10 @@ class TestArchives(BaseTest, unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
-                if 'unrecognized option: t' in details:
+                if any(message in details for message in [
+                    'unrecognized option: t',  # BusyBox
+                    'invalid option -- t',  # Android
+                ]):
                     self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
@@ -2145,9 +2148,6 @@ class TestArchives(BaseTest, unittest.TestCase):
     def check_unpack_tarball(self, format):
         self.check_unpack_archive(format, filter='fully_trusted')
         self.check_unpack_archive(format, filter='data')
-        with warnings_helper.check_warnings(
-                ('Python 3.14', DeprecationWarning)):
-            self.check_unpack_archive(format)
 
     def test_unpack_archive_tar(self):
         self.check_unpack_tarball('tar')
@@ -3396,7 +3396,7 @@ class PublicAPITests(unittest.TestCase):
         self.assertTrue(hasattr(shutil, '__all__'))
         target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
                       'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
-                      'SpecialFileError', 'ExecError', 'make_archive',
+                      'SpecialFileError', 'make_archive',
                       'get_archive_formats', 'register_archive_format',
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
@@ -3405,6 +3405,8 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
+        with self.assertWarns(DeprecationWarning):
+            from shutil import ExecError
 
 
 if __name__ == '__main__':

@@ -1,0 +1,2 @@
+Add support for returning intermixed options and non-option arguments in
+order in :func:`getopt.gnu_getopt`.
