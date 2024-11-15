@@ -1,5 +1,5 @@
 import contextlib
-from lexer import COMMENT, Token
+from lexer import COMMENT, CMACRO, Token
 from typing import TextIO, Iterator
 
 
@@ -92,7 +92,7 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
-        if tkn.kind == "CMACRO":
+        if tkn.kind == CMACRO:
             self.newline = True
         self.maybe_indent(tkn.text)
 

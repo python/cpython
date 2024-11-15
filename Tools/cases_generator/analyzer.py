@@ -3,6 +3,7 @@ import itertools
 import lexer
 import parser
 import re
+from lexer import *
 from typing import Optional
 
 @dataclass
@@ -194,7 +195,7 @@ class Uop:
             return None  # Adjusts next_instr, but only in tier 1 code
         if "INSTRUMENTED" in self.name:
             return "is instrumented"
-        if lexer.ANN_REPLACED in self.annotations:
+        if ANN_REPLACED in self.annotations:
             return "is replaced"
         if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
             return "has tier 1 control flow"
@@ -211,7 +212,7 @@ class Uop:
 
     def is_super(self) -> bool:
         for tkn in self.body:
-            if tkn.kind == lexer.IDENTIFIER and tkn.text == "oparg1":
+            if tkn.kind == IDENTIFIER and tkn.text == "oparg1":
                 return True
         return False
 
@@ -384,7 +385,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     """Find the tokens that make up the left-hand side of an assignment"""
     offset = 0
     for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {SEMI, LBRACE, RBRACE}:
             return node.block.tokens[idx - offset : idx]
         offset += 1
     return []
@@ -395,17 +396,17 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
     outnames = { out.name for out in node.outputs }
     innames = { out.name for out in node.inputs }
     for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind == "AND":
+        if tkn.kind == AND:
             name = node.block.tokens[idx+1]
             if name.text in outnames:
                 res.append(name)
-        if tkn.kind != "EQUALS":
+        if tkn.kind != EQUALS:
             continue
         lhs = find_assignment_target(node, idx)
         assert lhs
-        while lhs and lhs[0].kind == "COMMENT":
+        while lhs and lhs[0].kind == COMMENT:
             lhs = lhs[1:]
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+        if len(lhs) != 1 or lhs[0].kind != IDENTIFIER:
             continue
         name = lhs[0]
         if name.text in innames:
@@ -419,18 +420,18 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
 
     def in_frame_push(idx: int) -> bool:
         for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+            if tkn.kind in {SEMI, LBRACE, RBRACE}:
                 return False
-            if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
+            if tkn.kind == IDENTIFIER and tkn.text == "_PyFrame_PushUnchecked":
                 return True
         return False
 
     refs: dict[lexer.Token, str | None] = {}
     for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
+        if tkn.kind != IDENTIFIER or tkn.text != "PyStackRef_FromPyObjectNew":
             continue
 
-        if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
+        if idx == 0 or node.block.tokens[idx - 1].kind != EQUALS:
             if in_frame_push(idx):
                 # PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
                 refs[tkn] = None
@@ -443,15 +444,15 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
                 "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
             )
 
-        if lhs[0].kind == "TIMES" or any(
-            t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
+        if lhs[0].kind == TIMES or any(
+            t.kind == ARROW or t.kind == LBRACKET for t in lhs[1:]
         ):
             # Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
             # Assume that they are visible to the GC.
             refs[tkn] = None
             continue
 
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+        if len(lhs) != 1 or lhs[0].kind != IDENTIFIER:
             raise analysis_error(
                 "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
             )
@@ -475,7 +476,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
 def variable_used(node: parser.InstDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == lexer.IDENTIFIER and token.text == name
+        token.kind == IDENTIFIER and token.text == name
         for token in node.block.tokens
     )
 
@@ -483,7 +484,7 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
 def oparg_used(node: parser.InstDef) -> bool:
     """Determine whether `oparg` is used in a node."""
     return any(
-        token.kind == lexer.IDENTIFIER and token.text == "oparg"
+        token.kind == IDENTIFIER and token.text == "oparg"
         for token in node.tokens
     )
 
@@ -491,8 +492,8 @@ def oparg_used(node: parser.InstDef) -> bool:
 def tier_variable(node: parser.InstDef) -> int | None:
     """Determine whether a tier variable is used in a node."""
     for token in node.tokens:
-        if token.kind == lexer.ANNOTATION:
-            if token.text == lexer.ANN_SPECIALIZING:
+        if token.kind == ANNOTATION:
+            if token.text == ANN_SPECIALIZING:
                 return 1
             if re.fullmatch(r"tier\d", token.text):
                 return int(token.text[-1])
@@ -639,11 +640,11 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
+        if tkn.kind in {SEMI, LBRACE, RBRACE, CMACRO}:
             break
         idx -= 1
         assert idx > 0
-    while node.block.tokens[idx].kind == "COMMENT":
+    while node.block.tokens[idx].kind == COMMENT:
         idx += 1
     return node.block.tokens[idx]
 
@@ -653,7 +654,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
     while True:
         idx += 1
         tkn = node.block.tokens[idx]
-        if tkn.kind == "SEMI":
+        if tkn.kind == SEMI:
             return node.block.tokens[idx+1]
 
 def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
@@ -661,15 +662,15 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
     for tkn in tkn_iter:
-        if tkn.kind == "IF":
+        if tkn.kind == IF:
             next(tkn_iter)
             in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+        if tkn.kind == IDENTIFIER and tkn.text in ("DEOPT_IF", "ERROR_IF"):
             next(tkn_iter)
             in_if = 1
-        elif tkn.kind == "LPAREN" and in_if:
+        elif tkn.kind == LPAREN and in_if:
             in_if += 1
-        elif tkn.kind == "RPAREN":
+        elif tkn.kind == RPAREN:
             if in_if:
                 in_if -= 1
         elif tkn in calls and in_if:
@@ -683,11 +684,11 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
             next_tkn = tokens[idx+1]
         except IndexError:
             break
-        if tkn.kind == "SWITCH":
+        if tkn.kind == SWITCH:
             raise analysis_error(f"switch statements are not supported due to their complex flow control. Sorry.", tkn)
-        if next_tkn.kind != lexer.LPAREN:
+        if next_tkn.kind != LPAREN:
             continue
-        if tkn.kind == lexer.IDENTIFIER:
+        if tkn.kind == IDENTIFIER:
             if tkn.text.upper() == tkn.text:
                 # simple macro
                 continue
@@ -704,12 +705,12 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
                 continue
             if tkn.text in NON_ESCAPING_FUNCTIONS:
                 continue
-        elif tkn.kind == "RPAREN":
+        elif tkn.kind == RPAREN:
             prev = tokens[idx-1]
             if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
                 #cast
                 continue
-        elif tkn.kind != "RBRACKET":
+        elif tkn.kind != RBRACKET:
             continue
         start = find_stmt_start(instr, idx)
         end = find_stmt_end(instr, idx)
@@ -731,20 +732,20 @@ def always_exits(op: parser.InstDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
     for tkn in tkn_iter:
-        if tkn.kind == lexer.LBRACE:
+        if tkn.kind == LBRACE:
             depth += 1
-        elif tkn.kind == lexer.RBRACE:
+        elif tkn.kind == RBRACE:
             depth -= 1
         elif depth > 1:
             continue
-        elif tkn.kind == lexer.GOTO or tkn.kind == lexer.RETURN:
+        elif tkn.kind == GOTO or tkn.kind == RETURN:
             return True
-        elif tkn.kind == "KEYWORD":
+        elif tkn.kind == KEYWORD:
             # XXX: This appears to be unreachable since we never
-            # set tkn.kind to "KEYWORD"
+            # set tkn.kind to KEYWORD
             if tkn.text in EXITS:
                 return True
-        elif tkn.kind == lexer.IDENTIFIER:
+        elif tkn.kind == IDENTIFIER:
             if tkn.text in EXITS:
                 return True
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
@@ -826,12 +827,12 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
         and not has_free,
         has_free=has_free,
-        pure=lexer.ANN_PURE in op.annotations,
+        pure=ANN_PURE in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )
 
-ANN_REPLICATED = re.compile(rf'^{re.escape(lexer.ANN_REPLICATE)}\((\d+)\)$')
+ANN_REPLICATED = re.compile(rf'^{re.escape(ANN_REPLICATE)}\((\d+)\)$')
 
 def make_uop(
     name: str,
@@ -850,7 +851,7 @@ def make_uop(
         body=op.block.tokens,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and lexer.ANN_SPLIT in op.annotations:
+    if effect_depends_on_oparg_1(op) and ANN_SPLIT in op.annotations:
         result.properties.oparg_and_1 = True
         for bit in ("0", "1"):
             name_x = name + "_" + bit
@@ -902,9 +903,9 @@ def make_uop(
 
 
 def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
-    assert op.kind == "op"
+    assert op.kind == OP
     if op.name in uops:
-        if lexer.ANN_OVERRIDE not in op.annotations:
+        if ANN_OVERRIDE not in op.annotations:
             raise override_error(
                 op.name, op.context, uops[op.name].context, op.tokens[0]
             )
@@ -923,7 +924,7 @@ def add_instruction(
 def desugar_inst(
     inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    assert inst.kind == "inst"
+    assert inst.kind == INST
     name = inst.name
     op_inputs: list[parser.InputEffect] = []
     parts: list[Part] = []
@@ -1123,10 +1124,10 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     for node in forest:
         match node:
             case parser.InstDef(name):
-                if node.kind == "inst":
+                if node.kind == INST:
                     desugar_inst(node, instructions, uops)
                 else:
-                    assert node.kind == "op"
+                    assert node.kind == OP
                     add_op(node, uops)
             case parser.Macro():
                 pass
@@ -1150,11 +1151,11 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     for uop in uops.values():
         tkn_iter = iter(uop.body)
         for tkn in tkn_iter:
-            if tkn.kind == lexer.IDENTIFIER and tkn.text == "GO_TO_INSTRUCTION":
-                if next(tkn_iter).kind != lexer.LPAREN:
+            if tkn.kind == IDENTIFIER and tkn.text == "GO_TO_INSTRUCTION":
+                if next(tkn_iter).kind != LPAREN:
                     continue
                 target = next(tkn_iter)
-                if target.kind != lexer.IDENTIFIER:
+                if target.kind != IDENTIFIER:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
