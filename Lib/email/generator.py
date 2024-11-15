@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -227,7 +227,7 @@ class Generator:
             folded = self.policy.fold(h, v)
             if self.policy.verify_generated_headers:
                 linesep = self.policy.linesep
-                if not folded.endswith(self.policy.linesep):
+                if not folded.endswith(linesep):
                     raise HeaderWriteError(
                         f'folded header does not end with {linesep!r}: {folded!r}')
                 if NEWLINE_WITHOUT_FWSP.search(folded.removesuffix(linesep)):

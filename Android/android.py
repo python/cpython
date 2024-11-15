@@ -138,8 +138,8 @@ def make_build_python(context):
 
 def unpack_deps(host):
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-1", "libffi-3.4.4-2", "openssl-3.0.13-1",
-                     "sqlite-3.45.1-0", "xz-5.4.6-0"]:
+    for name_ver in ["bzip2-1.0.8-2", "libffi-3.4.4-3", "openssl-3.0.15-4",
+                     "sqlite-3.45.3-3", "xz-5.4.6-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
         run(["tar", "-xf", filename])
@@ -189,12 +189,13 @@ def configure_host_python(context):
 
 def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
-    # delete any previously-installed Python libs and include files to prevent
-    # them being used during the build.
+    # delete any previous Python installation to prevent it being used during
+    # the build.
     host_dir = subdir(context.host)
     prefix_dir = host_dir / "prefix"
     delete_glob(f"{prefix_dir}/include/python*")
     delete_glob(f"{prefix_dir}/lib/libpython*")
+    delete_glob(f"{prefix_dir}/lib/python*")
 
     os.chdir(host_dir / "build")
     run(["make", "-j", str(os.cpu_count())], host=context.host)
@@ -259,8 +260,8 @@ def setup_testbed():
              f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
-# run_testbed will build the app automatically, but it hides the Gradle output
-# by default, so it's useful to have this as a separate command for the buildbot.
+# run_testbed will build the app automatically, but it's useful to have this as
+# a separate command to allow running the app outside of this script.
 def build_testbed(context):
     setup_sdk()
     setup_testbed()
@@ -376,6 +377,8 @@ async def find_pid(serial):
     shown_error = False
     while True:
         try:
+            # `pidof` requires API level 24 or higher. The level 23 emulator
+            # includes it, but it doesn't work (it returns all processes).
             pid = (await async_check_output(
                 adb, "-s", serial, "shell", "pidof", "-s", APP_ID
             )).strip()
@@ -407,6 +410,7 @@ async def logcat_task(context, initial_devices):
     serial = await wait_for(find_device(context, initial_devices), startup_timeout)
     pid = await wait_for(find_pid(serial), startup_timeout)
 
+    # `--pid` requires API level 24 or higher.
     args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
     hidden_output = []
     async with async_process(
@@ -421,11 +425,15 @@ async def logcat_task(context, initial_devices):
                 # such messages, but other components might.
                 level, message = None, line
 
+            # Exclude high-volume messages which are rarely useful.
+            if context.verbose < 2 and "from python test_syslog" in message:
+                continue
+
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
             stream = (
                 sys.stderr
-                if level in ["E", "F"]  # ERROR and FATAL (aka ASSERT)
+                if level in ["W", "E", "F"]  # WARNING, ERROR, FATAL (aka ASSERT)
                 else sys.stdout
             )
 
@@ -573,8 +581,9 @@ def parse_args():
     test = subcommands.add_parser(
         "test", help="Run the test suite")
     test.add_argument(
-        "-v", "--verbose", action="store_true",
-        help="Show Gradle output, and non-Python logcat messages")
+        "-v", "--verbose", action="count", default=0,
+        help="Show Gradle output, and non-Python logcat messages. "
+        "Use twice to include high-volume messages which are rarely useful.")
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -591,6 +600,13 @@ def parse_args():
 
 def main():
     install_signal_handler()
+
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
+
     context = parse_args()
     dispatch = {"configure-build": configure_build_python,
                 "make-build": make_build_python,

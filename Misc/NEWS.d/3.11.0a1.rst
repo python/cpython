@@ -2000,7 +2000,7 @@ during file extraction.
 .. nonce: roUl0G
 .. section: Library
 
-:mod:`subprocess` on Solaris now also uses :func:`os.posix_spawn()` for
+:mod:`subprocess` on Solaris now also uses :func:`os.posix_spawn` for
 better performance.
 
 ..
