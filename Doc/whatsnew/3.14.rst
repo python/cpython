@@ -331,6 +331,9 @@ getopt
 * Add support for options with optional arguments.
   (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
+
 http
 ----
 
@@ -585,6 +588,13 @@ Deprecated
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -885,6 +895,9 @@ New features
 
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------
