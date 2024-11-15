@@ -187,9 +187,11 @@ def long_has_args(opt, longopts):
         return '?', opt
     # No exact match, so better be unique.
     if len(possibilities) > 1:
-        # XXX since possibilities contains all valid continuations, might be
-        # nice to work them into the error msg
-        raise GetoptError(_('option --%s not a unique prefix') % opt, opt)
+        raise GetoptError(
+            _("option --%s not a unique prefix; possible options: %s")
+            % (opt, ", ".join(possibilities)),
+            opt,
+        )
     assert len(possibilities) == 1
     unique_match = possibilities[0]
     if unique_match.endswith('=?'):
