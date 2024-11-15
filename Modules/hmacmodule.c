@@ -4,7 +4,6 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_strhex.h"                      // _Py_strhex()
 
 #include <openssl/evp.h>                        // EVP_* interface
 #include <openssl/objects.h>                    // LN_* and NID_* macros
