@@ -185,7 +185,7 @@ def long_has_args(opt, longopts):
         return True, opt
     elif opt + '=?' in possibilities:
         return '?', opt
-    # No exact match, so better be unique.
+    # Possibilities must be unique to be accepted
     if len(possibilities) > 1:
         raise GetoptError(
             _("option --%s not a unique prefix; possible options: %s")
