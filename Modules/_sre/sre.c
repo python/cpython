@@ -267,46 +267,83 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
     return 0;
 }
 
-LOCAL(SRE_REPEAT *)
-add_repeat(SRE_STATE* state, const SRE_CODE* pattern)
+/* memory pool functions for SRE_REPEAT, this can avoid memory
+   leak when SRE(match) function terminates abruptly.
+   state->repeat_pool_used is a doubly-linked list, so that we
+   can remove a SRE_REPEAT node from it.
+   state->repeat_pool_unused is a singly-linked list, we put/get
+   node at the head. */
+static SRE_REPEAT *
+repeat_pool_malloc(SRE_STATE *state)
 {
-    SRE_REPEAT *rep = (SRE_REPEAT*) PyMem_Malloc(sizeof(SRE_REPEAT));
-    if (!rep) {
-        return NULL;
-    }
-    rep->count = -1;
-    rep->last_ptr = NULL;
-    rep->prevlink = NULL;
-    if (state->repeats) {
-        rep->nextlink = state->repeats;
-        state->repeats->prevlink = rep;
+    SRE_REPEAT *repeat;
+
+    if (state->repeat_pool_unused) {
+        /* remove from unused pool (singly-linked list) */
+        repeat = state->repeat_pool_unused;
+        state->repeat_pool_unused = repeat->pool_next;
     }
     else {
-        rep->nextlink = NULL;
+        repeat = PyMem_Malloc(sizeof(SRE_REPEAT));
+        if (!repeat) {
+            return NULL;
+        }
     }
-    state->repeats = rep;
 
-    rep->pattern = pattern;
-    rep->prev = state->repeat;
-    state->repeat = rep;
-    return rep;
+    /* add to used pool (doubly-linked list) */
+    SRE_REPEAT *temp = state->repeat_pool_used;
+    if (temp) {
+        temp->pool_prev = repeat;
+    }
+    repeat->pool_prev = NULL;
+    repeat->pool_next = temp;
+    state->repeat_pool_used = repeat;
+
+    return repeat;
 }
 
-LOCAL(void)
-remove_repeat(SRE_STATE* state, SRE_REPEAT *rep)
+static void
+repeat_pool_free(SRE_STATE *state, SRE_REPEAT *repeat)
 {
-    state->repeat = rep->prev;
+    SRE_REPEAT *prev = repeat->pool_prev;
+    SRE_REPEAT *next = repeat->pool_next;
 
-    if (rep->nextlink) {
-        rep->nextlink->prevlink = rep->prevlink;
+    /* remove from used pool (doubly-linked list) */
+    if (prev) {
+        prev->pool_next = next;
     }
-    if (rep->prevlink) {
-        rep->prevlink->nextlink = rep->nextlink;
+    else {
+        state->repeat_pool_used = next;
     }
-    if (state->repeats == rep) {
-        state->repeats = rep->nextlink;
+    if (next) {
+        next->pool_prev = prev;
     }
-    PyMem_Free(rep);
+
+    /* add to unused pool (singly-linked list) */
+    repeat->pool_next = state->repeat_pool_unused;
+    state->repeat_pool_unused = repeat;
+}
+
+static void
+repeat_pool_clear(SRE_STATE *state)
+{
+    /* clear used pool */
+    SRE_REPEAT *next = state->repeat_pool_used;
+    state->repeat_pool_used = NULL;
+    while (next) {
+        SRE_REPEAT *temp = next;
+        next = temp->pool_next;
+        PyMem_Free(temp);
+    }
+
+    /* clear unused pool */
+    next = state->repeat_pool_unused;
+    state->repeat_pool_unused = NULL;
+    while (next) {
+        SRE_REPEAT *temp = next;
+        next = temp->pool_next;
+        PyMem_Free(temp);
+    }
 }
 
 /* generate 8-bit version */
@@ -440,18 +477,6 @@ _sre_unicode_tolower_impl(PyObject *module, int character)
 }
 
 LOCAL(void)
-state_clean_repeat_data(SRE_STATE* state)
-{
-    SRE_REPEAT *rep = state->repeats;
-    state->repeats = NULL;
-    while (rep) {
-        SRE_REPEAT *prev = rep->prevlink;
-        PyMem_Free(rep);
-        rep = prev;
-    }
-}
-
-LOCAL(void)
 state_reset(SRE_STATE* state)
 {
     /* state->mark will be set to 0 in SRE_OP_MARK dynamically. */
@@ -460,7 +485,8 @@ state_reset(SRE_STATE* state)
     state->lastmark = -1;
     state->lastindex = -1;
 
-    state_clean_repeat_data(state);
+    state->repeat = NULL;
+
     data_stack_dealloc(state);
 }
 
@@ -555,6 +581,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->must_advance = 0;
     state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
+    /* SRE_REPEAT pool */
+    state->repeat = NULL;
+    state->repeat_pool_used = NULL;
+    state->repeat_pool_unused = NULL;
+
     state->beginning = ptr;
 
     state->start = (void*) ((char*) ptr + start * state->charsize);
@@ -587,11 +618,12 @@ state_fini(SRE_STATE* state, PatternObject *pattern)
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
     Py_XDECREF(state->string);
-    state_clean_repeat_data(state);
     data_stack_dealloc(state);
     /* See above PyMem_Free() for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    /* SRE_REPEAT pool */
+    repeat_pool_clear(state);
 #ifdef Py_DEBUG
     if (pattern) {
         pattern->fail_after_count = -1;

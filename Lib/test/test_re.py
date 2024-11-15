@@ -2689,6 +2689,7 @@ class ReTests(unittest.TestCase):
             p._fail_after(n, Interrupt)
             try:
                 p.match(string)
+                print(n)
                 return n
             except Interrupt:
                 pass

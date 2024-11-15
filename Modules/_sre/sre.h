@@ -73,9 +73,9 @@ typedef struct SRE_REPEAT_T {
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */
     const void* last_ptr; /* helper to check for infinite loops */
     struct SRE_REPEAT_T *prev; /* points to previous repeat context */
-    /* links for double-linked list of all repeat contexts */
-    struct SRE_REPEAT_T *nextlink;
-    struct SRE_REPEAT_T *prevlink;
+    /* for SRE_REPEAT pool */
+    struct SRE_REPEAT_T *pool_prev;
+    struct SRE_REPEAT_T *pool_next;
 } SRE_REPEAT;
 
 typedef struct {
@@ -103,8 +103,9 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
-    /* linked list of all repeat contexts */
-    SRE_REPEAT *repeats;
+    /* SRE_REPEAT pool */
+    SRE_REPEAT *repeat_pool_used;
+    SRE_REPEAT *repeat_pool_unused;
     unsigned int sigcount;
 #ifdef Py_DEBUG
     int fail_after_count;

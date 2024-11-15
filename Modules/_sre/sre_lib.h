@@ -1136,14 +1136,20 @@ dispatch:
                    pattern[1], pattern[2]));
 
             /* install new repeat context */
-            ctx->u.rep = add_repeat(state, pattern);
+            ctx->u.rep = repeat_pool_malloc(state);
             if (!ctx->u.rep) {
                 RETURN_ERROR(SRE_ERROR_MEMORY);
             }
+            ctx->u.rep->count = -1;
+            ctx->u.rep->pattern = pattern;
+            ctx->u.rep->prev = state->repeat;
+            ctx->u.rep->last_ptr = NULL;
+            state->repeat = ctx->u.rep;
 
             state->ptr = ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
-            remove_repeat(state, ctx->u.rep);
+            state->repeat = ctx->u.rep->prev;
+            repeat_pool_free(state, ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
