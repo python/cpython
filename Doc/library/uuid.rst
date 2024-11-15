@@ -341,7 +341,7 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-   .. versionadded:: next
+   .. versionchanged:: next
       Allow generating UUID version 6 and 8.
 
 .. option:: -n <namespace>
