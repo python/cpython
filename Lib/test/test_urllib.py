@@ -709,10 +709,6 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
-        try:
-            filePath.encode("utf-8")
-        except UnicodeEncodeError:
-            raise unittest.SkipTest("filePath is not encodable to utf8")
         return "file://%s" % urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
@@ -1561,6 +1557,13 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('/'), '/')
         self.assertEqual(fn('/a/b.c'), '/a/b.c')
         self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
+        try:
+            expect = os.fsencode('\xe9')
+        except UnicodeEncodeError:
+            pass
+        else:
+            expect = urllib.parse.quote_from_bytes(expect)
+            self.assertEqual(fn('\xe9'), expect)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1611,6 +1614,12 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
+        try:
+            expect = os.fsdecode(b'\xe9')
+        except UnicodeDecodeError:
+            pass
+        else:
+            self.assertEqual(fn('%e9'), expect)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

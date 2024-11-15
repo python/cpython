@@ -103,7 +103,7 @@ from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
     _splitattr, _splitquery, _splitvalue, _splittag, _to_bytes,
-    unquote_to_bytes, urlunparse)
+    quote_from_bytes, unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
 # check for SSL
@@ -1660,12 +1660,12 @@ else:
             # URL has an empty authority section, so the path begins on the
             # third character.
             pathname = pathname[2:]
-        return unquote(pathname)
+        return os.fsdecode(unquote_to_bytes(pathname))
 
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
+        return quote_from_bytes(os.fsencode(pathname))
 
 
 ftpcache = {}
