@@ -1,5 +1,5 @@
 #ifdef _Py_JIT
-// XXX: Touching this file for JIT CI!
+
 #include "Python.h"
 
 #include "pycore_abstract.h"
