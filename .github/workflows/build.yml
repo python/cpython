@@ -42,7 +42,7 @@ jobs:
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -453,7 +453,7 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
