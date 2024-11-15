@@ -433,7 +433,8 @@ class WorkerThread(threading.Thread):
     def _wait_completed(self) -> None:
         popen = self._popen
         # only needed for mypy:
-        assert popen is not None, "Should never call `._popen` before `.run()`"
+        if popen is None:
+            raise ValueError("Should never call `._popen` before `.run()`")
 
         try:
             popen.wait(WAIT_COMPLETED_TIMEOUT)
