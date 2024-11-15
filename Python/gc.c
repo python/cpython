@@ -1565,6 +1565,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += gcstate->young.count;
+    gcstate->young.count = 0;
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
@@ -1585,7 +1586,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
     untrack_tuples(&gcstate->young.head);
     gc_list_merge(&gcstate->young.head, &increment);
-    gcstate->young.count = 0;
     gc_list_validate_space(&increment, gcstate->visited_space);
     Py_ssize_t increment_size = 0;
     while (increment_size < gcstate->work_to_do) {
