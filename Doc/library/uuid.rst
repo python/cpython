@@ -342,7 +342,7 @@ The following options are accepted:
    is used.
 
    .. versionchanged:: next
-      Allow generating UUID version 6 and 8.
+      Allow generating UUID versions 6 and 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>
