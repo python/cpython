@@ -11,9 +11,9 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, 5, and 8 UUIDs as specified in :rfc:`9562` (which
-supersedes :rfc:`4122`).
+and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
+and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, and 8 UUIDs as
+specified in :rfc:`9562` (which supersedes :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -322,6 +322,9 @@ The following options are accepted:
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
+
+   .. versionadded:: next
+      Allow generating UUID version 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>
