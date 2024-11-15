@@ -7,8 +7,8 @@ import os
 import pickle
 import random
 import sys
-import weakref
 import unittest
+import weakref
 from itertools import product
 from unittest import mock
 
