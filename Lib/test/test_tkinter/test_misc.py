@@ -66,9 +66,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         f.tk_busy_forget()
         self.assertFalse(f.tk_busy_status())
         self.assertFalse(f.tk_busy_current())
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_configure()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_forget()
 
     @requires_tk(8, 6, 6)
@@ -87,7 +88,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(f.tk_busy_configure('cursor')[4], 'heart')
 
         f.tk_busy_forget()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_cget('cursor')
 
     def test_tk_setPalette(self):
@@ -475,6 +477,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         else:
             self.assertEqual(vi.micro, 0)
         self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
+
+    def test_embedded_null(self):
+        widget = tkinter.Entry(self.root)
+        widget.insert(0, 'abc\0def')  # ASCII-only
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), 'abc\x00def')
+        widget.insert(0, '\u20ac\0')  # non-ASCII
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
 
 
 class WmTest(AbstractTkTest, unittest.TestCase):

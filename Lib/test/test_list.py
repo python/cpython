@@ -245,6 +245,20 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises(TypeError):
             a[0] < a
 
+    def test_list_index_modifing_operand(self):
+        # See gh-120384
+        class evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __iter__(self):
+                yield from self.lst
+                self.lst.clear()
+
+        lst = list(range(5))
+        operand = evil(lst)
+        with self.assertRaises(ValueError):
+            lst[::-1] = operand
+
     @cpython_only
     def test_preallocation(self):
         iterable = [0] * 10
@@ -285,6 +299,15 @@ class ListTest(list_tests.CommonTest):
         lst = [X(), X()]
         X() in lst
 
+    def test_tier2_invalidates_iterator(self):
+        # GH-121012
+        for _ in range(100):
+            a = [1, 2, 3]
+            it = iter(a)
+            for _ in it:
+                pass
+            a.append(4)
+            self.assertEqual(list(it), [])
 
 if __name__ == "__main__":
     unittest.main()

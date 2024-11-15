@@ -3,7 +3,7 @@ import unittest.mock
 from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
-                          requires_gil_enabled, suppress_immortalization,
+                          requires_gil_enabled,
                           Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
@@ -110,7 +110,6 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 2)
 
-    @suppress_immortalization()
     def test_class(self):
         class A:
             pass
@@ -119,7 +118,6 @@ class GCTests(unittest.TestCase):
         del A
         self.assertNotEqual(gc.collect(), 0)
 
-    @suppress_immortalization()
     def test_newstyleclass(self):
         class A(object):
             pass
@@ -136,7 +134,6 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
-    @suppress_immortalization()
     def test_newinstance(self):
         class A(object):
             pass
@@ -223,7 +220,6 @@ class GCTests(unittest.TestCase):
             self.fail("didn't find obj in garbage (finalizer)")
         gc.garbage.remove(obj)
 
-    @suppress_immortalization()
     def test_function(self):
         # Tricky: f -> d -> f, code should call d.clear() after the exec to
         # break the cycle.
@@ -566,7 +562,6 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
-    @suppress_immortalization()
     def test_is_tracked(self):
         # Atomic built-in types are not tracked, user-defined objects and
         # mutable containers are.
@@ -604,9 +599,7 @@ class GCTests(unittest.TestCase):
         class UserIntSlots(int):
             __slots__ = ()
 
-        if not Py_GIL_DISABLED:
-            # gh-117783: modules may be immortalized in free-threaded build
-            self.assertTrue(gc.is_tracked(gc))
+        self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
         self.assertTrue(gc.is_tracked(UserInt()))
@@ -1047,6 +1040,85 @@ class GCTests(unittest.TestCase):
         # cleared before Z dies.
         callback.assert_not_called()
         gc.enable()
+
+    @cpython_only
+    def test_get_referents_on_capsule(self):
+        # gh-124538: Calling gc.get_referents() on an untracked capsule must not crash.
+        import _datetime
+        import _socket
+        untracked_capsule = _datetime.datetime_CAPI
+        tracked_capsule = _socket.CAPI
+
+        # For whoever sees this in the future: if this is failing
+        # after making datetime's capsule tracked, that's fine -- this isn't something
+        # users are relying on. Just find a different capsule that is untracked.
+        self.assertFalse(gc.is_tracked(untracked_capsule))
+        self.assertTrue(gc.is_tracked(tracked_capsule))
+
+        self.assertEqual(len(gc.get_referents(untracked_capsule)), 0)
+        gc.get_referents(tracked_capsule)
+
+    @cpython_only
+    def test_get_objects_during_gc(self):
+        # gh-125859: Calling gc.get_objects() or gc.get_referrers() during a
+        # collection should not crash.
+        test = self
+        collected = False
+
+        class GetObjectsOnDel:
+            def __del__(self):
+                nonlocal collected
+                collected = True
+                objs = gc.get_objects()
+                # NB: can't use "in" here because some objects override __eq__
+                for obj in objs:
+                    test.assertTrue(obj is not self)
+                test.assertEqual(gc.get_referrers(self), [])
+
+        obj = GetObjectsOnDel()
+        obj.cycle = obj
+        del obj
+
+        gc.collect()
+        self.assertTrue(collected)
+
+    def test_traverse_frozen_objects(self):
+        # See GH-126312: Objects that were not frozen could traverse over
+        # a frozen object on the free-threaded build, which would cause
+        # a negative reference count.
+        x = [1, 2, 3]
+        gc.freeze()
+        y = [x]
+        y.append(y)
+        del y
+        gc.collect()
+        gc.unfreeze()
+
+    def test_deferred_refcount_frozen(self):
+        # Also from GH-126312: objects that use deferred reference counting
+        # weren't ignored if they were frozen. Unfortunately, it's pretty
+        # difficult to come up with a case that triggers this.
+        #
+        # Calling gc.collect() while the garbage collector is frozen doesn't
+        # trigger this normally, but it *does* if it's inside unittest for whatever
+        # reason. We can't call unittest from inside a test, so it has to be
+        # in a subprocess.
+        source = textwrap.dedent("""
+        import gc
+        import unittest
+
+
+        class Test(unittest.TestCase):
+            def test_something(self):
+                gc.freeze()
+                gc.collect()
+                gc.unfreeze()
+
+
+        if __name__ == "__main__":
+            unittest.main()
+        """)
+        assert_python_ok("-c", source)
 
 
 class IncrementalGCTests(unittest.TestCase):

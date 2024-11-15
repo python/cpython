@@ -1,8 +1,4 @@
-"""Concrete date/time and related types.
-
-See http://www.iana.org/time-zones/repository/tz-link.html for
-time zone and DST data sources.
-"""
+"""Pure Python implementation of the datetime module."""
 
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")
@@ -213,6 +209,28 @@ def _format_offset(off, sep=':'):
                 s += '.%06d' % ss.microseconds
     return s
 
+_normalize_century = None
+def _need_normalize_century():
+    global _normalize_century
+    if _normalize_century is None:
+        try:
+            _normalize_century = (
+                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) != "0099")
+        except ValueError:
+            _normalize_century = True
+    return _normalize_century
+
+_supports_c99 = None
+def _can_support_c99():
+    global _supports_c99
+    if _supports_c99 is None:
+        try:
+            _supports_c99 = (
+                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
+        except ValueError:
+            _supports_c99 = False
+    return _supports_c99
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -270,6 +288,20 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
+                # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
+                # year 1000 for %G can go on the fast path.
+                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
+                        object.year < 1000 and _need_normalize_century()):
+                    if ch == 'G':
+                        year = int(_time.strftime("%G", timetuple))
+                    else:
+                        year = object.year
+                    if ch == 'C':
+                        push('{:02}'.format(year // 100))
+                    else:
+                        push('{:04}'.format(year))
+                        if ch == 'F':
+                            push('-{:02}-{:02}'.format(*timetuple[1:3]))
                 else:
                     push('%')
                     push(ch)
@@ -440,6 +472,17 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
+    hour, minute, second, microsecond = time_comps
+    became_next_day = False
+    error_from_components = False
+    if (hour == 24):
+        if all(time_comp == 0 for time_comp in time_comps[1:]):
+            hour = 0
+            time_comps[0] = hour
+            became_next_day = True
+        else:
+            error_from_components = True
+
     tzi = None
     if tz_pos == len_str and tstr[-1] == 'Z':
         tzi = timezone.utc
@@ -472,7 +515,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps.append(tzi)
 
-    return time_comps
+    return time_comps, became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -917,6 +960,7 @@ class date:
     fromtimestamp()
     today()
     fromordinal()
+    strptime()
 
     Operators:
 
@@ -1016,6 +1060,12 @@ class date:
 
         This is the inverse of the date.isocalendar() function"""
         return cls(*_isoweek_to_gregorian(year, week, day))
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        """Parse a date string according to the given format (like time.strptime())."""
+        import _strptime
+        return _strptime._strptime_datetime_date(cls, date_string, format)
 
     # Conversions to string
 
@@ -1339,6 +1389,7 @@ class time:
     Constructors:
 
     __new__()
+    strptime()
 
     Operators:
 
@@ -1396,6 +1447,12 @@ class time:
         self._hashcode = -1
         self._fold = fold
         return self
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        """string, format -> new time parsed from a string (like time.strptime())."""
+        import _strptime
+        return _strptime._strptime_datetime_time(cls, date_string, format)
 
     # Read-only field accessors
     @property
@@ -1570,7 +1627,7 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string))
+            return cls(*_parse_isoformat_time(time_string)[0])
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
@@ -1884,10 +1941,27 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components = _parse_isoformat_time(tstr)
+                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
+            else:
+                if error_from_components:
+                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
+
+                if became_next_day:
+                    year, month, day = date_components
+                    # Only wrap day/month when it was previously valid
+                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                        # Calculate midnight of the next day
+                        day += 1
+                        if day > days_in_month:
+                            day = 1
+                            month += 1
+                            if month > 12:
+                                month = 1
+                                year += 1
+                        date_components = [year, month, day]
         else:
             time_components = [0, 0, 0, 0, None]
 
@@ -2114,7 +2188,7 @@ class datetime(date):
     def strptime(cls, date_string, format):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
         import _strptime
-        return _strptime._strptime_datetime(cls, date_string, format)
+        return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
     def utcoffset(self):
         """Return the timezone offset as timedelta positive east of UTC (negative west of

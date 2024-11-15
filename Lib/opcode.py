@@ -36,6 +36,7 @@ hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
 
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
+_special_method_names = _opcode.get_special_method_names()
 _common_constants = [AssertionError, NotImplementedError]
 _nb_ops = _opcode.get_nb_ops()
 
@@ -81,6 +82,10 @@ _cache_format = {
         "index": 1,
     },
     "CALL": {
+        "counter": 1,
+        "func_version": 2,
+    },
+    "CALL_KW": {
         "counter": 1,
         "func_version": 2,
     },

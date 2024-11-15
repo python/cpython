@@ -5,7 +5,6 @@ from ._bootstrap import _resolve_name
 from ._bootstrap import spec_from_loader
 from ._bootstrap import _find_spec
 from ._bootstrap_external import MAGIC_NUMBER
-from ._bootstrap_external import _RAW_MAGIC_NUMBER
 from ._bootstrap_external import cache_from_source
 from ._bootstrap_external import decode_source
 from ._bootstrap_external import source_from_cache
@@ -13,13 +12,12 @@ from ._bootstrap_external import spec_from_file_location
 
 import _imp
 import sys
-import threading
 import types
 
 
 def source_hash(source_bytes):
     "Return the hash of *source_bytes* as used in hash-based pyc files."
-    return _imp.source_hash(_RAW_MAGIC_NUMBER, source_bytes)
+    return _imp.source_hash(_imp.pyc_magic_number_token, source_bytes)
 
 
 def resolve_name(name, package):
@@ -257,6 +255,9 @@ class LazyLoader(Loader):
 
     def exec_module(self, module):
         """Make the module load lazily."""
+        # Threading is only needed for lazy loading, and importlib.util can
+        # be pulled in at interpreter startup, so defer until needed.
+        import threading
         module.__spec__.loader = self.loader
         module.__loader__ = self.loader
         # Don't need to worry about deep-copying as trying to set an attribute
@@ -270,3 +271,9 @@ class LazyLoader(Loader):
         loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
+
+
+__all__ = ['LazyLoader', 'Loader', 'MAGIC_NUMBER',
+           'cache_from_source', 'decode_source', 'find_spec',
+           'module_from_spec', 'resolve_name', 'source_from_cache',
+           'source_hash', 'spec_from_file_location', 'spec_from_loader']

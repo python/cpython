@@ -71,6 +71,7 @@ import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
@@ -212,12 +213,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -1682,6 +1683,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1755,7 +1763,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            what = thing if isinstance(thing, str) else type(thing).__name__
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
             pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
@@ -1856,6 +1871,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -1949,6 +1965,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',

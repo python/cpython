@@ -269,7 +269,11 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    void *ht_token;  // Storage for the "Py_tp_token" slot
     struct _specialization_cache _spec_cache; // For use by the specializer.
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t unique_id;  // ID used for per-thread refcounting
+#endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -287,6 +291,8 @@ PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
+
+PyAPI_FUNC(void) PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
@@ -521,3 +527,10 @@ typedef enum {
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
 PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
 PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
+
+/* Enable PEP-703 deferred reference counting on the object.
+ *
+ * Returns 1 if deferred reference counting was successfully enabled, and
+ * 0 if the runtime ignored it. This function cannot fail.
+ */
+PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);

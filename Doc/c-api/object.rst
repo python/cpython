@@ -52,6 +52,7 @@ Object Protocol
 
    The reference is borrowed from the interpreter, and is valid until the
    interpreter finalization.
+
    .. versionadded:: 3.13
 
 
@@ -205,6 +206,13 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
@@ -229,6 +237,14 @@ Object Protocol
    This is the same as :c:func:`PyObject_DelAttr`, but *attr_name* is
    specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
    rather than a :c:expr:`PyObject*`.
+
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_DelAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object for lookup.
 
 
 .. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)
@@ -351,14 +367,14 @@ Object Protocol
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
-   If *cls* has a :meth:`~class.__subclasscheck__` method, it will be called to
+   If *cls* has a :meth:`~type.__subclasscheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise,
    *derived* is a subclass of *cls* if it is a direct or indirect subclass,
-   i.e. contained in ``cls.__mro__``.
+   i.e. contained in :attr:`cls.__mro__ <type.__mro__>`.
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
    class, are considered classes.  However, objects can override this by having
-   a :attr:`~class.__bases__` attribute (which must be a tuple of base classes).
+   a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
@@ -370,15 +386,15 @@ Object Protocol
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
-   If *cls* has a :meth:`~class.__instancecheck__` method, it will be called to
+   If *cls* has a :meth:`~type.__instancecheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise, *inst*
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
-   :attr:`~instance.__class__` attribute.
+   :attr:`~object.__class__` attribute.
 
    An object *cls* can override if it is considered a class, and what its base
-   classes are, by having a :attr:`~class.__bases__` attribute (which must be a tuple
+   classes are, by having a :attr:`~type.__bases__` attribute (which must be a tuple
    of base classes).
 
 
@@ -559,3 +575,27 @@ Object Protocol
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_Object_EnableDeferredRefcount(PyObject *obj)
+
+   Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*,
+   if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
+   this allows the interpreter to avoid reference count adjustments to *obj*,
+   which may improve multi-threaded performance.  The tradeoff is
+   that *obj* will only be deallocated by the tracing garbage collector.
+
+   This function returns ``1`` if deferred reference counting is enabled on *obj*
+   (including when it was enabled before the call),
+   and ``0`` if deferred reference counting is not supported or if the hint was
+   ignored by the runtime. This function is thread-safe, and cannot fail.
+
+   This function does nothing on builds with the :term:`GIL` enabled, which do
+   not support deferred reference counting. This also does nothing if *obj* is not
+   an object tracked by the garbage collector (see :func:`gc.is_tracked` and
+   :c:func:`PyObject_GC_IsTracked`).
+
+   This function is intended to be used soon after *obj* is created,
+   by the code that creates it.
+
+   .. versionadded:: next
+

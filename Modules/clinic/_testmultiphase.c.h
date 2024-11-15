@@ -88,7 +88,7 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(n), &_Py_ID(twice), },
+        .ob_item = { _Py_LATIN1_CHR('n'), &_Py_ID(twice), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -109,7 +109,8 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
     int n = 1;
     int twice = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -162,4 +163,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=2c199bad52e9cda7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1aa0af3572bf059 input=a9049054013a1b77]*/

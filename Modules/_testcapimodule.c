@@ -81,8 +81,11 @@ static PyObject*
 test_config(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #define CHECK_SIZEOF(FATNAME, TYPE) \
-            if (FATNAME != sizeof(TYPE)) \
-                return sizeof_error(self, #FATNAME, #TYPE, FATNAME, sizeof(TYPE))
+    do { \
+        if (FATNAME != sizeof(TYPE)) { \
+            return sizeof_error(self, #FATNAME, #TYPE, FATNAME, sizeof(TYPE)); \
+        } \
+    } while (0)
 
     CHECK_SIZEOF(SIZEOF_SHORT, short);
     CHECK_SIZEOF(SIZEOF_INT, int);
@@ -103,21 +106,25 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
-#define CHECK_SIZEOF(TYPE, EXPECTED)         \
-    if (EXPECTED != sizeof(TYPE))  {         \
-        PyErr_Format(get_testerror(self),    \
-            "sizeof(%s) = %u instead of %u", \
-            #TYPE, sizeof(TYPE), EXPECTED);  \
-        return (PyObject*)NULL;              \
-    }
+#define CHECK_SIZEOF(TYPE, EXPECTED) \
+    do { \
+        if (EXPECTED != sizeof(TYPE)) { \
+            PyErr_Format(get_testerror(self),               \
+                         "sizeof(%s) = %u instead of %u",   \
+                         #TYPE, sizeof(TYPE), EXPECTED);    \
+            return (PyObject*)NULL; \
+        } \
+    } while (0)
 #define IS_SIGNED(TYPE) (((TYPE)-1) < (TYPE)0)
-#define CHECK_SIGNNESS(TYPE, SIGNED)            \
-    if (IS_SIGNED(TYPE) != SIGNED) {            \
-        PyErr_Format(get_testerror(self),       \
-            "%s signness is %i, instead of %i", \
-            #TYPE, IS_SIGNED(TYPE), SIGNED);    \
-        return (PyObject*)NULL;                 \
-    }
+#define CHECK_SIGNNESS(TYPE, SIGNED) \
+    do { \
+        if (IS_SIGNED(TYPE) != SIGNED) { \
+            PyErr_Format(get_testerror(self),                   \
+                         "%s signness is %i, instead of %i",    \
+                         #TYPE, IS_SIGNED(TYPE), SIGNED);       \
+            return (PyObject*)NULL; \
+        } \
+    } while (0)
 
     /* integer types */
     CHECK_SIZEOF(Py_UCS1, 1);
@@ -282,7 +289,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Del, /* tp_dealloc */
+    (destructor)PyObject_Free,  /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -884,27 +891,34 @@ test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     double result;
     const char *msg;
 
-#define CHECK_STRING(STR, expected)                             \
-    result = PyOS_string_to_double(STR, NULL, NULL);            \
-    if (result == -1.0 && PyErr_Occurred())                     \
-        return NULL;                                            \
-    if (result != (double)expected) {                           \
-        msg = "conversion of " STR " to float failed";          \
-        goto fail;                                              \
-    }
+#define CHECK_STRING(STR, expected) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        if (result != (double)expected) { \
+            msg = "conversion of " STR " to float failed"; \
+            goto fail; \
+        } \
+    } while (0)
 
-#define CHECK_INVALID(STR)                                              \
-    result = PyOS_string_to_double(STR, NULL, NULL);                    \
-    if (result == -1.0 && PyErr_Occurred()) {                           \
-        if (PyErr_ExceptionMatches(PyExc_ValueError))                   \
-            PyErr_Clear();                                              \
-        else                                                            \
-            return NULL;                                                \
-    }                                                                   \
-    else {                                                              \
-        msg = "conversion of " STR " didn't raise ValueError";          \
-        goto fail;                                                      \
-    }
+#define CHECK_INVALID(STR) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
+                PyErr_Clear(); \
+            } \
+            else { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            msg = "conversion of " STR " didn't raise ValueError"; \
+            goto fail; \
+        } \
+    } while (0)
 
     CHECK_STRING("0.1", 0.1);
     CHECK_STRING("1.234", 1.234);
@@ -971,16 +985,22 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
     };
     known_capsule *known = &known_capsules[0];
 
-#define FAIL(x) { error = (x); goto exit; }
+#define FAIL(x) \
+    do { \
+        error = (x); \
+        goto exit; \
+    } while (0)
 
 #define CHECK_DESTRUCTOR \
-    if (capsule_error) { \
-        FAIL(capsule_error); \
-    } \
-    else if (!capsule_destructor_call_count) {          \
-        FAIL("destructor not called!"); \
-    } \
-    capsule_destructor_call_count = 0; \
+    do { \
+        if (capsule_error) { \
+            FAIL(capsule_error); \
+        } \
+        else if (!capsule_destructor_call_count) { \
+            FAIL("destructor not called!"); \
+        } \
+        capsule_destructor_call_count = 0; \
+    } while (0)
 
     object = PyCapsule_New(capsule_pointer, capsule_name, capsule_destructor);
     PyCapsule_SetContext(object, capsule_context);
@@ -1024,12 +1044,12 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
         static char buffer[256];
 #undef FAIL
 #define FAIL(x) \
-        { \
-        sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
-            x, known->module, known->attribute); \
-        error = buffer; \
-        goto exit; \
-        } \
+        do { \
+            sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
+                    x, known->module, known->attribute);           \
+            error = buffer; \
+            goto exit; \
+        } while (0)
 
         PyObject *module = PyImport_ImportModule(known->module);
         if (module) {
@@ -1889,25 +1909,6 @@ getitem_with_error(PyObject *self, PyObject *args)
     return PyObject_GetItem(map, key);
 }
 
-static PyObject *
-dict_get_version(PyObject *self, PyObject *args)
-{
-    PyDictObject *dict;
-    uint64_t version;
-
-    if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
-        return NULL;
-
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    version = dict->ma_version_tag;
-    _Py_COMP_DIAG_POP
-
-    static_assert(sizeof(unsigned long long) >= sizeof(version),
-                  "version is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong((unsigned long long)version);
-}
-
 
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
@@ -1978,11 +1979,15 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
                               "an already initialized key");
     }
 #define CHECK_TSS_API(expr) \
+    do { \
         (void)(expr); \
         if (!PyThread_tss_is_created(&tss_key)) { \
             return raiseTestError(self, "test_pythread_tss_key_state", \
                                   "TSS key initialization state was not " \
-                                  "preserved after calling " #expr); }
+                                  "preserved after calling " #expr); \
+        } \
+    } while (0)
+
     CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
     CHECK_TSS_API(PyThread_tss_get(&tss_key));
 #undef CHECK_TSS_API
@@ -2304,7 +2309,7 @@ test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
         \
         Py_DECREF(obj); \
         Py_RETURN_NONE; \
-    } while (0) \
+    } while (0)
 
 
 // Test Py_NewRef() and Py_XNewRef() macros
@@ -2630,18 +2635,6 @@ test_frame_getvarstring(PyObject *self, PyObject *args)
     return PyFrame_GetVarString((PyFrameObject *)frame, name);
 }
 
-
-static PyObject *
-eval_get_func_name(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncName(func));
-}
-
-static PyObject *
-eval_get_func_desc(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
-}
 
 static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
@@ -3305,6 +3298,62 @@ function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2(module, module);
+    Py_END_CRITICAL_SECTION2();
+
+    Py_RETURN_NONE;
+}
+
+
+// Used by `finalize_thread_hang`.
+#ifdef _POSIX_THREADS
+static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
+    // Should not reach here.
+    Py_FatalError("pthread thread termination was triggered unexpectedly");
+}
+#endif
+
+// Tests that finalization does not trigger pthread cleanup.
+//
+// Must be called with a single nullary callable function that should block
+// (with GIL released) until finalization is in progress.
+static PyObject *
+finalize_thread_hang(PyObject *self, PyObject *callback)
+{
+    // WASI builds some pthread stuff but doesn't have these APIs today?
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_push(finalize_thread_hang_cleanup_callback, NULL);
+#endif
+    PyObject_CallNoArgs(callback);
+    // Should not reach here.
+    Py_FatalError("thread unexpectedly did not hang");
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_pop(0);
+#endif
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+type_freeze(PyObject *module, PyObject *args)
+{
+    PyTypeObject *type;
+    if (!PyArg_ParseTuple(args, "O!", &PyType_Type, &type)) {
+        return NULL;
+    }
+    if (PyType_Freeze(type) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3383,7 +3432,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -3425,8 +3473,6 @@ static PyMethodDef TestMethods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
-    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
-    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3446,6 +3492,9 @@ static PyMethodDef TestMethods[] = {
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
+    {"test_critical_sections", test_critical_sections, METH_NOARGS},
+    {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
+    {"type_freeze", type_freeze, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3550,7 +3599,7 @@ static PyTypeObject matmulType = {
     0,
     0,
     PyType_GenericNew,                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 typedef struct {
@@ -3662,7 +3711,7 @@ static PyTypeObject awaitType = {
     0,
     0,
     awaitObject_new,                    /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 
@@ -4023,6 +4072,12 @@ PyInit__testcapi(void)
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
+    PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
+    PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
+    PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));
+    PyModule_AddObject(m, "INT64_MIN", PyLong_FromInt64(INT64_MIN));
+    PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
+    PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return NULL;
@@ -4141,6 +4196,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Config(m) < 0) {
         return NULL;
     }
 
