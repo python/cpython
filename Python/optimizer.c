@@ -464,6 +464,9 @@ add_to_trace(
     trace[trace_length].target = target;
     trace[trace_length].oparg = oparg;
     trace[trace_length].operand0 = operand;
+#ifdef Py_STATS
+    trace[trace_length].execution_count = 0;
+#endif
     return trace_length + 1;
 }
 
@@ -973,6 +976,9 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
     inst->operand0 = 0;
     inst->format = UOP_FORMAT_TARGET;
     inst->target = target;
+#ifdef Py_STATS
+    inst->execution_count = 0;
+#endif
 }
 
 /* Convert implicit exits, errors and deopts
@@ -1748,31 +1754,28 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
         int line = find_line_number(code, executor);
         fprintf(out, "        <tr><td border=\"1\" >line: %d</td></tr>\n", line);
     }
-    for (int i = 0; i < executor->code_size; i++) {
-        _PyUOpInstruction *inst = &executor->trace[i];
+    for (uint32_t i = 0; i < executor->code_size; i++) {
+        _PyUOpInstruction const *inst = &executor->trace[i];
         const char *opname = _PyOpcode_uop_name[inst->opcode];
+#ifdef Py_STATS
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
+#else
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
+#endif
     }
-    for (int i = 0; i < executor->exit_count; i++) {
-        _PyExitData *exit = &executor->exits[i];
-        int temp = exit->temperature.value_and_backoff >> 4;
-        fprintf(out, "        <tr><td port=\"e%d\" border=\"1\" >EXIT: temp %d</td></tr>\n", i, temp);
-    }
-
     fprintf(out, "    label = </table>>\n");
     fprintf(out, "]\n\n");
-    for (int i = 0; i < executor->code_size; i++) {
-        _PyUOpInstruction *inst = &executor->trace[i];
-        if (inst->format == UOP_FORMAT_JUMP) {
-            int exit = inst->jump_target;
-            fprintf(out, "executor_%p:i%d -> executor_%p:i%d\n", executor, i,  executor, exit);
-        }
-    }
-
-    for (int i = 0; i < executor->exit_count; i++) {
-        _PyExitData *exit = &executor->exits[i];
-        if (exit->executor != NULL) {
-            fprintf(out, "executor_%p:e%d -> executor_%p:start\n", executor, i, exit->executor);
+    for (uint32_t i = 0; i < executor->code_size; i++) {
+        _PyUOpInstruction const *inst = &executor->trace[i];
+        uint16_t flags = _PyUop_Flags[inst->opcode];
+        if (flags & HAS_EXIT_FLAG) {
+            assert(inst->format == UOP_FORMAT_JUMP);
+            _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
+            assert(exit_inst->opcode == _EXIT_TRACE);
+            _PyExitData *exit = (_PyExitData *)exit_inst->operand0;
+            if (exit->executor != NULL) {
+                fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+            }
         }
     }
 }

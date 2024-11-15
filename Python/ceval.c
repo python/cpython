@@ -1098,6 +1098,7 @@ tier2_dispatch:
         UOP_PAIR_INC(uopcode, lastuop);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
+        ((_PyUOpInstruction  *)next_uop)[-1].execution_count++;
 #endif
 
         switch (uopcode) {
