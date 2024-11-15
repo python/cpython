@@ -111,11 +111,27 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self.test_name: TestName | None = None
-        self.start_time: float | None = None
+        self._test_name: TestName | None = None
+        self._start_time: float | None = None
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
+
+    @property
+    def test_name(self) -> TestName:
+        if self._test_name is None:
+            raise ValueError(
+                'Should never call `.test_name` before calling `.run()`'
+            )
+        return self._test_name
+
+    @property
+    def start_time(self) -> float:
+        if self._start_time is None:
+            raise ValueError(
+                'Should never call `.start_time` before calling `.run()`'
+            )
+        return self._start_time
 
     def __repr__(self) -> str:
         info = [f'WorkerThread #{self.worker_id}']
@@ -129,7 +145,7 @@ class WorkerThread(threading.Thread):
         popen = self._popen
         if popen is not None:
             dt = time.monotonic() - self.start_time
-            info.extend((f'pid={self._popen.pid}',
+            info.extend((f'pid={popen.pid}',
                          f'time={format_duration(dt)}'))
         return '<%s>' % ' '.join(info)
 
@@ -394,14 +410,14 @@ class WorkerThread(threading.Thread):
                 except StopIteration:
                     break
 
-                self.start_time = time.monotonic()
-                self.test_name = test_name
+                self._start_time = time.monotonic()
+                self._test_name = test_name
                 try:
                     mp_result = self._runtest(test_name)
                 except WorkerError as exc:
                     mp_result = exc.mp_result
                 finally:
-                    self.test_name = None
+                    self._test_name = None
                 mp_result.result.duration = time.monotonic() - self.start_time
                 self.output.put((False, mp_result))
 
@@ -416,6 +432,8 @@ class WorkerThread(threading.Thread):
 
     def _wait_completed(self) -> None:
         popen = self._popen
+        # only needed for mypy:
+        assert popen is not None, "Should never call `._popen` before `.run()`"
 
         try:
             popen.wait(WAIT_COMPLETED_TIMEOUT)
@@ -483,7 +501,7 @@ class RunWorkers:
             self.worker_timeout: float | None = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
-        self.workers: list[WorkerThread] | None = None
+        self._workers: list[WorkerThread] | None = None
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -491,9 +509,17 @@ class RunWorkers:
             # these worker threads would never get anything to do.
             self.num_workers = min(self.num_workers, jobs)
 
+    @property
+    def workers(self) -> list[WorkerThread]:
+        if self._workers is None:
+            raise ValueError(
+                'Should never call `.workers` before `.start_workers()`',
+            )
+        return self._workers
+
     def start_workers(self) -> None:
-        self.workers = [WorkerThread(index, self)
-                        for index in range(1, self.num_workers + 1)]
+        self._workers = [WorkerThread(index, self)
+                         for index in range(1, self.num_workers + 1)]
         jobs = self.runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
@@ -503,7 +529,7 @@ class RunWorkers:
         processes = plural(nworkers, "process", "processes")
         msg = (f"Run {tests} in parallel using "
                f"{nworkers} worker {processes}")
-        if self.timeout:
+        if self.timeout and self.worker_timeout is not None:
             msg += (" (timeout: %s, worker timeout: %s)"
                     % (format_duration(self.timeout),
                        format_duration(self.worker_timeout)))
@@ -555,7 +581,7 @@ class RunWorkers:
         if mp_result.err_msg:
             # WORKER_BUG
             text += ' (%s)' % mp_result.err_msg
-        elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
+        elif (result.duration and result.duration >= PROGRESS_MIN_TIME and not pgo):
             text += ' (%s)' % format_duration(result.duration)
         if not pgo:
             running = get_running(self.workers)
