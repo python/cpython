@@ -23,6 +23,10 @@ typedef struct _gc_runtime_state GCState;
 #  define GC_DEBUG
 #endif
 
+// Define this when debugging the GC
+// #define GC_EXTRA_DEBUG
+
+
 #define GC_NEXT _PyGCHead_NEXT
 #define GC_PREV _PyGCHead_PREV
 
@@ -421,6 +425,11 @@ validate_list(PyGC_Head *head, enum flagstates flags)
     assert(prev == GC_PREV(head));
 }
 
+#else
+#define validate_list(x, y) do{}while(0)
+#endif
+
+#ifdef GC_EXTRA_DEBUG
 static void
 validate_old(GCState *gcstate)
 {
@@ -464,7 +473,6 @@ gc_list_validate_space(PyGC_Head *head, int space) {
 }
 
 #else
-#define validate_list(x, y) do{}while(0)
 #define validate_old(g) do{}while(0)
 #define validate_consistent_old_space(l) do{}while(0)
 #define gc_list_validate_space(l, s) do{}while(0)
