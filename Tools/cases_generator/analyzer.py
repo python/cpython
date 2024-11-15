@@ -445,7 +445,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
             )
 
         if lhs[0].kind == lx.TIMES or any(
-            t.kind == lx.ARROW or t.kind == lx.LBRACKET for t in lhs[1:]
+            t.kind in {lx.ARROW, lx.LBRACKET} for t in lhs[1:]
         ):
             # Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
             # Assume that they are visible to the GC.
