@@ -1,0 +1,2 @@
+:mod:`marshal` now supports :class:`slice` objects. The marshal format
+version was increased to 5.
