@@ -3163,7 +3163,7 @@ class TestTraceAtRecursionLimit(unittest.TestCase):
             pass
 
         def g(*args):
-            if True: # change to True to crash interpreter
+            if True:
                 try:
                     x()
                 except:
