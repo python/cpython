@@ -120,7 +120,7 @@ class WorkerThread(threading.Thread):
     def current_test_name(self) -> TestName:
         if self.test_name is None:
             raise ValueError(
-                'Should never call `.test_name` before calling `.run()`'
+                'Should never call `.current_test_name()` before calling `.run()`'
             )
         return self.test_name
 
@@ -426,7 +426,7 @@ class WorkerThread(threading.Thread):
         popen = self._popen
         # only needed for mypy:
         if popen is None:
-            raise ValueError("Should never call `._popen` before `.run()`")
+            raise ValueError("Should never access `._popen` before calling `.run()`")
 
         try:
             popen.wait(WAIT_COMPLETED_TIMEOUT)
