@@ -9316,7 +9316,7 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     }
     if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
