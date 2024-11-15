@@ -1,0 +1,2 @@
+Relax optimization requirements to allow fast attribute access to module
+subclasses.
