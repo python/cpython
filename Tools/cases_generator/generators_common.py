@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import TextIO
 
+import lexer as lx  # for constants
 from analyzer import (
     Instruction,
     Uop,
@@ -10,7 +11,6 @@ from analyzer import (
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
-from lexer import *
 from lexer import Token
 from stack import Storage, StackError
 
@@ -82,9 +82,9 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
     for tkn in tkn_iter:
         if tkn.kind == end and parens == 0:
             return tkn
-        if tkn.kind == LPAREN:
+        if tkn.kind == lx.LPAREN:
             parens += 1
-        if tkn.kind == RPAREN:
+        if tkn.kind == lx.RPAREN:
             parens -= 1
         out.emit(tkn)
     raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
@@ -119,7 +119,7 @@ class Emitter:
             "PyStackRef_CLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            DISPATCH: self.dispatch,
+            "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
         }
         self.out = out
@@ -146,9 +146,9 @@ class Emitter:
         self.out.emit_at("DEOPT_IF", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert lparen.kind == LPAREN
+        assert lparen.kind == lx.LPAREN
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, LPAREN)
+        emit_to(self.out, tkn_iter, lx.LPAREN)
         next(tkn_iter)  # Semi colon
         self.out.emit(", ")
         assert inst is not None
@@ -168,19 +168,19 @@ class Emitter:
         inst: Instruction | None,
     ) -> bool:
         lparen = next(tkn_iter)
-        assert lparen.kind == LPAREN
+        assert lparen.kind == lx.LPAREN
         first_tkn = tkn_iter.peek()
         unconditional = always_true(first_tkn)
         if unconditional:
             next(tkn_iter)
             comma = next(tkn_iter)
-            if comma.kind != COMMA:
+            if comma.kind != lx.COMMA:
                 raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
             self.out.start_line()
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, COMMA)
+            emit_to(self.out, tkn_iter, lx.COMMA)
             self.out.emit(") ")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
@@ -301,15 +301,15 @@ class Emitter:
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
-        assert tkn.kind == LPAREN
+        assert tkn.kind == lx.LPAREN
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
-        if name.kind == IDENTIFIER:
+        if name.kind == lx.IDENTIFIER:
             for var in storage.inputs:
                 if var.name == name.text:
                     var.defined = False
-        rparen = emit_to(self.out, tkn_iter, RPAREN)
+        rparen = emit_to(self.out, tkn_iter, lx.RPAREN)
         self.emit(rparen)
         return True
 
@@ -395,20 +395,20 @@ class Emitter:
     ) -> tuple[bool, Token, Storage]:
         """Returns (reachable?, closing '}', stack)."""
         tkn = next(tkn_iter)
-        assert tkn.kind == LPAREN
+        assert tkn.kind == lx.LPAREN
         self.out.emit(tkn)
-        rparen = emit_to(self.out, tkn_iter, LPAREN)
+        rparen = emit_to(self.out, tkn_iter, lx.LPAREN)
         self.emit(rparen)
         if_storage = storage.copy()
         reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
         try:
             maybe_else = tkn_iter.peek()
-            if maybe_else and maybe_else.kind == ELSE:
+            if maybe_else and maybe_else.kind == lx.ELSE:
                 self._print_storage(storage)
                 self.emit(rbrace)
                 self.emit(next(tkn_iter))
                 maybe_if = tkn_iter.peek()
-                if maybe_if and maybe_if.kind == IF:
+                if maybe_if and maybe_if.kind == lx.IF:
                     #Emit extra braces around the if to get scoping right
                     self.emit(" {\n")
                     self.emit(next(tkn_iter))
@@ -462,7 +462,7 @@ class Emitter:
         try:
             reachable = True
             line : int = -1
-            if tkn.kind != LBRACE:
+            if tkn.kind != lx.LBRACE:
                 raise analysis_error(f"PEP 7: expected '{{', found: {tkn.text}", tkn)
             escaping_calls = uop.properties.escaping_calls
             if emit_first_brace:
@@ -480,19 +480,19 @@ class Emitter:
                     _, reload = escaping_calls[tkn]
                 elif tkn == reload:
                     self.emit_reload(storage)
-                if tkn.kind == LBRACE:
+                if tkn.kind == lx.LBRACE:
                     self.out.emit(tkn)
                     braces += 1
-                elif tkn.kind == RBRACE:
+                elif tkn.kind == lx.RBRACE:
                     self._print_storage(storage)
                     braces -= 1
                     if braces == 0:
                         return reachable, tkn, storage
                     self.out.emit(tkn)
-                elif tkn.kind == GOTO:
+                elif tkn.kind == lx.GOTO:
                     reachable = False;
                     self.out.emit(tkn)
-                elif tkn.kind == IDENTIFIER:
+                elif tkn.kind == lx.IDENTIFIER:
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
                             reachable = False
@@ -503,11 +503,11 @@ class Emitter:
                                     out.defined = True
                                     out.in_memory = False
                                     break
-                        if tkn.text.startswith(DISPATCH):
+                        if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
                             reachable = False
                         self.out.emit(tkn)
-                elif tkn.kind == IF:
+                elif tkn.kind == lx.IF:
                     self.out.emit(tkn)
                     if_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
                     if reachable:
