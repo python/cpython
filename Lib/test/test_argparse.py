@@ -21,6 +21,7 @@ from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
 from unittest import mock
 
 
@@ -781,6 +782,13 @@ class TestBooleanOptionalAction(ParserTestCase):
             parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('--no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '--no-foo' for BooleanOptionalAction")
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
@@ -2048,7 +2056,7 @@ class TestFileTypeMissingInitialization(TestCase):
 
     def test(self):
         parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('-x', type=argparse.FileType)
 
         self.assertEqual(
@@ -2370,11 +2378,24 @@ class TestInvalidAction(TestCase):
         self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
 
     def test_modified_invalid_action(self):
-        parser = ErrorRaisingArgumentParser()
+        parser = argparse.ArgumentParser(exit_on_error=False)
         action = parser.add_argument('--foo')
         # Someone got crazy and did this
         action.type = 1
-        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+        self.assertRaisesRegex(TypeError, '1 is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        action.type = ()
+        self.assertRaisesRegex(TypeError, r'\(\) is not callable',
+                               parser.parse_args, ['--foo', 'bar'])
+        # It is impossible to distinguish a TypeError raised due to a mismatch
+        # of the required function arguments from a TypeError raised for an incorrect
+        # argument value, and using the heavy inspection machinery is not worthwhile
+        # as it does not reliably work in all cases.
+        # Therefore, a generic ArgumentError is raised to handle this logical error.
+        action.type = pow
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "argument --foo: invalid pow value: 'bar'",
+                               parser.parse_args, ['--foo', 'bar'])
 
 
 # ================
@@ -2411,7 +2432,7 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertRaisesRegex(argparse.ArgumentError,
+        self.assertRaisesRegex(ValueError,
                                'cannot have multiple subparser arguments',
                                parser.add_subparsers)
 
@@ -5527,20 +5548,27 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
-        self.assertValueError('--')
-        self.assertValueError('---')
+        self.assertTypeError('-', errmsg='dest= is required')
+        self.assertTypeError('--', errmsg='dest= is required')
+        self.assertTypeError('---', errmsg='dest= is required')
 
     def test_invalid_prefix(self):
-        self.assertValueError('--foo', '+foo')
+        self.assertValueError('--foo', '+foo',
+                              errmsg='must start with a character')
 
     def test_invalid_type(self):
-        self.assertValueError('--foo', type='int')
-        self.assertValueError('--foo', type=(int, float))
+        self.assertTypeError('--foo', type='int',
+                             errmsg="'int' is not callable")
+        self.assertTypeError('--foo', type=(int, float),
+                             errmsg='is not callable')
 
     def test_invalid_action(self):
-        self.assertValueError('-x', action='foo')
-        self.assertValueError('foo', action='baz')
-        self.assertValueError('--foo', action=('store', 'append'))
+        self.assertValueError('-x', action='foo',
+                              errmsg='unknown action')
+        self.assertValueError('foo', action='baz',
+                              errmsg='unknown action')
+        self.assertValueError('--foo', action=('store', 'append'),
+                              errmsg='unknown action')
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
@@ -5555,7 +5583,7 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             parser.add_argument('bar', dest='baz')
         self.assertIn('dest supplied twice for positional argument,'
                       ' did you mean metavar?',
@@ -5726,14 +5754,18 @@ class TestConflictHandling(TestCase):
         parser = argparse.ArgumentParser()
         sp = parser.add_subparsers()
         sp.add_parser('fullname', aliases=['alias'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'fullname')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'alias')
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['fullname'])
-        self.assertRaises(argparse.ArgumentError,
-                          sp.add_parser, 'other', aliases=['alias'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: fullname',
+                               sp.add_parser, 'fullname')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser: alias',
+                               sp.add_parser, 'alias')
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: fullname',
+                               sp.add_parser, 'other', aliases=['fullname'])
+        self.assertRaisesRegex(ValueError,
+                               'conflicting subparser alias: alias',
+                               sp.add_parser, 'other', aliases=['alias'])
 
 
 # =============================
@@ -7014,6 +7046,15 @@ class TestProgName(TestCase):
     def test_directory_in_zipfile_compiled(self):
         self.test_directory_in_zipfile(compiled=True)
 
+# =================
+# Translation tests
+# =================
+
+class TestTranslations(TestTranslationsBase):
+
+    def test_translations(self):
+        self.assertMsgidsEqual(argparse)
+
 
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
@@ -7022,4 +7063,8 @@ def tearDownModule():
 
 
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots(argparse)
+        sys.exit(0)
     unittest.main()
