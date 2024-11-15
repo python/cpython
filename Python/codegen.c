@@ -672,9 +672,7 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
-    // Insert None into consts to prevent an annotation
-    // appearing to be a docstring
-    _PyCompile_AddConst(c, Py_None);
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -770,7 +768,8 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
-    if ((FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) && SYMTABLE_ENTRY(c)->ste_annotations_used) {
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    if ((FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) && ste->ste_annotations_used) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
@@ -778,8 +777,9 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
     }
     Py_ssize_t first_instr = 0;
     if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
-        PyObject *docstring = _PyAST_GetDocString(stmts);
-        if (docstring) {
+        if (ste->ste_has_docstring) {
+            PyObject *docstring = _PyAST_GetDocString(stmts);
+            assert(docstring);
             first_instr = 1;
             /* set docstring */
             assert(OPTIMIZATION_LEVEL(c) < 2);
@@ -1241,10 +1241,11 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     RETURN_IF_ERROR(
         codegen_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     Py_ssize_t first_instr = 0;
-    PyObject *docstring = _PyAST_GetDocString(body);
-    assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
-    if (docstring) {
+    if (ste->ste_has_docstring) {
+        PyObject *docstring = _PyAST_GetDocString(body);
+        assert(docstring);
         first_instr = 1;
         docstring = _PyCompile_CleanDoc(docstring);
         if (docstring == NULL) {
@@ -1258,7 +1259,6 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
-    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
     if (add_stopiteration_handler) {
         /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
@@ -1600,9 +1600,8 @@ codegen_typealias_body(compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST_NEW(c, loc, defaults);
     RETURN_IF_ERROR(
         codegen_setup_annotations_scope(c, LOC(s), s, name));
-    /* Make None the first constant, so the evaluate function can't have a
-        docstring. */
-    RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
+
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
@@ -1898,9 +1897,7 @@ codegen_lambda(compiler *c, expr_ty e)
         codegen_enter_scope(c, &_Py_STR(anon_lambda), COMPILE_SCOPE_LAMBDA,
                             (void *)e, e->lineno, NULL, &umd));
 
-    /* Make None the first constant, so the lambda can't have a
-       docstring. */
-    RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
+    assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
 
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {

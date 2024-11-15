@@ -242,7 +242,8 @@ _lsprof_Profiler_enable(ProfilerObject *self, PyObject *const *args, Py_ssize_t 
     int subcalls = 1;
     int builtins = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -358,7 +359,8 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int subcalls = 1;
     int builtins = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -405,4 +407,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0b71f52bee9a7bb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e56d849e35d005a5 input=a9049054013a1b77]*/

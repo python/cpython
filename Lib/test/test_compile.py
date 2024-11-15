@@ -342,6 +342,10 @@ class TestSpecifics(unittest.TestCase):
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
+    def test_lambda_consts(self):
+        l = lambda: "this is the only const"
+        self.assertEqual(l.__code__.co_consts, ("this is the only const",))
+
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'
         self.assertRaises(SyntaxError, compile, code, 'tmp', 'exec')
@@ -790,10 +794,10 @@ class TestSpecifics(unittest.TestCase):
         # Merge constants in tuple or frozenset
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
-        self.assertIs(f1.__code__.co_consts[1],
-                      f2.__code__.co_consts[1][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[1])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f2.__code__.co_consts[0][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[0])),
+                      f2.__code__.co_consts[0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -902,6 +906,9 @@ class TestSpecifics(unittest.TestCase):
 
             def with_const_expression():
                 "also" + " not docstring"
+
+            def multiple_const_strings():
+                "not docstring " * 3
             """)
 
         for opt in [0, 1, 2]:
@@ -918,6 +925,7 @@ class TestSpecifics(unittest.TestCase):
                     self.assertIsNone(ns['two_strings'].__doc__)
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
+                self.assertIsNone(ns['multiple_const_strings'].__doc__)
 
     @support.cpython_only
     def test_docstring_interactive_mode(self):
