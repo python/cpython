@@ -728,7 +728,7 @@ class BaseTestUUID:
         self.assertEqual(len(uuids), 1000)
 
         # Within the same 60-bit timestamp, and for identical node IDs,
-        # it is likely to have collision on 14-bits.
+        # it is likely to have collision on the 14-bit clock sequence.
         timestamp = 0x1ec9414c_232a_b00
         fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
 
