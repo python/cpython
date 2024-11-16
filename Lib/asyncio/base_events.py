@@ -303,9 +303,16 @@ class Server(events.AbstractServer):
             self._wakeup()
 
     def _wakeup(self):
-        if self._waiters is None:
-            return
         waiters = self._waiters
+        if waiters is None:
+            # gh109564: the wakeup method has two possible call-sites, through an
+            # explicit call to the server's close method, or indirectly after the last
+            # client disconnects and the corresponding transport detaches from the
+            # server. These two can be in a race-condition if the server closes between
+            # `BaseSelectorEventLoop._accept_connection` and
+            # `BaseSelectorEventLoop._accept_connection2`; in this scenario we must
+            # check the wakeup call hasn't already set the server waiters to None.
+            return
         self._waiters = None
         for waiter in waiters:
             if not waiter.done():
@@ -949,7 +956,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except exceptions.SendfileNotAvailableError as exc:
+        except exceptions.SendfileNotAvailableError:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -1262,7 +1269,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except exceptions.SendfileNotAvailableError as exc:
+            except exceptions.SendfileNotAvailableError:
                 if not fallback:
                     raise
 
