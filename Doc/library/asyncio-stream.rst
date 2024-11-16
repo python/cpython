@@ -129,6 +129,9 @@ and work with streams:
    .. versionchanged:: 3.11
       Added the *ssl_shutdown_timeout* parameter.
 
+   .. versionchanged:: 3.13
+      Added the *keep_alive* parameter.
+
 
 .. rubric:: Unix Sockets
 
