@@ -119,7 +119,7 @@
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)PyObject_Free); // needs to be converted to freelist
                 if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -288,7 +288,7 @@
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)PyObject_Free); // needs to be converted to freelist
                 if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -359,7 +359,7 @@
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, (destructor)PyObject_Free); // needs to be converted to freelist
                 if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -7707,7 +7707,7 @@
             PyList_SET_ITEM(list, index, PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)_PyLong_ExactDealloc );
+            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)_PyLong_ExactDealloc);
             PyStackRef_CLOSE(list_st);
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
