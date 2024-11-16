@@ -308,10 +308,10 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_added_types_are_used(self):
         mime_type, _ = mimetypes.guess_type('test.myext')
-        self.assertEqual(None, mime_type)
+        self.assertEqual(mime_type, None)
         mimetypes.add_type('testing/type', '.myext')
         mime_type, _ = mimetypes.guess_type('test.myext')
-        self.assertEqual('testing/type', mime_type)
+        self.assertEqual(mime_type, 'testing/type')
 
     def test_add_type_with_undotted_extension_raises_exception(self):
         with self.assertRaises(ValueError):
@@ -320,9 +320,9 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_add_type_with_empty_extension_emits_warning(self):
         with warnings.catch_warnings(record=True) as wlog:
             mimetypes.add_type('testing/type', '')
-        self.assertEqual(1, len(wlog))
+        self.assertEqual(len(wlog), 1)
         warning = wlog[0]
-        self.assertEqual('Empty extension specified', str(warning.message))
+        self.assertEqual(str(warning.message), 'Empty extension specified')
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
