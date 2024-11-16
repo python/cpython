@@ -2716,25 +2716,26 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
     assert(_PyOpcode_Caches[TO_BOOL] == INLINE_CACHE_ENTRIES_TO_BOOL);
     _PyToBoolCache *cache = (_PyToBoolCache *)(instr + 1);
     PyObject *value = PyStackRef_AsPyObjectBorrow(value_o);
+    uint8_t specialized_op;
     if (PyBool_Check(value)) {
-        specialize(instr, TO_BOOL_BOOL);
-        return;
+        specialized_op = TO_BOOL_BOOL;
+        goto success;
     }
     if (PyLong_CheckExact(value)) {
-        specialize(instr, TO_BOOL_INT);
-        return;
+        specialized_op = TO_BOOL_INT;
+        goto success;
     }
     if (PyList_CheckExact(value)) {
-        specialize(instr, TO_BOOL_LIST);
-        return;
+        specialized_op = TO_BOOL_LIST;
+        goto success;
     }
     if (Py_IsNone(value)) {
-        specialize(instr, TO_BOOL_NONE);
-        return;
+        specialized_op = TO_BOOL_NONE;
+        goto success;
     }
     if (PyUnicode_CheckExact(value)) {
-        specialize(instr, TO_BOOL_STR);
-        return;
+        specialized_op = TO_BOOL_STR;
+        goto success;
     }
     if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
         unsigned int version = 0;
@@ -2751,10 +2752,13 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         assert(err == 0);
         assert(version);
         write_u32(cache->version, version);
-        specialize(instr, TO_BOOL_ALWAYS_TRUE);
-        return;
+        specialized_op = TO_BOOL_ALWAYS_TRUE;
+        goto success;
     }
     unspecialize(instr, to_bool_fail_kind(value));
+    return;
+success:
+    specialize(instr, specialized_op);
 }
 
 static int
