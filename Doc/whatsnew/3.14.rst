@@ -454,6 +454,14 @@ pathlib
   (Contributed by Barney Gale in :gh:`125413`.)
 
 
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
+
 pdb
 ---
 
@@ -782,6 +790,16 @@ Changes in the Python API
 
 Build changes
 =============
+
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
 
 
 C API changes
