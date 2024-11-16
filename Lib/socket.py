@@ -67,13 +67,6 @@ __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
            "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
-def __getattr__(name):
-    if name == "SocketType":
-        import warnings
-        warnings._deprecated(name, remove=(3, 16))
-        return _socket.socket
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
 # nicer string representations.

@@ -5579,16 +5579,17 @@ socket_getattr(PyObject *self, PyObject *name)
 {
     const char *attrname = PyUnicode_AsUTF8(name);
     PyObject *sock_type = PyType_FromSpec(&sock_spec);
-    if (sock_type == NULL) {
+    if (attrname == NULL || sock_type == NULL) {
         return NULL;
     }
 
     if (!strcmp(attrname, "SocketType")) {
-        PyErr_Warn(PyExc_DeprecationWarning, "Use socket.socket type instead");
+        PyErr_Warn(PyExc_DeprecationWarning, "It will be removed in 3.16. "
+                                             "Use socket.socket type instead");
         return sock_type;
     }
 
-    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute %s", attrname);
+    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%s'", attrname);
     return NULL;
 }
 
