@@ -697,6 +697,7 @@ pow5mult(Bigint *b, int k)
     for(;;) {
         assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
         p5 = *p5s;
+        assert(p5 != NULL);
         p5s++;
         if (k & 1) {
             b1 = mult(b, p5);
