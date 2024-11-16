@@ -15,53 +15,78 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: messages.py:5
+#: messages.py:16
 msgid ""
 msgstr ""
 
-#: messages.py:8 messages.py:9
+#: messages.py:19 messages.py:20
 msgid "parentheses"
 msgstr ""
 
-#: messages.py:12
+#: messages.py:23
 msgid "Hello, world!"
 msgstr ""
 
-#: messages.py:15
+#: messages.py:26
 msgid ""
 "Hello,\n"
 "    multiline!\n"
 msgstr ""
 
-#: messages.py:29
-msgid "Hello, {}!"
+#: messages.py:37
+msgid "kwargs work!"
 msgstr ""
 
-#: messages.py:33
-msgid "1"
-msgstr ""
+#: messages.py:38 messages.py:81 messages.py:82 messages.py:85 messages.py:86
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] ""
+msgstr[1] ""
 
-#: messages.py:33
-msgid "2"
-msgstr ""
-
-#: messages.py:34 messages.py:35
-msgid "A"
-msgstr ""
-
-#: messages.py:34 messages.py:35
-msgid "B"
-msgstr ""
-
-#: messages.py:36
-msgid "set"
+#: messages.py:39
+msgid "something"
 msgstr ""
 
 #: messages.py:42
+msgid "Hello, {}!"
+msgstr ""
+
+#: messages.py:43
+msgid "Hello, {}!world"
+msgstr ""
+
+#: messages.py:46
+msgid "1"
+msgstr ""
+
+#: messages.py:46
+msgid "2"
+msgstr ""
+
+#: messages.py:47 messages.py:48
+msgid "A"
+msgstr ""
+
+#: messages.py:47 messages.py:48
+msgid "B"
+msgstr ""
+
+#: messages.py:49
+msgid "set"
+msgstr ""
+
+#: messages.py:55
 msgid "nested string"
 msgstr ""
 
-#: messages.py:47
+#: messages.py:60
 msgid "baz"
 msgstr ""
+
+#: messages.py:83 messages.py:84 messages.py:87 messages.py:88
+msgctxt "context"
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] ""
+msgstr[1] ""
 

@@ -1,5 +1,16 @@
 # Test message extraction
-from gettext import gettext as _
+from gettext import (
+    gettext,
+    ngettext,
+    pgettext,
+    npgettext,
+    dgettext,
+    dngettext,
+    dpgettext,
+    dnpgettext
+)
+
+_ = gettext
 
 # Empty string
 _("")
@@ -21,13 +32,15 @@ _()
 _(None)
 _(1)
 _(False)
-_(x="kwargs are not allowed")
+
+# Unusual, but valid arguments
+_(x="kwargs work!")
 _("foo", "bar")
 _("something", x="something else")
 
 # .format()
 _("Hello, {}!").format("world")  # valid
-_("Hello, {}!".format("world"))  # invalid
+_("Hello, {}!".format("world"))  # should be invalid, but is extracted (also by xgettext and pybabel)
 
 # Nested structures
 _("1"), _("2")
@@ -62,3 +75,24 @@ def _(x):
 
 def _(x="don't extract me"):
     pass
+
+
+# Other gettext functions
+gettext("foo")
+ngettext("foo", "foos", 1)
+pgettext("context", "foo")
+npgettext("context", "foo", "foos", 1)
+dgettext("domain", "foo")
+dngettext("domain", "foo", "foos", 1)
+dpgettext("domain", "context", "foo")
+dnpgettext("domain", "context", "foo", "foos", 1)
+
+# Invalid calls which are not extracted
+gettext()
+ngettext('foo')
+pgettext('context')
+npgettext('context', 'foo')
+dgettext('domain')
+dngettext('domain', 'foo')
+dpgettext('domain', 'context')
+dnpgettext('domain', 'context', 'foo')
