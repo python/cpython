@@ -171,10 +171,6 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
-            # TODO: Get rid of this once we always have a trampoline (LLVM 19):
-            if not stencil_group.code.body:
-                continue
-            # TODO: Make this (and the other method it calls) a method on _Target:
             stencil_group.process_relocations(
                 known_symbols=self.known_symbols, alignment=self.alignment
             )
