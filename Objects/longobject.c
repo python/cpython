@@ -3651,14 +3651,6 @@ long_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
-void _PyLong_Free(PyLongObject *op) {
-    if (_PyLong_IsCompact(op)) {
-        _Py_FREELIST_FREE(ints, op, PyObject_Free);
-        return;
-    }
-    PyObject_Free(op);
-}
-
 static Py_hash_t
 long_hash(PyObject *obj)
 {
