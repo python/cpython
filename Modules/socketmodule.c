@@ -6976,18 +6976,6 @@ Set the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
-static PyObject *
-socket_getattr(PyObject *self, PyObject *name)
-{
-    const char *attrname = PyUnicode_AsUTF8(name);
-    if (strcmp(attrname, "asd") == 0) {
-        return PyLong_FromLong(42);
-    }
-
-    PyErr_Format(PyExc_AttributeError, "Module has no attribute '%s'", attrname);
-    return NULL;
-}
-
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 /* Python API for getting interface indices and names */
 
