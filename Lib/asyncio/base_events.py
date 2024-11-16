@@ -956,7 +956,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except exceptions.SendfileNotAvailableError:
+        except exceptions.SendfileNotAvailableError as exc:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -1269,7 +1269,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except exceptions.SendfileNotAvailableError:
+            except exceptions.SendfileNotAvailableError as exc:
                 if not fallback:
                     raise
 
