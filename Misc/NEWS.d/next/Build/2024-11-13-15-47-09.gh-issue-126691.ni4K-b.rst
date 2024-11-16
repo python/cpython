@@ -1,0 +1,3 @@
+Removed the ``--with-emscripten-target`` configure flag. We unified the
+``node`` and ``browser`` options and the same build can now be used, independent
+of target runtime.

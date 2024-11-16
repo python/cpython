@@ -1082,7 +1082,6 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_app_store_compliance
-with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
 with_suffix
@@ -1868,8 +1867,6 @@ Optional Packages:
                           Enable any patches required for compiliance with app
                           stores. Optional PATCH-FILE specifies the custom
                           patch to apply.
-  --with-emscripten-target=[browser|node]
-                          Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
                           yes is mapped to '.exe')
   --without-static-libpython
@@ -7223,48 +7220,6 @@ case $ac_sys_system/$ac_sys_release in #(
      ;;
 esac
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-emscripten-target" >&5
-printf %s "checking for --with-emscripten-target... " >&6; }
-
-# Check whether --with-emscripten-target was given.
-if test ${with_emscripten_target+y}
-then :
-  withval=$with_emscripten_target;
-	if test "x$ac_sys_system" = xEmscripten
-then :
-
-    case $with_emscripten_target in #(
-  browser) :
-    ac_sys_emscripten_target=browser ;; #(
-  node) :
-    ac_sys_emscripten_target=node ;; #(
-        browser-debug) :
-    ac_sys_emscripten_target=browser-debug ;; #(
-  node-debug) :
-    ac_sys_emscripten_target=node-debug ;; #(
-  *) :
-    as_fn_error $? "Invalid argument: --with-emscripten-target=browser|node" "$LINENO" 5
-     ;;
-esac
-
-else $as_nop
-
-    as_fn_error $? "--with-emscripten-target only applies to Emscripten" "$LINENO" 5
-
-fi
-
-else $as_nop
-
-  if test "x$ac_sys_system" = xEmscripten
-then :
-  ac_sys_emscripten_target=browser
-fi
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_sys_emscripten_target" >&5
-printf "%s\n" "$ac_sys_emscripten_target" >&6; }
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-wasm-dynamic-linking" >&5
 printf %s "checking for --enable-wasm-dynamic-linking... " >&6; }
 # Check whether --enable-wasm-dynamic-linking was given.
@@ -7334,12 +7289,10 @@ esac
 
 else $as_nop
 
-  case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
+  case $ac_sys_system in #(
+  Emscripten) :
     EXEEXT=.js ;; #(
-  Emscripten/node*) :
-    EXEEXT=.js ;; #(
-  WASI/*) :
+  WASI) :
     EXEEXT=.wasm ;; #(
   *) :
     EXEEXT=
@@ -7674,8 +7627,8 @@ printf %s "checking HOSTRUNNER... " >&6; }
 
 if test -z "$HOSTRUNNER"
 then
-  case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/node*) :
+  case $ac_sys_system in #(
+  Emscripten) :
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}node", so it can be a program name with args.
@@ -7791,7 +7744,7 @@ then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
-              WASI/*) :
+              WASI) :
     HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
@@ -7807,13 +7760,8 @@ if test -n "$HOSTRUNNER"; then
 fi
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
-case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js' ;; #(
-  *) :
-    LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
- ;;
-esac
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
 if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
@@ -9500,34 +9448,10 @@ then :
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
-
-    case $ac_sys_emscripten_target in #(
-  browser*) :
-
-        if test "x$ac_sys_emscripten_target" = xbrowser-debug
-then :
-  wasm_debug=yes
-fi
-        as_fn_append LINKFORSHARED " --preload-file=\$(WASM_ASSETS_DIR)"
-        WASM_ASSETS_DIR=".\$(prefix)"
-        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-                WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
-       ;; #(
-  node*) :
-
-        if test "x$ac_sys_emscripten_target" = xnode-debug
-then :
-  wasm_debug=yes
-fi
-        as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
-        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
-        as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
-        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
-
-     ;; #(
-  *) :
-     ;;
-esac
+    as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH"
+        as_fn_append LDFLAGS_NODIST " -sEXIT_RUNTIME"
+    as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
+    WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
     if test "x$wasm_debug" = xyes
 then :
@@ -29058,15 +28982,7 @@ else $as_nop
 fi
 
 else $as_nop
-
-  case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser*) :
-    TEST_MODULES=no ;; #(
-  *) :
-    TEST_MODULES=yes
-   ;;
-esac
-
+  TEST_MODULES=yes
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5

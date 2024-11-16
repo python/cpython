@@ -21,12 +21,6 @@ https://github.com/psf/webassembly for more information.
 
 ### Build
 
-For now the build system has two target flavors. The ``Emscripten/browser``
-target (``--with-emscripten-target=browser``) is optimized for browsers.
-It comes with a reduced and preloaded stdlib without tests and threading
-support. The ``Emscripten/node`` target has threading enabled and can
-access the file system directly.
-
 To cross compile to the ``wasm32-emscripten`` platform you need
 [the Emscripten compiler toolchain](https://emscripten.org/), 
 a Python interpreter, and an installation of Node version 18 or newer. Emscripten

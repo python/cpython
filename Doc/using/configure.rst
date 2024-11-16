@@ -454,15 +454,6 @@ Options for third-party dependencies
 WebAssembly Options
 -------------------
 
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
-
 .. option:: --enable-wasm-dynamic-linking
 
    Turn on dynamic linking support for WASM.
