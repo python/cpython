@@ -55,8 +55,7 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
 /* other API */
 
-void
-_PyLong_ExactDealloc(PyObject *self);
+PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
 
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
