@@ -519,7 +519,7 @@ tkinter
 
 * Add the argument ``**kw`` to method :meth:`!after` and method
   :meth:`!after_idle` of :mod:`tkinter` widgets so that the keyword argument
-  can passed to ``func`` Conveniently.
+  can passed to ``func`` conveniently.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
