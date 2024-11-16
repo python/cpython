@@ -221,7 +221,6 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
 
     PyLongObject *v = _Py_FREELIST_POP(PyLongObject, ints);
     if (v == NULL) {
