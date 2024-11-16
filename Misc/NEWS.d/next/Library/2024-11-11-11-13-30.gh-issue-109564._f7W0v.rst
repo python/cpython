@@ -1,1 +1,1 @@
-Add ``None`` check for :meth:`asyncio.Server._wakeup`. Patch by Jamie Phan.
+Fix race condition in :meth:`asyncio.Server.close`. Patch by Jamie Phan.
