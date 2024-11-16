@@ -1,2 +1,2 @@
-Increase the threshold for JIT code warmup. Depending on plaform and workload,
+Increase the threshold for JIT code warmup. Depending on platform and workload,
 this can result in performance gains of 1-9% and memory savings of 3-5%.
