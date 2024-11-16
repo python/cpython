@@ -1803,6 +1803,24 @@ different ways, depending on the type and number of the parameters in the call:
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
 
+
+.. exception:: COMError(hresult, text, details)
+
+   Windows only: This non-public exception is raised when a COM method call
+   fails.
+
+   .. attribute:: hresult
+
+      The integer value representing the error code.
+
+   .. attribute:: text
+
+      A string containing the error message or ``None``.
+
+   .. attribute:: details
+
+      A tuple of length 5 representing additional details about the error.
+
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
 
