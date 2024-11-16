@@ -1909,6 +1909,7 @@ finalize_interp_clear(PyThreadState *tstate)
 
     finalize_interp_types(tstate->interp);
 
+    /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
     _PyDtoa_Fini(tstate->interp);
 
     /* Free any delayed free requests immediately */
