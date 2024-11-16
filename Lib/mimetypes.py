@@ -27,7 +27,6 @@ import os
 import sys
 import posixpath
 import urllib.parse
-import warnings
 
 try:
     from _winapi import _mimetypes_read_windows_registry
