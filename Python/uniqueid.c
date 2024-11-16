@@ -1,5 +1,6 @@
 #include "Python.h"
 
+#include "pycore_dict.h"        // _PyDict_UniqueId()
 #include "pycore_lock.h"        // PyMutex_LockFlags()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pycore_object.h"      // _Py_IncRefTotal
@@ -104,30 +105,59 @@ _PyObject_ReleaseUniqueId(Py_ssize_t unique_id)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unique_id_pool *pool = &interp->unique_ids;
 
-    if (unique_id < 0) {
-        // The id is not assigned
-        return;
-    }
-
     LOCK_POOL(pool);
+    assert(unique_id >= 0 && unique_id < pool->size);
     _Py_unique_id_entry *entry = &pool->table[unique_id];
     entry->next = pool->freelist;
     pool->freelist = entry;
     UNLOCK_POOL(pool);
 }
 
+static Py_ssize_t
+clear_unique_id(PyObject *obj)
+{
+    Py_ssize_t id = -1;
+    if (PyType_Check(obj)) {
+        if (PyType_HasFeature((PyTypeObject *)obj, Py_TPFLAGS_HEAPTYPE)) {
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)obj;
+            id = ht->unique_id;
+            ht->unique_id = -1;
+        }
+    }
+    else if (PyCode_Check(obj)) {
+        PyCodeObject *co = (PyCodeObject *)obj;
+        id = co->_co_unique_id;
+        co->_co_unique_id = -1;
+    }
+    else if (PyDict_Check(obj)) {
+        PyDictObject *mp = (PyDictObject *)obj;
+        id = _PyDict_UniqueId(mp);
+        mp->_ma_watcher_tag &= ~(UINT64_MAX << DICT_UNIQUE_ID_SHIFT);
+    }
+    return id;
+}
+
 void
-_PyType_IncrefSlow(PyHeapTypeObject *type)
+_PyObject_DisablePerThreadRefcounting(PyObject *obj)
+{
+    Py_ssize_t id = clear_unique_id(obj);
+    if (id >= 0) {
+        _PyObject_ReleaseUniqueId(id);
+    }
+}
+
+void
+_PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (type->unique_id < 0 || resize_local_refcounts(tstate) < 0) {
-        // just incref the type directly.
-        Py_INCREF(type);
+    if (unique_id < 0 || resize_local_refcounts(tstate) < 0) {
+        // just incref the object directly.
+        Py_INCREF(obj);
         return;
     }
 
-    assert(type->unique_id < tstate->refcounts.size);
-    tstate->refcounts.values[type->unique_id]++;
+    assert(unique_id < tstate->refcounts.size);
+    tstate->refcounts.values[unique_id]++;
 #ifdef Py_REF_DEBUG
     _Py_IncRefTotal((PyThreadState *)tstate);
 #endif
@@ -179,20 +209,15 @@ _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp)
         pool->freelist = next;
     }
 
-    // Now everything non-NULL is a type. Set the type's id to -1 in case it
-    // outlives the interpreter.
+    // Now everything non-NULL is a object. Clear their unique ids as the
+    // object outlives the interpreter.
     for (Py_ssize_t i = 0; i < pool->size; i++) {
         PyObject *obj = pool->table[i].obj;
         pool->table[i].obj = NULL;
-        if (obj == NULL) {
-            continue;
-        }
-        if (PyType_Check(obj)) {
-            assert(PyType_HasFeature((PyTypeObject *)obj, Py_TPFLAGS_HEAPTYPE));
-            ((PyHeapTypeObject *)obj)->unique_id = -1;
-        }
-        else {
-            Py_UNREACHABLE();
+        if (obj != NULL) {
+            Py_ssize_t id = clear_unique_id(obj);
+            (void)id;
+            assert(id == i);
         }
     }
     PyMem_Free(pool->table);

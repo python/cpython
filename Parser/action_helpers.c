@@ -1128,6 +1128,9 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     }
 
     asdl_expr_seq *args = _Py_asdl_expr_seq_new(total_len, arena);
+    if (args == NULL) {
+        return NULL;
+    }
 
     Py_ssize_t i = 0;
     for (i = 0; i < args_len; i++) {
@@ -1298,6 +1301,9 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions)
     }
 
     asdl_expr_seq *expressions = _Py_asdl_expr_seq_new(req_size, p->arena);
+    if (expressions == NULL) {
+        return NULL;
+    }
 
     Py_ssize_t raw_index, req_index = 0;
     for (raw_index = 0; raw_index < raw_size; raw_index++) {
@@ -1490,6 +1496,9 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         }
 
         asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+        if (values == NULL) {
+            return NULL;
+        }
         asdl_seq_SET(values, 0, debug_text);
         asdl_seq_SET(values, 1, formatted_value);
         return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
@@ -1615,7 +1624,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     /* build folded list */
-    _PyUnicodeWriter writer;
     current_pos = 0;
     for (i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
@@ -1635,14 +1643,17 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                    "abc" u"abc" ->  "abcabc" */
                 PyObject *kind = elem->v.Constant.kind;
 
-                _PyUnicodeWriter_Init(&writer);
+                PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+                if (writer == NULL) {
+                    return NULL;
+                }
                 expr_ty last_elem = elem;
                 for (j = i; j < n_flattened_elements; j++) {
                     expr_ty current_elem = asdl_seq_GET(flattened, j);
                     if (current_elem->kind == Constant_kind) {
-                        if (_PyUnicodeWriter_WriteStr(
-                                &writer, current_elem->v.Constant.value)) {
-                            _PyUnicodeWriter_Dealloc(&writer);
+                        if (PyUnicodeWriter_WriteStr(writer,
+                                                     current_elem->v.Constant.value)) {
+                            PyUnicodeWriter_Discard(writer);
                             return NULL;
                         }
                         last_elem = current_elem;
@@ -1652,9 +1663,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 }
                 i = j - 1;
 
-                PyObject *concat_str = _PyUnicodeWriter_Finish(&writer);
+                PyObject *concat_str = PyUnicodeWriter_Finish(writer);
                 if (concat_str == NULL) {
-                    _PyUnicodeWriter_Dealloc(&writer);
                     return NULL;
                 }
                 if (_PyArena_AddPyObject(p->arena, concat_str) < 0) {

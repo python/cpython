@@ -13,6 +13,7 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
@@ -22,7 +23,7 @@
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF
@@ -563,6 +564,30 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
     return _PyRun_SimpleStringFlagsWithName(command, NULL, flags);
 }
 
+static int
+parse_exit_code(PyObject *code, int *exitcode_p)
+{
+    if (PyLong_Check(code)) {
+        // gh-125842: Use a long long to avoid an overflow error when `long`
+        // is 32-bit. We still truncate the result to an int.
+        int exitcode = (int)PyLong_AsLongLong(code);
+        if (exitcode == -1 && PyErr_Occurred()) {
+            // On overflow or other error, clear the exception and use -1
+            // as the exit code to match historical Python behavior.
+            PyErr_Clear();
+            *exitcode_p = -1;
+            return 1;
+        }
+        *exitcode_p = exitcode;
+        return 1;
+    }
+    else if (code == Py_None) {
+        *exitcode_p = 0;
+        return 1;
+    }
+    return 0;
+}
+
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
@@ -579,50 +604,40 @@ _Py_HandleSystemExit(int *exitcode_p)
 
     fflush(stdout);
 
-    int exitcode = 0;
-
     PyObject *exc = PyErr_GetRaisedException();
-    if (exc == NULL) {
-        goto done;
-    }
-    assert(PyExceptionInstance_Check(exc));
+    assert(exc != NULL && PyExceptionInstance_Check(exc));
 
-    /* The error code should be in the `code' attribute. */
     PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
-    if (code) {
-        Py_SETREF(exc, code);
-        if (exc == Py_None) {
-            goto done;
-        }
+    if (code == NULL) {
+        // If the exception has no 'code' attribute, print the exception below
+        PyErr_Clear();
     }
-    /* If we failed to dig out the 'code' attribute,
-     * just let the else clause below print the error.
-     */
-
-    if (PyLong_Check(exc)) {
-        exitcode = (int)PyLong_AsLong(exc);
+    else if (parse_exit_code(code, exitcode_p)) {
+        Py_DECREF(code);
+        Py_CLEAR(exc);
+        return 1;
     }
     else {
-        PyThreadState *tstate = _PyThreadState_GET();
-        PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-        /* We clear the exception here to avoid triggering the assertion
-         * in PyObject_Str that ensures it won't silently lose exception
-         * details.
-         */
-        PyErr_Clear();
-        if (sys_stderr != NULL && sys_stderr != Py_None) {
-            PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW);
-        } else {
-            PyObject_Print(exc, stderr, Py_PRINT_RAW);
-            fflush(stderr);
-        }
-        PySys_WriteStderr("\n");
-        exitcode = 1;
+        // If code is not an int or None, print it below
+        Py_SETREF(exc, code);
     }
 
-done:
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    if (sys_stderr != NULL && sys_stderr != Py_None) {
+        if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+    }
+    else {
+        if (PyObject_Print(exc, stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+        fflush(stderr);
+    }
+    PySys_WriteStderr("\n");
     Py_CLEAR(exc);
-    *exitcode_p = exitcode;
+    *exitcode_p = 1;
     return 1;
 }
 

@@ -3080,6 +3080,7 @@ PyTypeObject PyBytes_Type = {
     bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_BYTES,
 };
 
 void
