@@ -62,9 +62,12 @@ atexit_delete_cb(struct atexit_state *state, int i)
     atexit_py_callback *cb = state->callbacks[i];
     state->callbacks[i] = NULL;
 
+    // This can execute code via finalizers
+    _PyAtExit_UNLOCK(state);
     Py_DECREF(cb->func);
     Py_DECREF(cb->args);
     Py_XDECREF(cb->kwargs);
+    _PyAtExit_LOCK(state);
     PyMem_Free(cb);
 }
 
@@ -143,8 +146,12 @@ atexit_callfuncs(struct atexit_state *state)
         }
 
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
-        PyObject* the_func = Py_NewRef(cb->func);
-        PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
+        PyObject *the_func = Py_NewRef(cb->func);
+        PyObject *the_args = cb->args;
+        PyObject *the_kwargs = cb->kwargs;
+        // Unlock for re-entrancy problems
+        _PyAtExit_UNLOCK(state);
+        PyObject *res = PyObject_Call(the_func, the_args, the_kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
                 "Exception ignored in atexit callback %R", the_func);
@@ -153,6 +160,7 @@ atexit_callfuncs(struct atexit_state *state)
             Py_DECREF(res);
         }
         Py_DECREF(the_func);
+        _PyAtExit_LOCK(state);
     }
 
     atexit_cleanup(state);
