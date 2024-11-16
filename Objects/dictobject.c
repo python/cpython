@@ -1743,7 +1743,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     ix = unicodekeys_lookup_unicode(keys, key, hash);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
-        keys->dk_version = 0;
+        FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
