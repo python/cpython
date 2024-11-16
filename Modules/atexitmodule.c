@@ -311,16 +311,21 @@ atexit_unregister(PyObject *module, PyObject *func)
         if (cb == NULL) {
             continue;
         }
-
-        // We need to hold our own reference to this
-        // in case another thread is trying to unregister as well.
         PyObject *to_compare = cb->func;
+
+        // Unlock for fear of a custom __eq__ causing re-entrancy
         _PyAtExit_UNLOCK(state);
         int eq = PyObject_RichCompareBool(to_compare, func, Py_EQ);
         if (eq < 0) {
             return NULL;
         }
         _PyAtExit_LOCK(state);
+        if (state->callbacks[i] == NULL)
+        {
+            // Edge case: another thread might have
+            // unregistered the function while we released the lock.
+            continue;
+        }
         if (eq) {
             atexit_delete_cb(state, i);
         }
