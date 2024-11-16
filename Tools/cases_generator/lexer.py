@@ -72,8 +72,9 @@ operators = {
     (BACKSLASH := "BACKSLASH"): r"\\",
 }
 __all__.extend(operators.keys())
-opmap = {__pattern.replace("\\", "") or "\\": __opname
-         for __opname, __pattern in operators.items()}
+opmap = {pattern.replace("\\", "") or "\\": opname
+         for opname, pattern in operators.items()}
+del opname, pattern
 
 # Macros
 macro = r"#.*\n"
@@ -89,7 +90,6 @@ octal = r"0[0-7]+" + suffix
 hex = r"0[xX][0-9a-fA-F]+"
 decimal_digits = r"(0|[1-9][0-9]*)"
 decimal = decimal_digits + suffix
-
 
 exponent = r"""([eE][-+]?[0-9]+)"""
 fraction = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
