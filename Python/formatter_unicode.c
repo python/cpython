@@ -802,6 +802,9 @@ get_locale_info(enum LocaleType type, enum LocaleType frac_type,
     }
     if (frac_type == LT_UNDERSCORE_LOCALE) {
         locale_info->frac_thousands_sep = PyUnicode_FromOrdinal('_');
+        if (!locale_info->frac_thousands_sep) {
+            return -1;
+        }
         if (locale_info->grouping == no_grouping) {
             locale_info->grouping = "\3";
         }
