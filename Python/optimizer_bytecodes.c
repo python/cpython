@@ -589,6 +589,15 @@ dummy_func(void) {
         self = sym_new_not_null(ctx);
     }
 
+    op(_CHECK_FUNCTION, (func_version/2 -- )) {
+        (void)func_version;
+        if (ctx->frame->f_funcobj != NULL) {
+            assert(PyFunction_Check(ctx->frame->f_funcobj));
+            REPLACE_OP(this_instr, _CHECK_FUNCTION_INLINE, 0, func_version);
+            this_instr->operand1 = (uintptr_t)ctx->frame->f_funcobj;
+        }
+    }
+
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         (void)self_or_null;
         if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
@@ -639,10 +648,14 @@ dummy_func(void) {
             argcount++;
         }
 
+        PyObject *callable_o = NULL;
+        if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            callable_o = sym_get_const(callable);
+        }
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = frame_new(ctx, co, 0, args, argcount);
+            new_frame = frame_new(ctx, co, 0, args, argcount, callable_o);
         } else {
-            new_frame = frame_new(ctx, co, 0, NULL, 0);
+            new_frame = frame_new(ctx, co, 0, NULL, 0, callable_o);
 
         }
     }
@@ -666,7 +679,12 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = frame_new(ctx, co, 0, NULL, 0);
+        PyObject *callable_o = NULL;
+        if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            callable_o = sym_get_const(callable);
+        }
+
+        new_frame = frame_new(ctx, co, 0, NULL, 0, callable_o);
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {

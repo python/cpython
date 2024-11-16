@@ -339,7 +339,8 @@ _Py_uop_frame_new(
     PyCodeObject *co,
     int curr_stackentries,
     _Py_UopsSymbol **args,
-    int arg_len)
+    int arg_len,
+    PyObject *f_funcobj)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
@@ -373,6 +374,8 @@ _Py_uop_frame_new(
         _Py_UopsSymbol *stackvar = _Py_uop_sym_new_unknown(ctx);
         frame->stack[i] = stackvar;
     }
+
+    frame->f_funcobj = f_funcobj;
 
     return frame;
 }

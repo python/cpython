@@ -1515,9 +1515,33 @@ class TestUopsOptimization(unittest.TestCase):
         with self.assertRaises(TypeError):
             {item for item in items}
 
+    def test_global_guard_strength_reduced_if_possible(self):
+        def testfunc(n):
+            for i in range(n):
+                # Only works on functions promoted to constants
+                # The inner global promoted guard should be strength reduced.
+                global_foo(i)
+
+        opt = _testinternalcapi.new_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        opnames = list(iter_opnames(ex))
+        self.assertIn("_PUSH_FRAME", uops)
+        # Strength reduced version
+        self.assertIn("_CHECK_FUNCTION_INLINE", uops)
+        # Only 1 outer guard
+        self.assertLessEqual(opnames.count("_CHECK_FUNCTION"), 1)
 
 def global_identity(x):
     return x
+
+def global_foo(x):
+    return global_identity(x)
+
 
 if __name__ == "__main__":
     unittest.main()

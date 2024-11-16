@@ -5835,6 +5835,18 @@
             break;
         }
 
+        case _CHECK_FUNCTION_INLINE: {
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND0();
+            PyObject *callable_p = (PyObject *)CURRENT_OPERAND1();
+            assert(PyFunction_Check(callable_p));
+            PyFunctionObject *func = (PyFunctionObject *)callable_p;
+            if (func->func_version != func_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _LOAD_GLOBAL_MODULE: {
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
