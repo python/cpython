@@ -1810,7 +1810,7 @@ different ways, depending on the type and number of the parameters in the call:
 .. exception:: COMError(hresult, text, details)
 
    Windows only: This non-public exception is raised when a COM method call
-   fails.
+   failed.
 
    .. attribute:: hresult
 
