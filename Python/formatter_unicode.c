@@ -270,6 +270,16 @@ parse_internal_render_format_spec(PyObject *obj,
             ++pos;
             ++consumed;
         }
+        if (end-pos && READ_spec(pos) == ','
+            && format->frac_thousands_separator == LT_NO_LOCALE)
+        {
+            if (consumed == 0) {
+                format->precision = -1;
+            }
+            format->frac_thousands_separator = LT_DEFAULT_LOCALE;
+            ++pos;
+            ++consumed;
+        }
 
         /* Not having a precision or underscore after a dot is an error. */
         if (consumed == 0) {
@@ -800,8 +810,9 @@ get_locale_info(enum LocaleType type, enum LocaleType frac_type,
         locale_info->grouping = no_grouping;
         break;
     }
-    if (frac_type == LT_UNDERSCORE_LOCALE) {
-        locale_info->frac_thousands_sep = PyUnicode_FromOrdinal('_');
+    if (frac_type != LT_NO_LOCALE) {
+        locale_info->frac_thousands_sep = PyUnicode_FromOrdinal(
+            frac_type == LT_DEFAULT_LOCALE ? ',' : '_');
         if (!locale_info->frac_thousands_sep) {
             return -1;
         }

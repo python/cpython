@@ -763,6 +763,7 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(x, '>21._f'), '       123456.123_456')
         self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
         self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
+        self.assertEqual(format(x, '+.11,e'), '+1.234,561,234,56e+05')
 
         self.assertRaises(ValueError, format, x , '._6f')
 
