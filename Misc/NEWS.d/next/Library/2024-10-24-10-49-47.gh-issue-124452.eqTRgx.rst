@@ -1,0 +1,4 @@
+Fix an issue in :meth:`email.policy.EmailPolicy.header_source_parse` and
+:meth:`email.policy.Compat32.header_source_parse` that introduced spurious
+leading whitespaces into header values when the header includes a newline
+character after the header name delimiter (``:``) and before the value.
