@@ -1,0 +1,2 @@
+Fix crash when trying to concurrently create a thread state for a
+subinterpreter.
