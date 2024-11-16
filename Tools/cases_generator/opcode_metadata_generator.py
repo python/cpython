@@ -148,7 +148,7 @@ class MaxStackEffectSet:
         self.int_effect = 0
         self.cond_effects = set()
 
-    def update(self, other: MaxStackEffectSet) -> None:
+    def update(self, other: "MaxStackEffectSet") -> None:
         self.int_effect = max(self.int_effect, other.int_effect)
         self.cond_effects.update(other.cond_effects)
 
@@ -190,11 +190,11 @@ def generate_max_stack_effect_function(analysis: Analysis, out: CWriter) -> None
             effects[family.name].update(effects[inst.name])
 
     data: list[tuple[str, list[str]]] = []
-    for name, effects in sorted(effects.items(), key=lambda kv: kv[0]):
+    for name, effs in sorted(effects.items(), key=lambda kv: kv[0]):
         exprs = []
-        if effects.int_effect or not effects.cond_effects:
-            exprs.append(str(effects.int_effect))
-        exprs.extend(sorted(effects.cond_effects))
+        if effs.int_effect or not effs.cond_effects:
+            exprs.append(str(effs.int_effect))
+        exprs.extend(sorted(effs.cond_effects))
         data.append((name, exprs))
     emit_max_stack_effect_function(out, data)
 
