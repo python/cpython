@@ -121,31 +121,6 @@ noted otherwise, all return values are floats.
 ====================================================  ============================================
 
 
-.. impl-detail::
-
-   The :mod:`math` module consists mostly of thin wrappers around the platform C
-   math library functions.  Behavior in exceptional cases follows Annex F of
-   the C99 standard where appropriate.  The current implementation will raise
-   :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``
-   (where C99 Annex F recommends signaling invalid operation or divide-by-zero),
-   and :exc:`OverflowError` for results that overflow (for example,
-   ``exp(1000.0)``).  A NaN will not be returned from any of the functions
-   above unless one or more of the input arguments was a NaN; in that case,
-   most functions will return a NaN, but (again following C99 Annex F) there
-   are some exceptions to this rule, for example ``pow(float('nan'), 0.0)`` or
-   ``hypot(float('nan'), float('inf'))``.
-
-   Note that Python makes no effort to distinguish signaling NaNs from
-   quiet NaNs, and behavior for signaling NaNs remains unspecified.
-   Typical behavior is to treat all NaNs as though they were quiet.
-
-
-.. seealso::
-
-   Module :mod:`cmath`
-      Complex number versions of many of these functions.
-
-
 Number-theoretic functions
 --------------------------
 
@@ -838,6 +813,30 @@ Constants
    .. versionchanged:: 3.11
       It is now always available.
 
+
+.. impl-detail::
+
+   The :mod:`math` module consists mostly of thin wrappers around the platform C
+   math library functions.  Behavior in exceptional cases follows Annex F of
+   the C99 standard where appropriate.  The current implementation will raise
+   :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``
+   (where C99 Annex F recommends signaling invalid operation or divide-by-zero),
+   and :exc:`OverflowError` for results that overflow (for example,
+   ``exp(1000.0)``).  A NaN will not be returned from any of the functions
+   above unless one or more of the input arguments was a NaN; in that case,
+   most functions will return a NaN, but (again following C99 Annex F) there
+   are some exceptions to this rule, for example ``pow(float('nan'), 0.0)`` or
+   ``hypot(float('nan'), float('inf'))``.
+
+   Note that Python makes no effort to distinguish signaling NaNs from
+   quiet NaNs, and behavior for signaling NaNs remains unspecified.
+   Typical behavior is to treat all NaNs as though they were quiet.
+
+
+.. seealso::
+
+   Module :mod:`cmath`
+      Complex number versions of many of these functions.
 
 .. |nbsp| unicode:: 0xA0
    :trim:
