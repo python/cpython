@@ -43,7 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)_PyLong_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)_PyLong_ExactDealloc);
 }
 
 static inline int
@@ -3616,9 +3616,39 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+void
+_PyLong_ExactDealloc(PyObject *self)
+{
+    assert(PyLong_CheckExact(self));
+
+    if (_PyLong_IsCompact((PyLongObject *)self)) {
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
+    }
+    PyObject_Free(self);
+}
+
 static void
 long_dealloc(PyObject *self)
 {
+    PyLongObject *pylong = (PyLongObject*)self;
+
+    if (pylong && _PyLong_IsCompact(pylong)) {
+        stwodigits ival = medium_value(pylong);
+        if (IS_SMALL_INT(ival)) {
+            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+            if (pylong == small_pylong) {
+                /* This should never get called, but we also don't want to SEGV if
+                * we accidentally decref small Ints out of existence. Instead,
+                * since small Ints are immortal, re-set the reference count.
+                */
+                // can we remove the next two lines? the immortal objects now have a fixed refcount
+                // in particular in the free-threading build this seeems safe
+                _Py_SetImmortal(self);
+                return;
+            }
+        }
+    }
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -6613,7 +6643,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
-    (freefunc)_PyLong_Free,                              /* tp_free */
+    (freefunc)PyObject_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_INT,
 };
