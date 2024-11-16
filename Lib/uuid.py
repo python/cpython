@@ -108,7 +108,9 @@ class UUID:
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
-                    and two derived attributes:
+                    and two derived attributes. The time_* attributes are
+                    only relevant to version 1, while the others are only
+                    relevant to versions 1 and 6:
 
             time_low                the first 32 bits of the UUID
             time_mid                the next 16 bits of the UUID
@@ -322,17 +324,17 @@ class UUID:
 
     @property
     def time(self):
-        field_1 = self.int >> 96
-        field_3_no_ver = (self.int >> 64) & 0x0fff
-
         if self.version == 6:
-            # In version 6, the first field contains the 32 MSBs
-            # and the field after the version contains the 12 LSBs.
-            return field_1 << 28 | (self.time_mid << 12) | field_3_no_ver
+            # time_hi (32) | time_mid (16) | ver (4) | time_lo (12) | ... (64)
+            time_hi, time_lo = self.int >> 96, (self.int >> 64) & 0x0fff
+            return time_hi << 28 | (self.time_mid << 12) | time_lo
         else:
-            # In version 1, the first field contains the 32 LSBs
-            # and the field after the version contains the 12 MSBs.
-            return field_3_no_ver << 48 | (self.time_mid << 32) | field_1
+            # time_low (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
+            #
+            # For compatibility purposes, we do not warn or raise when the
+            # version is not 1 (timestamp is irrelevant to other versions).
+            time_hi, time_lo = (self.int >> 64) & 0x0fff, self.int >> 96
+            return time_hi << 48 | (self.time_mid << 32) | time_lo
 
     @property
     def clock_seq(self):
