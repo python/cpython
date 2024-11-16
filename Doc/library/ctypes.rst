@@ -1818,11 +1818,11 @@ different ways, depending on the type and number of the parameters in the call:
 
    .. attribute:: text
 
-      A string containing the error message or ``None``.
+      The error message.
 
    .. attribute:: details
 
-      A tuple of length 5 representing additional details about the error.
+      The 5-tuple representing additional details about the error.
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
