@@ -2716,6 +2716,7 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
     assert(_PyOpcode_Caches[TO_BOOL] == INLINE_CACHE_ENTRIES_TO_BOOL);
     _PyToBoolCache *cache = (_PyToBoolCache *)(instr + 1);
     PyObject *value = PyStackRef_AsPyObjectBorrow(value_o);
+    int reason;
     uint8_t specialized_op;
     if (PyBool_Check(value)) {
         specialized_op = TO_BOOL_BOOL;
@@ -2741,12 +2742,12 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         unsigned int version = 0;
         int err = _PyType_Validate(Py_TYPE(value), check_type_always_true, &version);
         if (err < 0) {
-            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
-            return;
+            reason = SPEC_FAIL_OUT_OF_VERSIONS;
+            goto fail;
         }
         else if (err > 0) {
-            unspecialize(instr, err);
-            return;
+            reason = err;
+            goto fail;
         }
 
         assert(err == 0);
@@ -2755,7 +2756,9 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         specialized_op = TO_BOOL_ALWAYS_TRUE;
         goto success;
     }
-    unspecialize(instr, to_bool_fail_kind(value));
+    reason = to_bool_fail_kind(value);
+fail:
+    unspecialize(instr, reason);
     return;
 success:
     specialize(instr, specialized_op);
