@@ -1,0 +1,1 @@
+Add ``**kw`` to ``tkinter.Misc.after`` and ``tkinter.Misc.after_idle``.
