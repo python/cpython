@@ -581,11 +581,6 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->must_advance = 0;
     state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
-    /* SRE_REPEAT pool */
-    state->repeat = NULL;
-    state->repeat_pool_used = NULL;
-    state->repeat_pool_unused = NULL;
-
     state->beginning = ptr;
 
     state->start = (void*) ((char*) ptr + start * state->charsize);
@@ -613,7 +608,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 }
 
 LOCAL(void)
-state_fini(SRE_STATE* state, PatternObject *pattern)
+state_fini(SRE_STATE* state)
 {
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
@@ -624,11 +619,6 @@ state_fini(SRE_STATE* state, PatternObject *pattern)
     state->mark = NULL;
     /* SRE_REPEAT pool */
     repeat_pool_clear(state);
-#ifdef Py_DEBUG
-    if (pattern) {
-        pattern->fail_after_count = -1;
-    }
-#endif
 }
 
 /* calculate offset from start of string */
@@ -804,12 +794,12 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred()) {
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
     match = pattern_new_match(module_state, self, &state, status);
-    state_fini(&state, self);
+    state_fini(&state);
     return match;
 }
 
@@ -849,12 +839,12 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
     if (PyErr_Occurred()) {
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
     match = pattern_new_match(module_state, self, &state, status);
-    state_fini(&state, self);
+    state_fini(&state);
     return match;
 }
 
@@ -894,12 +884,12 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
 
     if (PyErr_Occurred()) {
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
     match = pattern_new_match(module_state, self, &state, status);
-    state_fini(&state, self);
+    state_fini(&state);
     return match;
 }
 
@@ -928,7 +918,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
 
     list = PyList_New(0);
     if (!list) {
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
@@ -990,12 +980,12 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
         state.start = state.ptr;
     }
 
-    state_fini(&state, self);
+    state_fini(&state);
     return list;
 
 error:
     Py_DECREF(list);
-    state_fini(&state, self);
+    state_fini(&state);
     return NULL;
 
 }
@@ -1091,7 +1081,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
 
     list = PyList_New(0);
     if (!list) {
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
@@ -1155,12 +1145,12 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     if (status < 0)
         goto error;
 
-    state_fini(&state, self);
+    state_fini(&state);
     return list;
 
 error:
     Py_DECREF(list);
-    state_fini(&state, self);
+    state_fini(&state);
     return NULL;
 
 }
@@ -1287,7 +1277,7 @@ pattern_subx(_sremodulestate* module_state,
     list = PyList_New(0);
     if (!list) {
         Py_DECREF(filter);
-        state_fini(&state, self);
+        state_fini(&state);
         return NULL;
     }
 
@@ -1373,7 +1363,7 @@ pattern_subx(_sremodulestate* module_state,
             goto error;
     }
 
-    state_fini(&state, self);
+    state_fini(&state);
 
     Py_DECREF(filter);
 
@@ -1405,7 +1395,7 @@ pattern_subx(_sremodulestate* module_state,
 
 error:
     Py_DECREF(list);
-    state_fini(&state, self);
+    state_fini(&state);
     Py_DECREF(filter);
     return NULL;
 
@@ -1634,7 +1624,6 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 #ifdef Py_DEBUG
     self->fail_after_count = -1;
     self->fail_after_exc = NULL;
-    self->fail_after_exc = Py_NewRef(PyExc_RuntimeError);
 #endif
 
     self->codesize = n;
@@ -2734,7 +2723,8 @@ pattern_new_match(_sremodulestate* module_state,
         if (!match)
             return NULL;
 
-        match->pattern = (PatternObject*)Py_NewRef(pattern);
+        Py_INCREF(pattern);
+        match->pattern = pattern;
 
         match->string = Py_NewRef(state->string);
 
@@ -2810,7 +2800,7 @@ scanner_dealloc(ScannerObject* self)
     PyTypeObject *tp = Py_TYPE(self);
 
     PyObject_GC_UnTrack(self);
-    state_fini(&self->state, self->pattern);
+    state_fini(&self->state);
     (void)scanner_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2870,7 +2860,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    match = pattern_new_match(module_state, (PatternObject*) self->pattern,
+    match = pattern_new_match(module_state, self->pattern,
                               state, status);
 
     if (status == 0)
@@ -2920,7 +2910,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    match = pattern_new_match(module_state, (PatternObject*) self->pattern,
+    match = pattern_new_match(module_state, self->pattern,
                               state, status);
 
     if (status == 0)

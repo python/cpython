@@ -2686,13 +2686,14 @@ class ReTests(unittest.TestCase):
             pass
         p = re.compile(pattern)
         for n in range(maxcount):
-            p._fail_after(n, Interrupt)
             try:
+                p._fail_after(n, Interrupt)
                 p.match(string)
-                print(n)
                 return n
             except Interrupt:
                 pass
+            finally:
+                p._fail_after(-1, None)
 
     @unittest.skipUnless(hasattr(re.Pattern, '_fail_after'), 'requires debug build')
     def test_memory_leaks(self):

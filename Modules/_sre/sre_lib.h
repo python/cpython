@@ -571,11 +571,11 @@ typedef struct {
 # define MAYBE_CHECK_SIGNALS                                       \
     do {                                                           \
         _MAYBE_CHECK_SIGNALS;                                      \
-        if (state->fail_after_count == 0) {                        \
-            PyErr_SetNone(state->fail_after_exc);                  \
-            RETURN_ERROR(SRE_ERROR_INTERRUPTED);                   \
-        }                                                          \
-        if (state->fail_after_count > 0) {                         \
+        if (state->fail_after_count >= 0) {                        \
+            if (state->fail_after_count == 0) {                    \
+                PyErr_SetNone(state->fail_after_exc);              \
+                RETURN_ERROR(SRE_ERROR_INTERRUPTED);               \
+            }                                                      \
             state->fail_after_count--;                             \
         }                                                          \
     } while (0)
