@@ -262,17 +262,7 @@ parse_internal_render_format_spec(PyObject *obj,
             /* Overflow error. Exception already set. */
             return 0;
 
-        if (end-pos && READ_spec(pos) == '_') {
-            if (consumed == 0) {
-                format->precision = -1;
-            }
-            format->frac_thousands_separator = LT_UNDERSCORE_LOCALE;
-            ++pos;
-            ++consumed;
-        }
-        if (end-pos && READ_spec(pos) == ','
-            && format->frac_thousands_separator == LT_NO_LOCALE)
-        {
+        if (end-pos && READ_spec(pos) == ',') {
             if (consumed == 0) {
                 format->precision = -1;
             }
@@ -280,8 +270,27 @@ parse_internal_render_format_spec(PyObject *obj,
             ++pos;
             ++consumed;
         }
+        if (end-pos && READ_spec(pos) == '_') {
+            if (format->frac_thousands_separator != LT_NO_LOCALE) {
+                invalid_comma_and_underscore();
+                return 0;
+            }
+            if (consumed == 0) {
+                format->precision = -1;
+            }
+            format->frac_thousands_separator = LT_UNDERSCORE_LOCALE;
+            ++pos;
+            ++consumed;
+        }
+        if (end-pos && READ_spec(pos) == ',') {
+            if (format->frac_thousands_separator == LT_UNDERSCORE_LOCALE) {
+                invalid_comma_and_underscore();
+                return 0;
+            }
+        }
 
-        /* Not having a precision or underscore after a dot is an error. */
+        /* Not having a precision or underscore/comma after a dot
+           is an error. */
         if (consumed == 0) {
             PyErr_Format(PyExc_ValueError,
                          "Format specifier missing precision");

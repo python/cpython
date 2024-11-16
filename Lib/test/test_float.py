@@ -765,7 +765,9 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
         self.assertEqual(format(x, '+.11,e'), '+1.234,561,234,56e+05')
 
-        self.assertRaises(ValueError, format, x , '._6f')
+        self.assertRaises(ValueError, format, x, '._6f')
+        self.assertRaises(ValueError, format, x, '.,_6f')
+        self.assertRaises(ValueError, format, x, '._,6f')
 
     @support.requires_IEEE_754
     def test_format_testfile(self):
