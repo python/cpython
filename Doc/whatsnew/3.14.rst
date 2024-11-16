@@ -514,6 +514,15 @@ sys
   from other interpreters than the one it's called in.
 
 
+tkinter
+-------
+
+* Add the argument ``**kw`` to method :meth:`tkinter.Misc.after` and
+  :meth:`tkinter.Misc.after_idle` so that the keyword argument can passed to
+  ``func`` Conveniently.
+  (Contributed by Zhikang Yan in :gh:`126899`.)
+
+
 unicodedata
 -----------
 
