@@ -63,7 +63,7 @@ _globals (static struct globals):
                             data (void *)
                             obj (PyObject *)
                             interpid (int64_t)
-                            new_object (xid_newobjectfunc)
+                            new_object (xid_newobjfunc)
                             free (xid_freefunc)
                     last (struct _channelitem *):
                         ...
@@ -1758,6 +1758,11 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
     }
     int64_t interpid = PyInterpreterState_GetID(interp);
 
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+
     // Look up the channel.
     PyThread_type_lock mutex = NULL;
     _channel_state *chan = NULL;
@@ -1779,7 +1784,7 @@ channel_send(_channels *channels, int64_t cid, PyObject *obj,
         PyThread_release_lock(mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(obj, data) != 0) {
+    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
         PyThread_release_lock(mutex);
         GLOBAL_FREE(data);
         return -1;

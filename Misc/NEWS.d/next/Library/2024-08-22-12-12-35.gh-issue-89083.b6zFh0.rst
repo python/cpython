@@ -1,0 +1,2 @@
+Add :func:`uuid.uuid8` for generating UUIDv8 objects as specified in
+:rfc:`9562`. Patch by Bénédikt Tran
