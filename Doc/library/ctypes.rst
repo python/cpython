@@ -1809,8 +1809,7 @@ different ways, depending on the type and number of the parameters in the call:
 
 .. exception:: COMError(hresult, text, details)
 
-   Windows only: This non-public exception is raised when a COM method call
-   failed.
+   This non-public exception is raised when a COM method call failed.
 
    .. attribute:: hresult
 
@@ -1823,6 +1822,8 @@ different ways, depending on the type and number of the parameters in the call:
    .. attribute:: details
 
       The 5-tuple representing additional details about the error.
+
+   .. availability:: Windows
 
 
 The optional *paramflags* parameter creates foreign function wrappers with much
