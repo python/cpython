@@ -1619,7 +1619,9 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_nonascii(self):
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
-        url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
+        url = os_helper.FS_NONASCII
+        self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
+        url = urllib.parse.quote(url, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.url2pathname(url), os_helper.FS_NONASCII)
 
 class Utility_Tests(unittest.TestCase):
