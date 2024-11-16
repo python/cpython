@@ -314,7 +314,9 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(mime_type, 'testing/type')
 
     def test_add_type_with_undotted_extension_raises_exception(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, "Extensions should start with a '.' or be empty"
+        ):
             mimetypes.add_type('testing/type', 'undotted')
 
     def test_add_type_with_empty_extension_emits_no_warning(self):
