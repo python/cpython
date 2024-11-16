@@ -1707,12 +1707,6 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
       and raise an exception if the foreign function call failed.
 
 
-.. exception:: ArgumentError
-
-   This exception is raised when a foreign function call cannot convert one of the
-   passed arguments.
-
-
 .. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
@@ -1805,25 +1799,6 @@ different ways, depending on the type and number of the parameters in the call:
    COM methods use a special calling convention: They require a pointer to
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
-
-
-.. exception:: COMError(hresult, text, details)
-
-   This non-public exception is raised when a COM method call failed.
-
-   .. attribute:: hresult
-
-      The integer value representing the error code.
-
-   .. attribute:: text
-
-      The error message.
-
-   .. attribute:: details
-
-      The 5-tuple representing additional details about the error.
-
-   .. availability:: Windows
 
 
 The optional *paramflags* parameter creates foreign function wrappers with much
@@ -2764,3 +2739,33 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
+
+
+.. _ctypes-exceptions:
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: ArgumentError
+
+   This exception is raised when a foreign function call cannot convert one of the
+   passed arguments.
+
+
+.. exception:: COMError(hresult, text, details)
+
+   This non-public exception is raised when a COM method call failed.
+
+   .. attribute:: hresult
+
+      The integer value representing the error code.
+
+   .. attribute:: text
+
+      The error message.
+
+   .. attribute:: details
+
+      The 5-tuple representing additional details about the error.
+
+   .. availability:: Windows
