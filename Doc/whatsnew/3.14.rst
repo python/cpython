@@ -517,9 +517,9 @@ sys
 tkinter
 -------
 
-* Add the argument ``**kw`` to method :meth:`tkinter.Misc.after` and
-  :meth:`tkinter.Misc.after_idle` so that the keyword argument can passed to
-  ``func`` Conveniently.
+* Add the argument ``**kw`` to method :meth:`!after` and method
+  :meth:`!after_idle` of :mod:`tkinter` widgets so that the keyword argument
+  can passed to ``func`` Conveniently.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
