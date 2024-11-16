@@ -2743,11 +2743,11 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         int err = _PyType_Validate(Py_TYPE(value), check_type_always_true, &version);
         if (err < 0) {
             reason = SPEC_FAIL_OUT_OF_VERSIONS;
-            goto fail;
+            goto failure;
         }
         else if (err > 0) {
             reason = err;
-            goto fail;
+            goto failure;
         }
 
         assert(err == 0);
@@ -2757,7 +2757,7 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         goto success;
     }
     reason = to_bool_fail_kind(value);
-fail:
+failure:
     unspecialize(instr, reason);
     return;
 success:
