@@ -1550,8 +1550,8 @@ specialize_load_global_lock_held(
             unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
             return;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
-                interp, globals_keys);
+        uint32_t keys_version = _PyDict_GetKeysVersionForCurrentState(
+                interp, (PyDictObject*) globals);
         if (keys_version == 0) {
             unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
             return;
@@ -1583,8 +1583,8 @@ specialize_load_global_lock_held(
         unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
         return;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(
-            interp, globals_keys);
+    uint32_t globals_version = _PyDict_GetKeysVersionForCurrentState(
+            interp, (PyDictObject*) globals);
     if (globals_version == 0) {
         unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
         return;
@@ -1593,8 +1593,8 @@ specialize_load_global_lock_held(
         unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
         return;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(
-            interp, builtin_keys);
+    uint32_t builtins_version = _PyDict_GetKeysVersionForCurrentState(
+            interp, (PyDictObject*) builtins);
     if (builtins_version == 0) {
         unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
         return;

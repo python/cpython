@@ -92,6 +92,15 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
+/* Gets a version number unique to the current state of the keys of dict, if possible.
+ *
+ * In free-threaded builds ensures that the dict can be used for lock-free
+ * reads if a version was assigned.
+ *
+ * Returns the version number, or zero if it was not possible to get a version number. */
+extern uint32_t _PyDict_GetKeysVersionForCurrentState(
+        PyInterpreterState *interp, PyDictObject *dictkeys);
+
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
 extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
