@@ -1800,7 +1800,7 @@ different ways, depending on the type and number of the parameters in the call:
    the interface identifier which is used in extended error reporting.
 
    If *iid* is not specified, a :exc:`WindowsError` is raised if the COM method
-   call fails. If *iid* is specified, a :exc:`COMError` is raised instead.
+   call fails. If *iid* is specified, a :exc:`.COMError` is raised instead.
 
    COM methods use a special calling convention: They require a pointer to
    the COM interface as first argument, in addition to those parameters that
