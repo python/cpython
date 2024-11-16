@@ -1,0 +1,2 @@
+Fix a crash upon finalization when passing a non-boolean value to
+:meth:`loop.set_debug <asyncio.loop.set_debug>`. Patch by Bénédikt Tran.
