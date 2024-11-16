@@ -702,13 +702,10 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma as a thousands separator::
+Using the comma or the underscore as a thousands separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
-
-Using the underscore as a thousands separator::
-
    >>> '{:_}'.format(1234567890)
    '1_234_567_890'
    >>> '{:_}'.format(123456789.123456789)
