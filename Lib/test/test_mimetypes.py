@@ -317,12 +317,10 @@ class MimeTypesTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             mimetypes.add_type('testing/type', 'undotted')
 
-    def test_add_type_with_empty_extension_emits_warning(self):
+    def test_add_type_with_empty_extension_emits_no_warning(self):
         with warnings.catch_warnings(record=True) as wlog:
             mimetypes.add_type('testing/type', '')
-        self.assertEqual(len(wlog), 1)
-        warning = wlog[0]
-        self.assertEqual(str(warning.message), 'Empty extension specified')
+        self.assertEqual(len(wlog), 0)
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
