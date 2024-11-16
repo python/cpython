@@ -32,6 +32,22 @@ class StressTests(TestBase):
         with threading_helper.start_threads(threads):
             pass
 
+    @support.requires_resource('cpu')
+    def test_many_threads_to_same_interp(self):
+        interp = interpreters.create()
+
+        def run():
+            this_interp = interpreters.create()
+            this_interp.exec(f"import _interpreters; _interpreters.run_string({interp.id}, '1')")
+
+
+        threads = (threading.Thread(target=run) for _ in range(100))
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
