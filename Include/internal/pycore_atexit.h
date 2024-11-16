@@ -52,6 +52,8 @@ struct atexit_state {
     atexit_py_callback **callbacks;
     int ncallbacks;
     int callback_len;
+
+    PyMutex lock;
 };
 
 // Export for '_interpchannels' shared extension

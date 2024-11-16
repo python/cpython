@@ -12,6 +12,11 @@
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
+/* Note: anything declared as static in this file assumes the lock is held
+ * (except for the Python-level functions) */
+#define _PyAtExit_LOCK(state) PyMutex_Lock(&state->lock);
+#define _PyAtExit_UNLOCK(state) PyMutex_Unlock(&state->lock);
+
 /* ===================================================================== */
 /* Callback machinery. */
 
@@ -38,6 +43,7 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     callback->next = NULL;
 
     struct atexit_state *state = &interp->atexit;
+    _PyAtExit_LOCK(state);
     if (state->ll_callbacks == NULL) {
         state->ll_callbacks = callback;
         state->last_ll_callback = callback;
@@ -45,6 +51,7 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     else {
         state->last_ll_callback->next = callback;
     }
+    _PyAtExit_UNLOCK(state);
     return 0;
 }
 
@@ -99,6 +106,8 @@ void
 _PyAtExit_Fini(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
+    // XXX Can this be unlocked?
+    _PyAtExit_LOCK(state);
     atexit_cleanup(state);
     PyMem_Free(state->callbacks);
     state->callbacks = NULL;
@@ -114,6 +123,7 @@ _PyAtExit_Fini(PyInterpreterState *interp)
         PyMem_Free(callback);
         exitfunc(data);
     }
+    _PyAtExit_UNLOCK(state);
 }
 
 
@@ -155,7 +165,9 @@ void
 _PyAtExit_Call(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
+    _PyAtExit_LOCK(state);
     atexit_callfuncs(state);
+    _PyAtExit_UNLOCK(state);
 }
 
 
@@ -192,12 +204,17 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     }
 
     struct atexit_state *state = get_atexit_state();
+    /* In theory, we could hold the lock for a shorter amount of time
+     * using some fancy compare-exchanges with the length. However, I'm lazy.
+     */
+    _PyAtExit_LOCK(state);
     if (state->ncallbacks >= state->callback_len) {
         atexit_py_callback **r;
         state->callback_len += 16;
         size_t size = sizeof(atexit_py_callback*) * (size_t)state->callback_len;
         r = (atexit_py_callback**)PyMem_Realloc(state->callbacks, size);
         if (r == NULL) {
+            _PyAtExit_UNLOCK(state);
             return PyErr_NoMemory();
         }
         state->callbacks = r;
@@ -205,18 +222,21 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 
     atexit_py_callback *callback = PyMem_Malloc(sizeof(atexit_py_callback));
     if (callback == NULL) {
+        _PyAtExit_UNLOCK(state);
         return PyErr_NoMemory();
     }
 
     callback->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (callback->args == NULL) {
         PyMem_Free(callback);
+        _PyAtExit_UNLOCK(state);
         return NULL;
     }
     callback->func = Py_NewRef(func);
     callback->kwargs = Py_XNewRef(kwargs);
 
     state->callbacks[state->ncallbacks++] = callback;
+    _PyAtExit_UNLOCK(state);
 
     return Py_NewRef(func);
 }
@@ -233,7 +253,9 @@ static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
+    _PyAtExit_LOCK(state);
     atexit_callfuncs(state);
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
@@ -246,7 +268,10 @@ Clear the list of previously registered exit functions.");
 static PyObject *
 atexit_clear(PyObject *module, PyObject *unused)
 {
-    atexit_cleanup(get_atexit_state());
+    struct atexit_state *state = get_atexit_state();
+    _PyAtExit_LOCK(state);
+    atexit_cleanup(state);
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
@@ -260,7 +285,10 @@ static PyObject *
 atexit_ncallbacks(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
-    return PyLong_FromSsize_t(state->ncallbacks);
+    _PyAtExit_LOCK(state);
+    PyObject *res = PyLong_FromSsize_t(state->ncallbacks);
+    _PyAtExit_UNLOCK(state);
+    return res;
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
@@ -276,6 +304,7 @@ static PyObject *
 atexit_unregister(PyObject *module, PyObject *func)
 {
     struct atexit_state *state = get_atexit_state();
+    _PyAtExit_LOCK(state);
     for (int i = 0; i < state->ncallbacks; i++)
     {
         atexit_py_callback *cb = state->callbacks[i];
@@ -283,14 +312,20 @@ atexit_unregister(PyObject *module, PyObject *func)
             continue;
         }
 
-        int eq = PyObject_RichCompareBool(cb->func, func, Py_EQ);
+        // We need to hold our own reference to this
+        // in case another thread is trying to unregister as well.
+        PyObject *to_compare = cb->func;
+        _PyAtExit_UNLOCK(state);
+        int eq = PyObject_RichCompareBool(to_compare, func, Py_EQ);
         if (eq < 0) {
             return NULL;
         }
+        _PyAtExit_LOCK(state);
         if (eq) {
             atexit_delete_cb(state, i);
         }
     }
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
