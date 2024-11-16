@@ -5574,6 +5574,23 @@ static PyType_Spec sock_spec = {
     .slots = sock_slots,
 };
 
+static PyObject *
+socket_getattr(PyObject *self, PyObject *name)
+{
+    const char *attrname = PyUnicode_AsUTF8(name);
+    PyObject *sock_type = PyType_FromSpec(&sock_spec);
+    if (sock_type == NULL) {
+        return NULL;
+    }
+
+    if (!strcmp(attrname, "SocketType")) {
+        PyErr_Warn(PyExc_DeprecationWarning, "Use socket.socket type instead");
+        return sock_type;
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute %s", attrname);
+    return NULL;
+}
 
 #ifdef HAVE_GETHOSTNAME
 /* Python interface to gethostname(). */
@@ -6959,6 +6976,18 @@ Set the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
+static PyObject *
+socket_getattr(PyObject *self, PyObject *name)
+{
+    const char *attrname = PyUnicode_AsUTF8(name);
+    if (strcmp(attrname, "asd") == 0) {
+        return PyLong_FromLong(42);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "Module has no attribute '%s'", attrname);
+    return NULL;
+}
+
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 /* Python API for getting interface indices and names */
 
@@ -7179,6 +7208,7 @@ range of values.");
 /* List of functions exported by this module. */
 
 static PyMethodDef socket_methods[] = {
+    {"__getattr__", socket_getattr, METH_O, "Module __getattr__"},
 #ifdef HAVE_GETADDRINFO
     {"gethostbyname",           socket_gethostbyname,
      METH_VARARGS, gethostbyname_doc},
