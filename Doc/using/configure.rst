@@ -454,15 +454,6 @@ Options for third-party dependencies
 WebAssembly Options
 -------------------
 
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
-
 .. option:: --enable-wasm-dynamic-linking
 
    Turn on dynamic linking support for WASM.
@@ -1097,7 +1088,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
