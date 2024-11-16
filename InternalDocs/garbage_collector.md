@@ -453,7 +453,8 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 >>> class MyObj:
 ...     pass
 ...
->>> # Move everything to the old generation so it's easier to inspect the young generation.
+>>> # Move everything to the old generation so it's easier to inspect
+>>> # the young generation.
 >>> gc.collect()
 0
 >>> # Create a reference cycle.
@@ -464,7 +465,8 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 >>> gc.get_objects(generation=0)
 [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 >>> 
->>> # After a collection of the youngest generation the object moves to the old generation.
+>>> # After a collection of the youngest generation the object
+>>> # moves to the old generation.
 >>> gc.collect(generation=0)
 0
 >>> gc.get_objects(generation=0)
