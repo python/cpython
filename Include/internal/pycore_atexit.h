@@ -52,8 +52,9 @@ struct atexit_state {
     atexit_py_callback **callbacks;
     int ncallbacks;
     int callback_len;
-
+#ifdef Py_GIL_DISABLED
     PyMutex lock;
+#endif
 };
 
 // Export for '_interpchannels' shared extension
