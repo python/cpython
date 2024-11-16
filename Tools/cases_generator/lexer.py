@@ -74,7 +74,6 @@ operators = {
 __all__.extend(operators.keys())
 opmap = {pattern.replace("\\", "") or "\\": opname
          for opname, pattern in operators.items()}
-del opname, pattern
 
 # Macros
 macro = r"#.*\n"
