@@ -34,6 +34,8 @@ class StressTests(TestBase):
 
     @support.requires_resource('cpu')
     def test_many_threads_to_same_interp(self):
+        # GH-126914: The initial thread of a subinterpreter could be accessed
+        # concurrently in new_threadstate() while it was finalizing.
         interp = interpreters.create()
 
         def run():
