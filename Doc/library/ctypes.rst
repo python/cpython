@@ -2754,7 +2754,8 @@ Exceptions
 
 .. exception:: COMError(hresult, text, details)
 
-   This non-public exception is raised when a COM method call failed.
+   Windows only: This non-public exception is raised when a COM method call
+   failed.
 
    .. attribute:: hresult
 
@@ -2767,5 +2768,3 @@ Exceptions
    .. attribute:: details
 
       The 5-tuple representing additional details about the error.
-
-   .. availability:: Windows
