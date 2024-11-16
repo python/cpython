@@ -6,6 +6,7 @@ import math
 import platform
 import socket
 import sys
+import textwrap
 import threading
 import time
 import unittest
@@ -392,6 +393,37 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.loop.get_debug())
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
+
+    def test_set_debug_non_boolean(self):
+        # Assert that set_debug with a non-boolean value does not crash.
+        #
+        # In order to check that the crash does not happen anymore, we
+        # deliberately leave the loop unclosed. Note that the loop will
+        # be closed automatically when calling __del__() but a warning
+        # will be emitted.
+        #
+        # See: https://github.com/python/cpython/issues/126881.
+        code = textwrap.dedent("""
+            from asyncio.base_events import BaseEventLoop
+            loop = BaseEventLoop()
+            loop.set_debug(0.0005)
+            loop._run_forever_setup()
+            loop.__del__()
+        """)
+        _, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'ResourceWarning: unclosed event loop', stderr)
+
+        code = textwrap.dedent("""
+            from asyncio.base_events import BaseEventLoop
+            loop = BaseEventLoop()
+            loop.set_debug([])
+            loop._run_forever_setup()
+            loop.__del__()
+        """)
+        _, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'ResourceWarning: unclosed event loop', stderr)
 
     def test__run_once_schedule_handle(self):
         handle = None

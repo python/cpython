@@ -2052,7 +2052,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         return self._debug
 
     def set_debug(self, enabled):
-        self._debug = enabled
+        # Storing a non-boolean 'debug' flag causes a crash upon finalization.
+        # See: https://github.com/python/cpython/issues/126881.
+        self._debug = enabled = bool(enabled)
 
         if self.is_running():
             self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
