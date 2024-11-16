@@ -707,6 +707,17 @@ Using the comma as a thousands separator::
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
 
+Using the underscore as a thousands separator::
+
+   >>> '{:_}'.format(1234567890)
+   '1_234_567_890'
+   >>> '{:_}'.format(123456789.123456789)
+   '123_456_789.12345679'
+   >>> '{:._}'.format(123456789.123456789)
+   '123456789.123_456_79'
+   >>> '{:_._}'.format(123456789.123456789)
+   '123_456_789.123_456_79'
+
 Expressing a percentage::
 
    >>> points = 19
