@@ -2067,7 +2067,9 @@ Partial parsing
    This method works similarly to :meth:`~ArgumentParser.parse_args`, but it does
    not raise an error for extra, unrecognized arguments. Instead, it parses the
    known arguments and returns a two item tuple that contains the populated
-   namespace and the list of any unrecognized arguments::
+   namespace and the list of any unrecognized arguments.
+
+   ::
 
       >>> parser = argparse.ArgumentParser()
       >>> parser.add_argument('--foo', action='store_true')
