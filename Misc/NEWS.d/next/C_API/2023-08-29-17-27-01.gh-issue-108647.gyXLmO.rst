@@ -1,2 +1,3 @@
-Add :attr:`_fields` and :attr:`_asdict` helpers to :c:type:`PyStructSequence`,
+Add :attr:`collections.somenamedtuple._fields` and
+:attr:`collections.somenamedtuple._asdict` helpers to :c:var:`PyStructSequence`,
 improving its compatibility with :class:`collections.namedtuple`.
