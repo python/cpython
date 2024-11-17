@@ -1393,6 +1393,7 @@ this API may be passed as the ``action`` parameter to
              JAN = 'January'
              FEB = 'February'
              DEC = 'December'
+             
          WinterMonths.__name__ = 'Winter Month'
 
          parser = argparse.ArgumentParser()
