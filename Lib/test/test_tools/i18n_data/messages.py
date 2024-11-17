@@ -42,7 +42,7 @@ _("something", x="something else")
 
 # .format()
 _("Hello, {}!").format("world")  # valid
-_("Hello, {}!".format("world"))  # should be invalid, but is extracted (also by xgettext and pybabel)
+_("Hello, {}!".format("world"))  # invalid, but xgettext and pybabel extract the first string
 
 # Nested structures
 _("1"), _("2")
