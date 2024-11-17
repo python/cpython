@@ -1406,6 +1406,9 @@ free_threadstate(_PyThreadStateImpl *tstate)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
+        _Py_atomic_store_int_relaxed(
+                                    &tstate->base.interp->threads.used_initial,
+                                    0);
     }
     else {
         PyMem_RawFree(tstate);
@@ -1526,18 +1529,35 @@ new_threadstate(PyInterpreterState *interp, int whence)
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
 
+    /*
+     * GH-126914: Using the initial thread is a bit of a headache
+     * in terms of thread safety. Originally, this function just checked
+     * if interp->threads.head was NULL, but since that gets set
+     * before the thread is fully cleaned up, it's possible
+     * for it to still be in use while interp->threads.head is NULL.
+     *
+     * So, an atomic compare-exchange is used here to properly only let one
+     * thread access the initial thread at a time.
+     */
+    int expected = 0; // Initial is available
+    int set_initial = _Py_atomic_compare_exchange_int(
+                                                    &interp->threads.used_initial,
+                                                    &expected, 1);
+
     // Allocate the thread state and add it to the interpreter.
     PyThreadState *old_head = interp->threads.head;
-    if (old_head == NULL) {
-        // It's the interpreter's initial thread state.
+    if (set_initial == 1) {
+        // The initial thread state is not in use, and we successfully
+        // claimed it!
+        assert(old_head == NULL);
+        assert(_Py_atomic_load_int_relaxed(&interp->threads.used_initial) == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
     }
-    // XXX Re-use interp->_initial_thread if not in use?
     else {
         // Every valid interpreter must have at least one thread.
         assert(id > 1);
-        assert(old_head->prev == NULL);
+        assert(old_head == NULL || old_head->prev == NULL);
         used_newtstate = 1;
         tstate = new_tstate;
         // Set to _PyThreadState_INIT.

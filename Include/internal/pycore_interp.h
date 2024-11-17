@@ -139,6 +139,11 @@ struct _is {
            or the size specified by the THREAD_STACK_SIZE macro. */
         /* Used in Python/thread.c. */
         size_t stacksize;
+        /*
+         * Whether the _initial_thread has been used.
+         * This should only be accessed atomically.
+         */
+        int used_initial;
     } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists
