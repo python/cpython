@@ -1,1 +1,1 @@
-Updated credits command output
+Update credits command output.
