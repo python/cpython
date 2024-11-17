@@ -492,6 +492,7 @@ static PyMethodDef structseq_methods[] = {
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the structure with new values for the specified fields.")},
+    {"_replace", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS},
     {"_asdict", (PyCFunction)structseq_asdict, METH_NOARGS, NULL},
     {NULL, NULL}  // sentinel
 };
