@@ -1537,20 +1537,16 @@ new_threadstate(PyInterpreterState *interp, int whence)
      * before the thread is fully cleaned up, it's possible
      * for it to still be in use while interp->threads.head is NULL.
      *
-     * So, an atomic compare-exchange is used here to properly only let one
-     * thread access the initial thread at a time.
+     * So, we have a dedicated atomic field to make sure that only one
+     * thread accesses it at a time.
      */
-    int expected = 0; // Initial is available
-    int set_initial = _Py_atomic_compare_exchange_int(
-                                                    &interp->threads.used_initial,
-                                                    &expected, 1);
+    int used_initial = _Py_atomic_load_int_relaxed(&interp->threads.used_initial);
 
     // Allocate the thread state and add it to the interpreter.
     PyThreadState *old_head = interp->threads.head;
-    if (set_initial == 1) {
-        // The initial thread state is not in use, and we successfully
-        // claimed it!
-        assert(_Py_atomic_load_int_relaxed(&interp->threads.used_initial) == 1);
+    if (used_initial == 0) {
+        // The initial thread state is not in use.
+        _Py_atomic_store_int_relaxed(&interp->threads.used_initial, 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
     }
