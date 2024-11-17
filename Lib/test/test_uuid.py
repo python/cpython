@@ -751,7 +751,7 @@ class BaseTestUUID:
         # Make sure the given node ID appears in the UUID.
         #
         # Note: when no node ID is specified, the same logic as for UUIDv1
-        # is applied to UUIDv6. In particular, there is need to test that
+        # is applied to UUIDv6. In particular, there is no need to test that
         # getnode() correctly returns positive integers of exactly 48 bits
         # since this is done in test_uuid1_eui64().
         self.assertLessEqual(self.uuid.uuid6().node.bit_length(), 48)
