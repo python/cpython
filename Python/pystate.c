@@ -1746,6 +1746,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     }
     _PyRuntimeState *runtime = interp->runtime;
 
+    HEAD_LOCK(runtime);
     if (tstate->prev) {
         tstate->prev->next = tstate->next;
     }
@@ -1774,6 +1775,8 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     assert(tstate_impl->refcounts.values == NULL);
 #endif
 
+    HEAD_UNLOCK(runtime);
+
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
     if (tstate->_status.bound_gilstate) {
@@ -1801,14 +1804,11 @@ zapthreads(PyInterpreterState *interp)
     PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    _PyRuntimeState *runtime = interp->runtime;
-    HEAD_LOCK(runtime);
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
-    HEAD_UNLOCK(runtime);
 }
 
 
@@ -1816,12 +1816,9 @@ void
 PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    HEAD_LOCK(runtime);
     tstate_verify_not_active(tstate);
     tstate_delete_common(tstate, 0);
     free_threadstate((_PyThreadStateImpl *)tstate);
-    HEAD_UNLOCK(runtime);
 }
 
 
@@ -1833,11 +1830,8 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    HEAD_LOCK(runtime);
     tstate_delete_common(tstate, 1);  // release GIL as part of call
     free_threadstate((_PyThreadStateImpl *)tstate);
-    HEAD_UNLOCK(runtime);
 }
 
 void
