@@ -124,7 +124,6 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
             );
             goto error;
         }
-        
         assert(bit_size > 0);
         assert(bit_size <= info->size * 8);
         switch(info->ffi_type_pointer.type) {
