@@ -555,7 +555,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
             goto error;
         }
 
-        // Set _fields_defaults to an empty dict, as we don't support defaults
+        // Set _field_defaults to an empty dict, as we don't support defaults
         defaults = PyDict_New();
         if (!defaults) {
             goto error;
