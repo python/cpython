@@ -1080,11 +1080,14 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
 
 class NamespacePath:
-    """Represents a namespace package's path.  It uses the module name
-    to find its parent module, and from there it looks up the parent's
-    __path__.  When this changes, the module's own path is recomputed,
-    using path_finder.  For top-level modules, the parent module's path
-    is sys.path."""
+    """Represents a namespace package's path.
+
+    It uses the module name to find its parent module, and from there it looks
+    up the parent's __path__. When this changes, the module's own path is
+    recomputed, using path_finder. The initial package path value is set to path.
+
+    For top-level modules, the parent module's path is sys.path.
+    """
 
     # When invalidate_caches() is called, this epoch is incremented
     # https://bugs.python.org/issue45703
