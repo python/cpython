@@ -1386,19 +1386,23 @@ this API may be passed as the ``action`` parameter to
 
       The following example shows how to register a custom type with a parser::
 
-         import argparse
-         import enum
-
-         class WinterMonths(enum.StrEnum):
-             JAN = 'January'
-             FEB = 'February'
-             DEC = 'December'
-
-         WinterMonths.__name__ = 'Winter Month'
-
-         parser = argparse.ArgumentParser()
-         parser.register('type', 'Winter Month', WinterMonths)
-         parser.add_argument('--month', type=WinterMonths, action='store')
+         >>> import argparse
+         >>> import enum
+         >>> class WinterMonths(enum.StrEnum):
+         ...     JAN = 'January'
+         ...     FEB = 'February'
+         ...     DEC = 'December'
+         ...
+         >>> WinterMonths.__name__ = 'Winter Month'
+         >>> parser = argparse.ArgumentParser()
+         >>> parser.register('type', 'Winter Month', WinterMonths)
+         >>> parser.add_argument('--month', type=WinterMonths, action='store')
+         _StoreAction(option_strings=['--month'], dest='month', nargs=None, const=None, default=None, type=<enum 'Winter Month'>, choices=None, required=False, help=None, metavar=None, deprecated=False)
+         >>> parser.parse_args(['--month','January'])
+         Namespace(month=<Winter Month.JAN: 'January'>)
+         >>> parser.parse_args(['--month','March'])
+         usage: python.exe -m _pyrepl [-h] [--month MONTH]
+         python.exe -m _pyrepl: error: argument --month: invalid Winter Month value: 'March'
 
       In this example, :meth:`!register` allows the type converter to be
       referenced by its registered name instead of the class name. This approach
