@@ -5,6 +5,8 @@ import sys
 import os
 import subprocess
 import shutil
+import json
+import textwrap
 from copy import copy
 
 from test.support import (
@@ -17,6 +19,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
+from test.support.venv import VirtualEnvironment
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -100,6 +103,12 @@ class TestSysConfig(unittest.TestCase):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
+
+    def venv(self, **venv_create_args):
+        return VirtualEnvironment.from_tmpdir(
+            prefix=f'{self.id()}-venv-',
+            **venv_create_args,
+        )
 
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
@@ -581,6 +590,72 @@ class TestSysConfig(unittest.TestCase):
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_config_vars_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            config_vars = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps(config_vars, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_config_vars = json.loads(venv.run('-c', script).stdout)
+            no_site_config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_config_vars, no_site_config_vars)
+        # With the site initialization, the virtual environment should be enabled.
+        self.assertEqual(site_config_vars['base'], venv.prefix)
+        self.assertEqual(site_config_vars['platbase'], venv.prefix)
+        #self.assertEqual(site_config_vars['prefix'], venv.prefix)  # # FIXME: prefix gets overwriten by _init_posix
+        # Without the site initialization, the virtual environment should be disabled.
+        self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
+        self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_config_vars_recalculation_after_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            before = sysconfig.get_config_vars()
+
+            import site
+            site.main()
+
+            after = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps({'before': before, 'after': after}, indent=2))
+        """)
+
+        with self.venv() as venv:
+            config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(config_vars['before'], config_vars['after'])
+        self.assertEqual(config_vars['after']['base'], venv.prefix)
+        #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
+        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_paths_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            paths = sysconfig.get_paths()
+
+            import json
+            print(json.dumps(paths, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_paths = json.loads(venv.run('-c', script).stdout)
+            no_site_paths = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_paths, no_site_paths)
+
 
 class MakefileTests(unittest.TestCase):
 
