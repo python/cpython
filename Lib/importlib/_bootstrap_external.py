@@ -1084,7 +1084,7 @@ class NamespacePath:
 
     It uses the module name to find its parent module, and from there it looks
     up the parent's __path__. When this changes, the module's own path is
-    recomputed, using path_finder. The initial package path value is set to path.
+    recomputed, using path_finder. The initial value is set to path.
 
     For top-level modules, the parent module's path is sys.path.
     """
