@@ -454,7 +454,13 @@ structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     Py_ssize_t n_visible_fields, n_unnamed_fields, i;
 
     n_visible_fields = VISIBLE_SIZE(self);
+    if (n_visible_fields < 0) {
+        return NULL;
+    }
     n_unnamed_fields = UNNAMED_FIELDS(self);
+    if (n_unnamed_fields < 0) {
+        return NULL;
+    }
 
     if (n_unnamed_fields != 0) {
         PyErr_Format(PyExc_TypeError,
