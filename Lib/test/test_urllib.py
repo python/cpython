@@ -19,7 +19,6 @@ except ImportError:
     ssl = None
 import sys
 import tempfile
-from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
@@ -1520,39 +1519,98 @@ class Pathname_Tests(unittest.TestCase):
                          (expect, result))
 
     @unittest.skipUnless(sys.platform == 'win32',
-                         'test specific to the nturl2path functions.')
-    def test_prefixes(self):
+                         'test specific to Windows pathnames.')
+    def test_pathname2url_win(self):
         # Test special prefixes are correctly handled in pathname2url()
-        given = '\\\\?\\C:\\dir'
-        expect = '///C:/dir'
-        result = urllib.request.pathname2url(given)
-        self.assertEqual(expect, result,
-                         "pathname2url() failed; %s != %s" %
-                         (expect, result))
-        given = '\\\\?\\unc\\server\\share\\dir'
-        expect = '/server/share/dir'
-        result = urllib.request.pathname2url(given)
-        self.assertEqual(expect, result,
-                         "pathname2url() failed; %s != %s" %
-                         (expect, result))
+        fn = urllib.request.pathname2url
+        self.assertEqual(fn('\\\\?\\C:\\dir'), '///C:/dir')
+        self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
+        self.assertEqual(fn("C:"), '///C:')
+        self.assertEqual(fn("C:\\"), '///C:/')
+        self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('C:\\a\\b.c\\'), '///C:/a/b.c/')
+        self.assertEqual(fn('C:\\a\\\\b.c'), '///C:/a//b.c')
+        self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
+        self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
+        self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
+        # Long drive letter
+        self.assertRaises(IOError, fn, "XX:\\")
+        # No drive letter
+        self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
+        self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
+        self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
+        self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
+        self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
+        # Alternate path separator
+        self.assertEqual(fn('C:/a/b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('//some/share/a/b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('//?/C:/dir'), '///C:/dir')
+        self.assertEqual(fn('//?/unc/server/share/dir'), '//server/share/dir')
+        # Round-tripping
+        urls = ['///C:',
+                '/folder/test/',
+                '///C:/foo/bar/spam.foo']
+        for url in urls:
+            self.assertEqual(fn(urllib.request.url2pathname(url)), url)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to POSIX pathnames')
+    def test_pathname2url_posix(self):
+        fn = urllib.request.pathname2url
+        self.assertEqual(fn('/'), '/')
+        self.assertEqual(fn('/a/b.c'), '/a/b.c')
+        self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
 
     @unittest.skipUnless(sys.platform == 'win32',
-                         'test specific to the urllib.url2path function.')
-    def test_ntpath(self):
-        given = ('/C:/', '///C:/', '/C|//')
-        expect = 'C:\\'
-        for url in given:
-            result = urllib.request.url2pathname(url)
-            self.assertEqual(expect, result,
-                             'urllib.request..url2pathname() failed; %s != %s' %
-                             (expect, result))
-        given = '///C|/path'
-        expect = 'C:\\path'
-        result = urllib.request.url2pathname(given)
-        self.assertEqual(expect, result,
-                         'urllib.request.url2pathname() failed; %s != %s' %
-                         (expect, result))
+                         'test specific to Windows pathnames.')
+    def test_url2pathname_win(self):
+        fn = urllib.request.url2pathname
+        self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn("///C|"), 'C:')
+        self.assertEqual(fn("///C:"), 'C:')
+        self.assertEqual(fn('///C:/'), 'C:\\')
+        self.assertEqual(fn('/C|//'), 'C:\\\\')
+        self.assertEqual(fn('///C|/path'), 'C:\\path')
+        # No DOS drive
+        self.assertEqual(fn("///C/test/"), '\\C\\test\\')
+        self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
+        # DOS drive paths
+        self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('C:/path/to/file/'), 'C:\\path\\to\\file\\')
+        self.assertEqual(fn('C:/path/to//file'), 'C:\\path\\to\\\\file')
+        self.assertEqual(fn('C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
+        # Non-ASCII drive letter
+        self.assertRaises(IOError, fn, "///\u00e8|/")
+        # UNC paths
+        self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('/////server/path/to/file'), '\\\\\\server\\path\\to\\file')
+        # Localhost paths
+        self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
+        # Percent-encoded forward slashes are preserved for backwards compatibility
+        self.assertEqual(fn('C:/foo%2fbar'), 'C:\\foo/bar')
+        self.assertEqual(fn('//server/share/foo%2fbar'), '\\\\server\\share\\foo/bar')
+        # Round-tripping
+        paths = ['C:',
+                 r'\C\test\\',
+                 r'C:\foo\bar\spam.foo']
+        for path in paths:
+            self.assertEqual(fn(urllib.request.pathname2url(path)), path)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to POSIX pathnames')
+    def test_url2pathname_posix(self):
+        fn = urllib.request.url2pathname
+        self.assertEqual(fn('/foo/bar'), '/foo/bar')
+        self.assertEqual(fn('//foo/bar'), '//foo/bar')
+        self.assertEqual(fn('///foo/bar'), '/foo/bar')
+        self.assertEqual(fn('////foo/bar'), '//foo/bar')
+        self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
@@ -1635,61 +1693,6 @@ class RequestTests(unittest.TestCase):
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
 
-
-class URL2PathNameTests(unittest.TestCase):
-
-    def test_converting_drive_letter(self):
-        self.assertEqual(url2pathname("///C|"), 'C:')
-        self.assertEqual(url2pathname("///C:"), 'C:')
-        self.assertEqual(url2pathname("///C|/"), 'C:\\')
-
-    def test_converting_when_no_drive_letter(self):
-        # cannot end a raw string in \
-        self.assertEqual(url2pathname("///C/test/"), r'\\\C\test' '\\')
-        self.assertEqual(url2pathname("////C/test/"), r'\\C\test' '\\')
-
-    def test_simple_compare(self):
-        self.assertEqual(url2pathname("///C|/foo/bar/spam.foo"),
-                         r'C:\foo\bar\spam.foo')
-
-    def test_non_ascii_drive_letter(self):
-        self.assertRaises(IOError, url2pathname, "///\u00e8|/")
-
-    def test_roundtrip_url2pathname(self):
-        list_of_paths = ['C:',
-                         r'\\\C\test\\',
-                         r'C:\foo\bar\spam.foo'
-                         ]
-        for path in list_of_paths:
-            self.assertEqual(url2pathname(pathname2url(path)), path)
-
-class PathName2URLTests(unittest.TestCase):
-
-    def test_converting_drive_letter(self):
-        self.assertEqual(pathname2url("C:"), '///C:')
-        self.assertEqual(pathname2url("C:\\"), '///C:')
-
-    def test_converting_when_no_drive_letter(self):
-        self.assertEqual(pathname2url(r"\\\folder\test" "\\"),
-                         '/////folder/test/')
-        self.assertEqual(pathname2url(r"\\folder\test" "\\"),
-                         '////folder/test/')
-        self.assertEqual(pathname2url(r"\folder\test" "\\"),
-                         '/folder/test/')
-
-    def test_simple_compare(self):
-        self.assertEqual(pathname2url(r'C:\foo\bar\spam.foo'),
-                         "///C:/foo/bar/spam.foo" )
-
-    def test_long_drive_letter(self):
-        self.assertRaises(IOError, pathname2url, "XX:\\")
-
-    def test_roundtrip_pathname2url(self):
-        list_of_paths = ['///C:',
-                         '/////folder/test/',
-                         '///C:/foo/bar/spam.foo']
-        for path in list_of_paths:
-            self.assertEqual(pathname2url(url2pathname(path)), path)
 
 if __name__ == '__main__':
     unittest.main()

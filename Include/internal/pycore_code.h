@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_tstate.h"      // _PyThreadStateImpl
 
 
 /* Each instruction in a code object is a fixed-width value,
@@ -30,6 +31,9 @@ typedef union {
     } op;
     _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 
 /* These macros only remain defined for compatibility. */
@@ -153,6 +157,7 @@ typedef struct {
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+#define INLINE_CACHE_ENTRIES_CALL_KW CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
     _Py_BackoffCounter counter;
@@ -309,11 +314,17 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+
 #ifdef Py_GIL_DISABLED
 // gh-115999 tracks progress on addressing this.
 #define ENABLE_SPECIALIZATION 0
+// Use this to enable specialization families once they are thread-safe. All
+// uses will be replaced with ENABLE_SPECIALIZATION once all families are
+// thread-safe.
+#define ENABLE_SPECIALIZATION_FT 1
 #else
 #define ENABLE_SPECIALIZATION 1
+#define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
 #endif
 
 /* Specialization functions */
@@ -332,6 +343,8 @@ extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
+extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
+                                  int nargs);
 extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
@@ -378,6 +391,7 @@ extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
         } \
     } while (0)
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
+#define OPCODE_DEFERRED_INC(opname) do { if (_Py_stats && opcode == opname) _Py_stats->opcode_stats[opname].specialization.deferred++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -399,6 +413,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
+#define OPCODE_DEFERRED_INC(opname) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
@@ -535,8 +550,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
-    "Cold exit value should be larger than adaptive cooldown value");
+#if SIDE_EXIT_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "Cold exit value should be larger than adaptive cooldown value"
+#endif
 
 static inline _Py_BackoffCounter
 adaptive_counter_bits(uint16_t value, uint16_t backoff) {
@@ -583,9 +599,47 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 
 extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
-extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
+
+struct _PyCode8 _PyCode_DEF(8);
+
+PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
+#ifdef Py_GIL_DISABLED
+
+// Return a pointer to the thread-local bytecode for the current thread, if it
+// exists.
+static inline _Py_CODEUNIT *
+_PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
+{
+    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
+    if (idx < code->size && code->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) code->entries[idx];
+    }
+    return NULL;
+}
+
+// Return a pointer to the thread-local bytecode for the current thread,
+// creating it if necessary.
+extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+
+// Reserve an index for the current thread into thread-local bytecode
+// arrays
+//
+// Returns the reserved index or -1 on error.
+extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release the current thread's index into thread-local bytecode arrays
+extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
+
+// Free all TLBC copies not associated with live threads.
+//
+// Returns 0 on success or -1 on error.
+extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }

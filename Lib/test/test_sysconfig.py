@@ -5,6 +5,8 @@ import sys
 import os
 import subprocess
 import shutil
+import json
+import textwrap
 from copy import copy
 
 from test.support import (
@@ -17,6 +19,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
+from test.support.venv import VirtualEnvironment
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -101,6 +104,12 @@ class TestSysConfig(unittest.TestCase):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
+    def venv(self, **venv_create_args):
+        return VirtualEnvironment.from_tmpdir(
+            prefix=f'{self.id()}-venv-',
+            **venv_create_args,
+        )
+
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
 
@@ -157,7 +166,7 @@ class TestSysConfig(unittest.TestCase):
         binpath = 'bin'
         incpath = 'include'
         libpath = os.path.join('lib',
-                               'python%d.%d' % sys.version_info[:2],
+                               f'python{sysconfig._get_python_version_abi()}',
                                'site-packages')
 
         # Resolve the paths in an imaginary venv/ directory
@@ -417,8 +426,8 @@ class TestSysConfig(unittest.TestCase):
                 if name == 'platlib':
                     # Replace "/lib64/python3.11/site-packages" suffix
                     # with "/lib/python3.11/site-packages".
-                    py_version_short = sysconfig.get_python_version()
-                    suffix = f'python{py_version_short}/site-packages'
+                    py_version_abi = sysconfig._get_python_version_abi()
+                    suffix = f'python{py_version_abi}/site-packages'
                     expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
                                                 f'/lib/{suffix}')
                 self.assertEqual(user_path, expected)
@@ -581,6 +590,104 @@ class TestSysConfig(unittest.TestCase):
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_config_vars_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            config_vars = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps(config_vars, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_config_vars = json.loads(venv.run('-c', script).stdout)
+            no_site_config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_config_vars, no_site_config_vars)
+        # With the site initialization, the virtual environment should be enabled.
+        self.assertEqual(site_config_vars['base'], venv.prefix)
+        self.assertEqual(site_config_vars['platbase'], venv.prefix)
+        #self.assertEqual(site_config_vars['prefix'], venv.prefix)  # # FIXME: prefix gets overwriten by _init_posix
+        # Without the site initialization, the virtual environment should be disabled.
+        self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
+        self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_config_vars_recalculation_after_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            before = sysconfig.get_config_vars()
+
+            import site
+            site.main()
+
+            after = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps({'before': before, 'after': after}, indent=2))
+        """)
+
+        with self.venv() as venv:
+            config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(config_vars['before'], config_vars['after'])
+        self.assertEqual(config_vars['after']['base'], venv.prefix)
+        #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
+        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_paths_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            paths = sysconfig.get_paths()
+
+            import json
+            print(json.dumps(paths, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_paths = json.loads(venv.run('-c', script).stdout)
+            no_site_paths = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_paths, no_site_paths)
+
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_makefile_overwrites_config_vars(self):
+        script = textwrap.dedent("""
+            import sys, sysconfig
+
+            data = {
+                'prefix': sys.prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_prefix': sys.base_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'config_vars': sysconfig.get_config_vars(),
+            }
+
+            import json
+            print(json.dumps(data, indent=2))
+        """)
+
+        # We need to run the test inside a virtual environment so that
+        # sys.prefix/sys.exec_prefix have a different value from the
+        # prefix/exec_prefix Makefile variables.
+        with self.venv() as venv:
+            data = json.loads(venv.run('-c', script).stdout)
+
+        # We expect sysconfig.get_config_vars to correctly reflect sys.prefix/sys.exec_prefix
+        self.assertEqual(data['prefix'], data['config_vars']['prefix'])
+        self.assertEqual(data['exec_prefix'], data['config_vars']['exec_prefix'])
+        # As a sanity check, just make sure sys.prefix/sys.exec_prefix really
+        # are different from the Makefile values.
+        # sys.base_prefix/sys.base_exec_prefix should reflect the value of the
+        # prefix/exec_prefix Makefile variables, so we use them in the comparison.
+        self.assertNotEqual(data['prefix'], data['base_prefix'])
+        self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
 
 class MakefileTests(unittest.TestCase):
 

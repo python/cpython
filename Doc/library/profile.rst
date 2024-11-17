@@ -682,7 +682,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    that you choose (see :ref:`profile-calibration`).  For most machines, a timer
    that returns a lone integer value will provide the best results in terms of
    low overhead during profiling.  (:func:`os.times` is *pretty* bad, as it
-   returns a tuple of floating point values).  If you want to substitute a
+   returns a tuple of floating-point values).  If you want to substitute a
    better timer in the cleanest fashion, derive a class and hardwire a
    replacement dispatch method that best handles your timer call, along with the
    appropriate calibration constant.
@@ -699,7 +699,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    As the :class:`cProfile.Profile` class cannot be calibrated, custom timer
    functions should be used with care and should be as fast as possible.  For
    the best results with a custom timer, it might be necessary to hard-code it
-   in the C source of the internal :mod:`_lsprof` module.
+   in the C source of the internal :mod:`!_lsprof` module.
 
 Python 3.3 adds several new functions in :mod:`time` that can be used to make
 precise measurements of process or wall-clock time. For example, see

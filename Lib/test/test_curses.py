@@ -1081,6 +1081,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
 
+        with self.assertRaises(OverflowError):
+            curses.resize_term(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resize_term(1, 35000)
+        # GH-120378: Overflow failure in resize_term() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
+
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
         curses.update_lines_cols()
@@ -1094,6 +1102,14 @@ class TestCurses(unittest.TestCase):
         curses.resizeterm(lines, cols)
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
+
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(1, 35000)
+        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
