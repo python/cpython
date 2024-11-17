@@ -1399,16 +1399,17 @@ alloc_threadstate(void)
 static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
+    PyInterpreterState *interp = tstate->base.interp;
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
-    if (tstate == &tstate->base.interp->_initial_thread) {
+    if (tstate == &interp->_initial_thread) {
         // Restore to _PyThreadState_INIT.
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
-        _Py_atomic_store_int_relaxed(
-                                    &tstate->base.interp->threads.used_initial,
-                                    0);
+        _Py_atomic_store_int(
+                            &interp->threads.used_initial,
+                            0);
     }
     else {
         PyMem_RawFree(tstate);
@@ -1549,7 +1550,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (set_initial == 1) {
         // The initial thread state is not in use, and we successfully
         // claimed it!
-        assert(old_head == NULL);
         assert(_Py_atomic_load_int_relaxed(&interp->threads.used_initial) == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
