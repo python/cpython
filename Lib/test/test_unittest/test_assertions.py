@@ -267,9 +267,10 @@ class TestLongMessage(unittest.TestCase):
 
     def testAssertDictEqual(self):
         self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
-                            [r"\+ \{'key': 'value'\}$", "^oops$",
-                             r"\+ \{'key': 'value'\}$",
-                             r"\+ \{'key': 'value'\} : oops$"])
+                            [r"^\{\} != \{'key': 'value'\}\n\{\n Keys in the second dict but not the first:\n  \+ 'key': 'value',\n\}$",
+                             r"^oops$",
+                             r"^\{\} != \{'key': 'value'\}\n\{\n Keys in the second dict but not the first:\n  \+ 'key': 'value',\n\}$",
+                             r"^\{\} != \{'key': 'value'\}\n\{\n Keys in the second dict but not the first:\n  \+ 'key': 'value',\n\} : oops$"])
 
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),
