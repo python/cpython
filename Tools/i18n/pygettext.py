@@ -598,7 +598,7 @@ class TokenEater:
                             locline = locline + s
                         else:
                             print(locline, file=fp)
-                            locline = f'#: {s}'
+                            locline = f'#:{s}'
                     if len(locline) > 2:
                         print(locline, file=fp)
             if msg.is_docstring:

@@ -34,7 +34,7 @@ msgid ""
 msgstr ""
 
 #: messages.py:40 messages.py:83 messages.py:84 messages.py:87 messages.py:88
-#:  messages.py:93
+#: messages.py:93
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
