@@ -80,10 +80,10 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                 p.start()
             p.join()
             return p.exitcode
-    
+
         with futures.ThreadPoolExecutor(1) as pool:
             process_exitcode = pool.submit(fork_process_and_return_exitcode).result()
-    
+
         self.assertEqual(process_exitcode, 0)
 
     def test_executor_map_current_future_cancel(self):
