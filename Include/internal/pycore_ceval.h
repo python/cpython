@@ -83,9 +83,6 @@ extern void _PyEval_Fini(void);
 
 
 extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
-extern PyObject* _PyEval_BuiltinsFromGlobals(
-    PyThreadState *tstate,
-    PyObject *globals);
 
 // Trampoline API
 
@@ -177,6 +174,18 @@ _PyEval_IsGILEnabled(PyThreadState *tstate)
 extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
 extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
 extern int _PyEval_DisableGIL(PyThreadState *state);
+
+
+static inline _Py_CODEUNIT *
+_PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
+{
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(tstate, co);
+    if (bc != NULL) {
+        return bc;
+    }
+    return _PyCode_GetTLBC(co);
+}
+
 #endif
 
 extern void _PyEval_DeactivateOpCache(void);

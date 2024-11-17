@@ -1916,6 +1916,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 
 static void
@@ -2390,7 +2391,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+            return sign ? -Py_INFINITY : Py_INFINITY;
         }
         else {
             /* NaN */
