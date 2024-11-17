@@ -12,7 +12,7 @@ a local variable in some C function. When an object’s reference count becomes 
 the object is deallocated. If it contains references to other objects, their
 reference counts are decremented. Those other objects may be deallocated in turn, if
 this decrement makes their reference count become zero, and so on. The reference
-count field can be examined using the ``sys.getrefcount()`` function (notice that the
+count field can be examined using the `sys.getrefcount()` function (notice that the
 value returned by this function is always 1 more as the function also has a reference
 to the object when called):
 
@@ -39,7 +39,7 @@ cycles. For instance, consider this code:
     >>> del container
 ```
 
-In this example, ``container`` holds a reference to itself, so even when we remove
+In this example, `container` holds a reference to itself, so even when we remove
 our reference to it (the variable "container") the reference count never falls to 0
 because it still has its own internal reference. Therefore it would never be
 cleaned just by simple reference counting. For this reason some additional machinery
@@ -56,7 +56,7 @@ Starting in version 3.13, CPython contains two GC implementations:
   performing a collection for thread safety.
 
 Both implementations use the same basic algorithms, but operate on different
-data structures.  The the section on
+data structures.  See the section on
 [Differences between GC implementations](#Differences-between-GC-implementations)
 for the details.
 
@@ -108,7 +108,7 @@ As is explained later in the
 [Optimization: reusing fields to save memory](#optimization-reusing-fields-to-save-memory)
 section, these two extra fields are normally used to keep doubly linked lists of all the
 objects tracked by the garbage collector (these lists are the GC generations, more on
-that in the [Optimization: generations](#Optimization-generations) section), but
+that in the [Optimization: incremental collection](#Optimization-incremental-collection) section), but
 they are also reused to fulfill other purposes when the full doubly linked list
 structure is not needed as a memory optimization.
 
@@ -127,7 +127,7 @@ GC for the free-threaded build
 ------------------------------
 
 In the free-threaded build, Python objects contain a 1-byte field
-``ob_gc_bits`` that is used to track garbage collection related state. The
+`ob_gc_bits` that is used to track garbage collection related state. The
 field exists in all objects, including ones that do not support cyclic
 garbage collection.  The field is used to identify objects that are tracked
 by the collector, ensure that finalizers are called only once per object,
@@ -146,14 +146,14 @@ and, during garbage collection, differentiate reachable vs. unreachable objects.
                   |                      ...                      |
 ```
 
-Note that not all fields are to scale. ``pad`` is two bytes, ``ob_mutex`` and
-``ob_gc_bits`` are each one byte, and ``ob_ref_local`` is four bytes. The
-other fields, ``ob_tid``, ``ob_ref_shared``, and ``ob_type``, are all
+Note that not all fields are to scale. `pad` is two bytes, `ob_mutex` and
+`ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. The
+other fields, `ob_tid`, `ob_ref_shared`, and `ob_type`, are all
 pointer-sized (that is, eight bytes on a 64-bit platform).
 
 
-The garbage collector also temporarily repurposes the ``ob_tid`` (thread ID)
-and ``ob_ref_local`` (local reference count) fields for other purposes during
+The garbage collector also temporarily repurposes the `ob_tid` (thread ID)
+and `ob_ref_local` (local reference count) fields for other purposes during
 collections.
 
 
@@ -165,17 +165,17 @@ objects with GC support. These APIs can be found in the
 [Garbage Collector C API documentation](https://docs.python.org/3/c-api/gcsupport.html).
 
 Apart from this object structure, the type object for objects supporting garbage
-collection must include the ``Py_TPFLAGS_HAVE_GC`` in its ``tp_flags`` slot and
-provide an implementation of the ``tp_traverse`` handler. Unless it can be proven
+collection must include the `Py_TPFLAGS_HAVE_GC` in its `tp_flags` slot and
+provide an implementation of the `tp_traverse` handler. Unless it can be proven
 that the objects cannot form reference cycles with only objects of its type or unless
-the type is immutable, a ``tp_clear`` implementation must also be provided.
+the type is immutable, a `tp_clear` implementation must also be provided.
 
 
 Identifying reference cycles
 ============================
 
 The algorithm that CPython uses to detect those reference cycles is
-implemented in the ``gc`` module. The garbage collector **only focuses**
+implemented in the `gc` module. The garbage collector **only focuses**
 on cleaning container objects (that is, objects that can contain a reference
 to one or more objects). These can be arrays, dictionaries, lists, custom
 class instances, classes in extension modules, etc. One could think that
@@ -195,7 +195,7 @@ the interpreter create cycles everywhere. Some notable examples:
 To correctly dispose of these objects once they become unreachable, they need
 to be identified first.  To understand how the algorithm works, let’s take
 the case of a circular linked list which has one link referenced by a
-variable ``A``, and one self-referencing object which is completely
+variable `A`, and one self-referencing object which is completely
 unreachable:
 
 ```pycon
@@ -234,7 +234,7 @@ objects have a refcount larger than the number of incoming references from
 within the candidate set.
 
 Every object that supports garbage collection will have an extra reference
-count field initialized to the reference count (``gc_ref`` in the figures)
+count field initialized to the reference count (`gc_ref` in the figures)
 of that object when the algorithm starts. This is because the algorithm needs
 to modify the reference count to do the computations and in this way the
 interpreter will not modify the real reference count field.
@@ -243,43 +243,43 @@ interpreter will not modify the real reference count field.
 
 The GC then iterates over all containers in the first list and decrements by one the
 `gc_ref` field of any other object that container is referencing.  Doing
-this makes use of the ``tp_traverse`` slot in the container class (implemented
+this makes use of the `tp_traverse` slot in the container class (implemented
 using the C API or inherited by a superclass) to know what objects are referenced by
 each container. After all the objects have been scanned, only the objects that have
-references from outside the “objects to scan” list will have ``gc_ref > 0``.
+references from outside the “objects to scan” list will have `gc_ref > 0`.
 
 ![gc-image2](images/python-cyclic-gc-2-new-page.png)
 
-Notice that having ``gc_ref == 0`` does not imply that the object is unreachable.
-This is because another object that is reachable from the outside (``gc_ref > 0``)
-can still have references to it. For instance, the ``link_2`` object in our example
-ended having ``gc_ref == 0`` but is referenced still by the ``link_1`` object that
+Notice that having `gc_ref == 0` does not imply that the object is unreachable.
+This is because another object that is reachable from the outside (`gc_ref > 0`)
+can still have references to it. For instance, the `link_2` object in our example
+ended having `gc_ref == 0` but is referenced still by the `link_1` object that
 is reachable from the outside. To obtain the set of objects that are really
 unreachable, the garbage collector re-scans the container objects using the
-``tp_traverse`` slot; this time with a different traverse function that marks objects with
-``gc_ref == 0`` as "tentatively unreachable" and then moves them to the
+`tp_traverse` slot; this time with a different traverse function that marks objects with
+`gc_ref == 0` as "tentatively unreachable" and then moves them to the
 tentatively unreachable list. The following image depicts the state of the lists in a
-moment when the GC processed the ``link_3`` and ``link_4`` objects but has not
-processed ``link_1`` and ``link_2`` yet.
+moment when the GC processed the `link_3` and `link_4` objects but has not
+processed `link_1` and `link_2` yet.
 
 ![gc-image3](images/python-cyclic-gc-3-new-page.png)
 
-Then the GC scans the next ``link_1`` object. Because it has ``gc_ref == 1``,
+Then the GC scans the next `link_1` object. Because it has `gc_ref == 1`,
 the gc does not do anything special because it knows it has to be reachable (and is
 already in what will become the reachable list):
 
 ![gc-image4](images/python-cyclic-gc-4-new-page.png)
 
-When the GC encounters an object which is reachable (``gc_ref > 0``), it traverses
-its references using the ``tp_traverse`` slot to find all the objects that are
+When the GC encounters an object which is reachable (`gc_ref > 0`), it traverses
+its references using the `tp_traverse` slot to find all the objects that are
 reachable from it, moving them to the end of the list of reachable objects (where
-they started originally) and setting its ``gc_ref`` field to 1. This is what happens
-to ``link_2`` and ``link_3`` below as they are reachable from ``link_1``.  From the
-state in the previous image and after examining the objects referred to by ``link_1``
-the GC knows that ``link_3`` is reachable after all, so it is moved back to the
-original list and its ``gc_ref`` field is set to 1 so that if the GC visits it again,
+they started originally) and setting its `gc_ref` field to 1. This is what happens
+to `link_2` and `link_3` below as they are reachable from `link_1`.  From the
+state in the previous image and after examining the objects referred to by `link_1`
+the GC knows that `link_3` is reachable after all, so it is moved back to the
+original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
 it will know that it's reachable. To avoid visiting an object twice, the GC marks all
-objects that have already been visited once (by unsetting the ``PREV_MASK_COLLECTING``
+objects that have already been visited once (by unsetting the `PREV_MASK_COLLECTING`
 flag) so that if an object that has already been processed is referenced by some other
 object, the GC does not process it twice.
 
@@ -295,7 +295,7 @@ list are really unreachable and can thus be garbage collected.
 Pragmatically, it's important to note that no recursion is required by any of this,
 and neither does it in any other way require additional memory proportional to the
 number of objects, number of pointers, or the lengths of pointer chains.  Apart from
-``O(1)`` storage for internal C needs, the objects themselves contain all the storage
+`O(1)` storage for internal C needs, the objects themselves contain all the storage
 the GC algorithms require.
 
 Why moving unreachable objects is better
@@ -331,7 +331,7 @@ with the objective of completely destroying these objects. Roughly, the process
 follows these steps in order:
 
 1. Handle and clear weak references (if any). Weak references to unreachable objects
-   are set to ``None``. If the weak reference has an associated callback, the callback
+   are set to `None`. If the weak reference has an associated callback, the callback
    is enqueued to be called once the clearing of weak references is finished.  We only
    invoke callbacks for weak references that are themselves reachable. If both the weak
    reference and the pointed-to object are unreachable we do not execute the callback.
@@ -339,50 +339,102 @@ follows these steps in order:
    object and support for weak references predates support for object resurrection.
    Ignoring the weak reference's callback is fine because both the object and the weakref
    are going away, so it's legitimate to say the weak reference is going away first.
-2. If an object has legacy finalizers (``tp_del`` slot) move it to the
-   ``gc.garbage`` list.
-3. Call the finalizers (``tp_finalize`` slot) and mark the objects as already
+2. If an object has legacy finalizers (`tp_del` slot) move it to the
+   `gc.garbage` list.
+3. Call the finalizers (`tp_finalize` slot) and mark the objects as already
    finalized to avoid calling finalizers twice if the objects are resurrected or
    if other finalizers have removed the object first.
 4. Deal with resurrected objects. If some objects have been resurrected, the GC
    finds the new subset of objects that are still unreachable by running the cycle
    detection algorithm again and continues with them.
-5. Call the ``tp_clear`` slot of every object so all internal links are broken and
+5. Call the `tp_clear` slot of every object so all internal links are broken and
    the reference counts fall to 0, triggering the destruction of all unreachable
    objects.
 
-Optimization: generations
-=========================
+Optimization: incremental collection
+====================================
 
-In order to limit the time each garbage collection takes, the GC
-implementation for the default build uses a popular optimization:
-generations. The main idea behind this concept is the assumption that most
-objects have a very short lifespan and can thus be collected soon after their
-creation. This has proven to be very close to the reality of many Python
+In order to bound the length of each garbage collection pause, the GC implementation
+for the default build uses incremental collection with two generations.
+
+Generational garbage collection takes advantage of what is known as the weak
+generational hypothesis: Most objects die young.
+This has proven to be very close to the reality of many Python
 programs as many temporary objects are created and destroyed very quickly.
 
 To take advantage of this fact, all container objects are segregated into
-three spaces/generations. Every new
-object starts in the first generation (generation 0). The previous algorithm is
-executed only over the objects of a particular generation and if an object
-survives a collection of its generation it will be moved to the next one
-(generation 1), where it will be surveyed for collection less often. If
-the same object survives another GC round in this new generation (generation 1)
-it will be moved to the last generation (generation 2) where it will be
-surveyed the least often.
+two generations: young and old. Every new object starts in the young generation.
+Each garbage collection scans the entire young generation and part of the old generation.
 
-The GC implementation for the free-threaded build does not use multiple
-generations.  Every collection operates on the entire heap.
+The time taken to scan the young generation can be controlled by controlling its
+size, but the size of the old generation cannot be controlled.
+In order to keep pause times down, scanning of the old generation of the heap
+occurs in increments.
+
+To keep track of what has been scanned, the old generation contains two lists:
+
+* Those objects that have not yet been scanned, referred to as the `pending` list.
+* Those objects that have been scanned, referred to as the `visited` list.
+
+To detect and collect all unreachable objects in the heap, the garbage collector
+must scan the whole heap. This whole heap scan is called a full scavenge.
+
+Increments
+----------
+
+Each full scavenge is performed in a series of increments.
+For each full scavenge, the combined increments will cover the whole heap.
+
+Each increment is made up of:
+
+* The young generation
+* The old generation's least recently scanned objects
+* All objects reachable from those objects that have not yet been scanned this full scavenge
+
+The surviving objects (those that are not collected) are moved to the back of the
+`visited` list in the old generation.
+
+When a full scavenge starts, no objects in the heap are considered to have been scanned,
+so all objects in the old generation must be in the `pending` space.
+When all objects in the heap have been scanned a cycle ends, and all objects are moved
+to the `pending` list again. To avoid having to traverse the entire list, which list is
+`pending` and which is `visited` is determined by a field in the `GCState` struct.
+The `visited` and `pending` lists can be swapped by toggling this bit.
+
+Correctness
+-----------
+
+The [algorithm for identifying cycles](#Identifying-reference-cycles) will find all
+unreachable cycles in a list of objects, but will not find any cycles that are
+even partly outside of that list.
+Therefore, to be guaranteed that a full scavenge will find all unreachable cycles,
+each cycle must be fully contained within a single increment.
+
+To make sure that no partial cycles are included in the increment we perform a
+[transitive closure](https://en.wikipedia.org/wiki/Transitive_closure)
+over reachable, unscanned objects from the initial increment.
+Since the transitive closure of objects reachable from an object must be a (non-strict)
+superset of any unreachable cycle including that object, we are guaranteed that a
+transitive closure cannot contain any partial cycles.
+We can exclude scanned objects, as they must have been reachable when scanned.
+If a scanned object becomes part of an unreachable cycle after being scanned, it will
+not be collected this at this time, but it will be collected in the next full scavenge.
+
+> [!NOTE]
+> The GC implementation for the free-threaded build does not use incremental collection.
+> Every collection operates on the entire heap.
 
 In order to decide when to run, the collector keeps track of the number of object
 allocations and deallocations since the last collection. When the number of
-allocations minus the number of deallocations exceeds ``threshold_0``,
-collection starts. Initially only generation 0 is examined. If generation 0 has
-been examined more than ``threshold_1`` times since generation 1 has been
-examined, then generation 1 is examined as well. With generation 2,
-things are a bit more complicated; see
-[Collecting the oldest generation](#Collecting-the-oldest-generation) for
-more information. These thresholds can be examined using the
+allocations minus the number of deallocations exceeds `threshold0`,
+collection starts. `threshold1` determines the fraction of the old
+collection that is included in the increment.
+The fraction is inversely proportional to `threshold1`,
+as historically a larger `threshold1` meant that old generation
+collections were performed less frequently.
+`threshold2` is ignored.
+
+These thresholds can be examined using the
 [`gc.get_threshold()`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
 function:
 
@@ -393,8 +445,8 @@ function:
 ```
 
 The content of these generations can be examined using the
-``gc.get_objects(generation=NUM)`` function and collections can be triggered
-specifically in a generation by calling ``gc.collect(generation=NUM)``.
+`gc.get_objects(generation=NUM)` function and collections can be triggered
+specifically in a generation by calling `gc.collect(generation=NUM)`.
 
 ```pycon
     >>> import gc
@@ -402,8 +454,8 @@ specifically in a generation by calling ``gc.collect(generation=NUM)``.
     ...     pass
     ...
 
-    # Move everything to the last generation so it's easier to inspect
-    # the younger generations.
+    # Move everything to the old generation so it's easier to inspect
+    # the young generation.
 
     >>> gc.collect()
     0
@@ -413,40 +465,24 @@ specifically in a generation by calling ``gc.collect(generation=NUM)``.
     >>> x = MyObj()
     >>> x.self = x
 
-    # Initially the object is in the youngest generation.
+    # Initially the object is in the young generation.
 
     >>> gc.get_objects(generation=0)
     [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 
     # After a collection of the youngest generation the object
-    # moves to the next generation.
+    # moves to the old generation.
 
     >>> gc.collect(generation=0)
     0
     >>> gc.get_objects(generation=0)
     []
     >>> gc.get_objects(generation=1)
+    []
+    >>> gc.get_objects(generation=2)
     [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 ```
 
-Collecting the oldest generation
---------------------------------
-
-In addition to the various configurable thresholds, the GC only triggers a full
-collection of the oldest generation if the ratio ``long_lived_pending / long_lived_total``
-is above a given value (hardwired to 25%). The reason is that, while "non-full"
-collections (that is, collections of the young and middle generations) will always
-examine roughly the same number of objects (determined by the aforementioned
-thresholds) the cost of a full collection is proportional to the total
-number of long-lived objects, which is virtually unbounded.  Indeed, it has
-been remarked that doing a full collection every <constant number> of object
-creations entails a dramatic performance degradation in workloads which consist
-of creating and storing lots of long-lived objects (for example, building a large list
-of GC-tracked objects would show quadratic performance, instead of linear as
-expected). Using the above ratio, instead, yields amortized linear performance
-in the total number of objects (the effect of which can be summarized thusly:
-"each full garbage collection is more and more costly as the number of objects
-grows, but we do fewer and fewer of them").
 
 Optimization: reusing fields to save memory
 ===========================================
@@ -463,12 +499,12 @@ used for tags or to keep other information – most often as a bit field (each
 bit a separate tag) – as long as code that uses the pointer masks out these
 bits before accessing memory.  For example, on a 32-bit architecture (for both
 addresses and word size), a word is 32 bits = 4 bytes, so word-aligned
-addresses are always a multiple of 4, hence end in ``00``, leaving the last 2 bits
+addresses are always a multiple of 4, hence end in `00`, leaving the last 2 bits
 available; while on a 64-bit architecture, a word is 64 bits = 8 bytes, so
-word-aligned addresses end in ``000``, leaving the last 3 bits available.
+word-aligned addresses end in `000`, leaving the last 3 bits available.
 
 The CPython GC makes use of two fat pointers that correspond to the extra fields
-of ``PyGC_Head`` discussed in the `Memory layout and object structure`_ section:
+of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
 
 > [!WARNING]
 > Because the presence of extra information, "tagged" or "fat" pointers cannot be
@@ -478,23 +514,23 @@ of ``PyGC_Head`` discussed in the `Memory layout and object structure`_ section:
 > normally assume the pointers inside the lists are in a consistent state.
 
 
-- The ``_gc_prev`` field is normally used as the "previous" pointer to maintain the
+- The `_gc_prev` field is normally used as the "previous" pointer to maintain the
   doubly linked list but its lowest two bits are used to keep the flags
-  ``PREV_MASK_COLLECTING`` and ``_PyGC_PREV_MASK_FINALIZED``. Between collections,
-  the only flag that can be present is ``_PyGC_PREV_MASK_FINALIZED`` that indicates
-  if an object has been already finalized. During collections ``_gc_prev`` is
-  temporarily used for storing a copy of the reference count (``gc_ref``), in
+  `PREV_MASK_COLLECTING` and `_PyGC_PREV_MASK_FINALIZED`. Between collections,
+  the only flag that can be present is `_PyGC_PREV_MASK_FINALIZED` that indicates
+  if an object has been already finalized. During collections `_gc_prev` is
+  temporarily used for storing a copy of the reference count (`gc_ref`), in
   addition to two flags, and the GC linked list becomes a singly linked list until
-  ``_gc_prev`` is restored.
+  `_gc_prev` is restored.
 
-- The ``_gc_next`` field is used as the "next" pointer to maintain the doubly linked
+- The `_gc_next` field is used as the "next" pointer to maintain the doubly linked
   list but during collection its lowest bit is used to keep the
-  ``NEXT_MASK_UNREACHABLE`` flag that indicates if an object is tentatively
+  `NEXT_MASK_UNREACHABLE` flag that indicates if an object is tentatively
   unreachable during the cycle detection algorithm.  This is a drawback to using only
   doubly linked lists to implement partitions:  while most needed operations are
   constant-time, there is no efficient way to determine which partition an object is
   currently in.  Instead, when that's needed, ad hoc tricks (like the
-  ``NEXT_MASK_UNREACHABLE`` flag) are employed.
+  `NEXT_MASK_UNREACHABLE` flag) are employed.
 
 Optimization: delay tracking containers
 =======================================
@@ -531,7 +567,7 @@ benefit from delayed tracking:
   full garbage collection (all generations), the collector will untrack any dictionaries
   whose contents are not tracked.
 
-The garbage collector module provides the Python function ``is_tracked(obj)``, which returns
+The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
 
@@ -556,20 +592,20 @@ Differences between GC implementations
 This section summarizes the differences between the GC implementation in the
 default build and the implementation in the free-threaded build.
 
-The default build implementation makes extensive use of the ``PyGC_Head`` data
+The default build implementation makes extensive use of the `PyGC_Head` data
 structure, while the free-threaded build implementation does not use that
 data structure.
 
 - The default build implementation stores all tracked objects in a doubly
-  linked list using ``PyGC_Head``.  The free-threaded build implementation
+  linked list using `PyGC_Head`.  The free-threaded build implementation
   instead relies on the embedded mimalloc memory allocator to scan the heap
   for tracked objects.
-- The default build implementation uses ``PyGC_Head`` for the unreachable
+- The default build implementation uses `PyGC_Head` for the unreachable
   object list.  The free-threaded build implementation repurposes the
-  ``ob_tid`` field to store a unreachable objects linked list.
-- The default build implementation stores flags in the ``_gc_prev`` field of
-  ``PyGC_Head``.  The free-threaded build implementation stores these flags
-  in ``ob_gc_bits``.
+  `ob_tid` field to store a unreachable objects linked list.
+- The default build implementation stores flags in the `_gc_prev` field of
+  `PyGC_Head`.  The free-threaded build implementation stores these flags
+  in `ob_gc_bits`.
 
 
 The default build implementation relies on the
@@ -588,9 +624,9 @@ heap.
   be more difficult.
 
 
-> [!NOTE] 
+> [!NOTE]
 > **Document history**
->   
+>
 >   Pablo Galindo Salgado - Original author
-> 
+>
 >   Irit Katriel - Convert to Markdown

@@ -50,8 +50,8 @@ the extracted data in a :class:`argparse.Namespace` object::
    print(args.filename, args.count, args.verbose)
 
 .. note::
-   If you're looking a guide about how to upgrade optparse code
-   to argparse, see :ref:`Upgrading Optparse Code <upgrading-optparse-code>`.
+   If you're looking for a guide about how to upgrade :mod:`optparse` code
+   to :mod:`!argparse`, see :ref:`Upgrading Optparse Code <upgrading-optparse-code>`.
 
 ArgumentParser objects
 ----------------------
@@ -101,7 +101,7 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
-   * exit_on_error_ - Determines whether or not ArgumentParser exits with
+   * exit_on_error_ - Determines whether or not :class:`!ArgumentParser` exits with
      error info when an error occurs. (default: ``True``)
 
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
@@ -381,7 +381,7 @@ Most command-line options will use ``-`` as the prefix, e.g. ``-f/--foo``.
 Parsers that need to support different or additional prefix
 characters, e.g. for options
 like ``+f`` or ``/foo``, may specify them using the ``prefix_chars=`` argument
-to the ArgumentParser constructor::
+to the :class:`ArgumentParser` constructor::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', prefix_chars='-+')
    >>> parser.add_argument('+f')
@@ -512,9 +512,9 @@ string was overridden.
 add_help
 ^^^^^^^^
 
-By default, ArgumentParser objects add an option which simply displays
+By default, :class:`ArgumentParser` objects add an option which simply displays
 the parser's help message. If ``-h`` or ``--help`` is supplied at the command
-line, the ArgumentParser help will be printed.
+line, the :class:`!ArgumentParser` help will be printed.
 
 Occasionally, it may be useful to disable the addition of this help option.
 This can be achieved by passing ``False`` as the ``add_help=`` argument to
@@ -589,15 +589,15 @@ are strings::
 The add_argument() method
 -------------------------
 
-.. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
+.. method:: ArgumentParser.add_argument(name or flags..., *, [action], [nargs], \
                            [const], [default], [type], [choices], [required], \
                            [help], [metavar], [dest], [deprecated])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
 
-   * `name or flags`_ - Either a name or a list of option strings, e.g. ``foo``
-     or ``-f, --foo``.
+   * `name or flags`_ - Either a name or a list of option strings, e.g. ``'foo'``
+     or ``'-f', '--foo'``.
 
    * action_ - The basic type of action to be taken when this argument is
      encountered at the command line.
@@ -662,7 +662,7 @@ be positional::
    usage: PROG [-h] [-f FOO] bar
    PROG: error: the following arguments are required: bar
 
-By default, argparse automatically handles the internal naming and
+By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
@@ -741,6 +741,21 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
+* ``'extend'`` - This stores a list and appends each item from the multi-value
+  argument list to it.
+  The ``'extend'`` action is typically used with the nargs_ keyword argument
+  value ``'+'`` or ``'*'``.
+  Note that when nargs_ is ``None`` (the default) or ``'?'``, each
+  character of the argument string will be appended to the list.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+  .. versionadded:: 3.8
+
 * ``'count'`` - This counts the number of times a keyword argument occurs. For
   example, this is useful for increasing verbosity levels::
 
@@ -766,36 +781,27 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-* ``'extend'`` - This stores a list, and extends each argument value to the
-  list.
-  Example usage::
-
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
-    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
-    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
-
-  .. versionadded:: 3.8
-
 Only actions that consume command-line arguments (e.g. ``'store'``,
 ``'append'`` or ``'extend'``) can be used with positional arguments.
 
-You may also specify an arbitrary action by passing an Action subclass or
-other object that implements the same interface. The ``BooleanOptionalAction``
-is available in ``argparse`` and adds support for boolean actions such as
-``--foo`` and ``--no-foo``::
+.. class:: BooleanOptionalAction
 
-    >>> import argparse
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
-    >>> parser.parse_args(['--no-foo'])
-    Namespace(foo=False)
+   You may also specify an arbitrary action by passing an :class:`Action` subclass or
+   other object that implements the same interface. The :class:`!BooleanOptionalAction`
+   is available in :mod:`!argparse` and adds support for boolean actions such as
+   ``--foo`` and ``--no-foo``::
 
-.. versionadded:: 3.9
+       >>> import argparse
+       >>> parser = argparse.ArgumentParser()
+       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+       >>> parser.parse_args(['--no-foo'])
+       Namespace(foo=False)
+
+   .. versionadded:: 3.9
 
 The recommended way to create a custom action is to extend :class:`Action`,
-overriding the ``__call__`` method and optionally the ``__init__`` and
-``format_usage`` methods.
+overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
+:meth:`!format_usage` methods.
 
 An example of a custom action::
 
@@ -825,7 +831,7 @@ For more details, see :class:`Action`.
 nargs
 ^^^^^
 
-ArgumentParser objects usually associate a single command-line argument with a
+:class:`ArgumentParser` objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
 different number of command-line arguments with a single action.
 See also :ref:`specifying-ambiguous-arguments`. The supported values are:
@@ -865,16 +871,14 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
   output files::
 
      >>> parser = argparse.ArgumentParser()
-     >>> parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
-     ...                     default=sys.stdin)
-     >>> parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
-     ...                     default=sys.stdout)
+     >>> parser.add_argument('infile', nargs='?')
+     >>> parser.add_argument('outfile', nargs='?')
      >>> parser.parse_args(['input.txt', 'output.txt'])
-     Namespace(infile=<_io.TextIOWrapper name='input.txt' encoding='UTF-8'>,
-               outfile=<_io.TextIOWrapper name='output.txt' encoding='UTF-8'>)
+     Namespace(infile='input.txt', outfile='output.txt')
+     >>> parser.parse_args(['input.txt'])
+     Namespace(infile='input.txt', outfile=None)
      >>> parser.parse_args([])
-     Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
-               outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)
+     Namespace(infile=None, outfile=None)
 
 .. index:: single: * (asterisk); in argparse module
 
@@ -1033,7 +1037,6 @@ Common built-in types and functions can be used as type converters:
    parser.add_argument('distance', type=float)
    parser.add_argument('street', type=ascii)
    parser.add_argument('code_point', type=ord)
-   parser.add_argument('dest_file', type=argparse.FileType('w', encoding='latin-1'))
    parser.add_argument('datapath', type=pathlib.Path)
 
 User defined functions can be used as well:
@@ -1114,7 +1117,7 @@ many choices), just specify an explicit metavar_.
 required
 ^^^^^^^^
 
-In general, the :mod:`argparse` module assumes that flags like ``-f`` and ``--bar``
+In general, the :mod:`!argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
 To make an option *required*, ``True`` can be specified for the ``required=``
 keyword argument to :meth:`~ArgumentParser.add_argument`::
@@ -1167,7 +1170,7 @@ specifiers include the program name, ``%(prog)s`` and most keyword arguments to
 As the help string supports %-formatting, if you want a literal ``%`` to appear
 in the help string, you must escape it as ``%%``.
 
-:mod:`argparse` supports silencing the help entry for certain options, by
+:mod:`!argparse` supports silencing the help entry for certain options, by
 setting the ``help`` value to ``argparse.SUPPRESS``::
 
    >>> parser = argparse.ArgumentParser(prog='frobble')
@@ -1185,7 +1188,7 @@ metavar
 ^^^^^^^
 
 When :class:`ArgumentParser` generates help messages, it needs some way to refer
-to each expected argument.  By default, ArgumentParser objects use the dest_
+to each expected argument.  By default, :class:`!ArgumentParser` objects use the dest_
 value as the "name" of each object.  By default, for positional argument
 actions, the dest_ value is used directly, and for optional argument actions,
 the dest_ value is uppercased.  So, a single positional argument with
@@ -1317,7 +1320,7 @@ printed to :data:`sys.stderr` when the argument is used::
 Action classes
 ^^^^^^^^^^^^^^
 
-Action classes implement the Action API, a callable which returns a callable
+:class:`!Action` classes implement the Action API, a callable which returns a callable
 which processes arguments from the command-line. Any object which follows
 this API may be passed as the ``action`` parameter to
 :meth:`~ArgumentParser.add_argument`.
@@ -1326,40 +1329,45 @@ this API may be passed as the ``action`` parameter to
                   type=None, choices=None, required=False, help=None, \
                   metavar=None)
 
-   Action objects are used by an ArgumentParser to represent the information
+   :class:`!Action` objects are used by an :class:`ArgumentParser` to represent the information
    needed to parse a single argument from one or more strings from the
-   command line. The Action class must accept the two positional arguments
+   command line. The :class:`!Action` class must accept the two positional arguments
    plus any keyword arguments passed to :meth:`ArgumentParser.add_argument`
    except for the ``action`` itself.
 
-   Instances of Action (or return value of any callable to the ``action``
-   parameter) should have attributes "dest", "option_strings", "default", "type",
-   "required", "help", etc. defined. The easiest way to ensure these attributes
-   are defined is to call ``Action.__init__``.
+   Instances of :class:`!Action` (or return value of any callable to the
+   ``action`` parameter) should have attributes :attr:`!dest`,
+   :attr:`!option_strings`, :attr:`!default`, :attr:`!type`, :attr:`!required`,
+   :attr:`!help`, etc. defined. The easiest way to ensure these attributes
+   are defined is to call :meth:`!Action.__init__`.
 
-   Action instances should be callable, so subclasses must override the
-   ``__call__`` method, which should accept four parameters:
+   .. method:: __call__(parser, namespace, values, option_string=None)
 
-   * *parser* - The ArgumentParser object which contains this action.
+      :class:`!Action` instances should be callable, so subclasses must override the
+      :meth:`!__call__` method, which should accept four parameters:
 
-   * *namespace* - The :class:`Namespace` object that will be returned by
-      :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
-      object using :func:`setattr`.
+      * *parser* - The :class:`ArgumentParser` object which contains this action.
 
-   * *values* - The associated command-line arguments, with any type conversions
-      applied.  Type conversions are specified with the type_ keyword argument to
-      :meth:`~ArgumentParser.add_argument`.
+      * *namespace* - The :class:`Namespace` object that will be returned by
+        :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
+        object using :func:`setattr`.
 
-   * *option_string* - The option string that was used to invoke this action.
-      The ``option_string`` argument is optional, and will be absent if the action
-      is associated with a positional argument.
+      * *values* - The associated command-line arguments, with any type conversions
+        applied.  Type conversions are specified with the type_ keyword argument to
+        :meth:`~ArgumentParser.add_argument`.
 
-   The ``__call__`` method may perform arbitrary actions, but will typically set
-   attributes on the ``namespace`` based on ``dest`` and ``values``.
+      * *option_string* - The option string that was used to invoke this action.
+        The ``option_string`` argument is optional, and will be absent if the action
+        is associated with a positional argument.
 
-   Action subclasses can define a ``format_usage`` method that takes no argument
-   and return a string which will be used when printing the usage of the program.
-   If such method is not provided, a sensible default will be used.
+      The :meth:`!__call__` method may perform arbitrary actions, but will typically set
+      attributes on the ``namespace`` based on ``dest`` and ``values``.
+
+   .. method:: format_usage()
+
+      :class:`!Action` subclasses can define a :meth:`!format_usage` method that takes no argument
+      and return a string which will be used when printing the usage of the program.
+      If such method is not provided, a sensible default will be used.
 
 
 The parse_args() method
@@ -1372,7 +1380,7 @@ The parse_args() method
 
    Previous calls to :meth:`add_argument` determine exactly what objects are
    created and how they are assigned. See the documentation for
-   :meth:`add_argument` for details.
+   :meth:`!add_argument` for details.
 
    * args_ - List of strings to parse.  The default is taken from
      :data:`sys.argv`.
@@ -1528,7 +1536,7 @@ This feature can be disabled by setting :ref:`allow_abbrev` to ``False``.
 Beyond ``sys.argv``
 ^^^^^^^^^^^^^^^^^^^
 
-Sometimes it may be useful to have an ArgumentParser parse arguments other than those
+Sometimes it may be useful to have an :class:`ArgumentParser` parse arguments other than those
 of :data:`sys.argv`.  This can be accomplished by passing a list of strings to
 :meth:`~ArgumentParser.parse_args`.  This is useful for testing at the
 interactive prompt::
@@ -1586,9 +1594,9 @@ Other utilities
 Sub-commands
 ^^^^^^^^^^^^
 
-.. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
+.. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_strings], [dest], [required], \
+                                          [dest], [required], \
                                           [help], [metavar])
 
    Many programs split up their functionality into a number of subcommands,
@@ -1597,11 +1605,11 @@ Sub-commands
    this way can be a particularly good idea when a program performs several
    different functions which require different kinds of command-line arguments.
    :class:`ArgumentParser` supports the creation of such subcommands with the
-   :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
+   :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
-   command name and any :class:`ArgumentParser` constructor arguments, and
-   returns an :class:`ArgumentParser` object that can be modified as usual.
+   command name and any :class:`!ArgumentParser` constructor arguments, and
+   returns an :class:`!ArgumentParser` object that can be modified as usual.
 
    Description of parameters:
 
@@ -1617,7 +1625,7 @@ Sub-commands
      subparser argument
 
    * *parser_class* - class which will be used to create sub-parser instances, by
-     default the class of the current parser (e.g. ArgumentParser)
+     default the class of the current parser (e.g. :class:`ArgumentParser`)
 
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
@@ -1798,7 +1806,7 @@ Sub-commands
      Namespace(subparser_name='2', y='frobble')
 
    .. versionchanged:: 3.7
-      New *required* keyword argument.
+      New *required* keyword-only parameter.
 
 
 FileType objects
@@ -1827,8 +1835,18 @@ FileType objects
       >>> parser.parse_args(['-'])
       Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
 
+   .. note::
+
+      If one argument uses *FileType* and then a subsequent argument fails,
+      an error is reported but the file is not automatically closed.
+      This can also clobber the output files.
+      In this case, it would be better to wait until after the parser has
+      run and then use the :keyword:`with`-statement to manage the files.
+
    .. versionchanged:: 3.4
       Added the *encodings* and *errors* parameters.
+
+   .. deprecated:: 3.14
 
 
 Argument groups
@@ -1841,7 +1859,7 @@ Argument groups
    "positional arguments" and "options" when displaying help
    messages. When there is a better conceptual grouping of arguments than this
    default one, appropriate groups can be created using the
-   :meth:`add_argument_group` method::
+   :meth:`!add_argument_group` method::
 
      >>> parser = argparse.ArgumentParser(prog='PROG', add_help=False)
      >>> group = parser.add_argument_group('group')
@@ -1858,7 +1876,7 @@ Argument groups
    has an :meth:`~ArgumentParser.add_argument` method just like a regular
    :class:`ArgumentParser`.  When an argument is added to the group, the parser
    treats it just like a normal argument, but displays the argument in a
-   separate group for help messages.  The :meth:`add_argument_group` method
+   separate group for help messages.  The :meth:`!add_argument_group` method
    accepts *title* and *description* arguments which can be used to
    customize this display::
 
@@ -1895,8 +1913,8 @@ Argument groups
     will be removed in the future.
 
    .. deprecated:: 3.14
-    Passing prefix_chars_ to :meth:`add_argument_group`
-    is now deprecated.
+      Passing prefix_chars_ to :meth:`add_argument_group`
+      is now deprecated.
 
 
 Mutual exclusion
@@ -1904,7 +1922,7 @@ Mutual exclusion
 
 .. method:: ArgumentParser.add_mutually_exclusive_group(required=False)
 
-   Create a mutually exclusive group. :mod:`argparse` will make sure that only
+   Create a mutually exclusive group. :mod:`!argparse` will make sure that only
    one of the arguments in the mutually exclusive group was present on the
    command line::
 
@@ -2117,7 +2135,7 @@ Intermixed parsing
    and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
    support this parsing style.
 
-   These parsers do not support all the argparse features, and will raise
+   These parsers do not support all the :mod:`!argparse` features, and will raise
    exceptions if unsupported features are used.  In particular, subparsers,
    and mutually exclusive groups that include both
    optionals and positionals are not supported.

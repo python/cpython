@@ -43,7 +43,7 @@ __all__ = ['Option',
 
 __copyright__ = """
 Copyright (c) 2001-2006 Gregory P. Ward.  All rights reserved.
-Copyright (c) 2002-2006 Python Software Foundation.  All rights reserved.
+Copyright (c) 2002 Python Software Foundation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -75,6 +75,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys, os
 import textwrap
+from gettext import gettext as _, ngettext
+
 
 def _repr(self):
     return "<%s at 0x%x: %s>" % (self.__class__.__name__, id(self), self)
@@ -85,19 +87,6 @@ def _repr(self):
 #   Id: option.py 522 2006-06-11 16:22:03Z gward
 #   Id: help.py 527 2006-07-23 15:21:30Z greg
 #   Id: errors.py 509 2006-04-20 00:58:24Z gward
-
-try:
-    from gettext import gettext, ngettext
-except ImportError:
-    def gettext(message):
-        return message
-
-    def ngettext(singular, plural, n):
-        if n == 1:
-            return singular
-        return plural
-
-_ = gettext
 
 
 class OptParseError (Exception):
