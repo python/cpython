@@ -561,11 +561,9 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         if (!defaults) {
             goto error;
         }
-
         if (PyDict_SetItemString(dict, named_fields_defaults_key, defaults) < 0) {
             goto error;
         }
-
         Py_DECREF(defaults);
     }
 
