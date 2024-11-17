@@ -2164,7 +2164,7 @@ Intermixed parsing
 
 Registering custom types or actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. method:: register()
+.. method:: ArgumentParser.register(registry_name, value, object)
 
    It is possible to register custom actions, types, or other objects with
    a parser using :meth:`!register`. This method is called when the action is
