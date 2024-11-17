@@ -3381,5 +3381,69 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(t.prop, 1)
 
 
+class TestRetry(unittest.TestCase):
+
+    def test_function_fail(self):
+
+        @functools.retry
+        def fail_function1():
+            raise ValueError
+        
+        with self.assertRaises(ValueError):
+            fail_function1()
+
+        @functools.retry(interval_seconds=.1, retry_attempts=1, backoff_type='exponential')
+        def fail_function2():
+            raise ValueError
+        
+        with self.assertRaises(ValueError):
+            fail_function2()
+
+    def test_function_success(self):
+
+        @functools.retry
+        def success_function(a, b, c='test_value'):
+            return (a, b, c)
+        
+        value = success_function('a', 'b')
+
+        self.assertEqual(value, ('a', 'b', 'test_value'))
+
+        class TestObject:
+            def __init__(self, call_count):
+                self.call_count = call_count
+        test_object = TestObject(0)
+
+        @functools.retry(interval_seconds=.01, retry_attempts=3, backoff_type='exponential')
+        def success_function_after_3_failures(test_object):
+            test_object.call_count += 1
+            if test_object.call_count > 3:
+                return True
+            raise ValueError('Some error message!')
+        
+        value = success_function_after_3_failures(test_object)
+        self.assertTrue(value)
+
+    def test_backoff_type(self):
+        @functools.retry(backoff_type='exponential')
+        def user_function1():
+            return True
+        value1 = user_function1()
+        self.assertTrue(value1)
+
+        @functools.retry(backoff_type='linear')
+        def user_function2():
+            return True
+        value2 = user_function2()
+        self.assertTrue(value2)
+
+        with self.assertRaises(TypeError):
+            @functools.retry(backoff_type='incorrect_value')
+            def user_function3():
+                return True
+            
+            user_function3()
+
+
 if __name__ == '__main__':
     unittest.main()
