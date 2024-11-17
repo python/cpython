@@ -1942,14 +1942,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            PyDictObject *dict = (PyDictObject*) GLOBALS();
-            if (globals_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
-                Py_DECREF(res_o);
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
             #else
             Py_INCREF(res_o);
             #endif
@@ -1983,14 +1975,6 @@
             if (!increfed) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
-            }
-            PyDictObject *dict = (PyDictObject*) BUILTINS();
-            if (builtins_keys != _Py_atomic_load_ptr_acquire(&dict->ma_keys)) {
-                Py_DECREF(res_o);
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
             }
             #else
             Py_INCREF(res_o);
