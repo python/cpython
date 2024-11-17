@@ -457,8 +457,7 @@ structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     n_unnamed_fields = UNNAMED_FIELDS(self);
 
     if (n_unnamed_fields != 0) {
-        PyErr_SetString(PyExc_ValueError, "named tuples with both named and "
-                                          "unnamed fields don't support _asdict");
+        PyErr_SetString(PyExc_ValueError, "named tuples with unnamed fields don't support _asdict");
         return NULL;
     }
 
