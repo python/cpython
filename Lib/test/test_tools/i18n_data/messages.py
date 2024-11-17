@@ -87,6 +87,10 @@ dngettext("domain", "foo", "foos", 1)
 dpgettext("domain", "context", "foo")
 dnpgettext("domain", "context", "foo", "foos", 1)
 
+# Complex arguments
+ngettext("foo", "foos", 42 + (10 - 20))
+dgettext(["some", {"complex"}, ("argument",)], "domain foo")
+
 # Invalid calls which are not extracted
 gettext()
 ngettext('foo')

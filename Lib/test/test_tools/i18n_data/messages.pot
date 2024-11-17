@@ -38,6 +38,7 @@ msgid "kwargs work!"
 msgstr ""
 
 #: messages.py:38 messages.py:81 messages.py:82 messages.py:85 messages.py:86
+#:  messages.py:91
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
@@ -89,4 +90,8 @@ msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
+
+#: messages.py:92
+msgid "domain foo"
+msgstr ""
 
