@@ -4273,17 +4273,12 @@ These functions may be used to create and manage processes.
 
    *Program arguments*
 
-   The various :func:`exec\* <execl>` functions take a list of arguments for the new
-   program loaded into the process.  In each case, the first of these arguments must
-   be the name of the program itself, and not an argument that a user may
-   have typed on a command line.
+   The exec functions take a list of arguments for the new program. The first of these 
+   is by convention the command name used on the command line, rather than an argument to the command, 
+   and becomes argv[0] passed to the main function of a C program.
 
-   This first argument is equivalent to the ``argv[0]``
-   passed to a program's :c:func:`main` in a C program.  For example, ``os.execv('/bin/echo',
-   ['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
-   to be ignored.
-
-   *Fixed and variable numbers of arguments*
+   For example, ``os.execv('/bin/echo', ['echo', 'foo', 'bar'])`` would only print ``foo bar``; 
+   the echo argument would seem to be ignored.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
