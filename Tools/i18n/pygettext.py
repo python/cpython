@@ -166,7 +166,7 @@ import ast
 import tokenize
 from collections import defaultdict
 from dataclasses import dataclass, field
-from operator import attrgetter, itemgetter
+from operator import itemgetter
 
 __version__ = '1.6'
 
@@ -573,7 +573,7 @@ class TokenEater:
 
         # Sort locations within each message by filename and lineno
         sorted_keys = [
-            (key, sorted(msg.locations, key=attrgetter('filename', 'lineno')))
+            (key, sorted(msg.locations))
             for key, msg in self.__messages.items()
         ]
         # Sort messages by locations
