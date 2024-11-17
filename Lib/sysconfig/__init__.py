@@ -353,7 +353,8 @@ def _init_posix(vars):
     else:
         _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
     build_time_vars = _temp.build_time_vars
-    vars.update(build_time_vars)
+    # GH-126920: Make sure we don't overwrite any of the keys already set
+    vars.update(build_time_vars | vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
