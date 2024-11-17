@@ -2177,7 +2177,7 @@ Registering custom types or actions
    * *value* - a string serves as the key under which the object will be
      registered.
 
-   * *object* - the object to be registered, such as a callable or class.
+   * *object* - the callable object to be registered.
 
    The following example shows how to register a custom type with a parser::
 
