@@ -773,9 +773,6 @@ class BaseTestUUID:
     def test_uuid6_clock_seq(self):
         # Make sure the supplied clock sequence appears in the UUID.
         #
-        # Note: currently it is not possible to use the 'clock_seq'
-        # field as it only works for version 1.
-        #
         # For UUIDv6, clock sequence bits are stored from bit 48 to bit 62,
         # with the convention that the least significant bit is bit 0 and
         # the most significant bit is bit 127.
