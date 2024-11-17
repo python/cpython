@@ -1631,14 +1631,14 @@ dummy_func(
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else
             Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
@@ -1648,14 +1648,14 @@ dummy_func(
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else
             Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(LOAD_GLOBAL_MODULE) =

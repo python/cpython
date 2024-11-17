@@ -6162,14 +6162,14 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+                int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 #else
                 Py_INCREF(res_o);
+                res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = PyStackRef_NULL;
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
@@ -6205,14 +6205,14 @@
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 #if Py_GIL_DISABLED
-                int increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+                int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
                 DEOPT_IF(!increfed, LOAD_GLOBAL);
                 #else
                 Py_INCREF(res_o);
+                res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = PyStackRef_NULL;
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;

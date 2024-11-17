@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
 
 // This value is added to `ob_ref_shared` for objects that use deferred
@@ -589,6 +590,20 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
         return 0;
     }
     return 1;
+}
+
+static inline int
+_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
+{
+    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        return 1;
+    }
+    if (_Py_TryIncrefCompare(src, op)) {
+        *out = PyStackRef_FromPyObjectSteal(op);
+        return 1;
+    }
+    return 0;
 }
 
 /* Loads and increfs an object from ptr, which may contain a NULL value.
