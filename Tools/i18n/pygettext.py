@@ -482,29 +482,41 @@ class TokenEater:
             self.__state = self.__waiting
 
     def __openseen(self, ttype, tstring, lineno):
-        if ttype == tokenize.OP and tstring == ')' and self.__enclosurecount == 0:
-            # We've seen the last of the translatable strings.  Record the
-            # line number of the first line of the strings and update the list
-            # of messages seen.  Reset state for the next batch.  If there
-            # were no strings inside _(), then just ignore this entry.
-            if self.__data:
-                self.__addentry(self.__data)
-            self.__state = self.__waiting
-        elif ttype == tokenize.STRING and is_literal_string(tstring):
-            spec = self.__options.keywords[self.__curr_keyword]
-            arg_type = spec.get(self.__curr_arg)
-            if arg_type is None:
-                return
-            string = safe_eval(tstring)
-            self.__data[arg_type] += string
-        elif ttype == tokenize.OP:
-            if tstring == ',' and self.__enclosurecount == 0:
+        spec = self.__options.keywords[self.__curr_keyword]
+        arg_type = spec.get(self.__curr_arg)
+        expect_string_literal = arg_type is not None
+
+        if ttype == tokenize.OP:
+            if tstring == ')' and self.__enclosurecount == 0:
+                # We've seen the last of the translatable strings.  Record the
+                # line number of the first line of the strings and update the list
+                # of messages seen.  Reset state for the next batch.  If there
+                # were no strings inside _(), then just ignore this entry.
+                if self.__data:
+                    self.__addentry(self.__data)
+                self.__state = self.__waiting
+            elif tstring == ',' and self.__enclosurecount == 0:
                 # Advance to the next argument
                 self.__curr_arg += 1
             elif tstring in '([{':
                 self.__enclosurecount += 1
             elif tstring in ')]}':
                 self.__enclosurecount -= 1
+            elif expect_string_literal:
+                # We are inside an argument which is a translatable string and
+                # we encountered a token that is not a string.  This is an error.
+                self.warn_unexpected_token(tstring)
+                self.__enclosurecount = 0
+                self.__state = self.__waiting
+        elif expect_string_literal:
+            if ttype == tokenize.STRING and is_literal_string(tstring):
+                self.__data[arg_type] += safe_eval(tstring)
+            elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
+                               tokenize.NEWLINE, tokenize.NL):
+                self.warn_unexpected_token(tstring)
+                self.__enclosurecount = 0
+                self.__state = self.__waiting
+
 
     def __ignorenext(self, ttype, tstring, lineno):
         self.__state = self.__waiting
@@ -537,6 +549,15 @@ class TokenEater:
                 locations={Location(self.__curfile, lineno)},
                 is_docstring=is_docstring,
             )
+
+    def warn_unexpected_token(self, token):
+        print(_(
+            '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
+            ) % {
+            'token': token,
+            'file': self.__curfile,
+            'lineno': self.__lineno
+            }, file=sys.stderr)
 
     def set_filename(self, filename):
         self.__curfile = filename

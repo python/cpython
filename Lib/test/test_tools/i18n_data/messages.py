@@ -33,8 +33,10 @@ _(None)
 _(1)
 _(False)
 
-# Unusual, but valid arguments
+# pygettext does not allow keyword arguments, but both xgettext and pybabel do
 _(x="kwargs work!")
+
+# Unusual, but valid arguments
 _("foo", "bar")
 _("something", x="something else")
 
