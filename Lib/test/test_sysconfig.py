@@ -656,6 +656,38 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertNotEqual(site_paths, no_site_paths)
 
+    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    def test_makefile_overwrites_config_vars(self):
+        script = textwrap.dedent("""
+            import sys, sysconfig
+
+            data = {
+                'prefix': sys.prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_prefix': sys.base_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'config_vars': sysconfig.get_config_vars(),
+            }
+
+            import json
+            print(json.dumps(data, indent=2))
+        """)
+
+        # We need to run the test inside a virtual environment so that
+        # sys.prefix/sys.exec_prefix have a different value from the
+        # prefix/exec_prefix Makefile variables.
+        with self.venv() as venv:
+            data = json.loads(venv.run('-c', script).stdout)
+
+        # We expect sysconfig.get_config_vars to correctly reflect sys.prefix/sys.exec_prefix
+        self.assertEqual(data['prefix'], data['config_vars']['prefix'])
+        self.assertEqual(data['exec_prefix'], data['config_vars']['exec_prefix'])
+        # As a sanity check, just make sure sys.prefix/sys.exec_prefix really
+        # are different from the Makefile values.
+        # sys.base_prefix/sys.base_exec_prefix should reflect the value of the
+        # prefix/exec_prefix Makefile variables, so we use them in the comparison.
+        self.assertNotEqual(data['prefix'], data['base_prefix'])
+        self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
 
 class MakefileTests(unittest.TestCase):
 
