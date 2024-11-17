@@ -2164,6 +2164,7 @@ Intermixed parsing
 
 Registering custom types or actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. method:: ArgumentParser.register(registry_name, value, object)
 
    It is possible to register custom actions, types, or other objects with
