@@ -1,0 +1,1 @@
+Fixed TypeError when a Structure's field's size is >65535 bytes
