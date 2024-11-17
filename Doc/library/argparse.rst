@@ -1369,6 +1369,40 @@ this API may be passed as the ``action`` parameter to
       and return a string which will be used when printing the usage of the program.
       If such method is not provided, a sensible default will be used.
 
+   .. method:: register()
+
+      :class:`!Action` instances can call :meth:`!register` to register
+      custom actions, types, or other objects with a parser. This method is
+      called when the action is added to the parser. :meth:`!register` takes
+      in the following arguments:
+
+      * *registry_name* - the name of the internal registry where the object
+        will be stored (e.g. ``'action'``, ``'type'``, ``'formatter_class'``).
+
+      * *value* - a string serves as the key under which the object will be
+        registered.
+
+      * *object* - the object to be registered, such as a callable or class.
+
+      The following example shows how to register a custom type with a parser::
+
+         import argparse
+         import enum
+
+         class WinterMonths(enum.StrEnum):
+             JAN = 'January'
+             FEB = 'February'
+             DEC = 'December'
+         WinterMonths.__name__ = 'Winter Month'
+
+         parser = argparse.ArgumentParser()
+         parser.register('type', 'Winter Month', WinterMonths)
+         parser.add_argument('--month', type=WinterMonths, action='store')
+
+      In this example, :meth:`!register` allows the type converter to be
+      referenced by its registered name instead of the class name. This approach
+      can improve error message clarity and provide more user-friendly output.
+
 
 The parse_args() method
 -----------------------
