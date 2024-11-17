@@ -1377,7 +1377,7 @@ this API may be passed as the ``action`` parameter to
       in the following arguments:
 
       * *registry_name* - the name of the internal registry where the object
-        will be stored (e.g. ``'action'``, ``'type'``, ``'formatter_class'``).
+        will be stored (e.g. ``action``, ``type``).
 
       * *value* - a string serves as the key under which the object will be
         registered.
@@ -1393,7 +1393,7 @@ this API may be passed as the ``action`` parameter to
              JAN = 'January'
              FEB = 'February'
              DEC = 'December'
-             
+
          WinterMonths.__name__ = 'Winter Month'
 
          parser = argparse.ArgumentParser()
