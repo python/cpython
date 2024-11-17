@@ -5577,9 +5577,13 @@ static PyType_Spec sock_spec = {
 static PyObject *
 socket_getattr(PyObject *self, PyObject *name)
 {
-    const char *attrname = PyUnicode_AsUTF8(name);
     PyObject *sock_type = PyType_FromSpec(&sock_spec);
-    if (attrname == NULL || sock_type == NULL) {
+    if (sock_type == NULL) {
+        return NULL;
+    }
+    const char *attrname = PyUnicode_AsUTF8(name);
+    if (attrname == NULL) {
+        Py_DECREF(sock_type);
         return NULL;
     }
 
@@ -5590,6 +5594,7 @@ socket_getattr(PyObject *self, PyObject *name)
     }
 
     PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%s'", attrname);
+    Py_DECREF(sock_type);
     return NULL;
 }
 
