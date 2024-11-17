@@ -487,6 +487,53 @@ error:
     return NULL;
 }
 
+static PyObject *
+structseq_make(PyStructSequence *self, PyObject *iterable)
+{
+    Py_ssize_t field_index = 0;
+    PyStructSequence *result = NULL;
+
+    Py_ssize_t n_fields = REAL_SIZE(self);
+    if (n_fields < 0) {
+        return NULL;
+    }
+
+    PyObject *values = PySequence_List(iterable);
+    if (values == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t values_len = PyList_Size(values);
+    if (values_len != n_fields) {
+        PyErr_Format(PyExc_TypeError, "Expected %d arguments, got %d",
+                        n_fields, values_len);
+        goto error;
+    }
+
+    result = (PyStructSequence *) PyStructSequence_New(Py_TYPE(self));
+    if (!result) {
+        goto error;
+    }
+
+    for (field_index = 0; field_index < n_fields; ++field_index) {
+        PyObject *item = PyList_GetItemRef(values, field_index);
+        if (item == NULL) {
+            goto error;
+        }
+        result->ob_item[field_index] = item;
+    }
+
+    return (PyObject *)result;
+
+error:
+    for (Py_ssize_t i = 0; i < field_index; ++i) {
+        Py_DECREF(result->ob_item[i]);
+    }
+    Py_DECREF(values);
+    Py_XDECREF(result);
+    return NULL;
+}
+
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
@@ -494,6 +541,7 @@ static PyMethodDef structseq_methods[] = {
         "Return a copy of the structure with new values for the specified fields.")},
     {"_replace", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS},
     {"_asdict", (PyCFunction)structseq_asdict, METH_NOARGS, NULL},
+    {"_make", (PyCFunction)structseq_make, METH_O, NULL},
     {NULL, NULL}  // sentinel
 };
 
