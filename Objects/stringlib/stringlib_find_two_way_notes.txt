@@ -239,7 +239,7 @@ We cut as AA + bAAbAAbA, and then the algorithm runs as follows:
                 ~~                  AA != bA at the cut
         bbbAbbAAbAAbAAbbbAAbAAbAAbAA
                  AAbAAbAAbA
-                 ^^^^X              7-3=4 match, and the 5th misses.
+                   ^^^^X            7-3=4 match, and the 5th misses.
         bbbAbbAAbAAbAAbbbAAbAAbAAbAA
                   AAbAAbAAbA
                    ~                A != b at the cut
@@ -395,7 +395,7 @@ of their proof goes something like this (this is far from complete):
       needle == (a + w) + (w + b), meaning there's a bad equality
       w == w, it's impossible for w + b to be bigger than both
       b and w + w + b, so this can't happen. We thus have all of
-      the ineuqalities with no question marks.
+      the inequalities with no question marks.
     * By maximality, the right part is not a substring of the left
       part. Thus, we have all of the inequalities involving no
       left-side question marks.

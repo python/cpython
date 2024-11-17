@@ -1,6 +1,6 @@
-import unittest
 import textwrap
-from email import policy, message_from_string
+import unittest
+from email import message_from_bytes, message_from_string, policy
 from email.message import EmailMessage, MIMEPart
 from test.test_email import TestEmailBase, parameterize
 
@@ -696,14 +696,16 @@ class TestEmailMessageBase:
             self.assertIsNone(part['Content-Disposition'])
 
     class _TestSetRaisingContentManager:
+        class CustomError(Exception):
+            pass
         def set_content(self, msg, content, *args, **kw):
-            raise Exception('test')
+            raise self.CustomError('test')
 
     def test_default_content_manager_for_add_comes_from_policy(self):
         cm = self._TestSetRaisingContentManager()
         m = self.message(policy=self.policy.clone(content_manager=cm))
         for method in ('add_related', 'add_alternative', 'add_attachment'):
-            with self.assertRaises(Exception) as ar:
+            with self.assertRaises(self._TestSetRaisingContentManager.CustomError) as ar:
                 getattr(m, method)('')
             self.assertEqual(str(ar.exception), 'test')
 
@@ -745,6 +747,35 @@ class TestEmailMessageBase:
         orig = m.get_payload().copy()
         self.assertEqual(len(list(m.iter_attachments())), 2)
         self.assertEqual(m.get_payload(), orig)
+
+    get_payload_surrogate_params = {
+
+        'good_surrogateescape': (
+            "String that can be encod\udcc3\udcabd with surrogateescape",
+            b'String that can be encod\xc3\xabd with surrogateescape'
+            ),
+
+        'string_with_utf8': (
+            "String with utf-8 charactër",
+            b'String with utf-8 charact\xebr'
+            ),
+
+        'surrogate_and_utf8': (
+            "String that cannot be ëncod\udcc3\udcabd with surrogateescape",
+             b'String that cannot be \xebncod\\udcc3\\udcabd with surrogateescape'
+            ),
+
+        'out_of_range_surrogate': (
+            "String with \udfff cannot be encoded with surrogateescape",
+             b'String with \\udfff cannot be encoded with surrogateescape'
+            ),
+    }
+
+    def get_payload_surrogate_as_gh_94606(self, msg, expected):
+        """test for GH issue 94606"""
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
 
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
@@ -926,6 +957,52 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789 123456789 123456789 123456789 '
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
+
+    def test_folding_with_short_nospace_1(self):
+        # bpo-36520
+        #
+        # Fold a line that contains a long whitespace after
+        # the fold point.
+
+        m = EmailMessage(policy.default)
+        m['Message-ID'] = '123456789' * 3
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_default_policy_1(self):
+        # Fixed: https://github.com/python/cpython/issues/124452
+        #
+        # When the value is too long, it should be converted back
+        # to its original form without any modifications.
+
+        m = EmailMessage(policy.default)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        self.assertEqual(m.as_bytes(),
+                         f'Message-ID:\n {message}\n\n'.encode())
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_compat32_policy_1(self):
+        m = EmailMessage(policy.compat32)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_smtp_policy_1(self):
+        m = EmailMessage(policy.SMTP)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_http_policy_1(self):
+        m = EmailMessage(policy.HTTP)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
     def test_get_body_malformed(self):
         """test for bpo-42892"""

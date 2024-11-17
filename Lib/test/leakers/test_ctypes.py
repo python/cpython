@@ -1,5 +1,5 @@
 
-# Taken from Lib/ctypes/test/test_keeprefs.py, PointerToStructure.test().
+# Taken from Lib/test/test_ctypes/test_keeprefs.py, PointerToStructure.test().
 
 from ctypes import Structure, c_int, POINTER
 import gc

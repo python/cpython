@@ -1,0 +1,949 @@
+
+****************************
+  What's new in Python 3.14
+****************************
+
+:Editor: TBD
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the issue number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :gh:`12345`.)
+
+   This saves the maintainer the effort of going through the VCS log
+   when researching a change.
+
+This article explains the new features in Python 3.14, compared to 3.13.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.14 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.14.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New features
+============
+
+.. _whatsnew314-pep649:
+
+PEP 649: deferred evaluation of annotations
+-------------------------------------------
+
+The :term:`annotations <annotation>` on functions, classes, and modules are no
+longer evaluated eagerly. Instead, annotations are stored in special-purpose
+:term:`annotate functions <annotate function>` and evaluated only when
+necessary. This is specified in :pep:`649` and :pep:`749`.
+
+This change is designed to make annotations in Python more performant and more
+usable in most circumstances. The runtime cost for defining annotations is
+minimized, but it remains possible to introspect annotations at runtime.
+It is usually no longer necessary to enclose annotations in strings if they
+contain forward references.
+
+The new :mod:`annotationlib` module provides tools for inspecting deferred
+annotations. Annotations may be evaluated in the :attr:`~annotationlib.Format.VALUE`
+format (which evaluates annotations to runtime values, similar to the behavior in
+earlier Python versions), the :attr:`~annotationlib.Format.FORWARDREF` format
+(which replaces undefined names with special markers), and the
+:attr:`~annotationlib.Format.STRING` format (which returns annotations as strings).
+
+This example shows how these formats behave:
+
+.. doctest::
+
+   >>> from annotationlib import get_annotations, Format
+   >>> def func(arg: Undefined):
+   ...     pass
+   >>> get_annotations(func, format=Format.VALUE)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'Undefined' is not defined
+   >>> get_annotations(func, format=Format.FORWARDREF)
+   {'arg': ForwardRef('Undefined')}
+   >>> get_annotations(func, format=Format.STRING)
+   {'arg': 'Undefined'}
+
+Implications for annotated code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you define annotations in your code (for example, for use with a static type
+checker), then this change probably does not affect you: you can keep
+writing annotations the same way you did with previous versions of Python.
+
+You will likely be able to remove quoted strings in annotations, which are frequently
+used for forward references. Similarly, if you use ``from __future__ import annotations``
+to avoid having to write strings in annotations, you may well be able to
+remove that import. However, if you rely on third-party libraries that read annotations,
+those libraries may need changes to support unquoted annotations before they
+work as expected.
+
+Implications for readers of ``__annotations__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your code reads the ``__annotations__`` attribute on objects, you may want
+to make changes in order to support code that relies on deferred evaluation of
+annotations. For example, you may want to use :func:`annotationlib.get_annotations`
+with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
+module now does.
+
+Related changes
+^^^^^^^^^^^^^^^
+
+The changes in Python 3.14 are designed to rework how ``__annotations__``
+works at runtime while minimizing breakage to code that contains
+annotations in source code and to code that reads ``__annotations__``. However,
+if you rely on undocumented details of the annotation behavior or on private
+functions in the standard library, there are many ways in which your code may
+not work in Python 3.14. To safeguard your code against future changes,
+use only the documented functionality of the :mod:`annotationlib` module.
+
+``from __future__ import annotations``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
+directive, which turns all annotations into strings. This directive is now
+considered deprecated and it is expected to be removed in a future version of Python.
+However, this removal will not happen until after Python 3.13, the last version of
+Python without deferred evaluation of annotations, reaches its end of life in 2029.
+In Python 3.14, the behavior of code using ``from __future__ import annotations``
+is unchanged.
+
+
+Improved error messages
+-----------------------
+
+* When unpacking assignment fails due to incorrect number of variables, the
+  error message prints the received number of values in more cases than before.
+  (Contributed by Tushar Sadhwani in :gh:`122239`.)
+
+  .. code-block:: pycon
+
+     >>> x, y, z = 1, 2, 3, 4
+     Traceback (most recent call last):
+       File "<stdin>", line 1, in <module>
+         x, y, z = 1, 2, 3, 4
+         ^^^^^^^
+     ValueError: too many values to unpack (expected 3, got 4)
+
+
+Other language changes
+======================
+
+* The :func:`map` built-in now has an optional keyword-only *strict* flag
+  like :func:`zip` to check that all the iterables are of equal length.
+  (Contributed by Wannes Boeykens in :gh:`119793`.)
+
+* Incorrect usage of :keyword:`await` and asynchronous comprehensions
+  is now detected even if the code is optimized away by the :option:`-O`
+  command-line option. For example, ``python -O -c 'assert await 1'``
+  now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
+
+* Writes to ``__debug__`` are now detected even if the code is optimized
+  away by the :option:`-O` command-line option. For example,
+  ``python -O -c 'assert (__debug__ := 1)'`` now produces a
+  :exc:`SyntaxError`. (Contributed by Irit Katriel in :gh:`122245`.)
+
+* Add class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise an error if the argument is a string.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
+
+* :class:`super` objects are now :mod:`pickleable <pickle>` and
+  :mod:`copyable <copy>`.
+  (Contributed by Serhiy Storchaka in :gh:`125767`.)
+
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
+
+New modules
+===========
+
+* :mod:`annotationlib`: For introspecting :term:`annotations <annotation>`.
+  See :pep:`749` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`119180`.)
+
+
+Improved modules
+================
+
+argparse
+--------
+
+* The default value of the :ref:`program name <prog>` for
+  :class:`argparse.ArgumentParser` now reflects the way the Python
+  interpreter was instructed to find the ``__main__`` module code.
+  (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
+
+* Introduced the optional *suggest_on_error* parameter to
+  :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
+  and subparser names if mistyped by the user.
+  (Contributed by Savannah Ostrowski in :gh:`124456`)
+
+ast
+---
+
+* Add :func:`ast.compare` for comparing two ASTs.
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :gh:`60191`.)
+
+* Add support for :func:`copy.replace` for AST nodes.
+  (Contributed by Bénédikt Tran in :gh:`121141`.)
+
+* Docstrings are now removed from an optimized AST in optimization level 2.
+  (Contributed by Irit Katriel in :gh:`123958`.)
+
+* The ``repr()`` output for AST nodes now includes more information.
+  (Contributed by Tomas R in :gh:`116022`.)
+
+concurrent.futures
+------------------
+
+* Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
+  which exposes "subinterpreters (multiple Python interpreters in the
+  same process) to Python code.  This is separate from the proposed API
+  in :pep:`734`.
+  (Contributed by Eric Snow in :gh:`124548`.)
+* The default ``ProcessPoolExecutor`` start method (see
+  :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
+  platforms other than macOS & Windows. If you require the threading
+  incompatible *fork* start method you must explicitly request it by
+  supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
+  (Contributed by Gregory P.  Smith in :gh:`84559`.)
+
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>`
+  in :class:`~ctypes.Structure` and :class:`~ctypes.Union`
+  now matches platform defaults (GCC/Clang or MVSC) more closely.
+  In particular, fields no longer overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+
+* The :attr:`.Structure._layout_` class attribute can now be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
+
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+
+datetime
+--------
+
+* Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+  (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+dis
+---
+
+* Add support for rendering full source location information of
+  :class:`instructions <dis.Instruction>`, rather than only the line number.
+  This feature is added to the following interfaces via the *show_positions*
+  keyword argument:
+
+  - :class:`dis.Bytecode`
+  - :func:`dis.dis`
+  - :func:`dis.distb`
+  - :func:`dis.disassemble`
+
+  This feature is also exposed via :option:`dis --show-positions`.
+  (Contributed by Bénédikt Tran in :gh:`123165`.)
+
+
+fractions
+---------
+
+* Add support for converting any objects that have the
+  :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
+  (Contributed by Serhiy Storchaka in :gh:`82017`.)
+
+* Add alternative :class:`~fractions.Fraction` constructor
+  :meth:`Fraction.from_number() <fractions.Fraction.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121797`.)
+
+
+functools
+---------
+
+* Add support to :func:`functools.partial` and
+  :func:`functools.partialmethod` for :data:`functools.Placeholder` sentinels
+  to reserve a place for positional arguments.
+  (Contributed by Dominykas Grigonis in :gh:`119127`.)
+
+* Allow the *initial* parameter of :func:`functools.reduce` to be passed
+  as a keyword argument.
+  (Contributed by Sayandip Dutta in :gh:`125916`.)
+
+
+getopt
+------
+
+* Add support for options with optional arguments.
+  (Contributed by Serhiy Storchaka in :gh:`126374`.)
+
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
+
+http
+----
+
+* Directory lists and error pages generated by the :mod:`http.server`
+  module allow the browser to apply its default dark mode.
+  (Contributed by Yorik Hansen in :gh:`123430`.)
+
+
+inspect
+-------
+
+* :func:`inspect.signature` takes a new argument *annotation_format* to control
+  the :class:`annotationlib.Format` used for representing annotations.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+* :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
+  If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+* Add function :func:`inspect.ispackage` to determine whether an object is a
+  :term:`package` or not.
+  (Contributed by Zhikang Yan in :gh:`125634`.)
+
+
+json
+----
+
+* Add notes for JSON serialization errors that allow to identify the source
+  of the error.
+  (Contributed by Serhiy Storchaka in :gh:`122163`.)
+
+* Enable the :mod:`json` module to work as a script using the :option:`-m`
+  switch: :program:`python -m json`.
+  See the :ref:`JSON command-line interface <json-commandline>` documentation.
+  (Contributed by Trey Hunner in :gh:`122873`.)
+
+
+mimetypes
+---------
+
+* Add MS and :rfc:`8081` MIME types for fonts:
+
+  * Embedded OpenType: ``application/vnd.ms-fontobject``
+  * OpenType Layout (OTF) ``font/otf``
+  * TrueType: ``font/ttf``
+  * WOFF 1.0 ``font/woff``
+  * WOFF 2.0 ``font/woff2``
+
+  (Contributed by Sahil Prajapati and Hugo van Kemenade in :gh:`84852`.)
+
+* Add :rfc:`9559` MIME types for Matroska audiovisual data container
+  structures, containing:
+
+  * audio with no video: ``audio/matroska`` (``.mka``)
+  * video: ``video/matroska`` (``.mkv``)
+  * stereoscopic video: ``video/matroska-3d`` (``.mk3d``)
+
+  (Contributed by Hugo van Kemenade in :gh:`89416`.)
+
+
+multiprocessing
+---------------
+
+* The default start method (see :ref:`multiprocessing-start-methods`) changed
+  from *fork* to *forkserver* on platforms other than macOS & Windows where
+  it was already *spawn*. If you require the threading incompatible *fork*
+  start method you must explicitly request it using a context from
+  :func:`multiprocessing.get_context` (preferred) or change the default via
+  :func:`multiprocessing.set_start_method`.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
+* The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
+  for *list* and *dict* types gain previously overlooked missing methods:
+
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
+     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+
+  (Contributed by Roy Hyunjin Han for :gh:`103134`)
+
+
+operator
+--------
+
+* Two new functions :func:`operator.is_none` and :func:`operator.is_not_none`
+  have been added, such that ``operator.is_none(obj)`` is equivalent
+  to ``obj is None`` and ``operator.is_not_none(obj)`` is equivalent
+  to ``obj is not None``.
+  (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
+
+
+os
+--
+
+* Add the :func:`os.reload_environ` function to update :data:`os.environ` and
+  :data:`os.environb` with changes to the environment made by
+  :func:`os.putenv`, by :func:`os.unsetenv`, or made outside Python in the
+  same process.
+  (Contributed by Victor Stinner in :gh:`120057`.)
+
+
+pathlib
+-------
+
+* Add methods to :class:`pathlib.Path` to recursively copy or move files and
+  directories:
+
+  * :meth:`~pathlib.Path.copy` copies a file or directory tree to a destination.
+  * :meth:`~pathlib.Path.copy_into` copies *into* a destination directory.
+  * :meth:`~pathlib.Path.move` moves a file or directory tree to a destination.
+  * :meth:`~pathlib.Path.move_into` moves *into* a destination directory.
+
+  (Contributed by Barney Gale in :gh:`73991`.)
+
+* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
+  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
+  :func:`os.scandir` on a path object.
+
+  (Contributed by Barney Gale in :gh:`125413`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
+
+pdb
+---
+
+* Hardcoded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
+  reuse the most recent :class:`~pdb.Pdb` instance that calls
+  :meth:`~pdb.Pdb.set_trace`, instead of creating a new one each time.
+  As a result, all the instance specific data like :pdbcmd:`display` and
+  :pdbcmd:`commands` are preserved across hardcoded breakpoints.
+  (Contributed by Tian Gao in :gh:`121450`.)
+
+* Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
+  command when :mod:`pdb` is in ``inline`` mode.
+  (Contributed by Tian Gao in :gh:`123757`.)
+
+pickle
+------
+
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, see :ref:`pickle protocols <pickle-protocols>`.
+
+* Add notes for pickle serialization errors that allow to identify the source
+  of the error.
+  (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+pydoc
+-----
+
+* :term:`Annotations <annotation>` in help output are now usually
+  displayed in a format closer to that in the original source.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_comp_cell`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_free_class`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
+
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.
+
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 16.0.0.
+
+
+unittest
+--------
+
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
+
+uuid
+----
+
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+
+.. Add improved modules above alphabetically, not here at the end.
+
+Optimizations
+=============
+
+asyncio
+-------
+
+* :mod:`asyncio` now uses double linked list implementation for native tasks
+  which speeds up execution by 10% on standard pyperformance benchmarks and
+  reduces memory usage.
+  (Contributed by Kumar Aditya in :gh:`107803`.)
+
+io
+---
+* :mod:`io` which provides the built-in :func:`open` makes less system calls
+  when opening regular files as well as reading whole files. Reading a small
+  operating system cached file in full is up to 15% faster.
+  :func:`pathlib.Path.read_bytes` has the most optimizations for reading a
+  file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
+  :gh:`120754` and :gh:`90102`.)
+
+Deprecated
+==========
+
+* :mod:`argparse`:
+
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+    (Contributed by Savannah Ostrowski in :gh:`125563`.)
+  * Deprecated the :class:`argparse.FileType` type converter.
+    Anything with resource management should be done downstream after the
+    arguments are parsed.
+    (Contributed by Serhiy Storchaka in :gh:`58032`.)
+
+* :mod:`asyncio`:
+  :func:`!asyncio.iscoroutinefunction` is deprecated
+  and will be removed in Python 3.16,
+  use :func:`inspect.iscoroutinefunction` instead.
+  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+* :mod:`builtins`:
+  Passing a complex number as the *real* or *imag* argument in the
+  :func:`complex` constructor is now deprecated; it should only be passed
+  as a single positional argument.
+  (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`os`:
+  :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
+  write new code.  The :mod:`subprocess` module is recommended instead.
+  (Contributed by Victor Stinner in :gh:`120743`.)
+
+* :mod:`symtable`:
+  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
+  (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
+
+Removed
+=======
+
+argparse
+--------
+
+* Remove the *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction`.
+  They were deprecated since 3.12.
+
+ast
+---
+
+* Remove the following classes. They were all deprecated since Python 3.8,
+  and have emitted deprecation warnings since Python 3.12:
+
+  * :class:`!ast.Bytes`
+  * :class:`!ast.Ellipsis`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+
+  Use :class:`ast.Constant` instead. As a consequence of these removals,
+  user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
+  ``visit_NameConstant`` and ``visit_Ellipsis`` methods on custom
+  :class:`ast.NodeVisitor` subclasses will no longer be called when the
+  :class:`!NodeVisitor` subclass is visiting an AST. Define a ``visit_Constant``
+  method instead.
+
+  Also, remove the following deprecated properties on :class:`ast.Constant`,
+  which were present for compatibility with the now-removed AST classes:
+
+  * :attr:`!ast.Constant.n`
+  * :attr:`!ast.Constant.s`
+
+  Use :attr:`!ast.Constant.value` instead.
+
+  (Contributed by Alex Waygood in :gh:`119562`.)
+
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
+* Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
+  It now raises a :exc:`RuntimeError` if there is no current event loop.
+  (Contributed by Kumar Aditya in :gh:`126353`.)
+
+
+collections.abc
+---------------
+
+* Remove :class:`!collections.abc.ByteString`. It had previously raised a
+  :exc:`DeprecationWarning` since Python 3.12.
+
+email
+-----
+
+* Remove the *isdst* parameter from :func:`email.utils.localtime`.
+  (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+importlib
+---------
+
+* Remove deprecated :mod:`importlib.abc` classes:
+
+  * :class:`!importlib.abc.ResourceReader`
+  * :class:`!importlib.abc.Traversable`
+  * :class:`!importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
+itertools
+---------
+
+* Remove :mod:`itertools` support for copy, deepcopy, and pickle operations.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
+
+pathlib
+-------
+
+* Remove support for passing additional keyword arguments to
+  :class:`pathlib.Path`. In previous versions, any such arguments are ignored.
+* Remove support for passing additional positional arguments to
+  :meth:`pathlib.PurePath.relative_to` and
+  :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
+  arguments are joined onto *other*.
+
+pkgutil
+-------
+
+* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Bénédikt Tran in :gh:`97850`.)
+
+pty
+---
+
+* Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
+  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  Use :func:`pty.openpty` instead.
+  (Contributed by Nikita Sobolev in :gh:`118824`.)
+
+sqlite3
+-------
+
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+  (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
+* Disallow using a sequence of parameters with named placeholders.
+  This had previously raised a :exc:`DeprecationWarning` since Python 3.12;
+  it will now raise a :exc:`sqlite3.ProgrammingError`.
+  (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
+
+typing
+------
+
+* Remove :class:`!typing.ByteString`. It had previously raised a
+  :exc:`DeprecationWarning` since Python 3.12.
+
+urllib
+------
+
+* Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
+  It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
+  (Contributed by Nikita Sobolev in :gh:`118827`.)
+
+Others
+------
+
+* Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
+  It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
+  by Jelle Zijlstra in :gh:`118767`.)
+
+* The :func:`int` built-in no longer delegates to
+  :meth:`~object.__trunc__`. Classes that want to support conversion to
+  integer must implement either :meth:`~object.__int__` or
+  :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
+
+
+Porting to Python 3.14
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
+
+* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
+  locale in some cases.
+  This temporary change affects other threads.
+  (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+
+Build changes
+=============
+
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
+
+
+C API changes
+=============
+
+New features
+------------
+
+* Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
+  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
+
+* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
+  object:
+
+  * :c:func:`PyUnicodeWriter_Create`
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
+  * :c:func:`PyUnicodeWriter_Discard`
+  * :c:func:`PyUnicodeWriter_Finish`
+  * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteChar`
+  * :c:func:`PyUnicodeWriter_WriteRepr`
+  * :c:func:`PyUnicodeWriter_WriteStr`
+  * :c:func:`PyUnicodeWriter_WriteSubstring`
+  * :c:func:`PyUnicodeWriter_WriteUCS4`
+  * :c:func:`PyUnicodeWriter_WriteUTF8`
+  * :c:func:`PyUnicodeWriter_WriteWideChar`
+
+  (Contributed by Victor Stinner in :gh:`119182`.)
+
+* Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
+  which has an ambiguous return value.
+  (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the execution of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
+  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
+  is positive, negative, or zero, respectively.
+  (Contribued by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+
+* Add new functions to convert C ``<stdint.h>`` numbers from/to Python
+  :class:`int`:
+
+  * :c:func:`PyLong_AsInt32`
+  * :c:func:`PyLong_AsInt64`
+  * :c:func:`PyLong_AsUInt32`
+  * :c:func:`PyLong_AsUInt64`
+  * :c:func:`PyLong_FromInt32`
+  * :c:func:`PyLong_FromInt64`
+  * :c:func:`PyLong_FromUInt32`
+  * :c:func:`PyLong_FromUInt64`
+
+  (Contributed by Victor Stinner in :gh:`120389`.)
+
+* Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
+  similar to ``sep.join(iterable)`` in Python.
+  (Contributed by Victor Stinner in :gh:`121645`.)
+
+* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
+* Add functions to get and set the current runtime Python configuration
+  (:pep:`741`):
+
+  * :c:func:`PyConfig_Get`
+  * :c:func:`PyConfig_GetInt`
+  * :c:func:`PyConfig_Set`
+  * :c:func:`PyConfig_Names`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
+
+* Add functions to configure the Python initialization (:pep:`741`):
+
+  * :c:func:`Py_InitializeFromInitConfig`
+  * :c:func:`PyInitConfig_AddModule`
+  * :c:func:`PyInitConfig_Create`
+  * :c:func:`PyInitConfig_Free`
+  * :c:func:`PyInitConfig_FreeStrList`
+  * :c:func:`PyInitConfig_GetError`
+  * :c:func:`PyInitConfig_GetExitCode`
+  * :c:func:`PyInitConfig_GetInt`
+  * :c:func:`PyInitConfig_GetStr`
+  * :c:func:`PyInitConfig_GetStrList`
+  * :c:func:`PyInitConfig_HasOption`
+  * :c:func:`PyInitConfig_SetInt`
+  * :c:func:`PyInitConfig_SetStr`
+  * :c:func:`PyInitConfig_SetStrList`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
+
+* Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
+  superclass identification, which attempts to resolve the `type checking issue
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
+  (:gh:`124153`).
+
+* Add :c:func:`PyUnicode_Equal` function to the limited C API:
+  test if two strings are equal.
+  (Contributed by Victor Stinner in :gh:`124502`.)
+
+
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
+
+Porting to Python 3.14
+----------------------
+
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
+  :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
+  implementation details.
+  (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+
+Deprecated
+----------
+
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
+
+* Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
+  and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
+  use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
+  :c:macro:`!isfinite` available from :file:`math.h`
+  since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+.. Add C API deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
+Removed
+-------
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases was deprecated since 3.12 and now raises a :exc:`TypeError`.

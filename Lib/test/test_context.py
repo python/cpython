@@ -1,3 +1,4 @@
+import collections.abc
 import concurrent.futures
 import contextvars
 import functools
@@ -6,9 +7,11 @@ import random
 import time
 import unittest
 import weakref
+from test import support
+from test.support import threading_helper
 
 try:
-    from _testcapi import hamt
+    from _testinternalcapi import hamt
 except ImportError:
     hamt = None
 
@@ -57,6 +60,14 @@ class ContextTest(unittest.TestCase):
         self.assertNotIn(' used ', repr(t))
         c.reset(t)
         self.assertIn(' used ', repr(t))
+
+    @isolated_context
+    def test_token_repr_1(self):
+        c = contextvars.ContextVar('a')
+        tok = c.set(1)
+        self.assertRegex(repr(tok),
+                         r"^<Token var=<ContextVar name='a' "
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
@@ -340,7 +351,21 @@ class ContextTest(unittest.TestCase):
 
         ctx1.run(ctx1_fun)
 
+    def test_context_isinstance(self):
+        ctx = contextvars.Context()
+        self.assertIsInstance(ctx, collections.abc.Mapping)
+        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
+
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__', 'get', 'items', 'keys', 'values',
+        )
+        for name in mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
+
     @isolated_context
+    @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
         cvar = contextvars.ContextVar('cvar')
 
@@ -429,7 +454,7 @@ class EqError(Exception):
     pass
 
 
-@unittest.skipIf(hamt is None, '_testcapi lacks "hamt()" function')
+@unittest.skipIf(hamt is None, '_testinternalcapi.hamt() not available')
 class HamtTest(unittest.TestCase):
 
     def test_hashkey_helper_1(self):
@@ -533,6 +558,42 @@ class HamtTest(unittest.TestCase):
         self.assertEqual(len(h4), 2)
         self.assertEqual(len(h5), 3)
 
+    def test_hamt_collision_3(self):
+        # Test that iteration works with the deepest tree possible.
+        # https://github.com/python/cpython/issues/93065
+
+        C = HashKey(0b10000000_00000000_00000000_00000000, 'C')
+        D = HashKey(0b10000000_00000000_00000000_00000000, 'D')
+
+        E = HashKey(0b00000000_00000000_00000000_00000000, 'E')
+
+        h = hamt()
+        h = h.set(C, 'C')
+        h = h.set(D, 'D')
+        h = h.set(E, 'E')
+
+        # BitmapNode(size=2 count=1 bitmap=0b1):
+        #   NULL:
+        #     BitmapNode(size=2 count=1 bitmap=0b1):
+        #       NULL:
+        #         BitmapNode(size=2 count=1 bitmap=0b1):
+        #           NULL:
+        #             BitmapNode(size=2 count=1 bitmap=0b1):
+        #               NULL:
+        #                 BitmapNode(size=2 count=1 bitmap=0b1):
+        #                   NULL:
+        #                     BitmapNode(size=2 count=1 bitmap=0b1):
+        #                       NULL:
+        #                         BitmapNode(size=4 count=2 bitmap=0b101):
+        #                           <Key name:E hash:0>: 'E'
+        #                           NULL:
+        #                             CollisionNode(size=4 id=0x107a24520):
+        #                               <Key name:C hash:2147483648>: 'C'
+        #                               <Key name:D hash:2147483648>: 'D'
+
+        self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
+
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647

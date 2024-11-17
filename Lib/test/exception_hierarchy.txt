@@ -1,12 +1,9 @@
 BaseException
- ├── SystemExit
- ├── KeyboardInterrupt
- ├── GeneratorExit
  ├── BaseExceptionGroup
+ ├── GeneratorExit
+ ├── KeyboardInterrupt
+ ├── SystemExit
  └── Exception
-      ├── ExceptionGroup [BaseExceptionGroup]
-      ├── StopIteration
-      ├── StopAsyncIteration
       ├── ArithmeticError
       │    ├── FloatingPointError
       │    ├── OverflowError
@@ -15,6 +12,7 @@ BaseException
       ├── AttributeError
       ├── BufferError
       ├── EOFError
+      ├── ExceptionGroup [BaseExceptionGroup]
       ├── ImportError
       │    └── ModuleNotFoundError
       ├── LookupError
@@ -42,7 +40,10 @@ BaseException
       ├── ReferenceError
       ├── RuntimeError
       │    ├── NotImplementedError
+      │    ├── PythonFinalizationError
       │    └── RecursionError
+      ├── StopAsyncIteration
+      ├── StopIteration
       ├── SyntaxError
       │    └── IndentationError
       │         └── TabError
@@ -54,14 +55,14 @@ BaseException
       │         ├── UnicodeEncodeError
       │         └── UnicodeTranslateError
       └── Warning
+           ├── BytesWarning
            ├── DeprecationWarning
-           ├── PendingDeprecationWarning
-           ├── RuntimeWarning
-           ├── SyntaxWarning
-           ├── UserWarning
+           ├── EncodingWarning
            ├── FutureWarning
            ├── ImportWarning
+           ├── PendingDeprecationWarning
+           ├── ResourceWarning
+           ├── RuntimeWarning
+           ├── SyntaxWarning
            ├── UnicodeWarning
-           ├── BytesWarning
-           ├── EncodingWarning
-           └── ResourceWarning
+           └── UserWarning

@@ -1,3 +1,5 @@
+from types import GenericAlias
+
 __all__ = ["TopologicalSorter", "CycleError"]
 
 _NODE_OUT = -1
@@ -101,7 +103,7 @@ class TopologicalSorter:
         # nodes as possible before cycles block more progress
         cycle = self._find_cycle()
         if cycle:
-            raise CycleError(f"nodes are in a cycle", cycle)
+            raise CycleError("nodes are in a cycle", cycle)
 
     def get_ready(self):
         """Return a tuple of all the nodes that are ready.
@@ -244,3 +246,5 @@ class TopologicalSorter:
             node_group = self.get_ready()
             yield from node_group
             self.done(*node_group)
+
+    __class_getitem__ = classmethod(GenericAlias)

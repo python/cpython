@@ -1,4 +1,4 @@
-# Copyright (C) 2004-2006 Python Software Foundation
+# Copyright (C) 2004 Python Software Foundation
 # Authors: Baxter, Wouters and Warsaw
 # Contact: email-sig@python.org
 
@@ -37,11 +37,12 @@ NLCRE_crack = re.compile(r'(\r\n|\r|\n)')
 headerRE = re.compile(r'^(From |[\041-\071\073-\176]*:|[\t ])')
 EMPTYSTRING = ''
 NL = '\n'
+boundaryendRE = re.compile(
+    r'(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)?$')
 
 NeedMoreData = object()
 
 
-
 class BufferedSubFile(object):
     """A file-ish object that can have new data loaded into it.
 
@@ -132,7 +133,6 @@ class BufferedSubFile(object):
         return line
 
 
-
 class FeedParser:
     """A feed-style parser of email."""
 
@@ -189,7 +189,7 @@ class FeedParser:
         assert not self._msgstack
         # Look for final set of defects
         if root.get_content_maintype() == 'multipart' \
-               and not root.is_multipart():
+               and not root.is_multipart() and not self._headersonly:
             defect = errors.MultipartInvariantViolationDefect()
             self.policy.handle_defect(root, defect)
         return root
@@ -266,7 +266,7 @@ class FeedParser:
                         yield NeedMoreData
                         continue
                     break
-                msg = self._pop_message()
+                self._pop_message()
                 # We need to pop the EOF matcher in order to tell if we're at
                 # the end of the current file, not the end of the last block
                 # of message headers.
@@ -329,9 +329,10 @@ class FeedParser:
             # this onto the input stream until we've scanned past the
             # preamble.
             separator = '--' + boundary
-            boundaryre = re.compile(
-                '(?P<sep>' + re.escape(separator) +
-                r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)?$')
+            def boundarymatch(line):
+                if not line.startswith(separator):
+                    return None
+                return boundaryendRE.match(line, len(separator))
             capturing_preamble = True
             preamble = []
             linesep = False
@@ -343,7 +344,7 @@ class FeedParser:
                     continue
                 if line == '':
                     break
-                mo = boundaryre.match(line)
+                mo = boundarymatch(line)
                 if mo:
                     # If we're looking at the end boundary, we're done with
                     # this multipart.  If there was a newline at the end of
@@ -375,13 +376,13 @@ class FeedParser:
                         if line is NeedMoreData:
                             yield NeedMoreData
                             continue
-                        mo = boundaryre.match(line)
+                        mo = boundarymatch(line)
                         if not mo:
                             self._input.unreadline(line)
                             break
                     # Recurse to parse this subpart; the input stream points
                     # at the subpart's first line.
-                    self._input.push_eof_matcher(boundaryre.match)
+                    self._input.push_eof_matcher(boundarymatch)
                     for retval in self._parsegen():
                         if retval is NeedMoreData:
                             yield NeedMoreData

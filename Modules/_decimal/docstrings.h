@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2012 Python Software Foundation. All Rights Reserved.
+ * Copyright (c) 2001 Python Software Foundation. All Rights Reserved.
  * Modified and extended by Stefan Krah.
  */
 
@@ -30,7 +30,7 @@ Set a new default context.\n\
 \n");
 
 PyDoc_STRVAR(doc_localcontext,
-"localcontext($module, /, ctx=None)\n--\n\n\
+"localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
 Return a context manager that will set the default context to a copy of ctx\n\
 on entry to the with-statement and restore the previous default context when\n\
 exiting the with-statement. If no context is specified, a copy of the current\n\
@@ -186,6 +186,19 @@ Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
     Decimal('Infinity')\n\
     >>> Decimal.from_float(float('-inf'))\n\
     Decimal('-Infinity')\n\
+\n\
+\n");
+
+PyDoc_STRVAR(doc_from_number,
+"from_number($type, number, /)\n--\n\n\
+Class method that converts a real number to a decimal number, exactly.\n\
+\n\
+    >>> Decimal.from_number(314)              # int\n\
+    Decimal('314')\n\
+    >>> Decimal.from_number(0.1)              # float\n\
+    Decimal('0.1000000000000000055511151231257827021181583404541015625')\n\
+    >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance\n\
+    Decimal('3.14')\n\
 \n\
 \n");
 

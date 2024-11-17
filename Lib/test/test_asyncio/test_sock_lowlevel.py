@@ -1,14 +1,21 @@
 import socket
-import time
 import asyncio
 import sys
 import unittest
 
 from asyncio import proactor_events
 from itertools import cycle, islice
+from unittest.mock import Mock
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
+
+if socket_helper.tcp_blackhole():
+    raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -23,24 +30,28 @@ class MyProto(asyncio.Protocol):
             self.connected = loop.create_future()
             self.done = loop.create_future()
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
         transport.write(b'GET / HTTP/1.0\r\nHost: example.com\r\n\r\n')
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
@@ -373,6 +384,79 @@ class BaseSockTestsMixin:
             self.loop.run_until_complete(
                 self._basetest_huge_content_recvinto(httpd.address))
 
+    async def _basetest_datagram_recvfrom(self, server_address):
+        # Happy path, sock.sendto() returns immediately
+        data = b'\x01' * 4096
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+            await self.loop.sock_sendto(sock, data, server_address)
+            received_data, from_addr = await self.loop.sock_recvfrom(
+                sock, 4096)
+            self.assertEqual(received_data, data)
+            self.assertEqual(from_addr, server_address)
+
+    def test_recvfrom(self):
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_recvfrom(server_address))
+
+    async def _basetest_datagram_recvfrom_into(self, server_address):
+        # Happy path, sock.sendto() returns immediately
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+
+            buf = bytearray(4096)
+            data = b'\x01' * 4096
+            await self.loop.sock_sendto(sock, data, server_address)
+            num_bytes, from_addr = await self.loop.sock_recvfrom_into(
+                sock, buf)
+            self.assertEqual(num_bytes, 4096)
+            self.assertEqual(buf, data)
+            self.assertEqual(from_addr, server_address)
+
+            buf = bytearray(8192)
+            await self.loop.sock_sendto(sock, data, server_address)
+            num_bytes, from_addr = await self.loop.sock_recvfrom_into(
+                sock, buf, 4096)
+            self.assertEqual(num_bytes, 4096)
+            self.assertEqual(buf[:4096], data[:4096])
+            self.assertEqual(from_addr, server_address)
+
+    def test_recvfrom_into(self):
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_recvfrom_into(server_address))
+
+    async def _basetest_datagram_sendto_blocking(self, server_address):
+        # Sad path, sock.sendto() raises BlockingIOError
+        # This involves patching sock.sendto() to raise BlockingIOError but
+        # sendto() is not used by the proactor event loop
+        data = b'\x01' * 4096
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+            mock_sock = Mock(sock)
+            mock_sock.gettimeout = sock.gettimeout
+            mock_sock.sendto.configure_mock(side_effect=BlockingIOError)
+            mock_sock.fileno = sock.fileno
+            self.loop.call_soon(
+                lambda: setattr(mock_sock, 'sendto', sock.sendto)
+            )
+            await self.loop.sock_sendto(mock_sock, data, server_address)
+
+            received_data, from_addr = await self.loop.sock_recvfrom(
+                sock, 4096)
+            self.assertEqual(received_data, data)
+            self.assertEqual(from_addr, server_address)
+
+    def test_sendto_blocking(self):
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_sendto_blocking(server_address))
+
     @socket_helper.skip_unless_bind_unix_socket
     def test_unix_sock_client_ops(self):
         with test_utils.run_test_unix_server() as httpd:
@@ -451,7 +535,7 @@ class BaseSockTestsMixin:
                 else:
                     break
             else:
-                assert False, 'Can not create socket.'
+                self.fail('Can not create socket.')
 
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop), sock=sock)
@@ -471,11 +555,92 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return asyncio.SelectorEventLoop()
 
+
     class ProactorEventLoopTests(BaseSockTestsMixin,
                                  test_utils.TestCase):
 
         def create_event_loop(self):
             return asyncio.ProactorEventLoop()
+
+
+        async def _basetest_datagram_send_to_non_listening_address(self,
+                                                                   recvfrom):
+            # see:
+            #   https://github.com/python/cpython/issues/91227
+            #   https://github.com/python/cpython/issues/88906
+            #   https://bugs.python.org/issue47071
+            #   https://bugs.python.org/issue44743
+            # The Proactor event loop would fail to receive datagram messages
+            # after sending a message to an address that wasn't listening.
+
+            def create_socket():
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.setblocking(False)
+                sock.bind(('127.0.0.1', 0))
+                return sock
+
+            socket_1 = create_socket()
+            addr_1 = socket_1.getsockname()
+
+            socket_2 = create_socket()
+            addr_2 = socket_2.getsockname()
+
+            # creating and immediately closing this to try to get an address
+            # that is not listening
+            socket_3 = create_socket()
+            addr_3 = socket_3.getsockname()
+            socket_3.shutdown(socket.SHUT_RDWR)
+            socket_3.close()
+
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            socket_2_recv_task = self.loop.create_task(recvfrom(socket_2))
+            await asyncio.sleep(0)
+
+            await self.loop.sock_sendto(socket_1, b'a', addr_2)
+            self.assertEqual(await socket_2_recv_task, b'a')
+
+            await self.loop.sock_sendto(socket_2, b'b', addr_1)
+            self.assertEqual(await socket_1_recv_task, b'b')
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            await asyncio.sleep(0)
+
+            # this should send to an address that isn't listening
+            await self.loop.sock_sendto(socket_1, b'c', addr_3)
+            self.assertEqual(await socket_1_recv_task, b'')
+            socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
+            await asyncio.sleep(0)
+
+            # socket 1 should still be able to receive messages after sending
+            # to an address that wasn't listening
+            socket_2.sendto(b'd', addr_1)
+            self.assertEqual(await socket_1_recv_task, b'd')
+
+            socket_1.shutdown(socket.SHUT_RDWR)
+            socket_1.close()
+            socket_2.shutdown(socket.SHUT_RDWR)
+            socket_2.close()
+
+
+        def test_datagram_send_to_non_listening_address_recvfrom(self):
+            async def recvfrom(socket):
+                data, _ = await self.loop.sock_recvfrom(socket, 4096)
+                return data
+
+            self.loop.run_until_complete(
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom))
+
+
+        def test_datagram_send_to_non_listening_address_recvfrom_into(self):
+            async def recvfrom_into(socket):
+                buf = bytearray(4096)
+                length, _ = await self.loop.sock_recvfrom_into(socket, buf,
+                                                               4096)
+                return buf[:length]
+
+            self.loop.run_until_complete(
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom_into))
 
 else:
     import selectors
@@ -508,3 +673,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()

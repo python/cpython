@@ -1,5 +1,5 @@
-:mod:`email.mime`: Creating email and MIME objects from scratch
----------------------------------------------------------------
+:mod:`!email.mime`: Creating email and MIME objects from scratch
+----------------------------------------------------------------
 
 .. module:: email.mime
    :synopsis: Build MIME messages.
@@ -28,7 +28,7 @@ make things easier.
 
 Here are the classes:
 
-.. currentmodule:: email.mime.base
+.. module:: email.mime.base
 
 .. class:: MIMEBase(_maintype, _subtype, *, policy=compat32, **_params)
 
@@ -58,7 +58,7 @@ Here are the classes:
       Added *policy* keyword-only parameter.
 
 
-.. currentmodule:: email.mime.nonmultipart
+.. module:: email.mime.nonmultipart
 
 .. class:: MIMENonMultipart()
 
@@ -72,7 +72,7 @@ Here are the classes:
    is called, a :exc:`~email.errors.MultipartConversionError` exception is raised.
 
 
-.. currentmodule:: email.mime.multipart
+.. module:: email.mime.multipart
 
 .. class:: MIMEMultipart(_subtype='mixed', boundary=None, _subparts=None, \
                          *, policy=compat32, **_params)
@@ -104,7 +104,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.application
+.. module:: email.mime.application
 
 .. class:: MIMEApplication(_data, _subtype='octet-stream', \
                            _encoder=email.encoders.encode_base64, \
@@ -114,9 +114,9 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEApplication` class is used to represent MIME message objects of
-   major type :mimetype:`application`.  *_data* is a string containing the raw
-   byte data.  Optional *_subtype* specifies the MIME subtype and defaults to
-   :mimetype:`octet-stream`.
+   major type :mimetype:`application`.  *_data* contains the bytes for the raw
+   application data.  Optional *_subtype* specifies the MIME subtype and defaults
+   to :mimetype:`octet-stream`.
 
    Optional *_encoder* is a callable (i.e. function) which will perform the actual
    encoding of the data for transport.  This callable takes one argument, which is
@@ -135,7 +135,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.audio
+.. module:: email.mime.audio
 
 .. class:: MIMEAudio(_audiodata, _subtype=None, \
                      _encoder=email.encoders.encode_base64, \
@@ -145,8 +145,8 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEAudio` class is used to create MIME message objects of major type
-   :mimetype:`audio`. *_audiodata* is a string containing the raw audio data.  If
-   this data can be decoded by the standard Python module :mod:`sndhdr`, then the
+   :mimetype:`audio`. *_audiodata* contains the bytes for the raw audio data.  If
+   this data can be decoded as au, wav, aiff, or aifc, then the
    subtype will be automatically included in the :mailheader:`Content-Type` header.
    Otherwise you can explicitly specify the audio subtype via the *_subtype*
    argument.  If the minor type could not be guessed and *_subtype* was not given,
@@ -169,7 +169,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.image
+.. module:: email.mime.image
 
 .. class:: MIMEImage(_imagedata, _subtype=None, \
                      _encoder=email.encoders.encode_base64, \
@@ -179,12 +179,13 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEImage` class is used to create MIME message objects of major type
-   :mimetype:`image`. *_imagedata* is a string containing the raw image data.  If
-   this data can be decoded by the standard Python module :mod:`imghdr`, then the
-   subtype will be automatically included in the :mailheader:`Content-Type` header.
-   Otherwise you can explicitly specify the image subtype via the *_subtype*
-   argument.  If the minor type could not be guessed and *_subtype* was not given,
-   then :exc:`TypeError` is raised.
+   :mimetype:`image`. *_imagedata* contains the bytes for the raw image data.  If
+   this data type can be detected (jpeg, png, gif, tiff, rgb, pbm, pgm, ppm,
+   rast, xbm, bmp, webp, and exr attempted), then the subtype will be
+   automatically included in the :mailheader:`Content-Type` header. Otherwise
+   you can explicitly specify the image subtype via the *_subtype* argument.
+   If the minor type could not be guessed and *_subtype* was not given, then
+   :exc:`TypeError` is raised.
 
    Optional *_encoder* is a callable (i.e. function) which will perform the actual
    encoding of the image data for transport.  This callable takes one argument,
@@ -204,7 +205,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.message
+.. module:: email.mime.message
 
 .. class:: MIMEMessage(_msg, _subtype='rfc822', *, policy=compat32)
 
@@ -224,7 +225,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.text
+.. module:: email.mime.text
 
 .. class:: MIMEText(_text, _subtype='plain', _charset=None, *, policy=compat32)
 

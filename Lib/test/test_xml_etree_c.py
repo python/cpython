@@ -169,6 +169,38 @@ class MiscTests(unittest.TestCase):
         del parser
         support.gc_collect()
 
+    def test_dict_disappearing_during_get_item(self):
+        # test fix for seg fault reported in issue 27946
+        class X:
+            def __hash__(self):
+                e.attrib = {} # this frees e->extra->attrib
+                [{i: i} for i in range(1000)] # exhaust the dict keys cache
+                return 13
+
+        e = cET.Element("elem", {1: 2})
+        r = e.get(X())
+        self.assertIsNone(r)
+
+    @support.cpython_only
+    def test_immutable_types(self):
+        root = cET.fromstring('<a></a>')
+        dataset = (
+            cET.Element,
+            cET.TreeBuilder,
+            cET.XMLParser,
+            type(root.iter()),
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        root = cET.fromstring('<a></a>')
+        iter_type = type(root.iter())
+        support.check_disallow_instantiation(self, iter_type)
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
@@ -222,20 +254,25 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(e, self.elementsize + self.extra +
                              struct.calcsize('8P'))
 
-def test_main():
+
+def install_tests():
+    # Test classes should have __module__ referring to this module.
     from test import test_xml_etree
+    for name, base in vars(test_xml_etree).items():
+        if isinstance(base, type) and issubclass(base, unittest.TestCase):
+            class Temp(base):
+                pass
+            Temp.__name__ = Temp.__qualname__ = name
+            Temp.__module__ = __name__
+            assert name not in globals()
+            globals()[name] = Temp
 
-    # Run the tests specific to the C implementation
-    support.run_unittest(
-        MiscTests,
-        TestAliasWorking,
-        TestAcceleratorImported,
-        SizeofTest,
-        )
+install_tests()
 
-    # Run the same test suite as the Python module
-    test_xml_etree.test_main(module=cET)
+def setUpModule():
+    from test import test_xml_etree
+    test_xml_etree.setUpModule(module=cET)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
