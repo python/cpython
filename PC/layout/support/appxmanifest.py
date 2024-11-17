@@ -209,7 +209,7 @@ def get_packagefamilyname(name, publisher_id):
     result = ctypes.create_unicode_buffer(256)
     result_len = ctypes.c_uint32(256)
     r = ctypes.windll.kernel32.PackageFamilyNameFromId(
-        pid, ctypes.byref(result_len), result
+        ctypes.byref(pid), ctypes.byref(result_len), result
     )
     if r:
         raise OSError(r, "failed to get package family name")

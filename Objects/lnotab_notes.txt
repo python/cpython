@@ -60,7 +60,7 @@ Final form:
 Iterating over the table.
 -------------------------
 
-For the `co_lines` attribute we want to emit the full form, omitting the (350, 360, No line number) and empty entries.
+For the `co_lines` method we want to emit the full form, omitting the (350, 360, No line number) and empty entries.
 
 The code is as follows:
 

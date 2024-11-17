@@ -85,16 +85,15 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     if (!key) {
         return NULL;
     }
-    adapter = PyDict_GetItemWithError(state->psyco_adapters, key);
+    if (PyDict_GetItemRef(state->psyco_adapters, key, &adapter) < 0) {
+        Py_DECREF(key);
+        return NULL;
+    }
     Py_DECREF(key);
     if (adapter) {
-        Py_INCREF(adapter);
         adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
         return adapted;
-    }
-    if (PyErr_Occurred()) {
-        return NULL;
     }
 
     /* try to have the protocol adapt this object */

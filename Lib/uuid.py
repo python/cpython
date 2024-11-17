@@ -1,8 +1,8 @@
-r"""UUID objects (universally unique identifiers) according to RFC 4122.
+r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid8() for generating version 1, 3,
+4, 5, and 8 UUIDs as specified in RFC 4122/9562.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -53,13 +53,16 @@ from enum import Enum, _simple_enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-if sys.platform in ('win32', 'darwin', 'emscripten', 'wasi'):
+if sys.platform in {'win32', 'darwin', 'emscripten', 'wasi'}:
     _AIX = _LINUX = False
+elif sys.platform == 'linux':
+    _LINUX = True
+    _AIX = False
 else:
     import platform
     _platform_system = platform.system()
     _AIX     = _platform_system == 'AIX'
-    _LINUX   = _platform_system == 'Linux'
+    _LINUX   = _platform_system in ('Linux', 'Android')
 
 _MAC_DELIM = b':'
 _MAC_OMITS_LEADING_ZEROES = False
@@ -121,12 +124,12 @@ class UUID:
 
         int         the UUID as a 128-bit integer
 
-        urn         the UUID as a URN as specified in RFC 4122
+        urn         the UUID as a URN as specified in RFC 4122/9562
 
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1 through 8, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -211,9 +214,9 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
-            # Set the variant to RFC 4122.
+            # Set the variant to RFC 4122/9562.
             int &= ~(0xc000 << 48)
             int |= 0x8000 << 48
             # Set the version number.
@@ -352,7 +355,7 @@ class UUID:
 
     @property
     def version(self):
-        # The version bits are only meaningful for RFC 4122 UUIDs.
+        # The version bits are only meaningful for RFC 4122/9562 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
@@ -371,7 +374,7 @@ def _get_command_stdout(command, *args):
         # for are actually localized, but in theory some system could do so.)
         env = dict(os.environ)
         env['LC_ALL'] = 'C'
-        # Empty strings will be quoted by popen so we should just ommit it
+        # Empty strings will be quoted by popen so we should just omit it
         if args != ('',):
             command = (executable, *args)
         else:
@@ -564,32 +567,16 @@ def _netstat_getnode():
     # This works on AIX and might work on Tru64 UNIX.
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
-def _ipconfig_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
-def _netbios_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
-    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
     _generate_time_safe = None
     _UuidCreate = None
-    _has_uuid_generate_time_safe = None
-
-
-def _load_system_functions():
-    """[DEPRECATED] Platform-specific functions loaded at import time"""
 
 
 def _unix_getnode():
@@ -732,6 +719,28 @@ def uuid5(namespace, name):
     hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
+def uuid8(a=None, b=None, c=None):
+    """Generate a UUID from three custom blocks.
+
+    * 'a' is the first 48-bit chunk of the UUID (octets 0-5);
+    * 'b' is the mid 12-bit chunk (octets 6-7);
+    * 'c' is the last 62-bit chunk (octets 8-15).
+
+    When a value is not specified, a pseudo-random value is generated.
+    """
+    if a is None:
+        import random
+        a = random.getrandbits(48)
+    if b is None:
+        import random
+        b = random.getrandbits(12)
+    if c is None:
+        import random
+        c = random.getrandbits(62)
+    int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
+    int_uuid_8 |= (b & 0xfff) << 64
+    int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
+    return UUID(int=int_uuid_8, version=8)
 
 def main():
     """Run the uuid command line interface."""
@@ -739,7 +748,8 @@ def main():
         "uuid1": uuid1,
         "uuid3": uuid3,
         "uuid4": uuid4,
-        "uuid5": uuid5
+        "uuid5": uuid5,
+        "uuid8": uuid8,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {

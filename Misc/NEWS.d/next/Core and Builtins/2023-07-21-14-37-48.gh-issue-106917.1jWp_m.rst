@@ -1,4 +1,0 @@
-Fix classmethod-style :func:`super` method calls (i.e., where the second
-argument to :func:`super`, or the implied second argument drawn from
-``self/cls`` in the case of zero-arg super, is a type) when the target of
-the call is not a classmethod.

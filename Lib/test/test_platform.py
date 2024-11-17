@@ -10,6 +10,14 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
+try:
+    # Some of the iOS tests need ctypes to operate.
+    # Confirm that the ctypes module is available
+    # is available.
+    import _ctypes
+except ImportError:
+    _ctypes = None
+
 FEDORA_OS_RELEASE = """\
 NAME=Fedora
 VERSION="32 (Thirty Two)"
@@ -74,6 +82,38 @@ class PlatformTest(unittest.TestCase):
         platform._sys_version_cache.clear()
         platform._uname_cache = None
         platform._os_release_cache = None
+
+    def test_invalidate_caches(self):
+        self.clear_caches()
+
+        self.assertDictEqual(platform._platform_cache, {})
+        self.assertDictEqual(platform._sys_version_cache, {})
+        self.assertIsNone(platform._uname_cache)
+        self.assertIsNone(platform._os_release_cache)
+
+        # fill the cached entries (some have side effects on others)
+        platform.platform()                 # for platform._platform_cache
+        platform.python_implementation()    # for platform._sys_version_cache
+        platform.uname()                    # for platform._uname_cache
+
+        # check that the cache are filled
+        self.assertNotEqual(platform._platform_cache, {})
+        self.assertNotEqual(platform._sys_version_cache, {})
+        self.assertIsNotNone(platform._uname_cache)
+
+        try:
+            platform.freedesktop_os_release()
+        except OSError:
+            self.assertIsNone(platform._os_release_cache)
+        else:
+            self.assertIsNotNone(platform._os_release_cache)
+
+        with self.subTest('clear platform caches'):
+            platform.invalidate_caches()
+            self.assertDictEqual(platform._platform_cache, {})
+            self.assertDictEqual(platform._sys_version_cache, {})
+            self.assertIsNone(platform._uname_cache)
+            self.assertIsNone(platform._os_release_cache)
 
     def test_architecture(self):
         res = platform.architecture()
@@ -219,6 +259,30 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+        if os.name == "posix":
+            uname = os.uname()
+            self.assertEqual(res.node, uname.nodename)
+            self.assertEqual(res.version, uname.version)
+            self.assertEqual(res.machine, uname.machine)
+
+            if sys.platform == "android":
+                self.assertEqual(res.system, "Android")
+                self.assertEqual(res.release, platform.android_ver().release)
+            elif sys.platform == "ios":
+                # Platform module needs ctypes for full operation. If ctypes
+                # isn't available, there's no ObjC module, and dummy values are
+                # returned.
+                if _ctypes:
+                    self.assertIn(res.system, {"iOS", "iPadOS"})
+                    self.assertEqual(res.release, platform.ios_ver().release)
+                else:
+                    self.assertEqual(res.system, "")
+                    self.assertEqual(res.release, "")
+            else:
+                self.assertEqual(res.system, uname.sysname)
+                self.assertEqual(res.release, uname.release)
+
+
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
         def raises_oserror(*a):
@@ -318,12 +382,44 @@ class PlatformTest(unittest.TestCase):
                     platform._uname_cache = None
 
     def test_java_ver(self):
-        res = platform.java_ver()
-        if sys.platform == 'java':  # Is never actually checked in CI
-            self.assertTrue(all(res))
+        import re
+        msg = re.escape(
+            "'java_ver' is deprecated and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            res = platform.java_ver()
+        self.assertEqual(len(res), 4)
 
+    @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
-        res = platform.win32_ver()
+        release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'
+        res = platform.win32_ver(release1, version1, csd1, ptype1)
+        self.assertEqual(len(res), 4)
+        release, version, csd, ptype = res
+        if release:
+            # Currently, release names always come from internal dicts,
+            # but this could change over time. For now, we just check that
+            # release is something different from what we have passed.
+            self.assertNotEqual(release, release1)
+        if version:
+            # It is rather hard to test explicit version without
+            # going deep into the details.
+            self.assertIn('.', version)
+            for v in version.split('.'):
+                int(v)  # should not fail
+        if csd:
+            self.assertTrue(csd.startswith('SP'), msg=csd)
+        if ptype:
+            if os.cpu_count() > 1:
+                self.assertIn('Multiprocessor', ptype)
+            else:
+                self.assertIn('Uniprocessor', ptype)
+
+    @unittest.skipIf(support.MS_WINDOWS, 'This test only makes sense on non Windows')
+    def test_win32_ver_on_non_windows(self):
+        release, version, csd, ptype = 'a', '1.0', 'c', 'd'
+        res = platform.win32_ver(release, version, csd, ptype)
+        self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
 
     def test_mac_ver(self):
         res = platform.mac_ver()
@@ -377,6 +473,56 @@ class PlatformTest(unittest.TestCase):
             # parent
             support.wait_process(pid, exitcode=0)
 
+    def test_ios_ver(self):
+        result = platform.ios_ver()
+
+        # ios_ver is only fully available on iOS where ctypes is available.
+        if sys.platform == "ios" and _ctypes:
+            system, release, model, is_simulator = result
+            # Result is a namedtuple
+            self.assertEqual(result.system, system)
+            self.assertEqual(result.release, release)
+            self.assertEqual(result.model, model)
+            self.assertEqual(result.is_simulator, is_simulator)
+
+            # We can't assert specific values without reproducing the logic of
+            # ios_ver(), so we check that the values are broadly what we expect.
+
+            # System is either iOS or iPadOS, depending on the test device
+            self.assertIn(system, {"iOS", "iPadOS"})
+
+            # Release is a numeric version specifier with at least 2 parts
+            parts = release.split(".")
+            self.assertGreaterEqual(len(parts), 2)
+            self.assertTrue(all(part.isdigit() for part in parts))
+
+            # If this is a simulator, we get a high level device descriptor
+            # with no identifying model number. If this is a physical device,
+            # we get a model descriptor like "iPhone13,1"
+            if is_simulator:
+                self.assertIn(model, {"iPhone", "iPad"})
+            else:
+                self.assertTrue(
+                    (model.startswith("iPhone") or model.startswith("iPad"))
+                    and "," in model
+                )
+
+            self.assertEqual(type(is_simulator), bool)
+        else:
+            # On non-iOS platforms, calling ios_ver doesn't fail; you get
+            # default values
+            self.assertEqual(result.system, "")
+            self.assertEqual(result.release, "")
+            self.assertEqual(result.model, "")
+            self.assertFalse(result.is_simulator)
+
+            # Check the fallback values can be overridden by arguments
+            override = platform.ios_ver("Foo", "Bar", "Whiz", True)
+            self.assertEqual(override.system, "Foo")
+            self.assertEqual(override.release, "Bar")
+            self.assertEqual(override.model, "Whiz")
+            self.assertTrue(override.is_simulator)
+
     @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
@@ -426,6 +572,43 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
                          ('glibc', '1.23.4'))
 
+    def test_android_ver(self):
+        res = platform.android_ver()
+        self.assertIsInstance(res, tuple)
+        self.assertEqual(res, (res.release, res.api_level, res.manufacturer,
+                               res.model, res.device, res.is_emulator))
+
+        if sys.platform == "android":
+            for name in ["release", "manufacturer", "model", "device"]:
+                with self.subTest(name):
+                    value = getattr(res, name)
+                    self.assertIsInstance(value, str)
+                    self.assertNotEqual(value, "")
+
+            self.assertIsInstance(res.api_level, int)
+            self.assertGreaterEqual(res.api_level, sys.getandroidapilevel())
+
+            self.assertIsInstance(res.is_emulator, bool)
+
+        # When not running on Android, it should return the default values.
+        else:
+            self.assertEqual(res.release, "")
+            self.assertEqual(res.api_level, 0)
+            self.assertEqual(res.manufacturer, "")
+            self.assertEqual(res.model, "")
+            self.assertEqual(res.device, "")
+            self.assertEqual(res.is_emulator, False)
+
+            # Default values may also be overridden using parameters.
+            res = platform.android_ver(
+                "alpha", 1, "bravo", "charlie", "delta", True)
+            self.assertEqual(res.release, "alpha")
+            self.assertEqual(res.api_level, 1)
+            self.assertEqual(res.manufacturer, "bravo")
+            self.assertEqual(res.model, "charlie")
+            self.assertEqual(res.device, "delta")
+            self.assertEqual(res.is_emulator, True)
+
     @support.cpython_only
     def test__comparable_version(self):
         from platform import _comparable_version as V
@@ -472,7 +655,8 @@ class PlatformTest(unittest.TestCase):
                   'root:xnu-4570.71.2~1/RELEASE_X86_64'),
                  'x86_64', 'i386')
         arch = ('64bit', '')
-        with mock.patch.object(platform, 'uname', return_value=uname), \
+        with mock.patch.object(sys, "platform", "darwin"), \
+             mock.patch.object(platform, 'uname', return_value=uname), \
              mock.patch.object(platform, 'architecture', return_value=arch):
             for mac_ver, expected_terse, expected in [
                 # darwin: mac_ver() returns empty strings

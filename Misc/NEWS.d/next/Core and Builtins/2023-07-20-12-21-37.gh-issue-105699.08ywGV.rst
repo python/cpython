@@ -1,4 +1,0 @@
-Python no longer crashes due to an infrequent race in setting
-``Py_FileSystemDefaultEncoding`` and ``Py_FileSystemDefaultEncodeErrors``
-(both deprecated), when simultaneously initializing two isolated
-subinterpreters.  Now they are only set during runtime initialization.

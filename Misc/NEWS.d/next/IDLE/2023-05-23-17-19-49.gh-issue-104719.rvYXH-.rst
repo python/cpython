@@ -1,2 +1,0 @@
-Remove IDLE's modification of tokenize.tabsize and test other uses of
-tokenize data and methods.

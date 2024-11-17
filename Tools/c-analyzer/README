@@ -11,9 +11,8 @@ falls into one of several categories:
 * module state
 * Python runtime state
 
-The ignored-globals.txt file is organized similarly.  Of the different
-categories, the last two are problematic and generally should not exist
-in the codebase.
+Of the different categories, the last two are problematic and
+generally should not exist in the codebase.
 
 Globals that hold module state (i.e. in Modules/*.c) cause problems
 when multiple interpreters are in use.  For more info, see PEP 3121,
@@ -42,4 +41,3 @@ You can also use the more generic tool:
 
 If it reports any globals then they should be resolved.  If the globals
 are runtime state then they should be folded into _PyRuntimeState.
-Otherwise they should be added to ignored-globals.txt.

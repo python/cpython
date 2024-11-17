@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_long.h"           // _PyLong_UnsignedLong_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
 "sha3_224(data=b\'\', /, *, usedforsecurity=True)\n"
@@ -54,7 +54,8 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *data = NULL;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -194,4 +195,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5188d9ae4af48c6d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c644eb0ed42b993 input=a9049054013a1b77]*/

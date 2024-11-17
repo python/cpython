@@ -5,6 +5,7 @@ import errno
 import os
 import select
 import socket
+from test import support
 import time
 import unittest
 
@@ -255,6 +256,23 @@ class TestKQueue(unittest.TestCase):
         kqueue = select.kqueue()
         self.addCleanup(kqueue.close)
         self.assertEqual(os.get_inheritable(kqueue.fileno()), False)
+
+    @support.requires_fork()
+    def test_fork(self):
+        # gh-110395: kqueue objects must be closed after fork
+        kqueue = select.kqueue()
+        if (pid := os.fork()) == 0:
+            try:
+                self.assertTrue(kqueue.closed)
+                with self.assertRaisesRegex(ValueError, "closed kqueue"):
+                    kqueue.fileno()
+            except:
+                os._exit(1)
+            finally:
+                os._exit(0)
+        else:
+            support.wait_process(pid, exitcode=0)
+            self.assertFalse(kqueue.closed)  # child done, we're still open.
 
 
 if __name__ == "__main__":

@@ -166,7 +166,7 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             n in d
 
-    def test_contains_count_stop_crashes(self):
+    def test_contains_count_index_stop_crashes(self):
         class A:
             def __eq__(self, other):
                 d.clear()
@@ -177,6 +177,10 @@ class TestBasic(unittest.TestCase):
         d = deque([A(), A()])
         with self.assertRaises(RuntimeError):
             _ = d.count(3)
+
+        d = deque([A()])
+        with self.assertRaises(RuntimeError):
+            d.index(0)
 
     def test_extend(self):
         d = deque('a')

@@ -116,7 +116,7 @@ def generate_parser_c_extension(
 def print_memstats() -> bool:
     MiB: Final = 2**20
     try:
-        import psutil  # type: ignore[import]
+        import psutil
     except ImportError:
         return False
     print("Memory stats:")

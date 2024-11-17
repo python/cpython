@@ -1,5 +1,5 @@
-:mod:`math` --- Mathematical functions
-======================================
+:mod:`!math` --- Mathematical functions
+=======================================
 
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).
@@ -24,6 +24,92 @@ was generated in the first place.
 
 The following functions are provided by this module.  Except when explicitly
 noted otherwise, all return values are floats.
+
+
+====================================================  ============================================
+**Number-theoretic and representation functions**
+--------------------------------------------------------------------------------------------------
+:func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
+:func:`comb(n, k) <comb>`                             Number of ways to choose *k* items from *n* items without repetition and without order
+:func:`copysign(x, y) <copysign>`                     Magnitude (absolute value) of *x* with the sign of *y*
+:func:`fabs(x) <fabs>`                                Absolute value of *x*
+:func:`factorial(n) <factorial>`                      *n* factorial
+:func:`floor (x)  <floor>`                            Floor of *x*, the largest integer less than or equal to *x*
+:func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
+:func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
+:func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
+:func:`fsum(iterable) <fsum>`                         Sum of values in the input *iterable*
+:func:`gcd(*integers) <gcd>`                          Greatest common divisor of the integer arguments
+:func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
+:func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
+:func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
+:func:`isqrt(n) <isqrt>`                              Integer square root of a nonnegative integer *n*
+:func:`lcm(*integers) <lcm>`                          Least common multiple of the integer arguments
+:func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
+:func:`modf(x) <modf>`                                Fractional and integer parts of *x*
+:func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`perm(n, k) <perm>`                             Number of ways to choose *k* items from *n* items without repetition and with order
+:func:`prod(iterable, start) <prod>`                  Product of elements in the input *iterable* with a *start* value
+:func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
+:func:`sumprod(p, q) <sumprod>`                       Sum of products from two iterables *p* and *q*
+:func:`trunc(x) <trunc>`                              Integer part of *x*
+:func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
+
+**Power and logarithmic functions**
+--------------------------------------------------------------------------------------------------
+:func:`cbrt(x) <cbrt>`                                Cube root of *x*
+:func:`exp(x) <exp>`                                  *e* raised to the power *x*
+:func:`exp2(x) <exp2>`                                *2* raised to the power *x*
+:func:`expm1(x) <expm1>`                              *e* raised to the power *x*, minus 1
+:func:`log(x, base) <log>`                            Logarithm of *x* to the given base (*e* by default)
+:func:`log1p(x) <log1p>`                              Natural logarithm of *1+x* (base *e*)
+:func:`log2(x) <log2>`                                Base-2 logarithm of *x*
+:func:`log10(x) <log10>`                              Base-10 logarithm of *x*
+:func:`pow(x, y) <math.pow>`                          *x* raised to the power *y*
+:func:`sqrt(x) <sqrt>`                                Square root of *x*
+
+**Trigonometric functions**
+--------------------------------------------------------------------------------------------------
+:func:`acos(x) <acos>`                                Arc cosine of *x*
+:func:`asin(x) <asin>`                                Arc sine of *x*
+:func:`atan(x) <atan>`                                Arc tangent of *x*
+:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``
+:func:`cos(x) <cos>`                                  Cosine of *x*
+:func:`dist(p, q) <dist>`                             Euclidean distance between two points *p* and *q* given as an iterable of coordinates
+:func:`hypot(*coordinates) <hypot>`                   Euclidean norm of an iterable of coordinates
+:func:`sin(x) <sin>`                                  Sine of *x*
+:func:`tan(x) <tan>`                                  Tangent of *x*
+
+**Angular conversion**
+--------------------------------------------------------------------------------------------------
+:func:`degrees(x) <degrees>`                          Convert angle *x* from radians to degrees
+:func:`radians(x) <radians>`                          Convert angle *x* from degrees to radians
+
+**Hyperbolic functions**
+--------------------------------------------------------------------------------------------------
+:func:`acosh(x) <acosh>`                              Inverse hyperbolic cosine of *x*
+:func:`asinh(x) <asinh>`                              Inverse hyperbolic sine of *x*
+:func:`atanh(x) <atanh>`                              Inverse hyperbolic tangent of *x*
+:func:`cosh(x) <cosh>`                                Hyperbolic cosine of *x*
+:func:`sinh(x) <sinh>`                                Hyperbolic sine of *x*
+:func:`tanh(x) <tanh>`                                Hyperbolic tangent of *x*
+
+**Special functions**
+--------------------------------------------------------------------------------------------------
+:func:`erf(x) <erf>`                                  `Error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
+:func:`erfc(x) <erfc>`                                `Complementary error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
+:func:`gamma(x) <gamma>`                              `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at *x*
+:func:`lgamma(x) <lgamma>`                            Natural logarithm of the absolute value of the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at *x*
+
+**Constants**
+--------------------------------------------------------------------------------------------------
+:data:`pi`                                            *π* = 3.141592...
+:data:`e`                                             *e* = 2.718281...
+:data:`tau`                                           *τ* = 2\ *π* = 6.283185...
+:data:`inf`                                           Positive infinity
+:data:`nan`                                           "Not a number" (NaN)
+====================================================  ============================================
 
 
 Number-theoretic and representation functions
@@ -82,6 +168,22 @@ Number-theoretic and representation functions
    should return an :class:`~numbers.Integral` value.
 
 
+.. function:: fma(x, y, z)
+
+   Fused multiply-add operation. Return ``(x * y) + z``, computed as though with
+   infinite precision and range followed by a single round to the ``float``
+   format. This operation often provides better accuracy than the direct
+   expression ``(x * y) + z``.
+
+   This function follows the specification of the fusedMultiplyAdd operation
+   described in the IEEE 754 standard. The standard leaves one case
+   implementation-defined, namely the result of ``fma(0, inf, nan)``
+   and ``fma(inf, 0, nan)``. In these cases, ``math.fma`` returns a NaN,
+   and does not raise any exception.
+
+   .. versionadded:: 3.13
+
+
 .. function:: fmod(x, y)
 
    Return ``fmod(x, y)``, as defined by the platform C library. Note that the
@@ -107,7 +209,7 @@ Number-theoretic and representation functions
 
 .. function:: fsum(iterable)
 
-   Return an accurate floating point sum of values in the iterable.  Avoids
+   Return an accurate floating-point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
@@ -117,8 +219,8 @@ Number-theoretic and representation functions
    least significant bit.
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
-   recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
+   recipes for accurate floating-point summation
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
 
 
 .. function:: gcd(*integers)
@@ -142,19 +244,21 @@ Number-theoretic and representation functions
    ``False`` otherwise.
 
    Whether or not two values are considered close is determined according to
-   given absolute and relative tolerances.
+   given absolute and relative tolerances.  If no errors occur, the result will
+   be: ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
 
    *rel_tol* is the relative tolerance -- it is the maximum allowed difference
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be greater than zero.
+   within about 9 decimal digits.  *rel_tol* must be nonnegative and less
+   than ``1.0``.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
-
-   If no errors occur, the result will be:
-   ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
+   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
    handled according to IEEE rules.  Specifically, ``NaN`` is not considered
@@ -239,10 +343,10 @@ Number-theoretic and representation functions
 
    See also :func:`math.ulp`.
 
+   .. versionadded:: 3.9
+
    .. versionchanged:: 3.12
       Added the *steps* argument.
-
-   .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
 
@@ -252,7 +356,7 @@ Number-theoretic and representation functions
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
 
-   If *k* is not specified or is None, then *k* defaults to *n*
+   If *k* is not specified or is ``None``, then *k* defaults to *n*
    and the function returns ``n!``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
@@ -288,7 +392,7 @@ Number-theoretic and representation functions
    If the result of the remainder operation is zero, that zero will have
    the same sign as *x*.
 
-   On platforms using IEEE 754 binary floating-point, the result of this
+   On platforms using IEEE 754 binary floating point, the result of this
    operation is always exactly representable: no rounding error is introduced.
 
    .. versionadded:: 3.7
@@ -302,7 +406,7 @@ Number-theoretic and representation functions
 
    Roughly equivalent to::
 
-       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+       sum(map(operator.mul, p, q, strict=True))
 
    For float and mixed int/float inputs, the intermediate products
    and sums are computed with extended precision.
@@ -431,11 +535,11 @@ Power and logarithmic functions
 
 .. function:: pow(x, y)
 
-   Return ``x`` raised to the power ``y``.  Exceptional cases follow
+   Return *x* raised to the power *y*.  Exceptional cases follow
    the IEEE 754 standard as far as possible.  In particular,
    ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
-   when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
-   ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
+   when *x* is a zero or a NaN.  If both *x* and *y* are finite,
+   *x* is negative, and *y* is not an integer then ``pow(x, y)``
    is undefined, and raises :exc:`ValueError`.
 
    Unlike the built-in ``**`` operator, :func:`math.pow` converts both
@@ -592,7 +696,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
+   <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -680,10 +784,10 @@ Constants
       >>> math.isnan(float('nan'))
       True
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: 3.11
       It is now always available.
-
-   .. versionadded:: 3.5
 
 
 .. impl-detail::

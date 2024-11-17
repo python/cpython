@@ -1,1 +1,0 @@
-Reduce overhead to add and remove :mod:`asyncio` readers and writers.

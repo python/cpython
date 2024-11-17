@@ -1,2 +1,0 @@
-:mod:`re` module: fix the matching of possessive quantifiers in the case of
-a subpattern containing backtracking.

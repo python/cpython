@@ -19,7 +19,7 @@ class AuditTest(unittest.TestCase):
     maxDiff = None
 
     @support.requires_subprocess()
-    def do_test(self, *args):
+    def run_test_in_subprocess(self, *args):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
@@ -27,27 +27,26 @@ class AuditTest(unittest.TestCase):
             stderr=subprocess.PIPE,
         ) as p:
             p.wait()
-            sys.stdout.writelines(p.stdout)
-            sys.stderr.writelines(p.stderr)
-            if p.returncode:
-                self.fail("".join(p.stderr))
+            return p, p.stdout.read(), p.stderr.read()
 
-    @support.requires_subprocess()
-    def run_python(self, *args):
+    def do_test(self, *args):
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+        if proc.returncode:
+            self.fail(stderr)
+
+    def run_python(self, *args, expect_stderr=False):
         events = []
-        with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as p:
-            p.wait()
-            sys.stderr.writelines(p.stderr)
-            return (
-                p.returncode,
-                [line.strip().partition(" ") for line in p.stdout],
-                "".join(p.stderr),
-            )
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+        if not expect_stderr or support.verbose:
+            sys.stderr.write(stderr)
+        return (
+            proc.returncode,
+            [line.strip().partition(" ") for line in stdout.splitlines()],
+            stderr,
+        )
 
     def test_basic(self):
         self.do_test("test_basic")
@@ -90,6 +89,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_unraisablehook(self):
+        import_helper.import_module("_testcapi")
         returncode, events, stderr = self.run_python("test_unraisablehook")
         if returncode:
             self.fail(stderr)
@@ -140,6 +140,7 @@ class AuditTest(unittest.TestCase):
         )
 
 
+    @support.requires_resource('network')
     def test_http(self):
         import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
@@ -210,6 +211,8 @@ class AuditTest(unittest.TestCase):
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
             ("test.test_func", "()"),
+            ("_thread.start_joinable_thread", "(<test_func>, 1, None)"),
+            ("test.test_func", "()"),
         ]
 
         self.assertEqual(actual, expected)
@@ -257,7 +260,7 @@ class AuditTest(unittest.TestCase):
             self.fail(stderr)
 
     def test_time(self):
-        returncode, events, stderr = self.run_python("test_time")
+        returncode, events, stderr = self.run_python("test_time", "print")
         if returncode:
             self.fail(stderr)
 
@@ -271,6 +274,11 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_time_fail(self):
+        returncode, events, stderr = self.run_python("test_time", "fail",
+                                                     expect_stderr=True)
+        self.assertNotEqual(returncode, 0)
+        self.assertIn('hook failed', stderr.splitlines()[-1])
 
     def test_sys_monitoring_register_callback(self):
         returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
@@ -283,6 +291,27 @@ class AuditTest(unittest.TestCase):
         expected = [("sys.monitoring.register_callback", "(None,)")]
 
         self.assertEqual(actual, expected)
+
+    def test_winapi_createnamedpipe(self):
+        winapi = import_helper.import_module("_winapi")
+
+        pipe_name = r"\\.\pipe\LOCAL\test_winapi_createnamed_pipe"
+        returncode, events, stderr = self.run_python("test_winapi_createnamedpipe", pipe_name)
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_winapi.CreateNamedPipe", f"({pipe_name!r}, 3, 8)")]
+
+        self.assertEqual(actual, expected)
+
+    def test_assert_unicode(self):
+        # See gh-126018
+        returncode, _, stderr = self.run_python("test_assert_unicode")
+        if returncode:
+            self.fail(stderr)
 
 
 if __name__ == "__main__":

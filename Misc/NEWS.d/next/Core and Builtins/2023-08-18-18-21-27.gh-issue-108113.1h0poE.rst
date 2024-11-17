@@ -1,8 +1,0 @@
-The :func:`compile` built-in can now accept a new flag,
-``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
-except that the returned ``AST`` is optimized according to the value
-of the ``optimize`` argument.
-
-:func:`ast.parse` now accepts an optional argument ``optimize``
-which is passed on to the :func:`compile` built-in. This makes it
-possible to obtain an optimized ``AST``.

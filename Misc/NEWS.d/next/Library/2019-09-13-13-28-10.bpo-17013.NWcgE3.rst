@@ -1,3 +1,0 @@
-Add ``ThreadingMock`` to :mod:`unittest.mock` that can be used to create
-Mock objects that can wait until they are called. Patch by Karthikeyan
-Singaravelan and Mario Corchero.

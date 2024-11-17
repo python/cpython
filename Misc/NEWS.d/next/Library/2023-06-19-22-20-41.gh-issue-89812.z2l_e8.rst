@@ -1,2 +1,0 @@
-Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
-:exc:`NotImplementedError` when a path operation isn't supported.
