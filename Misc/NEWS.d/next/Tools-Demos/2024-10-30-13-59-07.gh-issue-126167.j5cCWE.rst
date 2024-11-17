@@ -1,0 +1,2 @@
+The iOS testbed was modified so that it can be used by third-party projects
+for testing purposes.
