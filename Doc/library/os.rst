@@ -4315,8 +4315,8 @@ These functions may be used to create and manage processes.
    The variants which include a "p" near the end (:func:`execlp`,
    :func:`execlpe`, :func:`execvp`, and :func:`execvpe`) will use the
    :envvar:`PATH` environment variable to locate the program *file*.  When the
-   environment is being replaced (using one of the :func:`exec\*e <execl>` variants,
-   discussed in the next paragraph), the new environment is used as the source of
+   environment is being replaced (see *Environment variables*
+   below), the new environment is used as the source of
    the :envvar:`PATH` variable.
 
    The variants without "p" (:func:`execl`, :func:`execle`,
