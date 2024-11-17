@@ -2171,13 +2171,13 @@ Registering custom types or actions
    a parser using :meth:`!register`. This method is called when the action is
    added to the parser. :meth:`!register` takes in the following arguments:
 
-   * *registry_name* - the name of the internal registry where the object
-   will be stored (e.g. ``action``, ``type``).
+      * *registry_name* - the name of the internal registry where the object
+      will be stored (e.g. ``action``, ``type``).
 
-   * *value* - a string serves as the key under which the object will be
-   registered.
+      * *value* - a string serves as the key under which the object will be
+      registered.
 
-   * *object* - the object to be registered, such as a callable or class.
+      * *object* - the object to be registered, such as a callable or class.
 
    The following example shows how to register a custom type with a parser::
 
