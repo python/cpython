@@ -1,0 +1,1 @@
+Included possibilities in the error message of getopt.do_longs.
