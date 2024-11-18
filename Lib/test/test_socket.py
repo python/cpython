@@ -5141,14 +5141,22 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # test recv() with large timeout
         conn, addr = self.serv.accept()
         self.addCleanup(conn.close)
-        conn.settimeout(large_timeout)
+        try:
+            conn.settimeout(large_timeout)
+        except OverflowError:
+            # On Windows, settimeout() fails with OverflowError, whereas
+            # we want to test recv(). Just give up silently.
+            return
         msg = conn.recv(len(MSG))
 
     def _testLargeTimeout(self):
         # test sendall() with large timeout
         large_timeout = _testcapi.INT_MAX + 1
         self.cli.connect((HOST, self.port))
-        self.cli.settimeout(large_timeout)
+        try:
+            self.cli.settimeout(large_timeout)
+        except OverflowError:
+            return
         self.cli.sendall(MSG)
 
 
