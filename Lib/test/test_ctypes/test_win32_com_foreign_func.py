@@ -125,7 +125,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         self.assertEqual(S_OK, hr_qi)
         self.assertEqual(3, punk.Release())
 
-        with self.assertRaises(WindowsError) as e:
+        with self.assertRaises(OSError) as e:
             punk.QueryInterface(IID_IStream, IUnknown())
         self.assertEqual(E_NOINTERFACE, e.exception.winerror)
 
@@ -152,7 +152,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         self.assertEqual(S_OK, hr_qi)
         self.assertEqual(1, punk.Release())
 
-        with self.assertRaises(WindowsError) as e:
+        with self.assertRaises(OSError) as e:
             ppst.QueryInterface(IID_IStream, IUnknown())
         self.assertEqual(E_NOINTERFACE, e.exception.winerror)
 
