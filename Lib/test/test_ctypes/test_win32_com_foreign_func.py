@@ -20,11 +20,6 @@ OUT = 2
 TRUE = 1
 E_NOINTERFACE = -2147467262
 
-PyInstanceMethod_New = ctypes.pythonapi.PyInstanceMethod_New
-PyInstanceMethod_New.argtypes = [ctypes.py_object]
-PyInstanceMethod_New.restype = ctypes.py_object
-PyInstanceMethod_Type = type(PyInstanceMethod_New(id))
-
 
 class GUID(ctypes.Structure):
     # https://learn.microsoft.com/en-us/windows/win32/api/guiddef/ns-guiddef-guid
@@ -36,39 +31,18 @@ class GUID(ctypes.Structure):
     ]
 
 
-class ProtoComMethod:
-    """Utilities for tests that define COM methods."""
+def create_proto_com_method(name, index, restype, *argtypes):
+    proto = ctypes.WINFUNCTYPE(restype, *argtypes)
 
-    def __init__(self, index, restype, *argtypes):
-        self.index = index
-        self.proto = ctypes.WINFUNCTYPE(restype, *argtypes)
+    def make_method(*args):
+        foreign_func = proto(index, name, *args)
 
-    def __set_name__(self, owner, name):
-        foreign_func = self.proto(self.index, name, *self.args)
-        self.mth = PyInstanceMethod_Type(foreign_func)
+        def call(self, *args, **kwargs):
+            return foreign_func(self, *args, **kwargs)
 
-    # NOTE: To aid understanding, adding type annotations with `typing`
-    # would look like this.
-    #
-    # _ParamFlags = tuple[tuple[int] | tuple[int, str] | tuple[int, str, Any], ...]
-    #
-    # @overload
-    # def __call__(self, paramflags: None | _ParamFlags, iid: GUID, /) -> Self: ...
-    # @overload
-    # def __call__(self, paramflags: None | _ParamFlags, /) -> Self: ...
-    # @overload
-    # def __call__(self) -> Self: ...
-    def __call__(self, *args):
-        self.args = args
-        return self
+        return call
 
-    def __get__(self, instance, owner=None):
-        # if instance is None:
-        #     return self
-        # NOTE: In this test, there is no need to define behavior for the
-        # custom descriptor as a class attribute, so the above implementation
-        # is omitted.
-        return self.mth.__get__(instance)
+    return make_method
 
 
 def create_guid(name):
@@ -91,15 +65,17 @@ IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
 CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
 
 # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
-proto_query_interface = ProtoComMethod(
-    0, HRESULT, POINTER(GUID), POINTER(c_void_p)
+proto_query_interface = create_proto_com_method(
+    "QueryInterface", 0, HRESULT, POINTER(GUID), POINTER(c_void_p)
 )
 # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-proto_add_ref = ProtoComMethod(1, ctypes.c_long)
+proto_add_ref = create_proto_com_method("AddRef", 1, ctypes.c_long)
 # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
-proto_release = ProtoComMethod(2, ctypes.c_long)
+proto_release = create_proto_com_method("Release", 2, ctypes.c_long)
 # https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid
-proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
+proto_get_class_id = create_proto_com_method(
+    "GetClassID", 3, HRESULT, POINTER(GUID)
+)
 
 
 class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
