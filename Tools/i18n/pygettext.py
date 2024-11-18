@@ -168,7 +168,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from operator import itemgetter
 
-__version__ = '1.6'
+__version__ = '1.5'
 
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
