@@ -5,6 +5,14 @@ import unittest
 from ctypes import POINTER, byref, c_void_p
 from ctypes.wintypes import BYTE, DWORD, WORD
 
+if sys.platform != "win32":
+    raise unittest.SkipTest("Windows-specific test")
+
+
+from _ctypes import COMError
+from ctypes import HRESULT
+
+
 COINIT_APARTMENTTHREADED = 0x2
 CLSCTX_SERVER = 5
 S_OK = 0
@@ -75,30 +83,25 @@ def is_equal_guid(guid1, guid2):
     return ole32.IsEqualGUID(byref(guid1), byref(guid2))
 
 
-if sys.platform == "win32":
-    from _ctypes import COMError
-    from ctypes import HRESULT
+ole32 = ctypes.oledll.ole32
 
-    ole32 = ctypes.oledll.ole32
+IID_IUnknown = create_guid("{00000000-0000-0000-C000-000000000046}")
+IID_IStream = create_guid("{0000000C-0000-0000-C000-000000000046}")
+IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
+CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
 
-    IID_IUnknown = create_guid("{00000000-0000-0000-C000-000000000046}")
-    IID_IStream = create_guid("{0000000C-0000-0000-C000-000000000046}")
-    IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
-    CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
-
-    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
-    proto_query_interface = ProtoComMethod(
-        0, HRESULT, POINTER(GUID), POINTER(c_void_p)
-    )
-    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-    proto_add_ref = ProtoComMethod(1, ctypes.c_long)
-    # https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
-    proto_release = ProtoComMethod(2, ctypes.c_long)
-    # https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid
-    proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
+# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
+proto_query_interface = ProtoComMethod(
+    0, HRESULT, POINTER(GUID), POINTER(c_void_p)
+)
+# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
+proto_add_ref = ProtoComMethod(1, ctypes.c_long)
+# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
+proto_release = ProtoComMethod(2, ctypes.c_long)
+# https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid
+proto_get_class_id = ProtoComMethod(3, HRESULT, POINTER(GUID))
 
 
-@unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
 class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
     def setUp(self):
         # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex
