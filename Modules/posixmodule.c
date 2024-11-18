@@ -13569,15 +13569,19 @@ conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablenam
         Py_INCREF(arg);  // Match the Py_DECREF below.
     }
 
-    if (PyLong_Check(arg)) {
-        *valuep = PyLong_AsInt(arg);
-    } else {
+    int success = 0;
+    if (!PyLong_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
             "configuration names must be strings or integers");
+    } else {
+        int value = PyLong_AsInt(arg);
+        if (!(value == -1 && PyErr_Occurred())) {
+            *valuep = value;
+            success = 1;
+        }
     }
-
     Py_DECREF(arg);
-    return !PyErr_Occurred();
+    return success;
 }
 
 
