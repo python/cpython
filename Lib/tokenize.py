@@ -398,9 +398,10 @@ def detect_encoding(readline):
         except LookupError:
             # This behaviour mimics the Python interpreter
             if filename is None:
-                msg = f"encoding '{encoding}' is not registered"
+                msg = "unknown encoding: " + encoding
             else:
-                msg = f"encoding '{encoding}' is not registered for {filename!r}"
+                msg = "unknown encoding for {!r}: {}".format(filename,
+                        encoding)
             raise SyntaxError(msg)
 
         if bom_found:
