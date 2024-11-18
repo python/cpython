@@ -2914,10 +2914,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
-                _PyObject_GC_TRACK(dict);
-            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
