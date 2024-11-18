@@ -1800,7 +1800,6 @@ _PyDumpExecutors(FILE *out)
         exec = exec->vm_data.links.next;
     }
     fprintf(out, "}\n\n");
-    fclose(out);
 }
 
 #endif /* _Py_TIER2 */

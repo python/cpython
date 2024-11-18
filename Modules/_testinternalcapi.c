@@ -2077,17 +2077,14 @@ has_deferred_refcount(PyObject *self, PyObject *op)
 }
 
 static PyObject *
-dump_executors(PyObject *self, PyObject *Py_UNUSED(ignored))
+dump_executors(PyObject *self, PyObject *filepath)
 {
-# ifdef MS_WINDOWS
-        const char *dirname = "c:\\temp\\py_stats\\";
-# else
-        const char *dirname = "/tmp/py_stats/";
-# endif
-    char buf[64];
-    sprintf(buf, "%s%s.gv", dirname, "executor_dump");
-    FILE *out = fopen(buf, "w");
+    FILE *out = _Py_fopen_obj(filepath, "wb");
+    if (out == NULL) {
+        return NULL;
+    }
     _PyDumpExecutors(out);
+    fclose(out);
     Py_RETURN_NONE;
 }
 
@@ -2189,7 +2186,7 @@ static PyMethodDef module_functions[] = {
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
-    {"dump_executors", dump_executors, METH_NOARGS},
+    {"dump_executors", dump_executors, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
