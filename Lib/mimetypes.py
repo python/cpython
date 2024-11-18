@@ -565,6 +565,7 @@ def _default_mime_types():
         '.heif'   : 'image/heif',
         '.png'    : 'image/png',
         '.svg'    : 'image/svg+xml',
+        '.t38'    : 'image/t38',
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.tfx'    : 'image/tiff-fx',

@@ -245,6 +245,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/g3fax", ".g3"),
                 ("image/jp2", ".jp2"),
                 ("image/jpm", ".jpm"),
+                ("image/t38", ".t38"),
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("image/jpeg", ".jpg"),
