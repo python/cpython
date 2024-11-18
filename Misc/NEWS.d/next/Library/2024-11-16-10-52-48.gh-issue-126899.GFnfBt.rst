@@ -1,1 +1,1 @@
-Add the var-positional parameter to :meth:`!tkinter.Misc.after` and :meth:`!tkinter.Misc.after_idle`.
+Add the var-keyword parameter to :meth:`!tkinter.Misc.after` and :meth:`!tkinter.Misc.after_idle`.
