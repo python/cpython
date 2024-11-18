@@ -366,14 +366,14 @@ class WorkerThread(threading.Thread):
             stdout = self.read_stdout(stdout_file)
 
             if retcode is None:
-                raise WorkerError(test_name, stdout=stdout,
+                raise WorkerError(self.test_name, stdout=stdout,
                                   err_msg=None,
                                   state=State.TIMEOUT)
             if retcode != 0:
                 name = support.get_signal_name(retcode)
                 if name:
                     retcode = f"{retcode} ({name})"
-                raise WorkerError(test_name, f"Exit code {retcode}", stdout,
+                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout,
                                   state=State.WORKER_FAILED)
 
             result, stdout = self.read_json(json_file, json_tmpfile, stdout)
