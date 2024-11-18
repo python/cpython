@@ -591,7 +591,7 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
-    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    @requires_subprocess
     def test_config_vars_depend_on_site_initialization(self):
         script = textwrap.dedent("""
             import sysconfig
@@ -615,7 +615,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
         self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
 
-    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    @requires_subprocess
     def test_config_vars_recalculation_after_site_initialization(self):
         script = textwrap.dedent("""
             import sysconfig
@@ -639,7 +639,7 @@ class TestSysConfig(unittest.TestCase):
         #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
         #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
 
-    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    @requires_subprocess
     def test_paths_depend_on_site_initialization(self):
         script = textwrap.dedent("""
             import sysconfig
@@ -656,7 +656,7 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertNotEqual(site_paths, no_site_paths)
 
-    @unittest.skipIf(sys.platform == 'wasi', 'venv is unsupported on WASI')
+    @unittest.skipIf(is_wasi, 'venv is unsupported on WASI')
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
             import sys, sysconfig
