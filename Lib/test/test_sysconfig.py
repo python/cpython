@@ -656,7 +656,7 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertNotEqual(site_paths, no_site_paths)
 
-    @unittest.skipIf(is_wasi, 'venv is unsupported on WASI')
+    @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
             import sys, sysconfig
@@ -688,6 +688,7 @@ class TestSysConfig(unittest.TestCase):
         # prefix/exec_prefix Makefile variables, so we use them in the comparison.
         self.assertNotEqual(data['prefix'], data['base_prefix'])
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
+
 
 class MakefileTests(unittest.TestCase):
 
