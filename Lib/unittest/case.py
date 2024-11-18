@@ -1230,19 +1230,18 @@ class TestCase(object):
                         commonvalues.append(key)
                         commonkeys.remove(key)
                 if commonvalues:
-                    lines.append(" Keys in both dicts with identical values:")
                     lines.extend(_justified_values(d1, commonvalues, " "))
                 if commonkeys:
-                    lines.append(" Keys in both dicts with differing values:")
+                    lines.append("Keys in both dicts with differing values:")
                     for key in sorted(commonkeys):
                         key_repr = _value_repr(key)
                         lines.append("  - %s: %s," % (key_repr, _value_repr(d1[key])))
                         lines.append("  + %s: %s," % (key_repr, _value_repr(d2[key])))
             if d1extrakeys:
-                lines.append(" Keys in the first dict but not the second:")
+                lines.append("Keys in the first dict but not the second:")
                 lines.extend(_justified_values(d1, d1extrakeys, "-"))
             if d2extrakeys:
-                lines.append(" Keys in the second dict but not the first:")
+                lines.append("Keys in the second dict but not the first:")
                 lines.extend(_justified_values(d2, d2extrakeys, "+"))
 
             diff = "\n{\n%s\n}" % '\n'.join(lines)
