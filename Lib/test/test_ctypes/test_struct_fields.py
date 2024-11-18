@@ -79,7 +79,7 @@ class FieldsTestBase:
         class X(self.cls):
             _fields_ = [('char', c_char),]
         class Y(self.cls):
-            _fields_ = [('largeField', X * (2 ** 32))]
+            _fields_ = [('largeField', X * (2 ** 32 - 1))]
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
