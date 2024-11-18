@@ -757,9 +757,13 @@ class FormatTestCase(unittest.TestCase):
         # thousands separators
         x = 123_456.123_456
         self.assertEqual(format(x, '_f'), '123_456.123456')
+        self.assertEqual(format(x, ',f'), '123,456.123456')
         self.assertEqual(format(x, '._f'), '123456.123_456')
+        self.assertEqual(format(x, '.,f'), '123456.123,456')
         self.assertEqual(format(x, '_._f'), '123_456.123_456')
+        self.assertEqual(format(x, ',.,f'), '123,456.123,456')
         self.assertEqual(format(x, '.10_f'), '123456.123_456_000_0')
+        self.assertEqual(format(x, '.10,f'), '123456.123,456,000,0')
         self.assertEqual(format(x, '>21._f'), '       123456.123_456')
         self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
         self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
