@@ -269,6 +269,11 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 #define HEAD_UNLOCK(runtime) \
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
+#define THREADS_HEAD_LOCK(interp) \
+    PyMutex_LockFlags(&(interp)->threads.mutex, _Py_LOCK_DONT_DETACH)
+#define THREADS_HEAD_UNLOCK(interp) \
+    PyMutex_Unlock(&(interp)->threads.mutex)
+
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
 // Export for test_peg_generator.

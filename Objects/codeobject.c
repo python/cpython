@@ -2871,20 +2871,24 @@ get_indices_in_use(PyInterpreterState *interp, struct flag_set *in_use)
     assert(interp->stoptheworld.world_stopped);
     assert(in_use->flags == NULL);
     int32_t max_index = 0;
+    THREADS_HEAD_LOCK(interp);
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         int32_t idx = ((_PyThreadStateImpl *) p)->tlbc_index;
         if (idx > max_index) {
             max_index = idx;
         }
     }
+    THREADS_HEAD_UNLOCK(interp);
     in_use->size = (size_t) max_index + 1;
     in_use->flags = PyMem_Calloc(in_use->size, sizeof(*in_use->flags));
     if (in_use->flags == NULL) {
         return -1;
     }
+    THREADS_HEAD_LOCK(interp);
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         in_use->flags[((_PyThreadStateImpl *) p)->tlbc_index] = 1;
     }
+    THREADS_HEAD_UNLOCK(interp);
     return 0;
 }
 

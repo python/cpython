@@ -977,25 +977,21 @@ make_pending_calls(PyThreadState *tstate)
 void
 _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    HEAD_LOCK(runtime);
+    THREADS_HEAD_LOCK(interp);
     for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
         _Py_set_eval_breaker_bit(tstate, bit);
     }
-    HEAD_UNLOCK(runtime);
+    THREADS_HEAD_UNLOCK(interp);
 }
 
 void
 _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    HEAD_LOCK(runtime);
+    THREADS_HEAD_LOCK(interp);
     for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
         _Py_unset_eval_breaker_bit(tstate, bit);
     }
-    HEAD_UNLOCK(runtime);
+    THREADS_HEAD_UNLOCK(interp);
 }
 
 void
