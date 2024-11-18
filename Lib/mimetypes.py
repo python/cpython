@@ -447,7 +447,7 @@ def _default_mime_types():
         }
 
     # Before adding new types, make sure they are either registered with IANA,
-    # at http://www.iana.org/assignments/media-types
+    # at https://www.iana.org/assignments/media-types/media-types.xhtml
     # or extensions, i.e. using the x- prefix
 
     # If you add to these, please keep them sorted by mime type.
