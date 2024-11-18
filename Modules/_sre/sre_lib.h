@@ -1306,6 +1306,17 @@ dispatch:
                pointer */
             state->ptr = ptr;
 
+            /* Set state->repeat to non-NULL */
+            ctx->u.rep = repeat_pool_malloc(state);
+            if (!ctx->u.rep) {
+                RETURN_ERROR(SRE_ERROR_MEMORY);
+            }
+            ctx->u.rep->count = -1;
+            ctx->u.rep->pattern = NULL;
+            ctx->u.rep->prev = state->repeat;
+            ctx->u.rep->last_ptr = NULL;
+            state->repeat = ctx->u.rep;
+
             /* Initialize Count to 0 */
             ctx->count = 0;
 
@@ -1320,6 +1331,9 @@ dispatch:
                 }
                 else {
                     state->ptr = ptr;
+                    /* Restore state->repeat */
+                    state->repeat = ctx->u.rep->prev;
+                    repeat_pool_free(state, ctx->u.rep);
                     RETURN_FAILURE;
                 }
             }
@@ -1391,6 +1405,10 @@ dispatch:
                     break;
                 }
             }
+
+            /* Restore state->repeat */
+            state->repeat = ctx->u.rep->prev;
+            repeat_pool_free(state, ctx->u.rep);
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
