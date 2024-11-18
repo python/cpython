@@ -1,1 +1,1 @@
-Add support for multi-argument gettext functions in :program:`pygettext.py`.
+Add support for multi-argument :mod:`gettext` functions in :program:`pygettext.py`.
