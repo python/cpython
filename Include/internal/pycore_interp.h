@@ -130,6 +130,10 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        struct {
+            PyMutex mutex;
+            _PyThreadStateImpl *head;
+        } freelist;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */

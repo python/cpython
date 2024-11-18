@@ -515,6 +515,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
+        _PyMutex_at_fork_reinit(&interp->threads.freelist.mutex);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
@@ -628,6 +629,8 @@ init_interpreter(PyInterpreterState *interp,
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
+
+    interp->threads.freelist.head = &interp->_initial_thread;
 
     // We would call _PyObject_InitState() at this point
     // if interp->feature_flags were alredy set.
@@ -765,7 +768,6 @@ PyInterpreterState_New(void)
     assert(interp != NULL);
     return interp;
 }
-
 
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
@@ -910,6 +912,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
+
+    // We could clear interp->threads.freelist here
+    // if it held more than just the initial thread state.
 }
 
 
@@ -1386,36 +1391,61 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
     return res;
 }
 
-static _PyThreadStateImpl *
-alloc_threadstate(void)
+static void
+reset_threadstate(_PyThreadStateImpl *tstate)
 {
-    return PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
+    // Set to _PyThreadState_INIT directly?
+    memcpy(tstate,
+           &initial._main_interpreter._initial_thread,
+           sizeof(*tstate));
+}
+
+#define LOCK_THREADS_FREELIST(interp) \
+    PyMutex_LockFlags(&(interp)->threads.freelist.mutex, _Py_LOCK_DONT_DETACH)
+#define UNLOCK_THREADS_FREELIST(interp) \
+    PyMutex_Unlock(&(interp)->threads.freelist.mutex)
+
+static _PyThreadStateImpl *
+alloc_threadstate(PyInterpreterState *interp)
+{
+    // Try the freelist first.
+    _PyThreadStateImpl *tstate = NULL;
+    LOCK_THREADS_FREELIST(interp);
+    if (interp->threads.freelist.head != NULL) {
+        tstate = interp->threads.freelist.head;
+        interp->threads.freelist.head =
+            (_PyThreadStateImpl *)tstate->base.next;
+    }
+    UNLOCK_THREADS_FREELIST(interp);
+    // Fall back to the allocator.
+    if (tstate == NULL) {
+        tstate = PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
+        reset_threadstate(tstate);
+    }
+    return tstate;
 }
 
 static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
+    PyInterpreterState *interp = tstate->base.interp;
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
-    if (tstate == &tstate->base.interp->_initial_thread) {
-        // Restore to _PyThreadState_INIT.
-        memcpy(tstate,
-               &initial._main_interpreter._initial_thread,
-               sizeof(*tstate));
+    if (tstate == &interp->_initial_thread) {
+        // Add it to the freelist.
+        reset_threadstate(tstate);
+        LOCK_THREADS_FREELIST(interp);
+        tstate->base.next = (PyThreadState *)interp->threads.freelist.head;
+        interp->threads.freelist.head = tstate;
+        UNLOCK_THREADS_FREELIST(interp);
     }
     else {
         PyMem_RawFree(tstate);
     }
 }
 
-static void
-reset_threadstate(_PyThreadStateImpl *tstate)
-{
-    // Set to _PyThreadState_INIT.
-    memcpy(tstate,
-           &initial._main_interpreter._initial_thread,
-           sizeof(*tstate));
-}
+#undef LOCK_THREADS_FREELIST
+#undef UNLOCK_THREADS_FREELIST
 
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
@@ -1501,66 +1531,38 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int whence)
 {
-    _PyThreadStateImpl *tstate;
-    _PyRuntimeState *runtime = interp->runtime;
-    // We don't need to allocate a thread state for the main interpreter
-    // (the common case), but doing it later for the other case revealed a
-    // reentrancy problem (deadlock).  So for now we always allocate before
-    // taking the interpreters lock.  See GH-96071.
-    _PyThreadStateImpl *new_tstate = alloc_threadstate();
-    int used_newtstate;
-    if (new_tstate == NULL) {
+    // Allocate the thread state.
+    _PyThreadStateImpl *tstate = alloc_threadstate(interp);
+    if (tstate == NULL) {
         return NULL;
     }
+
 #ifdef Py_GIL_DISABLED
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
     if (qsbr_idx < 0) {
-        PyMem_RawFree(new_tstate);
+        free_threadstate(new_tstate
         return NULL;
     }
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
-        PyMem_RawFree(new_tstate);
+        free_threadstate(new_tstate
         return NULL;
     }
 #endif
 
     /* We serialize concurrent creation to protect global state. */
-    HEAD_LOCK(runtime);
+    HEAD_LOCK(interp->runtime);
 
+    // Initialize the new thread state.
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
-
-    // Allocate the thread state and add it to the interpreter.
-    PyThreadState *old_head = interp->threads.head;
-    if (old_head == NULL) {
-        // It's the interpreter's initial thread state.
-        used_newtstate = 0;
-        tstate = &interp->_initial_thread;
-        if (tstate->base._status.finalized) {
-            reset_threadstate(tstate);
-        }
-    }
-    // XXX Re-use interp->_initial_thread if not in use?
-    else {
-        // Every valid interpreter must have at least one thread.
-        assert(id > 1);
-        assert(old_head->prev == NULL);
-        used_newtstate = 1;
-        tstate = new_tstate;
-        reset_threadstate(tstate);
-    }
-
     init_threadstate(tstate, interp, id, whence);
+
+    // Add the new thread state to the interpreter.
+    PyThreadState *old_head = interp->threads.head;
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
-    HEAD_UNLOCK(runtime);
-    if (!used_newtstate) {
-        // Must be called with lock unlocked to avoid re-entrancy deadlock.
-        PyMem_RawFree(new_tstate);
-    }
-    else {
-    }
+    HEAD_UNLOCK(interp->runtime);
 
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
