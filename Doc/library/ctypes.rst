@@ -2767,4 +2767,10 @@ Exceptions
 
    .. attribute:: details
 
-      The 5-tuple representing additional details about the error.
+      The 5-tuple ``(descr, source, helpfile, helpcontext, progid)``.
+
+      *descr* is the textual description.  *source* is the language-dependent
+      ``ProgID`` for the class or application that raised the error.  *helpfile*
+      is the path of the help file.  *helpcontext* is the help context
+      identifier.  *progid* is ``ProgID`` of the interface that defined the
+      error.
