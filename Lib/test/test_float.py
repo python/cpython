@@ -754,7 +754,7 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
-        # underscores
+        # thousands separators
         x = 123_456.123_456
         self.assertEqual(format(x, '_f'), '123_456.123456')
         self.assertEqual(format(x, '._f'), '123456.123_456')
@@ -768,6 +768,8 @@ class FormatTestCase(unittest.TestCase):
         self.assertRaises(ValueError, format, x, '._6f')
         self.assertRaises(ValueError, format, x, '.,_6f')
         self.assertRaises(ValueError, format, x, '._,6f')
+        self.assertRaises(ValueError, format, x, '.6_n')
+        self.assertRaises(ValueError, format, x, '.6,n')
 
     @support.requires_IEEE_754
     def test_format_testfile(self):

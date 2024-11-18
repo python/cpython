@@ -357,6 +357,14 @@ parse_internal_render_format_spec(PyObject *obj,
         }
     }
 
+    if (format->type == 'n'
+        && format->frac_thousands_separator != LT_NO_LOCALE)
+    {
+        invalid_thousands_separator_type(format->frac_thousands_separator,
+                                         format->type);
+        return 0;
+    }
+
     assert (format->align <= 127);
     assert (format->sign <= 127);
     return 1;
