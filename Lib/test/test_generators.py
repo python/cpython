@@ -652,7 +652,7 @@ class GeneratorCloseTest(unittest.TestCase):
         self.assertIsNone(f_wr())
 
 
-#See https://github.com/python/cpython/issues/125723
+# See https://github.com/python/cpython/issues/125723
 class GeneratorDeallocTest(unittest.TestCase):
     def test_frame_outlives_generator(self):
         def g1():
