@@ -1,0 +1,1 @@
+Increase the cov% in module :mod:`trace` to one decimal place.
