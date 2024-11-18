@@ -79,7 +79,8 @@ class FieldsTestBase:
         class X(self.cls):
             _fields_ = [('char', c_char),]
         class Y(self.cls):
-            _fields_ = [('largeField', X * (2 ** 32))]
+            # (2^31 - 1) is the largest size that can fit into a signed 32 bit int
+            _fields_ = [('largeField', X * (2 ** 31 - 1))]
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
