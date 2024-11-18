@@ -249,6 +249,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/wmf", ".wmf"),
                 ("image/jpeg", ".jpg"),
                 ("image/tiff", ".tiff"),
+                ("image/tiff-fx", ".tfx"),
                 ("message/rfc822", ".eml"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),

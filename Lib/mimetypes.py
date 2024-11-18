@@ -567,6 +567,7 @@ def _default_mime_types():
         '.svg'    : 'image/svg+xml',
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
+        '.tfx'    : 'image/tiff-fx',
         '.ico'    : 'image/vnd.microsoft.icon',
         '.webp'   : 'image/webp',
         '.wmf'    : 'image/wmf',

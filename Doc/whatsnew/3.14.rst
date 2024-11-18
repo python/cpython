@@ -397,6 +397,7 @@ mimetypes
 
   * :rfc:`1494`: CCITT Group 3 (``.g3``)
   * :rfc:`3745`: JPEG 2000 (``.jp2``), extension (``.jpx``) and compound (``.jpm``)
+  * :rfc:`3950`: Tag Image File Format Fax eXtended, TIFF-FX (``.tfx``)
   * :rfc:`4047`: Flexible Image Transport System (``.fits``)
   * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
 
