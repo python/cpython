@@ -1552,10 +1552,17 @@ mark_at_start(PyThreadState *tstate)
 static Py_ssize_t
 assess_work_to_do(GCState *gcstate)
 {
-    /* The amount of work we want to do depends on two things.
+    /* The amount of work we want to do depends on three things.
      * 1. The number of new objects created
      * 2. The growth in heap size since the last collection
      * 3. The heap size (up to the number of new objects, to avoid quadratic effects)
+     *
+     * For a steady state heap, the amount of work to do is three times the number
+     * of new objects added to the heap. This ensures that we stay ahead in the
+     * worst case of all new objects being garbage.
+     *
+     * This could be improved by tracking survival rates, but it is still a
+     * large improvement on the non-marking approach.
      */
     Py_ssize_t scale_factor = gcstate->old[0].threshold;
     if (scale_factor < 2) {
