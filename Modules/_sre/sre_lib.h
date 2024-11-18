@@ -1302,29 +1302,20 @@ dispatch:
             TRACE(("|%p|%p|POSSESSIVE_REPEAT %d %d\n", pattern,
                    ptr, pattern[1], pattern[2]));
 
-            /* Create repeat context.
-             * It is only needed to set state->repeat to non-NULL, so nested
-             * BRANCH will be able to restore marks. */
-            if (state->repeat == NULL) {
-                /* See comment in SRE_OP_REPEAT about potential memory leak. */
-                ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
-                if (!ctx->u.rep) {
-                    PyErr_NoMemory();
-                    RETURN_FAILURE;
-                }
-                ctx->u.rep->count = -1;
-                ctx->u.rep->pattern = NULL;
-                ctx->u.rep->prev = state->repeat;
-                ctx->u.rep->last_ptr = NULL;
-                state->repeat = ctx->u.rep;
-            }
-            else {
-                ctx->u.rep = NULL;
-            }
-
             /* Set the global Input pointer to this context's Input
                pointer */
             state->ptr = ptr;
+
+            /* Set state->repeat to non-NULL */
+            ctx->u.rep = repeat_pool_malloc(state);
+            if (!ctx->u.rep) {
+                RETURN_ERROR(SRE_ERROR_MEMORY);
+            }
+            ctx->u.rep->count = -1;
+            ctx->u.rep->pattern = NULL;
+            ctx->u.rep->prev = state->repeat;
+            ctx->u.rep->last_ptr = NULL;
+            state->repeat = ctx->u.rep;
 
             /* Initialize Count to 0 */
             ctx->count = 0;
@@ -1334,18 +1325,15 @@ dispatch:
                 /* not enough matches */
                 DO_JUMP0(JUMP_POSS_REPEAT_1, jump_poss_repeat_1,
                          &pattern[3]);
-                if (ret <= 0) {  // error or failure
-                    if (ctx->u.rep && !ctx->u.rep->pattern) {
-                        state->repeat = ctx->u.rep->prev;
-                        PyObject_Free(ctx->u.rep);
-                    }
-                }
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     ctx->count++;
                 }
                 else {
                     state->ptr = ptr;
+                    /* Restore state->repeat */
+                    state->repeat = ctx->u.rep->prev;
+                    repeat_pool_free(state, ctx->u.rep);
                     RETURN_FAILURE;
                 }
             }
@@ -1390,12 +1378,6 @@ dispatch:
 
                 /* Check to see if the last attempted match
                    succeeded. */
-                if (ret < 0) {  // error
-                    if (ctx->u.rep && !ctx->u.rep->pattern) {
-                        state->repeat = ctx->u.rep->prev;
-                        PyObject_Free(ctx->u.rep);
-                    }
-                }
                 if (ret) {
                     /* Drop the saved highest number Capture Group
                        marker saved above and use the newly updated
@@ -1423,10 +1405,10 @@ dispatch:
                     break;
                 }
             }
-            if (ctx->u.rep && !ctx->u.rep->pattern) {
-                state->repeat = ctx->u.rep->prev;
-                PyObject_Free(ctx->u.rep);
-            }
+
+            /* Restore state->repeat */
+            state->repeat = ctx->u.rep->prev;
+            repeat_pool_free(state, ctx->u.rep);
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
