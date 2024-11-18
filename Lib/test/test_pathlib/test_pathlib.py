@@ -861,6 +861,28 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_move_into_empty_name_other_os(self):
         self.test_move_into_empty_name()
 
+    def _check_complex_symlinks(self, link0_target):
+        super()._check_complex_symlinks(link0_target)
+        P = self.cls(self.base)
+        # Resolve relative paths.
+        old_path = os.getcwd()
+        os.chdir(self.base)
+        try:
+            p = self.cls('link0').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link1').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link2').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link3').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+        finally:
+            os.chdir(old_path)
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 

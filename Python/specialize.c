@@ -230,6 +230,8 @@ print_gc_stats(FILE *out, GCStats *stats)
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
         fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
+        fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
+        fprintf(out, "GC[%d] objects not reachable from roots: %" PRIu64 "\n", i, stats[i].objects_not_transitively_reachable);
         fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
     }
 }
@@ -1219,7 +1221,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
         fail = true;
     }
-    else if (PyModule_CheckExact(owner)) {
+    else if (Py_TYPE(owner)->tp_getattro == PyModule_Type.tp_getattro) {
         fail = specialize_module_load_attr(owner, instr, name);
     }
     else if (PyType_Check(owner)) {

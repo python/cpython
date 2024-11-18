@@ -8,15 +8,24 @@
 static int
 ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
 {
-    //assert(cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    return _PyXIData_RegisterClass(cls, getdata);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+    return _PyXIData_RegisterClass(&ctx, cls, getdata);
 }
 
 #ifdef REGISTERS_HEAP_TYPES
 static int
 clear_xid_class(PyTypeObject *cls)
 {
-    return _PyXIData_UnregisterClass(cls);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+    return _PyXIData_UnregisterClass(&ctx, cls);
 }
 #endif
 
