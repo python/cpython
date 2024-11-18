@@ -183,9 +183,7 @@
             /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
-                #ifndef NDEBUG
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                #endif
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 int next_oparg;
                 #if TIER_ONE
@@ -195,7 +193,7 @@
                 next_oparg = CURRENT_OPERAND0();
                 #endif
                 _PyStackRef *target_local = &GETLOCAL(next_oparg);
-                DEOPT_IF(!PyStackRef_Is(*target_local, left), BINARY_OP);
+                DEOPT_IF(PyStackRef_AsPyObjectBorrow(*target_local) != left_o, BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 /* Handle `left = left + right` or `left += right` for str.
                  *
@@ -3251,6 +3249,14 @@
                 }
                 else {
                     res = PyStackRef_FromPyObjectSteal(res_o);
+                    #ifdef Py_GIL_DISABLED
+                    // Ensure that Py_TAG_DEFERRED is set for Py_True and Py_False
+                    // so that ops like _POP_JUMP_IF_FALSE can use the faster
+                    // PyStackRef_IsExactly() check.
+                    if (_Py_IsImmortal(res_o)) {
+                        res.bits |= Py_TAG_DEFERRED;
+                    }
+                    #endif
                     stack_pointer += -2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -3824,7 +3830,7 @@
             _PyStackRef should_be_none;
             should_be_none = stack_pointer[-1];
             assert(STACK_LEVEL() == 2);
-            if (!PyStackRef_Is(should_be_none, PyStackRef_None)) {
+            if (!PyStackRef_IsNone(should_be_none)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyErr_Format(PyExc_TypeError,
                              "__init__() should return None, not '%.200s'",
@@ -4760,7 +4766,7 @@
             /* Skip 1 cache entry */
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_False);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
@@ -4774,7 +4780,7 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_Is(value_stackref, PyStackRef_None);
+            int flag = PyStackRef_IsNone(value_stackref);
             int offset;
             if (flag) {
                 offset = oparg;
@@ -4796,7 +4802,7 @@
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
             int offset;
-            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None);
+            int nflag = PyStackRef_IsNone(value_stackref);
             if (nflag) {
                 offset = 0;
             }
@@ -4819,7 +4825,7 @@
             /* Skip 1 cache entry */
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_True);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
@@ -5040,13 +5046,7 @@
             _PyStackRef b;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            #ifdef Py_GIL_DISABLED
-            // On free-threaded builds, objects are conditionally immortalized.
-            // So their bits don't always compare equally.
             int res = Py_Is(PyStackRef_AsPyObjectBorrow(left), PyStackRef_AsPyObjectBorrow(right)) ^ oparg;
-            #else
-            int res = PyStackRef_Is(left, right) ^ oparg;
-            #endif
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
             b = res ? PyStackRef_True : PyStackRef_False;
@@ -6647,7 +6647,7 @@
             _PyErr_StackItem *exc_info = tstate->exc_info;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_XSETREF(exc_info->exc_value,
-                       PyStackRef_Is(exc_value, PyStackRef_None)
+                       PyStackRef_IsNone(exc_value)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
@@ -6664,7 +6664,7 @@
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_False);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
             stack_pointer += -1;
@@ -6684,7 +6684,7 @@
             // _IS_NONE
             {
                 value = stack_pointer[-1];
-                if (PyStackRef_Is(value, PyStackRef_None)) {
+                if (PyStackRef_IsNone(value)) {
                     b = PyStackRef_True;
                 }
                 else {
@@ -6696,7 +6696,7 @@
             {
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
-                int flag = PyStackRef_Is(cond, PyStackRef_True);
+                int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
                 RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(oparg * flag);
             }
@@ -6717,7 +6717,7 @@
             // _IS_NONE
             {
                 value = stack_pointer[-1];
-                if (PyStackRef_Is(value, PyStackRef_None)) {
+                if (PyStackRef_IsNone(value)) {
                     b = PyStackRef_True;
                 }
                 else {
@@ -6729,7 +6729,7 @@
             {
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
-                int flag = PyStackRef_Is(cond, PyStackRef_False);
+                int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
                 RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(oparg * flag);
             }
@@ -6747,7 +6747,7 @@
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_True);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
             stack_pointer += -1;
@@ -7084,7 +7084,7 @@
                     gen_frame->previous = frame;
                     DISPATCH_INLINED(gen_frame);
                 }
-                if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
+                if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -7868,7 +7868,7 @@
             /* Skip 2 cache entries */
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!PyStackRef_Is(value, PyStackRef_None), TO_BOOL);
+            DEOPT_IF(!PyStackRef_IsNone(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False;
             stack_pointer[-1] = res;
@@ -7943,7 +7943,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(value));
-            res = PyStackRef_Is(value, PyStackRef_False)
+            res = PyStackRef_IsExactly(value, PyStackRef_False)
             ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-1] = res;
             DISPATCH();

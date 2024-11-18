@@ -376,7 +376,7 @@ dummy_func(
 
         pure inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
-            res = PyStackRef_Is(value, PyStackRef_False)
+            res = PyStackRef_IsExactly(value, PyStackRef_False)
                 ? PyStackRef_True : PyStackRef_False;
             DEAD(value);
         }
@@ -441,7 +441,7 @@ dummy_func(
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
-            EXIT_IF(!PyStackRef_Is(value, PyStackRef_None));
+            EXIT_IF(!PyStackRef_IsNone(value));
             DEAD(value);
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False;
@@ -651,9 +651,7 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-        #ifndef NDEBUG
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-        #endif
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             int next_oparg;
@@ -664,7 +662,7 @@ dummy_func(
             next_oparg = CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
-            DEOPT_IF(!PyStackRef_Is(*target_local, left));
+            DEOPT_IF(PyStackRef_AsPyObjectBorrow(*target_local) != left_o);
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
              *
@@ -1141,7 +1139,7 @@ dummy_func(
                 gen_frame->previous = frame;
                 DISPATCH_INLINED(gen_frame);
             }
-            if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
+            if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
                 retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
             }
             else {
@@ -1249,7 +1247,7 @@ dummy_func(
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
-                   PyStackRef_Is(exc_value, PyStackRef_None)
+                   PyStackRef_IsNone(exc_value)
                     ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
         }
 
@@ -2408,6 +2406,14 @@ dummy_func(
             }
             else {
                 res = PyStackRef_FromPyObjectSteal(res_o);
+#ifdef Py_GIL_DISABLED
+                // Ensure that Py_TAG_DEFERRED is set for Py_True and Py_False
+                // so that ops like _POP_JUMP_IF_FALSE can use the faster
+                // PyStackRef_IsExactly() check.
+                if (_Py_IsImmortal(res_o)) {
+                    res.bits |= Py_TAG_DEFERRED;
+                }
+#endif
             }
         }
 
@@ -2481,13 +2487,7 @@ dummy_func(
         }
 
         inst(IS_OP, (left, right -- b)) {
-#ifdef Py_GIL_DISABLED
-            // On free-threaded builds, objects are conditionally immortalized.
-            // So their bits don't always compare equally.
             int res = Py_Is(PyStackRef_AsPyObjectBorrow(left), PyStackRef_AsPyObjectBorrow(right)) ^ oparg;
-#else
-            int res = PyStackRef_Is(left, right) ^ oparg;
-#endif
             DECREF_INPUTS();
             b = res ? PyStackRef_True : PyStackRef_False;
         }
@@ -2693,7 +2693,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_False);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
@@ -2701,14 +2701,14 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_True);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
         }
 
         op(_IS_NONE, (value -- b)) {
-            if (PyStackRef_Is(value, PyStackRef_None)) {
+            if (PyStackRef_IsNone(value)) {
                 b = PyStackRef_True;
                 DEAD(value);
             }
@@ -3752,7 +3752,7 @@ dummy_func(
 
         inst(EXIT_INIT_CHECK, (should_be_none -- )) {
             assert(STACK_LEVEL() == 2);
-            if (!PyStackRef_Is(should_be_none, PyStackRef_None)) {
+            if (!PyStackRef_IsNone(should_be_none)) {
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
                     Py_TYPE(PyStackRef_AsPyObjectBorrow(should_be_none))->tp_name);
@@ -4712,7 +4712,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_True);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
@@ -4721,7 +4721,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_Is(cond, PyStackRef_False);
+            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
@@ -4729,7 +4729,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_Is(value_stackref, PyStackRef_None);
+            int flag = PyStackRef_IsNone(value_stackref);
             int offset;
             if (flag) {
                 offset = oparg;
@@ -4745,7 +4745,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
             int offset;
-            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None);
+            int nflag = PyStackRef_IsNone(value_stackref);
             if (nflag) {
                 offset = 0;
             }
@@ -4780,21 +4780,21 @@ dummy_func(
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
-            int is_true = PyStackRef_Is(flag, PyStackRef_True);
+            int is_true = PyStackRef_IsTrue(flag);
             DEAD(flag);
             SYNC_SP();
             EXIT_IF(!is_true);
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
-            int is_false = PyStackRef_Is(flag, PyStackRef_False);
+            int is_false = PyStackRef_IsFalse(flag);
             DEAD(flag);
             SYNC_SP();
             EXIT_IF(!is_false);
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
-            int is_none = PyStackRef_Is(val, PyStackRef_None);
+            int is_none = PyStackRef_IsNone(val);
             if (!is_none) {
                 PyStackRef_CLOSE(val);
                 SYNC_SP();
@@ -4804,7 +4804,7 @@ dummy_func(
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
-            int is_none = PyStackRef_Is(val, PyStackRef_None);
+            int is_none = PyStackRef_IsNone(val);
             PyStackRef_CLOSE(val);
             SYNC_SP();
             EXIT_IF(is_none);
