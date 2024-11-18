@@ -1526,8 +1526,10 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\?\\C:\\dir'), '///C:/dir')
         self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
         self.assertEqual(fn("C:"), '///C:')
-        self.assertEqual(fn("C:\\"), '///C:')
+        self.assertEqual(fn("C:\\"), '///C:/')
         self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('C:\\a\\b.c\\'), '///C:/a/b.c/')
+        self.assertEqual(fn('C:\\a\\\\b.c'), '///C:/a//b.c')
         self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
         self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
@@ -1540,9 +1542,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
         self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
         self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
+        # Alternate path separator
+        self.assertEqual(fn('C:/a/b.c'), '///C:/a/b.c')
+        self.assertEqual(fn('//some/share/a/b.c'), '//some/share/a/b.c')
+        self.assertEqual(fn('//?/C:/dir'), '///C:/dir')
+        self.assertEqual(fn('//?/unc/server/share/dir'), '//server/share/dir')
         # Round-tripping
         urls = ['///C:',
-                '///folder/test/',
+                '/folder/test/',
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(urllib.request.url2pathname(url)), url)
@@ -1563,13 +1570,15 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')
-        self.assertEqual(fn('/C|//'), 'C:\\')
+        self.assertEqual(fn('/C|//'), 'C:\\\\')
         self.assertEqual(fn('///C|/path'), 'C:\\path')
         # No DOS drive
-        self.assertEqual(fn("///C/test/"), '\\\\\\C\\test\\')
+        self.assertEqual(fn("///C/test/"), '\\C\\test\\')
         self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
         # DOS drive paths
         self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('C:/path/to/file/'), 'C:\\path\\to\\file\\')
+        self.assertEqual(fn('C:/path/to//file'), 'C:\\path\\to\\\\file')
         self.assertEqual(fn('C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
@@ -1583,9 +1592,12 @@ class Pathname_Tests(unittest.TestCase):
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
+        # Percent-encoded forward slashes are preserved for backwards compatibility
+        self.assertEqual(fn('C:/foo%2fbar'), 'C:\\foo/bar')
+        self.assertEqual(fn('//server/share/foo%2fbar'), '\\\\server\\share\\foo/bar')
         # Round-tripping
         paths = ['C:',
-                 r'\\\C\test\\',
+                 r'\C\test\\',
                  r'C:\foo\bar\spam.foo']
         for path in paths:
             self.assertEqual(fn(urllib.request.pathname2url(path)), path)
@@ -1596,8 +1608,8 @@ class Pathname_Tests(unittest.TestCase):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
         self.assertEqual(fn('//foo/bar'), '//foo/bar')
-        self.assertEqual(fn('///foo/bar'), '///foo/bar')
-        self.assertEqual(fn('////foo/bar'), '////foo/bar')
+        self.assertEqual(fn('///foo/bar'), '/foo/bar')
+        self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
 
 class Utility_Tests(unittest.TestCase):
