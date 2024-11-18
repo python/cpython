@@ -1118,8 +1118,6 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
-                Count(gen["objects reachable from roots"]),
-                Count(gen["objects not reachable from roots"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1129,8 +1127,7 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
-                 "Reachable from roots:", "Not reachable from roots:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
                 calc_gc_stats,
             )
         ],
