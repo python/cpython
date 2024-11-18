@@ -1138,7 +1138,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--coverage", test)
         self.check_executed_tests(output, [test], stats=1)
         regex = (r'lines +cov% +module +\(path\)\n'
-                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+                 r'(?: *[0-9]+ *[0-9]{1,2}\.[0-9]% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
 
     def test_wait(self):
