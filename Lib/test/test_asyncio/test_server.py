@@ -1,11 +1,14 @@
 import asyncio
+import gc
 import os
 import socket
 import time
 import threading
 import unittest
 
+from test import support
 from test.support import socket_helper
+from test.support import warnings_helper
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -265,6 +268,49 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+    async def test_close_race(self):
+
+        srv = await asyncio.start_server(lambda *_: None, socket_helper.HOSTv4, 0)
+        srv_sock = srv.sockets[0]
+        addr = srv_sock.getsockname()
+
+        # When the server is closed before a connection is handled but after the
+        # connection is accepted, then a race-condition exists between the handler
+        # transport and the server, both which will attempt to wakeup the server to set
+        # any server waiters. We can recreate race-condition by opening a connection and
+        # waiting for the server reader callback before closing the server
+        loop = asyncio.get_running_loop()
+        srv_reader, _ = loop._selector.get_key(srv_sock.fileno()).data
+        conn_task = asyncio.create_task(asyncio.open_connection(addr[0], addr[1]))
+        for _ in range(10):
+            await asyncio.sleep(0)
+            if srv_reader in loop._ready:
+                break
+
+        # Ensure accepted connection task is scheduled by the server reader, but not
+        # completed, before closing the server.
+        await asyncio.sleep(0)
+        srv.close()
+
+        # Complete the client connection to close the socket. Suppress errors in the
+        # handler transport due to failing to attach to closed server.
+        with support.captured_stderr():
+            try:
+                _, wr = await conn_task
+                self.addCleanup(wr.close)
+            except OSError:
+                pass
+
+        await srv.wait_closed()
+
+        # Verify the handler transport does not raise an error due to multiple calls to
+        # the server wakeup. Suppress expected ResourceWarnings from the handler
+        # transport failing to attach to the closed server.
+        with warnings_helper.check_warnings(("unclosed transport", ResourceWarning)), \
+             support.catch_unraisable_exception() as cm:
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
 
 
 # Test the various corner cases of Unix server socket removal
