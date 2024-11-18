@@ -420,7 +420,7 @@ if real_executable:
         # Only warn if the file actually exists and was unresolvable
         # Otherwise users who specify a fake executable may get spurious warnings.
         if isfile(real_executable):
-            warn(f'Failed to find real location of {base_executable}')
+            warn(f'Failed to find real location of {real_executable}')
 
 if not executable_dir and os_name == 'darwin' and library:
     # QUIRK: macOS checks adjacent to its library early
