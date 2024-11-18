@@ -1,0 +1,2 @@
+Add typechecking for _pydatetime.timedelta.__new__ arguments so that python
+implementation is in line with C implementation
