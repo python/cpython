@@ -351,6 +351,7 @@ follows these steps in order:
    the reference counts fall to 0, triggering the destruction of all unreachable
    objects.
 
+
 Optimization: incremental collection
 ====================================
 
@@ -484,6 +485,46 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 ```
 
 
+Optimization: visiting reachable objects
+========================================
+
+An object cannot be garbage if it can be reached.
+
+To avoid having to identify reference cycles across the whole heap, we can
+reduce the amount of work done considerably by first moving most reachable objects
+to the `visited` space. Empirically, most reachable objects can be reached from a
+small set of global objects and local variables.
+This step does much less work per object, so reduces the time spent
+performing garbage collection by at least half.
+
+> [!NOTE]
+> Objects that are not determined to be reachable by this pass are not necessarily
+> unreachable. We still need to perform the main algorithm to determine which objects
+> are actually unreachable.
+
+We use the same technique of forming a transitive closure as the incremental
+collector does to find reachable objects, seeding the list with some global
+objects and the currently executing frames.
+
+This phase moves objects to the `visited` space, as follows:
+
+1. All objects directly referred to by any builtin class, the `sys` module, the `builtins`
+module and all objects directly referred to from stack frames are added to a working
+set of reachable objects.
+2. Until this working set is empty:
+   1. Pop an object from the set and move it to the `visited` space
+   2. For each object directly reachable from that object:
+      * If it is not already in `visited` space and it is a GC object,
+        add it to the working set
+
+
+Before each increment of collection is performed, the stacks are scanned
+to check for any new stack frames that have been created since the last
+increment. All objects directly referred to from those stack frames are
+added to the working set.
+Then the above algorithm is repeated, starting from step 2.
+
+
 Optimization: reusing fields to save memory
 ===========================================
 
@@ -532,8 +573,8 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
   currently in.  Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
 
-Optimization: delay tracking containers
-=======================================
+Optimization: delayed untracking of containers
+==============================================
 
 Certain types of containers cannot participate in a reference cycle, and so do
 not need to be tracked by the garbage collector. Untracking these objects
@@ -548,8 +589,8 @@ a container:
 As a general rule, instances of atomic types aren't tracked and instances of
 non-atomic types (containers, user-defined objects...) are.  However, some
 type-specific optimizations can be present in order to suppress the garbage
-collector footprint of simple instances. Some examples of native types that
-benefit from delayed tracking:
+collector footprint of simple instances. Historically, both dictionaries and
+tuples were untracked during garbage collection. Now it is only tuples:
 
 - Tuples containing only immutable objects (integers, strings etc,
   and recursively, tuples of immutable objects) do not need to be tracked. The
@@ -558,14 +599,8 @@ benefit from delayed tracking:
   tuples at creation time. Instead, all tuples except the empty tuple are tracked
   when created. During garbage collection it is determined whether any surviving
   tuples can be untracked. A tuple can be untracked if all of its contents are
-  already not tracked. Tuples are examined for untracking in all garbage collection
-  cycles. It may take more than one cycle to untrack a tuple.
-
-- Dictionaries containing only immutable objects also do not need to be tracked.
-  Dictionaries are untracked when created. If a tracked item is inserted into a
-  dictionary (either as a key or value), the dictionary becomes tracked. During a
-  full garbage collection (all generations), the collector will untrack any dictionaries
-  whose contents are not tracked.
+  already not tracked. Tuples are examined for untracking when moved from the
+  young to the old generation.
 
 The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
@@ -578,11 +613,9 @@ tracking status of the object.
       False
       >>> gc.is_tracked([])
       True
-      >>> gc.is_tracked({})
+      >>> gc.is_tracked(("a", 1))
       False
       >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
       True
 ```
 
