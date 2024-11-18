@@ -278,9 +278,10 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    Py_ssize_t _interactive_src_count;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
-    Py_ssize_t _interactive_src_count;
 };
 
 
