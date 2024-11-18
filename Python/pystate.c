@@ -1408,6 +1408,15 @@ free_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
+static void
+reset_threadstate(_PyThreadStateImpl *tstate)
+{
+    // Set to _PyThreadState_INIT.
+    memcpy(tstate,
+           &initial._main_interpreter._initial_thread,
+           sizeof(*tstate));
+}
+
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1528,6 +1537,9 @@ new_threadstate(PyInterpreterState *interp, int whence)
         // It's the interpreter's initial thread state.
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
+        if (tstate->base._status.finalized) {
+            reset_threadstate(tstate);
+        }
     }
     // XXX Re-use interp->_initial_thread if not in use?
     else {
@@ -1536,10 +1548,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
         assert(old_head->prev == NULL);
         used_newtstate = 1;
         tstate = new_tstate;
-        // Set to _PyThreadState_INIT.
-        memcpy(tstate,
-               &initial._main_interpreter._initial_thread,
-               sizeof(*tstate));
+        reset_threadstate(tstate);
     }
 
     init_threadstate(tstate, interp, id, whence);
