@@ -2229,7 +2229,7 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
         return 1;
     }
 
