@@ -983,7 +983,6 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         break;
     case _PyXI_ERR_ALREADY_RUNNING:
         assert(interp != NULL);
-        assert(_PyInterpreterState_IsRunningMain(interp));
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
