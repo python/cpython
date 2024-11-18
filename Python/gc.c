@@ -1576,7 +1576,7 @@ assess_work_to_do(GCState *gcstate)
     }
     gcstate->young.count = 0;
     gcstate->prior_heap_size = gcstate->heap_size;
-    return new_objects*2 + growth*2 + heap_fraction;
+    return new_objects*3/2 + growth*2 + heap_fraction*3/2;
 }
 
 static void
