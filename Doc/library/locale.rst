@@ -281,7 +281,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ERA
 
-      Get a string which describe how years are counted and displayed for
+      Get a string which describes how years are counted and displayed for
       each era in a locale.
 
       Most locales do not define this value.  An example of a locale which does
