@@ -1,0 +1,2 @@
+Fix memory leaks when :mod:`regular expression <re>` matching terminates
+abruptly, either because of a signal or because memory allocation fails.
