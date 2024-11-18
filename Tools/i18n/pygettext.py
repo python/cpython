@@ -508,7 +508,7 @@ class TokenEater:
                 self.warn_unexpected_token(tstring)
                 self.__enclosurecount = 0
                 self.__state = self.__waiting
-        elif expect_string_literal:
+        elif expect_string_literal and self.__enclosurecount == 0:
             if ttype == tokenize.STRING and is_literal_string(tstring):
                 self.__data[arg_type] += safe_eval(tstring)
             elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
