@@ -75,6 +75,12 @@ class FieldsTestBase:
                                     'ctypes state is not initialized'):
             class Subclass(BrokenStructure): ...
 
+    def test_gh126937(self):
+        class X(self.cls):
+            _fields_ = [('char', c_char),]
+        class Y(self.cls):
+            _fields_ = [('largeField', X * (2 ** 32))]
+
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
     def test___set__(self):
