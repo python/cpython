@@ -467,8 +467,9 @@ class TestTPen(unittest.TestCase):
 
 class TestRawTurtle(unittest.TestCase):
     def test_clone(self):
-        a_turtle = self.Turtle()
-        another_turtle = a_turtle.clone()
+        screen = unittest.mock.Mock()
+        rawturtle = turtle.RawTurtle(screen)
+        another_turtle = rawturtle.clone()
         self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
         self.assertFalse(a_turtle.currentLineItem in another_turtle.items)
 
