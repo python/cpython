@@ -2772,5 +2772,5 @@ Exceptions
       *descr* is the textual description.  *source* is the language-dependent
       ``ProgID`` for the class or application that raised the error.  *helpfile*
       is the path of the help file.  *helpcontext* is the help context
-      identifier.  *progid* is ``ProgID`` of the interface that defined the
+      identifier.  *progid* is the ``ProgID`` of the interface that defined the
       error.
