@@ -331,6 +331,9 @@ getopt
 * Add support for options with optional arguments.
   (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
+
 http
 ----
 
@@ -449,6 +452,14 @@ pathlib
   :func:`os.scandir` on a path object.
 
   (Contributed by Barney Gale in :gh:`125413`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 
 pdb
@@ -780,6 +791,16 @@ Changes in the Python API
 Build changes
 =============
 
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
+
 
 C API changes
 =============
@@ -889,6 +910,9 @@ New features
 
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------

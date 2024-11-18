@@ -2687,6 +2687,29 @@ class ReTests(unittest.TestCase):
                 self.assertIsNone(re.search(p, s))
                 self.assertIsNone(re.search('(?s:.)' + p, s))
 
+    def check_interrupt(self, pattern, string, maxcount):
+        class Interrupt(Exception):
+            pass
+        p = re.compile(pattern)
+        for n in range(maxcount):
+            try:
+                p._fail_after(n, Interrupt)
+                p.match(string)
+                return n
+            except Interrupt:
+                pass
+            finally:
+                p._fail_after(-1, None)
+
+    @unittest.skipUnless(hasattr(re.Pattern, '_fail_after'), 'requires debug build')
+    def test_memory_leaks(self):
+        self.check_interrupt(r'(.)*:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*?:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*+:', 'abc:', 100)
+        self.check_interrupt(r'(.){2,4}:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}?:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}+:', 'abc:', 100)
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:
