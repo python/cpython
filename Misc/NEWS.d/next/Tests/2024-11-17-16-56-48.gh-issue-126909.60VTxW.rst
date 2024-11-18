@@ -1,0 +1,2 @@
+Fix test_os extended attribute tests to work on filesystems with 1 KiB xattr size
+limit.
