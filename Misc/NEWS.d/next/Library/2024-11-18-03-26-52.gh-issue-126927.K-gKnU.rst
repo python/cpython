@@ -1,4 +1,4 @@
-Add :func:`functools.retry` function to be used as a decorator.  The
+Add ``functools.retry`` function to be used as a decorator.  The
 decorator gives retries to a function that raises exeptions.  It can be
 used with default options or have options specified with keyword
 arguments.

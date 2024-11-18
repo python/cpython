@@ -324,7 +324,7 @@ functools
   as a keyword argument.
   (Contributed by Sayandip Dutta in :gh:`125916`.)
 
-* Add function decorator :func:`functools.retry` that allows configurable
+* Add function decorator ``functools.retry`` that allows configurable
   retries for functions that raise an exception.  It can be used with or
   without keyword arguments.
 
