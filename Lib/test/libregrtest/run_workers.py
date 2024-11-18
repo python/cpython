@@ -115,7 +115,7 @@ class WorkerThread(threading.Thread):
         self.timeout = runner.worker_timeout
         self.log = runner.log
         self.test_name = _NOT_RUNNING
-        self.start_time = 0.0
+        self.start_time = time.monotonic()
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
@@ -130,7 +130,7 @@ class WorkerThread(threading.Thread):
         if test:
             info.append(f'test={test}')
         popen = self._popen
-        if popen is not None and self.start_time is not None:
+        if popen is not None:
             dt = time.monotonic() - self.start_time
             info.extend((f'pid={popen.pid}',
                          f'time={format_duration(dt)}'))
@@ -321,7 +321,6 @@ class WorkerThread(threading.Thread):
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
-        test_name = self.test_name
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
@@ -336,11 +335,11 @@ class WorkerThread(threading.Thread):
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             err_msg = f"Failed to read worker process JSON: {exc}"
-            raise WorkerError(test_name, err_msg, stdout,
+            raise WorkerError(self.test_name, err_msg, stdout,
                               state=State.WORKER_BUG)
 
         if not worker_json:
-            raise WorkerError(test_name, "empty JSON", stdout,
+            raise WorkerError(self.test_name, "empty JSON", stdout,
                               state=State.WORKER_BUG)
 
         try:
@@ -349,7 +348,7 @@ class WorkerThread(threading.Thread):
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             err_msg = f"Failed to parse worker process JSON: {exc}"
-            raise WorkerError(test_name, err_msg, stdout,
+            raise WorkerError(self.test_name, err_msg, stdout,
                               state=State.WORKER_BUG)
 
         return (result, stdout)
@@ -458,7 +457,7 @@ def get_running(workers: list[WorkerThread]) -> str | None:
     running: list[str] = []
     for worker in workers:
         test_name = worker.test_name
-        if not test_name or worker.start_time is None:
+        if not test_name:
             continue
         dt = time.monotonic() - worker.start_time
         if dt >= PROGRESS_MIN_TIME:
