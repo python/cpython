@@ -321,6 +321,8 @@ def _tclobj_to_py(val):
     elif hasattr(val, 'typename'): # some other (single) Tcl object
         val = _convert_stringval(val)
 
+    if isinstance(val, tuple) and len(val) == 0:
+        return ''
     return val
 
 def tclobjs_to_py(adict):

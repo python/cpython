@@ -331,6 +331,9 @@ getopt
 * Add support for options with optional arguments.
   (Contributed by Serhiy Storchaka in :gh:`126374`.)
 
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
+
 http
 ----
 
@@ -451,6 +454,14 @@ pathlib
   (Contributed by Barney Gale in :gh:`125413`.)
 
 
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
+
 pdb
 ---
 
@@ -517,6 +528,14 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+uuid
+----
+
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -574,6 +593,13 @@ Deprecated
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -765,6 +791,16 @@ Changes in the Python API
 Build changes
 =============
 
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
+
 
 C API changes
 =============
@@ -874,6 +910,9 @@ New features
 
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------

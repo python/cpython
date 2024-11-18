@@ -1,0 +1,2 @@
+Fix a crash when calling :func:`os.fork` on some operating systems,
+including SerenityOS.
