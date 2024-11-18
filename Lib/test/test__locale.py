@@ -239,7 +239,7 @@ class _LocaleTests(unittest.TestCase):
             self.skipTest('no suitable locales')
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
-    @unittest.skipUnless(hasattr(locale, 'ERA'), "requires locale.ALT_DIGITS")
+    @unittest.skipUnless(hasattr(locale, 'ERA'), "requires locale.ERA")
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten, bpo-46390"
@@ -258,6 +258,9 @@ class _LocaleTests(unittest.TestCase):
                 with self.subTest(locale=loc):
                     era = nl_langinfo(locale.ERA)
                     self.assertIsInstance(era, str)
+                    if era:
+                        self.assertEqual(era.count(':'), (era.count(';') + 1) * 5, era)
+
                     loc1 = loc.split('.', 1)[0]
                     if loc1 in known_era:
                         count, sample = known_era[loc1]
