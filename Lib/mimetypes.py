@@ -26,7 +26,6 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 import os
 import sys
 import posixpath
-import urllib.parse
 
 try:
     from _winapi import _mimetypes_read_windows_registry
@@ -119,6 +118,9 @@ class MimeTypes:
         Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
+        # Lazy import to improve module import time
+        import urllib.parse
+
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
