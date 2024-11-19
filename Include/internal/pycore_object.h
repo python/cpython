@@ -94,6 +94,14 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+#define _PyReftracerTrack(obj, operation) \
+    do { \
+        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+        if (tracer->tracer_func != NULL) { \
+            void *data = tracer->tracer_data; \
+            tracer->tracer_func((obj), (operation), data); \
+        } \
+    } while(0)
 
 #ifdef Py_REF_DEBUG
 /* The symbol is only exposed in the API for the sake of extensions
@@ -208,11 +216,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
-        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-        if (tracer->tracer_func != NULL) {
-            void* data = tracer->tracer_data;
-            tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-        }
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         destruct(op);
     }
 }
@@ -466,8 +470,8 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
-    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
+    /* Young objects will be moved into the visited space during GC, so set the bit here */
+    gc->_gc_next = ((uintptr_t)generation0) | (uintptr_t)interp->gc.visited_space;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
