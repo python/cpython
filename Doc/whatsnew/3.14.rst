@@ -273,18 +273,18 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
+datetime
+--------
+
+* Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+  (Contributed by Wannes Boeykens in :gh:`41431`.)
+
 decimal
 -------
 
 * Add alternative :class:`~decimal.Decimal` constructor
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
-
-datetime
---------
-
-* Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
-  (Contributed by Wannes Boeykens in :gh:`41431`.)
 
 dis
 ---
@@ -468,14 +468,6 @@ pathlib
   (Contributed by Barney Gale in :gh:`125413`.)
 
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
-
 pdb
 ---
 
@@ -489,6 +481,14 @@ pdb
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pickle
 ------
