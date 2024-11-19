@@ -304,7 +304,6 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     Py_ssize_t offset_pre = offset_base + 2 * sizeof(PyObject*);
 
     // visit each thread's heaps for GC objects
-    // XXX THREADS_HEAD_LOCK()?
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
         if (!_Py_atomic_load_int(&m->initialized)) {
@@ -351,9 +350,9 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     assert(interp->stoptheworld.world_stopped);
 
     int err;
-    HEAD_LOCK(&_PyRuntime);
+    THREADS_HEAD_LOCK(interp);
     err = gc_visit_heaps_lock_held(interp, visitor, arg);
-    HEAD_UNLOCK(&_PyRuntime);
+    THREADS_HEAD_UNLOCK(interp);
     return err;
 }
 
