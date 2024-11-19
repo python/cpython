@@ -2165,7 +2165,6 @@ Intermixed parsing
 
    .. versionadded:: 3.7
 
-.. _register-custom:
 
 Registering custom types or actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
