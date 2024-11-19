@@ -1,0 +1,10 @@
+Generator objects now have a valid `ob_size` field.
+
+#.. section: Library #.. section: Documentation #.. section: Tests #..
+section: Build #.. section: Windows #.. section: macOS #.. section: IDLE #..
+section: Tools/Demos #.. section: C API
+
+# Write your Misc/NEWS.d entry below.  It should be a simple ReST paragraph.
+# Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
+stuff.
+###########################################################################
