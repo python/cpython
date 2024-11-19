@@ -67,7 +67,7 @@ this module.  The following types are supported:
    * Added format version 4, which supports efficient representations
      of short strings.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
 
    Added format version 5, which allows marshalling slices.
 

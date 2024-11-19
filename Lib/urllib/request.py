@@ -1641,12 +1641,16 @@ else:
         authority, pathname = urlsplit(f'file:{url}')[1:3]
         if not _is_local_host(authority):
             raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
-        return unquote(pathname)
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return unquote(pathname, encoding=encoding, errors=errors)
 
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return quote(pathname, encoding=encoding, errors=errors)
 
 
 # Utility functions
