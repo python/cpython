@@ -1711,6 +1711,15 @@ int
 _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates)
 {
+    if (_PyInterpreterState_IsShuttingDown(interp))
+    {
+        // This shouldn't be an error code because we want it
+        // to happen before we create a thread state
+        /* XXX Move to PyThreadState_New()? */
+        PyErr_SetString(PyExc_InterpreterError,
+                        "interpreter is shutting down");
+        return -1;
+    }
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {

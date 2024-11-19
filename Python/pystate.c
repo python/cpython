@@ -1058,6 +1058,47 @@ _PyErr_SetInterpreterAlreadyRunning(void)
 }
 
 int
+_PyInterpreterState_IsShuttingDown(PyInterpreterState *interp)
+{
+    return get_main_thread(interp) == _PyInterpreterState_MAIN_SHUTTING_DOWN;
+}
+
+int
+_PyInterpreterState_SetShuttingDown(PyInterpreterState *interp)
+{
+    void *expected = NULL;
+    // XXX Use an exchange without a comparison?
+    if (_Py_atomic_compare_exchange_ptr(&interp->threads.main,
+                                        &expected,
+                                        _PyInterpreterState_MAIN_SHUTTING_DOWN) == 0)
+    {
+        /* We're either already shutting down or another thread started running */
+        _PyErr_SetInterpreterAlreadyRunning();
+        return -1;
+    }
+    assert(_PyInterpreterState_IsShuttingDown(interp));
+    assert(!_PyInterpreterState_IsRunningMain(interp));
+    /* At this point, we're certain that no other threads can set the main thread.
+     * However, there might be some remaining thread states--in that case, let's just raise.
+     * We could wait for them all to finish up, but that's a job for later. */
+
+    // TODO: Switch this to the per-interpreter lock once Eric's PR is merged
+    HEAD_LOCK(interp->runtime);
+    PyThreadState *thread_head = interp->threads.head;
+    HEAD_UNLOCK(interp->runtime);
+    if (thread_head != NULL)
+    {
+        /* Remaining thread states exist */
+        PyErr_SetString(PyExc_InterpreterError, "cannot destroy this interpreter right now");
+        set_main_thread(interp, NULL);
+        assert(!_PyInterpreterState_IsShuttingDown(interp));
+        return -1;
+    }
+
+    return 0;
+}
+
+int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
     if (get_main_thread(interp) != NULL) {
@@ -1071,6 +1112,7 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
                         "current tstate has wrong interpreter");
         return -1;
     }
+    assert(get_main_thread(interp) == NULL);
     set_main_thread(interp, tstate);
 
     return 0;
@@ -1086,8 +1128,9 @@ _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    if (get_main_thread(interp) != NULL) {
-        return 1;
+    PyThreadState *main_thread = get_main_thread(interp);
+    if (main_thread != NULL) {
+        return main_thread != _PyInterpreterState_MAIN_SHUTTING_DOWN;
     }
     // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
     // so their main thread wouldn't show it is running the main interpreter's

@@ -2407,6 +2407,7 @@ void
 Py_EndInterpreter(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
+    // XXX Mark the interpreter as shutting down here?
 
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");

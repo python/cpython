@@ -131,6 +131,7 @@ struct _is {
         /* The linked list of threads, newest first. */
         PyThreadState *head;
         _PyThreadStateImpl *preallocated;
+#define _PyInterpreterState_MAIN_SHUTTING_DOWN ((void *) 1)
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
@@ -405,6 +406,11 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
     PyInterpreterState **pinterp);
 
+PyAPI_FUNC(int)
+_PyInterpreterState_IsShuttingDown(PyInterpreterState *interp);
+
+PyAPI_FUNC(int)
+_PyInterpreterState_SetShuttingDown(PyInterpreterState *interp);
 
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
