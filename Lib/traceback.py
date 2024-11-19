@@ -415,7 +415,7 @@ def _walk_tb_with_full_positions(tb, _seen=None):
         if tb.tb_lineno != tb.tb_frame.f_lineno and _seen:
             for exc in reversed(_seen.values()):
                 if (handler_tb := exc.__traceback__) is not tb:
-                    while handler_tb.tb_lineno != tb.tb_frame.f_lineno:
+                    while handler_tb.tb_frame != tb.tb_frame:
                         if not (handler_tb := handler_tb.tb_next):
                             break
                     else:
