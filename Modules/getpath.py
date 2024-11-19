@@ -760,7 +760,7 @@ elif not pythonpath_was_set:
 # QUIRK: Non-Windows replaces prefix/exec_prefix with defaults when running
 # in build directory. This happens after pythonpath calculation.
 # Virtual environments using the build directory Python still keep their prefix.
-if not venv_prefix and os_name != 'nt' and build_prefix:
+if os_name != 'nt' and build_prefix:
     if not venv_prefix:
         prefix = config.get('prefix') or PREFIX
         exec_prefix = config.get('exec_prefix') or EXEC_PREFIX or prefix
