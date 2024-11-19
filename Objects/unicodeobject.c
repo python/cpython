@@ -5061,6 +5061,14 @@ load_unaligned(const unsigned char *p, size_t size)
 }
 #endif
 
+/*
+ * Find the first non-ASCII character in a byte sequence.
+ *
+ * This function scans a range of bytes from `start` to `end` and returns the
+ * index of the first byte that is not an ASCII character (i.e., has the most
+ * significant bit set). If all characters in the range are ASCII, it returns
+ * `end - start`.
+ */
 static Py_ssize_t
 find_first_nonascii(const unsigned char *start, const unsigned char *end)
 {
@@ -5122,18 +5130,23 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
 #endif
 }
 
-static inline int scalar_utf8_start_char(unsigned int ch)
+static inline int
+scalar_utf8_start_char(unsigned int ch)
 {
     // 0xxxxxxx or 11xxxxxx are first byte.
     return (~ch >> 7 | ch >> 6) & 1;
 }
 
-static inline size_t vector_utf8_start_chars(size_t v)
+static inline size_t
+vector_utf8_start_chars(size_t v)
 {
     return ((~v >> 7) | (v >> 6)) & VECTOR_0101;
 }
 
-static Py_ssize_t utf8_count_codepoints(const unsigned char *s, const unsigned char *end)
+
+// Count the number of UTF-8 code points in a given byte sequence.
+static Py_ssize_t
+utf8_count_codepoints(const unsigned char *s, const unsigned char *end)
 {
     Py_ssize_t len = 0;
 
@@ -5377,6 +5390,11 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     // otherwise: check the input and decide the maxchr and maxsize to reduce
     // reallocation and copy.
     if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
+        // we only calculate the number of codepoints and don't determine the exact maxchr.
+        // This is because writing fast and portable SIMD code to find maxchr is difficult.
+        // If reallocation occurs for a larger maxchar, knowing the exact number of codepoints
+        // means that it is no longer necessary to allocate several times the required amount
+        // of memory.
         maxsize = utf8_count_codepoints((const unsigned char *)s, (const unsigned char *)end);
         if (ch < 0xc4) { // latin1
             maxchr = 0xff;
