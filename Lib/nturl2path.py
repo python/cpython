@@ -49,15 +49,13 @@ def pathname2url(p):
         p = p[4:]
         if p[:4].upper() == 'UNC/':
             p = '//' + p[4:]
-    prefix = ''
     drive, tail = ntpath.splitdrive(p)
     if drive[1:2] == ':':
         # DOS drive specified. Add three slashes to the start, producing
         # an authority section with a zero-length authority, and a path
         # section starting with a single slash.
-        prefix += '///'
-        drive = drive.upper()
+        drive = f'///{drive.upper()}'
 
     drive = urllib.parse.quote(drive, safe='/:')
     tail = urllib.parse.quote(tail)
-    return prefix + drive + tail
+    return drive + tail
