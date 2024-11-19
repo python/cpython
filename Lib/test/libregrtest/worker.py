@@ -20,7 +20,7 @@ NEED_TTY = {
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
     worker_json = runtests.as_json()
 
     cmd = runtests.create_python_cmd()
