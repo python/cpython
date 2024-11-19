@@ -1,4 +1,4 @@
-Generator objects now have a valid `ob_size` field.
+Generator objects now have a valid ``ob_size`` field.
 
 #.. section: Library #.. section: Documentation #.. section: Tests #..
 section: Build #.. section: Windows #.. section: macOS #.. section: IDLE #..
