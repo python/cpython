@@ -5030,25 +5030,25 @@ load_unaligned(const unsigned char *p, size_t size)
     switch (size) {
     case 8:
         u.b[7] = p[7];
-    // fall through
+        _Py_FALLTHROUGH;
     case 7:
         u.b[6] = p[6];
-    // fall through
+        _Py_FALLTHROUGH;
     case 6:
         u.b[5] = p[5];
-    // fall through
+        _Py_FALLTHROUGH;
     case 5:
         u.b[4] = p[4];
-    // fall through
+        _Py_FALLTHROUGH;
     case 4:
         u.b[3] = p[3];
-    // fall through
+        _Py_FALLTHROUGH;
     case 3:
         u.b[2] = p[2];
-    // fall through
+        _Py_FALLTHROUGH;
     case 2:
         u.b[1] = p[1];
-    // fall through
+        _Py_FALLTHROUGH;
     case 1:
         u.b[0] = p[0];
         break;
