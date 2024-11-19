@@ -45,7 +45,18 @@ class StressTests(TestBase):
 
         def run():
             interp = interpreters.create()
-            interp.exec(script)
+            alreadyrunning = (f'{interpreters.InterpreterError}: '
+                              'interpreter already running')
+            success = False
+            while not success:
+                try:
+                    interp.exec(script)
+                except interpreters.ExecutionFailed as exc:
+                    if exc.excinfo.msg != 'interpreter already running':
+                        raise  # re-raise
+                    assert exc.excinfo.type.__name__ == 'InterpreterError'
+                else:
+                    success = True
 
         threads = (threading.Thread(target=run) for _ in range(200))
         with threading_helper.start_threads(threads):
