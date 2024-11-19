@@ -396,7 +396,7 @@ _Py_COMP_DIAG_POP
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
-        &(runtime)->xi.registry.mutex, \
+        &(runtime)->xi.data_lookup.registry.mutex, \
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.mutex, \
@@ -1047,10 +1047,17 @@ get_main_thread(PyInterpreterState *interp)
     return _Py_atomic_load_ptr_relaxed(&interp->threads.main);
 }
 
+void
+_PyErr_SetInterpreterAlreadyRunning(void)
+{
+    PyErr_SetString(PyExc_InterpreterError, "interpreter already running");
+}
+
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
+    if (get_main_thread(interp) != NULL) {
+        _PyErr_SetInterpreterAlreadyRunning();
         return -1;
     }
     PyThreadState *tstate = current_fast_get();
@@ -1094,17 +1101,6 @@ _PyThreadState_IsRunningMain(PyThreadState *tstate)
     // See the note in _PyInterpreterState_IsRunningMain() about
     // possible false negatives here for embedders.
     return get_main_thread(interp) == tstate;
-}
-
-int
-_PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
-{
-    if (get_main_thread(interp) != NULL) {
-        PyErr_SetString(PyExc_InterpreterError,
-                        "interpreter already running");
-        return -1;
-    }
-    return 0;
 }
 
 void
@@ -1513,6 +1509,11 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    if (tlbc_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
 #endif
 
     /* We serialize concurrent creation to protect global state. */
@@ -1555,6 +1556,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
     _Py_qsbr_register(tstate, interp, qsbr_idx);
+    tstate->tlbc_index = tlbc_idx;
 #endif
 
     return (PyThreadState *)tstate;
@@ -1706,6 +1708,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
+
+    // Release our thread-local copies of the bytecode for reuse by another
+    // thread
+    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.
