@@ -85,6 +85,16 @@ exception:
    variable :envvar:`!POSIXLY_CORRECT` is set, then option processing stops as
    soon as a non-option argument is encountered.
 
+   If the first character of the option string is ``'-'``, non-option arguments
+   that are followed by options are added to the list of option-and-value pairs
+   as a pair that has ``None`` as its first element and the list of non-option
+   arguments as its second element.
+   The second element of the :func:`!gnu_getopt` result is a list of
+   program arguments after the last option.
+
+   .. versionchanged:: 3.14
+      Support for returning intermixed options and non-option arguments in order.
+
 
 .. exception:: GetoptError
 
@@ -143,6 +153,20 @@ Optional arguments should be specified explicitly:
    [('-C', 'on'), ('-C', ''), ('--color', 'off'), ('--color', '')]
    >>> args
    ['a1', 'a2']
+
+The order of options and non-option arguments can be preserved:
+
+.. doctest::
+
+   >>> s = 'a1 -x a2 a3 a4 --long a5 a6'
+   >>> args = s.split()
+   >>> args
+   ['a1', '-x', 'a2', 'a3', 'a4', '--long', 'a5', 'a6']
+   >>> optlist, args = getopt.gnu_getopt(args, '-x:', ['long='])
+   >>> optlist
+   [(None, ['a1']), ('-x', 'a2'), (None, ['a3', 'a4']), ('--long', 'a5')]
+   >>> args
+   ['a6']
 
 In a script, typical usage is something like this:
 
