@@ -1290,7 +1290,7 @@ ensure_shared_on_keys_version_assignment(PyDictObject *mp)
 {
     ASSERT_DICT_LOCKED((PyObject *) mp);
     #ifdef Py_GIL_DISABLED
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)mp) && !IS_DICT_SHARED(mp)) {
+    if (!IS_DICT_SHARED(mp)) {
         // This ensures that a concurrent resize operation will delay
         // freeing the old keys or values using QSBR, which is necessary to
         // safely allow concurrent reads without locking.
@@ -7349,31 +7349,19 @@ get_next_dict_keys_version(PyInterpreterState *interp)
     return v;
 }
 
-typedef struct {
-    uint32_t version;
-    int assigned;
-} assign_keys_version_result;
-
-static inline assign_keys_version_result
-assign_keys_version(PyInterpreterState *interp, PyDictKeysObject *dictkeys)
-{
-    uint32_t dk_version = FT_ATOMIC_LOAD_UINT32_RELAXED(dictkeys->dk_version);
-    if (dk_version != 0) {
-        return (assign_keys_version_result){dk_version, 0};
-    }
-    dk_version = get_next_dict_keys_version(interp);
-    FT_ATOMIC_STORE_UINT32_RELAXED(dictkeys->dk_version, dk_version);
-    return (assign_keys_version_result){dk_version, 1};
-}
-
 // In free-threaded builds the caller must ensure that the keys object is not
 // being mutated concurrently by another thread.
 uint32_t
 _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
                                       PyDictKeysObject *dictkeys)
 {
-    assign_keys_version_result res = assign_keys_version(interp, dictkeys);
-    return res.version;
+    uint32_t dk_version = FT_ATOMIC_LOAD_UINT32_RELAXED(dictkeys->dk_version);
+    if (dk_version != 0) {
+        return dk_version;
+    }
+    dk_version = get_next_dict_keys_version(interp);
+    FT_ATOMIC_STORE_UINT32_RELAXED(dictkeys->dk_version, dk_version);
+    return dk_version;
 }
 
 uint32_t
@@ -7381,11 +7369,10 @@ _PyDict_GetKeysVersionForCurrentState(PyInterpreterState *interp,
                                       PyDictObject *dict)
 {
     ASSERT_DICT_LOCKED((PyObject *) dict);
-    assign_keys_version_result res = assign_keys_version(interp, dict->ma_keys);
-    if (res.assigned) {
-        ensure_shared_on_keys_version_assignment(dict);
-    }
-    return res.version;
+    uint32_t dk_version =
+        _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
+    ensure_shared_on_keys_version_assignment(dict);
+    return dk_version;
 }
 
 static inline int
