@@ -2754,8 +2754,7 @@ Exceptions
 
 .. exception:: COMError(hresult, text, details)
 
-   Windows only: This non-public exception is raised when a COM method call
-   failed.
+   Windows only: This exception is raised when a COM method call failed.
 
    .. attribute:: hresult
 
@@ -2774,3 +2773,8 @@ Exceptions
       is the path of the help file.  *helpcontext* is the help context
       identifier.  *progid* is the ``ProgID`` of the interface that defined the
       error.
+
+   .. versionchanged:: 3.14
+
+      This exception is now public.
+      Previously, this was private and only available in ``_ctypes``.

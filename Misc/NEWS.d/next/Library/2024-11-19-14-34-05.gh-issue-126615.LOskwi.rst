@@ -1,0 +1,1 @@
+The :exc:`~ctypes.COMError` exception is now public.
