@@ -177,7 +177,7 @@ class _LazyModule(types.ModuleType):
         # (see importlib._bootstrap._find_and_load()).
         if attr == "__spec__":
             return __spec__
-            
+
         loader_state = __spec__.loader_state
         with loader_state['lock']:
             # Only the first thread to get the lock should trigger the load
