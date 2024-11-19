@@ -97,7 +97,7 @@ extern uint32_t _PyDictKeys_GetVersionForCurrentState(
  *
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDict_GetKeysVersionForCurrentState(
-        PyInterpreterState *interp, PyDictObject *dictkeys);
+        PyInterpreterState *interp, PyDictObject *dict);
 
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
