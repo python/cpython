@@ -2369,7 +2369,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
         _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
         return 1;
     }
-    THREADS_HEAD_LOCK(interp);
+    THREADS_HEAD_UNLOCK(interp);
     return 0;
 }
 
