@@ -2592,8 +2592,8 @@ class TestWhich(BaseTest, unittest.TestCase):
             open(exe, 'w').close()
             os.chmod(exe, 0o755)
 
-            # default behavior allows a direct match if nothing in PATHEXT matches
-            self.assertEqual(shutil.which(self.to_text_type("test.exe")), exe)
+            self.assertIsNone(shutil.which(self.to_text_type("test.exe")))
+            self.assertEqual(shutil.which(self.to_text_type("test.exe"), mode=os.F_OK), exe)
 
             dot_test = os.path.join(self.temp_dir, self.to_text_type("test.exe.test"))
             open(dot_test, 'w').close()
