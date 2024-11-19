@@ -651,7 +651,19 @@ class timedelta:
         # guide the C implementation; it's way more convoluted than speed-
         # ignoring auto-overflow-to-long idiomatic Python could be.
 
-        # XXX Check that all inputs are ints or floats.
+        for name, value in (
+            ("days", days),
+            ("seconds", seconds),
+            ("microseconds", microseconds),
+            ("milliseconds", milliseconds),
+            ("minutes", minutes),
+            ("hours", hours),
+            ("weeks", weeks)
+        ):
+            if not isinstance(value, (int, float)):
+                raise TypeError(
+                    f"unsupported type for timedelta {name} component: {type(value).__name__}"
+                )
 
         # Final values, all integer.
         # s and us fit in 32-bit signed ints; d isn't bounded.
