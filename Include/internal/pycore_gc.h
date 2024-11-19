@@ -10,11 +10,11 @@ extern "C" {
 
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
-    // Tagged pointer to next object in the list.
+    // Pointer to next object in the list.
     // 0 means the object is not tracked
     uintptr_t _gc_next;
 
-    // Tagged pointer to previous object in the list.
+    // Pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     uintptr_t _gc_prev;
 } PyGC_Head;
@@ -302,11 +302,6 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
-enum _GCPhase {
-    GC_PHASE_MARK = 0,
-    GC_PHASE_COLLECT = 1
-};
-
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -330,12 +325,10 @@ struct _gc_runtime_state {
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
-    Py_ssize_t prior_heap_size;
     Py_ssize_t heap_size;
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
     int visited_space;
-    int phase;
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
