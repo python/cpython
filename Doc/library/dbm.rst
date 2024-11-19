@@ -23,7 +23,7 @@ the Oracle Berkeley DB.
 .. seealso::
 
    Module :mod:`shelve`
-      Persistence module that can store keys and values of types other than bytes.
+      Persistence module which stores non-string data.
 
 
 .. exception:: error
