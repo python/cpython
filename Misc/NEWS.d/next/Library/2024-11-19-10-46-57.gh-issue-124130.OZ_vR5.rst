@@ -1,0 +1,2 @@
+Fix a bug in matching regular expression ``\B`` in empty string. Now it
+is always the opposite of ``\b``.
