@@ -1420,6 +1420,9 @@ alloc_threadstate(PyInterpreterState *interp)
     // Fall back to the allocator.
     if (tstate == NULL) {
         tstate = PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
+        if (tstate == NULL) {
+            return NULL;
+        }
         reset_threadstate(tstate);
     }
     return tstate;
