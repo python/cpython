@@ -1284,6 +1284,19 @@ PyLong_FromUnsignedLong:unsignedlong:v::
 PyLong_FromVoidPtr:PyObject*::+1:
 PyLong_FromVoidPtr:void*:p::
 
+PyLong_IsPositive:int:::
+PyLong_IsPositive:PyObject*:obj:0:
+
+PyLong_IsNegative:int:::
+PyLong_IsNegative:PyObject*:obj:0:
+
+PyLong_IsZero:int:::
+PyLong_IsZero:PyObject*:obj:0:
+
+PyLong_GetSign:int:::
+PyLong_GetSign:PyObject*:v:0:
+PyLong_GetSign:int*:sign::
+
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
 

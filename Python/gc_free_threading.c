@@ -114,6 +114,12 @@ worklist_remove(struct worklist_iter *iter)
 }
 
 static inline int
+gc_is_frozen(PyObject *op)
+{
+    return (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0;
+}
+
+static inline int
 gc_is_unreachable(PyObject *op)
 {
     return (op->ob_gc_bits & _PyGC_BITS_UNREACHABLE) != 0;
@@ -277,7 +283,7 @@ op_from_block(void *block, void *arg, bool include_frozen)
     if (!_PyObject_GC_IS_TRACKED(op)) {
         return NULL;
     }
-    if (!include_frozen && (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0) {
+    if (!include_frozen && gc_is_frozen(op)) {
         return NULL;
     }
     return op;
@@ -358,7 +364,7 @@ gc_visit_stackref(_PyStackRef stackref)
     // being dead already.
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        if (_PyObject_GC_IS_TRACKED(obj)) {
+        if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
         }
     }
@@ -439,7 +445,10 @@ process_delayed_frees(PyInterpreterState *interp)
 static int
 visit_decref(PyObject *op, void *arg)
 {
-    if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
+    if (_PyObject_GC_IS_TRACKED(op)
+        && !_Py_IsImmortal(op)
+        && !gc_is_frozen(op))
+    {
         // If update_refs hasn't reached this object yet, mark it
         // as (tentatively) unreachable and initialize ob_tid to zero.
         gc_maybe_init_refs(op);
@@ -1539,7 +1548,7 @@ visit_freeze(const mi_heap_t *heap, const mi_heap_area_t *area,
              void *block, size_t block_size, void *args)
 {
     PyObject *op = op_from_block(block, args, true);
-    if (op != NULL) {
+    if (op != NULL && !gc_is_unreachable(op)) {
         op->ob_gc_bits |= _PyGC_BITS_FROZEN;
     }
     return true;
@@ -1584,7 +1593,7 @@ visit_count_frozen(const mi_heap_t *heap, const mi_heap_area_t *area,
                    void *block, size_t block_size, void *args)
 {
     PyObject *op = op_from_block(block, args, true);
-    if (op != NULL && (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0) {
+    if (op != NULL && gc_is_frozen(op)) {
         struct count_frozen_args *arg = (struct count_frozen_args *)args;
         arg->count++;
     }
@@ -1953,16 +1962,22 @@ custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 void
-PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+_PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                               gcvisitobjects_t callback, void *arg)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct custom_visitor_args wrapper = {
         .callback = callback,
         .arg = arg,
     };
-
-    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &custom_visitor_wrapper, &wrapper.base);
+}
+
+void
+PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    _PyGC_VisitObjectsWorldStopped(interp, callback, arg);
     _PyEval_StartTheWorld(interp);
 }
 
