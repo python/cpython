@@ -3,7 +3,7 @@
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
-#include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -488,6 +488,13 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         // with zero refcount, which we will want to collect.
         if (PyTuple_CheckExact(op)) {
             _PyTuple_MaybeUntrack(op);
+            if (!_PyObject_GC_IS_TRACKED(op)) {
+                gc_restore_refs(op);
+                return true;
+            }
+        }
+        else if (PyDict_CheckExact(op)) {
+            _PyDict_MaybeUntrack(op);
             if (!_PyObject_GC_IS_TRACKED(op)) {
                 gc_restore_refs(op);
                 return true;
