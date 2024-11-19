@@ -1080,6 +1080,7 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.RawConfigParser
 
     def test_interpolation(self):
+        
         cf = self.get_interpolation_config()
         eq = self.assertEqual
         eq(cf.get("Foo", "bar"),
@@ -1126,6 +1127,34 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
         cf = self.newconfig(defaults={"A": 5.2})
         self.assertAlmostEqual(cf[self.default_section]['a'], 5.2)
 
+def test_repr_and_str_representation(self):
+    """Test repr and str representation of RawConfigParser."""
+    config_string = """\
+[Section1]
+key1 = value1
+key2 = value2
+
+[Section2]
+keyA = valueA
+keyB = valueB
+"""
+    cf = self.newconfig()
+    cf.read_string(config_string)  # Use a left-aligned string to avoid ParsingError
+    cf.optionxform = str  # Preserve key casing
+
+    # Test `repr` representation
+    expected_repr = (
+        "ConfigParser(default_section='DEFAULT', "
+        "interpolation=None)"
+    )
+    self.assertEqual(repr(cf), expected_repr)
+
+    # Test `str` representation
+    expected_str = (
+        "{'Section1': {'key1': 'value1', 'key2': 'value2'}, "
+        "'Section2': {'keyA': 'valueA', 'keyB': 'valueB'}}"
+    )
+    self.assertEqual(str(cf), expected_str)
 
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):
     delimiters = (':=', '$')
