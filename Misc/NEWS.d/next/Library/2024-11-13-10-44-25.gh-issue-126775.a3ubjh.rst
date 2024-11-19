@@ -1,1 +1,1 @@
-make :func:`linecache.checkcache` threadsafe and GC re-entrency safe
+Make :func:`linecache.checkcache` thread safe and GC re-entrancy safe.
