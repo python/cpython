@@ -44,15 +44,15 @@ _getbytevalue(PyObject* arg, int *value)
 static int
 bytearray_getbuffer(PyByteArrayObject *obj, Py_buffer *view, int flags)
 {
-    void *ptr;
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
             "bytearray_getbuffer: view==NULL argument is obsolete");
         return -1;
     }
-    ptr = (void *) PyByteArray_AS_STRING(obj);
-    /* cannot fail if view != NULL and readonly == 0 */
-    (void)PyBuffer_FillInfo(view, (PyObject*)obj, ptr, Py_SIZE(obj), 0, flags);
+    void *ptr = (void *) PyByteArray_AS_STRING(obj);
+    if (PyBuffer_FillInfo(view, (PyObject*)obj, ptr, Py_SIZE(obj), 0, flags) < 0) {
+        return -1;
+    }
     obj->ob_exports++;
     return 0;
 }
