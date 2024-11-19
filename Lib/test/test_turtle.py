@@ -470,7 +470,7 @@ class TestRawTurtle(unittest.TestCase):
         try:
             self.screen = turtle.Screen()
         except turtle.TK.TclError:
-            self.skipTest() # cannot instantiate RawTurtle without a screen            
+            raise SkipTest() # cannot instantiate RawTurtle without a screen            
 
     def test_clone(self):            
         rawturtle = turtle.RawTurtle(self.screen)
