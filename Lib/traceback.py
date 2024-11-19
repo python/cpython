@@ -397,18 +397,32 @@ def walk_tb(tb):
         tb = tb.tb_next
 
 
-def _walk_tb_with_full_positions(tb):
+def _get_tb_position(tb):
+    positions = _get_code_position(tb.tb_frame.f_code, tb.tb_lasti)
+    # Yield tb_lineno when co_positions does not have a line number to
+    # maintain behavior with walk_tb.
+    if positions[0] is None:
+        return tb.tb_frame, (tb.tb_lineno, ) + positions[1:]
+    return tb.tb_frame, positions
+
+
+def _walk_tb_with_full_positions(tb, _seen=None):
     # Internal version of walk_tb that yields full code positions including
     # end line and column information.
+    handler_tb = None
     while tb is not None:
-        positions = _get_code_position(tb.tb_frame.f_code, tb.tb_lasti)
-        # Yield tb_lineno when co_positions does not have a line number to
-        # maintain behavior with walk_tb.
-        if positions[0] is None:
-            yield tb.tb_frame, (tb.tb_lineno, ) + positions[1:]
-        else:
-            yield tb.tb_frame, positions
+        yield _get_tb_position(tb)
+        if tb.tb_lineno != tb.tb_frame.f_lineno and _seen:
+            for exc in reversed(_seen.values()):
+                if (handler_tb := exc.__traceback__) is not tb:
+                    while handler_tb.tb_lineno != tb.tb_frame.f_lineno:
+                        if not (handler_tb := handler_tb.tb_next):
+                            break
+                    else:
+                        break
         tb = tb.tb_next
+    if handler_tb:
+        yield _get_tb_position(handler_tb)
 
 
 def _get_code_position(code, instruction_index):
@@ -1035,14 +1049,14 @@ class TracebackException:
         # Handle loops in __cause__ or __context__.
         is_recursive_call = _seen is not None
         if _seen is None:
-            _seen = set()
-        _seen.add(id(exc_value))
+            _seen = {}
+        _seen[id(exc_value)] = exc_value
 
         self.max_group_width = max_group_width
         self.max_group_depth = max_group_depth
 
         self.stack = StackSummary._extract_from_extended_frame_gen(
-            _walk_tb_with_full_positions(exc_traceback),
+            _walk_tb_with_full_positions(exc_traceback, _seen),
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
 
