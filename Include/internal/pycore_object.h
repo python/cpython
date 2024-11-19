@@ -98,7 +98,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     do { \
         struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
         if (tracer->tracer_func != NULL) { \
-            void* data = tracer->tracer_data; \
+            void *data = tracer->tracer_data; \
             tracer->tracer_func((obj), (operation), data); \
         } \
     } while(0)
