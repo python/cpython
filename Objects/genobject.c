@@ -814,24 +814,10 @@ static PyMemberDef gen_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-static PyObject *
-gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
-{
-    Py_ssize_t res;
-    res = offsetof(PyGenObject, gi_iframe) + offsetof(_PyInterpreterFrame, localsplus);
-    PyCodeObject *code = _PyGen_GetCode(gen);
-    res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
-    return PyLong_FromSsize_t(res);
-}
-
-PyDoc_STRVAR(sizeof__doc__,
-"gen.__sizeof__() -> size of gen in memory, in bytes");
-
 static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close", gen_close, METH_NOARGS, close_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1192,7 +1178,6 @@ static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close", gen_close, METH_NOARGS, coro_close_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1620,7 +1605,6 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
