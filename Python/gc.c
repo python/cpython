@@ -1394,7 +1394,6 @@ visit_add_to_container(PyObject *op, void *arg)
 static uintptr_t
 expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCState *gcstate)
 {
-    validate_list(container, collecting_clear_unreachable_clear);
     struct container_and_flag arg = {
         .container = container,
         .visited_space = gcstate->visited_space,
@@ -1468,6 +1467,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         gc_set_old_space(gc, gcstate->visited_space);
         increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
+    validate_list(&increment, collecting_clear_unreachable_clear);
     gc_list_validate_space(&increment, gcstate->visited_space);
     PyGC_Head survivors;
     gc_list_init(&survivors);
