@@ -472,6 +472,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             goto throw_here;
         }
         PyThreadState *tstate = _PyThreadState_GET();
+        assert(tstate != NULL);
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
 
