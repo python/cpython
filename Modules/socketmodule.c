@@ -5588,8 +5588,8 @@ socket_getattr(PyObject *self, PyObject *name)
     }
 
     if (!strcmp(attrname, "SocketType")) {
-        PyErr_Warn(PyExc_DeprecationWarning, "It will be removed in 3.16. "
-                                             "Use socket.socket type instead");
+        PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and will be removed in 3.16. "
+                                             "Use socket.socket instead");
         return sock_type;
     }
 
