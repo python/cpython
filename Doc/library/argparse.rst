@@ -801,7 +801,8 @@ Only actions that consume command-line arguments (e.g. ``'store'``,
 
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
-:meth:`!format_usage` methods.
+:meth:`!format_usage` methods. You can also register custom actions using the
+:meth:`~ArgumentParser.register` method and reference them by their registered name.
 
 An example of a custom action::
 
@@ -1023,7 +1024,9 @@ is only applied if the default is a string.
 The argument to ``type`` can be any callable that accepts a single string.
 If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
 :exc:`ValueError`, the exception is caught and a nicely formatted error
-message is displayed.  No other exception types are handled.
+message is displayed. Other exception types are not handled. You can also
+customize how the type is displayed in error messages by registering it with
+the parser using :meth:`~ArgumentParser.register`.
 
 Common built-in types and functions can be used as type converters:
 
@@ -2161,6 +2164,8 @@ Intermixed parsing
    remaining unparsed argument strings.
 
    .. versionadded:: 3.7
+
+.. _register-custom:
 
 Registering custom types or actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
