@@ -1139,17 +1139,14 @@ keyA = valueA
 keyB = valueB
 """
     cf = self.newconfig()
-    cf.read_string(config_string)  # Use a left-aligned string to avoid ParsingError
-    cf.optionxform = str  # Preserve key casing
+    cf.read_string(config_string)  
+    cf.optionxform = str 
 
-    # Test `repr` representation
     expected_repr = (
         "ConfigParser(default_section='DEFAULT', "
         "interpolation=None)"
     )
     self.assertEqual(repr(cf), expected_repr)
-
-    # Test `str` representation
     expected_str = (
         "{'Section1': {'key1': 'value1', 'key2': 'value2'}, "
         "'Section2': {'keyA': 'valueA', 'keyB': 'valueB'}}"
