@@ -1,2 +1,0 @@
-Fix crash when non-dict was passed to several functions in ``_interpreters``
-module.

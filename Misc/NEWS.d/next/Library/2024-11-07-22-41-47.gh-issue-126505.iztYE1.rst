@@ -1,4 +1,0 @@
-Fix bugs in compiling case-insensitive :mod:`regular expressions <re>` with
-character classes containing non-BMP characters: upper-case non-BMP
-character did was ignored and the ASCII flag was ignored when
-matching a character range whose upper bound is beyond the BMP region.

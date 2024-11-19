@@ -1,2 +1,0 @@
-Following :gh:`126101`, for :ref:`codeobjects` like lambda, annotation and type alias,
-we no longer  add ``None`` to its :attr:`~codeobject.co_consts`.

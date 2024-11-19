@@ -1,1 +1,0 @@
-The minimum supported Android version is now 7.0 (API level 24).

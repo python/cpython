@@ -1,2 +1,0 @@
-Fix a use-after-free crash in :meth:`asyncio.Future.remove_done_callback`.
-Patch by Bénédikt Tran.

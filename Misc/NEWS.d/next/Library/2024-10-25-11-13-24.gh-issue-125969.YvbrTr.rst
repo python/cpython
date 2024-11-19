@@ -1,2 +1,0 @@
-Fix an out-of-bounds crash when an evil :meth:`asyncio.loop.call_soon`
-mutates the length of the internal callbacks list. Patch by Bénédikt Tran.
