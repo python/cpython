@@ -1040,6 +1040,14 @@ class RawConfigParser(MutableMapping):
         # XXX does it break when underlying container state changed?
         return itertools.chain((self.default_section,), self._sections.keys())
 
+    def __str__(self):
+        config_dict = {section: dict(self.items(section)) for section in self.sections()}
+        return str(config_dict)
+
+    def __repr__(self):
+        return f"<ConfigParser(default_section='{self.default_section}', interpolation={self._interpolation})>"
+
+
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
