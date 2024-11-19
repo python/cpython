@@ -94,6 +94,12 @@ def _trace(message):
         print(message, file=sys.stderr)
 
 
+def _warn(*args, **kwargs):
+    import warnings
+
+    warnings.warn(*args, **kwargs)
+
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     try:
@@ -602,7 +608,10 @@ def venv(known_paths):
                     elif key == 'home':
                         sys._home = value
 
-        sys.prefix = sys.exec_prefix = site_prefix
+        if sys.prefix != site_prefix:
+            _warn(f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}', RuntimeWarning)
+        if sys.exec_prefix != site_prefix:
+            _warn(f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}', RuntimeWarning)
 
         # Doing this here ensures venv takes precedence over user-site
         addsitepackages(known_paths, [sys.prefix])
