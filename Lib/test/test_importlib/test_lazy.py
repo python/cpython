@@ -90,6 +90,11 @@ class LazyLoaderTests(unittest.TestCase):
             with test_util.import_state(meta_path=[importer]):
                 module = importlib.import_module(importer.module_name)
         self.assertIsNone(importer.loaded)
+
+        # Check that getting __spec__ doesn't trigger the load.
+        module.__spec__
+        self.assertIsNone(importer.loaded)
+
         # Trigger load.
         self.assertEqual(module.__loader__, importer)
         self.assertIsNotNone(importer.loaded)
@@ -223,6 +228,21 @@ sys.modules[__name__].__class__ = ImmutableModule
             module.CONSTANT = 2.71
         with self.assertRaises(AttributeError):
             del module.CONSTANT
+
+    def test_spec_passthrough(self):
+        # Verify that a lazily loaded module can have its __spec__ retrieved without triggering
+        # a full load. That way, importlib internal machinery will not cause a load when pulling
+        # a lazily loaded module out of sys.modules.
+        loader = TestingImporter()
+        module = self.new_module(loader=loader)
+
+        # Access __spec__ without triggering the load.
+        _ = module.__spec__
+        self.assertIsNone(loader.loaded)
+
+        # Trigger the full load.
+        _ = module.attr
+        self.assertIsNotNone(loader.loaded)
 
 
 if __name__ == '__main__':
