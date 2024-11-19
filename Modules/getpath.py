@@ -764,8 +764,8 @@ if os_name != 'nt' and build_prefix:
     if not venv_prefix:
         prefix = config.get('prefix') or PREFIX
         exec_prefix = config.get('exec_prefix') or EXEC_PREFIX or prefix
-    base_prefix = config.get('base_prefix') or prefix
-    base_exec_prefix = config.get('base_exec_prefix') or base_prefix
+    base_prefix = config.get('base_prefix') or PREFIX
+    base_exec_prefix = config.get('base_exec_prefix') or EXEC_PREFIX or base_prefix
 
 
 # ******************************************************************************
