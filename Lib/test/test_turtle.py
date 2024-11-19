@@ -471,7 +471,7 @@ class TestRawTurtle(unittest.TestCase):
         rawturtle = turtle.RawTurtle(screen)
         another_turtle = rawturtle.clone()
         self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
-        self.assertFalse(a_turtle.currentLineItem in another_turtle.items)
+        self.assertFalse(rawturtle.currentLineItem in another_turtle.items)
 
 
 class TestTurtleScreen(unittest.TestCase):
