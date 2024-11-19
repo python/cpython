@@ -119,9 +119,7 @@ extern PyTypeObject _PyExc_MemoryError;
         .id_refcount = -1, \
         ._whence = _PyInterpreterState_WHENCE_NOTSET, \
         .threads = { \
-            .freelist = { \
-                .head = &(INTERP)._initial_thread, \
-            }, \
+            .preallocated = &(INTERP)._initial_thread, \
         }, \
         .imports = IMPORTS_INIT, \
         .ceval = { \

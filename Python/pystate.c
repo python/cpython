@@ -515,7 +515,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
-        _PyMutex_at_fork_reinit(&interp->threads.freelist.mutex);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
@@ -630,7 +629,7 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    interp->threads.freelist.head = &interp->_initial_thread;
+    interp->threads.preallocated = &interp->_initial_thread;
 
     // We would call _PyObject_InitState() at this point
     // if interp->feature_flags were alredy set.
@@ -1400,23 +1399,14 @@ reset_threadstate(_PyThreadStateImpl *tstate)
            sizeof(*tstate));
 }
 
-#define LOCK_THREADS_FREELIST(interp) \
-    PyMutex_LockFlags(&(interp)->threads.freelist.mutex, _Py_LOCK_DONT_DETACH)
-#define UNLOCK_THREADS_FREELIST(interp) \
-    PyMutex_Unlock(&(interp)->threads.freelist.mutex)
-
 static _PyThreadStateImpl *
 alloc_threadstate(PyInterpreterState *interp)
 {
-    // Try the freelist first.
-    _PyThreadStateImpl *tstate = NULL;
-    LOCK_THREADS_FREELIST(interp);
-    if (interp->threads.freelist.head != NULL) {
-        tstate = interp->threads.freelist.head;
-        interp->threads.freelist.head =
-            (_PyThreadStateImpl *)tstate->base.next;
-    }
-    UNLOCK_THREADS_FREELIST(interp);
+    _PyThreadStateImpl *tstate;
+
+    // Try the preallocated tstate first.
+    tstate = _Py_atomic_exchange_ptr(&interp->threads.preallocated, NULL);
+
     // Fall back to the allocator.
     if (tstate == NULL) {
         tstate = PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
@@ -1435,20 +1425,15 @@ free_threadstate(_PyThreadStateImpl *tstate)
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
     if (tstate == &interp->_initial_thread) {
-        // Add it to the freelist.
+        // Make it available again.
         reset_threadstate(tstate);
-        LOCK_THREADS_FREELIST(interp);
-        tstate->base.next = (PyThreadState *)interp->threads.freelist.head;
-        interp->threads.freelist.head = tstate;
-        UNLOCK_THREADS_FREELIST(interp);
+        assert(interp->threads.preallocated == NULL);
+        _Py_atomic_store_ptr(&interp->threads.preallocated, tstate);
     }
     else {
         PyMem_RawFree(tstate);
     }
 }
-
-#undef LOCK_THREADS_FREELIST
-#undef UNLOCK_THREADS_FREELIST
 
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
