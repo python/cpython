@@ -1,3 +1,0 @@
-Remove :class:`!URLopener` and :class:`!FancyURLopener` classes from
-:mod:`urllib.request`. They had previously raised :exc:`DeprecationWarning`
-since Python 3.3.
