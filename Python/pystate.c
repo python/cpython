@@ -1089,7 +1089,7 @@ _PyInterpreterState_SetShuttingDown(PyInterpreterState *interp)
     if (interp->threads.head != NULL)
     {
         /* Remaining thread states exist */
-        PyErr_SetString(PyExc_InterpreterError, "cannot destroy this interpreter right now");
+        PyErr_SetString(PyExc_InterpreterError, "interpreter has remaining threads");
         set_main_thread(interp, NULL);
         assert(!_PyInterpreterState_IsShuttingDown(interp));
         return -1;
