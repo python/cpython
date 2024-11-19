@@ -1429,6 +1429,39 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "All instructions containing a uop"):
             self.run_cases_test(input, output)
 
+    def test_escaping_call_next_to_cmacro(self):
+        input = """
+        inst(OP, (--)) {
+            #ifdef Py_GIL_DISABLED
+            escaping_call();
+            #else
+            another_escaping_call();
+            #endif
+            yet_another_escaping_call();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            #ifdef Py_GIL_DISABLED
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #else
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            another_escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #endif
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            yet_another_escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

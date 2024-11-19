@@ -2452,6 +2452,7 @@ PyTypeObject PyByteArray_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Free,                      /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };
 
 /*********************** Bytearray Iterator ****************************/

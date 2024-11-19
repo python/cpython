@@ -66,9 +66,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         f.tk_busy_forget()
         self.assertFalse(f.tk_busy_status())
         self.assertFalse(f.tk_busy_current())
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_configure()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_forget()
 
     @requires_tk(8, 6, 6)
@@ -87,7 +88,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(f.tk_busy_configure('cursor')[4], 'heart')
 
         f.tk_busy_forget()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_cget('cursor')
 
     def test_tk_setPalette(self):

@@ -18,7 +18,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
+   Copyright (c) 2004 Python Software Foundation.
    All rights reserved.
 */
 
@@ -932,15 +932,31 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 
 /* reduce (used to be a builtin) ********************************************/
 
-// Not converted to argument clinic, because of `args` in-place modification.
-// AC will affect performance.
-static PyObject *
-functools_reduce(PyObject *self, PyObject *args)
-{
-    PyObject *seq, *func, *result = NULL, *it;
+/*[clinic input]
+_functools.reduce
 
-    if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
-        return NULL;
+    function as func: object
+    iterable as seq: object
+    /
+    initial as result: object = NULL
+
+Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
+
+This effectively reduces the iterable to a single value.  If initial is present,
+it is placed before the items of the iterable in the calculation, and serves as
+a default when the iterable is empty.
+
+For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+calculates ((((1 + 2) + 3) + 4) + 5).
+[clinic start generated code]*/
+
+static PyObject *
+_functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
+                       PyObject *result)
+/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
+{
+    PyObject *args, *it;
+
     if (result != NULL)
         Py_INCREF(result);
 
@@ -1005,18 +1021,6 @@ Fail:
     Py_DECREF(it);
     return NULL;
 }
-
-PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial], /) -> value\n\
-\n\
-Apply a function of two arguments cumulatively to the items of an iterable, from left to right.\n\
-\n\
-This effectively reduces the iterable to a single value.  If initial is present,\n\
-it is placed before the items of the iterable in the calculation, and serves as\n\
-a default when the iterable is empty.\n\
-\n\
-For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])\n\
-calculates ((((1 + 2) + 3) + 4) + 5).");
 
 /* lru_cache object **********************************************************/
 
@@ -1722,7 +1726,7 @@ PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
 static PyMethodDef _functools_methods[] = {
-    {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
+    _FUNCTOOLS_REDUCE_METHODDEF
     _FUNCTOOLS_CMP_TO_KEY_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };

@@ -16,6 +16,9 @@ configure*                    @erlend-aasland @corona10
 Makefile.pre.in               @erlend-aasland
 Modules/Setup*                @erlend-aasland
 
+# argparse
+**/*argparse*                 @savannahostrowski
+
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @kumaraditya303 @willingc
 
@@ -23,7 +26,7 @@ Modules/Setup*                @erlend-aasland
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
-**/*jit*                      @brandtbucher
+**/*jit*                      @brandtbucher @savannahostrowski
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -88,7 +91,6 @@ Objects/exceptions.c          @iritkatriel
 **/sha*                       @gpshead @tiran
 Modules/md5*                  @gpshead @tiran
 **/*blake*                    @gpshead @tiran
-Modules/_blake2/**            @gpshead @tiran
 Modules/_hacl/**              @gpshead
 
 # logging

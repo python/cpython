@@ -200,7 +200,7 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
@@ -637,7 +637,7 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
             break
         idx -= 1
         assert idx > 0
