@@ -1649,7 +1649,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             config = {
                 'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_exec_prefix': exec_prefix,
-                'exec_prefix': exec_prefix,
+                'exec_prefix': tmpdir,
+                'prefix': tmpdir,
                 'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
