@@ -1657,7 +1657,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             }
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
-                config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
                 config['use_frozen_modules'] = bool(not support.Py_DEBUG)
             else:
