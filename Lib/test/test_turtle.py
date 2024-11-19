@@ -466,9 +466,14 @@ class TestTPen(unittest.TestCase):
             self.assertTrue(tpen.isdown())
 
 class TestRawTurtle(unittest.TestCase):
-    def test_clone(self):
-        screen = turtle.Screen()
-        rawturtle = turtle.RawTurtle(screen)
+    def setUp(self):
+        try:
+            self.screen = turtle.Screen()
+        except _tkinter.TclError:
+            self.skipTest() # cannot instantiate RawTurtle without a screen            
+
+    def test_clone(self):            
+        rawturtle = turtle.RawTurtle(self.screen)
         another_turtle = rawturtle.clone()
         self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
         self.assertFalse(rawturtle.currentLineItem in another_turtle.items)
