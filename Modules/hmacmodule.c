@@ -5,8 +5,8 @@
 #include "Python.h"
 #include "pycore_hashtable.h"
 
-#include <openssl/evp.h>                        // EVP_* interface
-#include <openssl/objects.h>                    // LN_* and NID_* macros
+#include <openssl/evp.h>                // EVP_* interface
+#include <openssl/objects.h>            // LN_* and NID_* macros
 
 #include "_hacl/Hacl_HMAC.h"
 #include "hashlib.h"
@@ -200,7 +200,6 @@ typedef void
 (*HACL_HMAC_compute_func)(uint8_t *out,
                           uint8_t *key, uint32_t keylen,
                           uint8_t *msg, uint32_t msglen);
-
 /* Function pointer type for 1-shot HACL* HMAC CPython AC functions. */
 typedef PyObject *
 (*PYAC_HMAC_compute_func)(PyObject *module, PyObject *key, PyObject *msg);
