@@ -1,0 +1,4 @@
+Fixed the values of :py:func:`sysconfig.get_config_vars`,
+:py:func:`sysconfig.get_paths`, and their siblings when the :py:mod:`site`
+initialization happens after :py:mod:`sysconfig` has built a cache for
+:py:func:`sysconfig.get_config_vars`.

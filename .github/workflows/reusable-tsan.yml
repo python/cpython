@@ -21,12 +21,12 @@ on:
 jobs:
   build_tsan_reusable:
     name: 'Thread sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
@@ -47,12 +47,12 @@ jobs:
         sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
       run: |
-        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }} handle_segv=0" >> $GITHUB_ENV
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
+        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }} handle_segv=0" >> "$GITHUB_ENV"
+        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:
@@ -68,7 +68,7 @@ jobs:
       run: ./python -m test --tsan -j4
     - name: Display TSAN logs
       if: always()
-      run: find ${GITHUB_WORKSPACE} -name 'tsan_log.*' | xargs head -n 1000
+      run: find "${GITHUB_WORKSPACE}" -name 'tsan_log.*' | xargs head -n 1000
     - name: Archive TSAN logs
       if: always()
       uses: actions/upload-artifact@v4

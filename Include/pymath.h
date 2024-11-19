@@ -49,7 +49,7 @@
 
 /* Py_HUGE_VAL should always be the same as Py_INFINITY.  But historically
  * this was not reliable and Python did not require IEEE floats and C99
- * conformity.  Prefer Py_INFINITY for new code.
+ * conformity.  The macro was soft deprecated in Python 3.14, use Py_INFINITY instead.
  */
 #ifndef Py_HUGE_VAL
 #  define Py_HUGE_VAL HUGE_VAL

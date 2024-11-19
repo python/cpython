@@ -3,7 +3,7 @@
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
-#include "pycore_dict.h"          // _PyDict_MaybeUntrack()
+#include "pycore_dict.h"          // _PyInlineValuesSize()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -15,7 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyType_MergeThreadLocalRefcounts
+#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 #ifdef Py_GIL_DISABLED
 
@@ -111,6 +111,12 @@ worklist_remove(struct worklist_iter *iter)
     *(iter->ptr) = op->ob_tid;
     op->ob_tid = 0;
     iter->next = iter->ptr;
+}
+
+static inline int
+gc_is_frozen(PyObject *op)
+{
+    return (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0;
 }
 
 static inline int
@@ -215,15 +221,10 @@ disable_deferred_refcounting(PyObject *op)
         op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
         op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
         merge_refcount(op, 0);
-    }
 
-    // Heap types also use per-thread refcounting -- disable it here.
-    if (PyType_Check(op)) {
-        if (PyType_HasFeature((PyTypeObject *)op, Py_TPFLAGS_HEAPTYPE)) {
-            PyHeapTypeObject *ht = (PyHeapTypeObject *)op;
-            _PyObject_ReleaseUniqueId(ht->unique_id);
-            ht->unique_id = -1;
-        }
+        // Heap types and code objects also use per-thread refcounting, which
+        // should also be disabled when we turn off deferred refcounting.
+        _PyObject_DisablePerThreadRefcounting(op);
     }
 
     // Generators and frame objects may contain deferred references to other
@@ -282,7 +283,7 @@ op_from_block(void *block, void *arg, bool include_frozen)
     if (!_PyObject_GC_IS_TRACKED(op)) {
         return NULL;
     }
-    if (!include_frozen && (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0) {
+    if (!include_frozen && gc_is_frozen(op)) {
         return NULL;
     }
     return op;
@@ -363,7 +364,7 @@ gc_visit_stackref(_PyStackRef stackref)
     // being dead already.
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        if (_PyObject_GC_IS_TRACKED(obj)) {
+        if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
         }
     }
@@ -420,25 +421,34 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 static void
 process_delayed_frees(PyInterpreterState *interp)
 {
-    // In STW status, we can observe the latest write sequence by
-    // advancing the write sequence immediately.
+    // While we are in a "stop the world" pause, we can observe the latest
+    // write sequence by advancing the write sequence immediately.
     _Py_qsbr_advance(&interp->qsbr);
     _PyThreadStateImpl *current_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     _Py_qsbr_quiescent_state(current_tstate->qsbr);
+
+    // Merge the queues from other threads into our own queue so that we can
+    // process all of the pending delayed free requests at once.
     HEAD_LOCK(&_PyRuntime);
-    PyThreadState *tstate = interp->threads.head;
-    while (tstate != NULL) {
-        _PyMem_ProcessDelayed(tstate);
-        tstate = (PyThreadState *)tstate->next;
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyThreadStateImpl *other = (_PyThreadStateImpl *)p;
+        if (other != current_tstate) {
+            llist_concat(&current_tstate->mem_free_queue, &other->mem_free_queue);
+        }
     }
     HEAD_UNLOCK(&_PyRuntime);
+
+    _PyMem_ProcessDelayed((PyThreadState *)current_tstate);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
 static int
 visit_decref(PyObject *op, void *arg)
 {
-    if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
+    if (_PyObject_GC_IS_TRACKED(op)
+        && !_Py_IsImmortal(op)
+        && !gc_is_frozen(op))
+    {
         // If update_refs hasn't reached this object yet, mark it
         // as (tentatively) unreachable and initialize ob_tid to zero.
         gc_maybe_init_refs(op);
@@ -478,13 +488,6 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         // with zero refcount, which we will want to collect.
         if (PyTuple_CheckExact(op)) {
             _PyTuple_MaybeUntrack(op);
-            if (!_PyObject_GC_IS_TRACKED(op)) {
-                gc_restore_refs(op);
-                return true;
-            }
-        }
-        else if (PyDict_CheckExact(op)) {
-            _PyDict_MaybeUntrack(op);
             if (!_PyObject_GC_IS_TRACKED(op)) {
                 gc_restore_refs(op);
                 return true;
@@ -1400,10 +1403,32 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     return n + m;
 }
 
+static PyObject *
+list_from_object_stack(_PyObjectStack *stack)
+{
+    PyObject *list = PyList_New(_PyObjectStack_Size(stack));
+    if (list == NULL) {
+        PyObject *op;
+        while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+            Py_DECREF(op);
+        }
+        return NULL;
+    }
+
+    PyObject *op;
+    Py_ssize_t idx = 0;
+    while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+        assert(idx < PyList_GET_SIZE(list));
+        PyList_SET_ITEM(list, idx++, op);
+    }
+    assert(idx == PyList_GET_SIZE(list));
+    return list;
+}
+
 struct get_referrers_args {
     struct visitor_args base;
     PyObject *objs;
-    struct worklist results;
+    _PyObjectStack results;
 };
 
 static int
@@ -1427,11 +1452,21 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
+    if (op->ob_gc_bits & (_PyGC_BITS_UNREACHABLE | _PyGC_BITS_FROZEN)) {
+        // Exclude unreachable objects (in-progress GC) and frozen
+        // objects from gc.get_objects() to match the default build.
+        return true;
+    }
 
     struct get_referrers_args *arg = (struct get_referrers_args *)args;
+    if (op == arg->objs) {
+        // Don't include the tuple itself in the referrers list.
+        return true;
+    }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        op->ob_tid = 0;  // we will restore the refcount later
-        worklist_push(&arg->results, op);
+        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
+            return false;
+        }
     }
 
     return true;
@@ -1440,48 +1475,25 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
 PyObject *
 _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
-    _PyEval_StopTheWorld(interp);
-
-    // Append all objects to a worklist. This abuses ob_tid. We will restore
-    // it later. NOTE: We can't append to the PyListObject during
-    // gc_visit_heaps() because PyList_Append() may reclaim an abandoned
-    // mimalloc segments while we are traversing them.
+    // NOTE: We can't append to the PyListObject during gc_visit_heaps()
+    // because PyList_Append() may reclaim an abandoned mimalloc segments
+    // while we are traversing them.
     struct get_referrers_args args = { .objs = objs };
-    gc_visit_heaps(interp, &visit_get_referrers, &args.base);
-
-    bool error = false;
-    PyObject *op;
-    while ((op = worklist_pop(&args.results)) != NULL) {
-        gc_restore_tid(op);
-        if (op != objs && PyList_Append(result, op) < 0) {
-            error = true;
-            break;
-        }
-    }
-
-    // In case of error, clear the remaining worklist
-    while ((op = worklist_pop(&args.results)) != NULL) {
-        gc_restore_tid(op);
-    }
-
+    _PyEval_StopTheWorld(interp);
+    int err = gc_visit_heaps(interp, &visit_get_referrers, &args.base);
     _PyEval_StartTheWorld(interp);
 
-    if (error) {
-        Py_DECREF(result);
-        return NULL;
+    PyObject *list = list_from_object_stack(&args.results);
+    if (err < 0) {
+        PyErr_NoMemory();
+        Py_CLEAR(list);
     }
-
-    return result;
+    return list;
 }
 
 struct get_objects_args {
     struct visitor_args base;
-    struct worklist objects;
+    _PyObjectStack objects;
 };
 
 static bool
@@ -1492,54 +1504,36 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
+    if (op->ob_gc_bits & (_PyGC_BITS_UNREACHABLE | _PyGC_BITS_FROZEN)) {
+        // Exclude unreachable objects (in-progress GC) and frozen
+        // objects from gc.get_objects() to match the default build.
+        return true;
+    }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    op->ob_tid = 0;  // we will restore the refcount later
-    worklist_push(&arg->objects, op);
-
+    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
+        return false;
+    }
     return true;
 }
 
 PyObject *
 _PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
-    _PyEval_StopTheWorld(interp);
-
-    // Append all objects to a worklist. This abuses ob_tid. We will restore
-    // it later. NOTE: We can't append to the list during gc_visit_heaps()
-    // because PyList_Append() may reclaim an abandoned mimalloc segment
-    // while we are traversing it.
+    // NOTE: We can't append to the PyListObject during gc_visit_heaps()
+    // because PyList_Append() may reclaim an abandoned mimalloc segments
+    // while we are traversing them.
     struct get_objects_args args = { 0 };
-    gc_visit_heaps(interp, &visit_get_objects, &args.base);
-
-    bool error = false;
-    PyObject *op;
-    while ((op = worklist_pop(&args.objects)) != NULL) {
-        gc_restore_tid(op);
-        if (op != result && PyList_Append(result, op) < 0) {
-            error = true;
-            break;
-        }
-    }
-
-    // In case of error, clear the remaining worklist
-    while ((op = worklist_pop(&args.objects)) != NULL) {
-        gc_restore_tid(op);
-    }
-
+    _PyEval_StopTheWorld(interp);
+    int err = gc_visit_heaps(interp, &visit_get_objects, &args.base);
     _PyEval_StartTheWorld(interp);
 
-    if (error) {
-        Py_DECREF(result);
-        return NULL;
+    PyObject *list = list_from_object_stack(&args.objects);
+    if (err < 0) {
+        PyErr_NoMemory();
+        Py_CLEAR(list);
     }
-
-    return result;
+    return list;
 }
 
 static bool
@@ -1547,7 +1541,7 @@ visit_freeze(const mi_heap_t *heap, const mi_heap_area_t *area,
              void *block, size_t block_size, void *args)
 {
     PyObject *op = op_from_block(block, args, true);
-    if (op != NULL) {
+    if (op != NULL && !gc_is_unreachable(op)) {
         op->ob_gc_bits |= _PyGC_BITS_FROZEN;
     }
     return true;
@@ -1592,7 +1586,7 @@ visit_count_frozen(const mi_heap_t *heap, const mi_heap_area_t *area,
                    void *block, size_t block_size, void *args)
 {
     PyObject *op = op_from_block(block, args, true);
-    if (op != NULL && (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0) {
+    if (op != NULL && gc_is_frozen(op)) {
         struct count_frozen_args *arg = (struct count_frozen_args *)args;
         arg->count++;
     }
@@ -1961,16 +1955,22 @@ custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 void
-PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+_PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                               gcvisitobjects_t callback, void *arg)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct custom_visitor_args wrapper = {
         .callback = callback,
         .arg = arg,
     };
-
-    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &custom_visitor_wrapper, &wrapper.base);
+}
+
+void
+PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    _PyGC_VisitObjectsWorldStopped(interp, callback, arg);
     _PyEval_StartTheWorld(interp);
 }
 

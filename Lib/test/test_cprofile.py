@@ -30,6 +30,22 @@ class CProfileTest(ProfileTest):
 
             self.assertEqual(cm.unraisable.exc_type, TypeError)
 
+    def test_crash_with_not_enough_args(self):
+        # gh-126220
+        import _lsprof
+
+        for profile in [_lsprof.Profiler(), cProfile.Profile()]:
+            for method in [
+                "_pystart_callback",
+                "_pyreturn_callback",
+                "_ccall_callback",
+                "_creturn_callback",
+            ]:
+                with self.subTest(profile=profile, method=method):
+                    method_obj = getattr(profile, method)
+                    with self.assertRaises(TypeError):
+                        method_obj()  # should not crash
+
     def test_evil_external_timer(self):
         # gh-120289
         # Disabling profiler in external timer should not crash
