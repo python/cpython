@@ -1080,7 +1080,6 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.RawConfigParser
 
     def test_interpolation(self):
-
         cf = self.get_interpolation_config()
         eq = self.assertEqual
         eq(cf.get("Foo", "bar"),
@@ -1126,6 +1125,7 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(str(err), "'int' object has no attribute 'lower'")
         cf = self.newconfig(defaults={"A": 5.2})
         self.assertAlmostEqual(cf[self.default_section]['a'], 5.2)
+
 
 class RawConfigParserTestCaseNonStandardDelimiters(RawConfigParserTestCase):
     delimiters = (':=', '$')
