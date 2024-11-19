@@ -211,7 +211,7 @@ void Hacl_Hash_SHA2_sha224_init(uint32_t *hash)
     os[i] = x;);
 }
 
-static inline void sha224_update_nblocks(uint32_t len, uint8_t *b, uint32_t *st)
+void Hacl_Hash_SHA2_sha224_update_nblocks(uint32_t len, uint8_t *b, uint32_t *st)
 {
   Hacl_Hash_SHA2_sha256_update_nblocks(len, b, st);
 }
@@ -825,7 +825,7 @@ void Hacl_Hash_SHA2_digest_224(Hacl_Streaming_MD_state_32 *state, uint8_t *outpu
   }
   uint8_t *buf_last = buf_1 + r - ite;
   uint8_t *buf_multi = buf_1;
-  sha224_update_nblocks(0U, buf_multi, tmp_block_state);
+  Hacl_Hash_SHA2_sha224_update_nblocks(0U, buf_multi, tmp_block_state);
   uint64_t prev_len_last = total_len - (uint64_t)r;
   Hacl_Hash_SHA2_sha224_update_last(prev_len_last + (uint64_t)r, r, buf_last, tmp_block_state);
   Hacl_Hash_SHA2_sha224_finish(tmp_block_state, output);
@@ -847,7 +847,7 @@ void Hacl_Hash_SHA2_hash_224(uint8_t *output, uint8_t *input, uint32_t input_len
   Hacl_Hash_SHA2_sha224_init(st);
   uint32_t rem = input_len % 64U;
   uint64_t len_ = (uint64_t)input_len;
-  sha224_update_nblocks(input_len, ib, st);
+  Hacl_Hash_SHA2_sha224_update_nblocks(input_len, ib, st);
   uint32_t rem1 = input_len % 64U;
   uint8_t *b0 = ib;
   uint8_t *lb = b0 + input_len - rem1;

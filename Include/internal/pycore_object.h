@@ -94,6 +94,14 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+#define _PyReftracerTrack(obj, operation) \
+    do { \
+        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+        if (tracer->tracer_func != NULL) { \
+            void *data = tracer->tracer_data; \
+            tracer->tracer_func((obj), (operation), data); \
+        } \
+    } while(0)
 
 #ifdef Py_REF_DEBUG
 /* The symbol is only exposed in the API for the sake of extensions
@@ -208,11 +216,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
-        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-        if (tracer->tracer_func != NULL) {
-            void* data = tracer->tracer_data;
-            tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-        }
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         destruct(op);
     }
 }
