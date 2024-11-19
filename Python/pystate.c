@@ -2842,7 +2842,9 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     }
 #endif
     RARE_EVENT_INC(set_eval_frame_func);
+    _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
+    _PyEval_StartTheWorld(interp);
 }
 
 
