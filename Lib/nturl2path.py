@@ -19,10 +19,9 @@ def url2pathname(url):
     url = url.replace(':', '|')
     if not '|' in url:
         # No drive specifier, just convert slashes
-        if url[:4] == '////':
-            # path is something like ////host/path/on/remote/host
-            # convert this to \\host\path\on\remote\host
-            # (notice halving of slashes at the start of the path)
+        if url[:3] == '///':
+            # URL has an empty authority section, so the path begins on the
+            # third character.
             url = url[2:]
         # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
@@ -44,20 +43,21 @@ def pathname2url(p):
     import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
-    if p[:4] == '\\\\?\\':
+    p = p.replace('\\', '/')
+    if p[:4] == '//?/':
         p = p[4:]
-        if p[:4].upper() == 'UNC\\':
-            p = '\\\\' + p[4:]
+        if p[:4].upper() == 'UNC/':
+            p = '//' + p[4:]
         elif p[1:2] != ':':
             raise OSError('Bad path: ' + p)
     if not ':' in p:
-        # No drive specifier, just convert slashes and quote the name
-        return urllib.parse.quote(p.replace('\\', '/'))
+        # No DOS drive specified, just quote the pathname
+        return urllib.parse.quote(p)
     comp = p.split(':', maxsplit=2)
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
         raise OSError(error)
 
     drive = urllib.parse.quote(comp[0].upper())
-    tail = urllib.parse.quote(comp[1].replace('\\', '/'))
+    tail = urllib.parse.quote(comp[1])
     return '///' + drive + ':' + tail

@@ -551,6 +551,24 @@ class DestroyTests(TestBase):
             self.assertTrue(_interpreters.is_running(interp))
 
 
+class CommonTests(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.id = _interpreters.create()
+
+    def test_signatures(self):
+        # for method in ['exec', 'run_string', 'run_func']:
+        msg = "expected 'shared' to be a dict"
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', 1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', shared=1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_string(self.id, 'a', shared=1)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_func(self.id, lambda: None, shared=1)
+
+
 class RunStringTests(TestBase):
 
     def setUp(self):
