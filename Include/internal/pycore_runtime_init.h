@@ -87,7 +87,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .double_format = _py_float_format_unknown, \
         }, \
         .types = { \
-            .next_version_tag = 1, \
+            .next_version_tag = _Py_TYPE_VERSION_NEXT, \
         }, \
         .static_objects = { \
             .singletons = { \
@@ -134,6 +134,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
+            .phase = GC_PHASE_MARK, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
