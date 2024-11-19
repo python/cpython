@@ -71,12 +71,14 @@ representation of the source code positions of instructions, which are
 returned by the `co_positions()` iterator.
 
 > [!NOTE]
-> Not to be confused by [`Objects/lnotab_notes.txt`](Objects/lnotab_notes.txt),
-> which describes the 3.10 format, that stores only that start line for each instruction.
-> For backwards compatibility this format is still supported by the `co_lnotab` property.
+> `co_linetable` is not to be confused with `co_lnotab`.
+> For backwards compatibility, `co_lnotab` stores the format
+> as it existed in Python 3.10 and lower: this older format
+> stores only the start line for each instruction.
+> See [`Objects/lnotab_notes.txt`](../Objects/lnotab_notes.txt) for more details.
 
 `co_linetable` consists of a sequence of location entries.
-Each entry starts with a byte with the most significant bit set, followed by zero or more bytes with most significant bit unset.
+Each entry starts with a byte with the most significant bit set, followed by zero or more bytes with the most significant bit unset.
 
 Each entry contains the following information:
 * The number of code units covered by this entry (length)
@@ -93,20 +95,20 @@ Bit 7 | Bits 3-6 | Bits 0-2
 
 The codes are enumerated in the `_PyCodeLocationInfoKind` enum.
 
-## Variable length integer encodings
+## Variable-length integer encodings
 
-Integers are often encoded using a variable length integer encoding
+Integers are often encoded using a variable-length integer encoding
 
-### Unsigned integers (varint)
+### Unsigned integers (`varint`)
 
-Unsigned integers are encoded in 6 bit chunks, least significant first.
+Unsigned integers are encoded in 6-bit chunks, least significant first.
 Each chunk but the last has bit 6 set.
 For example:
 
 * 63 is encoded as `0x3f`
 * 200 is encoded as `0x48`, `0x03`
 
-### Signed integers (svarint)
+### Signed integers (`svarint`)
 
 Signed integers are encoded by converting them to unsigned integers, using the following function:
 ```Python
