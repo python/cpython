@@ -23,6 +23,7 @@ class StressTests(TestBase):
             alive.append(interp)
 
     @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
     def test_create_many_threaded(self):
         alive = []
         def task():
@@ -33,6 +34,7 @@ class StressTests(TestBase):
             pass
 
     @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
     def test_many_threads_running_interp_in_other_interp(self):
         interp = interpreters.create()
 
