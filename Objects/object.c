@@ -2457,11 +2457,7 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_CREATE, data);
-    }
+    _PyReftracerTrack(op, PyRefTracer_CREATE);
 }
 
 void
@@ -2554,10 +2550,6 @@ _Py_ResurrectReference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
-        void* data = _PyRuntime.ref_tracer.tracer_data;
-        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
-    }
 }
 
 
@@ -2947,15 +2939,10 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-    }
-
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
     (*dealloc)(op);
 
 #ifdef Py_DEBUG
