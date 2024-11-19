@@ -95,6 +95,8 @@ extern uint32_t _PyDictKeys_GetVersionForCurrentState(
  * In free-threaded builds ensures that the dict can be used for lock-free
  * reads if a version was assigned.
  *
+ * The caller must hold the per-object lock on dict.
+ *
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDict_GetKeysVersionForCurrentState(
         PyInterpreterState *interp, PyDictObject *dict);
