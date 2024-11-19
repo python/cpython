@@ -205,7 +205,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                         waiter=waiter, extra=extra,
                                         **kwargs)
         watcher.add_child_handler(transp.get_pid(),
-                                self._child_watcher_callback, transp)
+                                self._child_watcher_callback_threadsafe, transp._proc, transp)
         try:
             await waiter
         except (SystemExit, KeyboardInterrupt):
@@ -217,8 +217,34 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         return transp
 
-    def _child_watcher_callback(self, pid, returncode, transp):
-        self.call_soon_threadsafe(transp._process_exited, returncode)
+    def _child_watcher_callback_threadsafe(self, pid, proc, transp):
+        if self.is_closed():
+            logger.warning("Loop %r that handles pid %r is closed", loop, pid)
+            # Bump the Popen to reap the PID so it doesn't emit a
+            # ResourceWarning later.
+            proc.poll()
+        else:
+            self.call_soon_threadsafe(self._child_watcher_callback, pid, proc, transp)
+
+    def _child_watcher_callback(self, pid, proc, transp):
+        # N.B.: This poll call must happen in the event loop thread to avoid
+        # both case 1 of the known race condition ignored in GH-20010 and the
+        # race condition GH-127050.
+        returncode = proc.poll()
+        if proc._returncode_is_a_lie:
+            # A buggy reap call (i.e. one external to Popen) stole the return code from
+            # Popen. Popen will silently fail and report return code zero.
+            returncode = 255
+            logger.warning(
+                "child process pid %d exit status already read: "
+                " will report returncode 255",
+                pid)
+        else:
+            if self.get_debug():
+                logger.debug('process %s exited with returncode %s',
+                             pid, returncode)
+
+        transp._process_exited(returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
@@ -870,26 +896,13 @@ class _PidfdChildWatcher:
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
         pidfd = os.pidfd_open(pid)
-        loop._add_reader(pidfd, self._do_wait, pid, pidfd, callback, args)
+        loop._add_reader(pidfd, self._reader_callback, pid, pidfd, callback, args)
 
-    def _do_wait(self, pid, pidfd, callback, args):
+    def _reader_callback(self, pid, pidfd, callback, args):
         loop = events.get_running_loop()
         loop._remove_reader(pidfd)
-        try:
-            _, status = os.waitpid(pid, 0)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            returncode = 255
-            logger.warning(
-                "child process pid %d exit status already read: "
-                " will report returncode 255",
-                pid)
-        else:
-            returncode = waitstatus_to_exitcode(status)
-
         os.close(pidfd)
-        callback(pid, returncode, *args)
+        callback(pid, *args)
 
 class _ThreadedChildWatcher:
     """Threaded child watcher implementation.
@@ -918,38 +931,28 @@ class _ThreadedChildWatcher:
 
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
-        thread = threading.Thread(target=self._do_waitpid,
-                                  name=f"asyncio-waitpid-{next(self._pid_counter)}",
+        thread = threading.Thread(target=self._do_waitid_WNOWAIT,
+                                  name=f"asyncio-waitid+WNOWAIT-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),
                                   daemon=True)
         self._threads[pid] = thread
         thread.start()
 
-    def _do_waitpid(self, loop, expected_pid, callback, args):
+    def _do_waitid_WNOWAIT(self, loop, expected_pid, callback, args):
         assert expected_pid > 0
 
         try:
-            pid, status = os.waitpid(expected_pid, 0)
+            # Do not reap---Popen is responsible for reaping and we mustn't have
+            # a second reap call racing with it.
+            os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
         except ChildProcessError:
             # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            pid = expected_pid
-            returncode = 255
-            logger.warning(
-                "Unknown child process pid %d, will report returncode 255",
-                pid)
-        else:
-            returncode = waitstatus_to_exitcode(status)
-            if loop.get_debug():
-                logger.debug('process %s exited with returncode %s',
-                             expected_pid, returncode)
-
-        if loop.is_closed():
-            logger.warning("Loop %r that handles pid %r is closed", loop, pid)
-        else:
-            loop.call_soon_threadsafe(callback, pid, returncode, *args)
+            # (may happen if waitpid() is called elsewhere, e.g. by
+            # Process.send_signal() in the event loop thread).
+            pass
 
         self._threads.pop(expected_pid)
+        callback(expected_pid, *args)
 
 def can_use_pidfd():
     if not hasattr(os, 'pidfd_open'):
