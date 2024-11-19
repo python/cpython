@@ -454,6 +454,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
 static PyObject *
 b_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(signed char)));
     long val;
     if (get_long(value, &val) < 0)
         return NULL;
@@ -465,6 +466,7 @@ b_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 b_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(signed char)));
     signed char val = *(signed char *)ptr;
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
@@ -473,6 +475,7 @@ b_get(void *ptr, Py_ssize_t size)
 static PyObject *
 B_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned char)));
     unsigned long val;
     if (get_ulong(value, &val) < 0)
         return NULL;
@@ -484,6 +487,7 @@ B_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 B_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned char)));
     unsigned char val = *(unsigned char *)ptr;
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
@@ -492,6 +496,7 @@ B_get(void *ptr, Py_ssize_t size)
 static PyObject *
 h_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short)));
     long val;
     short x;
     if (get_long(value, &val) < 0)
@@ -506,6 +511,7 @@ h_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short)));
     long val;
     short field;
     if (get_long(value, &val) < 0) {
@@ -522,6 +528,7 @@ h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 h_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short)));
     short val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -531,6 +538,7 @@ h_get(void *ptr, Py_ssize_t size)
 static PyObject *
 h_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short)));
     short val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_SHORT(val);
@@ -541,6 +549,7 @@ h_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 H_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned short)));
     unsigned long val;
     unsigned short x;
     if (get_ulong(value, &val) < 0)
@@ -554,6 +563,7 @@ H_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned short)));
     unsigned long val;
     unsigned short field;
     if (get_ulong(value, &val) < 0) {
@@ -571,6 +581,7 @@ H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 H_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned short)));
     unsigned short val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -580,6 +591,7 @@ H_get(void *ptr, Py_ssize_t size)
 static PyObject *
 H_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned short)));
     unsigned short val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_SHORT(val);
@@ -590,6 +602,7 @@ H_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 i_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(int)));
     long val;
     int x;
     if (get_long(value, &val) < 0)
@@ -603,6 +616,7 @@ i_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(int)));
     long val;
     int field;
     if (get_long(value, &val) < 0) {
@@ -620,6 +634,7 @@ i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 i_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(int)));
     int val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -629,6 +644,7 @@ i_get(void *ptr, Py_ssize_t size)
 static PyObject *
 i_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(int)));
     int val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_INT(val);
@@ -645,6 +661,7 @@ i_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short int)));
     switch (PyObject_IsTrue(value)) {
     case -1:
         return NULL;
@@ -660,12 +677,14 @@ vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 vBOOL_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short int)));
     return PyBool_FromLong((long)*(short int *)ptr);
 }
 
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(bool)));
     switch (PyObject_IsTrue(value)) {
     case -1:
         return NULL;
@@ -681,12 +700,14 @@ bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 bool_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(bool)));
     return PyBool_FromLong((long)*(_Bool *)ptr);
 }
 
 static PyObject *
 I_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned int)));
     unsigned long val;
     unsigned int x;
     if (get_ulong(value, &val) < 0)
@@ -700,6 +721,7 @@ I_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned int)));
     unsigned long val;
     unsigned int field;
     if (get_ulong(value, &val) < 0) {
@@ -717,6 +739,7 @@ I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 I_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned int)));
     unsigned int val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -726,6 +749,7 @@ I_get(void *ptr, Py_ssize_t size)
 static PyObject *
 I_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned int)));
     unsigned int val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_INT(val);
@@ -736,6 +760,7 @@ I_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 l_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long)));
     long val;
     long x;
     if (get_long(value, &val) < 0)
@@ -749,6 +774,7 @@ l_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long)));
     long val;
     long field;
     if (get_long(value, &val) < 0) {
@@ -766,6 +792,7 @@ l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 l_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long)));
     long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -775,6 +802,7 @@ l_get(void *ptr, Py_ssize_t size)
 static PyObject *
 l_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long)));
     long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_LONG(val);
@@ -785,6 +813,7 @@ l_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 L_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long)));
     unsigned long val;
     unsigned long x;
     if (get_ulong(value, &val) < 0)
@@ -798,6 +827,7 @@ L_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long)));
     unsigned long val;
     unsigned long field;
     if (get_ulong(value, &val) < 0) {
@@ -815,6 +845,7 @@ L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 L_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long)));
     unsigned long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -824,6 +855,7 @@ L_get(void *ptr, Py_ssize_t size)
 static PyObject *
 L_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long)));
     unsigned long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_LONG(val);
@@ -834,6 +866,7 @@ L_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 q_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long long)));
     long long val;
     long long x;
     if (get_longlong(value, &val) < 0)
@@ -847,6 +880,7 @@ q_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long long)));
     long long val;
     long long field;
     if (get_longlong(value, &val) < 0) {
@@ -863,6 +897,7 @@ q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 q_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long long)));
     long long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -872,6 +907,7 @@ q_get(void *ptr, Py_ssize_t size)
 static PyObject *
 q_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long long)));
     long long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_LONG_LONG(val);
@@ -882,6 +918,7 @@ q_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 Q_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long long)));
     unsigned long long val;
     unsigned long long x;
     if (get_ulonglong(value, &val) < 0)
@@ -895,6 +932,7 @@ Q_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long long)));
     unsigned long long val;
     unsigned long long field;
     if (get_ulonglong(value, &val) < 0) {
@@ -911,6 +949,7 @@ Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 Q_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long long)));
     unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
@@ -920,6 +959,7 @@ Q_get(void *ptr, Py_ssize_t size)
 static PyObject *
 Q_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(unsigned long long)));
     unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_LONG_LONG(val);
@@ -935,6 +975,7 @@ Q_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 g_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double)));
     long double x;
 
     x = PyFloat_AsDouble(value);
@@ -947,6 +988,7 @@ g_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 g_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double)));
     long double val;
     memcpy(&val, ptr, sizeof(long double));
     return PyFloat_FromDouble(val);
@@ -955,6 +997,7 @@ g_get(void *ptr, Py_ssize_t size)
 static PyObject *
 d_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double x;
 
     x = PyFloat_AsDouble(value);
@@ -967,6 +1010,7 @@ d_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 d_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double val;
     memcpy(&val, ptr, sizeof(val));
     return PyFloat_FromDouble(val);
@@ -976,6 +1020,7 @@ d_get(void *ptr, Py_ssize_t size)
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double complex)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
@@ -989,6 +1034,7 @@ C_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 C_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double complex)));
     double complex x;
 
     memcpy(&x, ptr, sizeof(x));
@@ -998,6 +1044,7 @@ C_get(void *ptr, Py_ssize_t size)
 static PyObject *
 E_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float complex)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
@@ -1011,6 +1058,7 @@ E_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 E_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float complex)));
     float complex x;
 
     memcpy(&x, ptr, sizeof(x));
@@ -1020,6 +1068,7 @@ E_get(void *ptr, Py_ssize_t size)
 static PyObject *
 F_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
@@ -1033,6 +1082,7 @@ F_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 F_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
     long double complex x;
 
     memcpy(&x, ptr, sizeof(x));
@@ -1043,6 +1093,7 @@ F_get(void *ptr, Py_ssize_t size)
 static PyObject *
 d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double x;
 
     x = PyFloat_AsDouble(value);
@@ -1061,6 +1112,7 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 d_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
 #ifdef WORDS_BIGENDIAN
     return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 1));
 #else
@@ -1071,6 +1123,7 @@ d_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 f_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float x;
 
     x = (float)PyFloat_AsDouble(value);
@@ -1083,6 +1136,7 @@ f_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 f_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float val;
     memcpy(&val, ptr, sizeof(val));
     return PyFloat_FromDouble(val);
@@ -1091,6 +1145,7 @@ f_get(void *ptr, Py_ssize_t size)
 static PyObject *
 f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float x;
 
     x = (float)PyFloat_AsDouble(value);
@@ -1109,6 +1164,7 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 f_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
 #ifdef WORDS_BIGENDIAN
     return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 1));
 #else
@@ -1129,6 +1185,7 @@ f_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 O_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(PyObject *)));
     PyObject *ob = *(PyObject **)ptr;
     if (ob == NULL) {
         if (!PyErr_Occurred())
@@ -1143,6 +1200,7 @@ O_get(void *ptr, Py_ssize_t size)
 static PyObject *
 O_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(PyObject *)));
     /* Hm, does the memory block need it's own refcount or not? */
     *(PyObject **)ptr = value;
     return Py_NewRef(value);
@@ -1152,6 +1210,7 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(char)));
     if (PyBytes_Check(value)) {
         if (PyBytes_GET_SIZE(value) != 1) {
             PyErr_Format(PyExc_TypeError,
@@ -1198,6 +1257,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(char)));
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
@@ -1205,6 +1265,7 @@ c_get(void *ptr, Py_ssize_t size)
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(wchar_t)));
     Py_ssize_t len;
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
@@ -1238,6 +1299,7 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 u_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(wchar_t)));
     return PyUnicode_FromWideChar((wchar_t *)ptr, 1);
 }
 
@@ -1502,6 +1564,7 @@ BSTR_get(void *ptr, Py_ssize_t size)
 static PyObject *
 P_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(void *)));
     void *v;
     if (value == Py_None) {
         *(void **)ptr = NULL;
@@ -1533,6 +1596,7 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 P_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(void *)));
     if (*(void **)ptr == NULL) {
         Py_RETURN_NONE;
     }
