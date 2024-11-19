@@ -1076,10 +1076,24 @@ _PyInterpreterState_SetShuttingDown(PyInterpreterState *interp)
         _PyErr_SetInterpreterAlreadyRunning();
         return -1;
     }
-
-    /* At this point, we're certain that no other threads can set the main thread. */
     assert(_PyInterpreterState_IsShuttingDown(interp));
     assert(!_PyInterpreterState_IsRunningMain(interp));
+    /* At this point, we're certain that no other threads can set the main thread.
+     * However, there might be some remaining thread states--in that case, let's just raise.
+     * We could wait for them all to finish up, but that's a job for later. */
+
+    // TODO: Switch this to the per-interpreter lock once Eric's PR is merged
+    HEAD_LOCK(interp->runtime);
+    PyThreadState *thread_head = interp->threads.head;
+    HEAD_UNLOCK(interp->runtime);
+    if (interp->threads.head != NULL)
+    {
+        /* Remaining thread states exist */
+        PyErr_SetString(PyExc_InterpreterError, "cannot destroy this interpreter right now");
+        set_main_thread(interp, NULL);
+        assert(!_PyInterpreterState_IsShuttingDown(interp));
+        return -1;
+    }
 
     return 0;
 }
