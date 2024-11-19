@@ -1080,7 +1080,7 @@ class RawConfigParserTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.RawConfigParser
 
     def test_interpolation(self):
-        
+
         cf = self.get_interpolation_config()
         eq = self.assertEqual
         eq(cf.get("Foo", "bar"),
@@ -1139,8 +1139,8 @@ keyA = valueA
 keyB = valueB
 """
     cf = self.newconfig()
-    cf.read_string(config_string)  
-    cf.optionxform = str 
+    cf.read_string(config_string)
+    cf.optionxform = str
 
     expected_repr = (
         "ConfigParser(default_section='DEFAULT', "
