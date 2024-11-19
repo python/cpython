@@ -4442,6 +4442,21 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
 
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
+
 
 class TestPythonBufferProtocol(unittest.TestCase):
     def test_basic(self):
