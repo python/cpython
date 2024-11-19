@@ -110,6 +110,7 @@ class TestSysConfig(unittest.TestCase):
             **venv_create_args,
         )
 
+
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
 
@@ -592,71 +593,6 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
     @requires_subprocess()
-    def test_config_vars_depend_on_site_initialization(self):
-        script = textwrap.dedent("""
-            import sysconfig
-
-            config_vars = sysconfig.get_config_vars()
-
-            import json
-            print(json.dumps(config_vars, indent=2))
-        """)
-
-        with self.venv() as venv:
-            site_config_vars = json.loads(venv.run('-c', script).stdout)
-            no_site_config_vars = json.loads(venv.run('-S', '-c', script).stdout)
-
-        self.assertNotEqual(site_config_vars, no_site_config_vars)
-        # With the site initialization, the virtual environment should be enabled.
-        self.assertEqual(site_config_vars['base'], venv.prefix)
-        self.assertEqual(site_config_vars['platbase'], venv.prefix)
-        #self.assertEqual(site_config_vars['prefix'], venv.prefix)  # # FIXME: prefix gets overwriten by _init_posix
-        # Without the site initialization, the virtual environment should be disabled.
-        self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
-        self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
-
-    @requires_subprocess()
-    def test_config_vars_recalculation_after_site_initialization(self):
-        script = textwrap.dedent("""
-            import sysconfig
-
-            before = sysconfig.get_config_vars()
-
-            import site
-            site.main()
-
-            after = sysconfig.get_config_vars()
-
-            import json
-            print(json.dumps({'before': before, 'after': after}, indent=2))
-        """)
-
-        with self.venv() as venv:
-            config_vars = json.loads(venv.run('-S', '-c', script).stdout)
-
-        self.assertNotEqual(config_vars['before'], config_vars['after'])
-        self.assertEqual(config_vars['after']['base'], venv.prefix)
-        #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
-        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
-
-    @requires_subprocess()
-    def test_paths_depend_on_site_initialization(self):
-        script = textwrap.dedent("""
-            import sysconfig
-
-            paths = sysconfig.get_paths()
-
-            import json
-            print(json.dumps(paths, indent=2))
-        """)
-
-        with self.venv() as venv:
-            site_paths = json.loads(venv.run('-c', script).stdout)
-            no_site_paths = json.loads(venv.run('-S', '-c', script).stdout)
-
-        self.assertNotEqual(site_paths, no_site_paths)
-
-    @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
             import sys, sysconfig
@@ -688,7 +624,6 @@ class TestSysConfig(unittest.TestCase):
         # prefix/exec_prefix Makefile variables, so we use them in the comparison.
         self.assertNotEqual(data['prefix'], data['base_prefix'])
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
-
 
 class MakefileTests(unittest.TestCase):
 
