@@ -1203,7 +1203,7 @@ class TestCase(object):
             standardMsg = 'unexpectedly identical: %s' % (safe_repr(expr1),)
             self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertDictEqual(self, d1: dict, d2: dict, msg: str | None = None):
+    def assertDictEqual(self, d1, d2, msg=None):
         self.assertIsInstance(d1, dict, "First argument is not a dictionary")
         self.assertIsInstance(d2, dict, "Second argument is not a dictionary")
 
