@@ -4441,10 +4441,11 @@ class TestBufferProtocol(unittest.TestCase):
 
     def test_bytearray_release_buffer_read_flag(self):
         # See https://github.com/python/cpython/issues/126980
+        obj = bytearray(b'abc')
         with self.assertRaises(SystemError):
-            bytearray().__buffer__(inspect.BufferFlags.READ)
+            obj.__buffer__(inspect.BufferFlags.READ)
         with self.assertRaises(SystemError):
-            bytearray().__buffer__(inspect.BufferFlags.WRITE)
+            obj.__buffer__(inspect.BufferFlags.WRITE)
 
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
