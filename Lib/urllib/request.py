@@ -1685,12 +1685,16 @@ else:
             # URL has an empty authority section, so the path begins on the
             # third character.
             pathname = pathname[2:]
-        return unquote(pathname)
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return unquote(pathname, encoding=encoding, errors=errors)
 
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return quote(pathname, encoding=encoding, errors=errors)
 
 
 ftpcache = {}
