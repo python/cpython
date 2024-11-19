@@ -476,6 +476,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* `yf` is a generator or a coroutine. */
 
             /* Link frame into the stack to enable complete backtraces. */
+            /* XXX We should probably be updating the current frame somewhere in
+               ceval.c. */
             _PyInterpreterFrame *prev = tstate->current_frame;
             frame->previous = prev;
             tstate->current_frame = frame;
