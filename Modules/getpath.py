@@ -641,8 +641,10 @@ else:
 
 # For a venv, update the main prefix/exec_prefix but leave the base ones unchanged
 if venv_prefix:
-    base_prefix = prefix
-    base_exec_prefix = exec_prefix
+    if not base_prefix:
+        base_prefix = prefix
+    if not base_exec_prefix:
+        base_exec_prefix = exec_prefix
     prefix = exec_prefix = venv_prefix
 
 
