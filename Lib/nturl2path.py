@@ -42,23 +42,22 @@ def pathname2url(p):
     #   ///C:/foo/bar/spam.foo
     import ntpath
     import urllib.parse
-    drive, tail = ntpath.splitdrive(p.replace('\\', '/'))
-    if drive:
-        # First, clean up some special forms. We are going to sacrifice the
-        # additional information anyway.
-        if drive[:4] == '//?/':
-            drive = drive[4:]
-            if drive[:4].upper() == 'UNC/':
-                drive = '//' + drive[4:]
+    # First, clean up some special forms. We are going to sacrifice
+    # the additional information anyway
+    p = p.replace('\\', '/')
+    if p[:4] == '//?/':
+        p = p[4:]
+        if p[:4].upper() == 'UNC/':
+            p = '//' + p[4:]
+    prefix = ''
+    drive, tail = ntpath.splitdrive(p)
+    if drive[1:2] == ':':
+        # DOS drive specified. Add three slashes to the start, producing
+        # an authority section with a zero-length authority, and a path
+        # section starting with a single slash.
+        prefix += '///'
+        drive = drive.upper()
 
-        if drive[1:2] == ':':
-            # DOS drive specified. Add three slashes to the start, producing
-            # an authority section with a zero-length authority, and a path
-            # section starting with a single slash. The colon is *not* quoted.
-            letter = urllib.parse.quote(drive[0].upper())
-            drive = f'///{letter}:'
-        else:
-            # UNC drive specified. The UNC server becomes the URL authority.
-            drive = urllib.parse.quote(drive)
-
-    return drive + urllib.parse.quote(tail)
+    drive = urllib.parse.quote(drive, safe='/:')
+    tail = urllib.parse.quote(tail)
+    return prefix + drive + tail
