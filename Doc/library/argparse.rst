@@ -1021,12 +1021,11 @@ necessary type-checking and type conversions to be performed.
 If the type_ keyword is used with the default_ keyword, the type converter
 is only applied if the default is a string.
 
-The argument to ``type`` can be any callable that accepts a single string.
+The argument to ``type`` can be a callable that accepts a single string or
+the name of a registered type (see :meth:`~ArgumentParser.register`)
 If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
 :exc:`ValueError`, the exception is caught and a nicely formatted error
-message is displayed. Other exception types are not handled. You can also
-customize how the type is displayed in error messages by registering it with
-the parser using :meth:`~ArgumentParser.register`.
+message is displayed. Other exception types are not handled.
 
 Common built-in types and functions can be used as type converters:
 
@@ -2188,6 +2187,8 @@ Registering custom types or actions
       >>> parser.register('type', 'hexadecimal integer', lambda s: int(s, 16))
       >>> parser.add_argument('--foo', type='hexadecimal integer')
       _StoreAction(option_strings=['--foo'], dest='foo', nargs=None, const=None, default=None, type='hexadecimal integer', choices=None, required=False, help=None, metavar=None, deprecated=False)
+      >>> parser.parse_args(['--foo', '0xFA'])
+      Namespace(foo=250)
       >>> parser.parse_args(['--foo', '1.2'])
       usage: PROG [-h] [--foo FOO]
       PROG: error: argument --foo: invalid 'hexadecimal integer' value: '1.2'
