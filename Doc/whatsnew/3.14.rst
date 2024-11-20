@@ -772,6 +772,13 @@ urllib
 * Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
   from :mod:`urllib.request`. They had previously raised a
   :exc:`DeprecationWarning` since Python 3.3.
+
+  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`,
+  and ``myopener.retrieve()`` can be replaced with
+  :func:`~urllib.request.urlretrieve`. Customizations to the opener
+  classes can be replaced by passing customized handlers to
+  :func:`~urllib.request.build_opener`.
+
   (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
