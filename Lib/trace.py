@@ -286,7 +286,7 @@ class CoverageResults:
             print("lines   cov%   module   (path)")
             for m in sorted(sums):
                 n_lines, percent, modulename, filename = sums[m]
-                print("%5d   %3.1f%%   %s   (%s)" % sums[m])
+                print(f"{n_lines:5d}   {percent:3.1f}%   {modulename}   ({filename})")
 
         if self.outfile:
             # try and store counts and module info into self.outfile
