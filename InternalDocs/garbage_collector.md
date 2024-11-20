@@ -546,20 +546,17 @@ a container:
 2. When the container is examined by the garbage collector.
 
 As a general rule, instances of atomic types aren't tracked and instances of
-non-atomic types (containers, user-defined objects...) are.  However, some
-type-specific optimizations can be present in order to suppress the garbage
-collector footprint of simple instances. Historically, both dictionaries and
-tuples were untracked during garbage collection. Now it is only tuples:
+non-atomic types (containers, user-defined objects...) are.
 
-- Tuples containing only immutable objects (integers, strings etc,
-  and recursively, tuples of immutable objects) do not need to be tracked. The
-  interpreter creates a large number of tuples, many of which will not survive
-  until garbage collection. It is therefore not worthwhile to untrack eligible
-  tuples at creation time. Instead, all tuples except the empty tuple are tracked
-  when created. During garbage collection it is determined whether any surviving
-  tuples can be untracked. A tuple can be untracked if all of its contents are
-  already not tracked. Tuples are examined for untracking in all garbage collection
-  cycles. It may take more than one cycle to untrack a tuple.
+Tuples containing only immutable objects (integers, strings etc,
+and recursively, tuples of immutable objects) do not need to be tracked. The
+interpreter creates a large number of tuples, many of which will not survive
+until garbage collection. It is therefore not worthwhile to untrack eligible
+tuples at creation time. Instead, all tuples except the empty tuple are tracked
+when created. During garbage collection it is determined whether any surviving
+tuples can be untracked. A tuple can be untracked if all of its contents are
+already not tracked. Tuples are examined for untracking in all garbage collection
+cycles.
 
 The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
