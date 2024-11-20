@@ -19,7 +19,7 @@ if __version__ != _ctypes_version:
     raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
-    from _ctypes import FormatError
+    from _ctypes import COMError, FormatError
 
 DEFAULT_MODE = RTLD_LOCAL
 if _os.name == "posix" and _sys.platform == "darwin":
@@ -208,8 +208,10 @@ if sizeof(c_longdouble) == sizeof(c_double):
 try:
     class c_double_complex(_SimpleCData):
         _type_ = "C"
+    _check_size(c_double_complex)
     class c_float_complex(_SimpleCData):
         _type_ = "E"
+    _check_size(c_float_complex)
     class c_longdouble_complex(_SimpleCData):
         _type_ = "F"
 except AttributeError:
