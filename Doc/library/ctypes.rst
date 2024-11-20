@@ -1707,12 +1707,6 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
       and raise an exception if the foreign function call failed.
 
 
-.. exception:: ArgumentError
-
-   This exception is raised when a foreign function call cannot convert one of the
-   passed arguments.
-
-
 .. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
@@ -1799,9 +1793,14 @@ different ways, depending on the type and number of the parameters in the call:
    integer. *name* is name of the COM method. *iid* is an optional pointer to
    the interface identifier which is used in extended error reporting.
 
+   If *iid* is not specified, an :exc:`OSError` is raised if the COM method
+   call fails. If *iid* is specified, a :exc:`~ctypes.COMError` is raised
+   instead.
+
    COM methods use a special calling convention: They require a pointer to
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
+
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
@@ -2741,3 +2740,39 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
+
+
+.. _ctypes-exceptions:
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: ArgumentError
+
+   This exception is raised when a foreign function call cannot convert one of the
+   passed arguments.
+
+
+.. exception:: COMError(hresult, text, details)
+
+   Windows only: This exception is raised when a COM method call failed.
+
+   .. attribute:: hresult
+
+      The integer value representing the error code.
+
+   .. attribute:: text
+
+      The error message.
+
+   .. attribute:: details
+
+      The 5-tuple ``(descr, source, helpfile, helpcontext, progid)``.
+
+      *descr* is the textual description.  *source* is the language-dependent
+      ``ProgID`` for the class or application that raised the error.  *helpfile*
+      is the path of the help file.  *helpcontext* is the help context
+      identifier.  *progid* is the ``ProgID`` of the interface that defined the
+      error.
+
+   .. versionadded:: next
