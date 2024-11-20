@@ -1376,7 +1376,7 @@ opcodes = [
       stack_after=[pybuffer],
       proto=5,
       doc="""Push an out-of-band buffer object.
-      
+
       An iterable must be passed to the Unpickler's 'buffer' argument, and
       this opcode takes the next element from that iterable and puts it on
       the stack.
@@ -1389,7 +1389,7 @@ opcodes = [
       stack_after=[pybuffer],
       proto=5,
       doc="""Make an out-of-band buffer object read-only.
-      
+
       The top of the stack should be the out-of-band buffer object from
       NEXT_BUFFER, and this object is set to read-only.
       """),
@@ -1766,7 +1766,7 @@ opcodes = [
       stack_after=[],
       proto=0,
       doc="""Discard the top stack item, shrinking the stack by one item.
-      
+
       If the stack has no items in it and the metastack is not empty, then
       this opcode will act like POP_MARK and pop the top of the metastack
       into the current stack.
@@ -1970,7 +1970,7 @@ opcodes = [
       stack_after=[anyobject],
       proto=4,
       doc="""Push a global object (module.attr) on the stack.
-      
+
       This opcode behaves the same way as GLOBAL except the module and name
       arguments are two separate strings popped from the top of the stack.
       """),
