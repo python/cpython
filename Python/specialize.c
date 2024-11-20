@@ -2799,6 +2799,16 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
  * Ends with a RESUME so that it is not traced.
  * This is used as a plain code object, not a function,
  * so must not access globals or builtins.
+ * There are a few other constraints imposed on the code
+ * by the free-threaded build:
+ *
+ * 1. The RESUME instruction must not be executed. Otherwise we may attempt to
+ *    free the statically allocated TLBC array.
+ * 2. It must contain no specializable instructions. Specializing multiple
+ *    copies of the same bytecode is not thread-safe in free-threaded builds.
+ *
+ * This should be dynamically allocated if either of those restrictions need to
+ * be lifted.
  */
 
 #define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
