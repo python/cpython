@@ -473,8 +473,11 @@ class StackSummary(list):
 
         result = klass()
         fnames = set()
-        cause_frame = cause and cause.__traceback__.tb_frame
-        context_frame = context and context.__traceback__.tb_frame
+        cause_frame = context_frame = None
+        with suppress(AttributeError):
+            cause_frame = cause.__traceback__.tb_frame
+        with suppress(AttributeError):
+            context_frame = context.__traceback__.tb_frame
         for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
             co = f.f_code
             filename = co.co_filename
