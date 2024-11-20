@@ -3982,8 +3982,7 @@ dummy_func(
             DEOPT_IF(!PyList_Check(self_o));
             STAT_INC(CALL, hit);
         #ifdef Py_GIL_DISABLED
-            int err;
-            err = _PyList_AppendTakeRefAndLock((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            int err = _PyList_AppendTakeRefAndLock((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
         #else
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
         #endif
