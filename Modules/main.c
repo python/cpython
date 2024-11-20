@@ -374,6 +374,7 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
     if (fp == NULL) {
         // Ignore the OSError
         PyErr_Clear();
+        // XXX: strerror() is locale dependent but not PySys_FormatStderr().
         PySys_FormatStderr("%S: can't open file %R: [Errno %d] %s\n",
                            program_name, filename, errno, strerror(errno));
         return 2;

@@ -1783,6 +1783,7 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
      *       elsewhere within this file.  pyexpat's copy of the messages
      *       only acts as a fallback in case of outdated runtime libexpat,
      *       where it returns NULL. */
+    // XXX: verify that XML_ErrorString() returns UTF-8 strings only
     const char *error_string = XML_ErrorString(error_code);
     if (error_string == NULL) {
         error_string = error_info_of[error_index].description;
