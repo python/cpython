@@ -194,6 +194,9 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* All Windows code pages are now supported as "cpXXX" codecs on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`123803`.)
+
 * :class:`super` objects are now :mod:`pickleable <pickle>` and
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
@@ -393,6 +396,17 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`89416`.)
 
+* Add MIME types for images with RFCs:
+
+  * :rfc:`1494`: CCITT Group 3 (``.g3``)
+  * :rfc:`3362`: Real-time Facsimile, T.38 (``.t38``)
+  * :rfc:`3745`: JPEG 2000 (``.jp2``), extension (``.jpx``) and compound (``.jpm``)
+  * :rfc:`3950`: Tag Image File Format Fax eXtended, TIFF-FX (``.tfx``)
+  * :rfc:`4047`: Flexible Image Transport System (``.fits``)
+  * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
+
+  (Contributed by Hugo van Kemenade in :gh:`85957`.)
+
 
 multiprocessing
 ---------------
@@ -452,6 +466,14 @@ pathlib
   :func:`os.scandir` on a path object.
 
   (Contributed by Barney Gale in :gh:`125413`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 
 pdb
@@ -747,6 +769,10 @@ urllib
 * Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
   (Contributed by Nikita Sobolev in :gh:`118827`.)
+* Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
+  from :mod:`urllib.request`. They had previously raised a
+  :exc:`DeprecationWarning` since Python 3.3.
+  (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
 ------
@@ -782,6 +808,16 @@ Changes in the Python API
 
 Build changes
 =============
+
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
 
 
 C API changes

@@ -1,2 +1,0 @@
-Fix crash when iterating over a generator expression after direct changes on ``gi_frame.f_locals``.
-Patch by Mikhail Efimov.
