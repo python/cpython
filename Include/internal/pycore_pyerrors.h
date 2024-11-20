@@ -131,7 +131,7 @@ PyAPI_FUNC(void) _PyErr_SetString(
     const char *string);
 
 /*
- * Similar to _PyErr_SetString but decodes 'string' into the current locale.
+ * Similar to _PyErr_SetString but decodes 'string' from the current locale.
  *
  * Exceptions occurring in decoding take priority over the desired exception.
  */
@@ -141,7 +141,7 @@ extern void _PyErr_SetLocaleStringTstate(
     const char *string);
 
 /*
- * Similar to PyErr_SetString but decodes 'string' into the current locale.
+ * Similar to PyErr_SetString but decodes 'string' from the current locale.
  *
  * Exceptions occurring in decoding take priority over the desired exception.
  */
