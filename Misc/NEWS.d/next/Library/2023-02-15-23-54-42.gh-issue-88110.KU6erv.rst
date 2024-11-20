@@ -1,2 +1,2 @@
-Fix :class:`multiprocessing.Process` exiting with code 1 even on successful run when
-threads are used in the same application too.
+Fixed :class:`multiprocessing.Process` exiting with code 1 even on success when
+it was used from a :class:`concurrent.futures.ThreadPoolExecutor` task.
