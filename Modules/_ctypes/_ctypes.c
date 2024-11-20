@@ -984,14 +984,10 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
-        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
-        if (message) {
-            PyErr_SetObject(PyExc_ValueError, message);
-            Py_DECREF(message);
+        if (PyErr_SetLocaleString(PyExc_ValueError, dlerr) == 0) {
             return NULL;
         }
-        // Ignore errors from PyUnicode_DecodeLocale,
-        // fall back to the generic error below.
+        // Ignore decoding errors and fall back to the generic error.
         PyErr_Clear();
     }
     #endif
@@ -3808,15 +3804,11 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	#ifdef USE_DLERROR
         const char *dlerr = dlerror();
         if (dlerr) {
-            PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
-            if (message) {
-                PyErr_SetObject(PyExc_AttributeError, message);
+            if (PyErr_SetLocaleString(PyExc_AttributeError, dlerr) == 0) {
                 Py_DECREF(ftuple);
-                Py_DECREF(message);
                 return NULL;
             }
-            // Ignore errors from PyUnicode_DecodeLocale,
-            // fall back to the generic error below.
+            // Ignore decoding errors and fall back to the generic error.
             PyErr_Clear();
         }
 	#endif
