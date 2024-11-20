@@ -43,7 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free); // needs to be converted to freelist?
+    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor) _PyLong_ExactDealloc);
 }
 
 static inline int
@@ -222,7 +222,9 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
 
-    PyLongObject *v = _Py_FREELIST_POP(PyLongObject, ints);
+    // The small int cache is incompatible with _Py_NewReference which is called
+    // by _Py_FREELIST_POP.
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP_MEM(ints);
     if (v == NULL) {
         v = PyObject_Malloc(sizeof(PyLongObject));
         if (v == NULL) {
@@ -3618,13 +3620,13 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
-    assert(PyLong_CheckExact(self));
-
-    if (_PyLong_IsCompact((PyLongObject *)self)) {
-        _Py_FREELIST_FREE(ints, self, PyObject_Free);
-        return;
+    if (PyLong_CheckExact(self)) {
+        if (_PyLong_IsCompact((PyLongObject *)self)) {
+            _Py_FREELIST_FREE(ints, self, PyObject_Free);
+            return;
+        }
     }
-    PyObject_Free(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static void
