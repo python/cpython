@@ -572,8 +572,10 @@ tracking status of the object.
       False
       >>> gc.is_tracked([])
       True
-      >>> gc.is_tracked({})
+      >>> gc.is_tracked(())
       False
+      >>> gc.is_tracked({})
+      True
       >>> gc.is_tracked({"a": 1})
       True
 ```
