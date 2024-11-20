@@ -2152,7 +2152,7 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw)
 }
 
 #ifdef Py_GIL_DISABLED
-// Interpreter for _Py_FOR_EACH_THREAD(). For global stop-the-world events,
+// Interpreter for _Py_FOR_EACH_STW_INTERP(). For global stop-the-world events,
 // we start with the first interpreter and then iterate over all interpreters.
 // For per-interpreter stop-the-world events, we only operate on the one
 // interpreter.
@@ -2167,10 +2167,9 @@ interp_for_stop_the_world(struct _stoptheworld_state *stw)
 // Loops over threads for a stop-the-world event.
 // For global: all threads in all interpreters
 // For per-interpreter: all threads in the interpreter
-#define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
-    for (i = interp_for_stop_the_world((stw));                              \
-            i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t)
+#define _Py_FOR_EACH_STW_INTERP(stw, i)                                     \
+    for (PyInterpreterState *i = interp_for_stop_the_world((stw));          \
+            i != NULL; i = ((stw->is_global) ? i->next : NULL))
 
 
 // Try to transition threads atomically from the "detached" state to the
@@ -2179,18 +2178,19 @@ static bool
 park_detached_threads(struct _stoptheworld_state *stw)
 {
     int num_parked = 0;
-    PyInterpreterState *i;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        int state = _Py_atomic_load_int_relaxed(&t->state);
-        if (state == _Py_THREAD_DETACHED) {
-            // Atomically transition to "suspended" if in "detached" state.
-            if (_Py_atomic_compare_exchange_int(&t->state,
-                                                &state, _Py_THREAD_SUSPENDED)) {
-                num_parked++;
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            int state = _Py_atomic_load_int_relaxed(&t->state);
+            if (state == _Py_THREAD_DETACHED) {
+                // Atomically transition to "suspended" if in "detached" state.
+                if (_Py_atomic_compare_exchange_int(
+                                &t->state, &state, _Py_THREAD_SUSPENDED)) {
+                    num_parked++;
+                }
             }
-        }
-        else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
-            _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
+            else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
+                _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
+            }
         }
     }
     stw->thread_countdown -= num_parked;
@@ -2217,11 +2217,12 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
     stw->requester = _PyThreadState_GET();  // may be NULL
 
-    PyInterpreterState *i;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        if (t != stw->requester) {
-            // Count all the other threads (we don't wait on ourself).
-            stw->thread_countdown++;
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            if (t != stw->requester) {
+                // Count all the other threads (we don't wait on ourself).
+                stw->thread_countdown++;
+            }
         }
     }
 
@@ -2262,13 +2263,14 @@ start_the_world(struct _stoptheworld_state *stw)
     stw->requested = 0;
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
-    PyInterpreterState *i;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        if (t != stw->requester) {
-            assert(_Py_atomic_load_int_relaxed(&t->state) ==
-                   _Py_THREAD_SUSPENDED);
-            _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
-            _PyParkingLot_UnparkAll(&t->state);
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            if (t != stw->requester) {
+                assert(_Py_atomic_load_int_relaxed(&t->state) ==
+                       _Py_THREAD_SUSPENDED);
+                _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
+                _PyParkingLot_UnparkAll(&t->state);
+            }
         }
     }
     stw->requester = NULL;
