@@ -110,7 +110,7 @@ bytes_types = pickle.bytes_types
 #
 # The second major set of additions is now called "protocol 1", and was called
 # "binary mode" before Python 2.3.  This added many opcodes with arguments
-# consisting of arbitrary bytes, including NUL bytes and unprintable "high bit"
+# consisting of arbitrary bytes, including NULL bytes and unprintable "high bit"
 # bytes.  Binary mode pickles can be substantially smaller than equivalent
 # text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
 # int as 4 bytes following the opcode, which is cheaper to unpickle than the
@@ -1228,7 +1228,8 @@ opcodes = [
 
       The same as INT, except that the literal ends with 'L', and always
       unpickles to a Python long.  There doesn't seem a real purpose to the
-      trailing 'L'.
+      trailing 'L', and the trailing 'L' is not required for Python 3.0 or
+      higher.
 
       Note that LONG takes time quadratic in the number of digits when
       unpickling (this is simply due to the nature of decimal->binary
@@ -1271,7 +1272,7 @@ opcodes = [
       The argument is a repr-style string, with bracketing quote characters,
       and perhaps embedded escapes.  The argument extends until the next
       newline character.  These are usually decoded into a str instance
-      using the encoding given to the Unpickler constructor. or the default,
+      using the encoding given to the Unpickler constructor, or the default,
       'ASCII'.  If the encoding given was 'bytes' however, they will be
       decoded as bytes object instead.
       """),
@@ -1288,7 +1289,7 @@ opcodes = [
       signed int giving the number of bytes in the string, and the
       second is that many bytes, which are taken literally as the string
       content.  These are usually decoded into a str instance using the
-      encoding given to the Unpickler constructor. or the default,
+      encoding given to the Unpickler constructor, or the default,
       'ASCII'.  If the encoding given was 'bytes' however, they will be
       decoded as bytes object instead.
       """),
@@ -1305,7 +1306,7 @@ opcodes = [
       the number of bytes in the string, and the second is that many
       bytes, which are taken literally as the string content.  These are
       usually decoded into a str instance using the encoding given to
-      the Unpickler constructor. or the default, 'ASCII'.  If the
+      the Unpickler constructor, or the default, 'ASCII'.  If the
       encoding given was 'bytes' however, they will be decoded as bytes
       object instead.
       """),
