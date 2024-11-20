@@ -1649,6 +1649,10 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a frame\n");
     }
 
+    // This calls callbacks registered with PyContext_AddWatcher and can call
+    // sys.unraisablehook.
+    _PyContext_ExitThreadOwned(tstate);
+
     /* At this point tstate shouldn't be used any more,
        neither to run Python code nor for other uses.
 

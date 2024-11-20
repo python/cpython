@@ -113,6 +113,11 @@ context_event_name(PyContextEvent event) {
 static void
 notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
+    // The callbacks are registered on the interpreter, not on the thread, so
+    // the only way callbacks can know which thread changed is by calling the
+    // callbacks from the affected thread.
+    assert(ts != NULL);
+    assert(ts == _PyThreadState_GET());
     if (ctx == NULL) {
         // This will happen after exiting the last context in the stack, which
         // can occur if context_get was never called before entering a context
@@ -184,12 +189,14 @@ static inline void
 context_switched(PyThreadState *ts)
 {
     ts->context_ver++;
-    // ts->context is used instead of context_get() because context_get() might
-    // throw if ts->context is NULL.
+    // ts->context is used instead of context_get() because if ts->context is
+    // NULL, context_get() will either call context_switched -- causing a
+    // double notification -- or throw.
     notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
 }
 
 
+// ts is not required to belong to the calling thread.
 static int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
@@ -197,8 +204,8 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     PyContext *ctx = (PyContext *)octx;
 
     if (ctx->ctx_entered) {
-        _PyErr_Format(ts, PyExc_RuntimeError,
-                      "cannot enter context: %R is already entered", ctx);
+        PyErr_Format(PyExc_RuntimeError,
+                     "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
@@ -206,7 +213,6 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ctx->ctx_entered = 1;
 
     ts->context = Py_NewRef(ctx);
-    context_switched(ts);
     return 0;
 }
 
@@ -216,10 +222,15 @@ PyContext_Enter(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    return _PyContext_Enter(ts, octx);
+    if (_PyContext_Enter(ts, octx) < 0) {
+        return -1;
+    }
+    context_switched(ts);
+    return 0;
 }
 
 
+// ts is not required to belong to the calling thread.
 static int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
@@ -244,7 +255,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-    context_switched(ts);
+    ctx->ctx_owned_by_thread = 0;
     return 0;
 }
 
@@ -253,7 +264,49 @@ PyContext_Exit(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    return _PyContext_Exit(ts, octx);
+    if (_PyContext_Exit(ts, octx) < 0) {
+        return -1;
+    }
+    context_switched(ts);
+    return 0;
+}
+
+
+void
+_PyContext_ExitThreadOwned(PyThreadState *ts)
+{
+    assert(ts != NULL);
+    while (ts->context != NULL
+           && PyContext_CheckExact(ts->context)
+           && ((PyContext *)ts->context)->ctx_owned_by_thread) {
+        if (_PyContext_Exit(ts, ts->context) < 0) {
+            // Exiting a context that is already known to be at the top of the
+            // stack cannot fail.
+            Py_UNREACHABLE();
+        }
+        // notify_context_watchers() requires the notification to come from the
+        // affected thread, so context_switched() must not be called if ts
+        // doesn't belong to the current thread.  However, it's OK to skip
+        // calling it in this case: this function is only called when resetting
+        // a PyThreadState, so if the calling thread doesn't own ts, then the
+        // owning thread must not be running anymore (it must have just
+        // finished because a thread-owned context exists here).
+        if (ts == _PyThreadState_GET()) {
+            context_switched(ts);
+        }
+    }
+    if (ts->context != NULL) {
+        // This intentionally does not use tstate variants of these functions
+        // (e.g., _PyErr_GetRaisedException(ts)) because ts might not belong to
+        // the current thread.
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError,
+                        "contextvars.Context object(s) still entered during "
+                        "thread state reset");
+        PyErr_FormatUnraisable(
+            "Exception ignored during reset of thread state");
+        PyErr_SetRaisedException(exc);
+    }
 }
 
 
@@ -433,6 +486,7 @@ _context_alloc(void)
     ctx->ctx_vars = NULL;
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
+    ctx->ctx_owned_by_thread = 0;
     ctx->ctx_weakreflist = NULL;
 
     return ctx;
@@ -478,15 +532,18 @@ context_get(void)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    PyContext *current_ctx = (PyContext *)ts->context;
-    if (current_ctx == NULL) {
-        current_ctx = context_new_empty();
-        if (current_ctx == NULL) {
+    if (ts->context == NULL) {
+        PyContext *ctx = context_new_empty();
+        if (ctx == NULL || _PyContext_Enter(ts, (PyObject *)ctx) < 0) {
             return NULL;
         }
-        ts->context = (PyObject *)current_ctx;
+        ctx->ctx_owned_by_thread = 1;
+        assert(ts->context == (PyObject *)ctx);
+        Py_CLEAR(ctx);  // _PyContext_Enter created its own ref.
+        context_switched(ts);
     }
-    return current_ctx;
+    assert(PyContext_CheckExact(ts->context));
+    return (PyContext *)ts->context;
 }
 
 static int
@@ -715,6 +772,7 @@ context_run(PyContext *self, PyObject *const *args,
     if (_PyContext_Enter(ts, (PyObject *)self)) {
         return NULL;
     }
+    context_switched(ts);
 
     PyObject *call_result = _PyObject_VectorcallTstate(
         ts, args[0], args + 1, nargs - 1, kwnames);
@@ -723,6 +781,7 @@ context_run(PyContext *self, PyObject *const *args,
         Py_XDECREF(call_result);
         return NULL;
     }
+    context_switched(ts);
 
     return call_result;
 }
