@@ -1086,7 +1086,7 @@ _PyInterpreterState_SetShuttingDown(PyInterpreterState *interp)
     HEAD_LOCK(interp->runtime);
     PyThreadState *thread_head = interp->threads.head;
     HEAD_UNLOCK(interp->runtime);
-    if (interp->threads.head != NULL)
+    if (thread_head != NULL)
     {
         /* Remaining thread states exist */
         PyErr_SetString(PyExc_InterpreterError, "interpreter has remaining threads");
