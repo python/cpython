@@ -296,11 +296,12 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         int depth = p->py_recursion_limit - p->py_recursion_remaining;
         p->py_recursion_limit = new_limit;
         p->py_recursion_remaining = new_limit - depth;
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
