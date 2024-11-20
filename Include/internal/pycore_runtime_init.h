@@ -118,6 +118,9 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         ._whence = _PyInterpreterState_WHENCE_NOTSET, \
+        .threads = { \
+            .preallocated = &(INTERP)._initial_thread, \
+        }, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
@@ -134,7 +137,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
-            .phase = GC_PHASE_MARK, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
