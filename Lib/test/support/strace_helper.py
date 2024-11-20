@@ -91,7 +91,10 @@ def strace_python(code, strace_flags, check=True):
         res, cmd_line = run_python_until_end(
             "-c",
             textwrap.dedent(code),
-            __run_using_command=[_strace_binary] + strace_flags)
+            __run_using_command=[_strace_binary] + strace_flags,
+            # Don't want to trace our JIT's own mmap and mprotect calls:
+            PYTHON_JIT="0",
+        )
     except OSError as err:
         return _make_error("Caught OSError", err)
 
