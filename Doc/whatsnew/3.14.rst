@@ -421,6 +421,11 @@ multiprocessing
   :func:`multiprocessing.get_context` (preferred) or change the default via
   :func:`multiprocessing.set_start_method`.
   (Contributed by Gregory P. Smith in :gh:`84559`.)
+* :mod:`multiprocessing`'s ``"forkserver"`` start method now authenticates
+  its control socket to avoid solely relying on filesystem permissions
+  to restrict what other processes could cause the forkserver to spawn workers
+  and run code.
+  (Contributed by Gregory P. Smith for :gh:`97514`.)
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
