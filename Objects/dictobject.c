@@ -7110,7 +7110,7 @@ try_set_dict_inline_only_or_other_dict(PyObject *obj, PyObject *new_dict, PyDict
         // We have a materialized dict which doesn't point at the inline values,
         // We get to simply swap dictionaries and free the old dictionary.
         FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
-                (PyDictObject *)Py_XNewRef(new_dict));
+                            (PyDictObject *)Py_XNewRef(new_dict));
         replaced = true;
         goto exit_lock;
     }
@@ -7166,7 +7166,11 @@ static int
 set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+#ifndef NDEBUG
+    Py_BEGIN_CRITICAL_SECTION(obj);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+    Py_END_CRITICAL_SECTION();
+#endif
     int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
