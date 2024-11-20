@@ -42,7 +42,7 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor whose :meth:`__get__` method always
+The ``Ten`` class is a descriptor whose :meth:`__get__` method always
 returns the constant ``10``:
 
 .. testcode::
@@ -215,8 +215,8 @@ Customized names
 When a class uses descriptors, it can inform each descriptor about which
 variable name was used.
 
-In this example, the :class:`Person` class has two descriptor instances,
-*name* and *age*.  When the :class:`Person` class is defined, it makes a
+In this example, the ``Person`` class has two descriptor instances,
+*name* and *age*.  When the ``Person`` class is defined, it makes a
 callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can
 be recorded, giving each descriptor its own *public_name* and *private_name*:
 
@@ -253,7 +253,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*:
         def birthday(self):
             self.age += 1
 
-An interactive session shows that the :class:`Person` class has called
+An interactive session shows that the ``Person`` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
 we call :func:`vars` to look up the descriptor without triggering it:
 
@@ -337,7 +337,7 @@ any data, it verifies that the new value meets various type and range
 restrictions.  If those restrictions aren't met, it raises an exception to
 prevent data corruption at its source.
 
-This :class:`Validator` class is both an :term:`abstract base class` and a
+This ``Validator`` class is both an :term:`abstract base class` and a
 managed attribute descriptor:
 
 .. testcode::
@@ -360,8 +360,8 @@ managed attribute descriptor:
         def validate(self, value):
             pass
 
-Custom validators need to inherit from :class:`Validator` and must supply a
-:meth:`validate` method to test various restrictions as needed.
+Custom validators need to inherit from ``Validator`` and must supply a
+``validate`` method to test various restrictions as needed.
 
 
 Custom validators
@@ -369,13 +369,13 @@ Custom validators
 
 Here are three practical data validation utilities:
 
-1) :class:`OneOf` verifies that a value is one of a restricted set of options.
+1) ``OneOf`` verifies that a value is one of a restricted set of options.
 
-2) :class:`Number` verifies that a value is either an :class:`int` or
+2) ``Number`` verifies that a value is either an :class:`int` or
    :class:`float`.  Optionally, it verifies that a value is between a given
    minimum or maximum.
 
-3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it
+3) ``String`` verifies that a value is a :class:`str`.  Optionally, it
    validates a given minimum or maximum length.  It can validate a
    user-defined `predicate
    <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
@@ -873,7 +873,7 @@ care of lookups or updates:
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` class to define `models
+We can use the ``Field`` class to define `models
 <https://en.wikipedia.org/wiki/Database_model>`_ that describe the schema for
 each table in a database:
 
@@ -1140,7 +1140,7 @@ to wrap access to the value attribute in a property data descriptor:
             self.recalc()
             return self._value
 
-Either the built-in :func:`property` or our :func:`Property` equivalent would
+Either the built-in :func:`property` or our ``Property`` equivalent would
 work in this example.
 
 
@@ -1722,7 +1722,7 @@ Python:
                 )
             super().__delattr__(name)
 
-To use the simulation in a real class, just inherit from :class:`Object` and
+To use the simulation in a real class, just inherit from ``Object`` and
 set the :term:`metaclass` to :class:`Type`:
 
 .. testcode::

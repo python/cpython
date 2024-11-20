@@ -79,7 +79,7 @@ Unlike many languages that treat enumerations solely as name/value pairs,
 Python Enums can have behavior added.  For example, :class:`datetime.date`
 has two methods for returning the weekday: :meth:`weekday` and :meth:`isoweekday`.
 The difference is that one of them counts from 0-6 and the other from 1-7.
-Rather than keep track of that ourselves we can add a method to the :class:`Weekday`
+Rather than keep track of that ourselves we can add a method to the ``Weekday``
 enum to extract the day from the :class:`date` instance and return the matching
 enum member::
 
@@ -87,7 +87,7 @@ enum member::
         def from_date(cls, date):
             return cls(date.isoweekday())
 
-The complete :class:`Weekday` enum now looks like this::
+The complete ``Weekday`` enum now looks like this::
 
     >>> class Weekday(Enum):
     ...     MONDAY = 1
@@ -110,7 +110,7 @@ Now we can find out what today is!  Observe::
 
 Of course, if you're reading this on some other day, you'll see that day instead.
 
-This :class:`Weekday` enum is great if our variable only needs one day, but
+This ``Weekday`` enum is great if our variable only needs one day, but
 what if we need several?  Maybe we're writing a function to plot chores during
 a week, and don't want to use a :class:`list` -- we could use a different type
 of :class:`Enum`::
@@ -128,7 +128,7 @@ of :class:`Enum`::
 We've changed two things: we're inherited from :class:`Flag`, and the values are
 all powers of 2.
 
-Just like the original :class:`Weekday` enum above, we can have a single selection::
+Just like the original ``Weekday`` enum above, we can have a single selection::
 
     >>> first_week_day = Weekday.MONDAY
     >>> first_week_day
@@ -580,7 +580,7 @@ values.  The last two options enable assigning arbitrary values to
 enumerations; the others auto-assign increasing integers starting with 1 (use
 the ``start`` parameter to specify a different starting value).  A
 new class derived from :class:`Enum` is returned.  In other words, the above
-assignment to :class:`Animal` is equivalent to::
+assignment to ``Animal`` is equivalent to::
 
     >>> class Animal(Enum):
     ...     ANT = 1
@@ -891,7 +891,7 @@ simple to implement independently::
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
-a :class:`FloatEnum` that mixes in :class:`float` instead of :class:`int`.
+a ``FloatEnum`` that mixes in :class:`float` instead of :class:`int`.
 
 Some rules:
 
