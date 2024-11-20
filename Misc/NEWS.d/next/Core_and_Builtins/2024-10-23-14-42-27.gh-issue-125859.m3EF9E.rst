@@ -1,2 +1,0 @@
-Fix a crash in the free threading build when :func:`gc.get_objects` or
-:func:`gc.get_referrers` is called during an in-progress garbage collection.
