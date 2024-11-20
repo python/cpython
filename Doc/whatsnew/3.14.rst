@@ -228,7 +228,7 @@ argparse
 * Introduced the optional *suggest_on_error* parameter to
   :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
   and subparser names if mistyped by the user.
-  (Contributed by Savannah Ostrowski in :gh:`124456`)
+  (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
 ast
 ---
@@ -273,18 +273,21 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-decimal
--------
-
-* Add alternative :class:`~decimal.Decimal` constructor
-  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
-  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+* The :exc:`~ctypes.COMError` exception is now public.
+  (Contributed by Jun Komoda in :gh:`126686`.)
 
 datetime
 --------
 
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
 dis
 ---
@@ -425,7 +428,7 @@ multiprocessing
    * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
      ``d |= {'b': 2}`` for proxies of :class:`dict`.
 
-  (Contributed by Roy Hyunjin Han for :gh:`103134`)
+  (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
 
 operator
@@ -468,14 +471,6 @@ pathlib
   (Contributed by Barney Gale in :gh:`125413`.)
 
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
-
 pdb
 ---
 
@@ -489,6 +484,14 @@ pdb
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pickle
 ------
@@ -772,6 +775,13 @@ urllib
 * Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
   from :mod:`urllib.request`. They had previously raised a
   :exc:`DeprecationWarning` since Python 3.3.
+
+  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`,
+  and ``myopener.retrieve()`` can be replaced with
+  :func:`~urllib.request.urlretrieve`. Customizations to the opener
+  classes can be replaced by passing customized handlers to
+  :func:`~urllib.request.build_opener`.
+
   (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
@@ -864,7 +874,7 @@ New features
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
   is positive, negative, or zero, respectively.
-  (Contribued by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
 
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:
