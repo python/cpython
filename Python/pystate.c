@@ -773,7 +773,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
     assert(interp != NULL);
     assert(tstate != NULL);
-    _PyRuntimeState *runtime = interp->runtime;
 
     /* XXX Conditions we need to enforce:
 
@@ -794,9 +793,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
-        HEAD_UNLOCK(runtime);
+        THREADS_HEAD_UNLOCK(interp);
         PyThreadState_Clear(p);
-        HEAD_LOCK(runtime);
+        THREADS_HEAD_LOCK(interp);
     }
     _Py_FOR_EACH_TSTATE_END(interp);
     if (tstate->interp == interp) {
@@ -1536,7 +1535,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #endif
 
     /* We serialize concurrent creation to protect global state. */
-    HEAD_LOCK(interp->runtime);
+    THREADS_HEAD_LOCK(interp);
 
     // Initialize the new thread state.
     interp->threads.next_unique_id += 1;
@@ -1547,7 +1546,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     PyThreadState *old_head = interp->threads.head;
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
-    HEAD_UNLOCK(interp->runtime);
+    THREADS_HEAD_UNLOCK(interp);
 
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
@@ -1743,7 +1742,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     }
     _PyRuntimeState *runtime = interp->runtime;
 
-    HEAD_LOCK(runtime);
+    THREADS_HEAD_LOCK(interp);
     if (tstate->prev) {
         tstate->prev->next = tstate->next;
     }
@@ -1759,9 +1758,11 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
         if (interp->stoptheworld.requested) {
             decrement_stoptheworld_countdown(&interp->stoptheworld);
         }
+        HEAD_LOCK(runtime);
         if (runtime->stoptheworld.requested) {
             decrement_stoptheworld_countdown(&runtime->stoptheworld);
         }
+        HEAD_UNLOCK(runtime);
     }
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
@@ -1772,7 +1773,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     assert(tstate_impl->refcounts.values == NULL);
 #endif
 
-    HEAD_UNLOCK(runtime);
+    THREADS_HEAD_UNLOCK(interp);
 
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
@@ -1852,13 +1853,12 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
-    _PyRuntimeState *runtime = interp->runtime;
 
 #ifdef Py_GIL_DISABLED
-    assert(runtime->stoptheworld.world_stopped);
+    assert(interp->runtime->stoptheworld.world_stopped);
 #endif
 
-    HEAD_LOCK(runtime);
+    THREADS_HEAD_LOCK(interp);
     /* Remove all thread states, except tstate, from the linked list of
        thread states. */
     PyThreadState *list = interp->threads.head;
@@ -1873,7 +1873,7 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
     }
     tstate->prev = tstate->next = NULL;
     interp->threads.head = tstate;
-    HEAD_UNLOCK(runtime);
+    THREADS_HEAD_UNLOCK(interp);
 
     return list;
 }

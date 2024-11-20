@@ -269,14 +269,18 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 #define HEAD_UNLOCK(runtime) \
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
+#define THREADS_HEAD_LOCK(interp) \
+    PyMutex_LockFlags(&(interp)->threads.mutex, _Py_LOCK_DONT_DETACH)
+#define THREADS_HEAD_UNLOCK(interp) \
+    PyMutex_Unlock(&(interp)->threads.mutex)
+
 #define _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) \
     for (PyThreadState *t = interp->threads.head; t; t = t->next)
 #define _Py_FOR_EACH_TSTATE_BEGIN(interp, t) \
-    HEAD_LOCK(interp->runtime); \
+    THREADS_HEAD_LOCK(interp); \
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t)
 #define _Py_FOR_EACH_TSTATE_END(interp) \
-    HEAD_UNLOCK(interp->runtime)
-
+    THREADS_HEAD_UNLOCK(interp)
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
