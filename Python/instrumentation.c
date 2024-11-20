@@ -1008,8 +1008,7 @@ set_global_version(PyThreadState *tstate, uint32_t version)
     // Set the version on all threads in free-threaded builds.
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    for (tstate = interp->threads.head; tstate;
-         tstate = PyThreadState_Next(tstate)) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         set_version_raw(&tstate->eval_breaker, version);
     };
     HEAD_UNLOCK(runtime);

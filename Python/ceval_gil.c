@@ -980,7 +980,7 @@ _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
     _PyRuntimeState *runtime = &_PyRuntime;
 
     HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         _Py_set_eval_breaker_bit(tstate, bit);
     }
     HEAD_UNLOCK(runtime);
@@ -992,7 +992,7 @@ _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
     _PyRuntimeState *runtime = &_PyRuntime;
 
     HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         _Py_unset_eval_breaker_bit(tstate, bit);
     }
     HEAD_UNLOCK(runtime);

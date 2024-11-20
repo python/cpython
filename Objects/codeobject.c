@@ -2871,7 +2871,7 @@ get_indices_in_use(PyInterpreterState *interp, struct flag_set *in_use)
     assert(interp->stoptheworld.world_stopped);
     assert(in_use->flags == NULL);
     int32_t max_index = 0;
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         int32_t idx = ((_PyThreadStateImpl *) p)->tlbc_index;
         if (idx > max_index) {
             max_index = idx;
@@ -2882,7 +2882,7 @@ get_indices_in_use(PyInterpreterState *interp, struct flag_set *in_use)
     if (in_use->flags == NULL) {
         return -1;
     }
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         in_use->flags[((_PyThreadStateImpl *) p)->tlbc_index] = 1;
     }
     return 0;

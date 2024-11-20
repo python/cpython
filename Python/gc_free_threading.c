@@ -304,7 +304,7 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     Py_ssize_t offset_pre = offset_base + 2 * sizeof(PyObject*);
 
     // visit each thread's heaps for GC objects
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
         if (!_Py_atomic_load_int(&m->initialized)) {
             // The thread may not have called tstate_mimalloc_bind() yet.
@@ -375,7 +375,7 @@ static void
 gc_visit_thread_stacks(PyInterpreterState *interp)
 {
     HEAD_LOCK(&_PyRuntime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
             if (executable == NULL || !PyCode_Check(executable)) {
@@ -430,7 +430,7 @@ process_delayed_frees(PyInterpreterState *interp)
     // Merge the queues from other threads into our own queue so that we can
     // process all of the pending delayed free requests at once.
     HEAD_LOCK(&_PyRuntime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         _PyThreadStateImpl *other = (_PyThreadStateImpl *)p;
         if (other != current_tstate) {
             llist_concat(&current_tstate->mem_free_queue, &other->mem_free_queue);
@@ -1227,7 +1227,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     HEAD_LOCK(&_PyRuntime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
 
         // merge per-thread refcount for types into the type's actual refcount
@@ -1992,10 +1992,9 @@ void
 _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     HEAD_LOCK(&_PyRuntime);
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
-    while (tstate != NULL) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
         _PyObject_ClearFreeLists(&tstate->freelists, 0);
-        tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 }

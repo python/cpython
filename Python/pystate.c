@@ -791,17 +791,15 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     // Clear the current/main thread state last.
     HEAD_LOCK(runtime);
-    PyThreadState *p = interp->threads.head;
-    HEAD_UNLOCK(runtime);
-    while (p != NULL) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
+        HEAD_UNLOCK(runtime);
         PyThreadState_Clear(p);
         HEAD_LOCK(runtime);
-        p = p->next;
-        HEAD_UNLOCK(runtime);
     }
+    HEAD_UNLOCK(runtime);
     if (tstate->interp == interp) {
         /* We fix tstate->_status below when we for sure aren't using it
            (e.g. no longer need the GIL). */
@@ -1796,10 +1794,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 static void
 zapthreads(PyInterpreterState *interp)
 {
-    PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    while ((tstate = interp->threads.head) != NULL) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
@@ -2174,7 +2171,7 @@ interp_for_stop_the_world(struct _stoptheworld_state *stw)
 #define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
     for (i = interp_for_stop_the_world((stw));                              \
             i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
-        for (t = i->threads.head; t; t = t->next)
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t)
 
 
 // Try to transition threads atomically from the "detached" state to the
@@ -2184,7 +2181,6 @@ park_detached_threads(struct _stoptheworld_state *stw)
 {
     int num_parked = 0;
     PyInterpreterState *i;
-    PyThreadState *t;
     _Py_FOR_EACH_THREAD(stw, i, t) {
         int state = _Py_atomic_load_int_relaxed(&t->state);
         if (state == _Py_THREAD_DETACHED) {
@@ -2223,7 +2219,6 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->requester = _PyThreadState_GET();  // may be NULL
 
     PyInterpreterState *i;
-    PyThreadState *t;
     _Py_FOR_EACH_THREAD(stw, i, t) {
         if (t != stw->requester) {
             // Count all the other threads (we don't wait on ourself).
@@ -2269,7 +2264,6 @@ start_the_world(struct _stoptheworld_state *stw)
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
     PyInterpreterState *i;
-    PyThreadState *t;
     _Py_FOR_EACH_THREAD(stw, i, t) {
         if (t != stw->requester) {
             assert(_Py_atomic_load_int_relaxed(&t->state) ==
@@ -2349,7 +2343,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * head_mutex for the duration.
      */
     HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->thread_id != id) {
             continue;
         }
@@ -2510,8 +2504,7 @@ _PyThread_CurrentFrames(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        PyThreadState *t;
-        for (t = i->threads.head; t != NULL; t = t->next) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             _PyInterpreterFrame *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
@@ -2576,8 +2569,7 @@ _PyThread_CurrentExceptions(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        PyThreadState *t;
-        for (t = i->threads.head; t != NULL; t = t->next) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             _PyErr_StackItem *err_info = _PyErr_GetTopmostException(t);
             if (err_info == NULL) {
                 continue;
