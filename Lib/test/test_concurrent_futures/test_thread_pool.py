@@ -4,7 +4,6 @@ import multiprocessing.process
 import multiprocessing.util
 import os
 import threading
-import warnings
 import unittest
 from concurrent import futures
 from test import support
@@ -68,15 +67,15 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                     workers.submit(tuple)
 
     @support.requires_fork()
-    @unittest.skipUnless(hasattr(os, "register_at_fork"), "need os.register_at_fork")
-    @support.requires_resource("cpu")
+    @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
+    @support.requires_resource('cpu')
     def test_process_fork_from_a_threadpool(self):
         # bpo-43944: clear concurrent.futures.thread._threads_queues after fork,
         # otherwise child process will try to join parent thread
         def fork_process_and_return_exitcode():
             # Ignore the warning about fork with threads.
-            with warnings.catch_warnings(category=DeprecationWarning, action="ignore"):
-                p = mp.get_context("fork").Process(target=lambda: 1)
+            with self.assertWarnsRegex(DeprecationWarning, msg="use of fork() may lead to deadlocks in child"):
+                p = mp.get_context('fork').Process(target=lambda: 1)
                 p.start()
             p.join()
             return p.exitcode
