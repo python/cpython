@@ -8,10 +8,20 @@ extern "C" {
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
-PyAPI_FUNC(void) PyErr_SetString(
-    PyObject *exception,
-    const char *string   /* decoded from utf-8 */
-    );
+/*
+ * Set an exception with the error message decoded from UTF-8.
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ */
+PyAPI_FUNC(void) PyErr_SetString(PyObject *exception, const char *string);
+/*
+ * Set an exception with the error message decoded from the current locale.
+ *
+ * Exceptions occurring in decoding take priority over the desired exception,
+ * in which case, this returns -1. Otherwise this returns 0 if the localized
+ * exception has been successfully set.
+ */
+PyAPI_FUNC(int) PyErr_SetLocaleString(PyObject *, const char *string);
 PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(void) PyErr_Clear(void);
 PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);

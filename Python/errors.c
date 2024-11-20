@@ -301,22 +301,25 @@ PyErr_SetString(PyObject *exception, const char *string)
     _PyErr_SetString(tstate, exception, string);
 }
 
-void
-_PyErr_SetLocaleStringTstate(PyThreadState *tstate, PyObject *exception,
-                             const char *string)
+int
+_PyErr_SetLocaleString(PyThreadState *tstate,
+                       PyObject *exception,
+                       const char *string)
 {
     PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
     if (value != NULL) {
         _PyErr_SetObject(tstate, exception, value);
         Py_DECREF(value);
+        return 0;
     }
+    return -1;
 }
 
-void
-_PyErr_SetLocaleString(PyObject *exception, const char *string)
+int
+PyErr_SetLocaleString(PyObject *exception, const char *string)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_SetLocaleStringTstate(tstate, exception, string);
+    return _PyErr_SetLocaleString(tstate, exception, string);
 }
 
 PyObject* _Py_HOT_FUNCTION
