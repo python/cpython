@@ -5587,7 +5587,7 @@ socket_getattr(PyObject *self, PyObject *name)
         return NULL;
     }
 
-    if (!strcmp(attrname, "SocketType")) {
+    if (!PyUnicode_EqualToUTF8(name, "SocketType")) {
         PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and will be removed in Python 3.16. "
                                              "Use socket.socket instead");
         return sock_type;
