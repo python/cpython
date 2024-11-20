@@ -230,8 +230,6 @@ print_gc_stats(FILE *out, GCStats *stats)
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
         fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
-        fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
-        fprintf(out, "GC[%d] objects not reachable from roots: %" PRIu64 "\n", i, stats[i].objects_not_transitively_reachable);
         fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
     }
 }
@@ -721,7 +719,7 @@ specialize(_Py_CODEUNIT *instr, uint8_t specialized_opcode)
 }
 
 static inline void
-unspecialize(_Py_CODEUNIT *instr, int reason)
+unspecialize(_Py_CODEUNIT *instr)
 {
     assert(!PyErr_Occurred());
     uint8_t opcode = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
@@ -731,7 +729,6 @@ unspecialize(_Py_CODEUNIT *instr, int reason)
         SPECIALIZATION_FAIL(generic_opcode, SPEC_FAIL_OTHER);
         return;
     }
-    SPECIALIZATION_FAIL(generic_opcode, reason);
     _Py_BackoffCounter *counter = (_Py_BackoffCounter *)instr + 1;
     _Py_BackoffCounter cur = load_counter(counter);
     set_counter(counter, adaptive_counter_backoff(cur));
@@ -2244,6 +2241,7 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     }
 }
 
+#ifdef Py_STATS
 static int
 binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 {
@@ -2311,6 +2309,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
     }
     Py_UNREACHABLE();
 }
+#endif
 
 void
 _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
@@ -2374,7 +2373,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             break;
     }
-    unspecialize(instr, binary_op_fail_kind(oparg, lhs, rhs));
+    SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
+    unspecialize(instr);
 }
 
 
@@ -2761,6 +2761,7 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+#ifdef Py_STATS
 static int
 containsop_fail_kind(PyObject *value) {
     if (PyUnicode_CheckExact(value)) {
@@ -2777,6 +2778,7 @@ containsop_fail_kind(PyObject *value) {
     }
     return SPEC_FAIL_OTHER;
 }
+#endif
 
 void
 _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
@@ -2794,7 +2796,8 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
         return;
     }
 
-    unspecialize(instr, containsop_fail_kind(value));
+    SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
+    unspecialize(instr);
     return;
 }
 

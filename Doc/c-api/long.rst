@@ -590,7 +590,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    return ``1`` when it's positive and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. c:function:: int PyLong_IsNegative(PyObject *obj)
@@ -601,7 +601,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    return ``1`` when it's negative and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. c:function:: int PyLong_IsZero(PyObject *obj)
@@ -612,7 +612,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    return ``1`` when it's zero and ``0`` otherwise.  Else set an
    exception and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. c:function:: PyObject* PyLong_GetInfo(void)

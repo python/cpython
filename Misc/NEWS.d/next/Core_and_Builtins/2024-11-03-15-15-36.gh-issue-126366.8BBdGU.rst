@@ -1,2 +1,0 @@
-Fix crash when using ``yield from`` on an object that raises an exception in
-its ``__iter__``.

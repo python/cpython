@@ -3722,6 +3722,11 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
 
+            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
+                /* Maintain tracking. */
+                _PyObject_GC_TRACK(mp);
+            }
+
             return 0;
         }
     }
@@ -4006,7 +4011,6 @@ copy_lock_held(PyObject *o)
 
         new->ma_used = mp->ma_used;
         ASSERT_CONSISTENT(new);
-
         return (PyObject *)new;
     }
 
@@ -4292,6 +4296,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
                 *result = NULL;
             }
         }
+
         STORE_USED(mp, mp->ma_used + 1);
         assert(mp->ma_keys->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
@@ -4740,7 +4745,6 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
-
     if (!_PyObject_GC_IS_TRACKED(d)) {
         _PyObject_GC_TRACK(d);
     }

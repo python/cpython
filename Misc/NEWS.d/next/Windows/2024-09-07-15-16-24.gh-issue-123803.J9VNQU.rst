@@ -1,1 +1,0 @@
-All Windows code pages are now supported as "cpXXX" codecs on Windows.

@@ -1385,20 +1385,17 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    def test_guard_type_version_not_removed(self):
-        """
-        Verify that the guard type version is not removed if we modify the class
-        """
+    def test_guard_type_version_removed_invalidation(self):
 
         def thing(a):
             x = 0
-            for i in range(TIER2_THRESHOLD + 100):
+            for i in range(TIER2_THRESHOLD * 2 + 1):
                 x += a.attr
-                # for the first (TIER2_THRESHOLD + 90) iterations we set the attribute on this dummy function which shouldn't
-                # trigger the type watcher
-                # then after for the next 10 it should trigger it and stop optimizing
-                # Note that the code needs to be in this weird form so it's optimized inline without any control flow
-                setattr((Foo, Bar)[i < TIER2_THRESHOLD + 90], "attr", 2)
+                # The first TIER2_THRESHOLD iterations we set the attribute on
+                # this dummy class, which shouldn't trigger the type watcher.
+                # Note that the code needs to be in this weird form so it's
+                # optimized inline without any control flow:
+                setattr((Bar, Foo)[i == TIER2_THRESHOLD + 1], "attr", 2)
                 x += a.attr
             return x
 
@@ -1410,24 +1407,21 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-
         self.assertIsNotNone(ex)
-        self.assertEqual(res, (TIER2_THRESHOLD * 2) + 219)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        self.assertEqual(guard_type_version_count, 2)
+        self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
+        call = opnames.index("_CALL_BUILTIN_FAST")
+        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
 
-
-    @unittest.expectedFailure
-    def test_guard_type_version_not_removed_escaping(self):
-        """
-        Verify that the guard type version is not removed if have an escaping function
-        """
+    def test_guard_type_version_removed_escaping(self):
 
         def thing(a):
             x = 0
-            for i in range(100):
+            for i in range(TIER2_THRESHOLD):
                 x += a.attr
-                # eval should be escaping and so should cause optimization to stop and preserve both type versions
+                # eval should be escaping
                 eval("None")
                 x += a.attr
             return x
@@ -1437,12 +1431,12 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 200)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        # Note: This will actually be 1 for noe
-        # https://github.com/python/cpython/pull/119365#discussion_r1626220129
-        self.assertEqual(guard_type_version_count, 2)
-
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
+        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
 
     def test_guard_type_version_executor_invalidated(self):
         """
