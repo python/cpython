@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:
