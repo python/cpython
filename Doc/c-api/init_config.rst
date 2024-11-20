@@ -6,6 +6,8 @@
 Python Initialization Configuration
 ***********************************
 
+.. _pyconfig_api:
+
 PyConfig C API
 ==============
 
@@ -1591,6 +1593,8 @@ If a ``._pth`` file is present:
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 :c:member:`PyConfig.base_executable`.
 
+
+.. _pyinitconfig_api:
 
 PyInitConfig C API
 ==================
