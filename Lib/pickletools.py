@@ -1817,8 +1817,8 @@ opcodes = [
       proto=0,
       doc="""Read an object from the memo and push it on the stack.
 
-      The index of the memo object to push is given by the positive 
-      newline-terminated decimal string following.  BINGET and LONG_BINGET 
+      The index of the memo object to push is given by the positive
+      newline-terminated decimal string following.  BINGET and LONG_BINGET
       are space-optimized versions.
       """),
 
@@ -1855,7 +1855,7 @@ opcodes = [
       doc="""Store the stack top into the memo.  The stack is not popped.
 
       The index of the memo location to write into is given by the positive
-      newline-terminated decimal string following.  BINPUT and LONG_BINPUT 
+      newline-terminated decimal string following.  BINPUT and LONG_BINPUT
       are space-optimized versions.
       """),
 
