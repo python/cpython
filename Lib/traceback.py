@@ -288,11 +288,12 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', 'cause',
+                 'context')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
-            locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            locals=None, line=None, end_lineno=None, colno=None,
+            end_colno=None, cause=None, context=None):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -308,6 +309,8 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
+        self.cause = cause
+        self.context = context
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -462,7 +465,8 @@ class StackSummary(list):
 
     @classmethod
     def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
-            lookup_lines=True, capture_locals=False):
+            lookup_lines=True, capture_locals=False, cause=None,
+            context=None):
         # Same as extract but operates on a frame generator that yields
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
@@ -483,6 +487,8 @@ class StackSummary(list):
 
         result = klass()
         fnames = set()
+        cause_frame = cause and cause.__traceback__.tb_frame
+        context_frame = context and context.__traceback__.tb_frame
         for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
             co = f.f_code
             filename = co.co_filename
@@ -496,7 +502,9 @@ class StackSummary(list):
                 f_locals = None
             result.append(FrameSummary(
                 filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+                end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                cause=cause if f is cause_frame else None,
+                context=context if f is context_frame else None))
         for filename in fnames:
             linecache.checkcache(filename)
 
@@ -536,8 +544,13 @@ class StackSummary(list):
         filename = frame_summary.filename
         if frame_summary.filename.startswith("<stdin>-"):
             filename = "<stdin>"
+        notes = ''
+        if frame_summary.cause:
+            notes += ' (from cause)'
+        if frame_summary.context:
+            notes += ' (from context)'
         if colorize:
-            row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
+            row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}{}\n'.format(
                     ANSIColors.MAGENTA,
                     filename,
                     ANSIColors.RESET,
@@ -547,11 +560,12 @@ class StackSummary(list):
                     ANSIColors.MAGENTA,
                     frame_summary.name,
                     ANSIColors.RESET,
+                    notes,
                     )
             )
         else:
-            row.append('  File "{}", line {}, in {}\n'.format(
-                filename, frame_summary.lineno, frame_summary.name))
+            row.append('  File "{}", line {}, in {}{}\n'.format(
+                filename, frame_summary.lineno, frame_summary.name, notes))
         if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
                 frame_summary.colno is None or
@@ -1058,7 +1072,8 @@ class TracebackException:
         self.stack = StackSummary._extract_from_extended_frame_gen(
             _walk_tb_with_full_positions(exc_traceback, _seen),
             limit=limit, lookup_lines=lookup_lines,
-            capture_locals=capture_locals)
+            capture_locals=capture_locals, cause=exc_value.__cause__,
+            context=exc_value.__context__)
 
         self._exc_type = exc_type if save_exc_type else None
 
