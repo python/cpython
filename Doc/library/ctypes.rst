@@ -2048,7 +2048,8 @@ Utility functions
    Try to provide a list of paths of the shared libraries loaded into the current
    process.  These paths are not normalized or processed in any way. If the
    function is not able to determine the list of loaded libraries (either because
-   the current platform does not support it, or because an error occurred), it
+   the current platform is not Windows, MacOS, or Linux and does not support the
+   the ``dl_iterate_phdr`` API in libc, or because an error occurred), it
    returns ``None``.
 
    The exact functionality is system dependent.

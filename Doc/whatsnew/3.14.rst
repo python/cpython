@@ -275,7 +275,7 @@ ctypes
 
 * The :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
-  
+
 * Added :func:`ctypes.util.dllist` for listing the shared libraries
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
