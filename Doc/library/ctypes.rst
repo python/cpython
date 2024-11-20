@@ -2774,7 +2774,4 @@ Exceptions
       identifier.  *progid* is the ``ProgID`` of the interface that defined the
       error.
 
-   .. versionchanged:: 3.14
-
-      This exception is now public.
-      Previously, this was private and only available in ``_ctypes``.
+   .. versionadded:: next
