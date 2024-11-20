@@ -790,8 +790,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     // Clear the current/main thread state last.
-    HEAD_LOCK(runtime);
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
@@ -799,7 +798,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         PyThreadState_Clear(p);
         HEAD_LOCK(runtime);
     }
-    HEAD_UNLOCK(runtime);
+    _Py_FOR_EACH_TSTATE_END(interp);
     if (tstate->interp == interp) {
         /* We fix tstate->_status below when we for sure aren't using it
            (e.g. no longer need the GIL). */
@@ -2333,7 +2332,6 @@ _PyEval_StartTheWorld(PyInterpreterState *interp)
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Although the GIL is held, a few C API functions can be called
@@ -2342,12 +2340,16 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * list of thread states we're traversing, so to prevent that we lock
      * head_mutex for the duration.
      */
-    HEAD_LOCK(runtime);
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
-        if (tstate->thread_id != id) {
-            continue;
+    PyThreadState *tstate = NULL;
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, t) {
+        if (t->thread_id == id) {
+            tstate = t;
+            break;
         }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
 
+    if (tstate != NULL) {
         /* Tricky:  we need to decref the current value
          * (if any) in tstate->async_exc, but that can in turn
          * allow arbitrary Python code to run, including
@@ -2357,14 +2359,12 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          */
         Py_XINCREF(exc);
         PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, exc);
-        HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
         _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
-        return 1;
     }
-    HEAD_UNLOCK(runtime);
-    return 0;
+
+    return tstate != NULL;
 }
 
 //---------------------------------

@@ -271,6 +271,11 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) \
     for (PyThreadState *t = interp->threads.head; t; t = t->next)
+#define _Py_FOR_EACH_TSTATE_BEGIN(interp, t) \
+    HEAD_LOCK(interp->runtime); \
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t)
+#define _Py_FOR_EACH_TSTATE_END(interp) \
+    HEAD_UNLOCK(interp->runtime)
 
 
 // Get the configuration of the current interpreter.
