@@ -82,7 +82,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyErr_SetInterpreterAlreadyRunning(void);
 
 extern int _PyThreadState_IsRunningMain(PyThreadState *);
 extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
@@ -139,6 +139,12 @@ _PyThreadState_GET(void)
 #else
     return _PyThreadState_GetCurrent();
 #endif
+}
+
+static inline int
+_PyThreadState_IsAttached(PyThreadState *tstate)
+{
+    return (_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 }
 
 // Attaches the current thread to the interpreter.

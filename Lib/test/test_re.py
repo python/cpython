@@ -1136,6 +1136,39 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br'[19a]', b'a', re.I))
         self.assertTrue(re.match(br'[19a]', b'A', re.I))
         self.assertTrue(re.match(br'[19A]', b'a', re.I))
+        self.assertTrue(re.match(r'[19\xc7]', '\xc7', re.I))
+        self.assertTrue(re.match(r'[19\xc7]', '\xe7', re.I))
+        self.assertTrue(re.match(r'[19\xe7]', '\xc7', re.I))
+        self.assertTrue(re.match(r'[19\xe7]', '\xe7', re.I))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010400', re.I))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010428', re.I))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010400', re.I))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010428', re.I))
+
+        self.assertTrue(re.match(br'[19A]', b'A', re.I))
+        self.assertTrue(re.match(br'[19a]', b'a', re.I))
+        self.assertTrue(re.match(br'[19a]', b'A', re.I))
+        self.assertTrue(re.match(br'[19A]', b'a', re.I))
+        self.assertTrue(re.match(r'[19A]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[19a]', 'a', re.I|re.A))
+        self.assertTrue(re.match(r'[19a]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[19A]', 'a', re.I|re.A))
+        self.assertTrue(re.match(r'[19\xc7]', '\xc7', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\xc7]', '\xe7', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\xe7]', '\xc7', re.I|re.A))
+        self.assertTrue(re.match(r'[19\xe7]', '\xe7', re.I|re.A))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0400', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\u0400]', '\u0450', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\u0450]', '\u0400', re.I|re.A))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0450', re.I|re.A))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010400', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\U00010400]', '\U00010428', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\U00010428]', '\U00010400', re.I|re.A))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010428', re.I|re.A))
 
         # Two different characters have the same lowercase.
         assert 'K'.lower() == '\u212a'.lower() == 'k' # 'K'
@@ -1172,8 +1205,10 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br'[9-a]', b'_', re.I))
         self.assertIsNone(re.match(br'[9-A]', b'_', re.I))
         self.assertTrue(re.match(r'[\xc0-\xde]', '\xd7', re.I))
+        self.assertTrue(re.match(r'[\xc0-\xde]', '\xe7', re.I))
         self.assertIsNone(re.match(r'[\xc0-\xde]', '\xf7', re.I))
         self.assertTrue(re.match(r'[\xe0-\xfe]', '\xf7', re.I))
+        self.assertTrue(re.match(r'[\xe0-\xfe]', '\xc7', re.I))
         self.assertIsNone(re.match(r'[\xe0-\xfe]', '\xd7', re.I))
         self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0450', re.I))
         self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0400', re.I))
@@ -1183,6 +1218,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I))
+
+        self.assertTrue(re.match(r'[\xc0-\xde]', '\xd7', re.I|re.A))
+        self.assertIsNone(re.match(r'[\xc0-\xde]', '\xe7', re.I|re.A))
+        self.assertTrue(re.match(r'[\xe0-\xfe]', '\xf7', re.I|re.A))
+        self.assertIsNone(re.match(r'[\xe0-\xfe]', '\xc7', re.I|re.A))
+        self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0450', re.I|re.A))
+        self.assertIsNone(re.match(r'[\u0430-\u045f]', '\u0400', re.I|re.A))
+        self.assertIsNone(re.match(r'[\u0400-\u042f]', '\u0450', re.I|re.A))
+        self.assertTrue(re.match(r'[\u0400-\u042f]', '\u0400', re.I|re.A))
+        self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010428', re.I|re.A))
+        self.assertIsNone(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I|re.A))
+        self.assertIsNone(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I|re.A))
+        self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I|re.A))
+
+        self.assertTrue(re.match(r'[N-\x7f]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\x7f]', 'Z', re.I|re.A))
+        self.assertTrue(re.match(r'[N-\uffff]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\uffff]', 'Z', re.I|re.A))
+        self.assertTrue(re.match(r'[N-\U00010000]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\U00010000]', 'Z', re.I|re.A))
 
         # Two different characters have the same lowercase.
         assert 'K'.lower() == '\u212a'.lower() == 'k' # 'K'
@@ -2585,6 +2640,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
         self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
 
+    def test_bug_gh101955(self):
+        # Possessive quantifier with nested alternative with capture groups
+        self.assertEqual(re.match('((x)|y|z)*+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3}+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3,}+', 'xyz').groups(), ('z', 'x'))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2625,6 +2686,29 @@ class ReTests(unittest.TestCase):
             with self.subTest(pattern=p):
                 self.assertIsNone(re.search(p, s))
                 self.assertIsNone(re.search('(?s:.)' + p, s))
+
+    def check_interrupt(self, pattern, string, maxcount):
+        class Interrupt(Exception):
+            pass
+        p = re.compile(pattern)
+        for n in range(maxcount):
+            try:
+                p._fail_after(n, Interrupt)
+                p.match(string)
+                return n
+            except Interrupt:
+                pass
+            finally:
+                p._fail_after(-1, None)
+
+    @unittest.skipUnless(hasattr(re.Pattern, '_fail_after'), 'requires debug build')
+    def test_memory_leaks(self):
+        self.check_interrupt(r'(.)*:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*?:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*+:', 'abc:', 100)
+        self.check_interrupt(r'(.){2,4}:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}?:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}+:', 'abc:', 100)
 
 
 def get_debug_out(pat):

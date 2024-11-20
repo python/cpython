@@ -60,7 +60,8 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int week;
     int weekday;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 3, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -130,7 +131,8 @@ datetime_date_replace(PyDateTime_Date *self, PyObject *const *args, Py_ssize_t n
     int month = GET_MONTH(self);
     int day = GET_DAY(self);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -219,7 +221,8 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
     PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
     int fold = TIME_GET_FOLD(self);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 5, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -333,7 +336,8 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tz = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -406,7 +410,8 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
     PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
     int fold = DATE_GET_FOLD(self);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -496,4 +501,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c7a04b865b1e0890 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=203217a61ea14171 input=a9049054013a1b77]*/

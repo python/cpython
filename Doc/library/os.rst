@@ -193,10 +193,6 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`!os.environ.refresh` method updates :data:`os.environ` with
-   changes to the environment made by :func:`os.putenv`, by
-   :func:`os.unsetenv`, or made outside Python in the same process.
-
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -226,11 +222,12 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. seealso::
+
+      The :func:`os.reload_environ` function.
+
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
-
-   .. versionchanged:: 3.14
-      Added the :meth:`!os.environ.refresh` method.
 
 
 .. data:: environb
@@ -247,6 +244,24 @@ process and user.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+
+.. function:: reload_environ()
+
+   The :data:`os.environ` and :data:`os.environb` mappings are a cache of
+   environment variables at the time that Python started.
+   As such, changes to the current process environment are not reflected
+   if made outside Python, or by :func:`os.putenv` or :func:`os.unsetenv`.
+   Use :func:`!os.reload_environ` to update :data:`os.environ` and :data:`os.environb`
+   with any such changes to the current process environment.
+
+   .. warning::
+      This function is not thread-safe. Calling it while the environment is
+      being modified in an other thread is an undefined behavior. Reading from
+      :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
+      while reloading, may return an empty result.
+
+   .. versionadded:: 3.14
 
 
 .. function:: chdir(path)
@@ -568,7 +583,7 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :func:`os.reload_environ` function.
 
    .. note::
 
@@ -818,7 +833,7 @@ process and user.
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :func:`os.reload_environ` function.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -4562,8 +4577,7 @@ written in Python, such as a mail server's external command delivery program.
    only be sent to console processes which share a common console window,
    e.g., some subprocesses. Any other value for *sig* will cause the process
    to be unconditionally killed by the TerminateProcess API, and the exit code
-   will be set to *sig*. The Windows version of :func:`kill` additionally takes
-   process handles to be killed.
+   will be set to *sig*.
 
    See also :func:`signal.pthread_kill`.
 
