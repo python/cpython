@@ -1801,11 +1801,12 @@ zapthreads(PyInterpreterState *interp)
 {
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, tstate) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
 }
 
 
@@ -2184,7 +2185,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
 {
     int num_parked = 0;
     _Py_FOR_EACH_STW_INTERP(stw, i) {
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+        _Py_FOR_EACH_TSTATE_BEGIN(i, t) {
             int state = _Py_atomic_load_int_relaxed(&t->state);
             if (state == _Py_THREAD_DETACHED) {
                 // Atomically transition to "suspended" if in "detached" state.
@@ -2197,6 +2198,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
                 _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
             }
         }
+        _Py_FOR_EACH_TSTATE_END(i);
     }
     stw->thread_countdown -= num_parked;
     assert(stw->thread_countdown >= 0);
@@ -2223,12 +2225,13 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->requester = _PyThreadState_GET();  // may be NULL
 
     _Py_FOR_EACH_STW_INTERP(stw, i) {
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+        _Py_FOR_EACH_TSTATE_BEGIN(i, t) {
             if (t != stw->requester) {
                 // Count all the other threads (we don't wait on ourself).
                 stw->thread_countdown++;
             }
         }
+        _Py_FOR_EACH_TSTATE_END(i);
     }
 
     if (stw->thread_countdown == 0) {
@@ -2269,7 +2272,7 @@ start_the_world(struct _stoptheworld_state *stw)
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
     _Py_FOR_EACH_STW_INTERP(stw, i) {
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+        _Py_FOR_EACH_TSTATE_BEGIN(i, t) {
             if (t != stw->requester) {
                 assert(_Py_atomic_load_int_relaxed(&t->state) ==
                        _Py_THREAD_SUSPENDED);
@@ -2277,6 +2280,7 @@ start_the_world(struct _stoptheworld_state *stw)
                 _PyParkingLot_UnparkAll(&t->state);
             }
         }
+        _Py_FOR_EACH_TSTATE_END(i);
     }
     stw->requester = NULL;
     HEAD_UNLOCK(runtime);
@@ -2511,7 +2515,8 @@ _PyThread_CurrentFrames(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+        int failed = 0;
+        _Py_FOR_EACH_TSTATE_BEGIN(i, t) {
             _PyInterpreterFrame *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
@@ -2519,18 +2524,25 @@ _PyThread_CurrentFrames(void)
             }
             PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
             if (id == NULL) {
-                goto fail;
+                failed = 1;
+                break;
             }
             PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame);
             if (frameobj == NULL) {
                 Py_DECREF(id);
-                goto fail;
+                failed = 1;
+                break;
             }
             int stat = PyDict_SetItem(result, id, frameobj);
             Py_DECREF(id);
             if (stat < 0) {
-                goto fail;
+                failed = 1;
+                break;
             }
+        }
+        _Py_FOR_EACH_TSTATE_END(i);
+        if (failed) {
+            goto fail;
         }
     }
     goto done;
@@ -2576,14 +2588,16 @@ _PyThread_CurrentExceptions(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+        int failed = 0;
+        _Py_FOR_EACH_TSTATE_BEGIN(i, t) {
             _PyErr_StackItem *err_info = _PyErr_GetTopmostException(t);
             if (err_info == NULL) {
                 continue;
             }
             PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
             if (id == NULL) {
-                goto fail;
+                failed = 1;
+                break;
             }
             PyObject *exc = err_info->exc_value;
             assert(exc == NULL ||
@@ -2593,8 +2607,13 @@ _PyThread_CurrentExceptions(void)
             int stat = PyDict_SetItem(result, id, exc == NULL ? Py_None : exc);
             Py_DECREF(id);
             if (stat < 0) {
-                goto fail;
+                failed = 1;
+                break;
             }
+        }
+        _Py_FOR_EACH_TSTATE_END(i);
+        if (failed) {
+            goto fail;
         }
     }
     goto done;
