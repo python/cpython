@@ -127,7 +127,7 @@ struct _is {
 
     uintptr_t last_restart_version;
     struct pythreads {
-        PyMutex mutex;
+        _PyRecursiveMutex mutex;
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;

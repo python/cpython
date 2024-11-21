@@ -270,9 +270,9 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
 #define THREADS_HEAD_LOCK(interp) \
-    PyMutex_LockFlags(&(interp)->threads.mutex, _Py_LOCK_DONT_DETACH)
+    _PyRecursiveMutex_LockFlags(&(interp)->threads.mutex, _Py_LOCK_DONT_DETACH)
 #define THREADS_HEAD_UNLOCK(interp) \
-    PyMutex_Unlock(&(interp)->threads.mutex)
+    _PyRecursiveMutex_Unlock(&(interp)->threads.mutex)
 
 #define _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) \
     for (PyThreadState *t = interp->threads.head; t; t = t->next)

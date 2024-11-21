@@ -499,6 +499,9 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 PyStatus
 _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 {
+    PyThread_ident_t parent = _PyRuntime.fork_tid;
+    assert(parent != 0);
+
     // This was initially set in _PyRuntimeState_Init().
     runtime->main_thread = PyThread_get_thread_ident();
 
@@ -515,7 +518,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
-        _PyMutex_at_fork_reinit(&interp->threads.mutex);
+        _PyRecursiveMutex_at_fork_reinit(&interp->threads.mutex, parent);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
@@ -1751,11 +1754,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 
     HEAD_LOCK(runtime);
 
-    int locked = 1;
-    if (!PyMutex_IsLocked(&interp->threads.mutex)) {
-        locked = 0;
-        THREADS_HEAD_LOCK(interp);
-    }
+    THREADS_HEAD_LOCK(interp);
     if (tstate->prev) {
         tstate->prev->next = tstate->next;
     }
@@ -1765,9 +1764,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
     }
-    if (!locked) {
-        THREADS_HEAD_UNLOCK(interp);
-    }
+    THREADS_HEAD_UNLOCK(interp);
 
     if (tstate->state != _Py_THREAD_SUSPENDED) {
         // Any ongoing stop-the-world request should not wait for us because
