@@ -310,6 +310,10 @@ be found in any statistics text.
    depending on floating-point rounding in the expression
    ``a + (b-a) * random()``.
 
+   .. note::
+      The value *b* is not included in the range due to the underlying implementation.
+      The random number N is drawn from a uniform distribution over the half-open interval ``[*a*, *b*\)``.
+
 
 .. function:: triangular(low, high, mode)
 
