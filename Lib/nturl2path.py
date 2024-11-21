@@ -50,7 +50,7 @@ def pathname2url(p):
         if p[:4].upper() == 'UNC/':
             p = '//' + p[4:]
     drive, tail = ntpath.splitdrive(p)
-    if drive[1:2] == ':':
+    if drive[1:] == ':':
         # DOS drive specified. Add three slashes to the start, producing
         # an authority section with a zero-length authority, and a path
         # section starting with a single slash.
