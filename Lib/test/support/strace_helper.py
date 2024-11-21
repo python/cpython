@@ -71,6 +71,27 @@ class StraceResult:
         return sections
 
 
+def filter_memory(syscalls):
+    """Filter out memory allocation calls from File I/O calls.
+
+    Some calls (mmap, munmap, etc) can be used on files or to just get a block
+    of memory. Use this function to filter out the memory related calls from
+    other calls."""
+
+    def _filter(call):
+        # mmap can operate on a fd or `NULL` which gives a block of memory.
+        # Ignore the `NULL` ones.
+        if call.syscall == 'mmap' and call.args[0] == 'NULL':
+            return False
+
+        if call.syscall in ('munmap', 'mprotect'):
+            return False
+
+        return True
+
+    return [call for call in syscalls if _filter(call)]
+
+
 @support.requires_subprocess()
 def strace_python(code, strace_flags, check=True):
     """Run strace and return the trace.
@@ -92,8 +113,6 @@ def strace_python(code, strace_flags, check=True):
             "-c",
             textwrap.dedent(code),
             __run_using_command=[_strace_binary] + strace_flags,
-            # Don't want to trace our JIT's own mmap and mprotect calls:
-            PYTHON_JIT="0",
         )
     except OSError as err:
         return _make_error("Caught OSError", err)
@@ -144,9 +163,14 @@ print("MARK __shutdown", flush=True)
     return all_sections['code']
 
 
-def get_syscalls(code, strace_flags, prelude="", cleanup=""):
+def get_syscalls(code, strace_flags, prelude="", cleanup="",
+                 ignore_memory=True):
     """Get the syscalls which a given chunk of python code generates"""
     events = get_events(code, strace_flags, prelude=prelude, cleanup=cleanup)
+
+    if ignore_memory:
+        events = filter_memory(events)
+
     return [ev.syscall for ev in events]
 
 
@@ -169,5 +193,5 @@ def requires_strace():
     return unittest.skipUnless(_can_strace(), "Requires working strace")
 
 
-__all__ = ["get_events", "get_syscalls", "requires_strace", "strace_python",
-           "StraceEvent", "StraceResult"]
+__all__ = ["filter_memory", "get_events", "get_syscalls", "requires_strace",
+           "strace_python", "StraceEvent", "StraceResult"]
