@@ -288,8 +288,6 @@ def _is_local_static_mutex(decl):
         # We only want to allow local variables
         return False
 
-    print(decl.parent)
-
     vartype = decl.vartype
     return (vartype.typespec == 'PyMutex') and (decl.storage == 'static')
 
