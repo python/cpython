@@ -1,2 +1,0 @@
-Fix an issue in :func:`curses.napms` when :func:`curses.initscr` has not yet
-been called. Patch by Bénédikt Tran.
