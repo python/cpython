@@ -734,13 +734,25 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     unreachable->_gc_next &= _PyGC_PREV_MASK;
 }
 
+/* In theory, all tuples should be younger than the
+* objects they refer to, as tuples are immortal.
+* Therefore, untracking tuples in oldest-first order in the
+* young generation before promoting them should have tracked
+* all the tuples that can be untracked.
+*
+* Unfortunately, the C API allows tuples to be created
+* and then filled in. So this won't untrack all tuples
+* that can be untracked. It should untrack most of them
+* and is much faster than a more complex approach that
+* would untrack all relevant tuples.
+*/
 static void
 untrack_tuples(PyGC_Head *head)
 {
-    PyGC_Head *next, *gc = GC_NEXT(head);
+    PyGC_Head *gc = GC_NEXT(head);
     while (gc != head) {
         PyObject *op = FROM_GC(gc);
-        next = GC_NEXT(gc);
+        PyGC_Head *next = GC_NEXT(gc);
         if (PyTuple_CheckExact(op)) {
             _PyTuple_MaybeUntrack(op);
         }
@@ -1553,7 +1565,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects * 3/2;
+    intptr_t max_heap_fraction = new_objects*3/2;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1569,12 +1581,13 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
     untrack_tuples(&gcstate->young.head);
-//     if (gcstate->phase == GC_PHASE_MARK) {
-//         Py_ssize_t objects_marked = mark_at_start(tstate);
-//         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
-//         gcstate->work_to_do -= objects_marked;
-//         return;
-//     }
+    if (gcstate->phase == GC_PHASE_MARK) {
+        Py_ssize_t objects_marked = mark_at_start(tstate);
+        GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
+        gcstate->work_to_do -= objects_marked;
+        validate_spaces(gcstate);
+        return;
+    }
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     PyGC_Head increment;
@@ -1583,7 +1596,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (scale_factor < 2) {
         scale_factor = 2;
     }
-    intptr_t objects_marked = 0; // mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
+    intptr_t objects_marked = mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
     gcstate->work_to_do -= objects_marked;
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
@@ -1645,7 +1658,6 @@ gc_collect_full(PyThreadState *tstate,
     gcstate->old[0].count = 0;
     gcstate->old[1].count = 0;
     completed_cycle(gcstate);
-    gcstate->work_to_do = - gcstate->young.threshold * 2;
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_spaces(gcstate);
     add_stats(gcstate, 2, stats);
