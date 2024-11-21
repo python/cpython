@@ -23,11 +23,6 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
-import os
-import sys
-import posixpath
-import urllib.parse
-
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -119,6 +114,10 @@ class MimeTypes:
         Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
+        # Lazy import to improve module import time
+        import os
+        import urllib.parse
+
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
@@ -146,6 +145,10 @@ class MimeTypes:
             if '=' in type or '/' not in type:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
+
+        # Lazy import to improve module import time
+        import posixpath
+
         return self._guess_file_type(url, strict, posixpath.splitext)
 
     def guess_file_type(self, path, *, strict=True):
@@ -153,6 +156,9 @@ class MimeTypes:
 
         Similar to guess_type(), but takes file path instead of URL.
         """
+        # Lazy import to improve module import time
+        import os
+
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
         return self._guess_file_type(path, strict, os.path.splitext)
@@ -399,6 +405,9 @@ def init(files=None):
     else:
         db = _db
 
+    # Lazy import to improve module import time
+    import os
+
     for file in files:
         if os.path.isfile(file):
             db.read(file)
@@ -445,7 +454,7 @@ def _default_mime_types():
         }
 
     # Before adding new types, make sure they are either registered with IANA,
-    # at http://www.iana.org/assignments/media-types
+    # at https://www.iana.org/assignments/media-types/media-types.xhtml
     # or extensions, i.e. using the x- prefix
 
     # If you add to these, please keep them sorted by mime type.
@@ -646,6 +655,7 @@ _default_mime_types()
 
 def _main():
     import getopt
+    import sys
 
     USAGE = """\
 Usage: mimetypes.py [options] type
