@@ -222,8 +222,8 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
 
-    // The small int cache is incompatible with _Py_NewReference which is called
-    // by _Py_FREELIST_POP.
+    // We use _Py_FREELIST_POP_MEM instead of _Py_FREELIST_POP because the new
+    // reference is created in _PyObject_Init
     PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP_MEM(ints);
     if (v == NULL) {
         v = PyObject_Malloc(sizeof(PyLongObject));
