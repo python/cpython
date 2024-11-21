@@ -1053,7 +1053,9 @@ get_main_thread(PyInterpreterState *interp)
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
+    if (get_main_thread(interp) != NULL) {
+        // In 3.14+ we use _PyErr_SetInterpreterAlreadyRunning().
+        PyErr_SetString(PyExc_InterpreterError, "interpreter already running");
         return -1;
     }
     PyThreadState *tstate = current_fast_get();
@@ -1099,6 +1101,7 @@ _PyThreadState_IsRunningMain(PyThreadState *tstate)
     return get_main_thread(interp) == tstate;
 }
 
+// This has been removed in 3.14.
 int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
