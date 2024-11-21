@@ -13,34 +13,52 @@ object's life.  An arrow from *A* to *B* indicates that event *B* can occur
 after event *A* has occurred, with the arrow's label indicating the condition
 that must be true for *B* to occur after *A*.
 
-.. raw:: html
+.. only:: html and not epub
 
-   <style type="text/css">
+   .. raw:: html
 
-.. raw:: html
-   :file: lifecycle.dot.css
+      <style type="text/css">
 
-.. raw:: html
+   .. raw:: html
+      :file: lifecycle.dot.css
 
-   </style>
+   .. raw:: html
 
-.. raw:: html
-   :file: lifecycle.dot.svg
+      </style>
 
-.. raw:: html
+   .. raw:: html
+      :file: lifecycle.dot.svg
 
-   <script>
-       (() => {
-           const g = document.getElementById('life_events_graph');
-           const title = g.querySelector(':scope > title');
-           title.id = 'life-events-graph-title';
-           const svg = g.closest('svg');
-           svg.role = 'img';
-           svg.setAttribute('aria-describedby',
-                            'life-events-graph-description');
-           svg.setAttribute('aria-labelledby', 'life-events-graph-title');
-       })();
-   </script>
+   .. raw:: html
+
+      <script>
+          (() => {
+              const g = document.getElementById('life_events_graph');
+              const title = g.querySelector(':scope > title');
+              title.id = 'life-events-graph-title';
+              const svg = g.closest('svg');
+              svg.role = 'img';
+              svg.setAttribute('aria-describedby',
+                               'life-events-graph-description');
+              svg.setAttribute('aria-labelledby', 'life-events-graph-title');
+          })();
+      </script>
+
+.. only:: epub or not (html or latex)
+
+   .. image:: lifecycle.dot.svg
+      :align: center
+      :class: invert-in-dark-mode
+      :alt: Diagram showing events in an object's life.  Explained in detail
+            below.
+
+.. only:: latex
+
+   .. image:: lifecycle.dot.pdf
+      :align: center
+      :class: invert-in-dark-mode
+      :alt: Diagram showing events in an object's life.  Explained in detail
+            below.
 
 .. container::
    :name: life-events-graph-description

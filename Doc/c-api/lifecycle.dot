@@ -3,6 +3,7 @@ digraph "Life Events" {
      fontsize=12.0
      id="life_events_graph"
      layout="dot"
+     margin="0,0"
      ranksep=0.25
      stylesheet="lifecycle.dot.css"
    ]
