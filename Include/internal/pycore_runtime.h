@@ -189,6 +189,8 @@ typedef struct pyruntimestate {
 
     /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
+    // _main_interpreter should be the last field of _PyRuntimeState.
+    // See https://github.com/python/cpython/issues/127117.
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
     // Used in "Python/emscripten_trampoline.c" to choose between type
