@@ -619,7 +619,10 @@ void
 PyOS_BeforeFork(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->runtime == &_PyRuntime);
     run_at_forkers(interp->before_forkers, 1);
+
+    PyMutex_Lock(&_PyRuntime.os_fork.mutex);
 
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
@@ -633,7 +636,11 @@ PyOS_AfterFork_Parent(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->runtime == &_PyRuntime);
     _PyImport_ReleaseLock(interp);
+
+    PyMutex_Unlock(&_PyRuntime.os_fork.mutex);
+
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
@@ -651,6 +658,7 @@ PyOS_AfterFork_Child(void)
 
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
+    assert(tstate->interp->runtime == &_PyRuntime);
 
     assert(tstate->thread_id == PyThread_get_thread_ident());
 #ifdef PY_HAVE_THREAD_NATIVE_ID
@@ -693,6 +701,8 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+    PyMutex_Unlock(&_PyRuntime.os_fork.mutex);
 
     run_at_forkers(tstate->interp->after_forkers_child, 0);
     return;

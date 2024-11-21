@@ -164,6 +164,12 @@ typedef struct pyruntimestate {
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
+#ifdef HAVE_FORK
+    struct {
+        PyMutex mutex;
+    } os_fork;
+#endif
+
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
