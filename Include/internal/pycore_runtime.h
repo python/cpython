@@ -169,6 +169,12 @@ typedef struct pyruntimestate {
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
 
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    // Used in "Python/emscripten_trampoline.c" to choose between type
+    // reflection trampoline and EM_JS trampoline.
+    bool wasm_type_reflection_available;
+#endif
+
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;
     struct _Py_static_objects static_objects;
@@ -191,13 +197,6 @@ typedef struct pyruntimestate {
     PyInterpreterState _main_interpreter;
     // _main_interpreter should be the last field of _PyRuntimeState.
     // See https://github.com/python/cpython/issues/127117.
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    // Used in "Python/emscripten_trampoline.c" to choose between type
-    // reflection trampoline and EM_JS trampoline.
-    bool wasm_type_reflection_available;
-#endif
-
 } _PyRuntimeState;
 
 
