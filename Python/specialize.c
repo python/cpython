@@ -2466,6 +2466,7 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+#ifdef Py_STATS
 static int
 unpack_sequence_fail_kind(PyObject *seq)
 {
@@ -2477,6 +2478,7 @@ unpack_sequence_fail_kind(PyObject *seq)
     }
     return SPEC_FAIL_OTHER;
 }
+#endif
 
 void
 _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg)
@@ -2488,7 +2490,8 @@ _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg
            INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
     if (PyTuple_CheckExact(seq)) {
         if (PyTuple_GET_SIZE(seq) != oparg) {
-            unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            unspecialize(instr);
             return;
         }
         if (PyTuple_GET_SIZE(seq) == 2) {
@@ -2500,13 +2503,15 @@ _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg
     }
     if (PyList_CheckExact(seq)) {
         if (PyList_GET_SIZE(seq) != oparg) {
-            unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            unspecialize(instr);
             return;
         }
         specialize(instr, UNPACK_SEQUENCE_LIST);
         return;
     }
-    unspecialize(instr, unpack_sequence_fail_kind(seq));
+    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
+    unspecialize(instr);
 }
 
 #ifdef Py_STATS
