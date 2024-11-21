@@ -1548,14 +1548,15 @@ assess_work_to_do(GCState *gcstate)
      * This could be improved by tracking survival rates, but it is still a
      * large improvement on the non-marking approach.
      */
-    Py_ssize_t scale_factor = gcstate->old[0].threshold;
+    intptr_t scale_factor = gcstate->old[0].threshold;
     if (scale_factor < 2) {
         scale_factor = 2;
     }
-    Py_ssize_t new_objects = gcstate->young.count;
-    Py_ssize_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
-    if (heap_fraction > new_objects*2) {
-        heap_fraction = new_objects*2;
+    intptr_t new_objects = gcstate->young.count;
+    intptr_t max_heap_fraction = new_objects * 3/2;
+    intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    if (heap_fraction > max_heap_fraction) {
+        heap_fraction = max_heap_fraction;
     }
     gcstate->young.count = 0;
     return new_objects + heap_fraction;
