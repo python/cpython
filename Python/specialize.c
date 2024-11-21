@@ -2744,11 +2744,11 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         unsigned int version = 0;
         int err = _PyType_Validate(Py_TYPE(value), check_type_always_true, &version);
         if (err < 0) {
-            SPECIALIZATION_FAIL(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
             goto failure;
         }
         else if (err > 0) {
-            SPECIALIZATION_FAIL(instr, err);
+            SPECIALIZATION_FAIL(TO_BOOL, err);
             goto failure;
         }
 
@@ -2759,7 +2759,7 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         goto success;
     }
 
-    SPECIALIZATION_FAIL(instr, to_bool_fail_kind(value));
+    SPECIALIZATION_FAIL(TO_BOOL, to_bool_fail_kind(value));
 failure:
     unspecialize(instr);
     return;
