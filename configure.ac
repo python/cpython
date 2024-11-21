@@ -1327,7 +1327,7 @@ AC_ARG_WITH([suffix],
   )
 ], [
   AS_CASE([$ac_sys_system],
-    [Emscripten], [EXEEXT=.js],
+    [Emscripten], [EXEEXT=.mjs],
     [WASI], [EXEEXT=.wasm],
     [EXEEXT=]
   )
@@ -2328,6 +2328,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2341,7 +2342,6 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH"])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXIT_RUNTIME"])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"])
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
     AS_VAR_IF([wasm_debug], [yes], [

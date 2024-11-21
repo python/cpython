@@ -1,0 +1,1 @@
+The Emscripten build of Python is now based on ES6 modules.

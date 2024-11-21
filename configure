@@ -7291,7 +7291,7 @@ else $as_nop
 
   case $ac_sys_system in #(
   Emscripten) :
-    EXEEXT=.js ;; #(
+    EXEEXT=.mjs ;; #(
   WASI) :
     EXEEXT=.wasm ;; #(
   *) :
@@ -9432,6 +9432,7 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
+    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -9450,7 +9451,6 @@ then :
 fi
     as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH"
         as_fn_append LDFLAGS_NODIST " -sEXIT_RUNTIME"
-    as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
     if test "x$wasm_debug" = xyes
