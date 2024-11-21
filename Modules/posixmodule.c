@@ -663,11 +663,15 @@ PyOS_AfterFork_Child(void)
     _Py_EnsureTstateNotNULL(tstate);
     assert(tstate->interp->runtime == &_PyRuntime);
 
-    // XXX We are assuming that the parent and child always have
-    // the same thread ID.  That isn't necessarily true.
+    // We cannot assume that the parent and child always have
+    // the same thread ID.
     // See https://github.com/python/cpython/issues/126688.
-    assert(_PyRuntime.os_fork.parent.tid == PyThread_get_thread_ident_ex());
-    assert(tstate->thread_id == PyThread_get_thread_ident());
+    if (_PyRuntime.os_fork.parent.tid != PyThread_get_thread_ident_ex()) {
+        tstate->thread_id = PyThread_get_thread_ident();
+    }
+    else {
+        assert(tstate->thread_id == PyThread_get_thread_ident());
+    }
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
