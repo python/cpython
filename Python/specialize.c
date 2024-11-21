@@ -2478,7 +2478,7 @@ unpack_sequence_fail_kind(PyObject *seq)
     }
     return SPEC_FAIL_OTHER;
 }
-#endif
+#endif   // Py_STATS
 
 void
 _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg)
