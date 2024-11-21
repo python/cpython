@@ -985,7 +985,8 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         break;
     case _PyXI_ERR_ALREADY_RUNNING:
         assert(interp != NULL);
-        _PyErr_SetInterpreterAlreadyRunning();
+        // In 3.14+ we use _PyErr_SetInterpreterAlreadyRunning().
+        PyErr_SetString(PyExc_InterpreterError, "interpreter already running");
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
         PyErr_SetString(PyExc_InterpreterError,
