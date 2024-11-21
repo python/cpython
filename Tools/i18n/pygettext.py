@@ -486,8 +486,8 @@ class TokenEater:
         arg_type = spec.get(self.__curr_arg)
         expect_string_literal = arg_type is not None
 
-        if ttype == tokenize.OP:
-            if tstring == ')' and self.__enclosurecount == 0:
+        if ttype == tokenize.OP and self.__enclosurecount == 0:
+            if tstring == ')':
                 # We've seen the last of the translatable strings.  Record the
                 # line number of the first line of the strings and update the list
                 # of messages seen.  Reset state for the next batch.  If there
@@ -495,28 +495,27 @@ class TokenEater:
                 if self.__data:
                     self.__addentry(self.__data)
                 self.__state = self.__waiting
-            elif tstring == ',' and self.__enclosurecount == 0:
+                return
+            elif tstring == ',':
                 # Advance to the next argument
                 self.__curr_arg += 1
-            elif tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
-            elif expect_string_literal:
+                return
+
+        if expect_string_literal:
+            if ttype == tokenize.STRING and is_literal_string(tstring):
+                self.__data[arg_type] += safe_eval(tstring)
+            elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
+                               tokenize.NEWLINE, tokenize.NL):
                 # We are inside an argument which is a translatable string and
                 # we encountered a token that is not a string.  This is an error.
                 self.warn_unexpected_token(tstring)
                 self.__enclosurecount = 0
                 self.__state = self.__waiting
-        elif expect_string_literal and self.__enclosurecount == 0:
-            if ttype == tokenize.STRING and is_literal_string(tstring):
-                self.__data[arg_type] += safe_eval(tstring)
-            elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
-                               tokenize.NEWLINE, tokenize.NL):
-                self.warn_unexpected_token(tstring)
-                self.__enclosurecount = 0
-                self.__state = self.__waiting
-
+        elif ttype == tokenize.OP:
+            if tstring in '([{':
+                self.__enclosurecount += 1
+            elif tstring in ')]}':
+                self.__enclosurecount -= 1
 
     def __ignorenext(self, ttype, tstring, lineno):
         self.__state = self.__waiting

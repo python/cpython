@@ -35,6 +35,9 @@ _(False)
 _(("invalid"))
 _(["invalid"])
 _({"invalid"})
+_("string"[3])
+_("string"[:3])
+_({"string": "foo"})
 
 # pygettext does not allow keyword arguments, but both xgettext and pybabel do
 _(x="kwargs work!")
