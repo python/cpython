@@ -2979,7 +2979,7 @@ static PyType_Spec PySSLSocket_spec = {
     .name = "_ssl._SSLSocket",
     .basicsize = sizeof(PySSLSocket),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSocket_slots,
 };
 
@@ -4923,7 +4923,9 @@ static unsigned int psk_client_callback(SSL *s,
         goto error;
     }
 
-    if (identity_len_ + 1 > max_identity_len || psk_len_ > max_psk_len) {
+    if ((size_t)identity_len_ + 1 > max_identity_len
+        || (size_t)psk_len_ > max_psk_len)
+    {
         Py_DECREF(result);
         goto error;
     }
@@ -5036,7 +5038,7 @@ static unsigned int psk_server_callback(SSL *s,
         goto error;
     }
 
-    if (psk_len_ > max_psk_len) {
+    if ((size_t)psk_len_ > max_psk_len) {
         Py_DECREF(result);
         goto error;
     }

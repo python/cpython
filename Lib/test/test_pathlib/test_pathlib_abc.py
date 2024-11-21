@@ -86,11 +86,6 @@ class PurePathBaseTest(unittest.TestCase):
             p.suffix
         with self.assertRaises(e):
             p.suffixes
-        with self.assertRaises(e):
-            p / 'bar'
-        with self.assertRaises(e):
-            'bar' / p
-        self.assertRaises(e, p.joinpath, 'bar')
         self.assertRaises(e, p.with_name, 'bar')
         self.assertRaises(e, p.with_stem, 'bar')
         self.assertRaises(e, p.with_suffix, '.txt')
@@ -153,6 +148,7 @@ class DummyPurePathTest(unittest.TestCase):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
+        P()
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
@@ -2497,6 +2493,23 @@ class DummyPathTest(DummyPurePathTest):
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
+    @needs_posix
+    def test_absolute_posix(self):
+        P = self.cls
+        # The default implementation uses '/' as the current directory
+        self.assertEqual(str(P('').absolute()), '/')
+        self.assertEqual(str(P('a').absolute()), '/a')
+        self.assertEqual(str(P('a/b').absolute()), '/a/b')
+
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
+
     @needs_symlinks
     def test_readlink(self):
         P = self.cls(self.base)
@@ -2813,29 +2826,6 @@ class DummyPathTest(DummyPurePathTest):
         p = (P / 'link3').resolve()
         self.assertEqual(p, P)
         self.assertEqualNormCase(str(p), self.base)
-
-        # Resolve relative paths.
-        try:
-            self.cls('').absolute()
-        except UnsupportedOperation:
-            return
-        old_path = os.getcwd()
-        os.chdir(self.base)
-        try:
-            p = self.cls('link0').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link1').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link2').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link3').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-        finally:
-            os.chdir(old_path)
 
     @needs_symlinks
     def test_complex_symlinks_absolute(self):

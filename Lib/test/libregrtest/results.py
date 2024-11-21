@@ -1,11 +1,15 @@
 import sys
 import trace
+from typing import TYPE_CHECKING
 
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
+
+if TYPE_CHECKING:
+    from xml.etree.ElementTree import Element
 
 
 # Python uses exit code 1 when an exception is not caught
@@ -34,7 +38,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list = []
+        self.testsuite_xml: list['Element'] = []
         # used by -T with -j
         self.covered_lines: set[Location] = set()
 
@@ -71,7 +75,7 @@ class TestResults:
 
         return ', '.join(state)
 
-    def get_exitcode(self, fail_env_changed, fail_rerun):
+    def get_exitcode(self, fail_env_changed: bool, fail_rerun: bool) -> int:
         exitcode = 0
         if self.bad:
             exitcode = EXITCODE_BAD_TEST
@@ -87,7 +91,7 @@ class TestResults:
             exitcode = EXITCODE_BAD_TEST
         return exitcode
 
-    def accumulate_result(self, result: TestResult, runtests: RunTests):
+    def accumulate_result(self, result: TestResult, runtests: RunTests) -> None:
         test_name = result.test_name
         rerun = runtests.rerun
         fail_env_changed = runtests.fail_env_changed
@@ -135,7 +139,7 @@ class TestResults:
         counts = {loc: 1 for loc in self.covered_lines}
         return trace.CoverageResults(counts=counts)
 
-    def need_rerun(self):
+    def need_rerun(self) -> bool:
         return bool(self.rerun_results)
 
     def prepare_rerun(self, *, clear: bool = True) -> tuple[TestTuple, FilterDict]:
@@ -158,7 +162,7 @@ class TestResults:
 
         return (tuple(tests), match_tests_dict)
 
-    def add_junit(self, xml_data: list[str]):
+    def add_junit(self, xml_data: list[str]) -> None:
         import xml.etree.ElementTree as ET
         for e in xml_data:
             try:
@@ -167,7 +171,7 @@ class TestResults:
                 print(xml_data, file=sys.__stderr__)
                 raise
 
-    def write_junit(self, filename: StrPath):
+    def write_junit(self, filename: StrPath) -> None:
         if not self.testsuite_xml:
             # Don't create empty XML file
             return
@@ -192,7 +196,7 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
+    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool) -> None:
         if print_slowest:
             self.test_times.sort(reverse=True)
             print()
@@ -234,7 +238,7 @@ class TestResults:
             print()
             print("Test suite interrupted by signal SIGINT.")
 
-    def display_summary(self, first_runtests: RunTests, filtered: bool):
+    def display_summary(self, first_runtests: RunTests, filtered: bool) -> None:
         # Total tests
         stats = self.stats
         text = f'run={stats.tests_run:,}'
