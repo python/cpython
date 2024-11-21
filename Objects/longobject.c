@@ -6,7 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
-#include "pycore_freelist.h" // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE, _Py_FREELIST_POP
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -43,7 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor) _PyLong_ExactDealloc);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
 }
 
 static inline int
@@ -3631,26 +3631,24 @@ static void
 long_dealloc(PyObject *self)
 {
     PyLongObject *pylong = (PyLongObject*)self;
+    assert(pylong);
 
-    if (pylong && _PyLong_IsCompact(pylong)) {
+    if (_PyLong_IsCompact(pylong)) {
         stwodigits ival = medium_value(pylong);
         if (IS_SMALL_INT(ival)) {
             PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
             if (pylong == small_pylong) {
                 /* This should never get called, but we also don't want to SEGV if
-                * we accidentally decref small Ints out of existence. Instead,
-                * since small Ints are immortal, re-set the reference count.
-                */
-                // can we remove the next two lines? the immortal objects now have a fixed refcount
-                // in particular in the free-threading build this seeems safe
+                 * we accidentally decref small Ints out of existence. Instead,
+                 * since small Ints are immortal, re-set the reference count.
+                 *
+                 * With a fixed refcount for immortal objects this should not happen
+                 */
                 _Py_SetImmortal(self);
                 return;
             }
         }
-    }
-
-    if (PyLong_CheckExact(self)) {
-        if (_PyLong_IsCompact((PyLongObject *)self)) {
+        if (PyLong_CheckExact(self)) {
             _Py_FREELIST_FREE(ints, self, PyObject_Free);
             return;
         }
@@ -6642,7 +6640,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
-    (freefunc)PyObject_Free,                              /* tp_free */
+    PyObject_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_INT,
 };

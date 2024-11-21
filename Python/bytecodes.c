@@ -26,7 +26,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
-#include "pycore_long.h"         // void _PyLong_ExactDealloc(PyLongObject *op);
+#include "pycore_long.h"          // _PyLong_ExactDealloc()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
