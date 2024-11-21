@@ -191,7 +191,7 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 
 // Check if a stackref is exactly the same as another stackref, including the
 // the deferred bit. This can only be used safely if you know that the deferred
-// of `a` and `b` bits match.
+// bits of `a` and `b` match.
 #define PyStackRef_IsExactly(a, b) ((a).bits == (b).bits)
 
 // Checks that mask out the deferred bit in the free threading build.
