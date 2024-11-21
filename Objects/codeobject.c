@@ -304,21 +304,32 @@ validate_and_copy_tuple(PyObject *tup)
 }
 
 static int
-init_co_cached(PyCodeObject *self) {
-    if (self->_co_cached == NULL) {
-        self->_co_cached = PyMem_New(_PyCoCached, 1);
-        if (self->_co_cached == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        self->_co_cached->_co_code = NULL;
-        self->_co_cached->_co_cellvars = NULL;
-        self->_co_cached->_co_freevars = NULL;
-        self->_co_cached->_co_varnames = NULL;
+init_co_cached(PyCodeObject *self)
+{
+    _PyCoCached *cached = FT_ATOMIC_LOAD_PTR(self->_co_cached);
+    if (cached != NULL) {
+        return 0;
     }
-    return 0;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
+    cached = self->_co_cached;
+    if (cached == NULL) {
+        cached = PyMem_New(_PyCoCached, 1);
+        if (cached == NULL) {
+            PyErr_NoMemory();
+        }
+        else {
+            cached->_co_code = NULL;
+            cached->_co_cellvars = NULL;
+            cached->_co_freevars = NULL;
+            cached->_co_varnames = NULL;
+            FT_ATOMIC_STORE_PTR(self->_co_cached, cached);
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return cached != NULL ? 0 : -1;
 }
+
 /******************
  * _PyCode_New()
  ******************/
@@ -1544,16 +1555,21 @@ get_cached_locals(PyCodeObject *co, PyObject **cached_field,
 {
     assert(cached_field != NULL);
     assert(co->_co_cached != NULL);
-    if (*cached_field != NULL) {
-        return Py_NewRef(*cached_field);
+    PyObject *varnames = FT_ATOMIC_LOAD_PTR(*cached_field);
+    if (varnames != NULL) {
+        return Py_NewRef(varnames);
     }
-    assert(*cached_field == NULL);
-    PyObject *varnames = get_localsplus_names(co, kind, num);
+
+    Py_BEGIN_CRITICAL_SECTION(co);
+    varnames = *cached_field;
     if (varnames == NULL) {
-        return NULL;
+        varnames = get_localsplus_names(co, kind, num);
+        if (varnames != NULL) {
+            FT_ATOMIC_STORE_PTR(*cached_field, varnames);
+        }
     }
-    *cached_field = Py_NewRef(varnames);
-    return varnames;
+    Py_END_CRITICAL_SECTION();
+    return Py_XNewRef(varnames);
 }
 
 PyObject *
@@ -1652,18 +1668,26 @@ _PyCode_GetCode(PyCodeObject *co)
     if (init_co_cached(co)) {
         return NULL;
     }
-    if (co->_co_cached->_co_code != NULL) {
-        return Py_NewRef(co->_co_cached->_co_code);
+
+    _PyCoCached *cached = co->_co_cached;
+    PyObject *code = FT_ATOMIC_LOAD_PTR(cached->_co_code);
+    if (code != NULL) {
+        return Py_NewRef(code);
     }
-    PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
-                                               _PyCode_NBYTES(co));
+
+    Py_BEGIN_CRITICAL_SECTION(co);
+    code = cached->_co_code;
     if (code == NULL) {
-        return NULL;
+        code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
+                                         _PyCode_NBYTES(co));
+        if (code != NULL) {
+            deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
+            assert(cached->_co_code == NULL);
+            FT_ATOMIC_STORE_PTR(cached->_co_code, code);
+        }
     }
-    deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
-    assert(co->_co_cached->_co_code == NULL);
-    co->_co_cached->_co_code = Py_NewRef(code);
-    return code;
+    Py_END_CRITICAL_SECTION();
+    return Py_XNewRef(code);
 }
 
 PyObject *
