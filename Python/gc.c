@@ -1400,15 +1400,28 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
 
 /* Do bookkeeping for a completed GC cycle */
 static void
-completed_cycle(GCState *gcstate)
+completed_scavenge(GCState *gcstate)
 {
-    /* Flip spaces */
-    int not_visited = gcstate->visited_space;
-    int visited = other_space(not_visited);
-    gcstate->visited_space = visited;
-    /* Make sure all objects have visited bit set correctly */
-    gc_list_set_space(&gcstate->young.head, not_visited);
-    gc_list_set_space(&gcstate->permanent_generation.head, visited);
+    /* We must observe two invariants:
+    * 1. Members of the permanent generation must be marked visited.
+    * 2. We cannot touch members of the permanent generation. */
+    int visited;
+    if (gc_list_is_empty(&gcstate->permanent_generation.head)) {
+        /* Permanent generation is empty so we can flip spaces bit */
+        int not_visited = gcstate->visited_space;
+        visited = other_space(not_visited);
+        gcstate->visited_space = visited;
+        /* Make sure all objects have visited bit set correctly */
+        gc_list_set_space(&gcstate->young.head, not_visited);
+    }
+    else {
+         /* We must move the objects from visited to pending space. */
+        visited = gcstate->visited_space;
+        int not_visited = other_space(visited);
+        assert(gc_list_is_empty(&gcstate->old[not_visited].head));
+        gc_list_merge(&gcstate->old[visited].head, &gcstate->old[not_visited].head);
+        gc_list_set_space(&gcstate->old[not_visited].head, not_visited);
+    }
     assert(gc_list_is_empty(&gcstate->old[visited].head));
     gcstate->work_to_do = 0;
     gcstate->phase = GC_PHASE_MARK;
@@ -1627,7 +1640,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 
     add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
-        completed_cycle(gcstate);
+        completed_scavenge(gcstate);
     }
     validate_spaces(gcstate);
 }
@@ -1657,7 +1670,7 @@ gc_collect_full(PyThreadState *tstate,
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
     gcstate->old[1].count = 0;
-    completed_cycle(gcstate);
+    completed_scavenge(gcstate);
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_spaces(gcstate);
     add_stats(gcstate, 2, stats);
