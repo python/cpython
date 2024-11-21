@@ -312,7 +312,7 @@ uint8 = ArgumentDescriptor(
             doc="Eight-byte unsigned integer, little-endian.")
 
 
-def read_stringnl(f, decode=True, stripquotes=True):
+def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
     r"""
     >>> import io
     >>> read_stringnl(io.BytesIO(b"'abcd'\nefg\n"))
@@ -356,7 +356,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = codecs.escape_decode(data)[0].decode("ascii")
+        data = codecs.escape_decode(data)[0].decode(encoding)
     return data
 
 stringnl = ArgumentDescriptor(
@@ -370,7 +370,7 @@ stringnl = ArgumentDescriptor(
                    """)
 
 def read_stringnl_noescape(f):
-    return read_stringnl(f, stripquotes=False)
+    return read_stringnl(f, stripquotes=False, encoding='utf-8')
 
 stringnl_noescape = ArgumentDescriptor(
                         name='stringnl_noescape',
@@ -2513,7 +2513,10 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             # make a mild effort to align arguments
             line += ' ' * (10 - len(opcode.name))
             if arg is not None:
-                line += ' ' + repr(arg)
+                if opcode.name in ("STRING", "BINSTRING", "SHORT_BINSTRING"):
+                    line += ' ' + ascii(arg)
+                else:
+                    line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
         if annotate:
