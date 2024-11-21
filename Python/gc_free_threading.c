@@ -394,6 +394,23 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
 }
 
 static void
+queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
+{
+    if (!_PyObject_GC_IS_TRACKED(op)) {
+        // GC objects with zero refcount are handled subsequently by the
+        // GC as if they were cyclic trash, but we have to handle dead
+        // non-GC objects here. Add one to the refcount so that we can
+        // decref and deallocate the object once we start the world again.
+        op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+        worklist_push(&state->objs_to_decref, op);
+    }
+
+}
+
+static void
 merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 {
     struct _brc_thread_state *brc = &tstate->brc;
@@ -404,22 +421,20 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
         // Subtract one when merging because the queue had a reference.
         Py_ssize_t refcount = merge_refcount(op, -1);
 
-        if (!_PyObject_GC_IS_TRACKED(op) && refcount == 0) {
-            // GC objects with zero refcount are handled subsequently by the
-            // GC as if they were cyclic trash, but we have to handle dead
-            // non-GC objects here. Add one to the refcount so that we can
-            // decref and deallocate the object once we start the world again.
-            op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
-#ifdef Py_REF_DEBUG
-            _Py_IncRefTotal(_PyThreadState_GET());
-#endif
-            worklist_push(&state->objs_to_decref, op);
+        if (refcount == 0) {
+            queue_untracked_obj_decref(op, state);
         }
     }
 }
 
 static void
-process_delayed_frees(PyInterpreterState *interp)
+queue_freed_object(PyObject *obj, void *arg)
+{
+    queue_untracked_obj_decref(obj, arg);
+}
+
+static void
+process_delayed_frees(PyInterpreterState *interp, struct collection_state *state)
 {
     // While we are in a "stop the world" pause, we can observe the latest
     // write sequence by advancing the write sequence immediately.
@@ -438,7 +453,7 @@ process_delayed_frees(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
-    _PyMem_ProcessDelayed((PyThreadState *)current_tstate);
+    _PyMem_ProcessDelayedNoDealloc((PyThreadState *)current_tstate, queue_freed_object, state);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
@@ -1231,7 +1246,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
     HEAD_UNLOCK(&_PyRuntime);
 
-    process_delayed_frees(interp);
+    process_delayed_frees(interp, state);
 
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
@@ -1910,13 +1925,7 @@ PyObject_GC_Del(void *op)
     }
 
     record_deallocation(_PyThreadState_GET());
-    PyObject *self = (PyObject *)op;
-    if (_PyObject_GC_IS_SHARED_INLINE(self)) {
-        _PyObject_FreeDelayed(((char *)op)-presize);
-    }
-    else {
-        PyObject_Free(((char *)op)-presize);
-    }
+    PyObject_Free(((char *)op)-presize);
 }
 
 int
