@@ -164,7 +164,7 @@ def requires_strace():
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
 
-    if 'LD_PRELOAD' in os.environ:
+    if "LD_PRELOAD" in os.environ:
         # Distribution packaging (ex. Debian `fakeroot` and Gentoo `sandbox`)
         # use LD_PRELOAD to intercept system calls, which changes the overall
         # set of system calls which breaks tests expecting a specific set of
