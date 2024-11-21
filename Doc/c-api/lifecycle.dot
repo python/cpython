@@ -58,11 +58,14 @@ digraph "Life Events" {
      label=<  periodic  <br/>  cyclic isolate   <br/>  detection  >
    ]
    "reachable" -> "tp_init"
-   "reachable" -> "tp_finalize" [dir="back" label=<  resurrected  >]
+   "reachable" -> "tp_finalize" [
+     dir="back"
+     label=<  resurrected  <br/>  (maybe remove  <br/>  finalized mark)  >
+   ]
    "tp_traverse" -> "reachable" [label=<  not in a  <br/>  cyclic isolate  >]
    "tp_traverse" -> "finalized" [label=<  cyclic  <br/>  isolate  >]
    "reachable" -> "finalized" [label=<  no refs  >]
-   "finalized" -> "tp_finalize" [label=<  no  >]
+   "finalized" -> "tp_finalize" [label=<  no (mark  <br/>  as finalized)  >]
    "finalized" -> "tp_clear" [label=<  yes  >]
    "tp_finalize" -> "tp_clear" [label=<  no refs or   <br/>  cyclic isolate  >]
    "tp_finalize" -> "tp_dealloc" [

@@ -60,13 +60,12 @@ that must be true for *B* to occur after *A*.
    * After :c:member:`!tp_init` completes, the object is ready to use.
    * After the last reference to an object is removed:
 
-     #. :c:member:`~PyTypeObject.tp_finalize` might be called to finalize the
-        object.  :term:`CPython` currently does not finalize an object when the
-        last reference to it is deleted.  Also, for types that support garbage
-        collection (the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), CPython
-        currently never finalizes the same object twice, even if it has been
-        resurrected.  These behaviors may change in the future.
-     #. If the object was previously finalized,
+     #. If an object is not marked as *finalized*, it might be finalized by
+        marking it as *finalized* and calling its
+        :c:member:`~PyTypeObject.tp_finalize` function.  :term:`CPython`
+        currently does not finalize an object when the last reference to it is
+        deleted, but this may change in the future.
+     #. If the object is marked as finalized,
         :c:member:`~PyTypeObject.tp_clear` might be called to clear references
         held by the object.  :term:`CPython` currently does not clear an object
         in response to the deletion of the last reference, but this may change
@@ -76,8 +75,14 @@ that must be true for *B* to occur after *A*.
    * The :c:member:`~PyTypeObject.tp_finalize` function can optionally add a
      reference to the object, *resurrecting* it and preventing its pending
      destruction.  (Only :c:member:`!tp_finalize` can resurrect an object;
-     :c:member:`~PyTypeObject.tp_clear` and :c:member:`~PyTypeObject.tp_dealloc`
-     cannot.)
+     :c:member:`~PyTypeObject.tp_clear` and
+     :c:member:`~PyTypeObject.tp_dealloc` cannot.)  Resurrecting an object may
+     or may not cause the object's *finalized* mark to be removed.  Currently,
+     :term:`CPython` does not remove the *finalized* mark from a resurrected
+     object if the object's type supports garbage collection (i.e., the
+     :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set) but does remove the mark if the
+     object does not support garbage collection; either or both of these
+     behaviors may change in the future.
    * :c:member:`~PyTypeObject.tp_dealloc` can optionally call
      :c:member:`~PyTypeObject.tp_finalize` via
      :c:func:`PyObject_CallFinalizerFromDealloc` if it wishes to reuse that
@@ -88,8 +93,8 @@ that must be true for *B* to occur after *A*.
      directly calls :c:member:`~PyTypeObject.tp_free` to deallocate the memory.
    * If the object is a member of a :term:`cyclic isolate` and
      :c:member:`~PyTypeObject.tp_clear` fails to break the reference cycle (or
-     that function is not called), the objects remain indefinitely uncollectable
-     (they "leak").  See :data:`gc.garbage`.
+     that function is not called), the objects remain indefinitely
+     uncollectable (they "leak").  See :data:`gc.garbage`.
 
    If the object is marked as supporting garbage collection (the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
@@ -105,7 +110,8 @@ that must be true for *B* to occur after *A*.
    * :c:member:`~PyTypeObject.tp_finalize` can resurrect the object by adding a
      reference from outside the :term:`cyclic isolate`.  The new reference
      causes the group of objects to no longer form a cyclic isolate (the
-     reference cycle may still exist, but the objects are no longer isolated).
+     reference cycle may still exist; if it does the objects are no longer
+     isolated).
    * When the garbage collector discovers a :term:`cyclic isolate` and all of
      the objects in the group have already been finalized, the garbage
      collector clears one or more of the uncleared objects in the group
