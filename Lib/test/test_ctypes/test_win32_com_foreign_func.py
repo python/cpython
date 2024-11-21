@@ -182,3 +182,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         self.assertEqual(E_NOINTERFACE, e.exception.hresult)
 
         self.assertEqual(0, ppst.Release())
+
+
+if __name__ == '__main__':
+    unittest.main()
