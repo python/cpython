@@ -6,16 +6,21 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
+#include "pycore_object_stack.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
+
+#define INITIAL_SPECIALIZED_CODE_SIZE 16
 
 static const char *
 code_event_name(PyCodeEvent event) {
@@ -297,21 +302,32 @@ validate_and_copy_tuple(PyObject *tup)
 }
 
 static int
-init_co_cached(PyCodeObject *self) {
-    if (self->_co_cached == NULL) {
-        self->_co_cached = PyMem_New(_PyCoCached, 1);
-        if (self->_co_cached == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        self->_co_cached->_co_code = NULL;
-        self->_co_cached->_co_cellvars = NULL;
-        self->_co_cached->_co_freevars = NULL;
-        self->_co_cached->_co_varnames = NULL;
+init_co_cached(PyCodeObject *self)
+{
+    _PyCoCached *cached = FT_ATOMIC_LOAD_PTR(self->_co_cached);
+    if (cached != NULL) {
+        return 0;
     }
-    return 0;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
+    cached = self->_co_cached;
+    if (cached == NULL) {
+        cached = PyMem_New(_PyCoCached, 1);
+        if (cached == NULL) {
+            PyErr_NoMemory();
+        }
+        else {
+            cached->_co_code = NULL;
+            cached->_co_cellvars = NULL;
+            cached->_co_freevars = NULL;
+            cached->_co_varnames = NULL;
+            FT_ATOMIC_STORE_PTR(self->_co_cached, cached);
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return cached != NULL ? 0 : -1;
 }
+
 /******************
  * _PyCode_New()
  ******************/
@@ -440,9 +456,15 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     return 0;
 }
 
-extern void _PyCode_Quicken(PyCodeObject *code);
+extern void
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
+                int enable_counters);
 
-static void
+#ifdef Py_GIL_DISABLED
+static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
+#endif
+
+static int
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
@@ -505,14 +527,27 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+#ifdef Py_GIL_DISABLED
+    co->co_tlbc = _PyCodeArray_New(INITIAL_SPECIALIZED_CODE_SIZE);
+    if (co->co_tlbc == NULL) {
+        return -1;
+    }
+    co->co_tlbc->entries[0] = co->co_code_adaptive;
+#endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _PyCode_CODE(co)[entry_point].op.code != RESUME) {
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
-    _PyCode_Quicken(co);
+#ifdef Py_GIL_DISABLED
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts,
+                    interp->config.tlbc_enabled);
+#else
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts, 1);
+#endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
+    return 0;
 }
 
 static int
@@ -667,7 +702,12 @@ _PyCode_New(struct _PyCodeConstructor *con)
         PyErr_NoMemory();
         return NULL;
     }
-    init_code(co, con);
+
+    if (init_code(co, con) < 0) {
+        Py_DECREF(co);
+        return NULL;
+    }
+
 #ifdef Py_GIL_DISABLED
     co->_co_unique_id = _PyObject_AssignUniqueId((PyObject *)co);
     _PyObject_GC_TRACK(co);
@@ -1542,16 +1582,21 @@ get_cached_locals(PyCodeObject *co, PyObject **cached_field,
 {
     assert(cached_field != NULL);
     assert(co->_co_cached != NULL);
-    if (*cached_field != NULL) {
-        return Py_NewRef(*cached_field);
+    PyObject *varnames = FT_ATOMIC_LOAD_PTR(*cached_field);
+    if (varnames != NULL) {
+        return Py_NewRef(varnames);
     }
-    assert(*cached_field == NULL);
-    PyObject *varnames = get_localsplus_names(co, kind, num);
+
+    Py_BEGIN_CRITICAL_SECTION(co);
+    varnames = *cached_field;
     if (varnames == NULL) {
-        return NULL;
+        varnames = get_localsplus_names(co, kind, num);
+        if (varnames != NULL) {
+            FT_ATOMIC_STORE_PTR(*cached_field, varnames);
+        }
     }
-    *cached_field = Py_NewRef(varnames);
-    return varnames;
+    Py_END_CRITICAL_SECTION();
+    return Py_XNewRef(varnames);
 }
 
 PyObject *
@@ -1645,18 +1690,26 @@ _PyCode_GetCode(PyCodeObject *co)
     if (init_co_cached(co)) {
         return NULL;
     }
-    if (co->_co_cached->_co_code != NULL) {
-        return Py_NewRef(co->_co_cached->_co_code);
+
+    _PyCoCached *cached = co->_co_cached;
+    PyObject *code = FT_ATOMIC_LOAD_PTR(cached->_co_code);
+    if (code != NULL) {
+        return Py_NewRef(code);
     }
-    PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
-                                               _PyCode_NBYTES(co));
+
+    Py_BEGIN_CRITICAL_SECTION(co);
+    code = cached->_co_code;
     if (code == NULL) {
-        return NULL;
+        code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
+                                         _PyCode_NBYTES(co));
+        if (code != NULL) {
+            deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
+            assert(cached->_co_code == NULL);
+            FT_ATOMIC_STORE_PTR(cached->_co_code, code);
+        }
     }
-    deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
-    assert(co->_co_cached->_co_code == NULL);
-    co->_co_cached->_co_code = Py_NewRef(code);
-    return code;
+    Py_END_CRITICAL_SECTION();
+    return Py_XNewRef(code);
 }
 
 PyObject *
@@ -1871,6 +1924,17 @@ code_dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject*)co);
     }
     free_monitoring_data(co->_co_monitoring);
+#ifdef Py_GIL_DISABLED
+    // The first element always points to the mutable bytecode at the end of
+    // the code object, which will be freed when the code object is freed.
+    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+        char *entry = co->co_tlbc->entries[i];
+        if (entry != NULL) {
+            PyMem_Free(entry);
+        }
+    }
+    PyMem_Free(co->co_tlbc);
+#endif
     PyObject_Free(co);
 }
 
@@ -2348,7 +2412,6 @@ _PyCode_ConstantKey(PyObject *op)
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
        || PyUnicode_CheckExact(op)
-       || PySlice_Check(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
        || PyCode_Check(op))
     {
@@ -2455,6 +2518,40 @@ _PyCode_ConstantKey(PyObject *op)
         key = PyTuple_Pack(2, set, op);
         Py_DECREF(set);
         return key;
+    }
+    else if (PySlice_Check(op)) {
+        PySliceObject *slice = (PySliceObject *)op;
+        PyObject *start_key = NULL;
+        PyObject *stop_key = NULL;
+        PyObject *step_key = NULL;
+        key = NULL;
+
+        start_key = _PyCode_ConstantKey(slice->start);
+        if (start_key == NULL) {
+            goto slice_exit;
+        }
+
+        stop_key = _PyCode_ConstantKey(slice->stop);
+        if (stop_key == NULL) {
+            goto slice_exit;
+        }
+
+        step_key = _PyCode_ConstantKey(slice->step);
+        if (step_key == NULL) {
+            goto slice_exit;
+        }
+
+        PyObject *slice_key = PySlice_New(start_key, stop_key, step_key);
+        if (slice_key == NULL) {
+            goto slice_exit;
+        }
+
+        key = PyTuple_Pack(2, slice_key, op);
+        Py_DECREF(slice_key);
+    slice_exit:
+        Py_XDECREF(start_key);
+        Py_XDECREF(stop_key);
+        Py_XDECREF(step_key);
     }
     else {
         /* for other types, use the object identifier as a unique identifier
@@ -2646,5 +2743,272 @@ _PyCode_Fini(PyInterpreterState *interp)
         _Py_hashtable_destroy(state->constants);
         state->constants = NULL;
     }
+    _PyIndexPool_Fini(&interp->tlbc_indices);
 #endif
 }
+
+#ifdef Py_GIL_DISABLED
+
+// Thread-local bytecode (TLBC)
+//
+// Each thread specializes a thread-local copy of the bytecode, created on the
+// first RESUME, in free-threaded builds. All copies of the bytecode for a code
+// object are stored in the `co_tlbc` array. Threads reserve a globally unique
+// index identifying its copy of the bytecode in all `co_tlbc` arrays at thread
+// creation and release the index at thread destruction. The first entry in
+// every `co_tlbc` array always points to the "main" copy of the bytecode that
+// is stored at the end of the code object. This ensures that no bytecode is
+// copied for programs that do not use threads.
+//
+// Thread-local bytecode can be disabled at runtime by providing either `-X
+// tlbc=0` or `PYTHON_TLBC=0`. Disabling thread-local bytecode also disables
+// specialization. All threads share the main copy of the bytecode when
+// thread-local bytecode is disabled.
+//
+// Concurrent modifications to the bytecode made by the specializing
+// interpreter and instrumentation use atomics, with specialization taking care
+// not to overwrite an instruction that was instrumented concurrently.
+
+int32_t
+_Py_ReserveTLBCIndex(PyInterpreterState *interp)
+{
+    if (interp->config.tlbc_enabled) {
+        return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
+    }
+    // All threads share the main copy of the bytecode when TLBC is disabled
+    return 0;
+}
+
+void
+_Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
+{
+    PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
+    if (interp->config.tlbc_enabled) {
+        _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
+    }
+}
+
+static _PyCodeArray *
+_PyCodeArray_New(Py_ssize_t size)
+{
+    _PyCodeArray *arr = PyMem_Calloc(
+        1, offsetof(_PyCodeArray, entries) + sizeof(void *) * size);
+    if (arr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    arr->size = size;
+    return arr;
+}
+
+static void
+copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
+{
+    int code_len = (int) Py_SIZE(co);
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
+        dst[i] = _Py_GetBaseCodeUnit(co, i);
+    }
+    _PyCode_Quicken(dst, code_len, co->co_consts, 1);
+}
+
+static Py_ssize_t
+get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
+{
+    // initial must be a power of two
+    assert(!(initial & (initial - 1)));
+    Py_ssize_t res = initial;
+    while (res && res < limit) {
+        res <<= 1;
+    }
+    return res;
+}
+
+static _Py_CODEUNIT *
+create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    if (idx >= tlbc->size) {
+        Py_ssize_t new_size = get_pow2_greater(tlbc->size, idx + 1);
+        if (!new_size) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        _PyCodeArray *new_tlbc = _PyCodeArray_New(new_size);
+        if (new_tlbc == NULL) {
+            return NULL;
+        }
+        memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
+        _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
+        _PyMem_FreeDelayed(tlbc);
+        tlbc = new_tlbc;
+    }
+    char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));
+    if (bc == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    copy_code((_Py_CODEUNIT *) bc, co);
+    assert(tlbc->entries[idx] == NULL);
+    tlbc->entries[idx] = bc;
+    return (_Py_CODEUNIT *) bc;
+}
+
+static _Py_CODEUNIT *
+get_tlbc_lock_held(PyCodeObject *co)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+    int32_t idx = tstate->tlbc_index;
+    if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *)tlbc->entries[idx];
+    }
+    return create_tlbc_lock_held(co, idx);
+}
+
+_Py_CODEUNIT *
+_PyCode_GetTLBC(PyCodeObject *co)
+{
+    _Py_CODEUNIT *result;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    result = get_tlbc_lock_held(co);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+// My kingdom for a bitset
+struct flag_set {
+    uint8_t *flags;
+    Py_ssize_t size;
+};
+
+static inline int
+flag_is_set(struct flag_set *flags, Py_ssize_t idx)
+{
+    assert(idx >= 0);
+    return (idx < flags->size) && flags->flags[idx];
+}
+
+// Set the flag for each tlbc index in use
+static int
+get_indices_in_use(PyInterpreterState *interp, struct flag_set *in_use)
+{
+    assert(interp->stoptheworld.world_stopped);
+    assert(in_use->flags == NULL);
+    int32_t max_index = 0;
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        int32_t idx = ((_PyThreadStateImpl *) p)->tlbc_index;
+        if (idx > max_index) {
+            max_index = idx;
+        }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    in_use->size = (size_t) max_index + 1;
+    in_use->flags = PyMem_Calloc(in_use->size, sizeof(*in_use->flags));
+    if (in_use->flags == NULL) {
+        return -1;
+    }
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        in_use->flags[((_PyThreadStateImpl *) p)->tlbc_index] = 1;
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    return 0;
+}
+
+struct get_code_args {
+    _PyObjectStack code_objs;
+    struct flag_set indices_in_use;
+    int err;
+};
+
+static void
+clear_get_code_args(struct get_code_args *args)
+{
+    if (args->indices_in_use.flags != NULL) {
+        PyMem_Free(args->indices_in_use.flags);
+        args->indices_in_use.flags = NULL;
+    }
+    _PyObjectStack_Clear(&args->code_objs);
+}
+
+static inline int
+is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
+                   struct flag_set *indices_in_use)
+{
+    assert(idx > 0 && idx < tlbc->size);
+    return tlbc->entries[idx] != NULL && !flag_is_set(indices_in_use, idx);
+}
+
+static int
+get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+{
+    if (!PyCode_Check(obj)) {
+        return 1;
+    }
+    PyCodeObject *co = (PyCodeObject *) obj;
+    _PyCodeArray *tlbc = co->co_tlbc;
+    // The first index always points at the main copy of the bytecode embedded
+    // in the code object.
+    for (Py_ssize_t i = 1; i < tlbc->size; i++) {
+        if (is_bytecode_unused(tlbc, i, &args->indices_in_use)) {
+            if (_PyObjectStack_Push(&args->code_objs, obj) < 0) {
+                args->err = -1;
+                return 0;
+            }
+            return 1;
+        }
+    }
+    return 1;
+}
+
+static void
+free_unused_bytecode(PyCodeObject *co, struct flag_set *indices_in_use)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    // The first index always points at the main copy of the bytecode embedded
+    // in the code object.
+    for (Py_ssize_t i = 1; i < tlbc->size; i++) {
+        if (is_bytecode_unused(tlbc, i, indices_in_use)) {
+            PyMem_Free(tlbc->entries[i]);
+            tlbc->entries[i] = NULL;
+        }
+    }
+}
+
+int
+_Py_ClearUnusedTLBC(PyInterpreterState *interp)
+{
+    struct get_code_args args = {
+        .code_objs = {NULL},
+        .indices_in_use = {NULL, 0},
+        .err = 0,
+    };
+    _PyEval_StopTheWorld(interp);
+    // Collect in-use tlbc indices
+    if (get_indices_in_use(interp, &args.indices_in_use) < 0) {
+        goto err;
+    }
+    // Collect code objects that have bytecode not in use by any thread
+    _PyGC_VisitObjectsWorldStopped(
+        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+    if (args.err < 0) {
+        goto err;
+    }
+    // Free unused bytecode. This must happen outside of gc_visit_heaps; it is
+    // unsafe to allocate or free any mimalloc managed memory when it's
+    // running.
+    PyObject *obj;
+    while ((obj = _PyObjectStack_Pop(&args.code_objs)) != NULL) {
+        free_unused_bytecode((PyCodeObject*) obj, &args.indices_in_use);
+    }
+    _PyEval_StartTheWorld(interp);
+    clear_get_code_args(&args);
+    return 0;
+
+err:
+    _PyEval_StartTheWorld(interp);
+    clear_get_code_args(&args);
+    PyErr_NoMemory();
+    return -1;
+}
+
+#endif

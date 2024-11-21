@@ -510,6 +510,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
     def test_constructor(self):
         eq = self.assertEqual
+        ra = self.assertRaises
         td = timedelta
 
         # Check keyword args to constructor
@@ -532,6 +533,15 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(minutes=1.0/60), td(seconds=1))
         eq(td(seconds=0.001), td(milliseconds=1))
         eq(td(milliseconds=0.001), td(microseconds=1))
+
+        # Check type of args to constructor
+        ra(TypeError, lambda: td(weeks='1'))
+        ra(TypeError, lambda: td(days='1'))
+        ra(TypeError, lambda: td(hours='1'))
+        ra(TypeError, lambda: td(minutes='1'))
+        ra(TypeError, lambda: td(seconds='1'))
+        ra(TypeError, lambda: td(milliseconds='1'))
+        ra(TypeError, lambda: td(microseconds='1'))
 
     def test_computations(self):
         eq = self.assertEqual

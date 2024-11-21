@@ -909,6 +909,7 @@ PyTypeObject PyTuple_Type = {
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -965,6 +966,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
+    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
         *pv = NULL;

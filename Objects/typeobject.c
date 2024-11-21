@@ -4761,10 +4761,10 @@ PyType_FromMetaclass(
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     weaklistoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__dictoffset__") == 0) {
+                else if (strcmp(memb->name, "__dictoffset__") == 0) {
                     dictoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                else if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
                     vectorcalloffset_member = memb;
                 }
             }
@@ -7656,6 +7656,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
     return 0;
 }
 
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
+}
+
 
 /* Add the methods from tp_methods to the __dict__ in a type object */
 static int
@@ -8607,7 +8613,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        if (self->tp_version_tag == 0) {
+            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        }
     }
     else {
         assert(!initial);
@@ -9306,13 +9314,13 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (flags > INT_MAX) {
+    if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
-    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+    return _PyMemoryView_FromBufferProc(self, (int)flags,
                                         (getbufferproc)wrapped);
 }
 
@@ -11638,9 +11646,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
-                        PyTypeObject **type_p, PyObject **obj_p)
+super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
+                        PyObject **obj_p)
 {
+    PyCodeObject *co = _PyFrame_GetCode(cframe);
     if (co->co_argcount == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): no arguments");
@@ -11740,7 +11749,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(frame, _PyFrame_GetCode(frame), &type, &obj);
+        int res = super_init_without_args(frame, &type, &obj);
 
         if (res < 0) {
             return -1;

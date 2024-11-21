@@ -122,6 +122,13 @@ _PyImport_ReleaseLock(PyInterpreterState *interp)
     _PyRecursiveMutex_Unlock(&IMPORT_LOCK(interp));
 }
 
+void
+_PyImport_ReInitLock(PyInterpreterState *interp)
+{
+    // gh-126688: Thread id may change after fork() on some operating systems.
+    IMPORT_LOCK(interp).thread = PyThread_get_thread_ident_ex();
+}
+
 
 /***************/
 /* sys.modules */
@@ -4424,7 +4431,7 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
     if (info.origname != NULL && info.origname[0] != '\0') {
         origname = PyUnicode_FromString(info.origname);
         if (origname == NULL) {
-            Py_DECREF(data);
+            Py_XDECREF(data);
             return NULL;
         }
     }

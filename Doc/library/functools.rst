@@ -453,7 +453,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initial], /)
+.. function:: reduce(function, iterable, /[, initial])
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
@@ -468,7 +468,7 @@ The :mod:`functools` module defines the following functions:
 
       initial_missing = object()
 
-      def reduce(function, iterable, initial=initial_missing, /):
+      def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
           if initial is initial_missing:
               value = next(it)
@@ -480,6 +480,9 @@ The :mod:`functools` module defines the following functions:
 
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
    values.
+
+   .. versionchanged:: 3.14
+      *initial* is now supported as a keyword argument.
 
 .. decorator:: singledispatch
 
