@@ -758,7 +758,8 @@ class GeneratorStackTraceTest(unittest.TestCase):
         while frame:
             name = frame.f_code.co_name
             # Stop checking frames when we get to our test helper.
-            if name.startswith('check_') or name.startswith('call_'):
+            if (name.startswith('check_') or name.startswith('call_')
+                    or name.startswith('test')):
                 break
 
             names.append(name)
@@ -798,6 +799,25 @@ class GeneratorStackTraceTest(unittest.TestCase):
             gen.throw(RuntimeError)
 
         self.check_yield_from_example(call_throw)
+
+    def test_throw_with_yield_from_custom_generator(self):
+
+        class CustomGen:
+            def __init__(self, test):
+                self.test = test
+            def throw(self, *args):
+                self.test.check_stack_names(sys._getframe(), ['throw', 'g'])
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return 42
+
+        def g(target):
+            yield from target
+
+        gen = g(CustomGen(self))
+        gen.send(None)
+        gen.throw(RuntimeError)
 
 
 class YieldFromTests(unittest.TestCase):
