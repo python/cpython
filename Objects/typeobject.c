@@ -5658,9 +5658,8 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     return res;
 }
 
-
 int
-_PyType_CacheInitForSpecialization(PyTypeObject *type, PyObject *init,
+_PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
                                    unsigned int tp_version)
 {
     if (!init || !tp_version) {
@@ -5668,13 +5667,12 @@ _PyType_CacheInitForSpecialization(PyTypeObject *type, PyObject *init,
     }
     int can_cache;
     BEGIN_TYPE_LOCK();
-    can_cache = type->tp_version_tag == tp_version;
+    can_cache = ((PyTypeObject*)type)->tp_version_tag == tp_version;
     #ifdef Py_GIL_DISABLED
     can_cache = can_cache && _PyObject_HasDeferredRefcount(init);
     #endif
     if (can_cache) {
-        PyHeapTypeObject *ht = (PyHeapTypeObject*) type;
-        FT_ATOMIC_STORE_PTR_RELAXED(ht->_spec_cache.init, init);
+        FT_ATOMIC_STORE_PTR_RELAXED(type->_spec_cache.init, init);
     }
     END_TYPE_LOCK();
     return can_cache;

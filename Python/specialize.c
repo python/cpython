@@ -1992,7 +1992,8 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             Py_XDECREF(init);
             return -1;
         }
-        if (init != NULL && _PyType_CacheInitForSpecialization(tp, init, tp_version)) {
+        if (init != NULL && _PyType_CacheInitForSpecialization(
+                                (PyHeapTypeObject *)tp, init, tp_version)) {
             _PyCallCache *cache = (_PyCallCache *)(instr + 1);
             write_u32(cache->func_version, tp_version);
             specialize(instr, CALL_ALLOC_AND_ENTER_INIT);
