@@ -1,0 +1,2 @@
+Refactored :func:`base64.b58encode` to drastically reduce its memory
+footprint when used with large input data
