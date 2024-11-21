@@ -1433,9 +1433,9 @@ way is to instantiate one of the following classes:
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Instances of this class represent loaded shared libraries, functions in these
-   libraries use the ``stdcall`` calling convention, and are assumed to return
-   :c:expr:`int` by default.
+   Instances of this class represent loaded shared libraries,
+   functions in these libraries use the ``stdcall`` calling convention, and are
+   assumed to return :c:expr:`int` by default.
 
    .. availability:: Windows
 
@@ -2035,8 +2035,8 @@ Utility functions
 
 .. function:: FormatError([code])
 
-   Returns a textual description of the error code *code*.  If no error code is
-   specified, the last error code is used by calling the Windows
+   Returns a textual description of the error code *code*.  If no
+   error code is specified, the last error code is used by calling the Windows
    api function GetLastError.
 
    .. availability:: Windows
