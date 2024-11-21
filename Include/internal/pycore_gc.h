@@ -50,7 +50,6 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #  define _PyGC_BITS_UNREACHABLE    (4)
 #  define _PyGC_BITS_FROZEN         (8)
 #  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_SHARED_INLINE  (32)
 #  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
 #endif
 
@@ -118,23 +117,6 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED);
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
-
-/* True if the memory of the object is shared between multiple
- * threads and needs special purpose when freeing due to
- * the possibility of in-flight lock-free reads occurring.
- * Objects with this bit that are GC objects will automatically
- * delay-freed by PyObject_GC_Del. */
-static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
-    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_IS_SHARED_INLINE(op) \
-    _PyObject_GC_IS_SHARED_INLINE(_Py_CAST(PyObject*, op))
-
-static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
-    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_SET_SHARED_INLINE(op) \
-    _PyObject_GC_SET_SHARED_INLINE(_Py_CAST(PyObject*, op))
 
 #endif
 
