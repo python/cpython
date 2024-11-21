@@ -1413,9 +1413,9 @@ way is to instantiate one of the following classes:
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Instances of this class represent loaded shared libraries, functions in
-   these libraries use the ``stdcall`` calling convention, and are assumed
-   to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
+   Instances of this class represent loaded shared libraries,
+   functions in these libraries use the ``stdcall`` calling convention, and are
+   assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
    values contain information specifying whether the function call failed or
    succeeded, together with additional error code.  If the return value signals a
    failure, an :class:`OSError` is automatically raised.
@@ -1755,9 +1755,10 @@ See :ref:`ctypes-callback-functions` for examples.
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   The returned function prototype creates functions that use the ``stdcall``
-   calling convention.  The function will release the GIL during the call.
-   *use_errno* and *use_last_error* have the same meaning as above.
+   The returned function prototype creates functions that use the
+   ``stdcall`` calling convention.  The function will
+   release the GIL during the call.  *use_errno* and *use_last_error* have the
+   same meaning as above.
 
    .. availability:: Windows
 
@@ -1991,18 +1992,18 @@ Utility functions
 
 .. function:: DllCanUnloadNow()
 
-   This function is a hook which allows implementing in-process COM servers with
-   ctypes.  It is called from the ``DllCanUnloadNow`` function that the
-   ``_ctypes`` extension dll exports.
+   This function is a hook which allows implementing in-process
+   COM servers with ctypes.  It is called from the DllCanUnloadNow function that
+   the _ctypes extension dll exports.
 
    .. availability:: Windows
 
 
 .. function:: DllGetClassObject()
 
-   This function is a hook which allows implementing in-process COM servers with
-   ctypes.  It is called from the ``DllGetClassObject`` function that the
-   ``_ctypes`` extension dll exports.
+   This function is a hook which allows implementing in-process
+   COM servers with ctypes.  It is called from the DllGetClassObject function
+   that the ``_ctypes`` extension dll exports.
 
    .. availability:: Windows
 
@@ -2021,9 +2022,9 @@ Utility functions
 .. function:: find_msvcrt()
    :module: ctypes.util
 
-   Returns the filename of the VC runtime library used by Python, and by the
-   extension modules.  If the name of the library cannot be determined, ``None``
-   is returned.
+   Returns the filename of the VC runtime library used by Python,
+   and by the extension modules.  If the name of the library cannot be
+   determined, ``None`` is returned.
 
    If you need to free memory, for example, allocated by an extension module
    with a call to the ``free(void *)``, it is important that you use the
@@ -2035,8 +2036,8 @@ Utility functions
 .. function:: FormatError([code])
 
    Returns a textual description of the error code *code*.  If no error code is
-   specified, the last error code is used by calling the Windows api function
-   :func:`GetLastError`.
+   specified, the last error code is used by calling the Windows
+   api function GetLastError.
 
    .. availability:: Windows
 
@@ -2141,10 +2142,11 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   This function is probably the worst-named thing in ctypes. It creates an
-   instance of :exc:`OSError`.  If *code* is not specified, ``GetLastError`` is
-   called to determine the error code. If *descr* is not specified,
-   :func:`FormatError` is called to get a textual description of the error.
+   This function is probably the worst-named thing in ctypes. It
+   creates an instance of :exc:`OSError`.  If *code* is not specified,
+   ``GetLastError`` is called to determine the error code. If *descr* is not
+   specified, :func:`FormatError` is called to get a textual description of the
+   error.
 
    .. availability:: Windows
 
@@ -2511,8 +2513,8 @@ These are the fundamental ctypes data types:
 
 .. class:: HRESULT
 
-   Represents a :c:type:`!HRESULT` value, which contains success or error
-   information for a function or method call.
+   Represents a :c:type:`!HRESULT` value, which contains success or
+   error information for a function or method call.
 
    .. availability:: Windows
 
