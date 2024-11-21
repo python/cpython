@@ -46,14 +46,14 @@ jobs:
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/python/autoconf:2024.10.16.11360930377
+      image: ghcr.io/python/autoconf:2024.11.11.11786316759
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:

@@ -194,6 +194,9 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* All Windows code pages are now supported as "cpXXX" codecs on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`123803`.)
+
 * :class:`super` objects are now :mod:`pickleable <pickle>` and
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
@@ -225,7 +228,7 @@ argparse
 * Introduced the optional *suggest_on_error* parameter to
   :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
   and subparser names if mistyped by the user.
-  (Contributed by Savannah Ostrowski in :gh:`124456`)
+  (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
 ast
 ---
@@ -270,18 +273,21 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-decimal
--------
-
-* Add alternative :class:`~decimal.Decimal` constructor
-  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
-  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+* The :exc:`~ctypes.COMError` exception is now public.
+  (Contributed by Jun Komoda in :gh:`126686`.)
 
 datetime
 --------
 
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
 dis
 ---
@@ -330,6 +336,9 @@ getopt
 
 * Add support for options with optional arguments.
   (Contributed by Serhiy Storchaka in :gh:`126374`.)
+
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 http
 ----
@@ -390,6 +399,17 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`89416`.)
 
+* Add MIME types for images with RFCs:
+
+  * :rfc:`1494`: CCITT Group 3 (``.g3``)
+  * :rfc:`3362`: Real-time Facsimile, T.38 (``.t38``)
+  * :rfc:`3745`: JPEG 2000 (``.jp2``), extension (``.jpx``) and compound (``.jpm``)
+  * :rfc:`3950`: Tag Image File Format Fax eXtended, TIFF-FX (``.tfx``)
+  * :rfc:`4047`: Flexible Image Transport System (``.fits``)
+  * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
+
+  (Contributed by Hugo van Kemenade in :gh:`85957`.)
+
 
 multiprocessing
 ---------------
@@ -401,6 +421,11 @@ multiprocessing
   :func:`multiprocessing.get_context` (preferred) or change the default via
   :func:`multiprocessing.set_start_method`.
   (Contributed by Gregory P. Smith in :gh:`84559`.)
+* :mod:`multiprocessing`'s ``"forkserver"`` start method now authenticates
+  its control socket to avoid solely relying on filesystem permissions
+  to restrict what other processes could cause the forkserver to spawn workers
+  and run code.
+  (Contributed by Gregory P. Smith for :gh:`97514`.)
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
@@ -408,7 +433,7 @@ multiprocessing
    * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
      ``d |= {'b': 2}`` for proxies of :class:`dict`.
 
-  (Contributed by Roy Hyunjin Han for :gh:`103134`)
+  (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
 
 operator
@@ -464,6 +489,14 @@ pdb
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pickle
 ------
@@ -744,6 +777,17 @@ urllib
 * Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
   (Contributed by Nikita Sobolev in :gh:`118827`.)
+* Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
+  from :mod:`urllib.request`. They had previously raised a
+  :exc:`DeprecationWarning` since Python 3.3.
+
+  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`,
+  and ``myopener.retrieve()`` can be replaced with
+  :func:`~urllib.request.urlretrieve`. Customizations to the opener
+  classes can be replaced by passing customized handlers to
+  :func:`~urllib.request.build_opener`.
+
+  (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
 ------
@@ -779,6 +823,16 @@ Changes in the Python API
 
 Build changes
 =============
+
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
 
 
 C API changes
@@ -825,7 +879,7 @@ New features
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
   is positive, negative, or zero, respectively.
-  (Contribued by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
 
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:

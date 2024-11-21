@@ -690,7 +690,7 @@ Exception classes
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. exception:: ExecutionFailed
 
@@ -699,7 +699,7 @@ Exception classes
    :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
    exception from the submitted task.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 
