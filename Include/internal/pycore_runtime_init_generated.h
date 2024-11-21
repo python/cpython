@@ -976,6 +976,7 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
