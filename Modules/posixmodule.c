@@ -623,6 +623,7 @@ PyOS_BeforeFork(void)
     run_at_forkers(interp->before_forkers, 1);
 
     PyMutex_Lock(&_PyRuntime.os_fork.mutex);
+    _PyRuntime.os_fork.parent.tid = PyThread_get_thread_ident_ex();
 
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
@@ -632,6 +633,8 @@ PyOS_BeforeFork(void)
 void
 PyOS_AfterFork_Parent(void)
 {
+    _PyRuntime.os_fork.parent = (struct _os_fork_parent){0};
+
     HEAD_UNLOCK(&_PyRuntime);
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
@@ -660,6 +663,10 @@ PyOS_AfterFork_Child(void)
     _Py_EnsureTstateNotNULL(tstate);
     assert(tstate->interp->runtime == &_PyRuntime);
 
+    // XXX We are assuming that the parent and child always have
+    // the same thread ID.  That isn't necessarily true.
+    // See https://github.com/python/cpython/issues/126688.
+    assert(_PyRuntime.os_fork.parent.tid == PyThread_get_thread_ident_ex());
     assert(tstate->thread_id == PyThread_get_thread_ident());
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
@@ -702,6 +709,7 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+    _PyRuntime.os_fork.parent = (struct _os_fork_parent){0};
     PyMutex_Unlock(&_PyRuntime.os_fork.mutex);
 
     run_at_forkers(tstate->interp->after_forkers_child, 0);

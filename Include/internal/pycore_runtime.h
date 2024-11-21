@@ -167,6 +167,9 @@ typedef struct pyruntimestate {
 #ifdef HAVE_FORK
     struct {
         PyMutex mutex;
+        struct _os_fork_parent {
+            PyThread_ident_t tid;
+        } parent;
     } os_fork;
 #endif
 
