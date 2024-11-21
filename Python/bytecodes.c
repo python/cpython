@@ -391,7 +391,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ToBool(value, next_instr);
@@ -399,7 +399,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(TO_BOOL);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_TO_BOOL, (value -- res)) {
@@ -435,7 +435,7 @@ dummy_func(
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+            res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             DECREF_INPUTS();
         }
 

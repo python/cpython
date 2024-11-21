@@ -269,6 +269,16 @@ extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
+// Function pointer type for user-defined validation function that will be
+// called by _PyType_Validate().
+// It should return 0 if the validation is passed, otherwise it will return -1.
+typedef int (*_py_validate_type)(PyTypeObject *);
+
+// It will verify the ``ty`` through user-defined validation function ``validate``,
+// and if the validation is passed, it will set the ``tp_version`` as valid
+// tp_version_tag from the ``ty``.
+extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
+
 #ifdef __cplusplus
 }
 #endif
