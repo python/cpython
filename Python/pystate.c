@@ -515,6 +515,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
+        _PyMutex_at_fork_reinit(&interp->threads.mutex);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
