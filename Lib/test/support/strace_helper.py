@@ -1,6 +1,7 @@
 import re
 import sys
 import textwrap
+import os
 import unittest
 from dataclasses import dataclass
 from functools import cache
@@ -91,7 +92,10 @@ def strace_python(code, strace_flags, check=True):
         res, cmd_line = run_python_until_end(
             "-c",
             textwrap.dedent(code),
-            __run_using_command=[_strace_binary] + strace_flags)
+            __run_using_command=[_strace_binary] + strace_flags,
+            # Don't want to trace our JIT's own mmap and mprotect calls:
+            PYTHON_JIT="0",
+        )
     except OSError as err:
         return _make_error("Caught OSError", err)
 
@@ -159,6 +163,13 @@ def _can_strace():
 def requires_strace():
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
+
+    if "LD_PRELOAD" in os.environ:
+        # Distribution packaging (ex. Debian `fakeroot` and Gentoo `sandbox`)
+        # use LD_PRELOAD to intercept system calls, which changes the overall
+        # set of system calls which breaks tests expecting a specific set of
+        # system calls).
+        return unittest.skip("Not supported when LD_PRELOAD is intercepting system calls.")
 
     if support.check_sanitizer(address=True, memory=True):
         return unittest.skip("LeakSanitizer does not work under ptrace (strace, gdb, etc)")

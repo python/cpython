@@ -560,12 +560,27 @@ typedef struct {
     Py_ssize_t last_ctx_pos;
 } SRE(match_context);
 
-#define MAYBE_CHECK_SIGNALS                                        \
+#define _MAYBE_CHECK_SIGNALS                                       \
     do {                                                           \
         if ((0 == (++sigcount & 0xfff)) && PyErr_CheckSignals()) { \
             RETURN_ERROR(SRE_ERROR_INTERRUPTED);                   \
         }                                                          \
     } while (0)
+
+#ifdef Py_DEBUG
+# define MAYBE_CHECK_SIGNALS                                       \
+    do {                                                           \
+        _MAYBE_CHECK_SIGNALS;                                      \
+        if (state->fail_after_count >= 0) {                        \
+            if (state->fail_after_count-- == 0) {                  \
+                PyErr_SetNone(state->fail_after_exc);              \
+                RETURN_ERROR(SRE_ERROR_INTERRUPTED);               \
+            }                                                      \
+        }                                                          \
+    } while (0)
+#else
+# define MAYBE_CHECK_SIGNALS _MAYBE_CHECK_SIGNALS
+#endif /* Py_DEBUG */
 
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
@@ -1120,12 +1135,9 @@ dispatch:
                    pattern[1], pattern[2]));
 
             /* install new repeat context */
-            /* TODO(https://github.com/python/cpython/issues/67877): Fix this
-             * potential memory leak. */
-            ctx->u.rep = (SRE_REPEAT*) PyMem_Malloc(sizeof(*ctx->u.rep));
+            ctx->u.rep = repeat_pool_malloc(state);
             if (!ctx->u.rep) {
-                PyErr_NoMemory();
-                RETURN_FAILURE;
+                RETURN_ERROR(SRE_ERROR_MEMORY);
             }
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = pattern;
@@ -1136,7 +1148,7 @@ dispatch:
             state->ptr = ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
             state->repeat = ctx->u.rep->prev;
-            PyMem_Free(ctx->u.rep);
+            repeat_pool_free(state, ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1294,6 +1306,17 @@ dispatch:
                pointer */
             state->ptr = ptr;
 
+            /* Set state->repeat to non-NULL */
+            ctx->u.rep = repeat_pool_malloc(state);
+            if (!ctx->u.rep) {
+                RETURN_ERROR(SRE_ERROR_MEMORY);
+            }
+            ctx->u.rep->count = -1;
+            ctx->u.rep->pattern = NULL;
+            ctx->u.rep->prev = state->repeat;
+            ctx->u.rep->last_ptr = NULL;
+            state->repeat = ctx->u.rep;
+
             /* Initialize Count to 0 */
             ctx->count = 0;
 
@@ -1308,6 +1331,9 @@ dispatch:
                 }
                 else {
                     state->ptr = ptr;
+                    /* Restore state->repeat */
+                    state->repeat = ctx->u.rep->prev;
+                    repeat_pool_free(state, ctx->u.rep);
                     RETURN_FAILURE;
                 }
             }
@@ -1379,6 +1405,10 @@ dispatch:
                     break;
                 }
             }
+
+            /* Restore state->repeat */
+            state->repeat = ctx->u.rep->prev;
+            repeat_pool_free(state, ctx->u.rep);
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip

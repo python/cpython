@@ -2341,10 +2341,6 @@ dummy_func(
             DEOPT_IF(ep->me_key != name);
             PyObject *old_value = ep->me_value;
             DEOPT_IF(old_value == NULL);
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
-                _PyObject_GC_TRACK(dict);
-            }
             _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
@@ -2625,14 +2621,15 @@ dummy_func(
                 }
                 _PyExecutorObject *executor;
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                ERROR_IF(optimized < 0, error);
-                if (optimized) {
+                if (optimized <= 0) {
+                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ERROR_IF(optimized < 0, error);
+                }
+                else {
+                    this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->previous_executor == NULL);
                     tstate->previous_executor = Py_None;
                     GOTO_TIER_TWO(executor);
-                }
-                else {
-                    this_instr[1].counter = restart_backoff_counter(counter);
                 }
             }
             else {
@@ -4875,6 +4872,9 @@ dummy_func(
                         }
                         tstate->previous_executor = (PyObject *)current_executor;
                         GOTO_TIER_ONE(target);
+                    }
+                    else {
+                        exit->temperature = initial_temperature_backoff_counter();
                     }
                 }
                 exit->executor = executor;
