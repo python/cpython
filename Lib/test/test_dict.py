@@ -265,6 +265,31 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
+    def test_update_type_error(self):
+        with self.assertRaises(TypeError) as cm:
+            {}.update([object() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "object is not iterable")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+        def badgen():
+            yield "key"
+            raise TypeError("oops")
+            yield "value"
+
+        with self.assertRaises(TypeError) as cm:
+            dict([badgen() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "oops")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
