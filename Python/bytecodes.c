@@ -2406,14 +2406,6 @@ dummy_func(
             }
             else {
                 res = PyStackRef_FromPyObjectSteal(res_o);
-#ifdef Py_GIL_DISABLED
-                // Ensure that Py_TAG_DEFERRED is set for Py_True and Py_False
-                // so that ops like _POP_JUMP_IF_FALSE can use the faster
-                // PyStackRef_IsExactly() check.
-                if (_Py_IsImmortal(res_o)) {
-                    res.bits |= Py_TAG_DEFERRED;
-                }
-#endif
             }
         }
 
@@ -2693,7 +2685,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
+            int flag = PyStackRef_IsFalse(cond);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
@@ -4721,7 +4713,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_False);
+            int flag = PyStackRef_IsFalse(cond);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);

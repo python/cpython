@@ -2976,14 +2976,6 @@
             }
             else {
                 res = PyStackRef_FromPyObjectSteal(res_o);
-                #ifdef Py_GIL_DISABLED
-                // Ensure that Py_TAG_DEFERRED is set for Py_True and Py_False
-                // so that ops like _POP_JUMP_IF_FALSE can use the faster
-                // PyStackRef_IsExactly() check.
-                if (_Py_IsImmortal(res_o)) {
-                    res.bits |= Py_TAG_DEFERRED;
-                }
-                #endif
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
