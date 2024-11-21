@@ -654,7 +654,8 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState *runtime = &_PyRuntime;
 
     // re-creates runtime->interpreters.mutex (HEAD_UNLOCK)
-    status = _PyRuntimeState_ReInitThreads(runtime);
+    status = _PyRuntimeState_ReInitThreads(
+                                runtime, runtime->os_fork.parent.tid);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
@@ -697,7 +698,6 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    _PyImport_ReInitLock(tstate->interp, _PyRuntime.os_fork.parent.tid);
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
