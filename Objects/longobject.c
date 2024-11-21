@@ -3614,20 +3614,10 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 static void
 long_dealloc(PyObject *self)
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref small Ints out of existence. Instead,
-     * since small Ints are immortal, re-set the reference count.
-     */
     PyLongObject *pylong = (PyLongObject*)self;
-    if (pylong && _PyLong_IsCompact(pylong)) {
-        stwodigits ival = medium_value(pylong);
-        if (IS_SMALL_INT(ival)) {
-            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
-            if (pylong == small_pylong) {
-                _Py_SetImmortal(self);
-                return;
-            }
-        }
+    if (_PyLong_IsCompact(pylong)) {
+        // assert the small ints are not deallocated
+        assert (!(PyLong_CheckExact(self) && IS_SMALL_INT(medium_value(pylong))));
     }
     Py_TYPE(self)->tp_free(self);
 }
