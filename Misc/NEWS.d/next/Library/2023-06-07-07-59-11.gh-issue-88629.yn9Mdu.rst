@@ -1,0 +1,1 @@
+Add samesite attribute support for :class:`http.cookiejar.CookieJar`
