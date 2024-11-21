@@ -484,6 +484,45 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 ```
 
 
+Optimization: visiting reachable objects
+========================================
+
+An object cannot be garbage if it can be reached.
+
+To avoid having to identify reference cycles across the whole heap, we can
+reduce the amount of work done considerably by first moving most reachable objects
+to the `visited` space. Empirically, most reachable objects can be reached from a
+small set of global objects and local variables.
+This step does much less work per object, so reduces the time spent
+performing garbage collection by at least half.
+
+> [!NOTE]
+> Objects that are not determined to be reachable by this pass are not necessarily
+> unreachable. We still need to perform the main algorithm to determine which objects
+> are actually unreachable.
+We use the same technique of forming a transitive closure as the incremental
+collector does to find reachable objects, seeding the list with some global
+objects and the currently executing frames.
+
+This phase moves objects to the `visited` space, as follows:
+
+1. All objects directly referred to by any builtin class, the `sys` module, the `builtins`
+module and all objects directly referred to from stack frames are added to a working
+set of reachable objects.
+2. Until this working set is empty:
+   1. Pop an object from the set and move it to the `visited` space
+   2. For each object directly reachable from that object:
+      * If it is not already in `visited` space and it is a GC object,
+        add it to the working set
+
+
+Before each increment of collection is performed, the stacks are scanned
+to check for any new stack frames that have been created since the last
+increment. All objects directly referred to from those stack frames are
+added to the working set.
+Then the above algorithm is repeated, starting from step 2.
+
+
 Optimization: reusing fields to save memory
 ===========================================
 
