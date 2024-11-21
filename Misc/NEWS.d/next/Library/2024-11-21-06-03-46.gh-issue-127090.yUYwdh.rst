@@ -1,0 +1,3 @@
+Fix value of :attr:`urllib.request.addinfourl.url` for ``file:`` URIs that
+express relative paths and absolute Windows paths. The original URL is now
+used.
