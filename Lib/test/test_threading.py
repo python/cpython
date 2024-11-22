@@ -1187,18 +1187,23 @@ class ThreadTests(BaseTestCase):
             def f():
                 print("shouldn't be printed")
 
-            resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+            limits = resource.getrlimit(resource.RLIMIT_NPROC)
+            [_, hard] = limits
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
 
             try:
                 _thread.start_new_thread(f, ())
             except RuntimeError:
-                pass
+                print('ok')
             else:
-                exit('successfully created thread')
+                print('skip')
         """
-        _, out, err = assert_python_ok("-c", code)
+        _, out, err = assert_python_ok("-u", "-c", code)
+        out = out.strip()
+        if out == b'skip':
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
+        self.assertEqual(out, b'ok')
         self.assertEqual(err, b'')
-        self.assertEqual(out, b'')
 
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
