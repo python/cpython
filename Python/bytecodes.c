@@ -376,7 +376,7 @@ dummy_func(
 
         pure inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
-            res = PyStackRef_IsExactly(value, PyStackRef_False)
+            res = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
             DEAD(value);
         }
@@ -2693,7 +2693,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
+            int flag = PyStackRef_IsTrue(cond);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
@@ -4704,7 +4704,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
+            int flag = PyStackRef_IsTrue(cond);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);

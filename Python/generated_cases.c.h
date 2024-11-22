@@ -4817,7 +4817,7 @@
             /* Skip 1 cache entry */
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
+            int flag = PyStackRef_IsTrue(cond);
             int offset = flag * oparg;
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
@@ -6688,7 +6688,7 @@
             {
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
-                int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
+                int flag = PyStackRef_IsTrue(cond);
                 RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(oparg * flag);
             }
@@ -6739,7 +6739,7 @@
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsExactly(cond, PyStackRef_True);
+            int flag = PyStackRef_IsTrue(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(oparg * flag);
             stack_pointer += -1;
@@ -7935,7 +7935,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(value));
-            res = PyStackRef_IsExactly(value, PyStackRef_False)
+            res = PyStackRef_IsFalse(value)
             ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-1] = res;
             DISPATCH();
