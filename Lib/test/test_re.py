@@ -770,6 +770,31 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'x{2,1}',
                                'min repeat greater than max repeat', 2)
 
+    def test_no_repeat_minmax(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            for test in ["x{}", "x{ }", "x{, }", "x{- 1}",
+                         "x{- 1,3}", "x{1,- 3}",
+                         "x{-}", "x{-,}", "x{,-}",
+                         "x{-,3}", "x{1,-}", "x{-, }", "x{ ,-}",
+                        ]:
+                with self.subTest(pattern=test):
+                    self.assertTrue(re.fullmatch(test, test))
+
+    def test_no_repeat_minmax_spaces(self):
+        for test in ["x{ 1}", "x{1 }", "x{ ,3}",
+                     "x{1 ,3}", "x{1, 3}", "x{1,3 }", "x{1, }",
+                    ]:
+            with self.subTest(pattern=test):
+                with self.assertWarnsRegex(DeprecationWarning, 'spaces'):
+                    self.assertTrue(re.fullmatch(test, test))
+
+    def test_no_repeat_minmax_negative(self):
+        for test in ["x{-1}", "x{-1,3}", "x{1,-3}", "x{-1 }"]:
+            with self.subTest(pattern=test):
+                with self.assertWarnsRegex(DeprecationWarning, 'negative'):
+                    self.assertTrue(re.fullmatch(test, test))
+
     def test_getattr(self):
         self.assertEqual(re.compile("(?i)(a)(b)").pattern, "(?i)(a)(b)")
         self.assertEqual(re.compile("(?i)(a)(b)").flags, re.I | re.U)
