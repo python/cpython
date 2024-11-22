@@ -1,0 +1,2 @@
+The ``_sysconfigdata_*`` module that holds the :mod:`sysconfig` data on
+POSIX has been converted to a JSON file.
