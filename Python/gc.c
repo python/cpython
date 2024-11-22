@@ -471,7 +471,7 @@ validate_consistent_old_space(PyGC_Head *head)
 
 
 #else
-#define validate_old(g) do{}while(0)
+#define validate_spaces(g) do{}while(0)
 #define validate_consistent_old_space(l) do{}while(0)
 #define gc_list_validate_space(l, s) do{}while(0)
 #endif
