@@ -1601,7 +1601,7 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 
 .. versionchanged:: 3.14
 
-   :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix` are now
+   :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
    set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
    therefore affected by :option:`-S`.
 
