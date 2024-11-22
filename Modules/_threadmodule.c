@@ -1219,6 +1219,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
         PyThreadState_Clear(boot->tstate);
+        PyThreadState_Delete(boot->tstate);
         thread_bootstate_free(boot, 1);
         return NULL;
     }
