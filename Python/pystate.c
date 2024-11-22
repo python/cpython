@@ -790,18 +790,15 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     // Clear the current/main thread state last.
-    HEAD_LOCK(runtime);
-    PyThreadState *p = interp->threads.head;
-    HEAD_UNLOCK(runtime);
-    while (p != NULL) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
+        HEAD_UNLOCK(runtime);
         PyThreadState_Clear(p);
         HEAD_LOCK(runtime);
-        p = p->next;
-        HEAD_UNLOCK(runtime);
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
     if (tstate->interp == interp) {
         /* We fix tstate->_status below when we for sure aren't using it
            (e.g. no longer need the GIL). */
@@ -1801,10 +1798,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 static void
 zapthreads(PyInterpreterState *interp)
 {
-    PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    while ((tstate = interp->threads.head) != NULL) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
@@ -2161,7 +2157,7 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw)
 }
 
 #ifdef Py_GIL_DISABLED
-// Interpreter for _Py_FOR_EACH_THREAD(). For global stop-the-world events,
+// Interpreter for _Py_FOR_EACH_STW_INTERP(). For global stop-the-world events,
 // we start with the first interpreter and then iterate over all interpreters.
 // For per-interpreter stop-the-world events, we only operate on the one
 // interpreter.
@@ -2176,10 +2172,9 @@ interp_for_stop_the_world(struct _stoptheworld_state *stw)
 // Loops over threads for a stop-the-world event.
 // For global: all threads in all interpreters
 // For per-interpreter: all threads in the interpreter
-#define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
-    for (i = interp_for_stop_the_world((stw));                              \
-            i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
-        for (t = i->threads.head; t; t = t->next)
+#define _Py_FOR_EACH_STW_INTERP(stw, i)                                     \
+    for (PyInterpreterState *i = interp_for_stop_the_world((stw));          \
+            i != NULL; i = ((stw->is_global) ? i->next : NULL))
 
 
 // Try to transition threads atomically from the "detached" state to the
@@ -2188,19 +2183,19 @@ static bool
 park_detached_threads(struct _stoptheworld_state *stw)
 {
     int num_parked = 0;
-    PyInterpreterState *i;
-    PyThreadState *t;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        int state = _Py_atomic_load_int_relaxed(&t->state);
-        if (state == _Py_THREAD_DETACHED) {
-            // Atomically transition to "suspended" if in "detached" state.
-            if (_Py_atomic_compare_exchange_int(&t->state,
-                                                &state, _Py_THREAD_SUSPENDED)) {
-                num_parked++;
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            int state = _Py_atomic_load_int_relaxed(&t->state);
+            if (state == _Py_THREAD_DETACHED) {
+                // Atomically transition to "suspended" if in "detached" state.
+                if (_Py_atomic_compare_exchange_int(
+                                &t->state, &state, _Py_THREAD_SUSPENDED)) {
+                    num_parked++;
+                }
             }
-        }
-        else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
-            _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
+            else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
+                _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
+            }
         }
     }
     stw->thread_countdown -= num_parked;
@@ -2227,12 +2222,12 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
     stw->requester = _PyThreadState_GET();  // may be NULL
 
-    PyInterpreterState *i;
-    PyThreadState *t;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        if (t != stw->requester) {
-            // Count all the other threads (we don't wait on ourself).
-            stw->thread_countdown++;
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            if (t != stw->requester) {
+                // Count all the other threads (we don't wait on ourself).
+                stw->thread_countdown++;
+            }
         }
     }
 
@@ -2273,14 +2268,14 @@ start_the_world(struct _stoptheworld_state *stw)
     stw->requested = 0;
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
-    PyInterpreterState *i;
-    PyThreadState *t;
-    _Py_FOR_EACH_THREAD(stw, i, t) {
-        if (t != stw->requester) {
-            assert(_Py_atomic_load_int_relaxed(&t->state) ==
-                   _Py_THREAD_SUSPENDED);
-            _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
-            _PyParkingLot_UnparkAll(&t->state);
+    _Py_FOR_EACH_STW_INTERP(stw, i) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
+            if (t != stw->requester) {
+                assert(_Py_atomic_load_int_relaxed(&t->state) ==
+                       _Py_THREAD_SUSPENDED);
+                _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
+                _PyParkingLot_UnparkAll(&t->state);
+            }
         }
     }
     stw->requester = NULL;
@@ -2344,7 +2339,6 @@ _PyEval_StartTheWorld(PyInterpreterState *interp)
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Although the GIL is held, a few C API functions can be called
@@ -2353,12 +2347,16 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * list of thread states we're traversing, so to prevent that we lock
      * head_mutex for the duration.
      */
-    HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
-        if (tstate->thread_id != id) {
-            continue;
+    PyThreadState *tstate = NULL;
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, t) {
+        if (t->thread_id == id) {
+            tstate = t;
+            break;
         }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
 
+    if (tstate != NULL) {
         /* Tricky:  we need to decref the current value
          * (if any) in tstate->async_exc, but that can in turn
          * allow arbitrary Python code to run, including
@@ -2368,14 +2366,12 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          */
         Py_XINCREF(exc);
         PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, exc);
-        HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
         _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
-        return 1;
     }
-    HEAD_UNLOCK(runtime);
-    return 0;
+
+    return tstate != NULL;
 }
 
 //---------------------------------
@@ -2515,8 +2511,7 @@ _PyThread_CurrentFrames(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        PyThreadState *t;
-        for (t = i->threads.head; t != NULL; t = t->next) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             _PyInterpreterFrame *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
@@ -2581,8 +2576,7 @@ _PyThread_CurrentExceptions(void)
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
-        PyThreadState *t;
-        for (t = i->threads.head; t != NULL; t = t->next) {
+        _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             _PyErr_StackItem *err_info = _PyErr_GetTopmostException(t);
             if (err_info == NULL) {
                 continue;
