@@ -1174,7 +1174,7 @@ class IncrementalGCTests(unittest.TestCase):
         gc.enable()
         olds = []
         initial_heap_size = _testinternalcapi.get_tracked_heap_size()
-        for i in range(20_000):
+        for i in range(100_000):
             newhead = make_ll(20)
             count += 20
             newhead.surprise = head
