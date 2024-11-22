@@ -743,10 +743,10 @@ make_cfg_traversal_stack(basicblock *entryblock) {
    * -1 -- maximal
  */
 typedef struct {
-    /* The stack effect of the instruction after it has finished execution */
+    /* The stack effect of the instruction. */
     int net;
 
-    /* The maximum stack effect of the instruction. Some instructions may
+    /* The maximum stack usage of the instruction. Some instructions may
      * temporarily push extra values to the stack while they are executing.
      */
     int max;
