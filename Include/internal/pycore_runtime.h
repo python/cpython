@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
+#include "pycore_audit.h"           // _Py_AuditHookEntry
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
-#include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_crossinterp.h"     // _PyXI_global_state_t
+#include "pycore_debug_offsets.h"   // _Py_DebugOffsets
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -25,110 +27,12 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
-struct _getargs_runtime_state {
-    struct _PyArg_Parser *static_parsers;
-};
-
-/* GIL state */
-
-struct _gilstate_runtime_state {
-    /* bpo-26558: Flag to disable PyGILState_Check().
-       If set to non-zero, PyGILState_Check() always return 1. */
-    int check_enabled;
-    /* The single PyInterpreterState used by this process'
-       GILState implementation
-    */
-    /* TODO: Given interp_main, it may be possible to kill this ref */
-    PyInterpreterState *autoInterpreterState;
-};
-
-/* Runtime audit hook state */
-
-typedef struct _Py_AuditHookEntry {
-    struct _Py_AuditHookEntry *next;
-    Py_AuditHookFunction hookCFunction;
-    void *userData;
-} _Py_AuditHookEntry;
-
-typedef struct _Py_DebugOffsets {
-    char cookie[8];
-    uint64_t version;
-    // Runtime state offset;
-    struct _runtime_state {
-        off_t finalizing;
-        off_t interpreters_head;
-    } runtime_state;
-
-    // Interpreter state offset;
-    struct _interpreter_state {
-        off_t next;
-        off_t threads_head;
-        off_t gc;
-        off_t imports_modules;
-        off_t sysdict;
-        off_t builtins;
-        off_t ceval_gil;
-        off_t gil_runtime_state_locked;
-        off_t gil_runtime_state_holder;
-    } interpreter_state;
-
-    // Thread state offset;
-    struct _thread_state{
-        off_t prev;
-        off_t next;
-        off_t interp;
-        off_t current_frame;
-        off_t thread_id;
-        off_t native_thread_id;
-    } thread_state;
-
-    // InterpreterFrame offset;
-    struct _interpreter_frame {
-        off_t previous;
-        off_t executable;
-        off_t instr_ptr;
-        off_t localsplus;
-        off_t owner;
-    } interpreter_frame;
-
-    // CFrame offset;
-    struct _cframe {
-        off_t current_frame;
-        off_t previous;
-    } cframe;
-
-    // Code object offset;
-    struct _code_object {
-        off_t filename;
-        off_t name;
-        off_t linetable;
-        off_t firstlineno;
-        off_t argcount;
-        off_t localsplusnames;
-        off_t localspluskinds;
-        off_t co_code_adaptive;
-    } code_object;
-
-    // PyObject offset;
-    struct _pyobject {
-        off_t ob_type;
-    } pyobject;
-
-    // PyTypeObject object offset;
-    struct _type_object {
-        off_t tp_name;
-    } type_object;
-
-    // PyTuple object offset;
-    struct _tuple_object {
-        off_t ob_item;
-    } tuple_object;
-} _Py_DebugOffsets;
 
 /* Full Python runtime state */
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
-   That data is exposed in the internal API as a static variable (_PyRuntime).
+   That data is exported by the internal API as a global variable
+   (_PyRuntime, defined near the top of pylifecycle.c).
    */
 typedef struct pyruntimestate {
     /* This field must be first to facilitate locating it by out of process
@@ -191,7 +95,10 @@ typedef struct pyruntimestate {
         int64_t next_id;
     } interpreters;
 
+    /* Platform-specific identifier and PyThreadState, respectively, for the
+       main thread in the main interpreter. */
     unsigned long main_thread;
+    PyThreadState *main_tstate;
 
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
@@ -199,7 +106,7 @@ typedef struct pyruntimestate {
      tools. */
 
     /* cross-interpreter data and utils */
-    struct _xi_runtime_state xi;
+    _PyXI_global_state_t xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
@@ -221,11 +128,30 @@ typedef struct pyruntimestate {
 
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
-    struct _gilstate_runtime_state gilstate;
-    struct _getargs_runtime_state getargs;
+    struct _gilstate_runtime_state {
+        /* bpo-26558: Flag to disable PyGILState_Check().
+           If set to non-zero, PyGILState_Check() always return 1. */
+        int check_enabled;
+        /* The single PyInterpreterState used by this process'
+           GILState implementation
+        */
+        /* TODO: Given interp_main, it may be possible to kill this ref */
+        PyInterpreterState *autoInterpreterState;
+    } gilstate;
+    struct _getargs_runtime_state {
+        struct _PyArg_Parser *static_parsers;
+    } getargs;
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
+    struct _reftracer_runtime_state ref_tracer;
+
+    // The rwmutex is used to prevent overlapping global and per-interpreter
+    // stop-the-world events. Global stop-the-world events lock the mutex
+    // exclusively (as a "writer"), while per-interpreter stop-the-world events
+    // lock it non-exclusively (as "readers").
+    _PyRWMutex stoptheworld_mutex;
+    struct _stoptheworld_state stoptheworld;
 
     PyPreConfig preconfig;
 
@@ -261,7 +187,7 @@ typedef struct pyruntimestate {
        a pointer type.
        */
 
-    /* PyInterpreterState.interpreters.main */
+    /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
@@ -317,6 +243,7 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
                                        tstate->thread_id);
     }
 }
+
 
 #ifdef __cplusplus
 }

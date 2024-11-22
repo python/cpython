@@ -4,130 +4,195 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
-    write_header,
-    emit_tokens,
     emit_to,
-    REPLACEMENT_FUNCTIONS,
+    write_header,
+    type_and_null,
+    Emitter,
+    TokenIterator,
+    always_true,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
+def declare_variable(
+    var: StackItem, uop: Uop, required: set[str], out: CWriter
+) -> None:
+    if not var.used or var.name not in required:
+        return
+    required.remove(var.name)
+    type, null = type_and_null(var)
+    space = " " if type[-1].isalnum() else ""
+    if var.condition:
+        out.emit(f"{type}{space}{var.name} = {null};\n")
+        if uop.replicates:
+            # Replicas may not use all their conditional variables
+            # So avoid a compiler warning with a fake use
+            out.emit(f"(void){var.name};\n")
+    else:
+        out.emit(f"{type}{space}{var.name};\n")
+
+
 def declare_variables(uop: Uop, out: CWriter) -> None:
-    variables = {"unused"}
+    stack = Stack()
     for var in reversed(uop.stack.inputs):
-        if var.name not in variables:
-            type = var.type if var.type else "PyObject *"
-            variables.add(var.name)
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        stack.pop(var)
     for var in uop.stack.outputs:
-        if var.name not in variables:
-            variables.add(var.name)
-            type = var.type if var.type else "PyObject *"
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        stack.push(Local.undefined(var))
+    required = set(stack.defined)
+    required.discard("unused")
+    for var in reversed(uop.stack.inputs):
+        declare_variable(var, uop, required, out)
+    for var in uop.stack.outputs:
+        declare_variable(var, uop, required, out)
 
 
-def tier2_replace_error(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    out.emit_at("if ", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "COMMA")
-    label = next(tkn_iter).text
-    next(tkn_iter)  # RPAREN
-    next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
+class Tier2Emitter(Emitter):
+
+    def __init__(self, out: CWriter):
+        super().__init__(out)
+        self._replacers["oparg"] = self.oparg
+
+    def error_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit_at("if ", tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert lparen.kind == "LPAREN"
+        first_tkn = next(tkn_iter)
+        self.out.emit(first_tkn)
+        emit_to(self.out, tkn_iter, "COMMA")
+        label = next(tkn_iter).text
+        next(tkn_iter)  # RPAREN
+        next(tkn_iter)  # Semi colon
+        self.emit(") JUMP_TO_ERROR();\n")
+        return not always_true(first_tkn)
+
+
+    def error_no_pop(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)  # LPAREN
+        next(tkn_iter)  # RPAREN
+        next(tkn_iter)  # Semi colon
+        self.out.emit_at("JUMP_TO_ERROR();", tkn)
+        return False
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit_at("if ", tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)  # Semi colon
+        self.emit(") {\n")
+        self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        self.emit("JUMP_TO_JUMP_TARGET();\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    def exit_if(  # type: ignore[override]
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit_at("if ", tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)  # Semi colon
+        self.emit(") {\n")
+        self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        self.emit("JUMP_TO_JUMP_TARGET();\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    def oparg(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
+            self.emit(tkn)
+            return True
+        amp = next(tkn_iter)
+        if amp.text != "&":
+            self.emit(tkn)
+            self.emit(amp)
+            return True
+        one = next(tkn_iter)
+        assert one.text == "1"
+        self.out.emit_at(uop.name[-1], tkn)
+        return True
+
+
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+    locals: dict[str, Local] = {}
     try:
-        offset = -int(c_offset)
-        close = ";\n"
-    except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label + "_tier_two")
-    out.emit(close)
-
-
-def tier2_replace_deopt(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    unused: Stack,
-    inst: Instruction | None,
-) -> None:
-    out.emit_at("if ", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "RPAREN")
-    next(tkn_iter)  # Semi colon
-    out.emit(") goto deoptimize;\n")
-
-
-TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
-TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
-TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
-
-
-def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
-    try:
-        out.start_line()
+        emitter.out.start_line()
         if uop.properties.oparg:
-            out.emit("oparg = CURRENT_OPARG();\n")
-        for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
-        if not uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
-        for cache in uop.caches:
+            emitter.emit("oparg = CURRENT_OPARG();\n")
+            assert uop.properties.const_oparg < 0
+        elif uop.properties.const_oparg >= 0:
+            emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
+            emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
+        code_list, storage = Storage.for_uop(stack, uop)
+        for code in code_list:
+            emitter.emit(code)
+        for idx, cache in enumerate(uop.caches):
             if cache.name != "unused":
                 if cache.size == 4:
                     type = cast = "PyObject *"
                 else:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
-                out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        if uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
-    except SizeMismatch as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
-
+                emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+        storage = emitter.emit_tokens(uop, storage, None)
+    except StackError as ex:
+        raise analysis_error(ex.args[0], uop.body[0]) from None
+    return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
 
@@ -145,24 +210,29 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
+    emitter = Tier2Emitter(out)
     out.emit("\n")
     for name, uop in analysis.uops.items():
-        if uop.properties.tier_one_only:
+        if uop.properties.tier == 1:
+            continue
+        if uop.properties.oparg_and_1:
+            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
             continue
         if uop.is_super():
             continue
-        if not uop.is_viable():
-            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
+        why_not_viable = uop.why_not_viable()
+        if why_not_viable is not None:
+            out.emit(
+                f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
+            )
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
         stack = Stack()
-        write_uop(uop, out, stack)
+        stack = write_uop(uop, emitter, stack)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
-            if uop.properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

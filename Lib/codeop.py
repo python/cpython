@@ -44,6 +44,7 @@ __all__ = ["compile_command", "Compile", "CommandCompiler"]
 # Caveat emptor: These flags are undocumented on purpose and depending
 # on their effect outside the standard library is **unsupported**.
 PyCF_DONT_IMPLY_DEDENT = 0x200
+PyCF_ONLY_AST = 0x400
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
 def _maybe_compile(compiler, source, filename, symbol):
@@ -65,9 +66,10 @@ def _maybe_compile(compiler, source, filename, symbol):
             try:
                 compiler(source + "\n", filename, symbol)
                 return None
+            except _IncompleteInputError as e:
+                return None
             except SyntaxError as e:
-                if "incomplete input" in str(e):
-                    return None
+                pass
                 # fallthrough
 
     return compiler(source, filename, symbol, incomplete_input=False)
@@ -108,12 +110,14 @@ class Compile:
     def __init__(self):
         self.flags = PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT
 
-    def __call__(self, source, filename, symbol, **kwargs):
-        flags = self.flags
+    def __call__(self, source, filename, symbol, flags=0, **kwargs):
+        flags |= self.flags
         if kwargs.get('incomplete_input', True) is False:
             flags &= ~PyCF_DONT_IMPLY_DEDENT
             flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
         codeob = compile(source, filename, symbol, flags, True)
+        if flags & PyCF_ONLY_AST:
+            return codeob  # this is an ast.Module in this case
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag

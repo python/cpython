@@ -200,7 +200,7 @@ Here are some ways to address this challenge:
 Adding the checks to the concrete API would help make any interpreter
 switch to OrderedDict less painful for extension modules.  However, this
 won't work.  The equivalent C API call to `dict.__setitem__(obj, k, v)`
-is 'PyDict_SetItem(obj, k, v)`.  This illustrates how subclasses in C call
+is `PyDict_SetItem(obj, k, v)`.  This illustrates how subclasses in C call
 the base class's methods, since there is no equivalent of super() in the
 C API.  Calling into Python for parent class API would work, but some
 extension modules already rely on this feature of the concrete API.
@@ -276,7 +276,7 @@ tp_dictoffset     (__dict__)       -                   -
 tp_init           __init__         object_init         dict_init
 tp_alloc          -                PyType_GenericAlloc (repeated)
 tp_new            __new__          object_new          dict_new
-tp_free           -                PyObject_Del        PyObject_GC_Del
+tp_free           -                PyObject_Free       PyObject_GC_Del
 ================= ================ =================== ================
 
 Relevant Methods
@@ -465,12 +465,13 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_dict.h"          // _Py_dict_lookup()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include <stddef.h>               // offsetof()
+#include "pycore_call.h"             // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"            // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h" //_Py_BEGIN_CRITICAL_SECTION
+#include "pycore_dict.h"             // _Py_dict_lookup()
+#include "pycore_object.h"           // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
+#include <stddef.h>                  // offsetof()
 
 #include "clinic/odictobject.c.h"
 
@@ -534,8 +535,12 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyObject *value = NULL;
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
-
+#ifdef Py_GIL_DISABLED
+    ix = _Py_dict_lookup_threadsafe((PyDictObject *)od, key, hash, &value);
+    Py_XDECREF(value);
+#else
     ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
+#endif
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -791,6 +796,7 @@ _odict_clear_nodes(PyODictObject *od)
         _odictnode_DEALLOC(node);
         node = next;
     }
+    od->od_state++;
 }
 
 /* There isn't any memory management of nodes past this point. */
@@ -801,24 +807,40 @@ _odict_keys_equal(PyODictObject *a, PyODictObject *b)
 {
     _ODictNode *node_a, *node_b;
 
+    // keep operands' state to detect undesired mutations
+    const size_t state_a = a->od_state;
+    const size_t state_b = b->od_state;
+
     node_a = _odict_FIRST(a);
     node_b = _odict_FIRST(b);
     while (1) {
-        if (node_a == NULL && node_b == NULL)
+        if (node_a == NULL && node_b == NULL) {
             /* success: hit the end of each at the same time */
             return 1;
-        else if (node_a == NULL || node_b == NULL)
+        }
+        else if (node_a == NULL || node_b == NULL) {
             /* unequal length */
             return 0;
+        }
         else {
-            int res = PyObject_RichCompareBool(
-                                            (PyObject *)_odictnode_KEY(node_a),
-                                            (PyObject *)_odictnode_KEY(node_b),
-                                            Py_EQ);
-            if (res < 0)
+            PyObject *key_a = Py_NewRef(_odictnode_KEY(node_a));
+            PyObject *key_b = Py_NewRef(_odictnode_KEY(node_b));
+            int res = PyObject_RichCompareBool(key_a, key_b, Py_EQ);
+            Py_DECREF(key_a);
+            Py_DECREF(key_b);
+            if (res < 0) {
                 return res;
-            else if (res == 0)
+            }
+            else if (a->od_state != state_a || b->od_state != state_b) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                return -1;
+            }
+            else if (res == 0) {
+                // This check comes after the check on the state
+                // in order for the exception to be set correctly.
                 return 0;
+            }
 
             /* otherwise it must match, so move on to the next one */
             node_a = _odictnode_NEXT(node_a);
@@ -1039,6 +1061,8 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
 {
     PyObject *value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(od);
+
     _ODictNode *node = _odict_find_node_hash((PyODictObject *)od, key, hash);
     if (node != NULL) {
         /* Pop the node first to avoid a possible dict resize (due to
@@ -1046,7 +1070,7 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
            resolution. */
         int res = _odict_clear_node((PyODictObject *)od, node, key, hash);
         if (res < 0) {
-            return NULL;
+            goto done;
         }
         /* Now delete the value from the dict. */
         if (_PyDict_Pop_KnownHash((PyDictObject *)od, key, hash,
@@ -1063,6 +1087,8 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
             PyErr_SetObject(PyExc_KeyError, key);
         }
     }
+    Py_END_CRITICAL_SECTION();
+done:
 
     return value;
 }

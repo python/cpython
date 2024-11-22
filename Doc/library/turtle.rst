@@ -14,6 +14,11 @@
    from turtle import *
    turtle = Turtle()
 
+.. testcleanup::
+
+   import os
+   os.remove("my_drawing.ps")
+
 --------------
 
 Introduction
@@ -120,7 +125,7 @@ off-screen)::
    home()
 
 The home position is at the center of the turtle's screen. If you ever need to
-know them, get the turtle's x-y co-ordinates with::
+know them, get the turtle's x-y coordinates with::
 
     pos()
 
@@ -427,6 +432,7 @@ Input methods
 Methods specific to Screen
    | :func:`bye`
    | :func:`exitonclick`
+   | :func:`save`
    | :func:`setup`
    | :func:`title`
 
@@ -606,7 +612,7 @@ Turtle motion
       >>> turtle.pos()
       (20.00,30.00)
 
-   .. versionadded: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: setx(x)
@@ -2269,6 +2275,24 @@ Methods specific to Screen, not inherited from TurtleScreen
    client script.
 
 
+.. function:: save(filename, overwrite=False)
+
+   Save the current turtle drawing (and turtles) as a PostScript file.
+
+   :param filename: the path of the saved PostScript file
+   :param overwrite: if ``False`` and there already exists a file with the given
+                     filename, then the function will raise a
+                     ``FileExistsError``. If it is ``True``, the file will be
+                     overwritten.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.save("my_drawing.ps")
+      >>> screen.save("my_drawing.ps", overwrite=True)
+
+   .. versionadded:: 3.14
+
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
 
    Set the size and position of the main window.  Default values of arguments
@@ -2753,9 +2777,6 @@ Changes since Python 3.0
 - Two input methods have been added: :func:`Screen.textinput <textinput>` and
   :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
-
-- Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
-  have been added to the :file:`Lib/turtledemo` directory.
 
 
 .. doctest::

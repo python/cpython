@@ -1,4 +1,4 @@
-name: Docs
+name: Reusable Docs
 
 on:
   workflow_call:
@@ -10,6 +10,9 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
 
 jobs:
   build_doc:
@@ -25,9 +28,15 @@ jobs:
     - name: 'Check out latest PR branch commit'
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: >-
+          ${{
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.sha
+            || ''
+          }}
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
     - name: 'Fetch commits to get branch diff'
+      if: github.event_name == 'pull_request'
       run: |
         # Fetch enough history to find a common ancestor commit (aka merge-base):
         git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
@@ -62,7 +71,8 @@ jobs:
         python Doc/tools/check-warnings.py \
           --annotate-diff '${{ env.branch_base }}' '${{ env.branch_pr }}' \
           --fail-if-regression \
-          --fail-if-improved
+          --fail-if-improved \
+          --fail-if-new-news-nit
 
   # This build doesn't use problem matchers or check annotations
   build_doc_oldest_supported_sphinx:
@@ -74,7 +84,7 @@ jobs:
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # known to work with Sphinx 4.2
+        python-version: '3.13'  # known to work with Sphinx 7.2.6
         cache: 'pip'
         cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
     - name: 'Install build dependencies'
@@ -85,11 +95,11 @@ jobs:
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}

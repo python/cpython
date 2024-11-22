@@ -172,7 +172,10 @@ class PollTests(unittest.TestCase):
 
     @cpython_only
     def test_poll_c_limits(self):
-        from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
+        try:
+            from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
         pollster = select.poll()
         pollster.register(1)
 

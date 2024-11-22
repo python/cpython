@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
@@ -23,7 +23,13 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_do_handshake(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_do_handshake_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_do_handshake_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__test_decode_cert__doc__,
@@ -89,7 +95,9 @@ _ssl__SSLSocket_getpeercert(PySSLSocket *self, PyObject *const *args, Py_ssize_t
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_getpeercert_impl(self, binary_mode);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -109,7 +117,13 @@ _ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_get_verified_chain(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_get_verified_chain_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_get_verified_chain_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_get_unverified_chain__doc__,
@@ -126,7 +140,13 @@ _ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_get_unverified_chain(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_get_unverified_chain_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_get_unverified_chain_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_shared_ciphers__doc__,
@@ -143,7 +163,13 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_shared_ciphers(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_shared_ciphers_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_shared_ciphers_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_cipher__doc__,
@@ -160,7 +186,13 @@ _ssl__SSLSocket_cipher_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_cipher(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_cipher_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_cipher_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_version__doc__,
@@ -177,7 +209,13 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_version_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_version_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_selected_alpn_protocol__doc__,
@@ -194,7 +232,13 @@ _ssl__SSLSocket_selected_alpn_protocol_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_selected_alpn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_selected_alpn_protocol_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_selected_alpn_protocol_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_compression__doc__,
@@ -212,6 +256,176 @@ static PyObject *
 _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl__SSLSocket_compression_impl(self);
+}
+
+#if defined(_ssl__SSLSocket_context_HAS_DOCSTR)
+#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+#else
+#  define _ssl__SSLSocket_context_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
+#  undef _SSL__SSLSOCKET_CONTEXT_GETSETDEF
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, (setter)_ssl__SSLSocket_context_set, _ssl__SSLSocket_context_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, NULL, _ssl__SSLSocket_context_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_context_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_context_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_context_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLSOCKET_CONTEXT_HAS_DOCSTR)
+#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+#else
+#  define _ssl__SSLSocket_context_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
+#  undef _SSL__SSLSOCKET_CONTEXT_GETSETDEF
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, (setter)_ssl__SSLSocket_context_set, _ssl__SSLSocket_context_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", NULL, (setter)_ssl__SSLSocket_context_set, NULL},
+#endif
+
+static int
+_ssl__SSLSocket_context_set_impl(PySSLSocket *self, PyObject *value);
+
+static int
+_ssl__SSLSocket_context_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_context_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_server_side__doc__,
+"Whether this is a server-side socket.");
+#define _ssl__SSLSocket_server_side_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_server_side_HAS_DOCSTR)
+#  define _ssl__SSLSocket_server_side_DOCSTR _ssl__SSLSocket_server_side__doc__
+#else
+#  define _ssl__SSLSocket_server_side_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF
+#  define _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF {"server_side", (getter)_ssl__SSLSocket_server_side_get, (setter)_ssl__SSLSocket_server_side_set, _ssl__SSLSocket_server_side_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF {"server_side", (getter)_ssl__SSLSocket_server_side_get, NULL, _ssl__SSLSocket_server_side_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_server_side_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_server_side_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_server_side_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_server_hostname__doc__,
+"The currently set server hostname (for SNI).");
+#define _ssl__SSLSocket_server_hostname_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_server_hostname_HAS_DOCSTR)
+#  define _ssl__SSLSocket_server_hostname_DOCSTR _ssl__SSLSocket_server_hostname__doc__
+#else
+#  define _ssl__SSLSocket_server_hostname_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF
+#  define _SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF {"server_hostname", (getter)_ssl__SSLSocket_server_hostname_get, (setter)_ssl__SSLSocket_server_hostname_set, _ssl__SSLSocket_server_hostname_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF {"server_hostname", (getter)_ssl__SSLSocket_server_hostname_get, NULL, _ssl__SSLSocket_server_hostname_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_server_hostname_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_server_hostname_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_server_hostname_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLSocket_owner_HAS_DOCSTR)
+#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
+#else
+#  define _ssl__SSLSocket_owner_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
+#  undef _SSL__SSLSOCKET_OWNER_GETSETDEF
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, (setter)_ssl__SSLSocket_owner_set, _ssl__SSLSocket_owner_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, NULL, _ssl__SSLSocket_owner_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_owner_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_owner_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_owner_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLSOCKET_OWNER_HAS_DOCSTR)
+#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
+#else
+#  define _ssl__SSLSocket_owner_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
+#  undef _SSL__SSLSOCKET_OWNER_GETSETDEF
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, (setter)_ssl__SSLSocket_owner_set, _ssl__SSLSocket_owner_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", NULL, (setter)_ssl__SSLSocket_owner_set, NULL},
+#endif
+
+static int
+_ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value);
+
+static int
+_ssl__SSLSocket_owner_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_owner_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_write__doc__,
@@ -237,7 +451,9 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_write_impl(self, &b);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for b */
@@ -263,7 +479,13 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_pending(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_pending_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_pending_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_read__doc__,
@@ -301,7 +523,9 @@ _ssl__SSLSocket_read(PySSLSocket *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_ssl._SSLSocket.read requires 1 to 2 arguments");
             goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_read_impl(self, len, group_right_1, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -327,7 +551,13 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_shutdown(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_shutdown_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_shutdown_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_get_channel_binding__doc__,
@@ -380,7 +610,8 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *cb_type = "tls-unique";
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -401,7 +632,9 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_get_channel_binding_impl(self, cb_type);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -422,7 +655,98 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_verify_client_post_handshake_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_verify_client_post_handshake_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLSocket_session_HAS_DOCSTR)
+#  define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
+#else
+#  define _ssl__SSLSocket_session_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SESSION_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SESSION_GETSETDEF
+#  define _SSL__SSLSOCKET_SESSION_GETSETDEF {"session", (getter)_ssl__SSLSocket_session_get, (setter)_ssl__SSLSocket_session_set, _ssl__SSLSocket_session_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SESSION_GETSETDEF {"session", (getter)_ssl__SSLSocket_session_get, NULL, _ssl__SSLSocket_session_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_session_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_session_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_session_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLSOCKET_SESSION_HAS_DOCSTR)
+#  define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
+#else
+#  define _ssl__SSLSocket_session_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SESSION_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SESSION_GETSETDEF
+#  define _SSL__SSLSOCKET_SESSION_GETSETDEF {"session", (getter)_ssl__SSLSocket_session_get, (setter)_ssl__SSLSocket_session_set, _ssl__SSLSocket_session_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SESSION_GETSETDEF {"session", NULL, (setter)_ssl__SSLSocket_session_set, NULL},
+#endif
+
+static int
+_ssl__SSLSocket_session_set_impl(PySSLSocket *self, PyObject *value);
+
+static int
+_ssl__SSLSocket_session_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_session_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_session_reused__doc__,
+"Was the client session reused during handshake?");
+#define _ssl__SSLSocket_session_reused_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_session_reused_HAS_DOCSTR)
+#  define _ssl__SSLSocket_session_reused_DOCSTR _ssl__SSLSocket_session_reused__doc__
+#else
+#  define _ssl__SSLSocket_session_reused_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
+#  define _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF {"session_reused", (getter)_ssl__SSLSocket_session_reused_get, (setter)_ssl__SSLSocket_session_reused_set, _ssl__SSLSocket_session_reused_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF {"session_reused", (getter)_ssl__SSLSocket_session_reused_get, NULL, _ssl__SSLSocket_session_reused_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_session_reused_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_session_reused_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 static PyObject *
@@ -446,7 +770,9 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(type);
     return_value = _ssl__SSLContext_impl(type, proto_version);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -482,7 +808,9 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_set_ciphers_impl(self, cipherlist);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -502,7 +830,13 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self);
 static PyObject *
 _ssl__SSLContext_get_ciphers(PySSLContext *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLContext_get_ciphers_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_get_ciphers_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLContext__set_alpn_protocols__doc__,
@@ -526,13 +860,503 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for protos */
     if (protos.obj) {
        PyBuffer_Release(&protos);
     }
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_verify_mode_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_mode_DOCSTR _ssl__SSLContext_verify_mode__doc__
+#else
+#  define _ssl__SSLContext_verify_mode_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF {"verify_mode", (getter)_ssl__SSLContext_verify_mode_get, (setter)_ssl__SSLContext_verify_mode_set, _ssl__SSLContext_verify_mode_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF {"verify_mode", (getter)_ssl__SSLContext_verify_mode_get, NULL, _ssl__SSLContext_verify_mode_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_verify_mode_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_verify_mode_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_mode_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_VERIFY_MODE_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_mode_DOCSTR _ssl__SSLContext_verify_mode__doc__
+#else
+#  define _ssl__SSLContext_verify_mode_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF {"verify_mode", (getter)_ssl__SSLContext_verify_mode_get, (setter)_ssl__SSLContext_verify_mode_set, _ssl__SSLContext_verify_mode_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF {"verify_mode", NULL, (setter)_ssl__SSLContext_verify_mode_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_verify_mode_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_verify_mode_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_mode_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_verify_flags_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
+#else
+#  define _ssl__SSLContext_verify_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, (setter)_ssl__SSLContext_verify_flags_set, _ssl__SSLContext_verify_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, NULL, _ssl__SSLContext_verify_flags_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_verify_flags_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_verify_flags_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_flags_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
+#else
+#  define _ssl__SSLContext_verify_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, (setter)_ssl__SSLContext_verify_flags_set, _ssl__SSLContext_verify_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", NULL, (setter)_ssl__SSLContext_verify_flags_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_verify_flags_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_verify_flags_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_flags_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_minimum_version_HAS_DOCSTR)
+#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
+#else
+#  define _ssl__SSLContext_minimum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, (setter)_ssl__SSLContext_minimum_version_set, _ssl__SSLContext_minimum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, NULL, _ssl__SSLContext_minimum_version_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_minimum_version_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_minimum_version_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_minimum_version_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_HAS_DOCSTR)
+#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
+#else
+#  define _ssl__SSLContext_minimum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, (setter)_ssl__SSLContext_minimum_version_set, _ssl__SSLContext_minimum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", NULL, (setter)_ssl__SSLContext_minimum_version_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_minimum_version_set_impl(PySSLContext *self,
+                                          PyObject *value);
+
+static int
+_ssl__SSLContext_minimum_version_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_minimum_version_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_maximum_version_HAS_DOCSTR)
+#  define _ssl__SSLContext_maximum_version_DOCSTR _ssl__SSLContext_maximum_version__doc__
+#else
+#  define _ssl__SSLContext_maximum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF {"maximum_version", (getter)_ssl__SSLContext_maximum_version_get, (setter)_ssl__SSLContext_maximum_version_set, _ssl__SSLContext_maximum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF {"maximum_version", (getter)_ssl__SSLContext_maximum_version_get, NULL, _ssl__SSLContext_maximum_version_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_maximum_version_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_maximum_version_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_maximum_version_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_HAS_DOCSTR)
+#  define _ssl__SSLContext_maximum_version_DOCSTR _ssl__SSLContext_maximum_version__doc__
+#else
+#  define _ssl__SSLContext_maximum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF {"maximum_version", (getter)_ssl__SSLContext_maximum_version_get, (setter)_ssl__SSLContext_maximum_version_set, _ssl__SSLContext_maximum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF {"maximum_version", NULL, (setter)_ssl__SSLContext_maximum_version_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_maximum_version_set_impl(PySSLContext *self,
+                                          PyObject *value);
+
+static int
+_ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_maximum_version_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_num_tickets_HAS_DOCSTR)
+#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+#else
+#  define _ssl__SSLContext_num_tickets_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, (setter)_ssl__SSLContext_num_tickets_set, _ssl__SSLContext_num_tickets_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, NULL, _ssl__SSLContext_num_tickets_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_num_tickets_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_num_tickets_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_num_tickets_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_HAS_DOCSTR)
+#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+#else
+#  define _ssl__SSLContext_num_tickets_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, (setter)_ssl__SSLContext_num_tickets_set, _ssl__SSLContext_num_tickets_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", NULL, (setter)_ssl__SSLContext_num_tickets_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_num_tickets_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_security_level_HAS_DOCSTR)
+#  define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
+#else
+#  define _ssl__SSLContext_security_level_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF
+#  define _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF {"security_level", (getter)_ssl__SSLContext_security_level_get, (setter)_ssl__SSLContext_security_level_set, _ssl__SSLContext_security_level_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF {"security_level", (getter)_ssl__SSLContext_security_level_get, NULL, _ssl__SSLContext_security_level_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_security_level_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_security_level_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_security_level_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_options_HAS_DOCSTR)
+#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
+#else
+#  define _ssl__SSLContext_options_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, (setter)_ssl__SSLContext_options_set, _ssl__SSLContext_options_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, NULL, _ssl__SSLContext_options_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_options_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_options_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_options_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_OPTIONS_HAS_DOCSTR)
+#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
+#else
+#  define _ssl__SSLContext_options_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, (setter)_ssl__SSLContext_options_set, _ssl__SSLContext_options_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", NULL, (setter)_ssl__SSLContext_options_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_options_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_options_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
+#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
+#else
+#  define _ssl__SSLContext__host_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, (setter)_ssl__SSLContext__host_flags_set, _ssl__SSLContext__host_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, NULL, _ssl__SSLContext__host_flags_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext__host_flags_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext__host_flags_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext__host_flags_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_HAS_DOCSTR)
+#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
+#else
+#  define _ssl__SSLContext__host_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, (setter)_ssl__SSLContext__host_flags_set, _ssl__SSLContext__host_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", NULL, (setter)_ssl__SSLContext__host_flags_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext__host_flags_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext__host_flags_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_check_hostname_HAS_DOCSTR)
+#  define _ssl__SSLContext_check_hostname_DOCSTR _ssl__SSLContext_check_hostname__doc__
+#else
+#  define _ssl__SSLContext_check_hostname_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF
+#  define _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF {"check_hostname", (getter)_ssl__SSLContext_check_hostname_get, (setter)_ssl__SSLContext_check_hostname_set, _ssl__SSLContext_check_hostname_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF {"check_hostname", (getter)_ssl__SSLContext_check_hostname_get, NULL, _ssl__SSLContext_check_hostname_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_check_hostname_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_check_hostname_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_check_hostname_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_HAS_DOCSTR)
+#  define _ssl__SSLContext_check_hostname_DOCSTR _ssl__SSLContext_check_hostname__doc__
+#else
+#  define _ssl__SSLContext_check_hostname_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF
+#  define _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF {"check_hostname", (getter)_ssl__SSLContext_check_hostname_get, (setter)_ssl__SSLContext_check_hostname_set, _ssl__SSLContext_check_hostname_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF {"check_hostname", NULL, (setter)_ssl__SSLContext_check_hostname_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_check_hostname_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_check_hostname_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_protocol_HAS_DOCSTR)
+#  define _ssl__SSLContext_protocol_DOCSTR _ssl__SSLContext_protocol__doc__
+#else
+#  define _ssl__SSLContext_protocol_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_PROTOCOL_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
+#  define _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF {"protocol", (getter)_ssl__SSLContext_protocol_get, (setter)_ssl__SSLContext_protocol_set, _ssl__SSLContext_protocol_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF {"protocol", (getter)_ssl__SSLContext_protocol_get, NULL, _ssl__SSLContext_protocol_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_protocol_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_protocol_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_protocol_get_impl(self);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -584,7 +1408,8 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
     PyObject *keyfile = Py_None;
     PyObject *password = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -600,7 +1425,9 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
     }
     password = args[2];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_load_cert_chain_impl(self, certfile, keyfile, password);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -655,7 +1482,8 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
     PyObject *capath = Py_None;
     PyObject *cadata = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -676,7 +1504,9 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
     }
     cadata = args[2];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_load_verify_locations_impl(self, cafile, capath, cadata);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -689,6 +1519,21 @@ PyDoc_STRVAR(_ssl__SSLContext_load_dh_params__doc__,
 
 #define _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF    \
     {"load_dh_params", (PyCFunction)_ssl__SSLContext_load_dh_params, METH_O, _ssl__SSLContext_load_dh_params__doc__},
+
+static PyObject *
+_ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath);
+
+static PyObject *
+_ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_load_dh_params_impl(self, filepath);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_ssl__SSLContext__wrap_socket__doc__,
 "_wrap_socket($self, /, sock, server_side, server_hostname=None, *,\n"
@@ -741,7 +1586,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     PyObject *owner = Py_None;
     PyObject *session = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -775,7 +1621,9 @@ skip_optional_pos:
     }
     session = args[4];
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext__wrap_socket_impl(self, sock, server_side, hostname_obj, owner, session);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -834,7 +1682,8 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     PyObject *owner = Py_None;
     PyObject *session = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -873,7 +1722,9 @@ skip_optional_pos:
     }
     session = args[5];
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext__wrap_bio_impl(self, incoming, outgoing, server_side, hostname_obj, owner, session);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -893,7 +1744,13 @@ _ssl__SSLContext_session_stats_impl(PySSLContext *self);
 static PyObject *
 _ssl__SSLContext_session_stats(PySSLContext *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLContext_session_stats_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_session_stats_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLContext_set_default_verify_paths__doc__,
@@ -910,7 +1767,13 @@ _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self);
 static PyObject *
 _ssl__SSLContext_set_default_verify_paths(PySSLContext *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLContext_set_default_verify_paths_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_default_verify_paths_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
@@ -920,6 +1783,75 @@ PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 
 #define _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF    \
     {"set_ecdh_curve", (PyCFunction)_ssl__SSLContext_set_ecdh_curve, METH_O, _ssl__SSLContext_set_ecdh_curve__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_ecdh_curve_impl(PySSLContext *self, PyObject *name);
+
+static PyObject *
+_ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_ecdh_curve_impl(self, name);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl__SSLContext_sni_callback_HAS_DOCSTR)
+#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+#else
+#  define _ssl__SSLContext_sni_callback_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, (setter)_ssl__SSLContext_sni_callback_set, _ssl__SSLContext_sni_callback_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, NULL, _ssl__SSLContext_sni_callback_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_sni_callback_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_sni_callback_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_sni_callback_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_HAS_DOCSTR)
+#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+#else
+#  define _ssl__SSLContext_sni_callback_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, (setter)_ssl__SSLContext_sni_callback_set, _ssl__SSLContext_sni_callback_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", NULL, (setter)_ssl__SSLContext_sni_callback_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_sni_callback_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_sni_callback_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "cert_store_stats($self, /)\n"
@@ -942,7 +1874,13 @@ _ssl__SSLContext_cert_store_stats_impl(PySSLContext *self);
 static PyObject *
 _ssl__SSLContext_cert_store_stats(PySSLContext *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLContext_cert_store_stats_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_cert_store_stats_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLContext_get_ca_certs__doc__,
@@ -996,7 +1934,8 @@ _ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *const *args, Py_ssiz
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int binary_form = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1008,7 +1947,9 @@ _ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *const *args, Py_ssiz
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_get_ca_certs_impl(self, binary_form);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1058,12 +1999,15 @@ _ssl__SSLContext_set_psk_client_callback(PySSLContext *self, PyObject *const *ar
     PyObject *argsbuf[1];
     PyObject *callback;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     callback = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_set_psk_client_callback_impl(self, callback);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1116,7 +2060,8 @@ _ssl__SSLContext_set_psk_server_callback(PySSLContext *self, PyObject *const *ar
     PyObject *callback;
     const char *identity_hint = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1143,7 +2088,9 @@ _ssl__SSLContext_set_psk_server_callback(PySSLContext *self, PyObject *const *ar
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_set_psk_server_callback_impl(self, callback, identity_hint);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1166,9 +2113,65 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(type);
     return_value = _ssl_MemoryBIO_impl(type);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+#if defined(_ssl_MemoryBIO_pending_HAS_DOCSTR)
+#  define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
+#else
+#  define _ssl_MemoryBIO_pending_DOCSTR NULL
+#endif
+#if defined(_SSL_MEMORYBIO_PENDING_GETSETDEF)
+#  undef _SSL_MEMORYBIO_PENDING_GETSETDEF
+#  define _SSL_MEMORYBIO_PENDING_GETSETDEF {"pending", (getter)_ssl_MemoryBIO_pending_get, (setter)_ssl_MemoryBIO_pending_set, _ssl_MemoryBIO_pending_DOCSTR},
+#else
+#  define _SSL_MEMORYBIO_PENDING_GETSETDEF {"pending", (getter)_ssl_MemoryBIO_pending_get, NULL, _ssl_MemoryBIO_pending_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self);
+
+static PyObject *
+_ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_MemoryBIO_pending_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_MemoryBIO_eof_HAS_DOCSTR)
+#  define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
+#else
+#  define _ssl_MemoryBIO_eof_DOCSTR NULL
+#endif
+#if defined(_SSL_MEMORYBIO_EOF_GETSETDEF)
+#  undef _SSL_MEMORYBIO_EOF_GETSETDEF
+#  define _SSL_MEMORYBIO_EOF_GETSETDEF {"eof", (getter)_ssl_MemoryBIO_eof_get, (setter)_ssl_MemoryBIO_eof_set, _ssl_MemoryBIO_eof_DOCSTR},
+#else
+#  define _SSL_MEMORYBIO_EOF_GETSETDEF {"eof", (getter)_ssl_MemoryBIO_eof_get, NULL, _ssl_MemoryBIO_eof_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_MemoryBIO_eof_get_impl(PySSLMemoryBIO *self);
+
+static PyObject *
+_ssl_MemoryBIO_eof_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_MemoryBIO_eof_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -1206,7 +2209,9 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl_MemoryBIO_read_impl(self, len);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1235,7 +2240,9 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for b */
@@ -1263,7 +2270,148 @@ _ssl_MemoryBIO_write_eof_impl(PySSLMemoryBIO *self);
 static PyObject *
 _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl_MemoryBIO_write_eof_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_MemoryBIO_write_eof_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_SSLSession_time_HAS_DOCSTR)
+#  define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
+#else
+#  define _ssl_SSLSession_time_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TIME_GETSETDEF)
+#  undef _SSL_SSLSESSION_TIME_GETSETDEF
+#  define _SSL_SSLSESSION_TIME_GETSETDEF {"time", (getter)_ssl_SSLSession_time_get, (setter)_ssl_SSLSession_time_set, _ssl_SSLSession_time_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TIME_GETSETDEF {"time", (getter)_ssl_SSLSession_time_get, NULL, _ssl_SSLSession_time_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_time_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_time_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_SSLSession_timeout_HAS_DOCSTR)
+#  define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
+#else
+#  define _ssl_SSLSession_timeout_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TIMEOUT_GETSETDEF)
+#  undef _SSL_SSLSESSION_TIMEOUT_GETSETDEF
+#  define _SSL_SSLSESSION_TIMEOUT_GETSETDEF {"timeout", (getter)_ssl_SSLSession_timeout_get, (setter)_ssl_SSLSession_timeout_set, _ssl_SSLSession_timeout_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TIMEOUT_GETSETDEF {"timeout", (getter)_ssl_SSLSession_timeout_get, NULL, _ssl_SSLSession_timeout_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_timeout_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_timeout_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_timeout_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_SSLSession_ticket_lifetime_hint_HAS_DOCSTR)
+#  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
+#else
+#  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF)
+#  undef _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF
+#  define _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF {"ticket_lifetime_hint", (getter)_ssl_SSLSession_ticket_lifetime_hint_get, (setter)_ssl_SSLSession_ticket_lifetime_hint_set, _ssl_SSLSession_ticket_lifetime_hint_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF {"ticket_lifetime_hint", (getter)_ssl_SSLSession_ticket_lifetime_hint_get, NULL, _ssl_SSLSession_ticket_lifetime_hint_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_ticket_lifetime_hint_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_SSLSession_id_HAS_DOCSTR)
+#  define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
+#else
+#  define _ssl_SSLSession_id_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_ID_GETSETDEF)
+#  undef _SSL_SSLSESSION_ID_GETSETDEF
+#  define _SSL_SSLSESSION_ID_GETSETDEF {"id", (getter)_ssl_SSLSession_id_get, (setter)_ssl_SSLSession_id_set, _ssl_SSLSession_id_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_ID_GETSETDEF {"id", (getter)_ssl_SSLSession_id_get, NULL, _ssl_SSLSession_id_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_id_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_id_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_SSLSession_has_ticket_HAS_DOCSTR)
+#  define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
+#else
+#  define _ssl_SSLSession_has_ticket_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_HAS_TICKET_GETSETDEF)
+#  undef _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
+#  define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)_ssl_SSLSession_has_ticket_set, _ssl_SSLSession_has_ticket_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, NULL, _ssl_SSLSession_has_ticket_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_has_ticket_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_has_ticket_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_has_ticket_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl_RAND_add__doc__,
@@ -1297,7 +2445,9 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&view, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&view, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
@@ -1314,7 +2464,9 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_RAND_add_impl(module, &view, entropy);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for view */
@@ -1347,7 +2499,9 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_RAND_bytes_impl(module, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1371,7 +2525,13 @@ _ssl_RAND_status_impl(PyObject *module);
 static PyObject *
 _ssl_RAND_status(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl_RAND_status_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = _ssl_RAND_status_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl_get_default_verify_paths__doc__,
@@ -1391,7 +2551,13 @@ _ssl_get_default_verify_paths_impl(PyObject *module);
 static PyObject *
 _ssl_get_default_verify_paths(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl_get_default_verify_paths_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = _ssl_get_default_verify_paths_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl_txt2obj__doc__,
@@ -1443,7 +2609,8 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *txt;
     int name = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1468,7 +2635,9 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_txt2obj_impl(module, txt, name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1496,7 +2665,9 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_nid2obj_impl(module, nid);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1554,7 +2725,8 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *argsbuf[1];
     const char *store_name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1571,7 +2743,9 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_enum_certificates_impl(module, store_name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1630,7 +2804,8 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *argsbuf[1];
     const char *store_name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1647,7 +2822,9 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _ssl_enum_crls_impl(module, store_name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1662,4 +2839,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=6342ea0062ab16c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c2af0c8fab7ec4e input=a9049054013a1b77]*/

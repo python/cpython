@@ -1,5 +1,5 @@
-:mod:`fnmatch` --- Unix filename pattern matching
-=================================================
+:mod:`!fnmatch` --- Unix filename pattern matching
+==================================================
 
 .. module:: fnmatch
    :synopsis: Unix shell style filename pattern matching.

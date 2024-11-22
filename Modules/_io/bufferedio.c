@@ -8,7 +8,6 @@
 */
 
 #include "Python.h"
-#include "pycore_bytesobject.h"         // _PyBytes_Join()
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
@@ -1050,6 +1049,16 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
         Py_DECREF(res);
         return NULL;
     }
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL) {
+            LEAVE_BUFFERED(self)
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_DECREF(r);
+    }
     _bufferedreader_reset_buf(self);
     r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
     LEAVE_BUFFERED(self)
@@ -1274,7 +1283,7 @@ found:
         Py_CLEAR(res);
         goto end;
     }
-    Py_XSETREF(res, _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
+    Py_XSETREF(res, PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
 
 end:
     LEAVE_BUFFERED(self)
@@ -1315,7 +1324,11 @@ _io__Buffered_tell_impl(buffered *self)
     if (pos == -1)
         return NULL;
     pos -= RAW_OFFSET(self);
-    /* TODO: sanity check (pos >= 0) */
+
+    // GH-95782
+    if (pos < 0)
+        pos = 0;
+
     return PyLong_FromOff_t(pos);
 }
 
@@ -1385,6 +1398,11 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
                 offset = target;
             if (offset >= -self->pos && offset <= avail) {
                 self->pos += offset;
+
+                // GH-95782
+                if (current - avail + offset < 0)
+                    return PyLong_FromOff_t(0);
+
                 return PyLong_FromOff_t(current - avail + offset);
             }
         }
@@ -1718,7 +1736,7 @@ _bufferedreader_read_all(buffered *self)
                 goto cleanup;
             }
             else {
-                tmp = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
+                tmp = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
                 res = tmp;
                 goto cleanup;
             }
@@ -2073,7 +2091,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         self->raw_pos = 0;
     }
     avail = Py_SAFE_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
-    if (buffer->len <= avail) {
+    if (buffer->len <= avail && buffer->len < self->buffer_size) {
         memcpy(self->buffer + self->pos, buffer->buf, buffer->len);
         if (!VALID_WRITE_BUFFER(self) || self->write_pos > self->pos) {
             self->write_pos = self->pos;
@@ -2142,7 +2160,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     /* Then write buf itself. At this point the buffer has been emptied. */
     remaining = buffer->len;
     written = 0;
-    while (remaining > self->buffer_size) {
+    while (remaining >= self->buffer_size) {
         Py_ssize_t n = _bufferedwriter_raw_write(
             self, (char *) buffer->buf + written, buffer->len - written);
         if (n == -1) {
@@ -2512,8 +2530,8 @@ static PyMethodDef bufferedreader_methods[] = {
     _IO__BUFFERED_TRUNCATE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL, NULL}
 };
 
@@ -2572,8 +2590,8 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_TELL_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL, NULL}
 };
 
@@ -2690,8 +2708,8 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL, NULL}
 };
 

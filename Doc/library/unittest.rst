@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -340,28 +340,21 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`
-   for the start directory. Note that you need to specify the top level
-   directory too (e.g.
-   ``python -m unittest discover -s root/namespace -t root``).
+   Test discovery supports :term:`namespace packages <namespace package>`.
 
 .. versionchanged:: 3.11
-   :mod:`unittest` dropped the :term:`namespace packages <namespace package>`
-   support in Python 3.11. It has been broken since Python 3.7. Start directory and
-   subdirectories containing tests must be regular package that have
-   ``__init__.py`` file.
+   Test discovery dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7.
+   Start directory and its subdirectories containing tests must be regular
+   package that have ``__init__.py`` file.
 
-   Directories containing start directory still can be a namespace package.
-   In this case, you need to specify start directory as dotted package name,
-   and target directory explicitly. For example::
+   If the start directory is the dotted name of the package, the ancestor packages
+   can be namespace packages.
 
-      # proj/  <-- current directory
-      #   namespace/
-      #     mypkg/
-      #       __init__.py
-      #       test_mypkg.py
-
-      python -m unittest discover -s namespace.mypkg -t .
+.. versionchanged:: 3.14
+   Test discovery supports :term:`namespace package` as start directory again.
+   To avoid scanning directories unrelated to Python,
+   tests are not searched in subdirectories that do not contain ``__init__.py``.
 
 
 .. _organizing-tests:
@@ -1880,8 +1873,8 @@ Loading and running tests
       Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
-      the start directory is not the top level directory then the top level
-      directory must be specified separately.
+      the start directory is not the top level directory then *top_level_dir*
+      must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then
       this will be recorded as a single error and discovery will continue.  If
@@ -1901,9 +1894,11 @@ Loading and running tests
       package.
 
       The pattern is deliberately not stored as a loader attribute so that
-      packages can continue discovery themselves. *top_level_dir* is stored so
-      ``load_tests`` does not need to pass this argument in to
-      ``loader.discover()``.
+      packages can continue discovery themselves.
+
+      *top_level_dir* is stored internally, and used as a default to any
+      nested calls to ``discover()``. That is, if a package's ``load_tests``
+      calls ``loader.discover()``, it does not need to pass this argument.
 
       *start_dir* can be a dotted module name as well as a directory.
 
@@ -1913,10 +1908,8 @@ Loading and running tests
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
          not errors.
 
-      .. versionchanged:: 3.4
          *start_dir* can be a :term:`namespace packages <namespace package>`.
 
-      .. versionchanged:: 3.4
          Paths are sorted before being imported so that execution order is the
          same even if the underlying file system's ordering is not dependent
          on file name.
@@ -1928,8 +1921,13 @@ Loading and running tests
 
       .. versionchanged:: 3.11
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
-         It has been broken since Python 3.7 and Python 3.11 officially remove it.
+         It has been broken since Python 3.7, and Python 3.11 officially removes it.
 
+      .. versionchanged:: 3.13
+         *top_level_dir* is only stored for the duration of *discover* call.
+
+      .. versionchanged:: 3.14
+         *start_dir* can once again be a :term:`namespace package`.
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -2196,8 +2194,8 @@ Loading and running tests
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.12
-      Added *durations* keyword argument.
+   .. versionchanged:: 3.12
+      Added the *durations* keyword parameter.
 
 .. data:: defaultTestLoader
 
@@ -2311,8 +2309,8 @@ Loading and running tests
    (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
-   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
-   This stores the result of the tests run as the ``result`` attribute.
+   Calling ``main`` returns an object with the ``result`` attribute that contains
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    .. versionchanged:: 3.1
       The *exit* parameter was added.
@@ -2524,7 +2522,7 @@ Signal Handling
 .. versionadded:: 3.2
 
 The :option:`-c/--catch <unittest -c>` command-line option to unittest,
-along with the ``catchbreak`` parameter to :func:`unittest.main()`, provide
+along with the ``catchbreak`` parameter to :func:`unittest.main`, provide
 more friendly handling of control-C during a test run. With catch break
 behavior enabled control-C will allow the currently running test to complete,
 and the test run will then end and report all the results so far. A second

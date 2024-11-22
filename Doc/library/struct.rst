@@ -1,5 +1,5 @@
-:mod:`struct` --- Interpret bytes as packed binary data
-=======================================================
+:mod:`!struct` --- Interpret bytes as packed binary data
+========================================================
 
 .. testsetup:: *
 
@@ -160,6 +160,21 @@ following table:
 
 If the first character is not one of these, ``'@'`` is assumed.
 
+.. note::
+
+   The number 1023 (``0x3ff`` in hexadecimal) has the following byte representations:
+
+   * ``03 ff`` in big-endian (``>``)
+   * ``ff 03`` in little-endian (``<``)
+
+   Python example:
+
+       >>> import struct
+       >>> struct.pack('>h', 1023)
+       b'\x03\xff'
+       >>> struct.pack('<h', 1023)
+       b'\xff\x03'
+
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
 little-endian; IBM z and many legacy architectures are big-endian.
@@ -252,11 +267,25 @@ platform-dependent.
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
+C11 standard) is supported, the following format characters are available:
+
++--------+--------------------------+--------------------+----------------+------------+
+| Format | C Type                   | Python type        | Standard size  | Notes      |
++========+==========================+====================+================+============+
+| ``E``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``C``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+
 .. versionchanged:: 3.3
    Added support for the ``'n'`` and ``'N'`` formats.
 
 .. versionchanged:: 3.6
    Added support for the ``'e'`` format.
+
+.. versionchanged:: 3.14
+   Added support for the ``'E'`` and ``'C'`` formats.
 
 
 Notes:
@@ -264,9 +293,9 @@ Notes:
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :c:expr:`char`. In
-   standard mode, it is always represented by one byte.
+   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type
+   defined by C standards since C99.  In standard mode, it is
+   represented by one byte.
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
@@ -333,6 +362,11 @@ Notes:
    unpacking, the resulting bytes object always has exactly the specified number
    of bytes.  As a special case, ``'0s'`` means a single, empty string (while
    ``'0c'`` means 0 characters).
+
+(10)
+   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   the IEEE 754 binary32 and binary64 format for components of the complex
+   number, regardless of the floating-point format used by the platform.
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.

@@ -1,5 +1,5 @@
-:mod:`queue` --- A synchronized queue class
-===========================================
+:mod:`!queue` --- A synchronized queue class
+============================================
 
 .. module:: queue
    :synopsis: A synchronized queue class.
@@ -93,6 +93,14 @@ The :mod:`queue` module defines the following classes and exceptions:
    on a :class:`Queue` object which is full.
 
 
+.. exception:: ShutDown
+
+   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is called on
+   a :class:`Queue` object which has been shut down.
+
+   .. versionadded:: 3.13
+
+
 .. _queueobjects:
 
 Queue Objects
@@ -135,6 +143,8 @@ provide the public methods described below.
    immediately available, else raise the :exc:`Full` exception (*timeout* is
    ignored in that case).
 
+   Raises :exc:`ShutDown` if the queue has been shut down.
+
 
 .. method:: Queue.put_nowait(item)
 
@@ -155,6 +165,9 @@ provide the public methods described below.
    an uninterruptible wait on an underlying lock.  This means that no exceptions
    can occur, and in particular a SIGINT will not trigger a :exc:`KeyboardInterrupt`.
 
+   Raises :exc:`ShutDown` if the queue has been shut down and is empty, or if
+   the queue has been shut down immediately.
+
 
 .. method:: Queue.get_nowait()
 
@@ -173,6 +186,9 @@ fully processed by daemon consumer threads.
    If a :meth:`join` is currently blocking, it will resume when all items have been
    processed (meaning that a :meth:`task_done` call was received for every item
    that had been :meth:`put` into the queue).
+
+   ``shutdown(immediate=True)`` calls :meth:`task_done` for each remaining item
+   in the queue.
 
    Raises a :exc:`ValueError` if called more times than there were items placed in
    the queue.
@@ -212,6 +228,29 @@ Example of how to wait for enqueued tasks to be completed::
     # Block until all tasks are done.
     q.join()
     print('All work completed')
+
+
+Terminating queues
+^^^^^^^^^^^^^^^^^^
+
+:class:`Queue` objects can be made to prevent further interaction by shutting
+them down.
+
+.. method:: Queue.shutdown(immediate=False)
+
+   Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put` raise
+   :exc:`ShutDown`.
+
+   By default, :meth:`~Queue.get` on a shut down queue will only raise once the
+   queue is empty. Set *immediate* to true to make :meth:`~Queue.get` raise
+   immediately instead.
+
+   All blocked callers of :meth:`~Queue.put` and :meth:`~Queue.get` will be
+   unblocked. If *immediate* is true, a task will be marked as done for each
+   remaining item in the queue, which may unblock callers of
+   :meth:`~Queue.join`.
+
+   .. versionadded:: 3.13
 
 
 SimpleQueue Objects

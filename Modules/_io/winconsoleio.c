@@ -298,6 +298,13 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -1121,6 +1128,7 @@ static PyMethodDef winconsoleio_methods[] = {
     _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF
     _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF
     _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
+    {"_isatty_open_only", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 

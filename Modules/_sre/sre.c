@@ -39,13 +39,14 @@ static const char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Next()
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
+#include "pycore_dict.h"             // _PyDict_Next()
+#include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_moduleobject.h"     // _PyModule_GetState()
 
-#include "sre.h"                  // SRE_CODE
+#include "sre.h"                     // SRE_CODE
 
-#include <ctype.h>                // tolower(), toupper(), isalnum()
+#include <ctype.h>                   // tolower(), toupper(), isalnum()
 
 #define SRE_CODE_BITS (8 * sizeof(SRE_CODE))
 
@@ -264,6 +265,85 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
         state->data_stack_size = cursize;
     }
     return 0;
+}
+
+/* memory pool functions for SRE_REPEAT, this can avoid memory
+   leak when SRE(match) function terminates abruptly.
+   state->repeat_pool_used is a doubly-linked list, so that we
+   can remove a SRE_REPEAT node from it.
+   state->repeat_pool_unused is a singly-linked list, we put/get
+   node at the head. */
+static SRE_REPEAT *
+repeat_pool_malloc(SRE_STATE *state)
+{
+    SRE_REPEAT *repeat;
+
+    if (state->repeat_pool_unused) {
+        /* remove from unused pool (singly-linked list) */
+        repeat = state->repeat_pool_unused;
+        state->repeat_pool_unused = repeat->pool_next;
+    }
+    else {
+        repeat = PyMem_Malloc(sizeof(SRE_REPEAT));
+        if (!repeat) {
+            return NULL;
+        }
+    }
+
+    /* add to used pool (doubly-linked list) */
+    SRE_REPEAT *temp = state->repeat_pool_used;
+    if (temp) {
+        temp->pool_prev = repeat;
+    }
+    repeat->pool_prev = NULL;
+    repeat->pool_next = temp;
+    state->repeat_pool_used = repeat;
+
+    return repeat;
+}
+
+static void
+repeat_pool_free(SRE_STATE *state, SRE_REPEAT *repeat)
+{
+    SRE_REPEAT *prev = repeat->pool_prev;
+    SRE_REPEAT *next = repeat->pool_next;
+
+    /* remove from used pool (doubly-linked list) */
+    if (prev) {
+        prev->pool_next = next;
+    }
+    else {
+        state->repeat_pool_used = next;
+    }
+    if (next) {
+        next->pool_prev = prev;
+    }
+
+    /* add to unused pool (singly-linked list) */
+    repeat->pool_next = state->repeat_pool_unused;
+    state->repeat_pool_unused = repeat;
+}
+
+static void
+repeat_pool_clear(SRE_STATE *state)
+{
+    /* clear used pool */
+    SRE_REPEAT *next = state->repeat_pool_used;
+    state->repeat_pool_used = NULL;
+    while (next) {
+        SRE_REPEAT *temp = next;
+        next = temp->pool_next;
+        PyMem_Free(temp);
+    }
+
+    /* clear unused pool */
+    next = state->repeat_pool_unused;
+    state->repeat_pool_unused = NULL;
+    while (next) {
+        SRE_REPEAT *temp = next;
+        next = temp->pool_next;
+        PyMem_Free(temp);
+    }
 }
 
 /* generate 8-bit version */
@@ -510,6 +590,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->pos = start;
     state->endpos = end;
 
+#ifdef Py_DEBUG
+    state->fail_after_count = pattern->fail_after_count;
+    state->fail_after_exc = pattern->fail_after_exc; // borrowed ref
+#endif
+
     return string;
   err:
     /* We add an explicit cast here because MSVC has a bug when
@@ -529,9 +614,11 @@ state_fini(SRE_STATE* state)
         PyBuffer_Release(&state->buffer);
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
-    /* See above PyMem_Del for why we explicitly cast here. */
+    /* See above PyMem_Free() for why we explicitly cast here. */
     PyMem_Free((void*) state->mark);
     state->mark = NULL;
+    /* SRE_REPEAT pool */
+    repeat_pool_clear(state);
 }
 
 /* calculate offset from start of string */
@@ -618,6 +705,9 @@ pattern_traverse(PatternObject *self, visitproc visit, void *arg)
     Py_VISIT(self->groupindex);
     Py_VISIT(self->indexgroup);
     Py_VISIT(self->pattern);
+#ifdef Py_DEBUG
+    Py_VISIT(self->fail_after_exc);
+#endif
     return 0;
 }
 
@@ -627,6 +717,9 @@ pattern_clear(PatternObject *self)
     Py_CLEAR(self->groupindex);
     Py_CLEAR(self->indexgroup);
     Py_CLEAR(self->pattern);
+#ifdef Py_DEBUG
+    Py_CLEAR(self->fail_after_exc);
+#endif
     return 0;
 }
 
@@ -689,7 +782,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
     Py_ssize_t status;
     PyObject *match;
 
-    if (!state_init(&state, (PatternObject *)self, string, pos, endpos))
+    if (!state_init(&state, self, string, pos, endpos))
         return NULL;
 
     INIT_TRACE(&state);
@@ -1286,7 +1379,7 @@ pattern_subx(_sremodulestate* module_state,
     }
     else {
         if (state.isbytes)
-            item = _PyBytes_Join(joiner, list);
+            item = PyBytes_Join(joiner, list);
         else
             item = PyUnicode_Join(joiner, list);
         Py_DECREF(joiner);
@@ -1379,6 +1472,29 @@ _sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
 {
     return Py_NewRef(self);
 }
+
+#ifdef Py_DEBUG
+/*[clinic input]
+_sre.SRE_Pattern._fail_after
+
+    count: int
+    exception: object
+    /
+
+For debugging.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Pattern__fail_after_impl(PatternObject *self, int count,
+                                  PyObject *exception)
+/*[clinic end generated code: output=9a6bf12135ac50c2 input=ef80a45c66c5499d]*/
+{
+    self->fail_after_count = count;
+    Py_INCREF(exception);
+    Py_XSETREF(self->fail_after_exc, exception);
+    Py_RETURN_NONE;
+}
+#endif /* Py_DEBUG */
 
 static PyObject *
 pattern_repr(PatternObject *obj)
@@ -1505,6 +1621,10 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     self->pattern = NULL;
     self->groupindex = NULL;
     self->indexgroup = NULL;
+#ifdef Py_DEBUG
+    self->fail_after_count = -1;
+    self->fail_after_exc = NULL;
+#endif
 
     self->codesize = n;
 
@@ -1621,6 +1741,7 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
         }
         self->items[i].literal = Py_XNewRef(literal);
     }
+    PyObject_GC_Track(self);
     return (PyObject*) self;
 
 bad_template:
@@ -2215,6 +2336,8 @@ match_getindex(MatchObject* self, PyObject* index)
         return -1;
     }
 
+    // Check that i*2 cannot overflow to make static analyzers happy
+    assert(i <= SRE_MAXGROUPS);
     return i;
 }
 
@@ -2349,26 +2472,28 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
     if (!result || !self->pattern->groupindex)
         return result;
 
+    Py_BEGIN_CRITICAL_SECTION(self->pattern->groupindex);
     while (_PyDict_Next(self->pattern->groupindex, &pos, &key, &value, &hash)) {
         int status;
         Py_INCREF(key);
         value = match_getslice(self, key, default_value);
         if (!value) {
             Py_DECREF(key);
-            goto failed;
+            Py_CLEAR(result);
+            goto exit;
         }
         status = _PyDict_SetItem_KnownHash(result, key, value, hash);
         Py_DECREF(value);
         Py_DECREF(key);
-        if (status < 0)
-            goto failed;
+        if (status < 0) {
+            Py_CLEAR(result);
+            goto exit;
+        }
     }
+exit:;
+    Py_END_CRITICAL_SECTION();
 
     return result;
-
-failed:
-    Py_DECREF(result);
-    return NULL;
 }
 
 /*[clinic input]
@@ -2598,7 +2723,8 @@ pattern_new_match(_sremodulestate* module_state,
         if (!match)
             return NULL;
 
-        match->pattern = (PatternObject*)Py_NewRef(pattern);
+        Py_INCREF(pattern);
+        match->pattern = pattern;
 
         match->string = Py_NewRef(state->string);
 
@@ -2734,7 +2860,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    match = pattern_new_match(module_state, (PatternObject*) self->pattern,
+    match = pattern_new_match(module_state, self->pattern,
                               state, status);
 
     if (status == 0)
@@ -2784,7 +2910,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    match = pattern_new_match(module_state, (PatternObject*) self->pattern,
+    match = pattern_new_match(module_state, self->pattern,
                               state, status);
 
     if (status == 0)
@@ -2820,7 +2946,8 @@ pattern_scanner(_sremodulestate *module_state,
         return NULL;
     }
 
-    scanner->pattern = Py_NewRef(self);
+    Py_INCREF(self);
+    scanner->pattern = self;
 
     PyObject_GC_Track(scanner);
     return (PyObject*) scanner;
@@ -2912,7 +3039,7 @@ expand_template(TemplateObject *self, MatchObject *match)
     }
     else {
         Py_SET_SIZE(list, count);
-        result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
+        result = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
     }
 
 cleanup:
@@ -2938,7 +3065,7 @@ pattern_hash(PatternObject *self)
         return -1;
     }
 
-    hash2 = _Py_HashBytes(self->code, sizeof(self->code[0]) * self->codesize);
+    hash2 = Py_HashBuffer(self->code, sizeof(self->code[0]) * self->codesize);
     hash ^= hash2;
 
     hash ^= self->flags;
@@ -3014,6 +3141,7 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_SCANNER_METHODDEF
     _SRE_SRE_PATTERN___COPY___METHODDEF
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
+    _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {NULL, NULL}
@@ -3269,6 +3397,7 @@ error:
 static PyModuleDef_Slot sre_slots[] = {
     {Py_mod_exec, sre_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

@@ -196,7 +196,7 @@ write_str(stringio *self, PyObject *obj)
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
-            decoded, &_Py_STR(newline), self->writenl, -1);
+            decoded, _Py_LATIN1_CHR('\n'), self->writenl, -1);
         Py_SETREF(decoded, translated);
     }
     if (decoded == NULL)
@@ -353,7 +353,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
     /* In case of overseek, return the empty string */
     if (self->pos >= self->string_size)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     start = self->buf + self->pos;
     if (limit < 0 || limit > self->string_size - self->pos)

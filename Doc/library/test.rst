@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -143,7 +143,7 @@ guidelines to be followed:
          arg = (1, 2, 3)
 
   When using this pattern, remember that all classes that inherit from
-  :class:`unittest.TestCase` are run as tests.  The :class:`Mixin` class in the example above
+  :class:`unittest.TestCase` are run as tests.  The :class:`!TestFuncAcceptsSequencesMixin` class in the example above
   does not have any data and so can't be run by itself, thus it does not
   inherit from :class:`unittest.TestCase`.
 
@@ -324,9 +324,9 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
-   Python is :ref:`built in debug mode <debug-build>`
-   (:option:`./configure --with-pydebug <--with-pydebug>`).
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
+   defined, that is, if
+   Python was :ref:`built in debug mode <debug-build>`.
 
    .. versionadded:: 3.12
 
@@ -731,6 +731,12 @@ The :mod:`test.support` module defines the following functions:
    macOS version is less than the minimum, the test is skipped.
 
 
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
+
+
 .. decorator:: requires_IEEE_754
 
    Decorator for skipping tests on non-IEEE 754 platforms.
@@ -940,7 +946,7 @@ The :mod:`test.support` module defines the following functions:
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
    The *extra* argument can be a set of names that wouldn't otherwise be automatically
-   detected as "public", like objects without a proper ``__module__``
+   detected as "public", like objects without a proper :attr:`~definition.__module__`
    attribute. If provided, it will be added to the automatically detected ones.
 
    The *not_exported* argument can be a set of names that must not be treated
@@ -1695,7 +1701,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
 .. function:: check_warnings(*filters, quiet=True)
 
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   A convenience wrapper for :func:`warnings.catch_warnings` that makes it
    easier to test that a warning was correctly raised.  It is approximately
    equivalent to calling ``warnings.catch_warnings(record=True)`` with
    :meth:`warnings.simplefilter` set to ``always`` and with the option to

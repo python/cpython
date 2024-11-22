@@ -1,5 +1,5 @@
-:mod:`calendar` --- General calendar-related functions
-======================================================
+:mod:`!calendar` --- General calendar-related functions
+=======================================================
 
 .. module:: calendar
    :synopsis: Functions for working with calendars, including some emulation
@@ -393,13 +393,22 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   An array that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current locale,
+   where Monday is day number 0.
+
+       >>> import calendar
+       >>> list(calendar.day_name)
+       ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
 .. data:: day_abbr
 
-   An array that represents the abbreviated days of the week in the current locale.
+   A sequence that represents the abbreviated days of the week in the current locale,
+   where Mon is day number 0.
 
+       >>> import calendar
+       >>> list(calendar.day_abbr)
+       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 .. data:: MONDAY
           TUESDAY
@@ -426,17 +435,24 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: month_name
 
-   An array that represents the months of the year in the current locale.  This
+   A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
    13 and  ``month_name[0]`` is the empty string.
+
+       >>> import calendar
+       >>> list(calendar.month_name)
+       ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 
 .. data:: month_abbr
 
-   An array that represents the abbreviated months of the year in the current
+   A sequence that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+       >>> import calendar
+       >>> list(calendar.month_abbr)
+       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 .. data:: JANUARY
           FEBRUARY
@@ -512,7 +528,7 @@ to interactively print a calendar.
 
    python -m calendar [-h] [-L LOCALE] [-e ENCODING] [-t {text,html}]
                       [-w WIDTH] [-l LINES] [-s SPACING] [-m MONTHS] [-c CSS]
-                      [year] [month]
+                      [-f FIRST_WEEKDAY] [year] [month]
 
 
 For example, to print a calendar for the year 2000:
@@ -586,10 +602,17 @@ The following options are accepted:
    or as an HTML document.
 
 
+.. option:: --first-weekday FIRST_WEEKDAY, -f FIRST_WEEKDAY
+
+   The weekday to start each week.
+   Must be a number between 0 (Monday) and 6 (Sunday).
+   Defaults to 0.
+
+   .. versionadded:: 3.13
+
 .. option:: year
 
    The year to print the calendar for.
-   Must be a number between 1 and 9999.
    Defaults to the current year.
 
 

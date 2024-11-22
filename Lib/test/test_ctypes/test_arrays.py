@@ -1,8 +1,7 @@
 import ctypes
 import sys
 import unittest
-import warnings
-from ctypes import (Structure, Array, sizeof, addressof,
+from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
@@ -17,13 +16,6 @@ formats = c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint, \
           c_long, c_ulonglong, c_float, c_double, c_longdouble
 
 
-def ARRAY(*args):
-    # ignore DeprecationWarning in tests
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
-        return ctypes.ARRAY(*args)
-
-
 class ArrayTestCase(unittest.TestCase):
     def test_inheritance_hierarchy(self):
         self.assertEqual(Array.mro(), [Array, _CData, object])
@@ -36,6 +28,22 @@ class ArrayTestCase(unittest.TestCase):
             with self.subTest(cls=cls):
                 self.assertTrue(cls.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(cls.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_metaclass_details(self):
+        # Abstract classes (whose metaclass __init__ was not called) can't be
+        # instantiated directly
+        NewArray = PyCArrayType.__new__(PyCArrayType, 'NewArray', (Array,), {})
+        for cls in Array, NewArray:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(TypeError, "abstract class"):
+                    obj = cls()
+
+        # Cannot call the metaclass __init__ more than once
+        class T(Array):
+            _type_ = c_int
+            _length_ = 13
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCArrayType.__init__(T, 'ptr', (), {})
 
     def test_simple(self):
         # create classes holding simple numeric types, and check
@@ -237,7 +245,7 @@ class ArrayTestCase(unittest.TestCase):
         class EmptyStruct(Structure):
             _fields_ = []
 
-        obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyStruct * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_empty_element_array(self):
@@ -245,7 +253,7 @@ class ArrayTestCase(unittest.TestCase):
             _type_ = c_int
             _length_ = 0
 
-        obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyArray * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):
@@ -258,10 +266,6 @@ class ArrayTestCase(unittest.TestCase):
     @bigmemtest(size=_2G, memuse=1, dry_run=False)
     def test_large_array(self, size):
         c_char * size
-
-    def test_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            CharArray = ctypes.ARRAY(c_char, 3)
 
 
 if __name__ == '__main__':

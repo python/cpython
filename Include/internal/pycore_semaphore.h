@@ -8,7 +8,6 @@
 #endif
 
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
-#include "pycore_time.h"          // _PyTime_t
 
 #ifdef MS_WINDOWS
 #   define WIN32_LEAN_AND_MEAN
@@ -48,7 +47,7 @@ typedef struct _PySemaphore {
 // If `detach` is true, then the thread will detach/release the GIL while
 // sleeping.
 PyAPI_FUNC(int)
-_PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout_ns, int detach);
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout_ns, int detach);
 
 // Wakes up a single thread waiting on sema. Note that _PySemaphore_Wakeup()
 // can be called before _PySemaphore_Wait().
