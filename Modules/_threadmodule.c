@@ -421,6 +421,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     PyThread_handle_t os_handle;
     if (PyThread_start_joinable_thread(thread_run, boot, &ident, &os_handle)) {
         PyThreadState_Clear(boot->tstate);
+        PyThreadState_Delete(boot->tstate);
         thread_bootstate_free(boot, 1);
         PyErr_SetString(ThreadError, "can't start new thread");
         goto start_failed;
