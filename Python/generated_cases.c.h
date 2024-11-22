@@ -6098,7 +6098,7 @@
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                     next_instr = this_instr;
@@ -6109,7 +6109,7 @@
                 }
                 OPCODE_DEFERRED_INC(LOAD_GLOBAL);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             /* Skip 1 cache entry */
             /* Skip 1 cache entry */
@@ -6144,28 +6144,35 @@
                 uint16_t version = read_u16(&this_instr[2].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
-                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-                assert(DK_IS_UNICODE(dict->ma_keys));
+                PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version, LOAD_GLOBAL);
+                assert(DK_IS_UNICODE(keys));
             }
             // _GUARD_BUILTINS_VERSION_PUSH_KEYS
             {
                 uint16_t version = read_u16(&this_instr[3].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
-                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-                builtins_keys = dict->ma_keys;
+                PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version, LOAD_GLOBAL);
+                builtins_keys = keys;
                 assert(DK_IS_UNICODE(builtins_keys));
             }
             // _LOAD_GLOBAL_BUILTINS_FROM_KEYS
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
-                PyObject *res_o = entries[index].me_value;
+                PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
+                #if Py_GIL_DISABLED
+                int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
+                DEOPT_IF(!increfed, LOAD_GLOBAL);
+                #else
                 Py_INCREF(res_o);
+                res = PyStackRef_FromPyObjectSteal(res_o);
+                #endif
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = PyStackRef_NULL;
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
@@ -6188,8 +6195,9 @@
                 uint16_t version = read_u16(&this_instr[2].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
-                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-                globals_keys = dict->ma_keys;
+                PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version, LOAD_GLOBAL);
+                globals_keys = keys;
                 assert(DK_IS_UNICODE(globals_keys));
             }
             /* Skip 1 cache entry */
@@ -6197,12 +6205,17 @@
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
-                PyObject *res_o = entries[index].me_value;
+                PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
+                #if Py_GIL_DISABLED
+                int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
+                DEOPT_IF(!increfed, LOAD_GLOBAL);
+                #else
                 Py_INCREF(res_o);
+                res = PyStackRef_FromPyObjectSteal(res_o);
+                #endif
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = PyStackRef_NULL;
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
@@ -7745,7 +7758,7 @@
                 value = stack_pointer[-1];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7755,7 +7768,7 @@
                 }
                 OPCODE_DEFERRED_INC(TO_BOOL);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             /* Skip 2 cache entries */
             // _TO_BOOL
@@ -7850,7 +7863,7 @@
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             DEOPT_IF(!PyList_CheckExact(value_o), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+            res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             PyStackRef_CLOSE(value);
             stack_pointer[-1] = res;
             DISPATCH();
