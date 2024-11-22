@@ -583,6 +583,14 @@ are strings::
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``suggest_on_error`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.suggest_on_error = True
+
 .. versionadded:: 3.14
 
 
