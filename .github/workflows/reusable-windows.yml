@@ -33,17 +33,17 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: >-
-        .\PCbuild\build.bat
+        .\\PCbuild\\build.bat
         -e -d -v
         -p ${{ inputs.arch }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Display build info  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
-      run: .\python.bat -m test.pythoninfo
+      run: .\\python.bat -m test.pythoninfo
     - name: Tests  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
       run: >-
-        .\PCbuild\rt.bat
+        .\\PCbuild\\rt.bat
         -p ${{ inputs.arch }}
         -d -q --fast-ci
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
