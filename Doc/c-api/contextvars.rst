@@ -101,21 +101,25 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback callback)
+.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback *callback, PyObject *cbarg)
 
-   Register *callback* as a context object watcher for the current interpreter.
-   Return an ID which may be passed to :c:func:`PyContext_ClearWatcher`.
-   In case of error (e.g. no more watcher IDs available),
-   return ``-1`` and set an exception.
+   Registers *callback* as a context object watcher for the current
+   interpreter, and *cbarg* (which may be NULL; if not, this function creates a
+   new reference) as the object to pass as the callback's first parameter.  On
+   success, returns a non-negative ID which may be passed to
+   :c:func:`PyContext_ClearWatcher` to unregister the callback and remove the
+   added reference to *cbarg*.  Sets an exception and returns ``-1`` on error
+   (e.g., no more watcher IDs available).
 
    .. versionadded:: 3.14
 
 .. c:function:: int PyContext_ClearWatcher(int watcher_id)
 
-   Clear watcher identified by *watcher_id* previously returned from
-   :c:func:`PyContext_AddWatcher` for the current interpreter.
-   Return ``0`` on success, or ``-1`` and set an exception on error
-   (e.g. if the given *watcher_id* was never registered.)
+   Clears the watcher identified by *watcher_id* previously returned from
+   :c:func:`PyContext_AddWatcher` for the current interpreter, and removes the
+   reference created for the *cbarg* object that was registered with the
+   callback.  Returns ``0`` on success, or sets an exception and returns ``-1``
+   on error (e.g., if the given *watcher_id* was never registered).
 
    .. versionadded:: 3.14
 
@@ -130,10 +134,12 @@ Context object management functions:
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyObject *obj)
+.. c:type:: int PyContext_WatchCallback(PyObject *cbarg, PyContextEvent event, PyObject *obj)
 
-   Context object watcher callback function.  The object passed to the callback
-   is event-specific; see :c:type:`PyContextEvent` for details.
+   Context object watcher callback function.  *cbarg* is the same object
+   registered in the call to :c:func:`PyContext_AddWatcher`, as a borrowed
+   reference if non-NULL.  The *obj* object is event-specific; see
+   :c:type:`PyContextEvent` for details.
 
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using
