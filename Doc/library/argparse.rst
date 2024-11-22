@@ -750,7 +750,8 @@ Only actions that consume command-line arguments (e.g. ``'store'``,
 
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
-:meth:`!format_usage` methods.
+:meth:`!format_usage` methods. You can also register custom actions using the
+:meth:`~ArgumentParser.register` method and reference them by their registered name.
 
 An example of a custom action::
 
@@ -971,10 +972,11 @@ necessary type-checking and type conversions to be performed.
 If the type_ keyword is used with the default_ keyword, the type converter
 is only applied if the default is a string.
 
-The argument to ``type`` can be any callable that accepts a single string.
+The argument to ``type`` can be a callable that accepts a single string or
+the name of a registered type (see :meth:`~ArgumentParser.register`)
 If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
 :exc:`ValueError`, the exception is caught and a nicely formatted error
-message is displayed.  No other exception types are handled.
+message is displayed. Other exception types are not handled.
 
 Common built-in types and functions can be used as type converters:
 
@@ -2057,6 +2059,34 @@ Intermixed parsing
 
    .. versionadded:: 3.7
 
+
+Registering custom types or actions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: ArgumentParser.register(registry_name, value, object)
+
+   Sometimes it's desirable to use a custom string in error messages to provide
+   more user-friendly output. In these cases, :meth:`!register` can be used to
+   register custom actions or types with a parser and allow you to reference the
+   type by their registered name instead of their callable name.
+
+   The :meth:`!register` method accepts three arguments - a *registry_name*,
+   specifying the internal registry where the object will be stored (e.g.,
+   ``action``, ``type``), *value*, which is the key under which the object will
+   be registered, and object, the callable to be registered.
+
+   The following example shows how to register a custom type with a parser::
+
+      >>> import argparse
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.register('type', 'hexadecimal integer', lambda s: int(s, 16))
+      >>> parser.add_argument('--foo', type='hexadecimal integer')
+      _StoreAction(option_strings=['--foo'], dest='foo', nargs=None, const=None, default=None, type='hexadecimal integer', choices=None, required=False, help=None, metavar=None, deprecated=False)
+      >>> parser.parse_args(['--foo', '0xFA'])
+      Namespace(foo=250)
+      >>> parser.parse_args(['--foo', '1.2'])
+      usage: PROG [-h] [--foo FOO]
+      PROG: error: argument --foo: invalid 'hexadecimal integer' value: '1.2'
 
 Exceptions
 ----------
