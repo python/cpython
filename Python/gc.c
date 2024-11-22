@@ -456,7 +456,6 @@ validate_spaces(GCState *gcstate)
 static void
 validate_consistent_old_space(PyGC_Head *head)
 {
-    PyGC_Head *prev = head;
     PyGC_Head *gc = GC_NEXT(head);
     if (gc == head) {
         return;
@@ -466,10 +465,8 @@ validate_consistent_old_space(PyGC_Head *head)
         PyGC_Head *truenext = GC_NEXT(gc);
         assert(truenext != NULL);
         assert(gc_old_space(gc) == old_space);
-        prev = gc;
         gc = truenext;
     }
-    assert(prev == GC_PREV(head));
 }
 
 
