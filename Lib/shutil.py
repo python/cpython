@@ -1534,21 +1534,21 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
-        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+        pathext = pathext_source.split(os.pathsep)
+        pathext = [ext.rstrip('.') for ext in pathext if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
 
-        files = ([cmd] + [cmd + ext for ext in pathext])
+        files = [cmd + ext for ext in pathext]
 
-        # gh-109590. If we are looking for an executable, we need to look
-        # for a PATHEXT match. The first cmd is the direct match
-        # (e.g. python.exe instead of python)
-        # Check that direct match first if and only if the extension is in PATHEXT
-        # Otherwise check it last
-        suffix = os.path.splitext(files[0])[1].upper()
-        if mode & os.X_OK and not any(suffix == ext.upper() for ext in pathext):
-            files.append(files.pop(0))
+        # If X_OK in mode, simulate the cmd.exe behavior: look at direct
+        # match if and only if the extension is in PATHEXT.
+        # If X_OK not in mode, simulate the first result of where.exe:
+        # always look at direct match before a PATHEXT match.
+        normcmd = cmd.upper()
+        if not (mode & os.X_OK) or any(normcmd.endswith(ext.upper()) for ext in pathext):
+            files.insert(0, cmd)
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1557,7 +1557,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     seen = set()
     for dir in path:
         normdir = os.path.normcase(dir)
-        if not normdir in seen:
+        if normdir not in seen:
             seen.add(normdir)
             for thefile in files:
                 name = os.path.join(dir, thefile)
