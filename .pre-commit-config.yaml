@@ -57,13 +57,9 @@ repos:
       - id: check-github-workflows
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.3
+    rev: v1.7.4
     hooks:
       - id: actionlint
-        args: [
-          -ignore=1st argument of function call is not assignable,
-          -ignore=SC2(015|038|086|091|097|098|129|155),
-        ]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.0

@@ -3,6 +3,10 @@ name: Reusable Windows
 on:
   workflow_call:
     inputs:
+      os:
+        description: OS to run on
+        required: true
+        type: string
       arch:
         description: CPU architecture
         required: true
@@ -19,10 +23,8 @@ env:
 
 jobs:
   build:
-    name: >-
-      build${{ inputs.arch != 'arm64' && ' and test' || '' }}
-      (${{ inputs.arch }})
-    runs-on: windows-latest
+    name: 'build and test (${{ inputs.arch }})'
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
@@ -31,17 +33,17 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: >-
-        .\PCbuild\build.bat
+        .\\PCbuild\\build.bat
         -e -d -v
         -p ${{ inputs.arch }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
-    - name: Display build info
+    - name: Display build info  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
-      run: .\python.bat -m test.pythoninfo
-    - name: Tests
+      run: .\\python.bat -m test.pythoninfo
+    - name: Tests  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
       run: >-
-        .\PCbuild\rt.bat
+        .\\PCbuild\\rt.bat
         -p ${{ inputs.arch }}
         -d -q --fast-ci
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
