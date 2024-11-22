@@ -390,7 +390,7 @@ Functions
    threads ready to run, the function returns immediately, and the thread
    continues execution.  On Windows 8.1 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
    Unix implementation:

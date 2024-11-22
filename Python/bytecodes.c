@@ -391,7 +391,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ToBool(value, next_instr);
@@ -399,7 +399,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(TO_BOOL);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_TO_BOOL, (value -- res)) {
@@ -435,7 +435,7 @@ dummy_func(
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+            res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             DECREF_INPUTS();
         }
 
@@ -661,7 +661,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = CURRENT_OPERAND();
+            next_oparg = CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             DEOPT_IF(!PyStackRef_Is(*target_local, left));
@@ -1569,7 +1569,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
@@ -1578,7 +1578,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(LOAD_GLOBAL);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
@@ -1599,16 +1599,18 @@ dummy_func(
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            assert(DK_IS_UNICODE(dict->ma_keys));
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            assert(DK_IS_UNICODE(keys));
         }
 
         op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version / 1 -- globals_keys: PyDictKeysObject *))
         {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            globals_keys = dict->ma_keys;
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            globals_keys = keys;
             assert(DK_IS_UNICODE(globals_keys));
         }
 
@@ -1616,33 +1618,44 @@ dummy_func(
         {
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            builtins_keys = dict->ma_keys;
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            builtins_keys = keys;
             assert(DK_IS_UNICODE(builtins_keys));
         }
 
         op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(globals_keys);
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
+            #if Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
+            DEOPT_IF(!increfed);
+            #else
             Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(builtins_keys);
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
+            #if Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
+            DEOPT_IF(!increfed);
+            #else
             Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(LOAD_GLOBAL_MODULE) =
@@ -2132,7 +2145,7 @@ dummy_func(
 
         op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            DEOPT_IF(!PyModule_CheckExact(owner_o));
+            DEOPT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != dict_version);
@@ -2340,10 +2353,6 @@ dummy_func(
             DEOPT_IF(ep->me_key != name);
             PyObject *old_value = ep->me_value;
             DEOPT_IF(old_value == NULL);
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
-                _PyObject_GC_TRACK(dict);
-            }
             _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
@@ -2624,14 +2633,15 @@ dummy_func(
                 }
                 _PyExecutorObject *executor;
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                ERROR_IF(optimized < 0, error);
-                if (optimized) {
+                if (optimized <= 0) {
+                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ERROR_IF(optimized < 0, error);
+                }
+                else {
+                    this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->previous_executor == NULL);
                     tstate->previous_executor = Py_None;
                     GOTO_TIER_TWO(executor);
-                }
-                else {
-                    this_instr[1].counter = restart_backoff_counter(counter);
                 }
             }
             else {
@@ -3459,6 +3469,12 @@ dummy_func(
         op(_CHECK_FUNCTION_VERSION, (func_version/2, callable[1], self_or_null[1], unused[oparg] -- callable[1], self_or_null[1], unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
             EXIT_IF(!PyFunction_Check(callable_o));
+            PyFunctionObject *func = (PyFunctionObject *)callable_o;
+            EXIT_IF(func->func_version != func_version);
+        }
+
+        tier2 op(_CHECK_FUNCTION_VERSION_INLINE, (func_version/2, callable_o/4 --)) {
+            assert(PyFunction_Check(callable_o));
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             EXIT_IF(func->func_version != func_version);
         }
@@ -4868,6 +4884,9 @@ dummy_func(
                         }
                         tstate->previous_executor = (PyObject *)current_executor;
                         GOTO_TIER_ONE(target);
+                    }
+                    else {
+                        exit->temperature = initial_temperature_backoff_counter();
                     }
                 }
                 exit->executor = executor;

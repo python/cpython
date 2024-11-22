@@ -1,8 +1,6 @@
 #ifndef Py_INTERNAL_MODSUPPORT_H
 #define Py_INTERNAL_MODSUPPORT_H
 
-#include "pycore_lock.h"    // _PyOnceFlag
-
 #ifdef __cplusplus
 extern "C" {
 #endif

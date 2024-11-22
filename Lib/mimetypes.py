@@ -23,11 +23,6 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
-import os
-import sys
-import posixpath
-import urllib.parse
-
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -119,6 +114,10 @@ class MimeTypes:
         Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
+        # Lazy import to improve module import time
+        import os
+        import urllib.parse
+
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
@@ -146,6 +145,10 @@ class MimeTypes:
             if '=' in type or '/' not in type:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
+
+        # Lazy import to improve module import time
+        import posixpath
+
         return self._guess_file_type(url, strict, posixpath.splitext)
 
     def guess_file_type(self, path, *, strict=True):
@@ -153,6 +156,9 @@ class MimeTypes:
 
         Similar to guess_type(), but takes file path instead of URL.
         """
+        # Lazy import to improve module import time
+        import os
+
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
         return self._guess_file_type(path, strict, os.path.splitext)
@@ -399,6 +405,9 @@ def init(files=None):
     else:
         db = _db
 
+    # Lazy import to improve module import time
+    import os
+
     for file in files:
         if os.path.isfile(file):
             db.read(file)
@@ -445,7 +454,7 @@ def _default_mime_types():
         }
 
     # Before adding new types, make sure they are either registered with IANA,
-    # at http://www.iana.org/assignments/media-types
+    # at https://www.iana.org/assignments/media-types/media-types.xhtml
     # or extensions, i.e. using the x- prefix
 
     # If you add to these, please keep them sorted by mime type.
@@ -479,6 +488,7 @@ def _default_mime_types():
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
+        '.eot'    : 'application/vnd.ms-fontobject',
         '.ppt'    : 'application/vnd.ms-powerpoint',
         '.pot'    : 'application/vnd.ms-powerpoint',
         '.ppa'    : 'application/vnd.ms-powerpoint',
@@ -534,6 +544,7 @@ def _default_mime_types():
         '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
+        '.mka'    : 'audio/matroska',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
         '.opus'   : 'audio/opus',
@@ -542,21 +553,34 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.otf'    : 'font/otf',
+        '.ttf'    : 'font/ttf',
+        '.woff'   : 'font/woff',
+        '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
+        '.emf'    : 'image/emf',
+        '.fits'   : 'image/fits',
+        '.g3'     : 'image/g3fax',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
+        '.jp2'    : 'image/jp2',
         '.jpg'    : 'image/jpeg',
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
+        '.jpm'    : 'image/jpm',
+        '.jpx'    : 'image/jpx',
         '.heic'   : 'image/heic',
         '.heif'   : 'image/heif',
         '.png'    : 'image/png',
         '.svg'    : 'image/svg+xml',
+        '.t38'    : 'image/t38',
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
+        '.tfx'    : 'image/tiff-fx',
         '.ico'    : 'image/vnd.microsoft.icon',
         '.webp'   : 'image/webp',
+        '.wmf'    : 'image/wmf',
         '.ras'    : 'image/x-cmu-raster',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
@@ -595,6 +619,8 @@ def _default_mime_types():
         '.sgml'   : 'text/x-sgml',
         '.vcf'    : 'text/x-vcard',
         '.xml'    : 'text/xml',
+        '.mkv'    : 'video/matroska',
+        '.mk3d'   : 'video/matroska-3d',
         '.mp4'    : 'video/mp4',
         '.mpeg'   : 'video/mpeg',
         '.m1v'    : 'video/mpeg',
@@ -629,6 +655,7 @@ _default_mime_types()
 
 def _main():
     import getopt
+    import sys
 
     USAGE = """\
 Usage: mimetypes.py [options] type

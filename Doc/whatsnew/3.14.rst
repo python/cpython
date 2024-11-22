@@ -194,6 +194,9 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* All Windows code pages are now supported as "cpXXX" codecs on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`123803`.)
+
 * :class:`super` objects are now :mod:`pickleable <pickle>` and
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
@@ -225,7 +228,7 @@ argparse
 * Introduced the optional *suggest_on_error* parameter to
   :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
   and subparser names if mistyped by the user.
-  (Contributed by Savannah Ostrowski in :gh:`124456`)
+  (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
 ast
 ---
@@ -250,6 +253,12 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
+* The default ``ProcessPoolExecutor`` start method (see
+  :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
+  platforms other than macOS & Windows. If you require the threading
+  incompatible *fork* start method you must explicitly request it by
+  supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
+  (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
 ctypes
 ------
@@ -264,18 +273,21 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-decimal
--------
-
-* Add alternative :class:`~decimal.Decimal` constructor
-  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
-  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+* The :exc:`~ctypes.COMError` exception is now public.
+  (Contributed by Jun Komoda in :gh:`126686`.)
 
 datetime
 --------
 
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
 dis
 ---
@@ -314,6 +326,19 @@ functools
   to reserve a place for positional arguments.
   (Contributed by Dominykas Grigonis in :gh:`119127`.)
 
+* Allow the *initial* parameter of :func:`functools.reduce` to be passed
+  as a keyword argument.
+  (Contributed by Sayandip Dutta in :gh:`125916`.)
+
+
+getopt
+------
+
+* Add support for options with optional arguments.
+  (Contributed by Serhiy Storchaka in :gh:`126374`.)
+
+* Add support for returning intermixed options and non-option arguments in order.
+  (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 http
 ----
@@ -350,6 +375,65 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+
+mimetypes
+---------
+
+* Add MS and :rfc:`8081` MIME types for fonts:
+
+  * Embedded OpenType: ``application/vnd.ms-fontobject``
+  * OpenType Layout (OTF) ``font/otf``
+  * TrueType: ``font/ttf``
+  * WOFF 1.0 ``font/woff``
+  * WOFF 2.0 ``font/woff2``
+
+  (Contributed by Sahil Prajapati and Hugo van Kemenade in :gh:`84852`.)
+
+* Add :rfc:`9559` MIME types for Matroska audiovisual data container
+  structures, containing:
+
+  * audio with no video: ``audio/matroska`` (``.mka``)
+  * video: ``video/matroska`` (``.mkv``)
+  * stereoscopic video: ``video/matroska-3d`` (``.mk3d``)
+
+  (Contributed by Hugo van Kemenade in :gh:`89416`.)
+
+* Add MIME types for images with RFCs:
+
+  * :rfc:`1494`: CCITT Group 3 (``.g3``)
+  * :rfc:`3362`: Real-time Facsimile, T.38 (``.t38``)
+  * :rfc:`3745`: JPEG 2000 (``.jp2``), extension (``.jpx``) and compound (``.jpm``)
+  * :rfc:`3950`: Tag Image File Format Fax eXtended, TIFF-FX (``.tfx``)
+  * :rfc:`4047`: Flexible Image Transport System (``.fits``)
+  * :rfc:`7903`: Enhanced Metafile (``.emf``) and Windows Metafile (``.wmf``)
+
+  (Contributed by Hugo van Kemenade in :gh:`85957`.)
+
+
+multiprocessing
+---------------
+
+* The default start method (see :ref:`multiprocessing-start-methods`) changed
+  from *fork* to *forkserver* on platforms other than macOS & Windows where
+  it was already *spawn*. If you require the threading incompatible *fork*
+  start method you must explicitly request it using a context from
+  :func:`multiprocessing.get_context` (preferred) or change the default via
+  :func:`multiprocessing.set_start_method`.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
+* :mod:`multiprocessing`'s ``"forkserver"`` start method now authenticates
+  its control socket to avoid solely relying on filesystem permissions
+  to restrict what other processes could cause the forkserver to spawn workers
+  and run code.
+  (Contributed by Gregory P. Smith for :gh:`97514`.)
+* The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
+  for *list* and *dict* types gain previously overlooked missing methods:
+
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
+     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+
+  (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
 
 operator
@@ -406,6 +490,14 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
+
 pickle
 ------
 
@@ -458,6 +550,14 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+uuid
+----
+
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -506,14 +606,6 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :mod:`multiprocessing` and :mod:`concurrent.futures`:
-  The default start method (see :ref:`multiprocessing-start-methods`) changed
-  away from *fork* to *forkserver* on platforms where it was not already
-  *spawn* (Windows & macOS). If you require the threading incompatible *fork*
-  start method you must explicitly specify it when using :mod:`multiprocessing`
-  or :mod:`concurrent.futures` APIs.
-  (Contributed by Gregory P. Smith in :gh:`84559`.)
-
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
@@ -523,6 +615,13 @@ Deprecated
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`urllib.parse`:
+  Accepting objects with false values (like ``0`` and ``[]``) except empty
+  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
+  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
+  deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`116897`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -678,6 +777,17 @@ urllib
 * Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
   (Contributed by Nikita Sobolev in :gh:`118827`.)
+* Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
+  from :mod:`urllib.request`. They had previously raised a
+  :exc:`DeprecationWarning` since Python 3.3.
+
+  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`,
+  and ``myopener.retrieve()`` can be replaced with
+  :func:`~urllib.request.urlretrieve`. Customizations to the opener
+  classes can be replaced by passing customized handlers to
+  :func:`~urllib.request.build_opener`.
+
+  (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
 ------
@@ -713,6 +823,16 @@ Changes in the Python API
 
 Build changes
 =============
+
+PEP 761: Discontinuation of PGP signatures
+------------------------------------------
+
+PGP signatures will not be available for CPython 3.14 and onwards.
+Users verifying artifacts must use `Sigstore verification materials`_ for
+verifying CPython artifacts. This change in release process is specified
+in :pep:`761`.
+
+.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
 
 
 C API changes
@@ -755,6 +875,11 @@ New features
   an address sanitizer to identify any use-after-free coming from
   an interned string and deallocate it during module shutdown.
   (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
+  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
+  is positive, negative, or zero, respectively.
+  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
 
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:
@@ -818,6 +943,9 @@ New features
 
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
 Porting to Python 3.14
 ----------------------

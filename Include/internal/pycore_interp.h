@@ -16,7 +16,7 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_crossinterp.h"   // _PyXI_state_t
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -130,6 +130,7 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        _PyThreadStateImpl *preallocated;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
@@ -205,7 +206,7 @@ struct _is {
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
     /* cross-interpreter data and utils */
-    struct _xi_state xi;
+    _PyXI_state_t xi;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
@@ -278,9 +279,10 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    Py_ssize_t _interactive_src_count;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
-    Py_ssize_t _interactive_src_count;
 };
 
 

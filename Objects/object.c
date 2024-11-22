@@ -119,7 +119,7 @@ get_reftotal(PyInterpreterState *interp)
        since we can't determine which interpreter updated it. */
     Py_ssize_t total = REFTOTAL(interp);
 #ifdef Py_GIL_DISABLED
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         /* This may race with other threads modifications to their reftotal */
         _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
         total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
@@ -2457,11 +2457,7 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_CREATE, data);
-    }
+    _PyReftracerTrack(op, PyRefTracer_CREATE);
 }
 
 void
@@ -2519,16 +2515,41 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    if (!PyType_IS_GC(Py_TYPE(op))) {
+        // Deferred reference counting doesn't work
+        // on untracked types.
+        return 0;
+    }
+
+    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
+    if ((bits & _PyGC_BITS_DEFERRED) != 0)
+    {
+        // Nothing to do.
+        return 0;
+    }
+
+    if (_Py_atomic_compare_exchange_uint8(&op->ob_gc_bits, &bits, bits | _PyGC_BITS_DEFERRED) == 0)
+    {
+        // Someone beat us to it!
+        return 0;
+    }
+    _Py_atomic_add_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
-        void* data = _PyRuntime.ref_tracer.tracer_data;
-        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
-    }
 }
 
 
@@ -2918,15 +2939,10 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-    }
-
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
     (*dealloc)(op);
 
 #ifdef Py_DEBUG
