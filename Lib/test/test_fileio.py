@@ -364,8 +364,7 @@ class AutoFileTests:
 
     @strace_helper.requires_strace()
     def test_syscalls_read(self):
-        """Check that the set of system calls produced by the I/O stack is what
-        is expected for various read cases.
+        """Check set of system calls during common I/O patterns
 
         It's expected as bits of the I/O implementation change, this will need
         to change. The goal is to catch changes that unintentionally add
@@ -382,6 +381,11 @@ class AutoFileTests:
                 syscalls = strace_helper.get_events(code, _strace_flags,
                                                       prelude=prelude,
                                                       cleanup=cleanup)
+
+                # Some system calls (ex. mmap) can be used for both File I/O and
+                # memory allocation. Filter out the ones used for memory
+                # allocation.
+                syscalls = strace_helper.filter_memory(syscalls)
 
                 # The first call should be an open that returns a
                 # file descriptor (fd). Afer that calls may vary. Once the file
