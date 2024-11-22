@@ -24,7 +24,7 @@ typedef struct _gc_runtime_state GCState;
 #endif
 
 // Define this when debugging the GC
-#define GC_EXTRA_DEBUG
+// #define GC_EXTRA_DEBUG
 
 
 #define GC_NEXT _PyGCHead_NEXT
