@@ -81,10 +81,10 @@ def filter_memory(syscalls):
     def _filter(call):
         # mmap can operate on a fd or `NULL` which gives a block of memory.
         # Ignore the `NULL` ones.
-        if call.syscall == 'mmap' and call.args[0] == 'NULL':
+        if call.syscall == "mmap" and "MAP_ANON" in call.args[3]:
             return False
 
-        if call.syscall in ('munmap', 'mprotect'):
+        if call.syscall in ("munmap", "mprotect"):
             return False
 
         return True
