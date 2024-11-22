@@ -1788,7 +1788,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(("cr_running", coro.cr_running), members)
         self.assertTrue(any(name.startswith("cr_") for name, _ in attrs))
 
-        coro.close() # silence warnings
+        coro.close()  # silence warnings
 
     def test_getmembers_builtin(self):
         members = inspect.getmembers(len)
