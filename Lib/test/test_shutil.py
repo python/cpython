@@ -2440,7 +2440,7 @@ class TestWhich(BaseTest, unittest.TestCase):
                 self.assertIsNone(rv)
 
     def test_environ_path_cwd(self):
-        expected_cwd = os.path.basename(self.filepath)
+        expected_cwd = self.file
         if sys.platform == "win32":
             expected_cwd = os.path.join(self.curdir, expected_cwd)
 
@@ -2493,62 +2493,72 @@ class TestWhich(BaseTest, unittest.TestCase):
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext(self):
         ext = '.xyz'
-        file = self.to_text_type(TESTFN2)
-        filepath = os.path.join(self.dir, file + self.to_text_type(ext))
+        cmd = self.to_text_type(TESTFN2)
+        cmdext = cmd + self.to_text_type(ext)
+        filepath = os.path.join(self.dir, cmdext)
         self.create_file(filepath)
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = ext
-            self.assertEqual(shutil.which(file, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmdext, path=self.dir), filepath)
 
     # Issue 40592: See https://bugs.python.org/issue40592
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_empty_str(self):
         ext = '.xyz'
-        file = self.to_text_type(TESTFN2)
-        filepath = os.path.join(self.dir, file + self.to_text_type(ext))
+        cmd = self.to_text_type(TESTFN2)
+        cmdext = cmd + self.to_text_type(ext)
+        filepath = os.path.join(self.dir, cmdext)
         self.create_file(filepath)
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = ext + ';'  # note the ;
-            self.assertEqual(shutil.which(file, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmdext, path=self.dir), filepath)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_multidot_extension(self):
         ext = '.foo.bar'
-        file = self.to_text_type(TESTFN2)
-        filepath = os.path.join(self.dir, file + self.to_text_type(ext))
+        cmd = self.to_text_type(TESTFN2)
+        cmdext = cmd + self.to_text_type(ext)
+        filepath = os.path.join(self.dir, cmdext)
         self.create_file(filepath)
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = ext
-            self.assertEqual(shutil.which(file, path=self.dir), filepath)
-            self.assertEqual(shutil.which(file, path=self.dir, mode=os.F_OK), filepath)
-            file2 = file + self.to_text_type(ext)
-            self.assertEqual(shutil.which(file2, path=self.dir), filepath)
-            self.assertEqual(shutil.which(file2, path=self.dir, mode=os.F_OK), filepath)
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmdext, path=self.dir), filepath)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_null_extension(self):
-        file = self.to_text_type(TESTFN2)
-        filepath = os.path.join(self.dir, file)
+        cmd = self.to_text_type(TESTFN2)
+        cmddot = cmd + self.to_text_type('.')
+        filepath = os.path.join(self.dir, cmd)
         self.create_file(filepath)
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = '.xyz'
-            self.assertIsNone(shutil.which(file, path=self.dir))
+            self.assertIsNone(shutil.which(cmd, path=self.dir))
+            self.assertIsNone(shutil.which(cmddot, path=self.dir))
             env['PATHEXT'] = '.xyz;.'  # note the .
-            self.assertEqual(shutil.which(file, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmddot, path=self.dir),
+                             filepath + self.to_text_type('.'))
             env['PATHEXT'] = '.xyz;..'  # multiple dots
-            self.assertEqual(shutil.which(file, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)
+            self.assertEqual(shutil.which(cmddot, path=self.dir),
+                             filepath + self.to_text_type('.'))
 
     # See GH-75586
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_applied_on_files_in_path(self):
         ext = '.xyz'
-        file = self.to_text_type(TESTFN2)
-        filepath = os.path.join(self.dir, file + self.to_text_type(ext))
+        cmd = self.to_text_type(TESTFN2)
+        cmdext = cmd + self.to_text_type(ext)
+        filepath = os.path.join(self.dir, cmdext)
         self.create_file(filepath)
         with os_helper.EnvironmentVarGuard() as env:
             env["PATH"] = os.fsdecode(self.dir)
             env["PATHEXT"] = ext
-            self.assertEqual(shutil.which(file), filepath)
+            self.assertEqual(shutil.which(cmd), filepath)
+            self.assertEqual(shutil.which(cmdext), filepath)
 
     # See GH-75586
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
@@ -2566,77 +2576,105 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_same_dir_with_pathext_extension(self):
-        file = self.file  # with .exe extension
+        cmd = self.file  # with .exe extension
         # full match
-        self.assertNormEqual(shutil.which(file, path=self.dir), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=self.dir, mode=os.F_OK), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir, mode=os.F_OK),
+                             self.filepath)
 
-        # with .exe.com extension
-        other_file_path = os.path.join(self.dir, file + self.to_text_type('.com'))
+        cmd2 = cmd + self.to_text_type('.com')  # with .exe.com extension
+        other_file_path = os.path.join(self.dir, cmd2)
         self.create_file(other_file_path)
 
         # full match
-        self.assertNormEqual(shutil.which(file, path=self.dir), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=self.dir, mode=os.F_OK), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir, mode=os.F_OK),
+                             self.filepath)
+        self.assertNormEqual(shutil.which(cmd2, path=self.dir), other_file_path)
+        self.assertNormEqual(shutil.which(cmd2, path=self.dir, mode=os.F_OK),
+                             other_file_path)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_same_dir_without_pathext_extension(self):
-        file = self.file[:-4]  # without .exe extension
+        cmd = self.file[:-4]  # without .exe extension
         # pathext match
-        self.assertNormEqual(shutil.which(file, path=self.dir), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=self.dir, mode=os.F_OK), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir, mode=os.F_OK),
+                             self.filepath)
 
         # without extension
-        other_file_path = os.path.join(self.dir, file)
+        other_file_path = os.path.join(self.dir, cmd)
         self.create_file(other_file_path)
 
         # pathext match if mode contains X_OK
-        self.assertNormEqual(shutil.which(file, path=self.dir), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir), self.filepath)
         # full match
-        self.assertNormEqual(shutil.which(file, path=self.dir, mode=os.F_OK), other_file_path)
+        self.assertNormEqual(shutil.which(cmd, path=self.dir, mode=os.F_OK),
+                             other_file_path)
+        self.assertNormEqual(shutil.which(self.file, path=self.dir), self.filepath)
+        self.assertNormEqual(shutil.which(self.file, path=self.dir, mode=os.F_OK),
+                             self.filepath)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_dir_order_with_pathext_extension(self):
-        file = self.file  # with .exe extension
-        search_path = os.pathsep.join([os.fsdecode(self.other_dir), os.fsdecode(self.dir)])
+        cmd = self.file  # with .exe extension
+        search_path = os.pathsep.join([os.fsdecode(self.other_dir),
+                                       os.fsdecode(self.dir)])
         # full match in the second directory
-        self.assertNormEqual(shutil.which(file, path=search_path), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=search_path, mode=os.F_OK), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                             self.filepath)
 
-        # with .exe.com extension
-        other_file_path = os.path.join(self.other_dir, file + self.to_text_type('.com'))
+        cmd2 = cmd + self.to_text_type('.com')  # with .exe.com extension
+        other_file_path = os.path.join(self.other_dir, cmd2)
         self.create_file(other_file_path)
 
         # pathext match in the first directory
-        self.assertNormEqual(shutil.which(file, path=search_path), other_file_path)
-        self.assertNormEqual(shutil.which(file, path=search_path, mode=os.F_OK), other_file_path)
+        self.assertNormEqual(shutil.which(cmd, path=search_path), other_file_path)
+        self.assertNormEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                             other_file_path)
+        # full match in the first directory
+        self.assertNormEqual(shutil.which(cmd2, path=search_path), other_file_path)
+        self.assertNormEqual(shutil.which(cmd2, path=search_path, mode=os.F_OK),
+                             other_file_path)
 
         # full match in the first directory
-        search_path = os.pathsep.join([os.fsdecode(self.dir), os.fsdecode(self.other_dir)])
-        self.assertEqual(shutil.which(file, path=search_path), self.filepath)
-        self.assertEqual(shutil.which(file, path=search_path, mode=os.F_OK), self.filepath)
+        search_path = os.pathsep.join([os.fsdecode(self.dir),
+                                       os.fsdecode(self.other_dir)])
+        self.assertEqual(shutil.which(cmd, path=search_path), self.filepath)
+        self.assertEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                         self.filepath)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_dir_order_without_pathext_extension(self):
-        file = self.file[:-4]  # without .exe extension
-        search_path = os.pathsep.join([os.fsdecode(self.other_dir), os.fsdecode(self.dir)])
+        cmd = self.file[:-4]  # without .exe extension
+        search_path = os.pathsep.join([os.fsdecode(self.other_dir),
+                                       os.fsdecode(self.dir)])
         # pathext match in the second directory
-        self.assertNormEqual(shutil.which(file, path=search_path), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=search_path, mode=os.F_OK), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                             self.filepath)
 
         # without extension
-        other_file_path = os.path.join(self.other_dir, file)
+        other_file_path = os.path.join(self.other_dir, cmd)
         self.create_file(other_file_path)
 
         # pathext match in the second directory
-        self.assertNormEqual(shutil.which(file, path=search_path), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path), self.filepath)
         # full match in the first directory
-        self.assertNormEqual(shutil.which(file, path=search_path, mode=os.F_OK), other_file_path)
+        self.assertNormEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                             other_file_path)
+        # full match in the second directory
+        self.assertNormEqual(shutil.which(self.file, path=search_path), self.filepath)
+        self.assertNormEqual(shutil.which(self.file, path=search_path, mode=os.F_OK),
+                             self.filepath)
 
         # pathext match in the first directory
-        search_path = os.pathsep.join([os.fsdecode(self.dir), os.fsdecode(self.other_dir)])
-        self.assertNormEqual(shutil.which(file, path=search_path), self.filepath)
-        self.assertNormEqual(shutil.which(file, path=search_path, mode=os.F_OK), self.filepath)
+        search_path = os.pathsep.join([os.fsdecode(self.dir),
+                                       os.fsdecode(self.other_dir)])
+        self.assertNormEqual(shutil.which(cmd, path=search_path), self.filepath)
+        self.assertNormEqual(shutil.which(cmd, path=search_path, mode=os.F_OK),
+                             self.filepath)
 
 
 class TestWhichBytes(TestWhich):
