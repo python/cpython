@@ -57,10 +57,9 @@ repos:
       - id: check-github-workflows
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.3
+    rev: v1.7.4
     hooks:
       - id: actionlint
-      - args: [-config-file=.github/actionlint.yaml]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.0
