@@ -682,6 +682,7 @@ class RawConfigParser(MutableMapping):
         if defaults:
             self._read_defaults(defaults)
         self._allow_unnamed_section = allow_unnamed_section
+        self._loaded_files = []
 
     def defaults(self):
         return self._defaults
@@ -750,6 +751,7 @@ class RawConfigParser(MutableMapping):
             if isinstance(filename, os.PathLike):
                 filename = os.fspath(filename)
             read_ok.append(filename)
+        self._loaded_files.extend(read_ok)
         return read_ok
 
     def read_file(self, f, source=None):
@@ -1041,12 +1043,31 @@ class RawConfigParser(MutableMapping):
         return itertools.chain((self.default_section,), self._sections.keys())
 
     def __str__(self):
-        config_dict = {section: dict(self.items(section)) for section in self.sections()}
+        config_dict = {
+            section: dict(self.items(section)) for section in self.sections()
+        }
         return str(config_dict)
 
     def __repr__(self):
-        return f"<ConfigParser(default_section='{self.default_section}', interpolation={self._interpolation})>"
+        init_params = {
+            "defaults": self._defaults if self._defaults else None,
+            "dict_type": type(self._dict).__name__,
+            "allow_no_value": self._allow_no_value,
+            "delimiters": self._delimiters,
+            "strict": self._strict,
+            "default_section": self.default_section,
+            "interpolation": type(self._interpolation).__name__,
+        }
+        init_params = {k: v for k, v in init_params.items() if v is not None}
 
+        state_summary = {
+            "loaded_files": self._loaded_files if hasattr(self, '_loaded_files') else "(no files loaded)",
+            "sections": len(self._sections),
+        }
+
+        return (f"<{self.__class__.__name__}("
+                f"params={init_params}, "
+                f"state={state_summary})>")
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
