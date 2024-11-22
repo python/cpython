@@ -195,7 +195,7 @@ your usage messages.
 When a custom usage message is specified for the main parser, you may also want to
 consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
 or the ``prog`` and the ``usage`` arguments to
-:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and 
+:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and
 usage information across subparsers.
 
 
