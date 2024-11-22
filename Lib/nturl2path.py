@@ -22,6 +22,9 @@ def url2pathname(url):
     elif url[:12] == '//localhost/':
         # Skip past 'localhost' authority.
         url = url[11:]
+    if url[:3] == '///':
+        # Skip past extra slash before UNC drive in URL path.
+        url = url[1:]
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
     if not '|' in url:
