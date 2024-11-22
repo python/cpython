@@ -23,6 +23,9 @@ def url2pathname(url):
             # URL has an empty authority section, so the path begins on the
             # third character.
             url = url[2:]
+        elif url[:12] == '//localhost/':
+            # Skip past 'localhost' authority.
+            url = url[11:]
         # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
     comp = url.split('|')
