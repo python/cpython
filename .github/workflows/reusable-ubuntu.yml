@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, ubuntu24.04-aarch64]
+        os: [ubuntu-24.04, ubuntu-24.04-aarch64]
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
