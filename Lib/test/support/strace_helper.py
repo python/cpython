@@ -71,6 +71,17 @@ class StraceResult:
 
         return sections
 
+def _filter_memory_call(call):
+    # mmap can operate on a fd or "MAP_ANONYMOUS" which gives a block of memory.
+    # Ignore "MAP_ANONYMOUS + the "MAP_ANON" alias.
+    if call.syscall == "mmap" and "MAP_ANON" in call.args[3]:
+        return True
+
+    if call.syscall in ("munmap", "mprotect"):
+        return True
+
+    return False
+
 
 def filter_memory(syscalls):
     """Filter out memory allocation calls from File I/O calls.
@@ -79,18 +90,7 @@ def filter_memory(syscalls):
     of memory. Use this function to filter out the memory related calls from
     other calls."""
 
-    def _filter(call):
-        # mmap can operate on a fd or "MAP_ANON" which gives a block of memory.
-        # Ignore the "MAP_ANON" ones.
-        if call.syscall == "mmap" and "MAP_ANON" in call.args[3]:
-            return False
-
-        if call.syscall in ("munmap", "mprotect"):
-            return False
-
-        return True
-
-    return [call for call in syscalls if _filter(call)]
+    return [call for call in syscalls if not _filter_memory_call(call)]
 
 
 @support.requires_subprocess()
