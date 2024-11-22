@@ -38,7 +38,7 @@ Program Execution
 
 - [The Specializing Interpreter](adaptive.md)
 
-- [The Tier 2 Interpreter (coming soon)](tier2.md)
+- [The Tier 2 Interpreter](tier2.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 
