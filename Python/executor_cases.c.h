@@ -1711,15 +1711,33 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            PyCriticalSection cs;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyCriticalSection_Begin(&cs, seq_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #endif
             if (PyList_GET_SIZE(seq_o) != oparg) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+                #ifdef Py_GIL_DISABLED
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCriticalSection_End(&cs);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                #endif
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq_o);
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
+            #ifdef Py_GIL_DISABLED
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyCriticalSection_End(&cs);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #endif
             PyStackRef_CLOSE(seq);
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());

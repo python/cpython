@@ -1381,7 +1381,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
@@ -1389,7 +1389,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(UNPACK_SEQUENCE);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
             (void)seq;
             (void)counter;
         }
@@ -1429,12 +1429,24 @@ dummy_func(
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o));
-            DEOPT_IF(PyList_GET_SIZE(seq_o) != oparg);
+            #ifdef Py_GIL_DISABLED
+            PyCriticalSection cs;
+            PyCriticalSection_Begin(&cs, seq_o);
+            #endif
+            if (PyList_GET_SIZE(seq_o) != oparg) {
+                #ifdef Py_GIL_DISABLED
+                PyCriticalSection_End(&cs);
+                #endif
+                DEOPT_IF(true);
+            }
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq_o);
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
+            #ifdef Py_GIL_DISABLED
+            PyCriticalSection_End(&cs);
+            #endif
             DECREF_INPUTS();
         }
 
@@ -2525,7 +2537,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(CONTAINS_OP);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
