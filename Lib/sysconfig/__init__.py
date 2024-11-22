@@ -189,8 +189,8 @@ def _safe_realpath(path):
     except OSError:
         return path
 
-if sys.executable:
-    _PROJECT_BASE = os.path.dirname(_safe_realpath(sys.executable))
+if sys._base_executable:
+    _PROJECT_BASE = os.path.dirname(_safe_realpath(sys._base_executable))
 else:
     # sys.executable can be empty if argv[0] has been changed and Python is
     # unable to retrieve the real program name
