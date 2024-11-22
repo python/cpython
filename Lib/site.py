@@ -498,9 +498,18 @@ def register_readline():
         PYTHON_BASIC_REPL = False
 
     import atexit
+
     try:
-        import readline
-        import rlcompleter  # noqa: F401
+        try:
+            import readline
+        except ImportError:
+            readline = None
+        else:
+            import rlcompleter  # noqa: F401
+    except ImportError:
+        return
+
+    try:
         if PYTHON_BASIC_REPL:
             CAN_USE_PYREPL = False
         else:
@@ -508,30 +517,36 @@ def register_readline():
             sys.path = [p for p in original_path if p != '']
             try:
                 import _pyrepl.readline
-                import _pyrepl.unix_console
+                if os.name == "nt":
+                    import _pyrepl.windows_console
+                    console_errors = (_pyrepl.windows_console._error,)
+                else:
+                    import _pyrepl.unix_console
+                    console_errors = _pyrepl.unix_console._error
                 from _pyrepl.main import CAN_USE_PYREPL
             finally:
                 sys.path = original_path
     except ImportError:
         return
 
-    # Reading the initialization (config) file may not be enough to set a
-    # completion key, so we set one first and then read the file.
-    if readline.backend == 'editline':
-        readline.parse_and_bind('bind ^I rl_complete')
-    else:
-        readline.parse_and_bind('tab: complete')
+    if readline is not None:
+        # Reading the initialization (config) file may not be enough to set a
+        # completion key, so we set one first and then read the file.
+        if readline.backend == 'editline':
+            readline.parse_and_bind('bind ^I rl_complete')
+        else:
+            readline.parse_and_bind('tab: complete')
 
-    try:
-        readline.read_init_file()
-    except OSError:
-        # An OSError here could have many causes, but the most likely one
-        # is that there's no .inputrc file (or .editrc file in the case of
-        # Mac OS X + libedit) in the expected location.  In that case, we
-        # want to ignore the exception.
-        pass
+        try:
+            readline.read_init_file()
+        except OSError:
+            # An OSError here could have many causes, but the most likely one
+            # is that there's no .inputrc file (or .editrc file in the case of
+            # Mac OS X + libedit) in the expected location.  In that case, we
+            # want to ignore the exception.
+            pass
 
-    if readline.get_current_history_length() == 0:
+    if readline is None or readline.get_current_history_length() == 0:
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
@@ -542,8 +557,10 @@ def register_readline():
 
         if CAN_USE_PYREPL:
             readline_module = _pyrepl.readline
-            exceptions = (OSError, *_pyrepl.unix_console._error)
+            exceptions = (OSError, *console_errors)
         else:
+            if readline is None:
+                return
             readline_module = readline
             exceptions = OSError
 
