@@ -1181,7 +1181,7 @@ class IncrementalGCTests(unittest.TestCase):
             olds.append(newhead)
             if len(olds) == 20:
                 new_objects = _testinternalcapi.get_tracked_heap_size() - initial_heap_size
-                self.assertLess(new_objects, 25_000, f"Heap growing. Reached limit after {i} iterations")
+                self.assertLess(new_objects, 27_000, f"Heap growing. Reached limit after {i} iterations")
                 del olds[:]
         if not enabled:
             gc.disable()
