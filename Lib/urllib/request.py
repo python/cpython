@@ -1657,6 +1657,9 @@ else:
             # URL has an empty authority section, so the path begins on the
             # third character.
             pathname = pathname[2:]
+        elif pathname[:12] == '//localhost/':
+            # Skip past 'localhost' authority.
+            pathname = pathname[11:]
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return unquote(pathname, encoding=encoding, errors=errors)
