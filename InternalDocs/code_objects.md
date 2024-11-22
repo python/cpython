@@ -19,10 +19,6 @@ Code objects are typically produced by the bytecode [compiler](compiler.md),
 although they are often written to disk by one process and read back in by another.
 The disk version of a code object is serialized using the
 [marshal](https://docs.python.org/dev/library/marshal.html) protocol.
-Some code objects are pre-loaded into the interpreter using
-[`Tools/build/deepfreeze.py`](../Tools/build/deepfreeze.py),
-which writes
-[`Python/deepfreeze/deepfreeze.c`](../Python/deepfreeze/deepfreeze.c).
 
 Code objects are nominally immutable.
 Some fields (including `co_code_adaptive` and fields for runtime
@@ -58,8 +54,8 @@ compact, but doesn't return end line numbers or column offsets.
 From C code, you need to call
 [`PyCode_Addr2Location`](https://docs.python.org/dev/c-api/code.html#c.PyCode_Addr2Location).
 
-As the locations table is only consulted by exception handling (to set ``tb_lineno``)
-and by tracing (to pass the line number to the tracing function), lookup is not
+As the locations table is only consulted when displaying a traceback and when
+tracing (to pass the line number to the tracing function), lookup is not
 performance critical.
 In order to reduce the overhead during tracing, the mapping from instruction offset to
 line number is cached in the ``_co_linearray`` field.
@@ -72,9 +68,10 @@ returned by the `co_positions()` iterator.
 
 > [!NOTE]
 > `co_linetable` is not to be confused with `co_lnotab`.
-> For backwards compatibility, `co_lnotab` stores the format
+> For backwards compatibility, `co_lnotab` exposes the format
 > as it existed in Python 3.10 and lower: this older format
 > stores only the start line for each instruction.
+> It is lazily created from `co_linetable` when accessed.
 > See [`Objects/lnotab_notes.txt`](../Objects/lnotab_notes.txt) for more details.
 
 `co_linetable` consists of a sequence of location entries.
