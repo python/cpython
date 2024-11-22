@@ -1932,7 +1932,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             int load_method = oparg & 1;
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -1941,7 +1941,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(LOAD_SUPER_ATTR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         tier1 op(_LOAD_SUPER_ATTR, (global_super_st, class_st, self_st -- attr, null if (oparg & 1))) {

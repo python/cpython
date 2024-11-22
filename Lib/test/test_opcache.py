@@ -1272,6 +1272,47 @@ class TestSpecializer(TestBase):
         self.assert_specialized(g, "CONTAINS_OP_SET")
         self.assert_no_opcode(g, "CONTAINS_OP")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_load_super_attr(self):
+        """Ensure that LOAD_SUPER_ATTR is specialized as expected."""
+
+        class A:
+            def __init__(self):
+                meth = super().__init__
+                super().__init__()
+
+        for _ in range(100):
+            A()
+
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
+
+        # Temporarily replace super() with something else.
+        real_super = super
+
+        def fake_super():
+            def init(self):
+                pass
+
+            return init
+
+        # Force unspecialize
+        globals()['super'] = fake_super
+        try:
+            # Should be unspecialized after enough calls.
+            for _ in range(100):
+                A()
+        finally:
+            globals()['super'] = real_super
+
+        # Ensure the specialized instructions are not present
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+
+        if 0:
+            dis.dis(A.__init__, adaptive=True)
 
 
 if __name__ == "__main__":
