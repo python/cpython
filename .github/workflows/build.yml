@@ -160,10 +160,10 @@ jobs:
           - false
           - true
         include:
-          - os: windows-aarch64
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
             arch: arm64
             free-threading: false
-          - os: windows-aarch64
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
             arch: arm64
             free-threading: true
           - os: windows-latest
