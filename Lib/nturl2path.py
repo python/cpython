@@ -40,6 +40,7 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
+    import ntpath
     import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
@@ -48,16 +49,13 @@ def pathname2url(p):
         p = p[4:]
         if p[:4].upper() == 'UNC/':
             p = '//' + p[4:]
-        elif p[1:2] != ':':
-            raise OSError('Bad path: ' + p)
-    if not ':' in p:
-        # No DOS drive specified, just quote the pathname
-        return urllib.parse.quote(p)
-    comp = p.split(':', maxsplit=2)
-    if len(comp) != 2 or len(comp[0]) > 1:
-        error = 'Bad path: ' + p
-        raise OSError(error)
+    drive, tail = ntpath.splitdrive(p)
+    if drive[1:] == ':':
+        # DOS drive specified. Add three slashes to the start, producing
+        # an authority section with a zero-length authority, and a path
+        # section starting with a single slash.
+        drive = f'///{drive.upper()}'
 
-    drive = urllib.parse.quote(comp[0].upper())
-    tail = urllib.parse.quote(comp[1])
-    return '///' + drive + ':' + tail
+    drive = urllib.parse.quote(drive, safe='/:')
+    tail = urllib.parse.quote(tail)
+    return drive + tail

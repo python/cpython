@@ -1429,8 +1429,9 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
         self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
-        # Long drive letter
-        self.assertRaises(IOError, fn, "XX:\\")
+        # NTFS alternate data streams
+        self.assertEqual(fn('C:\\foo:bar'), '///C:/foo%3Abar')
+        self.assertEqual(fn('foo:bar'), 'foo%3Abar')
         # No drive letter
         self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
