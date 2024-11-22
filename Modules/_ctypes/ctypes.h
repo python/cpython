@@ -248,9 +248,9 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
     char code;
+    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
-    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
