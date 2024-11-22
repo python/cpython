@@ -68,13 +68,13 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     @support.requires_fork()
     @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
-    @support.requires_resource('cpu')
     def test_process_fork_from_a_threadpool(self):
         # bpo-43944: clear concurrent.futures.thread._threads_queues after fork,
         # otherwise child process will try to join parent thread
         def fork_process_and_return_exitcode():
             # Ignore the warning about fork with threads.
-            with self.assertWarnsRegex(DeprecationWarning, msg="use of fork() may lead to deadlocks in child"):
+            with self.assertWarnsRegex(DeprecationWarning,
+                                       r"use of fork\(\) may lead to deadlocks in the child"):
                 p = mp.get_context('fork').Process(target=lambda: 1)
                 p.start()
             p.join()
