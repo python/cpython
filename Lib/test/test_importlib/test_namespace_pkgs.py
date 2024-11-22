@@ -318,6 +318,17 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         self.assertEqual(a_test.attr, 'in module')
 
 
+class NamespaceSubpackageSameName(NamespacePackageTest):
+    paths = ['']
+
+    def test_namespace_subpackage_shares_name_with_directory(self):
+        submodule_path = 'project4.foo'
+        with self.assertRaises(ModuleNotFoundError) as cm:
+            importlib.machinery.PathFinder.find_spec(submodule_path)
+
+        self.assertEqual(cm.exception.name, 'project4')
+
+
 class ReloadTests(NamespacePackageTest):
     paths = ['portion1']
 
