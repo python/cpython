@@ -3611,7 +3611,6 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
-
 #ifndef NDEBUG
 static int _is_python_smallint(PyObject *op)
 {
