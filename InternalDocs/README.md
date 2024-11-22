@@ -34,9 +34,11 @@ Runtime Objects
 Program Execution
 ---
 
-- [The Interpreter](interpreter.md)
+- [The Basic Interpreter](interpreter.md)
 
-- [Adaptive Instruction Families](adaptive.md)
+- [The Specializing Interpreter](adaptive.md)
+
+- [The Tier 2 Interpreter (coming soon)](tier2.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 
