@@ -715,6 +715,7 @@ specialize(_Py_CODEUNIT *instr, uint8_t specialized_opcode)
                             SPEC_FAIL_OTHER);
         return;
     }
+    STAT_INC(_PyOpcode_Deopt[specialized_opcode], success);
     set_counter((_Py_BackoffCounter *)instr + 1, adaptive_counter_cooldown());
 }
 
