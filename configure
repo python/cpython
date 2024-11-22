@@ -9433,6 +9433,7 @@ fi
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS"
+    as_fn_append LDFLAGS_NODIST " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :

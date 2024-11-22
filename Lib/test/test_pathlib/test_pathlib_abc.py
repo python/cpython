@@ -9,7 +9,7 @@ import unittest
 from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
-from test.support import is_wasi
+from test.support import is_wasi, is_emscripten
 from test.support.os_helper import TESTFN
 
 
@@ -2301,6 +2301,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_glob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, recurse_symlinks=True)
@@ -2396,6 +2397,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_rglob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, recurse_symlinks=True)

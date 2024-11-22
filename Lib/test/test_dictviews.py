@@ -2,7 +2,7 @@ import collections.abc
 import copy
 import pickle
 import unittest
-from test.support import get_c_recursion_limit
+from test.support import get_c_recursion_limit, is_emscripten
 
 class DictSetTest(unittest.TestCase):
 
@@ -277,6 +277,7 @@ class DictSetTest(unittest.TestCase):
         # Again.
         self.assertIsInstance(r, str)
 
+    @unittest.skipIf(is_emscripten, "exhausts limited stack")
     def test_deeply_nested_repr(self):
         d = {}
         for i in range(get_c_recursion_limit()//2 + 100):

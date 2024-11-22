@@ -2215,16 +2215,17 @@ class SubinterpreterTest(unittest.TestCase):
                 self.assertEqual(settings, expected)
 
         # expected to fail
-        for config in expected_to_fail:
-            kwargs = dict(zip(kwlist, config))
-            with self.subTest(config):
-                script = textwrap.dedent(f'''
-                    import _testinternalcapi
-                    _testinternalcapi.get_interp_settings()
-                    raise NotImplementedError('unreachable')
-                    ''')
-                with self.assertRaises(_interpreters.InterpreterError):
-                    support.run_in_subinterp_with_config(script, **kwargs)
+        if _interpreters is not None:
+            for config in expected_to_fail:
+                kwargs = dict(zip(kwlist, config))
+                with self.subTest(config):
+                    script = textwrap.dedent(f'''
+                        import _testinternalcapi
+                        _testinternalcapi.get_interp_settings()
+                        raise NotImplementedError('unreachable')
+                        ''')
+                    with self.assertRaises(_interpreters.InterpreterError):
+                        support.run_in_subinterp_with_config(script, **kwargs)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")

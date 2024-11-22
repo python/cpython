@@ -1,7 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import collections
-from test.support import get_c_recursion_limit
+from test.support import get_c_recursion_limit, is_emscripten
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -622,6 +622,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
 
+    @unittest.skipIf(is_emscripten, "Stack overflow")
     def test_repr_deep(self):
         d = self._empty_mapping()
         for i in range(get_c_recursion_limit() + 1):

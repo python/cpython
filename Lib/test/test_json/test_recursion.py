@@ -1,5 +1,6 @@
 from test import support
 from test.test_json import PyTest, CTest
+import unittest
 
 
 class JSONTestObject:
@@ -68,6 +69,7 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @unittest.skipIf(support.is_emscripten, "limited C stack")
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
@@ -81,6 +83,7 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
+    @unittest.skipIf(support.is_emscripten, "limited C stack")
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}
@@ -93,6 +96,7 @@ class TestRecursion:
             with support.infinite_recursion(5000):
                 self.dumps(d)
 
+    @unittest.skipIf(support.is_emscripten, "limited C stack")
     def test_endless_recursion(self):
         # See #12051
         class EndlessJSONEncoder(self.json.JSONEncoder):

@@ -1,6 +1,6 @@
 import unittest
-from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x)
+from test.support import (cpython_only, is_wasi, is_emscripten, requires_limited_api,
+                          Py_DEBUG, set_recursion_limit, skip_on_s390x)
 try:
     import _testcapi
 except ImportError:
@@ -1038,6 +1038,7 @@ class TestRecursion(unittest.TestCase):
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @unittest.skipIf(is_emscripten, "requires deep stack")
     def test_super_deep(self):
 
         def recurse(n):
