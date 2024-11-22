@@ -297,6 +297,19 @@ General Options
 
    .. versionadded:: 3.13
 
+.. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
+
+   Indicate how to integrate the :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+
+   * ``no`` - build the interpreter without the JIT.
+   * ``yes`` - build the interpreter with the JIT.
+   * ``yes-off`` - build the interpreter with the JIT but disable it by default.
+   * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+
+   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+
+   .. versionadded:: 3.13
+
 .. option:: PKG_CONFIG
 
    Path to ``pkg-config`` utility.
@@ -440,15 +453,6 @@ Options for third-party dependencies
 
 WebAssembly Options
 -------------------
-
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
 
 .. option:: --enable-wasm-dynamic-linking
 
@@ -702,7 +706,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`!sys.getobjects` function.
+   * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -1084,7 +1088,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
@@ -1142,11 +1147,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest

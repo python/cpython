@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
+
 /**************/
 /* exceptions */
 /**************/
@@ -38,28 +39,28 @@ extern int _Py_CallInInterpreterAndRawFree(
 /* cross-interpreter data */
 /**************************/
 
-typedef struct _xid _PyCrossInterpreterData;
-typedef PyObject *(*xid_newobjectfunc)(_PyCrossInterpreterData *);
+typedef struct _xidata _PyXIData_t;
+typedef PyObject *(*xid_newobjfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
+// _PyXIData_t is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
-struct _xid {
+struct _xidata {
     // data is the cross-interpreter-safe derivation of a Python object
-    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
+    // (see _PyObject_GetXIData).  It will be NULL if the
     // new_object func (below) encodes the data.
     void *data;
     // obj is the Python object from which the data was derived.  This
     // is non-NULL only if the data remains bound to the object in some
     // way, such that the object must be "released" (via a decref) when
     // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
+    // likely a registered "xidatafunc", is responsible for
     // ensuring it owns the reference (i.e. incref).
     PyObject *obj;
     // interp is the ID of the owning interpreter of the original
     // object.  It corresponds to the active interpreter when
-    // _PyObject_GetCrossInterpreterData() was called.  This should only
+    // _PyObject_GetXIData() was called.  This should only
     // be set by the cross-interpreter machinery.
     //
     // We use the ID rather than the PyInterpreterState to avoid issues
@@ -71,130 +72,138 @@ struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    xid_newobjectfunc new_object;
+    xid_newobjfunc new_object;
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
     // to NULL.  However, for most the data was allocated just for
     // cross-interpreter use, so it must be freed when
-    // _PyCrossInterpreterData_Release is called or the memory will
+    // _PyXIData_Release is called or the memory will
     // leak.  In that case, at the very least this field should be set
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
     xid_freefunc free;
 };
 
-PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
+PyAPI_FUNC(_PyXIData_t *) _PyXIData_New(void);
+PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 
-#define _PyCrossInterpreterData_DATA(DATA) ((DATA)->data)
-#define _PyCrossInterpreterData_OBJ(DATA) ((DATA)->obj)
-#define _PyCrossInterpreterData_INTERPID(DATA) ((DATA)->interpid)
+#define _PyXIData_DATA(DATA) ((DATA)->data)
+#define _PyXIData_OBJ(DATA) ((DATA)->obj)
+#define _PyXIData_INTERPID(DATA) ((DATA)->interpid)
 // Users should not need getters for "new_object" or "free".
+
+
+/* getting cross-interpreter data */
+
+typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
+
+typedef struct _xid_lookup_state _PyXIData_lookup_t;
+
+typedef struct {
+    _PyXIData_lookup_t *global;
+    _PyXIData_lookup_t *local;
+    PyObject *PyExc_NotShareableError;
+} _PyXIData_lookup_context_t;
+
+PyAPI_FUNC(int) _PyXIData_GetLookupContext(
+        PyInterpreterState *,
+        _PyXIData_lookup_context_t *);
+
+PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_CheckXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *);
+PyAPI_FUNC(int) _PyObject_GetXIData(
+        _PyXIData_lookup_context_t *,
+        PyObject *,
+        _PyXIData_t *);
+
+
+/* using cross-interpreter data */
+
+PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
+PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
 
 
 /* defining cross-interpreter data */
 
-PyAPI_FUNC(void) _PyCrossInterpreterData_Init(
-        _PyCrossInterpreterData *data,
+PyAPI_FUNC(void) _PyXIData_Init(
+        _PyXIData_t *data,
         PyInterpreterState *interp, void *shared, PyObject *obj,
-        xid_newobjectfunc new_object);
-PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
-        _PyCrossInterpreterData *,
+        xid_newobjfunc new_object);
+PyAPI_FUNC(int) _PyXIData_InitWithSize(
+        _PyXIData_t *,
         PyInterpreterState *interp, const size_t, PyObject *,
-        xid_newobjectfunc);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
-        PyInterpreterState *, _PyCrossInterpreterData *);
+        xid_newobjfunc);
+PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 
 // Normally the Init* functions are sufficient.  The only time
 // additional initialization might be needed is to set the "free" func,
 // though that should be infrequent.
-#define _PyCrossInterpreterData_SET_FREE(DATA, FUNC) \
+#define _PyXIData_SET_FREE(DATA, FUNC) \
     do { \
         (DATA)->free = (FUNC); \
     } while (0)
 // Additionally, some shareable types are essentially light wrappers
-// around other shareable types.  The crossinterpdatafunc of the wrapper
+// around other shareable types.  The xidatafunc of the wrapper
 // can often be implemented by calling the wrapped object's
-// crossinterpdatafunc and then changing the "new_object" function.
-// We have _PyCrossInterpreterData_SET_NEW_OBJECT() here for that,
+// xidatafunc and then changing the "new_object" function.
+// We have _PyXIData_SET_NEW_OBJECT() here for that,
 // but might be better to have a function like
-// _PyCrossInterpreterData_AdaptToWrapper() instead.
-#define _PyCrossInterpreterData_SET_NEW_OBJECT(DATA, FUNC) \
+// _PyXIData_AdaptToWrapper() instead.
+#define _PyXIData_SET_NEW_OBJECT(DATA, FUNC) \
     do { \
         (DATA)->new_object = (FUNC); \
     } while (0)
 
 
-/* using cross-interpreter data */
-
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
-
-
 /* cross-interpreter data registry */
 
-// For now we use a global registry of shareable classes.  An
-// alternative would be to add a tp_* slot for a class's
-// crossinterpdatafunc. It would be simpler and more efficient.
-
-typedef int (*crossinterpdatafunc)(PyThreadState *tstate, PyObject *,
-                                   _PyCrossInterpreterData *);
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    /* This can be a dangling pointer, but only if weakref is set. */
-    PyTypeObject *cls;
-    /* This is NULL for builtin types. */
-    PyObject *weakref;
-    size_t refcount;
-    crossinterpdatafunc getdata;
-};
-
-struct _xidregistry {
-    int global;  /* builtin types or heap types */
-    int initialized;
-    PyMutex mutex;
-    struct _xidregitem *head;
-};
-
-PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
-PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
+#define Py_CORE_CROSSINTERP_DATA_REGISTRY_H
+#include "pycore_crossinterp_data_registry.h"
+#undef Py_CORE_CROSSINTERP_DATA_REGISTRY_H
 
 
 /*****************************/
 /* runtime state & lifecycle */
 /*****************************/
 
-struct _xi_runtime_state {
+typedef struct {
     // builtin types
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry registry;
-};
+    _PyXIData_lookup_t data_lookup;
+} _PyXI_global_state_t;
 
-struct _xi_state {
+typedef struct {
     // heap types
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry registry;
+    _PyXIData_lookup_t data_lookup;
 
-    // heap types
-    PyObject *PyExc_NotShareableError;
-};
+    struct xi_exceptions {
+        // static types
+        PyObject *PyExc_InterpreterError;
+        PyObject *PyExc_InterpreterNotFoundError;
+        // heap types
+        PyObject *PyExc_NotShareableError;
+    } exceptions;
+} _PyXI_state_t;
 
+#define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)
+#define _PyXI_GET_STATE(interp) (&(interp)->xi)
+
+#ifndef Py_BUILD_CORE_MODULE
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
-
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
+#endif  // Py_BUILD_CORE_MODULE
 
-#define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
+int _Py_xi_global_state_init(_PyXI_global_state_t *);
+void _Py_xi_global_state_fini(_PyXI_global_state_t *);
+int _Py_xi_state_init(_PyXI_state_t *, PyInterpreterState *);
+void _Py_xi_state_fini(_PyXI_state_t *, PyInterpreterState *);
 
 
 /***************************/

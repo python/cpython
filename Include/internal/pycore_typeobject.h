@@ -14,6 +14,21 @@ extern "C" {
 
 /* state */
 
+#define _Py_TYPE_VERSION_INT 1
+#define _Py_TYPE_VERSION_FLOAT 2
+#define _Py_TYPE_VERSION_LIST 3
+#define _Py_TYPE_VERSION_TUPLE 4
+#define _Py_TYPE_VERSION_STR 5
+#define _Py_TYPE_VERSION_SET 6
+#define _Py_TYPE_VERSION_FROZEN_SET 7
+#define _Py_TYPE_VERSION_DICT 8
+#define _Py_TYPE_VERSION_BYTEARRAY 9
+#define _Py_TYPE_VERSION_BYTES 10
+#define _Py_TYPE_VERSION_COMPLEX 11
+
+#define _Py_TYPE_VERSION_NEXT 16
+
+
 #define _Py_TYPE_BASE_VERSION_TAG (2<<16)
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
@@ -243,6 +258,7 @@ extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 // self->tp_flags = (self->tp_flags & ~mask) | flags;
 extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
                              unsigned long flags);
+extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 
 // Like _PyType_SetFlags(), but apply the operation to self and any of its
 // subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
@@ -252,6 +268,16 @@ extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
 extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
+
+// Function pointer type for user-defined validation function that will be
+// called by _PyType_Validate().
+// It should return 0 if the validation is passed, otherwise it will return -1.
+typedef int (*_py_validate_type)(PyTypeObject *);
+
+// It will verify the ``ty`` through user-defined validation function ``validate``,
+// and if the validation is passed, it will set the ``tp_version`` as valid
+// tp_version_tag from the ``ty``.
+extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 
 #ifdef __cplusplus
 }
