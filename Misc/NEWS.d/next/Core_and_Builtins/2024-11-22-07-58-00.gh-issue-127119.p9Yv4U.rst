@@ -1,0 +1,1 @@
+Remove redundant check on small ints in ``long_dealloc``
