@@ -3611,6 +3611,8 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+
+#ifdef Py_DEBUG
 static int _is_python_smallint(PyObject *op)
 {
     PyLongObject *pylong = (PyLongObject*)op;
@@ -3625,6 +3627,7 @@ static int _is_python_smallint(PyObject *op)
     }
     return 0;
 }
+#endif
 
 static void
 long_dealloc(PyObject *self)
