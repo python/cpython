@@ -15,14 +15,17 @@ def url2pathname(url):
     # become
     #   C:\foo\bar\spam.foo
     import string, urllib.parse
+    if url[:3] == '///':
+        # URL has an empty authority section, so the path begins on the third
+        # character.
+        url = url[2:]
+    elif url[:12] == '//localhost/':
+        # Skip past 'localhost' authority.
+        url = url[11:]
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
     if not '|' in url:
         # No drive specifier, just convert slashes
-        if url[:3] == '///':
-            # URL has an empty authority section, so the path begins on the
-            # third character.
-            url = url[2:]
         # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
     comp = url.split('|')
