@@ -119,6 +119,10 @@ Cookie Objects
       for k, v in rawdata.items():
           cookie[k] = v
 
+   .. versionchanged:: 3.9
+      :meth:`load` now correctly throws :class:`CookieError` instead of
+      silently ignoring erroneous data.
+
 
 .. _morsel-objects:
 
