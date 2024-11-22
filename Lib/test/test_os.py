@@ -4177,9 +4177,9 @@ class EventfdTests(unittest.TestCase):
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 10 ms (gh-108277).
+    # emulators, where we allow 100 ms (gh-124873).
     if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 2
+        CLOCK_RES_PLACES = 1
     else:
         CLOCK_RES_PLACES = 3
 

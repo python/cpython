@@ -1,6 +1,7 @@
 import re
 import sys
 import textwrap
+import os
 import unittest
 from dataclasses import dataclass
 from functools import cache
@@ -186,6 +187,13 @@ def _can_strace():
 def requires_strace():
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
+
+    if "LD_PRELOAD" in os.environ:
+        # Distribution packaging (ex. Debian `fakeroot` and Gentoo `sandbox`)
+        # use LD_PRELOAD to intercept system calls, which changes the overall
+        # set of system calls which breaks tests expecting a specific set of
+        # system calls).
+        return unittest.skip("Not supported when LD_PRELOAD is intercepting system calls.")
 
     if support.check_sanitizer(address=True, memory=True):
         return unittest.skip("LeakSanitizer does not work under ptrace (strace, gdb, etc)")

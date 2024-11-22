@@ -1,0 +1,2 @@
+Ensure stack traces are complete when throwing into a generator chain that
+ends in a custom generator.
