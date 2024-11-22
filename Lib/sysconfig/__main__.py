@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from sysconfig import (
@@ -207,13 +208,10 @@ def _generate_posix_vars():
     if hasattr(sys, "gettotalrefcount"):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
-    destfile = os.path.join(pybuilddir, name + '.py')
+    destfile = os.path.join(pybuilddir, name + '.json')
 
     with open(destfile, 'w', encoding='utf8') as f:
-        f.write('# system configuration generated and used by'
-                ' the sysconfig module\n')
-        f.write('build_time_vars = ')
-        _print_config_dict(vars, stream=f)
+        json.dump(vars, f, indent=2)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:

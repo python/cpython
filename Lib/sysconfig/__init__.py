@@ -227,6 +227,10 @@ def is_python_build(check_home=None):
             return True
     return False
 
+def _get_pybuilddir():
+    with open(os.path.join(_PROJECT_BASE, 'pybuilddir.txt')) as f:
+        return os.path.join(_PROJECT_BASE, f.read())
+
 _PYTHON_BUILD = is_python_build()
 
 if _PYTHON_BUILD:
@@ -337,24 +341,19 @@ def _get_sysconfigdata_name():
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    name = _get_sysconfigdata_name()
+    data_dir = _get_pybuilddir() if is_python_build() else sys._stdlib_dir
+    data_path = os.environ.get(
+        '_PYTHON_SYSCONFIGDATA_PATH',
+        os.path.join(data_dir, _get_sysconfigdata_name() + '.json')
+    )
 
-    # For cross builds, the path to the target's sysconfigdata must be specified
-    # so it can be imported. It cannot be in PYTHONPATH, as foreign modules in
-    # sys.path can cause crashes when loaded by the host interpreter.
-    # Rely on truthiness as a valueless env variable is still an empty string.
-    # See OS X note in _generate_posix_vars re _sysconfigdata.
-    if (path := os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')):
-        from importlib.machinery import FileFinder, SourceFileLoader, SOURCE_SUFFIXES
-        from importlib.util import module_from_spec
-        spec = FileFinder(path, (SourceFileLoader, SOURCE_SUFFIXES)).find_spec(name)
-        _temp = module_from_spec(spec)
-        spec.loader.exec_module(_temp)
-    else:
-        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
-    build_time_vars = _temp.build_time_vars
+    import json
+
+    with open(data_path) as f:
+        data = json.load(f)
+
     # GH-126920: Make sure we don't overwrite any of the keys already set
-    vars.update(build_time_vars | vars)
+    vars.update(data | vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
