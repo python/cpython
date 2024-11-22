@@ -1379,6 +1379,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
+   .. versionchanged:: 3.13
+      The :c:member:`PyThreadState.on_delete` callback was removed.
+
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 

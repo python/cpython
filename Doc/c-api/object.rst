@@ -597,5 +597,5 @@ Object Protocol
    This function is intended to be used soon after *obj* is created,
    by the code that creates it.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
