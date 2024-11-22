@@ -1568,6 +1568,8 @@ and are now removed:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
   Use the :mod:`subprocess` module instead.
+  Use :func:`shlex.quote` to replace the undocumented ``pipes.quote``
+  function.
 * :mod:`!sndhdr`:
   The :pypi:`filetype`, :pypi:`puremagic`, or :pypi:`python-magic` libraries
   should be used as replacements.
@@ -2706,3 +2708,14 @@ Regression Test Changes
   option. If used, it specifies a module that should be imported early
   in the lifecycle of the interpreter, before ``site.py`` is executed.
   (Contributed by Łukasz Langa in :gh:`110769`.)
+
+
+Notable changes in 3.13.1
+=========================
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.

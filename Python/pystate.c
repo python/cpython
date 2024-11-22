@@ -632,10 +632,8 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    PyStatus status = _PyObject_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    // We would call _PyObject_InitState() at this point
+    // if interp->feature_flags were alredy set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
@@ -1055,7 +1053,9 @@ get_main_thread(PyInterpreterState *interp)
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
+    if (get_main_thread(interp) != NULL) {
+        // In 3.14+ we use _PyErr_SetInterpreterAlreadyRunning().
+        PyErr_SetString(PyExc_InterpreterError, "interpreter already running");
         return -1;
     }
     PyThreadState *tstate = current_fast_get();
@@ -1101,6 +1101,7 @@ _PyThreadState_IsRunningMain(PyThreadState *tstate)
     return get_main_thread(interp) == tstate;
 }
 
+// This has been removed in 3.14.
 int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {

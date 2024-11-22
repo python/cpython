@@ -169,6 +169,48 @@ _PyDebug_PrintTotalRefs(void) {
 #define REFCHAIN(interp) interp->object_state.refchain
 #define REFCHAIN_VALUE ((void*)(uintptr_t)1)
 
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
+    }
+    return 1;
+}
+
+static int
+refchain_init(PyInterpreterState *interp)
+{
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
+        return 0;
+    }
+    _Py_hashtable_allocator_t alloc = {
+        // Don't use default PyMem_Malloc() and PyMem_Free() which
+        // require the caller to hold the GIL.
+        .malloc = PyMem_RawMalloc,
+        .free = PyMem_RawFree,
+    };
+    REFCHAIN(interp) = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
+        NULL, NULL, &alloc);
+    if (REFCHAIN(interp) == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+refchain_fini(PyInterpreterState *interp)
+{
+    if (has_own_refchain(interp) && REFCHAIN(interp) != NULL) {
+        _Py_hashtable_destroy(REFCHAIN(interp));
+    }
+    REFCHAIN(interp) = NULL;
+}
+
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 {
@@ -2171,16 +2213,7 @@ PyStatus
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
-    };
-    REFCHAIN(interp) = _Py_hashtable_new_full(
-        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
-        NULL, NULL, &alloc);
-    if (REFCHAIN(interp) == NULL) {
+    if (refchain_init(interp) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 #endif
@@ -2191,8 +2224,7 @@ void
 _PyObject_FiniState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_destroy(REFCHAIN(interp));
-    REFCHAIN(interp) = NULL;
+    refchain_fini(interp);
 #endif
 }
 

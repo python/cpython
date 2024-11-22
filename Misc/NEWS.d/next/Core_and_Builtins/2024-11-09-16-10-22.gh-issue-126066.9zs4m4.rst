@@ -1,0 +1,3 @@
+Fix :mod:`importlib` to not write an incomplete .pyc files when a ulimit or some
+other operating system mechanism is preventing the write to go through
+fully.
