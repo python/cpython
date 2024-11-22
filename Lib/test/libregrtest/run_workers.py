@@ -457,7 +457,7 @@ def get_running(workers: list[WorkerThread]) -> str | None:
     running: list[str] = []
     for worker in workers:
         test_name = worker.test_name
-        if not test_name:
+        if test_name == _NOT_RUNNING:
             continue
         dt = time.monotonic() - worker.start_time
         if dt >= PROGRESS_MIN_TIME:
