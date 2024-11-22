@@ -944,7 +944,7 @@ always available.
       This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       The result may include objects from other interpreters.
 

@@ -145,10 +145,6 @@ although there is currently no date scheduled for their removal.
   * ``splitvalue()``
   * ``to_bytes()``
 
-* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
-  :class:`~urllib.request.FancyURLopener` style of invoking requests is
-  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
-
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
 
