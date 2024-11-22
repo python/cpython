@@ -471,6 +471,7 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
     return 0;
 }
 
+#ifdef PY_HAVE_PERF_TRAMPOLINE
 static void
 set_eval_frame(PyThreadState *tstate, _PyFrameEvalFunction eval_frame)
 {
@@ -478,6 +479,7 @@ set_eval_frame(PyThreadState *tstate, _PyFrameEvalFunction eval_frame)
     tstate->interp->eval_frame = eval_frame;
     _PyEval_StartTheWorld(tstate->interp);
 }
+#endif
 
 int
 _PyPerfTrampoline_Init(int activate)
