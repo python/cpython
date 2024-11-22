@@ -2546,6 +2546,21 @@ class TestWhich(BaseTest, unittest.TestCase):
             self.assertEqual(shutil.which(cmddot, path=self.dir),
                              filepath + self.to_text_type('.'))
 
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext_extension_ends_with_dot(self):
+        ext = '.xyz'
+        cmd = self.to_text_type(TESTFN2)
+        cmdext = cmd + self.to_text_type(ext)
+        dot = self.to_text_type('.')
+        filepath = os.path.join(self.dir, cmdext)
+        self.create_file(filepath)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = ext + '.'
+            self.assertEqual(shutil.which(cmd, path=self.dir), filepath)  # cmd.exe hangs here
+            self.assertEqual(shutil.which(cmdext, path=self.dir), filepath)
+            self.assertIsNone(shutil.which(cmd + dot, path=self.dir))
+            self.assertIsNone(shutil.which(cmdext + dot, path=self.dir))
+
     # See GH-75586
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_applied_on_files_in_path(self):

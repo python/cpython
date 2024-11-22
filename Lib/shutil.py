@@ -1551,7 +1551,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
         pathext = pathext_source.split(os.pathsep)
-        pathext = [ext.rstrip('.') and ext for ext in pathext if ext]
+        pathext = [ext.rstrip('.') for ext in pathext if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
