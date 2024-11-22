@@ -3611,14 +3611,26 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static int _is_python_smallint(PyObject *op)
+{
+    PyLongObject *pylong = (PyLongObject*)op;
+    if (pylong && _PyLong_IsCompact(pylong)) {
+        stwodigits ival = medium_value(pylong);
+        if (IS_SMALL_INT(ival)) {
+            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+            if (pylong == small_pylong) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 static void
 long_dealloc(PyObject *self)
 {
-    PyLongObject *pylong = (PyLongObject*)self;
-    if (_PyLong_IsCompact(pylong)) {
-        // assert the small ints are not deallocated
-        assert (!(PyLong_CheckExact(self) && IS_SMALL_INT(medium_value(pylong))));
-    }
+    // assert the small ints are not deallocated
+    assert(!_is_python_smallint(self));
     Py_TYPE(self)->tp_free(self);
 }
 
