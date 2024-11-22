@@ -1429,8 +1429,9 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
         self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
-        # Long drive letter
-        self.assertRaises(IOError, fn, "XX:\\")
+        # NTFS alternate data streams
+        self.assertEqual(fn('C:\\foo:bar'), '///C:/foo%3Abar')
+        self.assertEqual(fn('foo:bar'), 'foo%3Abar')
         # No drive letter
         self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
@@ -1491,10 +1492,12 @@ class Pathname_Tests(unittest.TestCase):
         # UNC paths
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
-        self.assertEqual(fn('/////server/path/to/file'), '\\\\\\server\\path\\to\\file')
+        self.assertEqual(fn('/////server/path/to/file'), '\\\\server\\path\\to\\file')
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
+        self.assertEqual(fn('//localhost/path/to/file'), '\\path\\to\\file')
+        self.assertEqual(fn('//localhost//server/path/to/file'), '\\\\server\\path\\to\\file')
         # Percent-encoded forward slashes are preserved for backwards compatibility
         self.assertEqual(fn('C:/foo%2fbar'), 'C:\\foo/bar')
         self.assertEqual(fn('//server/share/foo%2fbar'), '\\\\server\\share\\foo/bar')
@@ -1513,7 +1516,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//foo/bar'), '//foo/bar')
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
-        self.assertEqual(fn('//localhost/foo/bar'), '//localhost/foo/bar')
+        self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):
