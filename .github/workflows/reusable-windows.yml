@@ -37,7 +37,8 @@ jobs:
         -e -d -v
         -p ${{ inputs.arch }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
-    - name: Display build info
+    - name: Display build info  # FIXME(diegorusso): remove the `if`
+      if: inputs.arch != 'arm64'
       run: .\python.bat -m test.pythoninfo
     - name: Tests  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
