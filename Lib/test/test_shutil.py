@@ -2520,6 +2520,10 @@ class TestWhich(BaseTest, unittest.TestCase):
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = ext
             self.assertEqual(shutil.which(file, path=self.dir), filepath)
+            self.assertEqual(shutil.which(file, path=self.dir, mode=os.F_OK), filepath)
+            file2 = file + self.to_text_type(ext)
+            self.assertEqual(shutil.which(file2, path=self.dir), filepath)
+            self.assertEqual(shutil.which(file2, path=self.dir, mode=os.F_OK), filepath)
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_null_extension(self):
