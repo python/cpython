@@ -12,7 +12,7 @@ Stack Introspection
 -------------------------------------
 
 asyncio has powerful runtime call graph introspection utilities
-to trace the entire call graph of a running coroutine or task, or
+to trace the entire call graph of a running *coroutine* or *task*, or
 a suspended *future*.  These utilities and the underlying machinery
 can be used by users in their Python code or by external profilers
 and debuggers.
@@ -20,12 +20,12 @@ and debuggers.
 .. versionadded:: next
 
 
-.. function:: print_call_graph(*, future=None, file=None, depth=1)
+.. function:: print_call_graph(future=None, /, *, file=None, depth=1)
 
    Print the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   The function receives an optional keyword-only *future* argument.
+   The function receives an optional *future* argument.
    If not passed, the current running task will be used. If there's no
    current task, the function returns ``None``.
 
@@ -33,7 +33,7 @@ and debuggers.
    keyword-only *depth* argument can be used to skip the specified
    number of frames from top of the stack.
 
-   If *file* is not specified the function will print to :data:`sys.stdout`.
+   If *file* is omitted or ``None``, the function will print to :data:`sys.stdout`.
 
    **Example:**
 
@@ -63,16 +63,16 @@ and debuggers.
             |   File 'taskgroups.py', line 107, in async TaskGroup.__aexit__()
             |   File 't2.py', line 7, in async main()
 
-.. function:: format_call_graph(*, future=None, depth=1)
+.. function:: format_call_graph(future=None, /, *, depth=1)
 
    Like :func:`print_call_graph`, but returns a string.
 
-.. function:: capture_call_graph(*, future=None)
+.. function:: capture_call_graph(future=None, /, *, depth=1)
 
    Capture the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   The function receives an optional keyword-only *future* argument.
+   The function receives an optional *future* argument.
    If not passed, the current running task will be used. If there's no
    current task, the function returns ``None``.
 
@@ -87,9 +87,9 @@ and debuggers.
       Where *future* is a reference to a :class:`Future` or
       a :class:`Task` (or their subclasses.)
 
-      ``call_stack`` is a list of ``FrameCallGraphEntry`` objects.
+      ``call_stack`` is a tuple of ``FrameCallGraphEntry`` objects.
 
-      ``awaited_by`` is a list of ``FutureCallGraph`` objects.
+      ``awaited_by`` is a tuple of ``FutureCallGraph`` objects.
 
    * ``FrameCallGraphEntry(frame)``
 
