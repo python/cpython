@@ -1661,9 +1661,13 @@ methodcaller_vectorcall(
     }
 
     assert(mc->vectorcall_args != 0);
-    number_of_arguments++;
-    PyObject **tmp_args = (PyObject **) PyMem_Malloc(number_of_arguments * sizeof(PyObject *));
-    memcpy(tmp_args, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments );
+    size_t buffer_size = sizeof(PyObject *) * (number_of_arguments + 1);
+    PyObject **tmp_args = (PyObject **) PyMem_Malloc buffer_size);
+    if (tmp_args == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    memcpy(tmp_args, mc->vectorcall_args, buffer_size);
     tmp_args[0] = args[0];
     return PyObject_VectorcallMethod(
             mc->name, tmp_args,
