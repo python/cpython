@@ -192,6 +192,12 @@ arguments it contains. The default message can be overridden with the
 The ``%(prog)s`` format specifier is available to fill in the program name in
 your usage messages.
 
+When a custom usage message is specified for the main parser, you may also want to
+consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
+or the ``prog`` and the ``usage`` arguments to
+:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and
+usage information across subparsers.
+
 
 .. _description:
 
@@ -582,6 +588,14 @@ are strings::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``suggest_on_error`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.suggest_on_error = True
 
 .. versionadded:: 3.14
 
@@ -1809,6 +1823,10 @@ Sub-commands
 
    .. versionchanged:: 3.7
       New *required* keyword-only parameter.
+
+   .. versionchanged:: 3.14
+      Subparser's *prog* is no longer affected by a custom usage message in
+      the main parser.
 
 
 FileType objects

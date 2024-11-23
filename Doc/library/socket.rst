@@ -979,7 +979,7 @@ The :mod:`socket` module also offers various network-related services:
       These addresses should generally be tried in order until a connection succeeds
       (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
       In these cases, limiting the *type* and/or *proto* can help eliminate
-      unsuccessful or unusable connecton attempts.
+      unsuccessful or unusable connection attempts.
 
       Some systems will, however, only return a single address.
       (For example, this was reported on Solaris and AIX configurations.)
