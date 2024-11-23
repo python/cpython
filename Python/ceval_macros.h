@@ -151,7 +151,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
@@ -301,14 +301,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#ifdef Py_GIL_DISABLED
-#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
-    do { \
-        /* gh-115999 tracks progress on addressing this. */ \
-        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
-    } while (0);
-#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
-#else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
@@ -318,6 +310,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+
+#ifdef ENABLE_SPECIALIZATION_FT
+/* Multiple threads may execute these concurrently if thread-local bytecode is
+ * disabled and they all execute the main copy of the bytecode. Specialization
+ * is disabled in that case so the value is unused, but the RMW cycle should be
+ * free of data races.
+ */
+#define RECORD_BRANCH_TAKEN(bitset, flag) \
+    FT_ATOMIC_STORE_UINT16_RELAXED(       \
+        bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#else
+#define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -409,7 +413,8 @@ do { \
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
-#define CURRENT_OPERAND() (next_uop[-1].operand)
+#define CURRENT_OPERAND0() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1() (next_uop[-1].operand1)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
 #define JUMP_TO_ERROR() goto jump_to_error_target

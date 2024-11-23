@@ -51,6 +51,9 @@ extern Py_ssize_t _PyObject_AssignUniqueId(PyObject *obj);
 // Releases the allocated id back to the pool.
 extern void _PyObject_ReleaseUniqueId(Py_ssize_t unique_id);
 
+// Releases the allocated id back to the pool.
+extern void _PyObject_DisablePerThreadRefcounting(PyObject *obj);
+
 // Merges the per-thread reference counts into the corresponding objects.
 extern void _PyObject_MergePerThreadRefcounts(_PyThreadStateImpl *tstate);
 
@@ -61,8 +64,8 @@ extern void _PyObject_FinalizePerThreadRefcounts(_PyThreadStateImpl *tstate);
 // Frees the interpreter's pool of type ids.
 extern void _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp);
 
-// Increfs the type, resizing the per-thread refcount array if necessary.
-PyAPI_FUNC(void) _PyType_IncrefSlow(PyHeapTypeObject *type);
+// Increfs the object, resizing the thread-local refcount array if necessary.
+PyAPI_FUNC(void) _PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id);
 
 #endif   /* Py_GIL_DISABLED */
 

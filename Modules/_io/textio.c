@@ -1806,7 +1806,7 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
     Py_ssize_t avail;
 
     if (self->decoded_chars == NULL)
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     /* decoded_chars is guaranteed to be "ready". */
     avail = (PyUnicode_GET_LENGTH(self->decoded_chars)

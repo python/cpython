@@ -4877,7 +4877,7 @@ class ExceptionTest(BaseTest):
         r.addHandler(h)
         try:
             raise RuntimeError('deliberate mistake')
-        except:
+        except RuntimeError:
             logging.exception('failed', stack_info=True)
         r.removeHandler(h)
         h.close()

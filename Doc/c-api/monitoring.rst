@@ -147,7 +147,7 @@ would typically correspond to a python function.
 
    The ``version`` argument is a pointer to a value which should be allocated
    by the user together with ``state_array`` and initialized to 0,
-   and then set only by :c:func:`!PyMonitoring_EnterScope` itelf. It allows this
+   and then set only by :c:func:`!PyMonitoring_EnterScope` itself. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
 

@@ -13,11 +13,11 @@ Pending removal in Python 3.15
   * :c:func:`PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
   * :c:func:`Py_GetExecPrefix`:
-    Get :data:`sys.exec_prefix` instead.
+    Get :data:`sys.base_exec_prefix` and :data:`sys.exec_prefix` instead.
   * :c:func:`Py_GetPath`:
     Get :data:`sys.path` instead.
   * :c:func:`Py_GetPrefix`:
-    Get :data:`sys.prefix` instead.
+    Get :data:`sys.base_prefix` and :data:`sys.prefix` instead.
   * :c:func:`Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.
   * :c:func:`Py_GetProgramName`:
