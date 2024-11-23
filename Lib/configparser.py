@@ -1044,9 +1044,11 @@ class RawConfigParser(MutableMapping):
 
     def __str__(self):
         config_dict = {
-            section: dict(self.items(section)) for section in self.sections()
+            section: {key: value for key, value in self.items(section, raw=True)}
+            for section in self.sections()
         }
         return str(config_dict)
+
 
     def __repr__(self):
         init_params = {
