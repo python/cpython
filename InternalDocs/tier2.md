@@ -13,8 +13,9 @@ enables optimizations that span multiple instructions.
 The program begins running in tier 1, until a `JUMP_BACKWARD` instruction
 determines that it is `hot` because the counter in its
 [inline cache](interpreter.md#inline-cache-entries) indicates that is
-executed more than some threshold number of times. It then calls the
-function `_PyOptimizer_Optimize()` in
+executed more than some threshold number of times (see
+[`backoff_counter_triggers`](../Include/internal/pycore_backoff.h)).
+It then calls the function `_PyOptimizer_Optimize()` in
 [`Python/optimizer.c`](../Python/optimizer.c), passing it the current
 [frame](frames.md) and instruction pointer. `_PyOptimizer_Optimize()`
 constructs an object of type
@@ -46,17 +47,23 @@ each bytecode by an equivalent sequence of micro-ops
 which is generated from [`Python/bytecodes.c`](../Python/bytecodes.c)).
 The micro-op sequence is then optimized by
 `_Py_uop_analyze_and_optimize` in
-[`Python/optimizer_analysis.c`](../Python/optimizer_analysis.c).
+[`Python/optimizer_analysis.c`](../Python/optimizer_analysis.c)
+and a `_PyUOpExecutor_Type` is created to contain it.
 
-## Running a uop executor
+## Running a uop executor on the tier 2 interpreter
 
 After a tier 1 `JUMP_BACKWARD` instruction invokes the uop optimizer
 to create a tier 2 uop executor, it transfers control to this executor
-via the `GOTO_TIER_TWO` macro, which jumps to `tier2_dispatch:` in
-[`Python/ceval.c`](../Python/ceval.c), where there is a loops that
+via the `GOTO_TIER_TWO` macro.
+
+When tier 2 is enabled but the JIT is not (python was configured with
+[`--enable-experimental-jit=interpreter`](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit)),
+the executor jumps to `tier2_dispatch:` in
+[`Python/ceval.c`](../Python/ceval.c), where there is a loop that
 executes the micro-ops which are defined in
 [`Python/executor_cases.c.h`](../Python/executor_cases.c.h).
-This loop exits when an `_EXIT_TRACE` or `_DEOPT` uop is reached.
+This loop exits when an `_EXIT_TRACE` or `_DEOPT` uop is reached,
+and execution returns to teh tier 1 interpreter.
 
 ## Invalidating Executors
 
