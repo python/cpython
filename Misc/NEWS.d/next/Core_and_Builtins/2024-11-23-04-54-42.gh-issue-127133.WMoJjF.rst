@@ -1,0 +1,1 @@
+Calling :meth:`add_argument_group` on an argument group, and calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group` on a mutually exclusive group have been removed. This nesting was never supported, did not always work correctly, and existed in the API by accident through inheritance. This functionality has been deprecated since Python 3.11.
