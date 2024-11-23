@@ -145,7 +145,7 @@ Context object management functions:
    after the callback returns.
 
    If the callback raises an exception it will be printed as an unraisable
-   exception using :c:func`PyErr_FormatUnraisable` and discarded.
+   exception using :c:func:`PyErr_FormatUnraisable` and discarded.
 
    .. versionadded:: 3.14
 
