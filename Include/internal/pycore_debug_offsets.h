@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 // Macros to burn global values in custom sections so out-of-process
-// profilers can locate them easily
+// profilers can locate them easily.
 
 #define GENERATE_DEBUG_SECTION(name, declaration) \
     _GENERATE_DEBUG_SECTION_WINDOWS(name)         \

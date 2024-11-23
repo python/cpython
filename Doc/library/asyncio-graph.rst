@@ -17,7 +17,7 @@ a suspended *future*.  These utilities and the underlying machinery
 can be used by users in their Python code or by external profilers
 and debuggers.
 
-.. versionadded:: 3.14
+.. versionadded:: next
 
 
 .. function:: print_call_graph(*, future=None, file=None, depth=1)
@@ -44,11 +44,11 @@ and debuggers.
       import asyncio
 
       async def test():
-         asyncio.print_call_graph()
+          asyncio.print_call_graph()
 
       async def main():
-         async with asyncio.TaskGroup() as g:
-            g.create_task(test())
+          async with asyncio.TaskGroup() as g:
+              g.create_task(test())
 
       asyncio.run(main())
 
@@ -77,15 +77,15 @@ and debuggers.
    current task, the function returns ``None``.
 
    If the function is called on *the current task*, the optional
-   keyword-only ``depth`` argument can be used to skip the specified
+   keyword-only *depth* argument can be used to skip the specified
    number of frames from top of the stack.
 
    Returns a ``FutureCallGraph`` data class object:
 
    * ``FutureCallGraph(future, call_stack, awaited_by)``
 
-      Where 'future' is a reference to a *Future* or a *Task*
-      (or their subclasses.)
+      Where *future* is a reference to a :class:`Future` or
+      a :class:`Task` (or their subclasses.)
 
       ``call_stack`` is a list of ``FrameCallGraphEntry`` objects.
 
@@ -93,7 +93,7 @@ and debuggers.
 
    * ``FrameCallGraphEntry(frame)``
 
-      Where ``frame`` is a frame object of a regular Python function
+      Where *frame* is a frame object of a regular Python function
       in the call stack.
 
 
@@ -102,7 +102,7 @@ Low level utility functions
 
 To introspect an async call graph asyncio requires cooperation from
 control flow structures, such as :func:`shield` or :class:`TaskGroup`.
-Any time an intermediate ``Future`` object with low-level APIs like
+Any time an intermediate :class:`Future` object with low-level APIs like
 :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>` is
 involved, the following two functions should be used to inform *asyncio*
 about how exactly such intermediate future objects are connected with
@@ -114,11 +114,11 @@ the tasks they wrap or control.
    Record that *future* is awaited on by *waiter*.
 
    Both *future* and *waiter* must be instances of
-   :class:`asyncio.Future <Future>` or :class:`asyncio.Task <Task>` or
-   their subclasses, otherwise the call would have no effect.
+   :class:`Future` or :class:`Task` or their subclasses,
+   otherwise the call would have no effect.
 
    A call to ``future_add_to_awaited_by()`` must be followed by an
-   eventual call to the ``future_discard_from_awaited_by()`` function
+   eventual call to the :func:`future_discard_from_awaited_by` function
    with the same arguments.
 
 
@@ -127,5 +127,5 @@ the tasks they wrap or control.
    Record that *future* is no longer awaited on by *waiter*.
 
    Both *future* and *waiter* must be instances of
-   :class:`asyncio.Future <Future>` or :class:`asyncio.Task <Task>` or
-   their subclasses, otherwise the call would have no effect.
+   :class:`Future` or :class:`Task` or their subclasses, otherwise
+   the call would have no effect.

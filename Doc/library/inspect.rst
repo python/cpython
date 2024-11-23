@@ -316,7 +316,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
-.. versionchanged:: 3.14
+.. versionchanged:: next
 
    Add ``f_generator`` attribute to frames.
 

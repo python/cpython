@@ -1683,8 +1683,7 @@ static PyObject *
 frame_getgenerator(PyFrameObject *f, void *arg) {
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
-        Py_INCREF(gen);
-        return gen;
+        return Py_NewRef(gen);
     }
     Py_RETURN_NONE;
 }
