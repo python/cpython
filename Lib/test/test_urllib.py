@@ -1423,6 +1423,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\?\\unc\\server\\share\\dir'), '//server/share/dir')
         self.assertEqual(fn("C:"), '///C:')
         self.assertEqual(fn("C:\\"), '///C:/')
+        self.assertEqual(fn('c:\\a\\b.c'), '///c:/a/b.c')
         self.assertEqual(fn('C:\\a\\b.c'), '///C:/a/b.c')
         self.assertEqual(fn('C:\\a\\b.c\\'), '///C:/a/b.c/')
         self.assertEqual(fn('C:\\a\\\\b.c'), '///C:/a//b.c')
@@ -1480,6 +1481,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn("///C/test/"), '\\C\\test\\')
         self.assertEqual(fn("////C/test/"), '\\\\C\\test\\')
         # DOS drive paths
+        self.assertEqual(fn('c:/path/to/file'), 'c:\\path\\to\\file')
         self.assertEqual(fn('C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('C:/path/to/file/'), 'C:\\path\\to\\file\\')
         self.assertEqual(fn('C:/path/to//file'), 'C:\\path\\to\\\\file')
