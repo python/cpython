@@ -27,6 +27,7 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
+
 /* Full Python runtime state */
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
