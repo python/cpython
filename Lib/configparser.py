@@ -753,7 +753,6 @@ class RawConfigParser(MutableMapping):
             if isinstance(filename, os.PathLike):
                 filename = os.fspath(filename)
             read_ok.append(filename)
-
         return read_ok
 
     def read_file(self, f, source=None):
@@ -809,7 +808,6 @@ class RawConfigParser(MutableMapping):
                 elements_added.add((section, key))
                 self.set(section, key, value)
         self._loaded_sources.append(source)
-
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.

@@ -1011,7 +1011,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         )
         self.assertEqual(repr(cf), expected_repr)
 
-
     def test_add_section_default(self):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
