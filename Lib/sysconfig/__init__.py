@@ -190,8 +190,8 @@ def _safe_realpath(path):
     except OSError:
         return path
 
-if sys._base_executable:
-    _PROJECT_BASE = os.path.dirname(_safe_realpath(sys._base_executable))
+if sys.executable:
+    _PROJECT_BASE = os.path.dirname(_safe_realpath(sys.executable))
 else:
     # sys.executable can be empty if argv[0] has been changed and Python is
     # unable to retrieve the real program name
@@ -227,10 +227,6 @@ def is_python_build(check_home=None):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
     return False
-
-def _get_pybuilddir():
-    with open(os.path.join(_PROJECT_BASE, 'pybuilddir.txt')) as f:
-        return os.path.join(_PROJECT_BASE, f.read())
 
 _PYTHON_BUILD = is_python_build()
 
@@ -345,11 +341,20 @@ def _get_sysconfigdata():
     global _SYSCONFIGDATA
 
     if _SYSCONFIGDATA is None:
-        data_dir = _get_pybuilddir() if is_python_build() else sys._stdlib_dir
-        data_path = os.environ.get(
-            '_PYTHON_SYSCONFIGDATA_PATH',
-            os.path.join(data_dir, _get_sysconfigdata_name() + '.json')
-        )
+        if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
+            data_path = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
+        else:
+            # Search sys.path
+            # FIXME: We should not need this if we could reliably identify the project directory on source builds
+            name = _get_sysconfigdata_name() + '.json'
+            for path in sys.path:
+                data_path = os.path.join(path, name)
+                if os.path.isfile(data_path):
+                    break
+            else:
+                import warnings
+                warnings.warn(f'Could not find {name}', RuntimeWarning)
+                return {}
 
         import json
 
