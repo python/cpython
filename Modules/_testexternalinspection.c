@@ -359,7 +359,7 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
             section_header_table[i].sh_name +
             1  // "+1" accounts for the leading "."
         );
-        this_sec_name += 1;
+
         if (strcmp(secname, this_sec_name) == 0) {
             section = &section_header_table[i];
             break;
