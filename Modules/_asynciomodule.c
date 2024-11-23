@@ -2155,8 +2155,8 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
     // memory reads and logic, as Python's dict is a notoriously complex
     // and ever-changing data structure.
     //
-    // So the actual solution is to put a reference to the currently
-    // running asyncio Task to the interpreter thread state (we already
+    // So the easier solution is to put a strong reference of the currently
+    // running `asyncio.Task` to the interpreter thread state (we already
     // have some asyncio state there.)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     if (ts->asyncio_running_loop == loop) {
@@ -2172,7 +2172,7 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         //
         // That said, we still want to make sure we don't end up in
         // a broken state, so we check that we're in the correct thread
-        // by comparing the *loop* argument to the event loop set
+        // by comparing the *loop* argument to running event loop
         // in the current thread. If they match we know we're in the
         // right thread, as asyncio event loops don't change threads.
         assert(ts->asyncio_running_task == NULL);
