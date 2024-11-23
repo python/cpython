@@ -222,19 +222,17 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
 
-    // We use _Py_FREELIST_POP_MEM instead of _Py_FREELIST_POP because the new
-    // reference is created in _PyObject_Init
-    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP_MEM(ints);
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
     if (v == NULL) {
         v = PyObject_Malloc(sizeof(PyLongObject));
         if (v == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
+        _PyObject_Init((PyObject*)v, &PyLong_Type);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
-    _PyObject_Init((PyObject*)v, &PyLong_Type);
     v->long_value.ob_digit[0] = abs_x;
     return (PyObject*)v;
 }
