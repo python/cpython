@@ -2218,7 +2218,7 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
         Py_CLEAR(ts->asyncio_running_task);
     }
 
-    return 0;
+    return res;
 }
 
 static PyObject *
