@@ -16,26 +16,23 @@ else:
 
 import hashlib as _hashlib
 
-trans_5C = bytes((x ^ 0x5C) for x in range(256))
-trans_36 = bytes((x ^ 0x36) for x in range(256))
+# Constants for padding
+INNER_PAD = 0x36
+OUTER_PAD = 0x5C
 
 # The size of the digests returned by HMAC depends on the underlying
-# hashing module used.  Use digest_size from the instance of HMAC instead.
+# hashing module used. Use digest_size from the instance of HMAC instead.
 digest_size = None
 
 
 class HMAC:
-    """RFC 2104 HMAC class.  Also complies with RFC 4231.
+    """RFC 2104 HMAC class. Complies with RFC 4231 and PEP 247."""
 
-    This supports the API for Cryptographic Hash Functions (PEP 247).
-    """
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
-    __slots__ = (
-        "_hmac", "_inner", "_outer", "block_size", "digest_size"
-    )
+    __slots__ = ("_hmac", "_inner", "_outer", "block_size", "digest_size")
 
-    def __init__(self, key, msg=None, digestmod=''):
+    def __init__(self, key: bytes, msg: bytes = None, digestmod: str = '') -> None:
         """Create a new HMAC object.
 
         key: bytes or buffer, key for the keyed hash object.
@@ -43,15 +40,9 @@ class HMAC:
         digestmod: A hash name suitable for hashlib.new(). *OR*
                    A hashlib constructor returning a new hash object. *OR*
                    A module supporting PEP 247.
-
-                   Required as of 3.8, despite its position after the optional
-                   msg argument.  Passing it as a keyword argument is
-                   recommended, though not required for legacy API reasons.
         """
-
         if not isinstance(key, (bytes, bytearray)):
-            raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
-
+            raise TypeError(f"Expected bytes or bytearray for key, got {type(key).__name__}")
         if not digestmod:
             raise TypeError("Missing required argument 'digestmod'.")
 
@@ -62,69 +53,68 @@ class HMAC:
                 self._init_old(key, msg, digestmod)
         else:
             self._init_old(key, msg, digestmod)
-
-    def _init_hmac(self, key, msg, digestmod):
+    
+    def _init_hmac(self, key: bytes, msg: bytes, digestmod: str) -> None:
+        """Initialize HMAC using openssl."""
         self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=digestmod)
         self.digest_size = self._hmac.digest_size
         self.block_size = self._hmac.block_size
 
-    def _init_old(self, key, msg, digestmod):
-        if callable(digestmod):
-            digest_cons = digestmod
-        elif isinstance(digestmod, str):
-            digest_cons = lambda d=b'': _hashlib.new(digestmod, d)
-        else:
-            digest_cons = lambda d=b'': digestmod.new(d)
-
-        self._hmac = None
+    def _init_old(self, key: bytes, msg: bytes, digestmod: str) -> None:
+        """Initialize HMAC for old methods."""
+        digest_cons = self._get_digest_cons(digestmod)
         self._outer = digest_cons()
         self._inner = digest_cons()
         self.digest_size = self._inner.digest_size
+        self._handle_blocksize(self._inner.block_size)
 
-        if hasattr(self._inner, 'block_size'):
-            blocksize = self._inner.block_size
-            if blocksize < 16:
-                _warnings.warn('block_size of %d seems too small; using our '
-                               'default of %d.' % (blocksize, self.blocksize),
-                               RuntimeWarning, 2)
-                blocksize = self.blocksize
-        else:
-            _warnings.warn('No block_size attribute on given digest object; '
-                           'Assuming %d.' % (self.blocksize),
-                           RuntimeWarning, 2)
-            blocksize = self.blocksize
-
-        if len(key) > blocksize:
-            key = digest_cons(key).digest()
-
-        # self.blocksize is the default blocksize. self.block_size is
-        # effective block size as well as the public API attribute.
-        self.block_size = blocksize
-
-        key = key.ljust(blocksize, b'\0')
+        # Prepare the key
+        key = self._prepare_key(key, self.block_size)
         self._outer.update(key.translate(trans_5C))
         self._inner.update(key.translate(trans_36))
         if msg is not None:
             self.update(msg)
 
+    def _get_digest_cons(self, digestmod: str):
+        """Returns a suitable digest constructor."""
+        if callable(digestmod):
+            return digestmod
+        elif isinstance(digestmod, str):
+            return lambda d=b'': _hashlib.new(digestmod, d)
+        else:
+            return lambda d=b'': digestmod.new(d)
+
+    def _handle_blocksize(self, blocksize: int) -> None:
+        """Handle blocksize warnings."""
+        if blocksize < 16:
+            _warnings.warn(f'block_size of {blocksize} seems too small; using default of {self.blocksize}.', RuntimeWarning, 2)
+            blocksize = self.blocksize
+        self.block_size = blocksize
+
+    def _prepare_key(self, key: bytes, blocksize: int) -> bytes:
+        """Prepare the key for the HMAC calculation."""
+        if len(key) > blocksize:
+            key = _hashlib.new(self._inner.name, key).digest()
+        return key.ljust(blocksize, b'\0')
+
     @property
-    def name(self):
+    def name(self) -> str:
+        """Return the name of the hashing algorithm."""
         if self._hmac:
             return self._hmac.name
         else:
             return f"hmac-{self._inner.name}"
 
-    def update(self, msg):
-        """Feed data from msg into this hashing object."""
+    def update(self, msg: bytes) -> None:
+        """Feed data into this hashing object."""
         inst = self._hmac or self._inner
         inst.update(msg)
 
-    def copy(self):
+    def copy(self) -> 'HMAC':
         """Return a separate copy of this hashing object.
 
         An update to this copy won't affect the original object.
         """
-        # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
         if self._hmac:
@@ -148,34 +138,30 @@ class HMAC:
             h.update(self._inner.digest())
             return h
 
-    def digest(self):
+    def digest(self) -> bytes:
         """Return the hash value of this hashing object.
 
-        This returns the hmac value as bytes.  The object is
+        This returns the hmac value as bytes. The object is
         not altered in any way by this function; you can continue
         updating the object after calling this function.
         """
         h = self._current()
         return h.digest()
 
-    def hexdigest(self):
-        """Like digest(), but returns a string of hexadecimal digits instead.
-        """
+    def hexdigest(self) -> str:
+        """Like digest(), but returns a string of hexadecimal digits instead."""
         h = self._current()
         return h.hexdigest()
 
-def new(key, msg=None, digestmod=''):
-    """Create a new hashing object and return it.
+
+def new(key: bytes, msg: bytes = None, digestmod: str = '') -> HMAC:
+    """Create a new HMAC object and return it.
 
     key: bytes or buffer, The starting key for the hash.
     msg: bytes or buffer, Initial input for the hash, or None.
     digestmod: A hash name suitable for hashlib.new(). *OR*
                A hashlib constructor returning a new hash object. *OR*
                A module supporting PEP 247.
-
-               Required as of 3.8, despite its position after the optional
-               msg argument.  Passing it as a keyword argument is
-               recommended, though not required for legacy API reasons.
 
     You can now feed arbitrary bytes into the object using its update()
     method, and can ask for the hash value at any time by calling its digest()
@@ -184,7 +170,7 @@ def new(key, msg=None, digestmod=''):
     return HMAC(key, msg, digestmod)
 
 
-def digest(key, msg, digest):
+def digest(key: bytes, msg: bytes, digest: str) -> bytes:
     """Fast inline implementation of HMAC.
 
     key: bytes or buffer, The key for the keyed hash object.
@@ -199,13 +185,7 @@ def digest(key, msg, digest):
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
-    if callable(digest):
-        digest_cons = digest
-    elif isinstance(digest, str):
-        digest_cons = lambda d=b'': _hashlib.new(digest, d)
-    else:
-        digest_cons = lambda d=b'': digest.new(d)
-
+    digest_cons = _get_digest_cons(digest)
     inner = digest_cons()
     outer = digest_cons()
     blocksize = getattr(inner, 'block_size', 64)
@@ -217,3 +197,4 @@ def digest(key, msg, digest):
     inner.update(msg)
     outer.update(inner.digest())
     return outer.digest()
+
