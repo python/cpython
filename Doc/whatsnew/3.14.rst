@@ -542,7 +542,7 @@ asyncio
   the program's call graph: :func:`asyncio.capture_call_graph` and
   :func:`asyncio.print_call_graph`.
   (Contributed by Yury Selivanov, Pablo Galindo Salgado, Łukasz Langa
-   and Kumar Aditya in :gh:`91048`.)
+  and Kumar Aditya in :gh:`91048`.)
 
 io
 ---
