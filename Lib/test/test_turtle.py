@@ -473,10 +473,10 @@ class TestRawTurtle(unittest.TestCase):
             raise unittest.SkipTest() # cannot instantiate RawTurtle without a screen
 
     def test_clone(self):
-        rawturtle = turtle.RawTurtle(self.screen)
-        another_turtle = rawturtle.clone()
+        raw_turtle = turtle.RawTurtle(self.screen)
+        another_turtle = raw_turtle.clone()
         self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
-        self.assertFalse(rawturtle.currentLineItem in another_turtle.items)
+        self.assertNotIn(raw_turtle.currentLineItem, another_turtle.items)
 
 
 class TestTurtleScreen(unittest.TestCase):
