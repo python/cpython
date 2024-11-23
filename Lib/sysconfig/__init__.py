@@ -181,6 +181,7 @@ _CONFIG_VARS = None
 # True iff _CONFIG_VARS has been fully initialized.
 _CONFIG_VARS_INITIALIZED = False
 _USER_BASE = None
+_SYSCONFIGDATA = None
 
 
 def _safe_realpath(path):
@@ -338,22 +339,30 @@ def _get_sysconfigdata_name():
         f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
     )
 
+
+def _get_sysconfigdata():
+    # _sysconfigdata is generated at build time, see _generate_posix_vars()
+    global _SYSCONFIGDATA
+
+    if _SYSCONFIGDATA is None:
+        data_dir = _get_pybuilddir() if is_python_build() else sys._stdlib_dir
+        data_path = os.environ.get(
+            '_PYTHON_SYSCONFIGDATA_PATH',
+            os.path.join(data_dir, _get_sysconfigdata_name() + '.json')
+        )
+
+        import json
+
+        with open(data_path) as f:
+            _SYSCONFIGDATA = json.load(f)
+
+    return _SYSCONFIGDATA
+
+
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
-    # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    data_dir = _get_pybuilddir() if is_python_build() else sys._stdlib_dir
-    data_path = os.environ.get(
-        '_PYTHON_SYSCONFIGDATA_PATH',
-        os.path.join(data_dir, _get_sysconfigdata_name() + '.json')
-    )
-
-    import json
-
-    with open(data_path) as f:
-        data = json.load(f)
-
     # GH-126920: Make sure we don't overwrite any of the keys already set
-    vars.update(data | vars)
+    vars.update(_get_sysconfigdata() | vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""

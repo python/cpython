@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import sysconfig
 from sysconfig import (
     _ALWAYS_STR,
     _PYTHON_BUILD,
@@ -193,16 +194,10 @@ def _generate_posix_vars():
     # _sysconfigdata.py module being constructed.  Unfortunately,
     # get_config_vars() eventually calls _init_posix(), which attempts
     # to import _sysconfigdata, which we won't have built yet.  In order
-    # for _init_posix() to work, if we're on Darwin, just mock up the
-    # _sysconfigdata module manually and populate it with the build vars.
-    # This is more than sufficient for ensuring the subsequent call to
-    # get_platform() succeeds.
+    # for _init_posix() to work, we set the _SYSCONFIGDATA cache directly
     name = _get_sysconfigdata_name()
     if 'darwin' in sys.platform:
-        import types
-        module = types.ModuleType(name)
-        module.build_time_vars = vars
-        sys.modules[name] = module
+        sysconfig._SYSCONFIGDATA = vars
 
     pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
     if hasattr(sys, "gettotalrefcount"):
