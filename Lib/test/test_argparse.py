@@ -3621,55 +3621,6 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -c          c help
         '''
 
-class TestMutuallyExclusiveNested(MEMixin, TestCase):
-
-    # Nesting mutually exclusive groups is an undocumented feature
-    # that came about by accident through inheritance and has been
-    # the source of many bugs. It is deprecated and this test should
-    # eventually be removed along with it.
-
-    def get_parser(self, required):
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
-        group.add_argument('-a')
-        group.add_argument('-b')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group2 = group.add_mutually_exclusive_group(required=required)
-        group2.add_argument('-c')
-        group2.add_argument('-d')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group3 = group2.add_mutually_exclusive_group(required=required)
-        group3.add_argument('-e')
-        group3.add_argument('-f')
-        return parser
-
-    usage_when_not_required = '''\
-        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
-        '''
-    usage_when_required = '''\
-        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
-        '''
-
-    help = '''\
-
-        options:
-          -h, --help  show this help message and exit
-          -a A
-          -b B
-          -c C
-          -d D
-          -e E
-          -f F
-        '''
-
-    # We are only interested in testing the behavior of format_usage().
-    test_failures_when_not_required = None
-    test_failures_when_required = None
-    test_successes_when_not_required = None
-    test_successes_when_required = None
-
 
 class TestMutuallyExclusiveOptionalOptional(MEMixin, TestCase):
     def get_parser(self, required=None):
@@ -4838,25 +4789,6 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
             '--param2',
             nargs='?', const='default', metavar='NAME', help=argparse.SUPPRESS)
         usage = 'usage: PROG [-h]\n'
-        self.assertEqual(parser.format_usage(), usage)
-
-    def test_nested_mutex_groups(self):
-        parser = argparse.ArgumentParser(prog='PROG')
-        g = parser.add_mutually_exclusive_group()
-        g.add_argument("--spam")
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            gg = g.add_mutually_exclusive_group()
-        gg.add_argument("--hax")
-        gg.add_argument("--hox", help=argparse.SUPPRESS)
-        gg.add_argument("--hex")
-        g.add_argument("--eggs")
-        parser.add_argument("--num")
-
-        usage = textwrap.dedent('''\
-        usage: PROG [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
-                    [--num NUM]
-        ''')
         self.assertEqual(parser.format_usage(), usage)
 
     def test_long_mutex_groups_wrap(self):
