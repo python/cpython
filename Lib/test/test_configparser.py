@@ -980,6 +980,28 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertRaises(TypeError, cf.set, "sect", 123, "invalid opt name!")
         self.assertRaises(TypeError, cf.add_section, 123)
 
+    def test_str_and_repr(self):
+        self.maxDiff = None
+        cf = self.config_class(allow_no_value=True, delimiters=('=',), strict=True)
+
+        cf.add_section("sect")
+        cf.set("sect", "option1", "foo")
+        cf.set("sect", "option2", "bar")
+
+        expected_str = "{'sect': {'option1': 'foo', 'option2': 'bar'}}"
+        self.assertEqual(str(cf), expected_str)
+
+        dict_type = type(cf._dict).__name__
+
+        expected_repr = (
+            f"<{cf.__class__.__name__}("
+            f"params={{'dict_type': '{dict_type}', 'allow_no_value': True, "
+            "'delimiters': ('=',), 'strict': True, 'default_section': 'DEFAULT', "
+            "'interpolation': 'BasicInterpolation'}, "
+            "state={'loaded_files': [], 'sections': 1})>"
+        )
+        self.assertEqual(repr(cf), expected_repr)
+
     def test_add_section_default(self):
         cf = self.newconfig()
         self.assertRaises(ValueError, cf.add_section, self.default_section)
@@ -1153,6 +1175,8 @@ class RawConfigParserTestSambaConf(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(cf.get("global", "hosts allow"), "127.")
         self.assertEqual(cf.get("tmp", "echo command"), "cat %s; rm %s")
 
+        
+
 class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase):
     config_class = configparser.ConfigParser
     interpolation = configparser.ExtendedInterpolation()
@@ -1299,6 +1323,8 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         eq(cf['Common']['Option'], 'A Better Value')
         eq(cf['random']['foo'], 'value redefined')
         eq(cf['random']['Foo'], 'A Better Value Redefined')
+
+    
 
     def test_other_errors(self):
         cf = self.fromstring("""
