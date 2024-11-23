@@ -380,6 +380,25 @@ unexpected, or if other problems occur while reading the file, instantiating a
       .. versionadded:: 3.8
 
 
+Utility functions
+^^^^^^^^^^^^^^^^^
+
+.. function:: c2py(plural)
+
+   Convert a :file:`.po` file plural rule to a Python function.
+   The returned function takes a single integer argument and returns the
+   corresponding plural index in the message catalog. See
+   `the GNU gettext documentation <https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html>`__
+   for more details about plural rules.
+
+   Example usage::
+
+      >>> plural_fn = c2py('n == 1 ? 0 : 1')
+      >>> plural_fn(1)
+      0
+      >>> plural_fn(5)
+      1
+
 Solaris message catalog support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
