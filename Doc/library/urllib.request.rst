@@ -148,9 +148,14 @@ The :mod:`urllib.request` module defines the following functions:
 
 .. function:: pathname2url(path)
 
-   Convert the given local path to a ``file:`` URL. For historical reasons,
-   the return value omits the ``file:`` scheme prefix. This function uses
-   :func:`~urllib.parse.quote` function to encode the path.
+   Convert the given local path to a ``file:`` URL. This function uses
+   :func:`~urllib.parse.quote` function to encode the path. For historical
+   reasons, the return value omits the ``file:`` scheme prefix. For example::
+
+      >>> from urllib.request import pathname2url
+      >>> path = 'C:\\Windows'
+      >>> 'file:' + pathname2url(path)
+      'file:///C:/Windows'
 
    .. versionchanged:: 3.14
       On Windows, ``:`` characters not following a drive letter are quoted. In
@@ -160,10 +165,14 @@ The :mod:`urllib.request` module defines the following functions:
 
 .. function:: url2pathname(url)
 
-   Convert the given ``file:`` URL to a local path. For historical reasons,
-   the given URL *must* omit the ``file:`` scheme prefix. This function uses
-   :func:`~urllib.parse.unquote` to decode the URL.
+   Convert the given ``file:`` URL to a local path. This function uses
+   :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
+   the given URL *must* omit the ``file:`` scheme prefix. For example::
 
+      >>> from urllib.request import url2pathname
+      >>> url = 'file:///C:/Windows'
+      >>> url2pathname(url.removeprefix('file:'))
+      'C:\\Windows'
 
 .. function:: getproxies()
 
