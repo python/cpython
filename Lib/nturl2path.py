@@ -35,7 +35,7 @@ def url2pathname(url):
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
-    drive = comp[0][-1].upper()
+    drive = comp[0][-1]
     tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
     return drive + ':' + tail
 
@@ -60,7 +60,7 @@ def pathname2url(p):
         # DOS drive specified. Add three slashes to the start, producing
         # an authority section with a zero-length authority, and a path
         # section starting with a single slash.
-        drive = f'///{drive.upper()}'
+        drive = f'///{drive}'
 
     drive = urllib.parse.quote(drive, safe='/:')
     tail = urllib.parse.quote(tail)
