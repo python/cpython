@@ -647,7 +647,7 @@ argparse
   supported, did not always work correctly, and existed in the API by
   accident through inheritance. This functionality has been deprecated
   since Python 3.11.
-  (Contributed by Savannah Ostrowski in :gh:`xxxxxxx`.)
+  (Contributed by Savannah Ostrowski in :gh:`127186`.)
 
 ast
 ---
