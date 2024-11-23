@@ -98,7 +98,7 @@ return_section_address(
 
     for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__TEXT") == 0) {
-                vmaddr = cmd->vmaddr;
+            vmaddr = cmd->vmaddr;
         }
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
             while (cmd->filesize != size) {
@@ -354,8 +354,11 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
 
     Elf_Shdr* section = NULL;
     for (int i = 0; i < elf_header->e_shnum; i++) {
-        char* this_sec_name = shstrtab + section_header_table[i].sh_name;
-        // Move 1 character to account for the leading "."
+        const char* this_sec_name = (
+            shstrtab +
+            section_header_table[i].sh_name +
+            1  // "+1" accounts for the leading "."
+        );
         this_sec_name += 1;
         if (strcmp(secname, this_sec_name) == 0) {
             section = &section_header_table[i];
@@ -487,7 +490,7 @@ read_string(
         sizeof(Py_ssize_t),
         &len
     );
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     if (len >= size) {
@@ -496,7 +499,7 @@ read_string(
     }
     size_t offset = debug_offsets->unicode_object.asciiobject_size;
     bytes_read = read_memory(pid, address + offset, len, buffer);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     buffer[len] = '\0';
@@ -508,7 +511,7 @@ static inline int
 read_ptr(pid_t pid, uintptr_t address, uintptr_t *ptr_addr)
 {
     int bytes_read = read_memory(pid, address, sizeof(void*), ptr_addr);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     return 0;
@@ -518,7 +521,7 @@ static inline int
 read_ssize_t(pid_t pid, uintptr_t address, Py_ssize_t *size)
 {
     int bytes_read = read_memory(pid, address, sizeof(Py_ssize_t), size);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     return 0;
@@ -610,7 +613,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
         pid, address + offsets->long_object.lv_tag,
         sizeof(uintptr_t),
         &lv_tag);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -641,7 +644,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
 
     for (ssize_t i = 0; i < size; ++i) {
         long long factor;
-        if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)),
+        if (__builtin_mul_overflow(digits[i], (1UL << (ssize_t)(shift * i)),
                                    &factor)
         ) {
             goto error;
@@ -652,7 +655,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
     }
     PyMem_RawFree(digits);
     if (negative) {
-        value = -1 * value;
+        value *= -1;
     }
     return value;
 error:
@@ -883,7 +886,7 @@ parse_task(
 
     PyObject *call_stack = PyList_New(0);
     if (call_stack == NULL) {
-        return -1;
+        goto err;
     }
     if (PyList_Append(result, call_stack)) {
         Py_DECREF(call_stack);
@@ -1124,7 +1127,7 @@ parse_code_object(
         sizeof(void*),
         &address_of_function_name
     );
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1164,7 +1167,7 @@ parse_frame_object(
         sizeof(void*),
         previous_frame
     );
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1212,7 +1215,7 @@ parse_async_frame_object(
         sizeof(void*),
         previous_frame
     );
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1242,6 +1245,7 @@ parse_async_frame_object(
         return -1;
     }
 
+    assert(code_object != NULL);
     if ((void*)*code_object == NULL) {
         return 0;
     }
@@ -1261,7 +1265,8 @@ read_offsets(
     _Py_DebugOffsets* debug_offsets
 ) {
     *runtime_start_address = get_py_runtime(pid);
-    if (!*runtime_start_address) {
+    assert(runtime_start_address != NULL);
+    if ((void*)*runtime_start_address == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
                 PyExc_RuntimeError, "Failed to get .PyRuntime address");
@@ -1271,7 +1276,7 @@ read_offsets(
     size_t size = sizeof(struct _Py_DebugOffsets);
     ssize_t bytes_read = read_memory(
         pid, *runtime_start_address, size, debug_offsets);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     return 0;
@@ -1289,7 +1294,7 @@ read_async_debug(
     size_t size = sizeof(struct _Py_AsyncioModuleDebugOffsets);
     ssize_t bytes_read = read_memory(
         pid, async_debug_addr, size, async_debug);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
     return 0;
@@ -1311,7 +1316,7 @@ find_running_frame(
             runtime_start_address + interpreter_state_list_head,
             sizeof(void*),
             &address_of_interpreter_state);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1327,7 +1332,7 @@ find_running_frame(
                 local_debug_offsets->interpreter_state.threads_head,
             sizeof(void*),
             &address_of_thread);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1366,7 +1371,7 @@ find_running_task(
             runtime_start_address + interpreter_state_list_head,
             sizeof(void*),
             &address_of_interpreter_state);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
@@ -1382,7 +1387,7 @@ find_running_task(
                 local_debug_offsets->interpreter_state.threads_head,
             sizeof(void*),
             &address_of_thread);
-    if (bytes_read == -1) {
+    if (bytes_read < 0) {
         return -1;
     }
 
