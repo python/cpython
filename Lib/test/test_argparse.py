@@ -2954,6 +2954,13 @@ class TestGroupConstructor(TestCase):
         self.assertEqual(msg, str(cm.warning))
         self.assertEqual(cm.filename, __file__)
 
+    def test_nested_argument_group(self):
+        parser = argparse.ArgumentParser()
+        g = parser.add_argument_group()
+        self.assertRaisesRegex(ValueError,
+                                 'nested argument groups are not supported',
+                                 g.add_argument_group)
+
 # ===================
 # Parent parser tests
 # ===================
@@ -3253,6 +3260,14 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         group = parser.add_mutually_exclusive_group()
         with self.assertRaises(ValueError):
             parser.parse_args(['-h'])
+
+    def test_nested_mutex_groups(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument("--spam")
+        self.assertRaisesRegex(ValueError,
+                               'nested mutually exclusive groups are not supported',
+                                 g.add_mutually_exclusive_group)
 
 class MEMixin(object):
 
