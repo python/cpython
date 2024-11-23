@@ -466,6 +466,20 @@ class TestTPen(unittest.TestCase):
             self.assertTrue(tpen.isdown())
 
 
+
+class TestRawTurtle(unittest.TestCase):
+    def setUp(self):
+        try:
+            self.screen = turtle.Screen()
+        except turtle.TK.TclError:
+            raise unittest.SkipTest() # cannot instantiate RawTurtle without a screen
+
+    def test_clone(self):
+        rawturtle = turtle.RawTurtle(self.screen)
+        another_turtle = rawturtle.clone()
+        self.assertEqual(another_turtle.currentLineItem, another_turtle.items[-1])
+        self.assertFalse(rawturtle.currentLineItem in another_turtle.items)
+
 class TestTurtleScreen(unittest.TestCase):
     def test_save_raises_if_wrong_extension(self) -> None:
         screen = unittest.mock.Mock()
