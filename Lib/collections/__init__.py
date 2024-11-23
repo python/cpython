@@ -479,16 +479,33 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         'Return self as a plain tuple.  Used by copy and pickle.'
         return _tuple(self)
 
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the named tuple is created.  Bypass this step in environments where
+    # sys._getframe is not defined (Jython for example) or sys._getframe is not
+    # defined for arguments greater than 0 (IronPython), or where the user has
+    # specified a particular module.
+    if module is None:
+        try:
+            module = _sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
+
     # Modify function metadata to help with introspection and debugging
-    for method in (
+    methods = (
         __new__,
         _make.__func__,
         _replace,
         __repr__,
         _asdict,
         __getnewargs__,
-    ):
+    )
+    for method in methods:
         method.__qualname__ = f'{typename}.{method.__name__}'
+    if module is not None:
+        method.__module__ = module
 
     # Build-up the class namespace dictionary
     # and use type() to build the result class
@@ -510,25 +527,11 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         doc = _sys.intern(f'Alias for field number {index}')
         class_namespace[name] = _tuplegetter(index, doc)
 
-    result = type(typename, (tuple,), class_namespace)
-
-    # For pickling to work, the __module__ variable needs to be set to the frame
-    # where the named tuple is created.  Bypass this step in environments where
-    # sys._getframe is not defined (Jython for example) or sys._getframe is not
-    # defined for arguments greater than 0 (IronPython), or where the user has
-    # specified a particular module.
-    if module is None:
-        try:
-            module = _sys._getframemodulename(1) or '__main__'
-        except AttributeError:
-            try:
-                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
-            except (AttributeError, ValueError):
-                pass
+    # Set `__module__` where the named tuple is created for pickling.
     if module is not None:
-        result.__module__ = module
+        class_namespace['__module__'] = module
 
-    return result
+    return type(typename, (tuple,), class_namespace)
 
 
 ########################################################################
