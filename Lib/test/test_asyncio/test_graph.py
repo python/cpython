@@ -39,9 +39,9 @@ def capture_test_stack(*, fut=None, depth=1):
         return ret
 
     buf = io.StringIO()
-    asyncio.print_call_graph(future=fut, file=buf, depth=depth+1)
+    asyncio.print_call_graph(fut, file=buf, depth=depth+1)
 
-    stack = asyncio.capture_call_graph(future=fut, depth=depth)
+    stack = asyncio.capture_call_graph(fut, depth=depth)
     return walk(stack), buf.getvalue()
 
 

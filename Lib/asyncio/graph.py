@@ -33,8 +33,8 @@ class FrameCallGraphEntry:
 @dataclasses.dataclass(frozen=True, slots=True)
 class FutureCallGraph:
     future: futures.Future
-    call_stack: list[FrameCallGraphEntry]
-    awaited_by: list[FutureCallGraph]
+    call_stack: tuple["FrameCallGraphEntry", ...]
+    awaited_by: tuple["FutureCallGraph", ...]
 
 
 def _build_graph_for_future(future: futures.Future) -> FutureCallGraph:
@@ -68,12 +68,13 @@ def _build_graph_for_future(future: futures.Future) -> FutureCallGraph:
             awaited_by.append(_build_graph_for_future(parent))
 
     st.reverse()
-    return FutureCallGraph(future, st, awaited_by)
+    return FutureCallGraph(future, tuple(st), tuple(awaited_by))
 
 
 def capture_call_graph(
-    *,
     future: futures.Future | None = None,
+    /,
+    *,
     depth: int = 1,
 ) -> FutureCallGraph | None:
     """Capture async call graph for the current task or the provided Future.
@@ -85,16 +86,16 @@ def capture_call_graph(
       Where 'future' is a reference to an asyncio.Future or asyncio.Task
       (or their subclasses.)
 
-      'call_stack' is a list of FrameGraphEntry objects.
+      'call_stack' is a tuple of FrameGraphEntry objects.
 
-      'awaited_by' is a list of FutureCallGraph objects.
+      'awaited_by' is a tuple of FutureCallGraph objects.
 
     * FrameCallGraphEntry(frame)
 
       Where 'frame' is a frame object of a regular Python function
       in the call stack.
 
-    Receives an optional keyword-only "future" argument. If not passed,
+    Receives an optional "future" argument. If not passed,
     the current task will be used. If there's no current task, the function
     returns None.
 
@@ -154,12 +155,13 @@ def capture_call_graph(
         for parent in future._asyncio_awaited_by:
             awaited_by.append(_build_graph_for_future(parent))
 
-    return FutureCallGraph(future, call_stack, awaited_by)
+    return FutureCallGraph(future, tuple(call_stack), tuple(awaited_by))
 
 
 def format_call_graph(
-    *,
     future: futures.Future | None = None,
+    /,
+    *,
     depth: int = 1,
 ) -> str:
     """Return async call graph as a string for `future`.
@@ -224,7 +226,7 @@ def format_call_graph(
             for fut in st.awaited_by:
                 render_level(fut, buf, level + 1)
 
-    graph = capture_call_graph(future=future, depth=depth + 1)
+    graph = capture_call_graph(future, depth=depth + 1)
     if graph is None:
         return
 
@@ -238,10 +240,11 @@ def format_call_graph(
         del graph
 
 def print_call_graph(
-    *,
     future: futures.Future | None = None,
+    /,
+    *,
     file: typing.TextIO | None = None,
     depth: int = 1,
 ) -> None:
     """Print async call graph for the current task or the provided Future."""
-    print(format_call_graph(future=future, depth=depth), file=file)
+    print(format_call_graph(future, depth=depth), file=file)
