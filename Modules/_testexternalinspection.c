@@ -77,8 +77,12 @@ struct _Py_AsyncioModuleDebugOffsets {
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
-return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base, void* map)
-{
+return_section_address(
+    const char* section,
+    mach_port_t proc_ref,
+    uintptr_t base,
+    void* map
+) {
     struct mach_header_64* hdr = (struct mach_header_64*)map;
     int ncmds = hdr->ncmds;
 
@@ -88,7 +92,7 @@ return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base
     mach_vm_size_t size = 0;
     mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_64_t);
     mach_vm_address_t address = (mach_vm_address_t)base;
-    vm_region_basic_info_data_64_t region_info;
+    vm_region_basic_info_data_64_t r_info;
     mach_port_t object_name;
     uintptr_t vmaddr = 0;
 
@@ -99,24 +103,26 @@ return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
             while (cmd->filesize != size) {
                 address += size;
-                if (mach_vm_region(
-                            proc_ref,
-                            &address,
-                            &size,
-                            VM_REGION_BASIC_INFO_64,
-                            (vm_region_info_t)&region_info,  // cppcheck-suppress [uninitvar]
-                            &count,
-                            &object_name)
-                    != KERN_SUCCESS)
-                {
-                    PyErr_SetString(PyExc_RuntimeError, "Cannot get any more VM maps.\n");
+                kern_return_t ret = mach_vm_region(
+                    proc_ref,
+                    &address,
+                    &size,
+                    VM_REGION_BASIC_INFO_64,
+                    (vm_region_info_t)&r_info,  // cppcheck-suppress [uninitvar]
+                    &count,
+                    &object_name
+                );
+                if (ret != KERN_SUCCESS) {
+                    PyErr_SetString(
+                        PyExc_RuntimeError, "Cannot get any more VM maps.\n");
                     return 0;
                 }
             }
 
             int nsects = cmd->nsects;
-            struct section_64* sec =
-                    (struct section_64*)((void*)cmd + sizeof(struct segment_command_64));
+            struct section_64* sec = (struct section_64*)(
+                (void*)cmd + sizeof(struct segment_command_64)
+            );
             for (int j = 0; j < nsects; j++) {
                 if (strcmp(sec[j].sectname, section) == 0) {
                     return base + sec[j].addr - vmaddr;
@@ -131,8 +137,13 @@ return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base
 }
 
 static uintptr_t
-search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_size_t size, mach_port_t proc_ref)
-{
+search_section_in_file(
+    const char* secname,
+    char* path,
+    uintptr_t base,
+    mach_vm_size_t size,
+    mach_port_t proc_ref
+) {
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
         PyErr_Format(PyExc_RuntimeError, "Cannot open binary %s\n", path);
@@ -141,7 +152,8 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
 
     struct stat fs;
     if (fstat(fd, &fs) == -1) {
-        PyErr_Format(PyExc_RuntimeError, "Cannot get size of binary %s\n", path);
+        PyErr_Format(
+            PyExc_RuntimeError, "Cannot get size of binary %s\n", path);
         close(fd);
         return 0;
     }
@@ -161,7 +173,9 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
         case MH_CIGAM:
         case FAT_MAGIC:
         case FAT_CIGAM:
-            PyErr_SetString(PyExc_RuntimeError, "32-bit Mach-O binaries are not supported");
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "32-bit Mach-O binaries are not supported");
             break;
         case MH_MAGIC_64:
         case MH_CIGAM_64:
@@ -216,10 +230,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
                    VM_REGION_BASIC_INFO_64,
                    (vm_region_info_t)&region_info,
                    &count,
-                   &object_name)
-           == KERN_SUCCESS)
+                   &object_name) == KERN_SUCCESS)
     {
-        int path_len = proc_regionfilename(pid, address, map_filename, MAXPATHLEN);
+        int path_len = proc_regionfilename(
+            pid, address, map_filename, MAXPATHLEN);
         if (path_len == 0) {
             address += size;
             continue;
@@ -240,7 +254,8 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
         if (!match_found && strncmp(filename, substr, strlen(substr)) == 0) {
             match_found = 1;
-            return search_section_in_file(secname, map_filename, address, size, proc_ref);
+            return search_section_in_file(
+                secname, map_filename, address, size, proc_ref);
         }
 
         address += size;
@@ -270,7 +285,10 @@ find_map_start_address(pid_t pid, char* result_filename, const char* map)
     uintptr_t result_address = 0;
     while (fgets(line, sizeof(line), maps_file) != NULL) {
         unsigned long start_address = 0;
-        sscanf(line, "%lx-%*x %*s %*s %*s %*s %s", &start_address, map_filename);
+        sscanf(
+            line, "%lx-%*x %*s %*s %*s %*s %s",
+            &start_address, map_filename
+        );
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
@@ -328,7 +346,8 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
 
     Elf_Ehdr* elf_header = (Elf_Ehdr*)file_memory;
 
-    Elf_Shdr* section_header_table = (Elf_Shdr*)(file_memory + elf_header->e_shoff);
+    Elf_Shdr* section_header_table =
+        (Elf_Shdr*)(file_memory + elf_header->e_shoff);
 
     Elf_Shdr* shstrtab_section = &section_header_table[elf_header->e_shstrndx];
     char* shstrtab = (char*)(file_memory + shstrtab_section->sh_offset);
@@ -344,7 +363,9 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
         }
     }
 
-    Elf_Phdr* program_header_table = (Elf_Phdr*)(file_memory + elf_header->e_phoff);
+    Elf_Phdr* program_header_table =
+        (Elf_Phdr*)(file_memory + elf_header->e_phoff);
+
     // Find the first PT_LOAD segment
     Elf_Phdr* first_load_segment = NULL;
     for (int i = 0; i < elf_header->e_phnum; i++) {
@@ -355,8 +376,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
     }
 
     if (section != NULL && first_load_segment != NULL) {
-        uintptr_t elf_load_addr = first_load_segment->p_vaddr
-                                  - (first_load_segment->p_vaddr % first_load_segment->p_align);
+        uintptr_t elf_load_addr =
+            first_load_segment->p_vaddr - (
+                first_load_segment->p_vaddr % first_load_segment->p_align
+            );
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
     }
 
@@ -426,13 +449,19 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
     if (kr != KERN_SUCCESS) {
         switch (kr) {
             case KERN_PROTECTION_FAILURE:
-                PyErr_SetString(PyExc_PermissionError, "Not enough permissions to read memory");
+                PyErr_SetString(
+                    PyExc_PermissionError,
+                    "Not enough permissions to read memory");
                 break;
             case KERN_INVALID_ARGUMENT:
-                PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_read_overwrite");
+                PyErr_SetString(
+                    PyExc_PermissionError,
+                    "Invalid argument to mach_vm_read_overwrite");
                 break;
             default:
-                PyErr_SetString(PyExc_RuntimeError, "Unknown error reading memory");
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "Unknown error reading memory");
         }
         return -1;
     }
@@ -444,8 +473,13 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
 }
 
 static int
-read_string(pid_t pid, _Py_DebugOffsets* debug_offsets, uintptr_t address, char* buffer, Py_ssize_t size)
-{
+read_string(
+    pid_t pid,
+    _Py_DebugOffsets* debug_offsets,
+    uintptr_t address,
+    char* buffer,
+    Py_ssize_t size
+) {
     Py_ssize_t len;
     ssize_t bytes_read = read_memory(
         pid,
@@ -565,18 +599,21 @@ err:
 }
 
 static long
-read_py_long(
-    pid_t pid,
-    _Py_DebugOffsets* offsets,
-    uintptr_t address) {
+read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
+{
     unsigned int shift = PYLONG_BITS_IN_DIGIT;
 
     ssize_t size;
     uintptr_t lv_tag;
-    int bytes_read = read_memory(pid, address + offsets->long_object.lv_tag, sizeof(uintptr_t), &lv_tag);
+
+    int bytes_read = read_memory(
+        pid, address + offsets->long_object.lv_tag,
+        sizeof(uintptr_t),
+        &lv_tag);
     if (bytes_read == -1) {
         return -1;
     }
+
     int negative = (lv_tag & 3) == 2;
     size = lv_tag >> 3;
 
@@ -586,9 +623,16 @@ read_py_long(
 
     char *digits = (char *)PyMem_RawMalloc(size * sizeof(digit));
     if (!digits) {
+        PyErr_NoMemory();
         return -1;
     }
-    bytes_read = read_memory(pid, address + offsets->long_object.ob_digit, sizeof(digit) * size, digits);
+
+    bytes_read = read_memory(
+        pid,
+        address + offsets->long_object.ob_digit,
+        sizeof(digit) * size,
+        digits
+    );
     if (bytes_read < 0) {
         goto error;
     }
@@ -597,7 +641,9 @@ read_py_long(
 
     for (ssize_t i = 0; i < size; ++i) {
         long long factor;
-        if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)), &factor)) {
+        if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)),
+                                   &factor)
+        ) {
             goto error;
         }
         if (__builtin_add_overflow(value, factor, &value)) {
@@ -847,7 +893,8 @@ parse_task(
     Py_DECREF(call_stack);
 
     if (is_task) {
-        PyObject *tn = parse_task_name(pid, offsets, async_offsets, task_address);
+        PyObject *tn = parse_task_name(
+            pid, offsets, async_offsets, task_address);
         if (tn == NULL) {
             goto err;
         }
@@ -900,7 +947,9 @@ parse_task(
     /* we can operate on a borrowed one to simplify cleanup */
     Py_DECREF(awaited_by);
 
-    if (parse_task_awaited_by(pid, offsets, async_offsets, task_address, awaited_by)) {
+    if (parse_task_awaited_by(pid, offsets, async_offsets,
+                              task_address, awaited_by)
+    ) {
         goto err;
     }
 
@@ -1372,8 +1421,11 @@ find_running_task(
 static PyObject*
 get_stack_trace(PyObject* self, PyObject* args)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || (defined(__linux__) && !HAVE_PROCESS_VM_READV)
-    PyErr_SetString(PyExc_RuntimeError, "get_stack_trace is not supported on this platform");
+#if (!defined(__linux__) && !defined(__APPLE__)) || \
+    (defined(__linux__) && !HAVE_PROCESS_VM_READV)
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "get_stack_trace is not supported on this platform");
     return NULL;
 #endif
     int pid;
@@ -1422,8 +1474,11 @@ get_stack_trace(PyObject* self, PyObject* args)
 static PyObject*
 get_async_stack_trace(PyObject* self, PyObject* args)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || (defined(__linux__) && !HAVE_PROCESS_VM_READV)
-    PyErr_SetString(PyExc_RuntimeError, "get_stack_trace is not supported on this platform");
+#if (!defined(__linux__) && !defined(__APPLE__)) || \
+    (defined(__linux__) && !HAVE_PROCESS_VM_READV)
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "get_stack_trace is not supported on this platform");
     return NULL;
 #endif
     int pid;
@@ -1485,8 +1540,8 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         goto result_err;
     }
 
-    // note: genobject's gi_iframe is an embedded struct so the address to the offset
-    // leads directly to its first field: f_executable
+    // note: genobject's gi_iframe is an embedded struct so the address to
+    // the offset leads directly to its first field: f_executable
     uintptr_t address_of_running_task_code_obj;
     if (read_py_ptr(
         pid,
@@ -1551,7 +1606,8 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     Py_DECREF(awaited_by);
 
     if (parse_task_awaited_by(
-        pid, &local_debug_offsets, &local_async_debug, running_task_addr, awaited_by)
+        pid, &local_debug_offsets, &local_async_debug,
+        running_task_addr, awaited_by)
     ) {
         goto result_err;
     }
@@ -1589,7 +1645,8 @@ PyInit__testexternalinspection(void)
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
 #endif
-    int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
+    int rc = PyModule_AddIntConstant(
+        mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         Py_DECREF(mod);
         return NULL;

@@ -15,7 +15,8 @@ try:
     from _testexternalinspection import get_stack_trace
     from _testexternalinspection import get_async_stack_trace
 except ImportError:
-    raise unittest.SkipTest("Test only runs when _testexternalinspection is available")
+    raise unittest.SkipTest(
+        "Test only runs when _testexternalinspection is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
@@ -24,8 +25,10 @@ def _make_test_script(script_dir, script_basename, source):
 
 class TestGetStackTrace(unittest.TestCase):
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_remote_stack_trace(self):
         # Spawn a process with some realistic Python code
         script = textwrap.dedent("""\
@@ -75,8 +78,10 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_async_remote_stack_trace(self):
         # Spawn a process with some realistic Python code
         script = textwrap.dedent("""\
@@ -111,7 +116,8 @@ class TestGetStackTrace(unittest.TestCase):
 
             def new_eager_loop():
                 loop = asyncio.new_event_loop()
-                eager_task_factory = asyncio.create_eager_task_factory(asyncio.Task)
+                eager_task_factory = asyncio.create_eager_task_factory(
+                    asyncio.Task)
                 loop.set_task_factory(eager_task_factory)
                 return loop
 
@@ -127,15 +133,20 @@ class TestGetStackTrace(unittest.TestCase):
                 os.mkdir(script_dir)
                 fifo = f"{work_dir}/the_fifo"
                 os.mkfifo(fifo)
-                script_name = _make_test_script(script_dir, 'script', script.format(TASK_FACTORY=task_factory_variant))
+                script_name = _make_test_script(
+                    script_dir, 'script',
+                    script.format(TASK_FACTORY=task_factory_variant))
                 try:
-                    p = subprocess.Popen([sys.executable, script_name,  str(fifo)])
+                    p = subprocess.Popen(
+                        [sys.executable, script_name, str(fifo)]
+                    )
                     with open(fifo, "r") as fifo_file:
                         response = fifo_file.read()
                     self.assertEqual(response, "ready")
                     stack_trace = get_async_stack_trace(p.pid)
                 except PermissionError:
-                    self.skipTest("Insufficient permissions to read the stack trace")
+                    self.skipTest(
+                        "Insufficient permissions to read the stack trace")
                 finally:
                     os.remove(fifo)
                     p.kill()
@@ -159,8 +170,10 @@ class TestGetStackTrace(unittest.TestCase):
                 ]
                 self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_asyncgen_remote_stack_trace(self):
         # Spawn a process with some realistic Python code
         script = textwrap.dedent("""\
@@ -210,11 +223,15 @@ class TestGetStackTrace(unittest.TestCase):
             # sets are unordered, so we want to sort "awaited_by"s
             stack_trace[2].sort(key=lambda x: x[1])
 
-            expected_stack_trace = [['gen_nested_call', 'gen', 'main'], 'Task-1', []]
+            expected_stack_trace = [
+                ['gen_nested_call', 'gen', 'main'], 'Task-1', []
+            ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_async_gather_remote_stack_trace(self):
         # Spawn a process with some realistic Python code
         script = textwrap.dedent("""\
@@ -255,7 +272,8 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertEqual(response, "ready")
                 stack_trace = get_async_stack_trace(p.pid)
             except PermissionError:
-                self.skipTest("Insufficient permissions to read the stack trace")
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace")
             finally:
                 os.remove(fifo)
                 p.kill()
@@ -265,11 +283,15 @@ class TestGetStackTrace(unittest.TestCase):
             # sets are unordered, so we want to sort "awaited_by"s
             stack_trace[2].sort(key=lambda x: x[1])
 
-            expected_stack_trace =  [['deep', 'c1'], 'Task-2', [[['main'], 'Task-1', []]]]
+            expected_stack_trace =  [
+                ['deep', 'c1'], 'Task-2', [[['main'], 'Task-1', []]]
+            ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux", "Test only runs on Linux and MacOS")
-    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED, "Test only runs on Linux with process_vm_readv support")
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
         self.assertEqual(stack_trace[0], "test_self_trace")
