@@ -468,6 +468,21 @@ class TestNamedTuple(unittest.TestCase):
         NT = namedtuple('NT', ['x', 'y'], module=collections)
         self.assertEqual(NT.__module__, collections)
 
+    def test_module_attribute(self):
+        method_names = (
+            '__new__',
+            '_make',
+            '_replace',
+            '__repr__',
+            '_asdict',
+            '__getnewargs__',
+        )
+        for module in ('some.module', collections):
+            NT = namedtuple('NT', ['x', 'y'], module=module)
+            self.assertEqual(NT.__module__, module)
+            for method in method_names:
+                self.assertEqual(getattr(NT, method).__module__, module)
+
     def test_instance(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)

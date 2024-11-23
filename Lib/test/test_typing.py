@@ -7839,6 +7839,20 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Emp.__annotations__,
                          collections.OrderedDict([('name', str), ('id', int)]))
 
+    def test_module_attribute(self):
+        method_names = (
+            '__new__',
+            '_make',
+            '_replace',
+            '__repr__',
+            '_asdict',
+            '__getnewargs__',
+        )
+        for nt in (CoolEmployee, self.NestedEmployee):
+            self.assertEqual(nt.__module__, __name__)
+            for method in method_names:
+                self.assertEqual(getattr(nt, method).__module__, __name__)
+
     def test_annotation_usage(self):
         tim = CoolEmployee('Tim', 9000)
         self.assertIsInstance(tim, CoolEmployee)
