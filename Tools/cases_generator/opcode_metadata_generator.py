@@ -21,7 +21,7 @@ from generators_common import (
 from cwriter import CWriter
 from dataclasses import dataclass
 from typing import TextIO
-from stack import get_stack_effect, get_stack_effects
+from stack import Stack, get_stack_effect, get_stack_effects
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
@@ -141,15 +141,28 @@ def emit_max_stack_effect_function(
 
 @dataclass
 class MaxStackEffectSet:
-    int_effect: int
+    int_effect: int | None
     cond_effects: set[str]
 
     def __init__(self) -> None:
-        self.int_effect = 0
+        self.int_effect = None
         self.cond_effects = set()
 
+    def add(self, stack: Stack) -> None:
+        top_off = stack.top_offset
+        top_off_int = top_off.as_int()
+        if top_off_int is not None:
+            if self.int_effect is None or top_off_int > self.int_effect:
+                self.int_effect = top_off_int
+        else:
+            self.cond_effects.add(top_off.to_c())
+
     def update(self, other: "MaxStackEffectSet") -> None:
-        self.int_effect = max(self.int_effect, other.int_effect)
+        if self.int_effect is None:
+            if other.int_effect is not None:
+                self.int_effect = other.int_effect
+        elif other.int_effect is not None:
+            self.int_effect = max(self.int_effect, other.int_effect)
         self.cond_effects.update(other.cond_effects)
 
 
@@ -166,15 +179,7 @@ def generate_max_stack_effect_function(analysis: Analysis, out: CWriter) -> None
     def add(inst: Instruction | PseudoInstruction) -> None:
         inst_effect = MaxStackEffectSet()
         for stack in get_stack_effects(inst):
-            popped = stack.base_offset
-            pushed = stack.top_offset - stack.base_offset
-            popped_int, pushed_int = popped.as_int(), pushed.as_int()
-            if popped_int is not None and pushed_int is not None:
-                int_effect = popped_int + pushed_int
-                if int_effect > inst_effect.int_effect:
-                    inst_effect.int_effect = int_effect
-            else:
-                inst_effect.cond_effects.add(f"({popped.to_c()}) + ({pushed.to_c()})")
+            inst_effect.add(stack)
         effects[inst.name] = inst_effect
 
     # Collect unique stack effects for each instruction
@@ -192,7 +197,7 @@ def generate_max_stack_effect_function(analysis: Analysis, out: CWriter) -> None
     data: list[tuple[str, list[str]]] = []
     for name, effs in sorted(effects.items(), key=lambda kv: kv[0]):
         exprs = []
-        if effs.int_effect or not effs.cond_effects:
+        if effs.int_effect is not None:
             exprs.append(str(effs.int_effect))
         exprs.extend(sorted(effs.cond_effects))
         data.append((name, exprs))

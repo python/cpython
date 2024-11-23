@@ -998,7 +998,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BINARY_SUBSCR_DICT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case BINARY_SUBSCR_GETITEM: {
@@ -1006,39 +1006,39 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BINARY_SUBSCR_LIST_INT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case BINARY_SUBSCR_STR_INT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case BINARY_SUBSCR_TUPLE_INT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case BUILD_LIST: {
-            *effect = (-oparg) + (1);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_MAP: {
-            *effect = (-oparg*2) + (1);
+            *effect = 1 - oparg*2;
             return 0;
         }
         case BUILD_SET: {
-            *effect = (-oparg) + (1);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_SLICE: {
-            *effect = (-2 - ((oparg == 3) ? 1 : 0)) + (1);
+            *effect = -1 - ((oparg == 3) ? 1 : 0);
             return 0;
         }
         case BUILD_STRING: {
-            *effect = (-oparg) + (1);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_TUPLE: {
-            *effect = (-oparg) + (1);
+            *effect = 1 - oparg;
             return 0;
         }
         case CACHE: {
@@ -1046,47 +1046,47 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case CALL: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_ALLOC_AND_ENTER_INIT: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_BOUND_METHOD_EXACT_ARGS: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_BOUND_METHOD_GENERAL: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_BUILTIN_CLASS: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_BUILTIN_FAST: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_BUILTIN_O: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_FUNCTION_EX: {
-            *effect = Py_MAX((-3 - (oparg & 1)) + (1), (-3 - (oparg & 1)) + (3 + (oparg & 1)));
+            *effect = Py_MAX(0, -2 - (oparg & 1));
             return 0;
         }
         case CALL_INTRINSIC_1: {
@@ -1094,85 +1094,85 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case CALL_INTRINSIC_2: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case CALL_ISINSTANCE: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_KW: {
-            int max_eff = Py_MAX((-3 - oparg) + (0), (-3 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-3 - oparg) + (3 + oparg));
+            int max_eff = Py_MAX(0, -2 - oparg);
+            max_eff = Py_MAX(max_eff, -3 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_KW_BOUND_METHOD: {
-            int max_eff = Py_MAX((-3 - oparg) + (0), (-3 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-3 - oparg) + (3 + oparg));
+            int max_eff = Py_MAX(0, -2 - oparg);
+            max_eff = Py_MAX(max_eff, -3 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_KW_NON_PY: {
-            *effect = Py_MAX((-3 - oparg) + (1), (-3 - oparg) + (3 + oparg));
+            *effect = Py_MAX(0, -2 - oparg);
             return 0;
         }
         case CALL_KW_PY: {
-            int max_eff = Py_MAX((-3 - oparg) + (0), (-3 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-3 - oparg) + (3 + oparg));
+            int max_eff = Py_MAX(0, -2 - oparg);
+            max_eff = Py_MAX(max_eff, -3 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_LEN: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_LIST_APPEND: {
-            *effect = 0;
+            *effect = -3;
             return 0;
         }
         case CALL_METHOD_DESCRIPTOR_FAST: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_METHOD_DESCRIPTOR_NOARGS: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_METHOD_DESCRIPTOR_O: {
-            *effect = (-2 - oparg) + (1);
+            *effect = -1 - oparg;
             return 0;
         }
         case CALL_NON_PY_GENERAL: {
-            *effect = Py_MAX((-2 - oparg) + (1), (-2 - oparg) + (2 + oparg));
+            *effect = Py_MAX(0, -1 - oparg);
             return 0;
         }
         case CALL_PY_EXACT_ARGS: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_PY_GENERAL: {
-            int max_eff = Py_MAX((-2 - oparg) + (0), (-2 - oparg) + (1));
-            max_eff = Py_MAX(max_eff, (-2 - oparg) + (2 + oparg));
+            int max_eff = Py_MAX(0, -1 - oparg);
+            max_eff = Py_MAX(max_eff, -2 - oparg);
             *effect = max_eff;
             return 0;
         }
         case CALL_STR_1: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case CALL_TUPLE_1: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case CALL_TYPE_1: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case CHECK_EG_MATCH: {
@@ -1184,7 +1184,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case CLEANUP_THROW: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case COMPARE_OP: {
@@ -1208,11 +1208,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case CONTAINS_OP_DICT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case CONTAINS_OP_SET: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case CONVERT_VALUE: {
@@ -1220,7 +1220,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case COPY: {
-            *effect = (-1 - (oparg-1)) + (2 + (oparg-1));
+            *effect = 1;
             return 0;
         }
         case COPY_FREE_VARS: {
@@ -1228,7 +1228,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case DELETE_ATTR: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case DELETE_DEREF: {
@@ -1248,27 +1248,27 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case DELETE_SUBSCR: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case DICT_MERGE: {
-            *effect = (-5 - (oparg - 1)) + (4 + (oparg - 1));
+            *effect = -1;
             return 0;
         }
         case DICT_UPDATE: {
-            *effect = (-2 - (oparg - 1)) + (1 + (oparg - 1));
+            *effect = -1;
             return 0;
         }
         case END_ASYNC_FOR: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case END_FOR: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case END_SEND: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case ENTER_EXECUTOR: {
@@ -1276,7 +1276,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case EXIT_INIT_CHECK: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case EXTENDED_ARG: {
@@ -1288,7 +1288,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case FORMAT_WITH_SPEC: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case FOR_ITER: {
@@ -1340,11 +1340,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case IMPORT_NAME: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case INSTRUMENTED_CALL: {
-            *effect = Py_MAX((-2 - oparg) + (1), (-2 - oparg) + (2 + oparg));
+            *effect = Py_MAX(0, -1 - oparg);
             return 0;
         }
         case INSTRUMENTED_CALL_FUNCTION_EX: {
@@ -1356,11 +1356,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case INSTRUMENTED_END_FOR: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case INSTRUMENTED_END_SEND: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case INSTRUMENTED_FOR_ITER: {
@@ -1416,11 +1416,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case INTERPRETER_EXIT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case IS_OP: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case JUMP: {
@@ -1452,23 +1452,23 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LIST_APPEND: {
-            *effect = (-2 - (oparg-1)) + (1 + (oparg-1));
+            *effect = -1;
             return 0;
         }
         case LIST_EXTEND: {
-            *effect = (-2 - (oparg-1)) + (1 + (oparg-1));
+            *effect = -1;
             return 0;
         }
         case LOAD_ATTR: {
-            *effect = Py_MAX(1, (-1) + (1 + (oparg & 1)));
+            *effect = Py_MAX(1, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_CLASS: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_CLASS_WITH_METACLASS_CHECK: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN: {
@@ -1476,7 +1476,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_INSTANCE_VALUE: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_METHOD_LAZY_DICT: {
@@ -1492,7 +1492,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_MODULE: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
@@ -1508,11 +1508,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_SLOT: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_WITH_HINT: {
-            *effect = (-1) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_BUILD_CLASS: {
@@ -1564,15 +1564,15 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_GLOBAL: {
-            *effect = Py_MAX(1, (0) + (1 + (oparg & 1)));
+            *effect = Py_MAX(1, 1 + (oparg & 1));
             return 0;
         }
         case LOAD_GLOBAL_BUILTIN: {
-            *effect = Py_MAX(1, (0) + (1 + (oparg & 1)));
+            *effect = Py_MAX(1, 1 + (oparg & 1));
             return 0;
         }
         case LOAD_GLOBAL_MODULE: {
-            *effect = Py_MAX(1, (0) + (1 + (oparg & 1)));
+            *effect = Py_MAX(1, 1 + (oparg & 1));
             return 0;
         }
         case LOAD_LOCALS: {
@@ -1592,15 +1592,15 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_SUPER_ATTR: {
-            *effect = (-3) + (1 + (oparg & 1));
+            *effect = Py_MAX(0, -2 + (oparg & 1));
             return 0;
         }
         case LOAD_SUPER_ATTR_ATTR: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case LOAD_SUPER_ATTR_METHOD: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case MAKE_CELL: {
@@ -1612,11 +1612,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case MAP_ADD: {
-            *effect = (-3 - (oparg - 1)) + (1 + (oparg - 1));
+            *effect = -2;
             return 0;
         }
         case MATCH_CLASS: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case MATCH_KEYS: {
@@ -1640,11 +1640,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case POP_EXCEPT: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case POP_JUMP_IF_FALSE: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case POP_JUMP_IF_NONE: {
@@ -1656,11 +1656,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case POP_JUMP_IF_TRUE: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case POP_TOP: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case PUSH_EXC_INFO: {
@@ -1672,11 +1672,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case RAISE_VARARGS: {
-            *effect = (-oparg) + (0);
+            *effect = -oparg;
             return 0;
         }
         case RERAISE: {
-            *effect = (-1 - oparg) + (oparg);
+            *effect = -1;
             return 0;
         }
         case RESERVED: {
@@ -1724,15 +1724,15 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case SET_ADD: {
-            *effect = (-2 - (oparg-1)) + (1 + (oparg-1));
+            *effect = -1;
             return 0;
         }
         case SET_FUNCTION_ATTRIBUTE: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case SET_UPDATE: {
-            *effect = (-2 - (oparg-1)) + (1 + (oparg-1));
+            *effect = -1;
             return 0;
         }
         case STORE_ATTR: {
@@ -1752,11 +1752,11 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case STORE_DEREF: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case STORE_FAST: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case STORE_FAST_LOAD_FAST: {
@@ -1764,19 +1764,19 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case STORE_FAST_MAYBE_NULL: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case STORE_FAST_STORE_FAST: {
-            *effect = 0;
+            *effect = -2;
             return 0;
         }
         case STORE_GLOBAL: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case STORE_NAME: {
-            *effect = 0;
+            *effect = -1;
             return 0;
         }
         case STORE_SLICE: {
@@ -1788,15 +1788,15 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case STORE_SUBSCR_DICT: {
-            *effect = 0;
+            *effect = -3;
             return 0;
         }
         case STORE_SUBSCR_LIST_INT: {
-            *effect = 0;
+            *effect = -3;
             return 0;
         }
         case SWAP: {
-            *effect = (-2 - (oparg-2)) + (2 + (oparg-2));
+            *effect = 0;
             return 0;
         }
         case TO_BOOL: {
@@ -1840,19 +1840,19 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case UNPACK_EX: {
-            *effect = (-1) + (1 + (oparg & 0xFF) + (oparg >> 8));
+            *effect = (oparg & 0xFF) + (oparg >> 8);
             return 0;
         }
         case UNPACK_SEQUENCE: {
-            *effect = Py_MAX(1, (-1) + (oparg));
+            *effect = Py_MAX(1, -1 + oparg);
             return 0;
         }
         case UNPACK_SEQUENCE_LIST: {
-            *effect = (-1) + (oparg);
+            *effect = -1 + oparg;
             return 0;
         }
         case UNPACK_SEQUENCE_TUPLE: {
-            *effect = (-1) + (oparg);
+            *effect = -1 + oparg;
             return 0;
         }
         case UNPACK_SEQUENCE_TWO_TUPLE: {

@@ -112,7 +112,7 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         output = """
         case OP: {
-            *effect = (-1) + (1 + ((oparg) ? 1 : 0));
+            *effect = ((oparg) ? 1 : 0);
             return 0;
         }
         """
@@ -151,13 +151,13 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         output = """
         case OP: {
-            *effect = Py_MAX(2, (0) + (2 + ((oparg) ? 1 : 0)));
+            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
             return 0;
         }
         """
         self.check(input, output)
 
-    def test_push_array(self):
+    def test_pop_push_array(self):
         input = """
         inst(OP, (values[oparg] -- values[oparg], above)) {
             SPAM(values, oparg);
@@ -166,7 +166,7 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         output = """
         case OP: {
-            *effect = (-oparg) + (1 + oparg);
+            *effect = 1;
             return 0;
         }
         """
@@ -216,7 +216,26 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         output = """
         case OP: {
-            *effect = Py_MAX(1, (0) + (oparg));
+            *effect = Py_MAX(1, oparg);
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_negative_effect(self):
+        input = """
+        op(A, (val1 -- )) {
+        }
+        op(B, (val2 --)) {
+        }
+        op(C, (val3 --)) {
+        }
+
+        macro(OP) = A + B + C;
+        """
+        output = """
+        case OP: {
+            *effect = -1;
             return 0;
         }
         """
