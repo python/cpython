@@ -420,12 +420,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.rcLines = []
 
     @property
-    @deprecated('Use curframe.f_locals instead')
+    @deprecated("The frame locals reference is no longer cached. Use 'curframe.f_locals' instead.")
     def curframe_locals(self):
         return self.curframe.f_locals
 
     @curframe_locals.setter
-    @deprecated('Use curframe.f_locals instead')
+    @deprecated("Setting 'curframe_locals' no longer has any effect. Update the contents of 'curframe.f_locals' instead.")
     def curframe_locals(self, value):
         pass
 
