@@ -341,12 +341,12 @@ def _get_sysconfigdata():
     global _SYSCONFIGDATA
 
     if _SYSCONFIGDATA is None:
+        name = _get_sysconfigdata_name() + '.json'
         if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
-            data_path = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
+            data_path = os.path.join(os.environ['_PYTHON_SYSCONFIGDATA_PATH'], name)
         else:
             # Search sys.path
             # FIXME: We should not need this if we could reliably identify the project directory on source builds
-            name = _get_sysconfigdata_name() + '.json'
             for path in sys.path:
                 data_path = os.path.join(path, name)
                 if os.path.isfile(data_path):
