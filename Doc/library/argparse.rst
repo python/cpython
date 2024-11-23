@@ -1926,16 +1926,12 @@ Argument groups
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
 
-   .. deprecated:: 3.11
-      Calling :meth:`add_argument_group` on an argument group is deprecated.
-      This feature was never supported and does not always work correctly.
-      The function exists on the API by accident through inheritance and
-      will be removed in the future.
-
-   .. versionchanged:: 3.14
+   .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` on an argument group has been removed.
+      This feature was never supported and did not always work correctly.
+      The function existed on the API by accident through inheritance.
 
-   .. deprecated-removed:: 3.14
+   .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
       is now deprecated.
 
@@ -1996,15 +1992,11 @@ Mutual exclusion
        --foo FOO   foo help
        --bar BAR   bar help
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-      on a mutually exclusive group is deprecated. These features were never
-      supported and do not always work correctly. The functions exist on the
-      API by accident through inheritance and will be removed in the future.
-
-   .. deprecated-removed:: 3.14
-      Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-      on a mutually exclusive group has been removed.
+      on a mutually exclusive group has been removed. These features were never
+      supported and did not always work correctly. The functions existed on the
+      API by accident through inheritance.
 
 
 Parser defaults
