@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
 
 // This value is added to `ob_ref_shared` for objects that use deferred
@@ -94,6 +95,14 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+#define _PyReftracerTrack(obj, operation) \
+    do { \
+        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+        if (tracer->tracer_func != NULL) { \
+            void *data = tracer->tracer_data; \
+            tracer->tracer_func((obj), (operation), data); \
+        } \
+    } while(0)
 
 #ifdef Py_REF_DEBUG
 /* The symbol is only exposed in the API for the sake of extensions
@@ -208,11 +217,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
-        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-        if (tracer->tracer_func != NULL) {
-            void* data = tracer->tracer_data;
-            tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-        }
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         destruct(op);
     }
 }
@@ -589,6 +594,20 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
         return 0;
     }
     return 1;
+}
+
+static inline int
+_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
+{
+    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        return 1;
+    }
+    if (_Py_TryIncrefCompare(src, op)) {
+        *out = PyStackRef_FromPyObjectSteal(op);
+        return 1;
+    }
+    return 0;
 }
 
 /* Loads and increfs an object from ptr, which may contain a NULL value.

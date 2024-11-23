@@ -347,13 +347,18 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('..')", r'..')
         tester("ntpath.normpath('.')", r'.')
+        tester("ntpath.normpath('c:.')", 'c:')
         tester("ntpath.normpath('')", r'.')
         tester("ntpath.normpath('/')", '\\')
         tester("ntpath.normpath('c:/')", 'c:\\')
         tester("ntpath.normpath('/../.././..')", '\\')
         tester("ntpath.normpath('c:/../../..')", 'c:\\')
+        tester("ntpath.normpath('/./a/b')", r'\a\b')
+        tester("ntpath.normpath('c:/./a/b')", r'c:\a\b')
         tester("ntpath.normpath('../.././..')", r'..\..\..')
         tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+        tester("ntpath.normpath('./a/b')", r'a\b')
+        tester("ntpath.normpath('c:./a/b')", r'c:a\b')
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 

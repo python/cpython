@@ -4,20 +4,22 @@ import argparse
 import contextlib
 import functools
 import os
-
-try:
-    from os import process_cpu_count as cpu_count
-except ImportError:
-    from os import cpu_count
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import sysconfig
 import tempfile
+from pathlib import Path
+from textwrap import dedent
 
-WASM_DIR = Path(__file__).parent.parent
-CHECKOUT = WASM_DIR.parent.parent
+try:
+    from os import process_cpu_count as cpu_count
+except ImportError:
+    from os import cpu_count
+
+
+EMSCRIPTEN_DIR = Path(__file__).parent
+CHECKOUT = EMSCRIPTEN_DIR.parent.parent.parent
 
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 BUILD_DIR = CROSS_BUILD_DIR / "build"
@@ -72,7 +74,7 @@ def subdir(working_dir, *, clean_ok=False):
             print("⎯" * terminal_width)
             print("📁", working_dir)
             if clean_ok and getattr(context, "clean", False) and working_dir.exists():
-                print(f"🚮 Deleting directory (--clean)...")
+                print("🚮 Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
             working_dir.mkdir(parents=True, exist_ok=True)
@@ -207,9 +209,21 @@ def configure_emscripten_python(context, working_dir):
         quiet=context.quiet,
     )
 
-    python_js = working_dir / "python.js"
+    shutil.copy(EMSCRIPTEN_DIR / "node_entry.mjs", working_dir / "node_entry.mjs")
+
+    node_entry = working_dir / "node_entry.mjs"
     exec_script = working_dir / "python.sh"
-    exec_script.write_text(f'#!/bin/sh\nexec {host_runner} {python_js} "$@"\n')
+    exec_script.write_text(
+        dedent(
+            f"""\
+            #!/bin/sh
+
+            # We compute our own path, not following symlinks and pass it in so that
+            # node_entry.mjs can set sys.executable correctly.
+            exec {host_runner} {node_entry} "$(realpath -s $0)" "$@"
+            """
+        )
+    )
     exec_script.chmod(0o755)
     print(f"🏃‍♀️ Created {exec_script} ... ")
     sys.stdout.flush()
