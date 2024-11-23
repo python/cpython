@@ -464,7 +464,7 @@ A more complicated example::
    executing finally clause
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-       divide("2", "0")
+       divide("2", "1")
        ~~~~~~^^^^^^^^^^
      File "<stdin>", line 3, in divide
        result = x / y

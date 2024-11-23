@@ -629,8 +629,6 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITI
 Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
-Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
-Modules/_blake2/blake2module.c	-	blake2s_type_spec	-
 Modules/_io/fileio.c	-	_Py_open_cloexec_works	-
 Modules/_io/_iomodule.h	-	PyIOBase_Type	-
 Modules/_io/_iomodule.h	-	PyRawIOBase_Type	-

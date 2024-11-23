@@ -208,7 +208,7 @@ ThreadPoolExecutor Example
            'http://www.cnn.com/',
            'http://europe.wsj.com/',
            'http://www.bbc.co.uk/',
-           'http://nonexistant-subdomain.python.org/']
+           'http://nonexistent-subdomain.python.org/']
 
    # Retrieve a single page and report the URL and contents
    def load_url(url, timeout):
@@ -690,7 +690,7 @@ Exception classes
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. exception:: ExecutionFailed
 
@@ -699,7 +699,7 @@ Exception classes
    :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
    exception from the submitted task.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 

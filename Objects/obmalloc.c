@@ -1093,10 +1093,24 @@ struct _mem_work_chunk {
 };
 
 static void
-free_work_item(uintptr_t ptr)
+free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
 {
     if (ptr & 0x01) {
-        PyObject_Free((char *)(ptr - 1));
+        PyObject *obj = (PyObject *)(ptr - 1);
+#ifdef Py_GIL_DISABLED
+        if (cb == NULL) {
+            assert(!_PyInterpreterState_GET()->stoptheworld.world_stopped);
+            Py_DECREF(obj);
+            return;
+        }
+
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
+        if (refcount == 0) {
+            cb(obj, state);
+        }
+#else
+        Py_DECREF(obj);
+#endif
     }
     else {
         PyMem_Free((void *)ptr);
@@ -1107,7 +1121,7 @@ static void
 free_delayed(uintptr_t ptr)
 {
 #ifndef Py_GIL_DISABLED
-    free_work_item(ptr);
+    free_work_item(ptr, NULL, NULL);
 #else
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_PyInterpreterState_GetFinalizing(interp) != NULL ||
@@ -1115,7 +1129,8 @@ free_delayed(uintptr_t ptr)
     {
         // Free immediately during interpreter shutdown or if the world is
         // stopped.
-        free_work_item(ptr);
+        assert(!interp->stoptheworld.world_stopped || !(ptr & 0x01));
+        free_work_item(ptr, NULL, NULL);
         return;
     }
 
@@ -1142,7 +1157,8 @@ free_delayed(uintptr_t ptr)
     if (buf == NULL) {
         // failed to allocate a buffer, free immediately
         _PyEval_StopTheWorld(tstate->base.interp);
-        free_work_item(ptr);
+        // TODO: Fix me
+        free_work_item(ptr, NULL, NULL);
         _PyEval_StartTheWorld(tstate->base.interp);
         return;
     }
@@ -1166,12 +1182,16 @@ _PyMem_FreeDelayed(void *ptr)
     free_delayed((uintptr_t)ptr);
 }
 
+#ifdef Py_GIL_DISABLED
 void
-_PyObject_FreeDelayed(void *ptr)
+_PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
-    free_delayed(((uintptr_t)ptr)|0x01);
+    if (ptr != NULL) {
+        free_delayed(((uintptr_t)ptr)|0x01);
+    }
 }
+#endif
 
 static struct _mem_work_chunk *
 work_queue_first(struct llist_node *head)
@@ -1181,7 +1201,7 @@ work_queue_first(struct llist_node *head)
 
 static void
 process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
-              bool keep_empty)
+              bool keep_empty, delayed_dealloc_cb cb, void *state)
 {
     while (!llist_empty(head)) {
         struct _mem_work_chunk *buf = work_queue_first(head);
@@ -1192,7 +1212,7 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
                 return;
             }
 
-            free_work_item(item->ptr);
+            free_work_item(item->ptr, cb, state);
             buf->rd_idx++;
         }
 
@@ -1210,7 +1230,8 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
 
 static void
 process_interp_queue(struct _Py_mem_interp_free_queue *queue,
-                     struct _qsbr_thread_state *qsbr)
+                     struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                     void *state)
 {
     if (!_Py_atomic_load_int_relaxed(&queue->has_work)) {
         return;
@@ -1218,7 +1239,7 @@ process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
     // Try to acquire the lock, but don't block if it's already held.
     if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        process_queue(&queue->head, qsbr, false);
+        process_queue(&queue->head, qsbr, false, cb, state);
 
         int more_work = !llist_empty(&queue->head);
         _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
@@ -1234,10 +1255,23 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, NULL, NULL);
 
     // Process shared interpreter work
-    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr);
+    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, NULL, NULL);
+}
+
+void
+_PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate, delayed_dealloc_cb cb, void *state)
+{
+    PyInterpreterState *interp = tstate->interp;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+
+    // Process thread-local work
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, cb, state);
+
+    // Process shared interpreter work
+    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, cb, state);
 }
 
 void
@@ -1279,7 +1313,7 @@ _PyMem_FiniDelayed(PyInterpreterState *interp)
             // Free the remaining items immediately. There should be no other
             // threads accessing the memory at this point during shutdown.
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
-            free_work_item(item->ptr);
+            free_work_item(item->ptr, NULL, NULL);
             buf->rd_idx++;
         }
 
@@ -1405,7 +1439,7 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
 {
     size_t allocated_blocks = 0;
 #ifdef Py_GIL_DISABLED
-    for (PyThreadState *t = interp->threads.head; t != NULL; t = t->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)t;
         for (int i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
             mi_heap_t *heap = &tstate->mimalloc.heaps[i];

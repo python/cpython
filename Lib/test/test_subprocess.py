@@ -4,6 +4,7 @@ from test import support
 from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
+from test.support import strace_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 import subprocess
@@ -3415,7 +3416,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
-    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    @strace_helper.requires_strace()
     @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test_vfork_used_when_expected(self):
         # This is a performance regression test to ensure we default to using
@@ -3423,36 +3424,25 @@ class POSIXProcessTestCase(BaseTestCase):
         # Technically this test could pass when posix_spawn is used as well
         # because libc tends to implement that internally using vfork. But
         # that'd just be testing a libc+kernel implementation detail.
-        strace_binary = "/usr/bin/strace"
-        # The only system calls we are interested in.
-        strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"
-        true_binary = "/bin/true"
-        strace_command = [strace_binary, strace_filter]
 
-        try:
-            does_strace_work_process = subprocess.run(
-                    strace_command + [true_binary],
-                    stderr=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-            )
-            rc = does_strace_work_process.returncode
-            stderr = does_strace_work_process.stderr
-        except OSError:
-            rc = -1
-            stderr = ""
-        if rc or (b"+++ exited with 0 +++" not in stderr):
-            self.skipTest("strace not found or not working as expected.")
+        # Are intersted in the system calls:
+        # clone,clone2,clone3,fork,vfork,exit,exit_group
+        # Unfortunately using `--trace` with that list to strace fails because
+        # not all are supported on all platforms (ex. clone2 is ia64 only...)
+        # So instead use `%process` which is recommended by strace, and contains
+        # the above.
+        true_binary = "/bin/true"
+        strace_args = ["--trace=%process"]
 
         with self.subTest(name="default_is_vfork"):
-            vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
-                    import subprocess
-                    subprocess.check_call([{true_binary!r}])"""),
-                    __run_using_command=strace_command,
+            vfork_result = strace_helper.strace_python(
+                f"""\
+                import subprocess
+                subprocess.check_call([{true_binary!r}])""",
+                strace_args
             )
             # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
-            self.assertRegex(vfork_result.err, br"(?i)vfork")
+            self.assertRegex(vfork_result.event_bytes, br"(?i)vfork")
             # Do NOT check that fork() or other clones did not happen.
             # If the OS denys the vfork it'll fallback to plain fork().
 
@@ -3465,9 +3455,8 @@ class POSIXProcessTestCase(BaseTestCase):
                 ("setgroups", "", "extra_groups=[]", True),
         ):
             with self.subTest(name=sub_name):
-                non_vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
+                non_vfork_result = strace_helper.strace_python(
+                    f"""\
                     import subprocess
                     {preamble}
                     try:
@@ -3475,11 +3464,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                 [{true_binary!r}], **dict({sp_kwarg}))
                     except PermissionError:
                         if not {expect_permission_error}:
-                            raise"""),
-                    __run_using_command=strace_command,
+                            raise""",
+                    strace_args
                 )
                 # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
-                self.assertNotRegex(non_vfork_result.err, br"(?i)vfork")
+                self.assertNotRegex(non_vfork_result.event_bytes, br"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
