@@ -9,7 +9,7 @@ if sys.platform != "win32":
     raise unittest.SkipTest("Windows-specific test")
 
 
-from _ctypes import COMError
+from _ctypes import COMError, CopyComPointer
 from ctypes import HRESULT
 
 
@@ -182,6 +182,45 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         self.assertEqual(E_NOINTERFACE, e.exception.hresult)
 
         self.assertEqual(0, ppst.Release())
+
+
+class CopyComPointerTests(unittest.TestCase):
+    def setUp(self):
+        ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
+
+    def tearDown(self):
+        ole32.CoUninitialize()
+        gc.collect()
+
+    def test_copy_com_pointer(self):
+        class IUnknown(c_void_p):
+            QueryInterface = proto_query_interface(None, IID_IUnknown)
+            AddRef = proto_add_ref()
+            Release = proto_release()
+
+        class IPersist(IUnknown):
+            GetClassID = proto_get_class_id(((OUT, "pClassID"),), IID_IPersist)
+
+        src = create_shelllink_persist(IPersist)
+        dst = IPersist()
+
+        self.assertIsNone(dst.value)
+        with self.assertRaises(ValueError):
+            dst.GetClassID()  # NULL COM pointer access
+
+        hr = CopyComPointer(src, byref(dst))
+
+        self.assertEqual(S_OK, hr)
+        self.assertEqual(dst.value, src.value)
+
+        clsid = dst.GetClassID()
+        self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
+
+        # The refcount of a COM pointer created by `CoCreateInstance` is 1.
+        # `CopyComPointer` calls `AddRef` internally (thus, +1 to the refcount).
+        # Here, the refcount is decremented from 2 to 1.
+        self.assertEqual(1, dst.Release())
+        self.assertEqual(0, src.Release())
 
 
 if __name__ == '__main__':
