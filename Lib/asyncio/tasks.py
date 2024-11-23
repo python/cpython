@@ -887,13 +887,13 @@ def gather(*coros_or_futures, return_exceptions=False):
                 # can't control it, disable the "destroy pending task"
                 # warning.
                 fut._log_destroy_pending = False
-            if cur_task is not None:
-                futures.future_add_to_awaited_by(fut, cur_task)
             nfuts += 1
             arg_to_fut[arg] = fut
             if fut.done():
                 done_futs.append(fut)
             else:
+                if cur_task is not None:
+                    futures.future_add_to_awaited_by(fut, cur_task)
                 fut.add_done_callback(lambda fut: _done_callback(fut, cur_task))
 
         else:
