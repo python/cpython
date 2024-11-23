@@ -1175,8 +1175,6 @@ class RawConfigParserTestSambaConf(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(cf.get("global", "hosts allow"), "127.")
         self.assertEqual(cf.get("tmp", "echo command"), "cat %s; rm %s")
 
-        
-
 class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase):
     config_class = configparser.ConfigParser
     interpolation = configparser.ExtendedInterpolation()
@@ -1323,8 +1321,6 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         eq(cf['Common']['Option'], 'A Better Value')
         eq(cf['random']['foo'], 'value redefined')
         eq(cf['random']['Foo'], 'A Better Value Redefined')
-
-    
 
     def test_other_errors(self):
         cf = self.fromstring("""
