@@ -1648,7 +1648,9 @@ static PyObject *
 methodcaller_vectorcall(
         methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
 {
-    if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
+    Py_ssize_t number_of_arguments = PyVectorcall_NARGS(nargsf);
+
+    if (!_PyArg_CheckPositional("methodcaller", number_of_arguments, 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
     }
@@ -1659,11 +1661,16 @@ methodcaller_vectorcall(
     }
 
     assert(mc->vectorcall_args != 0);
-    mc->vectorcall_args[0] = args[0];
+    number_of_arguments++;
+    PyObject **tmp_args = (PyObject **) PyMem_Malloc(number_of_arguments * sizeof(PyObject *));
+    memcpy(tmp_args, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments );
+    tmp_args[0] = args[0];
     return PyObject_VectorcallMethod(
-            mc->name, mc->vectorcall_args,
+            mc->name, tmp_args,
             (PyTuple_GET_SIZE(mc->xargs)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
             mc->vectorcall_kwnames);
+
+    PyMem_Free(tmp_args);
 }
 #endif
 
