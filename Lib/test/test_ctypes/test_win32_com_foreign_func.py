@@ -78,6 +78,19 @@ proto_get_class_id = create_proto_com_method(
 )
 
 
+def create_shelllink_persist(typ):
+    ppst = typ()
+    # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
+    ole32.CoCreateInstance(
+        byref(CLSID_ShellLink),
+        None,
+        CLSCTX_SERVER,
+        byref(IID_IPersist),
+        byref(ppst),
+    )
+    return ppst
+
+
 class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
     def setUp(self):
         # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex
@@ -88,19 +101,6 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         ole32.CoUninitialize()
         gc.collect()
 
-    @staticmethod
-    def create_shelllink_persist(typ):
-        ppst = typ()
-        # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
-        ole32.CoCreateInstance(
-            byref(CLSID_ShellLink),
-            None,
-            CLSCTX_SERVER,
-            byref(IID_IPersist),
-            byref(ppst),
-        )
-        return ppst
-
     def test_without_paramflags_and_iid(self):
         class IUnknown(c_void_p):
             QueryInterface = proto_query_interface()
@@ -110,7 +110,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         class IPersist(IUnknown):
             GetClassID = proto_get_class_id()
 
-        ppst = self.create_shelllink_persist(IPersist)
+        ppst = create_shelllink_persist(IPersist)
 
         clsid = GUID()
         hr_getclsid = ppst.GetClassID(byref(clsid))
@@ -142,7 +142,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         class IPersist(IUnknown):
             GetClassID = proto_get_class_id(((OUT, "pClassID"),))
 
-        ppst = self.create_shelllink_persist(IPersist)
+        ppst = create_shelllink_persist(IPersist)
 
         clsid = ppst.GetClassID()
         self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
@@ -167,7 +167,7 @@ class ForeignFunctionsThatWillCallComMethodsTests(unittest.TestCase):
         class IPersist(IUnknown):
             GetClassID = proto_get_class_id(((OUT, "pClassID"),), IID_IPersist)
 
-        ppst = self.create_shelllink_persist(IPersist)
+        ppst = create_shelllink_persist(IPersist)
 
         clsid = ppst.GetClassID()
         self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
