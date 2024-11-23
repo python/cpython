@@ -1602,7 +1602,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
-#ifndef Py_GIL_DISABLED
+
 static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
 {
     PyObject* args = mc->xargs;
@@ -1662,10 +1662,10 @@ methodcaller_vectorcall(
 
     assert(mc->vectorcall_args != 0);
     size_t buffer_size = sizeof(PyObject *) * (number_of_arguments + 1);
-    PyObject **tmp_args = (PyObject **) PyMem_Malloc buffer_size);
+    PyObject **tmp_args = (PyObject **) PyMem_Malloc(buffer_size);
     if (tmp_args == NULL) {
         PyErr_NoMemory();
-        return -1;
+        return NULL;
     }
     memcpy(tmp_args, mc->vectorcall_args, buffer_size);
     tmp_args[0] = args[0];
@@ -1676,7 +1676,6 @@ methodcaller_vectorcall(
 
     PyMem_Free(tmp_args);
 }
-#endif
 
 
 /* AC 3.5: variable number of arguments, not currently support by AC */
@@ -1715,15 +1714,7 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mc->kwds = Py_XNewRef(kwds);
     mc->vectorcall_args = 0;
 
-
-#ifdef Py_GIL_DISABLED
-    // gh-127065: The current implementation of methodcaller_vectorcall
-    // is not thread-safe because it modifies the `vectorcall_args` array,
-    // which is shared across calls.
-    mc->vectorcall = NULL;
-#else
     mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
-#endif
 
     PyObject_GC_Track(mc);
     return (PyObject *)mc;
