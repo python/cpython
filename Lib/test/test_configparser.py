@@ -983,12 +983,19 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
     def test_str_and_repr(self):
         self.maxDiff = None
         cf = self.config_class(allow_no_value=True, delimiters=('=',), strict=True)
+        cf.add_section("sect1")
+        cf.add_section("sect2")
+        cf.add_section("sect3")
+        cf.add_section("sect4")
+        cf.add_section("sect5")
+        cf.add_section("sect6")  # Added more than 5 sections to trigger truncation
+        cf.set("sect1", "option1", "foo")
+        cf.set("sect2", "option2", "bar")
 
-        cf.add_section("sect")
-        cf.set("sect", "option1", "foo")
-        cf.set("sect", "option2", "bar")
-
-        expected_str = "{'sect': {'option1': 'foo', 'option2': 'bar'}}"
+        expected_str = (
+            "{'sect1': {'option1': 'foo'}, 'sect2': {'option2': 'bar'}, 'sect3': {}, "
+            "'sect4': {}, 'sect5': {}, 'sect6': {}}"
+        )
         self.assertEqual(str(cf), expected_str)
 
         dict_type = type(cf._dict).__name__
@@ -998,9 +1005,12 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
             f"params={{'dict_type': '{dict_type}', 'allow_no_value': True, "
             "'delimiters': ('=',), 'strict': True, 'default_section': 'DEFAULT', "
             "'interpolation': 'BasicInterpolation'}, "
-            "state={'loaded_files': [], 'sections': 1})>"
+            "state={'loaded_sources': [], 'sections_count': 6, "
+            "'sections': ['sect1', 'sect2', 'sect3', 'sect4', 'sect5'], "
+            "'sections_truncated': '...and 1 more'})>"
         )
         self.assertEqual(repr(cf), expected_repr)
+
 
     def test_add_section_default(self):
         cf = self.newconfig()
