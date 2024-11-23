@@ -503,7 +503,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     for method in methods:
         method.__qualname__ = f'{typename}.{method.__name__}'
     if module is not None:
-        method.__module__ = module
+        for method in methods:
+            method.__module__ = module
 
     # Build-up the class namespace dictionary
     # and use type() to build the result class
