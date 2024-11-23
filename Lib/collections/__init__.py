@@ -448,15 +448,13 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     if defaults is not None:
         __new__.__defaults__ = defaults
 
-    @classmethod
-    def _make(cls, iterable):
+    def _make(cls, iterable):  # will be wrapped as classmethod below
         result = tuple_new(cls, iterable)
         if _len(result) != num_fields:
             raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
         return result
 
-    _make.__func__.__doc__ = (f'Make a new {typename} object from a sequence '
-                              'or iterable')
+    _make.__doc__ = f'Make a new {typename} object from a sequence or iterable'
 
     def _replace(self, /, **kwds):
         result = self._make(_map(kwds.pop, field_names, self))
@@ -496,7 +494,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # Modify function metadata to help with introspection and debugging
     methods = (
         __new__,
-        _make.__func__,
+        _make,
         _replace,
         __repr__,
         _asdict,
@@ -515,7 +513,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_fields': field_names,
         '_field_defaults': field_defaults,
         '__new__': __new__,
-        '_make': _make,
+        '_make': classmethod(_make),
         '__replace__': _replace,
         '_replace': _replace,
         '__repr__': __repr__,
