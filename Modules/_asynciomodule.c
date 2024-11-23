@@ -2136,9 +2136,49 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return -1;
     }
 
+    assert(task == item);
+    Py_CLEAR(item);
+
+    // This block is needed to enable `asyncio.capture_call_graph()` API.
+    // We want to be enable debuggers and profilers to be able to quickly
+    // introspect the asyncio running state from another process.
+    // When we do that, we need to essentially traverse the address space
+    // of a Python process and understand what every Python thread in it is
+    // currently doing, mainly:
+    //
+    //  * current frame
+    //  * current asyncio task
+    //
+    // A naive solution would be to require profilers and debuggers to
+    // find the current task in the "_asynciomodule" module state, but
+    // unfortunately that would require a lot of complicated remote
+    // memory reads and logic, as Python's dict is a notoriously complex
+    // and ever-changing data structure.
+    //
+    // So the actual solution is to put a reference to the currently
+    // running asyncio Task to the interpreter thread state (we already
+    // have some asyncio state there.)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    assert(ts->asyncio_running_task == NULL);
-    ts->asyncio_running_task = item;  // strong ref
+    if (ts->asyncio_running_loop == loop) {
+        // Protect from a situation when someone calls this method
+        // from another thread. This shouldn't ever happen though,
+        // as `enter_task` and `leave_task` can either be called by:
+        //
+        //  - `asyncio.Task` itself, in `Task.__step()`. That method
+        //    can only be called by the event loop itself.
+        //
+        //  - third-party Task "from scratch" implementations, that
+        //    our `capture_call_graph` API doesn't support anyway.
+        //
+        // That said, we still want to make sure we don't end up in
+        // a broken state, so we check that we're in the correct thread
+        // by comparing the *loop* argument to the event loop set
+        // in the current thread. If they match we know we're in the
+        // right thread, as asyncio event loops don't change threads.
+        assert(ts->asyncio_running_task == NULL);
+        ts->asyncio_running_task = Py_NewRef(task);
+    }
+
     return 0;
 }
 
@@ -2171,9 +2211,14 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return err_leave_task(Py_None, task);
     }
 
+    // See the comment in `enter_task` for the explanation of why
+    // the following is needed.
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    Py_CLEAR(ts->asyncio_running_task);
-    return res;
+    if (ts->asyncio_running_loop == loop) {
+        Py_CLEAR(ts->asyncio_running_task);
+    }
+
+    return 0;
 }
 
 static PyObject *
