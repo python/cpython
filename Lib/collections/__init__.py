@@ -434,12 +434,26 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     tuple_new = tuple.__new__
     _dict, _tuple, _len, _map, _zip = dict, tuple, len, map, zip
 
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the named tuple is created.  Bypass this step in environments where
+    # sys._getframe is not defined (Jython for example) or sys._getframe is not
+    # defined for arguments greater than 0 (IronPython), or where the user has
+    # specified a particular module.
+    if module is None:
+        try:
+            module = _sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
+
     # Create all the named tuple methods to be added to the class namespace
 
     namespace = {
         '_tuple_new': tuple_new,
         '__builtins__': {},
-        '__name__': f'namedtuple_{typename}',
+        '__name__': module or f'namedtuple_{typename}',
     }
     code = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
     __new__ = eval(code, namespace)
@@ -476,20 +490,6 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
         return _tuple(self)
-
-    # For pickling to work, the __module__ variable needs to be set to the frame
-    # where the named tuple is created.  Bypass this step in environments where
-    # sys._getframe is not defined (Jython for example) or sys._getframe is not
-    # defined for arguments greater than 0 (IronPython), or where the user has
-    # specified a particular module.
-    if module is None:
-        try:
-            module = _sys._getframemodulename(1) or '__main__'
-        except AttributeError:
-            try:
-                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
-            except (AttributeError, ValueError):
-                pass
 
     # Modify function metadata to help with introspection and debugging
     methods = (

@@ -468,6 +468,8 @@ class TestNamedTuple(unittest.TestCase):
         NT = namedtuple('NT', ['x', 'y'], module=collections)
         self.assertEqual(NT.__module__, collections)
 
+    @unittest.skipUnless(hasattr(sys, '_getframemodulename') or hasattr(sys, '_getframe'),
+                         "Maybe cannot get the module name from the frame.")
     def test_module_attribute(self):
         method_names = (
             '__new__',

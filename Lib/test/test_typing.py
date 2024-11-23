@@ -12,7 +12,7 @@ import os
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skip
+from unittest import TestCase, main, skip, skipUnless
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -7839,6 +7839,8 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Emp.__annotations__,
                          collections.OrderedDict([('name', str), ('id', int)]))
 
+    @skipUnless(hasattr(sys, '_getframemodulename') or hasattr(sys, '_getframe'),
+                "Maybe cannot get the module name from the frame.")
     def test_module_attribute(self):
         method_names = (
             '__new__',
