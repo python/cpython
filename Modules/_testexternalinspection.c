@@ -60,19 +60,19 @@
 #endif
 
 struct _Py_AsyncioModuleDebugOffsets {
-  struct _asyncio_task_object {
-    uint64_t size;
-    uint64_t task_name;
-    uint64_t task_awaited_by;
-    uint64_t task_is_task;
-    uint64_t task_awaited_by_is_set;
-    uint64_t task_coro;
-  } asyncio_task_object;
-  struct _asyncio_thread_state {
-    uint64_t size;
-    uint64_t asyncio_running_loop;
-    uint64_t asyncio_running_task;
-  } asyncio_thread_state;
+    struct _asyncio_task_object {
+        uint64_t size;
+        uint64_t task_name;
+        uint64_t task_awaited_by;
+        uint64_t task_is_task;
+        uint64_t task_awaited_by_is_set;
+        uint64_t task_coro;
+    } asyncio_task_object;
+    struct _asyncio_thread_state {
+        uint64_t size;
+        uint64_t asyncio_running_loop;
+        uint64_t asyncio_running_task;
+    } asyncio_thread_state;
 };
 
 #if defined(__APPLE__) && TARGET_OS_OSX
