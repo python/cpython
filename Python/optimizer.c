@@ -1394,28 +1394,6 @@ static PyMethodDef counter_optimizer_methods[] = {
     { NULL, NULL },
 };
 
-PyTypeObject _PyCounterOptimizer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "Counter optimizer",
-    .tp_basicsize = sizeof(_PyCounterOptimizerObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_methods = counter_optimizer_methods,
-    .tp_dealloc = (destructor)PyObject_Free,
-};
-
-PyObject *
-_PyOptimizer_NewCounter(void)
-{
-    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
-    opt->base.optimize = counter_optimize;
-    opt->count = 0;
-    return (PyObject *)opt;
-}
-
 
 /*****************************************
  *        Executor management
