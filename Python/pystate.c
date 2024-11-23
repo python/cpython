@@ -1779,7 +1779,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (tstate->_status.bound_gilstate) {
         unbind_gilstate_tstate(tstate);
     }
-    unbind_tstate(tstate);
+    if (tstate->_status.bound) {
+        unbind_tstate(tstate);
+    }
 
     // XXX Move to PyThreadState_Clear()?
     clear_datastack(tstate);

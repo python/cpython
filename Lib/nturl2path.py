@@ -15,21 +15,27 @@ def url2pathname(url):
     # become
     #   C:\foo\bar\spam.foo
     import string, urllib.parse
+    if url[:3] == '///':
+        # URL has an empty authority section, so the path begins on the third
+        # character.
+        url = url[2:]
+    elif url[:12] == '//localhost/':
+        # Skip past 'localhost' authority.
+        url = url[11:]
+    if url[:3] == '///':
+        # Skip past extra slash before UNC drive in URL path.
+        url = url[1:]
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
     if not '|' in url:
         # No drive specifier, just convert slashes
-        if url[:3] == '///':
-            # URL has an empty authority section, so the path begins on the
-            # third character.
-            url = url[2:]
         # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
-    drive = comp[0][-1].upper()
+    drive = comp[0][-1]
     tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
     return drive + ':' + tail
 
@@ -54,7 +60,7 @@ def pathname2url(p):
         # DOS drive specified. Add three slashes to the start, producing
         # an authority section with a zero-length authority, and a path
         # section starting with a single slash.
-        drive = f'///{drive.upper()}'
+        drive = f'///{drive}'
 
     drive = urllib.parse.quote(drive, safe='/:')
     tail = urllib.parse.quote(tail)

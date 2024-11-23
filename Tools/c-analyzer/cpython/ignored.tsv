@@ -739,7 +739,6 @@ Modules/expat/xmlrole.c	-	declClose	-
 Modules/expat/xmlrole.c	-	error	-
 
 ## other
-Modules/grpmodule.c	grp_getgrall_impl	getgrall_mutex	-
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
