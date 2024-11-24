@@ -552,15 +552,6 @@ unittest
   See also :ref:`using-on-controlling-color`.
   (Contributed by Hugo van Kemenade in :gh:`127221`.)
 
-.. Apparently this how you hack together a formatted link:
-   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
-
 * unittest discovery supports :term:`namespace package` as start
   directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
