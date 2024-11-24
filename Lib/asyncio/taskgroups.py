@@ -36,6 +36,7 @@ class TaskGroup:
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
+        self._stop_on_enter = False
 
     def __repr__(self):
         info = ['']
@@ -62,6 +63,8 @@ class TaskGroup:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
         self._entered = True
+        if self._stop_on_enter:
+            self.stop()
 
         return self
 
@@ -147,6 +150,10 @@ class TaskGroup:
                 # If there are no pending cancellations left,
                 # don't propagate CancelledError.
                 propagate_cancellation_error = None
+                # If Cancelled would actually be raised out of the TaskGroup,
+                # suppress it-- this is significant when using stop().
+                if not self._errors:
+                    return True
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
@@ -273,3 +280,30 @@ class TaskGroup:
             self._abort()
             self._parent_cancel_requested = True
             self._parent_task.cancel()
+
+    def stop(self):
+        """Stop the task group
+
+        `cancel()` will be called on any tasks in the group that aren't yet
+        done, as well as the parent (body) of the group.  This will cause the
+        task group context manager to exit *without* a Cancelled exception
+        being raised.
+
+        If `stop()` is called before entering the task group, the group will be
+        stopped upon entry.  This is useful for patterns where one piece of
+        code passes an unused TaskGroup instance to another in order to have
+        the ability to stop anything run within the group.
+
+        `stop()` is idempotent and may be called after the task group has
+        already exited.
+        """
+        if not self._entered:
+            self._stop_on_enter = True
+            return
+        if self._exiting and not self._tasks:
+            return
+        if not self._aborting:
+            self._abort()
+            if self._parent_task and not self._parent_cancel_requested:
+                self._parent_cancel_requested = True
+                self._parent_task.cancel()
