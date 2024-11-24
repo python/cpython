@@ -168,7 +168,7 @@ _Py_c_pow(Py_complex a, Py_complex b)
         at = atan2(a.imag, a.real);
         phase = at*b.real;
         if (b.imag != 0.0) {
-            len /= exp(at*b.imag);
+            len *= exp(-at*b.imag);
             phase += b.imag*log(vabs);
         }
         r.real = len*cos(phase);
@@ -1250,4 +1250,5 @@ PyTypeObject PyComplex_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     actual_complex_new,                         /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_version_tag = _Py_TYPE_VERSION_COMPLEX,
 };

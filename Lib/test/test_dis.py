@@ -10,8 +10,7 @@ import sys
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, requires_specialization_ft,
-                          cpython_only)
+                          requires_specialization, cpython_only)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -1260,27 +1259,6 @@ class DisTests(DisTestBase):
         self.code_quicken(lambda: load_test(0, 0))
         got = self.get_disassembly(load_test, adaptive=True)
         self.do_disassembly_compare(got, dis_load_test_quickened_code)
-
-    @cpython_only
-    @requires_specialization_ft
-    def test_binary_specialize(self):
-        binary_op_quicken = """\
-  0           RESUME_CHECK             0
-
-  1           LOAD_NAME                0 (a)
-              LOAD_NAME                1 (b)
-              %s
-              RETURN_VALUE
-"""
-        co_int = compile('a + b', "<int>", "eval")
-        self.code_quicken(lambda: exec(co_int, {}, {'a': 1, 'b': 2}))
-        got = self.get_disassembly(co_int, adaptive=True)
-        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_INT        0 (+)")
-
-        co_unicode = compile('a + b', "<unicode>", "eval")
-        self.code_quicken(lambda: exec(co_unicode, {}, {'a': 'a', 'b': 'b'}))
-        got = self.get_disassembly(co_unicode, adaptive=True)
-        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE    0 (+)")
 
     @cpython_only
     @requires_specialization

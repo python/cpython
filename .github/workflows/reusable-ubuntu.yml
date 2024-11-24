@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04, ubuntu-24.04-aarch64]
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
@@ -82,11 +82,11 @@ jobs:
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
+      run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
       if: ${{ !inputs.free-threading}}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: set -o pipefail; make -j4 --output-sync 2>&1 | tee compiler_output_ubuntu.txt
+      run: set -o pipefail; make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo

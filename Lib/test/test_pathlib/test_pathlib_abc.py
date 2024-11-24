@@ -86,11 +86,6 @@ class PurePathBaseTest(unittest.TestCase):
             p.suffix
         with self.assertRaises(e):
             p.suffixes
-        with self.assertRaises(e):
-            p / 'bar'
-        with self.assertRaises(e):
-            'bar' / p
-        self.assertRaises(e, p.joinpath, 'bar')
         self.assertRaises(e, p.with_name, 'bar')
         self.assertRaises(e, p.with_stem, 'bar')
         self.assertRaises(e, p.with_suffix, '.txt')
@@ -153,6 +148,7 @@ class DummyPurePathTest(unittest.TestCase):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
+        P()
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
@@ -2497,6 +2493,23 @@ class DummyPathTest(DummyPurePathTest):
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
+    @needs_posix
+    def test_absolute_posix(self):
+        P = self.cls
+        # The default implementation uses '/' as the current directory
+        self.assertEqual(str(P('').absolute()), '/')
+        self.assertEqual(str(P('a').absolute()), '/a')
+        self.assertEqual(str(P('a/b').absolute()), '/a/b')
+
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
+
     @needs_symlinks
     def test_readlink(self):
         P = self.cls(self.base)
@@ -2814,29 +2827,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(p, P)
         self.assertEqualNormCase(str(p), self.base)
 
-        # Resolve relative paths.
-        try:
-            self.cls('').absolute()
-        except UnsupportedOperation:
-            return
-        old_path = os.getcwd()
-        os.chdir(self.base)
-        try:
-            p = self.cls('link0').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link1').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link2').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-            p = self.cls('link3').resolve()
-            self.assertEqual(p, P)
-            self.assertEqualNormCase(str(p), self.base)
-        finally:
-            os.chdir(old_path)
-
     @needs_symlinks
     def test_complex_symlinks_absolute(self):
         self._check_complex_symlinks(self.base)
@@ -2932,7 +2922,16 @@ class DummyPathTest(DummyPurePathTest):
         filename = tmp / 'foo'
         self.assertRaises(FileNotFoundError, filename._delete)
 
-    def setUpWalk(self):
+
+class DummyPathWalkTest(unittest.TestCase):
+    cls = DummyPath
+    base = DummyPathTest.base
+    can_symlink = False
+
+    def setUp(self):
+        name = self.id().split('.')[-1]
+        if name in _tests_needing_symlinks and not self.can_symlink:
+            self.skipTest('requires symlinks')
         # Build:
         #     TESTFN/
         #       TEST1/              a file kid and two directory kids
@@ -2976,8 +2975,11 @@ class DummyPathTest(DummyPurePathTest):
         else:
             self.sub2_tree = (self.sub2_path, [], ["tmp3"])
 
+    def tearDown(self):
+        base = self.cls(self.base)
+        base._rmtree()
+
     def test_walk_topdown(self):
-        self.setUpWalk()
         walker = self.walk_path.walk()
         entry = next(walker)
         entry[1].sort()  # Ensure we visit SUB1 before SUB2
@@ -2994,7 +2996,6 @@ class DummyPathTest(DummyPurePathTest):
             next(walker)
 
     def test_walk_prune(self):
-        self.setUpWalk()
         # Prune the search.
         all = []
         for root, dirs, files in self.walk_path.walk():
@@ -3011,7 +3012,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_walk_bottom_up(self):
-        self.setUpWalk()
         seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
         for path, dirnames, filenames in self.walk_path.walk(top_down=False):
             if path == self.walk_path:
@@ -3046,7 +3046,6 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_symlinks
     def test_walk_follow_symlinks(self):
-        self.setUpWalk()
         walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.link_path:
@@ -3058,7 +3057,6 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_symlinks
     def test_walk_symlink_location(self):
-        self.setUpWalk()
         # Tests whether symlinks end up in filenames or dirnames depending
         # on the `follow_symlinks` argument.
         walk_it = self.walk_path.walk(follow_symlinks=False)
@@ -3103,6 +3101,11 @@ class DummyPathWithSymlinks(DummyPath):
 
 
 class DummyPathWithSymlinksTest(DummyPathTest):
+    cls = DummyPathWithSymlinks
+    can_symlink = True
+
+
+class DummyPathWithSymlinksWalkTest(DummyPathWalkTest):
     cls = DummyPathWithSymlinks
     can_symlink = True
 
