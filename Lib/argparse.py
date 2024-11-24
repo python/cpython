@@ -1709,7 +1709,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
-        raise ValueError('nested argument groups are not supported')
+        raise ValueError('argument groups cannot be nested')
 
 class _MutuallyExclusiveGroup(_ArgumentGroup):
 
@@ -1731,7 +1731,7 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._group_actions.remove(action)
 
     def add_mutually_exclusive_group(self, **kwargs):
-        raise ValueError('nested mutually exclusive groups are not supported')
+        raise ValueError('mutually exclusive groups cannot be nested')
 
 def _prog_name(prog=None):
     if prog is not None:

@@ -3310,7 +3310,7 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         g.add_argument("--spam")
         self.assertRaisesRegex(ValueError,
                                'nested mutually exclusive groups are not supported',
-                                 g.add_mutually_exclusive_group)
+                               g.add_mutually_exclusive_group)
 
 class MEMixin(object):
 
