@@ -3,12 +3,10 @@
 
 import sys
 import gc
-
 import asyncio
 import contextvars
 import contextlib
 from asyncio import taskgroups
-import math
 import unittest
 import warnings
 
@@ -1000,11 +998,13 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
     async def test_taskgroup_stop_children(self):
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(asyncio.sleep(math.inf))
-            tg.create_task(asyncio.sleep(math.inf))
-            await asyncio.sleep(0)
-            tg.stop()
+        # (asserting that TimeoutError is not raised)
+        async with asyncio.timeout(1):
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(asyncio.sleep(10))
+                tg.create_task(asyncio.sleep(10))
+                await asyncio.sleep(0)
+                tg.stop()
 
     async def test_taskgroup_stop_body(self):
         count = 0
@@ -1028,6 +1028,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
     async def test_taskgroup_stop_after_exit(self):
         async with asyncio.TaskGroup() as tg:
             await asyncio.sleep(0)
+        # (asserting that exception is not raised)
         tg.stop()
 
     async def test_taskgroup_stop_before_enter(self):
