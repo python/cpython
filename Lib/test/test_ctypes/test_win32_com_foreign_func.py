@@ -214,15 +214,20 @@ class CopyComPointerTests(unittest.TestCase):
         self.assertIsNone(src.value)
         self.assertIsNone(dst.value)
 
-    def test_both_are_nonnull(self):
+    def test_src_is_nonnull_and_dest_is_null(self):
+        # The reference count of the COM pointer created by `CoCreateInstance`
+        # is initially 1.
         src = create_shelllink_persist(self.IPersist)
-        dst = create_shelllink_persist(self.IPersist)
+        dst = self.IPersist()
 
-        self.assertNotEqual(src.value, dst.value)
+        # `CopyComPointer` calls `AddRef` explicitly in the C implementation.
+        # The refcount of `src` is incremented from 1 to 2 here.
         hr = CopyComPointer(src, byref(dst))
+
         self.assertEqual(S_OK, hr)
         self.assertEqual(src.value, dst.value)
 
+        # This indicates that the refcount was 2 before the `Release` call.
         self.assertEqual(1, src.Release())
 
         clsid = dst.GetClassID()
@@ -230,10 +235,17 @@ class CopyComPointerTests(unittest.TestCase):
 
         self.assertEqual(0, dst.Release())
 
-    def test_dest_is_nonnull(self):
+    def test_src_is_null_and_dest_is_nonnull(self):
         src = self.IPersist()
-        dst = create_shelllink_persist(self.IPersist)
+        dst_orig = create_shelllink_persist(self.IPersist)
+        dst = self.IPersist()
+        CopyComPointer(dst_orig, byref(dst))
+        dst_orig.Release()  # The refcount of `dst_orig` is 1 here.
 
+        clsid = dst.GetClassID()
+        self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
+
+        # This does NOT affects the refcount of `dst_orig`.
         hr = CopyComPointer(src, byref(dst))
 
         self.assertEqual(S_OK, hr)
@@ -242,14 +254,24 @@ class CopyComPointerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dst.GetClassID()  # NULL COM pointer access
 
-    def test_src_is_nonnull(self):
+        # This indicates that the refcount was 1 before the `Release` call.
+        self.assertEqual(0, dst_orig.Release())
+
+    def test_both_are_nonnull(self):
         src = create_shelllink_persist(self.IPersist)
+        dst_orig = create_shelllink_persist(self.IPersist)
         dst = self.IPersist()
+        CopyComPointer(dst_orig, byref(dst))
+        dst_orig.Release()
+
+        self.assertEqual(dst.value, dst_orig.value)
+        self.assertNotEqual(src.value, dst.value)
 
         hr = CopyComPointer(src, byref(dst))
 
         self.assertEqual(S_OK, hr)
         self.assertEqual(src.value, dst.value)
+        self.assertNotEqual(dst.value, dst_orig.value)
 
         self.assertEqual(1, src.Release())
 
@@ -257,6 +279,7 @@ class CopyComPointerTests(unittest.TestCase):
         self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
 
         self.assertEqual(0, dst.Release())
+        self.assertEqual(0, dst_orig.Release())
 
 
 if __name__ == '__main__':
