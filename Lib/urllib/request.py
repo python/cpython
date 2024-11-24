@@ -1667,6 +1667,10 @@ else:
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
+        if pathname[:2] == '//':
+            # Add explicitly empty authority to avoid interpreting the path
+            # as authority.
+            pathname = '//' + pathname
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return quote(pathname, encoding=encoding, errors=errors)

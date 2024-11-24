@@ -1458,6 +1458,9 @@ class Pathname_Tests(unittest.TestCase):
         fn = urllib.request.pathname2url
         self.assertEqual(fn('/'), '/')
         self.assertEqual(fn('/a/b.c'), '/a/b.c')
+        self.assertEqual(fn('//a/b.c'), '////a/b.c')
+        self.assertEqual(fn('///a/b.c'), '/////a/b.c')
+        self.assertEqual(fn('////a/b.c'), '//////a/b.c')
         self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
