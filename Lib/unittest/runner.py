@@ -15,18 +15,18 @@ __unittest = True
 
 class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""
-    def __init__(self,stream):
+    def __init__(self, stream):
         self.stream = stream
 
     def __getattr__(self, attr):
         if attr in ('stream', '__getstate__'):
             raise AttributeError(attr)
-        return getattr(self.stream,attr)
+        return getattr(self.stream, attr)
 
     def writeln(self, arg=None):
         if arg:
             self.write(arg)
-        self.write('\n') # text-mode streams translate to \r\n if needed
+        self.write('\n')  # text-mode streams translate to \r\n if needed
 
 
 class TextTestResult(result.TestResult):
@@ -251,7 +251,7 @@ class TextTestRunner(object):
             if self.warnings:
                 # if self.warnings is set, use it to filter all the warnings
                 warnings.simplefilter(self.warnings)
-            startTime = time.perf_counter()
+            start_time = time.perf_counter()
             startTestRun = getattr(result, 'startTestRun', None)
             if startTestRun is not None:
                 startTestRun()
@@ -261,8 +261,8 @@ class TextTestRunner(object):
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:
                     stopTestRun()
-            stopTime = time.perf_counter()
-        timeTaken = stopTime - startTime
+            stop_time = time.perf_counter()
+        time_taken = stop_time - start_time
         result.printErrors()
         if self.durations is not None:
             self._printDurations(result)
@@ -272,10 +272,10 @@ class TextTestRunner(object):
 
         run = result.testsRun
         self.stream.writeln("Ran %d test%s in %.3fs" %
-                            (run, run != 1 and "s" or "", timeTaken))
+                            (run, run != 1 and "s" or "", time_taken))
         self.stream.writeln()
 
-        expectedFails = unexpectedSuccesses = skipped = 0
+        expected_fails = unexpected_successes = skipped = 0
         try:
             results = map(len, (result.expectedFailures,
                                 result.unexpectedSuccesses,
@@ -283,7 +283,7 @@ class TextTestRunner(object):
         except AttributeError:
             pass
         else:
-            expectedFails, unexpectedSuccesses, skipped = results
+            expected_fails, unexpected_successes, skipped = results
 
         infos = []
         ansi = get_colors()
@@ -306,11 +306,11 @@ class TextTestRunner(object):
             self.stream.write(f"{green}OK{reset}")
         if skipped:
             infos.append(f"{yellow}skipped={skipped}{reset}")
-        if expectedFails:
-            infos.append(f"{yellow}expected failures={expectedFails}{reset}")
-        if unexpectedSuccesses:
+        if expected_fails:
+            infos.append(f"{yellow}expected failures={expected_fails}{reset}")
+        if unexpected_successes:
             infos.append(
-                f"{red}unexpected successes={unexpectedSuccesses}{reset}"
+                f"{red}unexpected successes={unexpected_successes}{reset}"
             )
         if infos:
             self.stream.writeln(" (%s)" % (", ".join(infos),))
