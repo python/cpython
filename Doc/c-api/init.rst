@@ -2470,7 +2470,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection2 _py_cs2;
-          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
+          PyCriticalSection2_Begin(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
 
    In the default build, this macro expands to ``{``.
 
@@ -2482,7 +2482,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    In the free-threaded build, this macro expands to::
 
-          PyCriticalSection_End2(&_py_cs2);
+          PyCriticalSection2_End(&_py_cs2);
       }
 
    In the default build, this macro expands to ``}``.
