@@ -156,8 +156,6 @@ jobs:
           make clean --jobs 4
           export HOST=${{ matrix.architecture }}-linux-gnu
           sudo apt install --yes "gcc-$HOST" qemu-user
-          ${{ !matrix.debug && matrix.compiler == 'clang' && './configure --enable-optimizations' || '' }}
-          ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 4' || '' }}
           export QEMU_LD_PREFIX="/usr/$HOST"
           CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}" \
             CPP="$CC --preprocess" \
