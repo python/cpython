@@ -1927,9 +1927,9 @@ Argument groups
    in the usual "positional arguments" and "optional arguments" sections.
 
    .. deprecated-removed:: 3.11 3.14
-      Calling :meth:`add_argument_group` on an argument group has been removed.
-      This feature was never supported and did not always work correctly.
-      The function existed on the API by accident through inheritance.
+      Calling :meth:`add_argument_group` on an argument group now raises an
+      exception. This nesting was never supported, often failed to work
+      correctly, and was unintentionally exposed through inheritance.
 
    .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
@@ -1994,9 +1994,9 @@ Mutual exclusion
 
    .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-      on a mutually exclusive group has been removed. These features were never
-      supported and did not always work correctly. The functions existed on the
-      API by accident through inheritance.
+      on a mutually exclusive group now raises an exception. This nesting was
+      never supported, often failed to work correctly, and was unintentionally
+      exposed through inheritance.
 
 
 Parser defaults
