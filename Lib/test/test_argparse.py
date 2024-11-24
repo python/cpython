@@ -3001,7 +3001,7 @@ class TestGroupConstructor(TestCase):
         parser = argparse.ArgumentParser()
         g = parser.add_argument_group()
         self.assertRaisesRegex(ValueError,
-                                 'nested argument groups are not supported',
+                                 'argument groups cannot be nested',
                                  g.add_argument_group)
 
 # ===================
@@ -3309,7 +3309,7 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         g = parser.add_mutually_exclusive_group()
         g.add_argument("--spam")
         self.assertRaisesRegex(ValueError,
-                               'nested mutually exclusive groups are not supported',
+                               'mutually exclusive groups cannot be nested',
                                g.add_mutually_exclusive_group)
 
 class MEMixin(object):
