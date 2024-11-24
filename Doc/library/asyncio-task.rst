@@ -344,16 +344,16 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. method:: stop()
 
-      Stop the task group
+      Stop the task group.
 
       :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
       aren't yet done, as well as the parent (body) of the group.  This will
-      cause the task group context manager to exit *without* a
+      cause the task group context manager to exit *without*
       :exc:`asyncio.CancelledError` being raised.
 
       If :meth:`stop` is called before entering the task group, the group will be
       stopped upon entry.  This is useful for patterns where one piece of
-      code passes an unused TaskGroup instance to another in order to have
+      code passes an unused :class:`asyncio.TaskGroup` instance to another in order to have
       the ability to stop anything run within the group.
 
       :meth:`stop` is idempotent and may be called after the task group has
