@@ -1,1 +1,1 @@
-Add colour to unittest output. Patch by Hugo van Kemenade.
+Add colour to :mod:`unittest` output. Patch by Hugo van Kemenade.
