@@ -46,6 +46,8 @@ test runner
    a textual interface, or return a special value to indicate the results of
    executing the tests.
 
+Output is in color by default and can be
+:ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. seealso::
 
