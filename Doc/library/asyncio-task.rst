@@ -359,7 +359,7 @@ and reliable way to wait for all tasks in the group to finish.
       :meth:`stop` is idempotent and may be called after the task group has
       already exited.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
 Example::
 
