@@ -3611,6 +3611,7 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static void
 long_dealloc(PyObject *self)
 {
 #ifdef Py_LIMITED_API
