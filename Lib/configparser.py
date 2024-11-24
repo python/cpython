@@ -1106,10 +1106,12 @@ class RawConfigParser(MutableMapping):
         # a section header or option header?
         if self._allow_unnamed_section and st.cursect is None:
             st.sectname = UNNAMED_SECTION
-            st.cursect = self._dict()
-            self._sections[st.sectname] = st.cursect
-            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
-            st.elements_added.add(st.sectname)
+            if st.sectname in self._sections:
+                st.cursect = self._sections[st.sectname]
+            else:
+                st.cursect = self._dict()
+                self._sections[st.sectname] = st.cursect
+                self._proxies[st.sectname] = SectionProxy(self, st.sectname)
 
         st.indent_level = st.cur_indent_level
         # is it a section header?
