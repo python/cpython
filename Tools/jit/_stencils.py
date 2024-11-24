@@ -202,7 +202,8 @@ class Stencil:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
-        self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        if padding:
+            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
     def remove_jump(self, *, alignment: int = 1) -> None:
