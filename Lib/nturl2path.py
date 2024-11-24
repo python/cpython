@@ -64,7 +64,7 @@ def pathname2url(p):
             drive = f'///{drive}'
         drive = urllib.parse.quote(drive, safe='/:')
     elif root:
-        # Path has a root but no drive. Add an authority section.
+        # Add explicitly empty authority to path beginning with one slash.
         root = f'//{root}'
 
     tail = urllib.parse.quote(tail)
