@@ -3611,28 +3611,29 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
-#ifndef NDEBUG
-static int _is_python_smallint(PyObject *op)
+long_dealloc(PyObject *self)
 {
-    PyLongObject *pylong = (PyLongObject*)op;
+#ifdef Py_LIMITED_API
+#ifndef Py_GIL_DISABLED
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref small Ints out of existence. Instead,
+     * since small Ints are immortal, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
+     */
+    PyLongObject *pylong = (PyLongObject*)self;
     if (pylong && _PyLong_IsCompact(pylong)) {
         stwodigits ival = medium_value(pylong);
         if (IS_SMALL_INT(ival)) {
             PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
             if (pylong == small_pylong) {
-                return 1;
+                _Py_SetImmortal(self);
+                return;
             }
         }
     }
-    return 0;
-}
 #endif
-
-static void
-long_dealloc(PyObject *self)
-{
-    // assert the small ints are not deallocated
-    assert(!_is_python_smallint(self));
+#endif
     Py_TYPE(self)->tp_free(self);
 }
 
