@@ -1668,9 +1668,8 @@ else:
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
         if pathname[:1] == '/':
-            # Absolute path supplied. Add an authority section with a
-            # zero-length authority.
-            pathname = f'//{pathname}'
+            # Add explicitly empty authority to absolute path.
+            pathname = '//' + pathname
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return quote(pathname, encoding=encoding, errors=errors)
