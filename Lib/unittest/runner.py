@@ -160,7 +160,7 @@ class TextTestResult(result.TestResult):
         self.printErrorList(f"{red}FAIL{reset}", self.failures)
         unexpectedSuccesses = getattr(self, "unexpectedSuccesses", ())
         if unexpectedSuccesses:
-            self.stream.writeln(f"{bold_red}{self.separator1}{reset}")
+            self.stream.writeln(self.separator1)
             for test in unexpectedSuccesses:
                 self.stream.writeln(
                     f"{red}UNEXPECTED SUCCESS{bold_red}: "
@@ -171,11 +171,11 @@ class TextTestResult(result.TestResult):
     def printErrorList(self, flavour, errors):
         bold_red, reset = self._ansi.BOLD_RED, self._ansi.RESET
         for test, err in errors:
-            self.stream.writeln(f"{bold_red}{self.separator1}{reset}")
+            self.stream.writeln(self.separator1)
             self.stream.writeln(
                 f"{flavour}{bold_red}: {self.getDescription(test)}{reset}"
             )
-            self.stream.writeln(f"{bold_red}{self.separator2}{reset}")
+            self.stream.writeln(self.separator2)
             self.stream.writeln("%s" % err)
             self.stream.flush()
 
