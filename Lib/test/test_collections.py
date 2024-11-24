@@ -479,8 +479,10 @@ class TestNamedTuple(unittest.TestCase):
             '_asdict',
             '__getnewargs__',
         )
-        for module in ('some.module', collections):
+        for module in (None, 'some.module', collections):
             NT = namedtuple('NT', ['x', 'y'], module=module)
+            if module is None:
+                module = __name__
             self.assertEqual(NT.__module__, module)
             for method in method_names:
                 self.assertEqual(getattr(NT, method).__module__, module)
