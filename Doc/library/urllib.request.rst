@@ -150,12 +150,13 @@ The :mod:`urllib.request` module defines the following functions:
 
    Convert the given local path to a ``file:`` URL. This function uses
    :func:`~urllib.parse.quote` function to encode the path. For historical
-   reasons, the return value omits the ``file:`` scheme prefix. For example::
+   reasons, the return value omits the ``file:`` scheme prefix. This example
+   shows the function being used on Windows::
 
       >>> from urllib.request import pathname2url
-      >>> path = 'C:\\Windows'
+      >>> path = 'C:\\Program Files'
       >>> 'file:' + pathname2url(path)
-      'file:///C:/Windows'
+      'file:///C:/Program%20Files'
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase.
@@ -170,12 +171,13 @@ The :mod:`urllib.request` module defines the following functions:
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
-   the given URL *must* omit the ``file:`` scheme prefix. For example::
+   the given value *must* omit the ``file:`` scheme prefix. This example shows
+   the function being used on Windows::
 
       >>> from urllib.request import url2pathname
-      >>> url = 'file:///C:/Windows'
+      >>> url = 'file:///C:/Program%20Files'
       >>> url2pathname(url.removeprefix('file:'))
-      'C:\\Windows'
+      'C:\\Program Files'
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase.
