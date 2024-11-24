@@ -1979,7 +1979,7 @@ Other Improvements
   now works correctly (previously it silently returned the first python
   module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
 
-* A new opcode, :opcode:`LOAD_CLASSDEREF`, has been added to fix a bug in the
+* A new opcode, :opcode:`!LOAD_CLASSDEREF`, has been added to fix a bug in the
   loading of free variables in class bodies that could be triggered by certain
   uses of :ref:`__prepare__ <prepare>`.  (Contributed by Benjamin Peterson in
   :issue:`17853`.)
