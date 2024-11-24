@@ -44,6 +44,10 @@ The module's API can be divided into two parts:
   necessary for later formatting without holding references to actual exception
   and traceback objects.
 
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 Module-Level Functions
 ----------------------
