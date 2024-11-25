@@ -471,16 +471,6 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
     return 0;
 }
 
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-static void
-set_eval_frame(PyThreadState *tstate, _PyFrameEvalFunction eval_frame)
-{
-    _PyEval_StopTheWorld(tstate->interp);
-    tstate->interp->eval_frame = eval_frame;
-    _PyEval_StartTheWorld(tstate->interp);
-}
-#endif
-
 int
 _PyPerfTrampoline_Init(int activate)
 {
@@ -494,11 +484,11 @@ _PyPerfTrampoline_Init(int activate)
         return -1;
     }
     if (!activate) {
-        set_eval_frame(tstate, NULL);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
         perf_status = PERF_STATUS_NO_INIT;
     }
     else {
-        set_eval_frame(tstate, py_trampoline_evaluator);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
         if (new_code_arena() < 0) {
             return -1;
         }
@@ -524,7 +514,7 @@ _PyPerfTrampoline_Fini(void)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
-        set_eval_frame(tstate, NULL);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);
