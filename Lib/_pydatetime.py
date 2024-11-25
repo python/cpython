@@ -506,11 +506,10 @@ def _parse_isoformat_time(tstr):
                                    fold=0)
             except ValueError as e:
                 error_from_tz = e
-
-            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
-                           seconds=tz_comps[2], microseconds=tz_comps[3])
-
-            tzi = timezone(tzsign * td)
+            else:
+                td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                               seconds=tz_comps[2], microseconds=tz_comps[3])
+                tzi = timezone(tzsign * td)
 
     time_comps.append(tzi)
 
