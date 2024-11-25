@@ -289,12 +289,14 @@ functions is running.
 
 */
 
+#ifndef Py_GIL_DISABLED
 static inline struct _func_version_cache_item *
 get_cache_item(PyInterpreterState *interp, uint32_t version)
 {
     return interp->func_state.func_version_cache +
            (version % FUNC_VERSION_CACHE_SIZE);
 }
+#endif
 
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)

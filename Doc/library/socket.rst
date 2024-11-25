@@ -979,7 +979,7 @@ The :mod:`socket` module also offers various network-related services:
       These addresses should generally be tried in order until a connection succeeds
       (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
       In these cases, limiting the *type* and/or *proto* can help eliminate
-      unsuccessful or unusable connecton attempts.
+      unsuccessful or unusable connection attempts.
 
       Some systems will, however, only return a single address.
       (For example, this was reported on Solaris and AIX configurations.)
@@ -1596,8 +1596,6 @@ to sockets.
 
 .. method:: socket.ioctl(control, option)
 
-   :platform: Windows
-
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface.  Please refer to the `Win32 documentation
    <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
@@ -1609,8 +1607,11 @@ to sockets.
    Currently only the following control codes are supported:
    ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
 
+   .. availability:: Windows
+
    .. versionchanged:: 3.6
       ``SIO_LOOPBACK_FAST_PATH`` was added.
+
 
 .. method:: socket.listen([backlog])
 
