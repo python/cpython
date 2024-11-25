@@ -1998,6 +1998,10 @@ Utility functions
 
    .. availability:: Windows
 
+   .. seealso::
+
+      `DllCanUnloadNow function official documentation <https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-dllcanunloadnow>`_
+
 
 .. function:: DllGetClassObject()
 
@@ -2006,6 +2010,10 @@ Utility functions
    ``_ctypes`` extension dll exports.
 
    .. availability:: Windows
+
+   .. seealso::
+
+      `DllGetClassObject function official documentation <https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-dllgetclassobject>`_
 
 
 .. function:: find_library(name)
