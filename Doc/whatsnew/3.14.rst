@@ -65,6 +65,8 @@ Summary -- release highlights
 
 .. PEP-sized items next.
 
+* :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
+* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 
 
 New features
@@ -170,6 +172,40 @@ Improved error messages
          x, y, z = 1, 2, 3, 4
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
+
+
+.. _whatsnew314-pep741:
+
+PEP 741: Python Configuration C API
+-----------------------------------
+
+Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
+initialization without relying on C structures and the ability to make
+ABI-compatible changes in the future.
+
+Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
+:c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
+module; feature previously referred to as the “inittab”.
+
+Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
+the current runtime configuration.
+
+PEP 587 “Python Initialization Configuration” unified all the ways to configure
+the Python initialization. This PEP unifies also the configuration of the
+Python preinitialization and the Python initialization in a single API.
+Moreover, this PEP only provides a single choice to embed Python, instead of
+having two “Python” and “Isolated” choices (PEP 587), to simplify the API
+further.
+
+The lower level PEP 587 PyConfig API remains available for use cases with an
+intentionally higher level of coupling to CPython implementation details (such
+as emulating the full functionality of CPython’s CLI, including its
+configuration mechanisms).
+
+(Contributed by Victor Stinner in :gh:`107954`.)
+
+.. seealso::
+   :pep:`741`.
 
 
 Other language changes
