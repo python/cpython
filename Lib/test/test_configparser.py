@@ -988,15 +988,17 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         cf.add_section("sect3")
         cf.add_section("sect4")
         cf.add_section("sect5")
-        cf.add_section("sect6")  # Added more than 5 sections to trigger truncation
+        cf.add_section("sect6")
         cf.set("sect1", "option1", "foo")
         cf.set("sect2", "option2", "bar")
 
+
         expected_str = (
-            "{'sect1': {'option1': 'foo'}, 'sect2': {'option2': 'bar'}, 'sect3': {}, "
-            "'sect4': {}, 'sect5': {}, 'sect6': {}}"
+            "<ConfigParser: {'sect1': {'option1': 'foo'}, 'sect2': {'option2': 'bar'}, "
+            "'sect3': {}, 'sect4': {}, 'sect5': {}, 'sect6': {}}>"
         )
         self.assertEqual(str(cf), expected_str)
+
 
         dict_type = type(cf._dict).__name__
 
