@@ -1434,7 +1434,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('C:\\foo:bar'), '///C:/foo%3Abar')
         self.assertEqual(fn('foo:bar'), 'foo%3Abar')
         # No drive letter
-        self.assertEqual(fn("\\folder\\test\\"), '/folder/test/')
+        self.assertEqual(fn("\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn("\\\\folder\\test\\"), '//folder/test/')
         self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
@@ -1447,7 +1447,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//?/unc/server/share/dir'), '//server/share/dir')
         # Round-tripping
         urls = ['///C:',
-                '/folder/test/',
+                '///folder/test/',
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(urllib.request.url2pathname(url)), url)
@@ -1456,12 +1456,12 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_pathname2url_posix(self):
         fn = urllib.request.pathname2url
-        self.assertEqual(fn('/'), '/')
-        self.assertEqual(fn('/a/b.c'), '/a/b.c')
+        self.assertEqual(fn('/'), '///')
+        self.assertEqual(fn('/a/b.c'), '///a/b.c')
         self.assertEqual(fn('//a/b.c'), '////a/b.c')
         self.assertEqual(fn('///a/b.c'), '/////a/b.c')
         self.assertEqual(fn('////a/b.c'), '//////a/b.c')
-        self.assertEqual(fn('/a/b%#c'), '/a/b%25%23c')
+        self.assertEqual(fn('/a/b%#c'), '///a/b%25%23c')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_pathname2url_nonascii(self):
