@@ -424,18 +424,18 @@ Then::
 The rules for what is allowed are as follows: names that start and end with
 a single underscore are reserved by enum and cannot be used; all other
 attributes defined within an enumeration will become members of this
-enumeration, with the exception of special methods (:meth:`__str__`,
-:meth:`__add__`, etc.), descriptors (methods are also descriptors), and
+enumeration, with the exception of special methods (:meth:`~object.__str__`,
+:meth:`~object.__add__`, etc.), descriptors (methods are also descriptors), and
 variable names listed in :attr:`_ignore_`.
 
-Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__`,
+Note:  if your enumeration defines :meth:`~object.__new__` and/or :meth:`~object.__init__`,
 any value(s) given to the enum member will be passed into those methods.
 See `Planet`_ for an example.
 
 .. note::
 
-    The :meth:`__new__` method, if defined, is used during creation of the Enum
-    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    The :meth:`~object.__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`~object.__new__` which is used after
     class creation for lookup of existing members.  See :ref:`new-vs-init` for
     more details.
 
@@ -544,7 +544,7 @@ from that module.
     nested in other classes.
 
 It is possible to modify how enum members are pickled/unpickled by defining
-:meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
+:meth:`~object.__reduce_ex__` in the enumeration class.  The default method is by-value,
 but enums with complicated values may want to use by-name::
 
     >>> import enum
@@ -908,29 +908,29 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
+5. A ``data type`` is a mixin that defines :meth:`~object.__new__`, or a
    :class:`~dataclasses.dataclass`
 6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
-   :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
+   :meth:`~object.__str__` and :meth:`~object.__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
 7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the enum's :meth:`__str__` method.
+   and :func:`format` will use the enum's :meth:`~object.__str__` method.
 
 .. note::
 
    Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
    designed to be drop-in replacements for existing constants, their
-   :meth:`__str__` method has been reset to their data types'
-   :meth:`__str__` method.
+   :meth:`~object.__str__` method has been reset to their data types'
+   :meth:`~object.__str__` method.
 
 .. _new-vs-init:
 
-When to use :meth:`__new__` vs. :meth:`__init__`
-------------------------------------------------
+When to use :meth:`~object.__new__` vs. :meth:`~object.__init__`
+----------------------------------------------------------------
 
-:meth:`__new__` must be used whenever you want to customize the actual value of
+:meth:`~object.__new__` must be used whenever you want to customize the actual value of
 the :class:`Enum` member.  Any other modifications may go in either
-:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+:meth:`~object.__new__` or :meth:`~object.__init__`, with :meth:`~object.__init__` being preferred.
 
 For example, if you want to pass several items to the constructor, but only
 want one of them to be the value::
@@ -972,7 +972,7 @@ Supported ``__dunder__`` names
 :attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`__new__`, if specified, must create and return the enum members; it is
+:meth:`~object.__new__`, if specified, must create and return the enum members; it is
 also a very good idea to set the member's :attr:`_value_` appropriately.  Once
 all the members are created it is no longer used.
 
@@ -1216,12 +1216,12 @@ Enum Classes
 ^^^^^^^^^^^^
 
 The :class:`EnumType` metaclass is responsible for providing the
-:meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
+:meth:`~object.__contains__`, :meth:`~object.__dir__`, :meth:`~object.__iter__` and other methods that
 allow one to do things with an :class:`Enum` class that fail on a typical
 class, such as ``list(Color)`` or ``some_enum_var in Color``.  :class:`EnumType` is
 responsible for ensuring that various other methods on the final :class:`Enum`
-class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
-:meth:`__str__` and :meth:`__repr__`).
+class are correct (such as :meth:`~object.__new__`, :meth:`~object.__getnewargs__`,
+:meth:`~object.__str__` and :meth:`~object.__repr__`).
 
 Flag Classes
 ^^^^^^^^^^^^
@@ -1236,7 +1236,7 @@ Enum Members (aka instances)
 
 The most interesting thing about enum members is that they are singletons.
 :class:`EnumType` creates them all while it is creating the enum class itself,
-and then puts a custom :meth:`__new__` in place to ensure that no new ones are
+and then puts a custom :meth:`~object.__new__` in place to ensure that no new ones are
 ever instantiated by returning only the existing member instances.
 
 Flag Members
@@ -1284,7 +1284,7 @@ is. There are several ways to define this type of simple enumeration:
 - use instances of :class:`auto` for the value
 - use instances of :class:`object` as the value
 - use a descriptive string as the value
-- use a tuple as the value and a custom :meth:`__new__` to replace the
+- use a tuple as the value and a custom :meth:`~object.__new__` to replace the
   tuple with an :class:`int` value
 
 Using any of these methods signifies to the user that these values are not
@@ -1320,7 +1320,7 @@ Using :class:`object` would look like::
     <Color.GREEN: <object object at 0x...>>
 
 This is also a good example of why you might want to write your own
-:meth:`__repr__`::
+:meth:`~object.__repr__`::
 
     >>> class Color(Enum):
     ...     RED = object()
@@ -1348,10 +1348,10 @@ Using a string as the value would look like::
     <Color.GREEN: 'go'>
 
 
-Using a custom :meth:`__new__`
-""""""""""""""""""""""""""""""
+Using a custom :meth:`~object.__new__`
+""""""""""""""""""""""""""""""""""""""
 
-Using an auto-numbering :meth:`__new__` would look like::
+Using an auto-numbering :meth:`~object.__new__` would look like::
 
     >>> class AutoNumber(Enum):
     ...     def __new__(cls):
@@ -1397,8 +1397,8 @@ to handle any extra arguments::
 
 .. note::
 
-    The :meth:`__new__` method, if defined, is used during creation of the Enum
-    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    The :meth:`~object.__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`~object.__new__` which is used after
     class creation for lookup of existing members.
 
 .. warning::
@@ -1504,7 +1504,7 @@ Supports having more than one value per member::
 Planet
 ^^^^^^
 
-If :meth:`__new__` or :meth:`__init__` is defined, the value of the enum member
+If :meth:`~object.__new__` or :meth:`~object.__init__` is defined, the value of the enum member
 will be passed to those methods::
 
     >>> class Planet(Enum):
