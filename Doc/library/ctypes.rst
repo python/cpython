@@ -1949,6 +1949,23 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, even if *dst* is not ``NULL``, its reference count will not be
+   decremented before assigning the new value.  You need to call its ``Release``
+   to free it appropriately.
+
+   .. availability:: Windows
+
+   .. versionadded:: next
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
