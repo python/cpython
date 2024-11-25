@@ -1051,7 +1051,7 @@ class RawConfigParser(MutableMapping):
             section: {key: value for key, value in self.items(section, raw=True)}
             for section in self.sections()
         }
-        return str(config_dict)
+        return f"<ConfigParser: {config_dict}>"
 
 
     def __repr__(self):
