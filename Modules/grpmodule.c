@@ -109,20 +109,15 @@ mkgrent(PyObject *module, struct group *p)
     return v;
 }
 
-/*[clinic input]
-grp.getgrgid
-
-    id: object
-
-Return the group database entry for the given numeric group ID.
-
-If id is not valid, raise KeyError.
-[clinic start generated code]*/
-
 static PyObject *
-grp_getgrgid_impl(PyObject *module, PyObject *id)
-/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &id)) {
+        return NULL;
+    }
+
     PyObject *retval = NULL;
     int nomem = 0;
     char *buf = NULL, *buf2 = NULL;
@@ -188,6 +183,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 #endif
     return retval;
 }
+
+PyDoc_STRVAR(grp_getgrgid__doc__,
+"getgrgid($module, /, id)\n"
+"--\n"
+"\n"
+"Return the group database entry for the given numeric group ID.\n"
+"\n"
+"If id is not valid, raise KeyError.");
+
 
 /*[clinic input]
 grp.getgrnam
@@ -311,7 +315,7 @@ done:
 }
 
 static PyMethodDef grp_methods[] = {
-    GRP_GETGRGID_METHODDEF
+    {"getgrgid", _PyCFunction_CAST(grp_getgrgid), METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
     GRP_GETGRNAM_METHODDEF
     GRP_GETGRALL_METHODDEF
     {NULL, NULL}
