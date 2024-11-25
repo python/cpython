@@ -130,7 +130,8 @@ class BaseProcess(object):
         Terminate process; sends SIGTERM signal or uses TerminateProcess()
         '''
         self._check_closed()
-        self._popen.terminate()
+        if self._popen is not None:
+            self._popen.terminate()
 
     def kill(self):
         '''

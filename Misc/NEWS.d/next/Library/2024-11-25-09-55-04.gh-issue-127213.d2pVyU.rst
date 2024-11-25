@@ -1,0 +1,1 @@
+Replace os._exit() to sys.exit(), so that .so will alos be unloaded in child process
