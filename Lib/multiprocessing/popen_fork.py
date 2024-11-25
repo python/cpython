@@ -1,5 +1,6 @@
 import os
 import signal
+import sys
 
 from . import util
 
@@ -70,7 +71,7 @@ class Popen(object):
                 os.close(parent_w)
                 code = process_obj._bootstrap(parent_sentinel=child_r)
             finally:
-                os._exit(code)
+                sys.exit(code)
         else:
             os.close(child_w)
             os.close(child_r)
