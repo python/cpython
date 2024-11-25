@@ -471,11 +471,14 @@ Connection: close
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
+        tmp_file_canon_url = 'file:' + urllib.request.pathname2url(tmp_file)
+        parsed = urllib.parse.urlparse(tmp_file_canon_url)
+        tmp_fileurl = parsed._replace(netloc='localhost').geturl()
         try:
             self.assertTrue(os.path.exists(tmp_file))
             with urllib.request.urlopen(tmp_fileurl) as fobj:
                 self.assertTrue(fobj)
+                self.assertEqual(fobj.url, tmp_file_canon_url)
         finally:
             os.close(fd)
             os.unlink(tmp_file)
@@ -609,7 +612,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
-        return "file://%s" % urllib.request.pathname2url(filePath)
+        return "file:" + urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
