@@ -40,3 +40,8 @@ Program Execution
 - [Garbage Collector Design](garbage_collector.md)
 
 - [Exception Handling](exception_handling.md)
+
+Other
+---
+
+- [String Interning](string_interning.md)
