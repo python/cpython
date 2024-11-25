@@ -11600,8 +11600,8 @@ supercheck(PyTypeObject *type, PyObject *obj)
     return NULL;
 }
 
-PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *method)
+static PyObject *
+super_lookup_lock_held(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *method)
 {
     PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
     if (su_obj_type == NULL) {
@@ -11609,6 +11609,28 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
     }
     PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, method);
     Py_DECREF(su_obj_type);
+    return res;
+}
+
+PyObject *
+_PySuper_LookupAttr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name)
+{
+    PyObject *res;
+    BEGIN_TYPE_LOCK();
+    res = super_lookup_lock_held(su_type, su_obj, name, NULL);
+    END_TYPE_LOCK();
+    return res;
+}
+
+PyObject *
+_PySuper_LookupMethod(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *method_found)
+{
+    PyObject *res;
+    BEGIN_TYPE_LOCK();
+    *method_found = 0;
+    res = super_lookup_lock_held(su_type, su_obj, name,
+              Py_TYPE(su_obj)->tp_getattro == PyObject_GenericGetAttr ? method_found : NULL);
+    END_TYPE_LOCK()
     return res;
 }
 
