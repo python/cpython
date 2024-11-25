@@ -377,6 +377,21 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def thread_unsafe(reason):
+    """Mark a test as  not thread safe. When the test runner is run with
+    --parallel-threads=N, the test will be run in a single thread."""
+    def decorator(test_item):
+        test_item.__unittest_thread_unsafe__ = True
+        # the reason is not currently used
+        test_item.__unittest_thread_unsafe__why__ = reason
+        return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
+    return decorator
+
+
 def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
     import getpass
