@@ -1759,7 +1759,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getmembers_traceback(self):
         try:
             1 / 0
-        except Exception as e:
+        except ZeroDivisionError as e:
             tb = e.__traceback__
 
         members = inspect.getmembers(tb)
