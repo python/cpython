@@ -1149,7 +1149,7 @@ class TestIOCTypes(unittest.TestCase):
         support.check_disallow_instantiation(self, _io._BytesIOBuffer)
 
     def test_stringio_setstate(self):
-        # See https://github.com/python/cpython/issues/127182
+        # gh-127182: Calling __setstate__() with invalid arguments must not crash
         obj = self._io.StringIO()
         with self.assertRaisesRegex(
             TypeError,
