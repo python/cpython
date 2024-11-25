@@ -1,1 +1,0 @@
-Introduced ``Tools/wasm/emscripten.py`` to simplify doing Emscripten builds.
