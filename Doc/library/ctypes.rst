@@ -2151,7 +2151,7 @@ Utility functions
 .. function:: WinError(code=None, descr=None)
 
    Creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
