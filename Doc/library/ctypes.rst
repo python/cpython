@@ -2036,7 +2036,7 @@ Utility functions
 .. function:: FormatError([code])
 
    Returns a textual description of the error code *code*.  If no error code is
-   specified, the last error code is used by calling the Windows api function
+   specified, the last error code is used by calling the Windows API function
    :func:`GetLastError`.
 
    .. availability:: Windows
@@ -2142,10 +2142,10 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   This function is probably the worst-named thing in ``ctypes``. It creates an
-   instance of :exc:`OSError`.  If *code* is not specified, :func:`GetLastError`
-   is called to determine the error code. If *descr* is not specified,
-   :func:`FormatError` is called to get a textual description of the error.
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   ``GetLastError`` is called to determine the error code. If *descr* is not
+   specified, :func:`FormatError` is called to get a textual description of the
+   error.
 
    .. availability:: Windows
 
