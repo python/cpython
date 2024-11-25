@@ -4104,7 +4104,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
 {
     if (maxdigits != 0 && maxdigits < _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            PyExc_ValueError, "maxdigits must be >= %d or 0 for unlimited",
             _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
         return -1;
     }

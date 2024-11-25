@@ -1,0 +1,1 @@
+Correct error message for :func:`sys.set_int_max_str_digits`.
