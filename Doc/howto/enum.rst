@@ -64,12 +64,12 @@ The *type* of an enumeration member is the enum it belongs to::
     >>> isinstance(Weekday.FRIDAY, Weekday)
     True
 
-Enum members have an attribute that contains just their :attr:`name`::
+Enum members have an attribute that contains just their :attr:`!name`::
 
     >>> print(Weekday.TUESDAY.name)
     TUESDAY
 
-Likewise, they have an attribute for their :attr:`value`::
+Likewise, they have an attribute for their :attr:`!value`::
 
 
     >>> Weekday.WEDNESDAY.value
@@ -77,10 +77,11 @@ Likewise, they have an attribute for their :attr:`value`::
 
 Unlike many languages that treat enumerations solely as name/value pairs,
 Python Enums can have behavior added.  For example, :class:`datetime.date`
-has two methods for returning the weekday: :meth:`weekday` and :meth:`isoweekday`.
+has two methods for returning the weekday:
+:meth:`~datetime.date.weekday` and :meth:`~datetime.date.isoweekday`.
 The difference is that one of them counts from 0-6 and the other from 1-7.
 Rather than keep track of that ourselves we can add a method to the :class:`!Weekday`
-enum to extract the day from the :class:`date` instance and return the matching
+enum to extract the day from the :class:`~datetime.date` instance and return the matching
 enum member::
 
         @classmethod
@@ -203,7 +204,7 @@ If you want to access enum members by *name*, use item access::
     >>> Color['GREEN']
     <Color.GREEN: 2>
 
-If you have an enum member and need its :attr:`name` or :attr:`value`::
+If you have an enum member and need its :attr:`!name` or :attr:`!value`::
 
     >>> member = Color.RED
     >>> member.name
@@ -284,7 +285,7 @@ If the exact value is unimportant you can use :class:`auto`::
     >>> [member.value for member in Color]
     [1, 2, 3]
 
-The values are chosen by :func:`_generate_next_value_`, which can be
+The values are chosen by :func:`~Enum._generate_next_value_`, which can be
 overridden::
 
     >>> class AutoName(Enum):
@@ -303,7 +304,7 @@ overridden::
 
 .. note::
 
-    The :meth:`_generate_next_value_` method must be defined before any members.
+    The :meth:`~Enum._generate_next_value_` method must be defined before any members.
 
 Iteration
 ---------
@@ -426,7 +427,7 @@ a single underscore are reserved by enum and cannot be used; all other
 attributes defined within an enumeration will become members of this
 enumeration, with the exception of special methods (:meth:`~object.__str__`,
 :meth:`~object.__add__`, etc.), descriptors (methods are also descriptors), and
-variable names listed in :attr:`_ignore_`.
+variable names listed in :attr:`~Enum._ignore_`.
 
 Note:  if your enumeration defines :meth:`~object.__new__` and/or :meth:`~object.__init__`,
 any value(s) given to the enum member will be passed into those methods.
@@ -905,7 +906,7 @@ Some rules:
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
    add methods and don't specify another type.
-4. When another data type is mixed in, the :attr:`value` attribute is *not the
+4. When another data type is mixed in, the :attr:`~Enum.value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
 5. A ``data type`` is a mixin that defines :meth:`~object.__new__`, or a
@@ -969,11 +970,11 @@ Finer Points
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+:attr:`~enum.EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
 :meth:`~object.__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+also a very good idea to set the member's :attr:`~Enum._value_` appropriately.  Once
 all the members are created it is no longer used.
 
 
@@ -989,9 +990,9 @@ Supported ``_sunder_`` names
   from the final class
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
-- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
   member.
-- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
   existing member.  See `MultiValueEnum`_ for an example.
 
   .. note::
@@ -1009,7 +1010,7 @@ Supported ``_sunder_`` names
 .. versionadded:: 3.7 ``_ignore_``
 .. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
 
-To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
+To help keep Python 2 / Python 3 code in sync an :attr:`~Enum._order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
 and raise an error if the two do not match::
 
@@ -1027,7 +1028,7 @@ and raise an error if the two do not match::
 
 .. note::
 
-    In Python 2 code the :attr:`_order_` attribute is necessary as definition
+    In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
     order is lost before it can be recorded.
 
 
@@ -1535,7 +1536,7 @@ will be passed to those methods::
 TimePeriod
 ^^^^^^^^^^
 
-An example to show the :attr:`_ignore_` attribute in use::
+An example to show the :attr:`~Enum._ignore_` attribute in use::
 
     >>> from datetime import timedelta
     >>> class Period(timedelta, Enum):
