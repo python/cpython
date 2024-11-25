@@ -223,7 +223,7 @@ class EagerTaskFactoryLoopTests:
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
-                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: asyncio.sleep(60, result="sleep2"),
                     lambda: asyncio.sleep(1, result="sleep1"),
                     lambda: fail()
                 ],
