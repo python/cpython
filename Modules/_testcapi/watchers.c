@@ -710,36 +710,6 @@ clear_context_stack(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-allocate_too_many_context_watchers(PyObject *self, PyObject *args)
-{
-    int watcher_ids[CONTEXT_MAX_WATCHERS + 1];
-    int num_watchers = 0;
-    for (unsigned long i = 0; i < sizeof(watcher_ids) / sizeof(int); i++) {
-        int watcher_id = PyContext_AddWatcher(&context_watcher, NULL);
-        if (watcher_id == -1) {
-            break;
-        }
-        watcher_ids[i] = watcher_id;
-        num_watchers++;
-    }
-    PyObject *exc = PyErr_GetRaisedException();
-    for (int i = 0; i < num_watchers; i++) {
-        if (PyContext_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
-            break;
-        }
-    }
-    if (exc) {
-        PyErr_SetRaisedException(exc);
-        return NULL;
-    }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 /*[clinic input]
 _testcapi.set_func_defaults_via_capi
     func: object
@@ -812,8 +782,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_ADD_CONTEXT_WATCHER_METHODDEF
     _TESTCAPI_CLEAR_CONTEXT_WATCHER_METHODDEF
     {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
-    {"allocate_too_many_context_watchers",
-     (PyCFunction) allocate_too_many_context_watchers,       METH_NOARGS,  NULL},
     {NULL},
 };
 
@@ -823,6 +791,16 @@ _PyTestCapi_Init_Watchers(PyObject *mod)
     if (PyModule_AddFunctions(mod, test_methods) < 0) {
         return -1;
     }
+
+#define ADD_INT_CONST(INT)                                      \
+    do {                                                        \
+        if (PyModule_AddIntConstant(mod, #INT, INT) < 0) {      \
+            return -1;                                          \
+        }                                                       \
+    } while(0)
+    ADD_INT_CONST(CONTEXT_MAX_WATCHERS);
+    ADD_INT_CONST(Py_CONTEXT_SWITCHED);
+#undef ADD_INT_CONST
 
     /* Expose each event as an attribute on the module */
 #define ADD_EVENT(event)  \

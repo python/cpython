@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 import contextvars
 
@@ -639,16 +640,19 @@ class TestContextObjectWatchers(unittest.TestCase):
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):
             _testcapi.clear_context_watcher(-1)
-        with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID 8"):
-            _testcapi.clear_context_watcher(8)  # CONTEXT_MAX_WATCHERS = 8
+        with self.assertRaisesRegex(ValueError, f"Invalid context watcher ID {_testcapi.CONTEXT_MAX_WATCHERS}"):
+            _testcapi.clear_context_watcher(_testcapi.CONTEXT_MAX_WATCHERS)
 
     def test_clear_unassigned_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"No context watcher set for ID 1"):
             _testcapi.clear_context_watcher(1)
 
     def test_allocate_too_many_watchers(self):
-        with self.assertRaisesRegex(RuntimeError, r"no more context watcher IDs available"):
-            _testcapi.allocate_too_many_context_watchers()
+        with contextlib.ExitStack() as stack:
+            for i in range(_testcapi.CONTEXT_MAX_WATCHERS):
+                stack.enter_context(self.context_watcher())
+            with self.assertRaisesRegex(RuntimeError, r"no more context watcher IDs available"):
+                stack.enter_context(self.context_watcher())
 
     def test_exit_base_context(self):
         ctx = contextvars.Context()
