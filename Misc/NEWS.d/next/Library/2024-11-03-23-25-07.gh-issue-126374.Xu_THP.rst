@@ -1,1 +1,0 @@
-Add support for options with optional arguments in the :mod:`getopt` module.

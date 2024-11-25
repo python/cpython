@@ -532,8 +532,8 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
   currently in.  Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
 
-Optimization: delay tracking containers
-=======================================
+Optimization: delayed untracking containers
+===========================================
 
 Certain types of containers cannot participate in a reference cycle, and so do
 not need to be tracked by the garbage collector. Untracking these objects
@@ -546,26 +546,17 @@ a container:
 2. When the container is examined by the garbage collector.
 
 As a general rule, instances of atomic types aren't tracked and instances of
-non-atomic types (containers, user-defined objects...) are.  However, some
-type-specific optimizations can be present in order to suppress the garbage
-collector footprint of simple instances. Some examples of native types that
-benefit from delayed tracking:
+non-atomic types (containers, user-defined objects...) are.
 
-- Tuples containing only immutable objects (integers, strings etc,
-  and recursively, tuples of immutable objects) do not need to be tracked. The
-  interpreter creates a large number of tuples, many of which will not survive
-  until garbage collection. It is therefore not worthwhile to untrack eligible
-  tuples at creation time. Instead, all tuples except the empty tuple are tracked
-  when created. During garbage collection it is determined whether any surviving
-  tuples can be untracked. A tuple can be untracked if all of its contents are
-  already not tracked. Tuples are examined for untracking in all garbage collection
-  cycles. It may take more than one cycle to untrack a tuple.
-
-- Dictionaries containing only immutable objects also do not need to be tracked.
-  Dictionaries are untracked when created. If a tracked item is inserted into a
-  dictionary (either as a key or value), the dictionary becomes tracked. During a
-  full garbage collection (all generations), the collector will untrack any dictionaries
-  whose contents are not tracked.
+Tuples containing only immutable objects (integers, strings etc,
+and recursively, tuples of immutable objects) do not need to be tracked. The
+interpreter creates a large number of tuples, many of which will not survive
+until garbage collection. It is therefore not worthwhile to untrack eligible
+tuples at creation time. Instead, all tuples except the empty tuple are tracked
+when created. During garbage collection it is determined whether any surviving
+tuples can be untracked. A tuple can be untracked if all of its contents are
+already not tracked. Tuples are examined for untracking in all garbage collection
+cycles.
 
 The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
@@ -578,11 +569,11 @@ tracking status of the object.
       False
       >>> gc.is_tracked([])
       True
+      >>> gc.is_tracked(())
+      False
       >>> gc.is_tracked({})
-      False
+      True
       >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
       True
 ```
 

@@ -1,2 +1,0 @@
-Add missing MIME types for images with RFCs: emf, fits, g3fax, jp2, jpm,
-jpx, t38, tiff-fx and wmf. Patch by Hugo van Kemenade.
