@@ -159,12 +159,14 @@ The :mod:`urllib.request` module defines the following functions:
       'file:///C:/Program%20Files'
 
    .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase.
+      Paths beginning with a slash are converted to URLs with authority
+      sections. For example, the path ``/etc/hosts`` is converted to
+      the URL ``///etc/hosts``.
 
    .. versionchanged:: 3.14
-      On Windows, ``:`` characters not following a drive letter are quoted. In
-      previous versions, :exc:`OSError` was raised if a colon character was
-      found in any position other than the second character.
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
 
 .. function:: url2pathname(url)
