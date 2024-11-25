@@ -240,7 +240,7 @@ class CopyComPointerTests(unittest.TestCase):
         dst_orig = create_shelllink_persist(self.IPersist)
         dst = self.IPersist()
         CopyComPointer(dst_orig, byref(dst))
-        dst_orig.Release()  # The refcount of `dst_orig` is 1 here.
+        self.assertEqual(1, dst_orig.Release())
 
         clsid = dst.GetClassID()
         self.assertEqual(TRUE, is_equal_guid(CLSID_ShellLink, clsid))
@@ -262,7 +262,7 @@ class CopyComPointerTests(unittest.TestCase):
         dst_orig = create_shelllink_persist(self.IPersist)
         dst = self.IPersist()
         CopyComPointer(dst_orig, byref(dst))
-        dst_orig.Release()
+        self.assertEqual(1, dst_orig.Release())
 
         self.assertEqual(dst.value, dst_orig.value)
         self.assertNotEqual(src.value, dst.value)
