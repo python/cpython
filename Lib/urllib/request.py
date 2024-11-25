@@ -1663,6 +1663,12 @@ else:
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
+        if pathname[:1] == '/':
+            # Add explicitly empty authority to absolute path. If the path
+            # starts with exactly one slash then this change is mostly
+            # cosmetic, but if it begins with two or more slashes then this
+            # avoids interpreting the path as a URL authority.
+            pathname = '//' + pathname
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return quote(pathname, encoding=encoding, errors=errors)
