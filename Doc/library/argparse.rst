@@ -589,6 +589,14 @@ are strings::
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``suggest_on_error`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.suggest_on_error = True
+
 .. versionadded:: 3.14
 
 
@@ -1918,11 +1926,10 @@ Argument groups
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` on an argument group is deprecated.
-    This feature was never supported and does not always work correctly.
-    The function exists on the API by accident through inheritance and
-    will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` on an argument group now raises an
+      exception. This nesting was never supported, often failed to work
+      correctly, and was unintentionally exposed through inheritance.
 
    .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
@@ -1985,11 +1992,11 @@ Mutual exclusion
        --foo FOO   foo help
        --bar BAR   bar help
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-    on a mutually exclusive group is deprecated. These features were never
-    supported and do not always work correctly. The functions exist on the
-    API by accident through inheritance and will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
+      on a mutually exclusive group now raises an exception. This nesting was
+      never supported, often failed to work correctly, and was unintentionally
+      exposed through inheritance.
 
 
 Parser defaults
