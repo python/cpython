@@ -231,9 +231,6 @@
     <ClInclude Include="..\Include\structseq.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\symtable.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -342,9 +339,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\hashtable.h">
-      <Filter>Modules</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\pegen.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -447,13 +441,7 @@
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\parser_interface.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\picklebufobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\cpython\pyarena.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pyatomic.h">
@@ -903,7 +891,7 @@
     <ClInclude Include="$(zlibDir)\zconf.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="$(zlibDir)\zconf.in.h">
+    <ClInclude Include="$(zlibDir)\zconf.h.in">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\zlib.h">
