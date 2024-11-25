@@ -1648,9 +1648,7 @@ static PyObject *
 methodcaller_vectorcall(
         methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
 {
-    Py_ssize_t number_of_arguments = PyVectorcall_NARGS(nargsf);
-
-    if (!_PyArg_CheckPositional("methodcaller", number_of_arguments, 1, 1)
+    if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
     }
@@ -1661,7 +1659,12 @@ methodcaller_vectorcall(
     }
 
     assert(mc->vectorcall_args != 0);
+
+    Py_ssize_t number_of_arguments = PyTuple_GET_SIZE(mc->xargs) +
+        (mc->vectorcall_kwnames? PyTuple_GET_SIZE(mc->vectorcall_kwnames):0) + 1;
     size_t buffer_size = sizeof(PyObject *) * (number_of_arguments + 1);
+
+    // for number_of_arguments == 1 we could optimize by setting tmp_args equal to &args
     PyObject **tmp_args = (PyObject **) PyMem_Malloc(buffer_size);
     if (tmp_args == NULL) {
         PyErr_NoMemory();
