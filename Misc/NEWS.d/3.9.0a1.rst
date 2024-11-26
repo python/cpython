@@ -3839,7 +3839,7 @@ Added possible exceptions to the description of os.chdir().
 .. nonce: r_wGRc
 .. section: Documentation
 
-Documented that in :meth:`datetime.datetime.strptime()`, the leading zero in
+Documented that in :meth:`datetime.datetime.strptime`, the leading zero in
 some two-digit formats is optional. Patch by Mike Gleen.
 
 ..

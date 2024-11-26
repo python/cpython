@@ -1032,7 +1032,7 @@ the :meth:`~object.__int__` method but do not have the
 .. nonce: AkRzjb
 .. section: Core and Builtins
 
-Add :meth:`int.bit_count()`, counting the number of ones in the binary
+Add :meth:`int.bit_count`, counting the number of ones in the binary
 representation of an integer. Patch by Niklas Fiekas.
 
 ..
@@ -2452,7 +2452,7 @@ Added the *root_dir* and *dir_fd* parameters in :func:`glob.glob`.
 .. nonce: X-TJZO
 .. section: Library
 
-Fix :meth:`IMAP4.noop()` when debug mode is enabled (ex: ``imaplib.Debug =
+Fix :meth:`IMAP4.noop` when debug mode is enabled (ex: ``imaplib.Debug =
 3``).
 
 ..

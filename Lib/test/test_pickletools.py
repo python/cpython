@@ -206,7 +206,7 @@ highest protocol among opcodes = 0
     def test_no_mark(self):
         self.check_dis_error(b'Nt.', '''\
     0: N    NONE
-    1: t    TUPLE      no MARK exists on stack
+    1: t    TUPLE
 ''', 'no MARK exists on stack')
 
     def test_put(self):
@@ -221,26 +221,16 @@ highest protocol among opcodes = 4
 ''')
 
     def test_put_redefined(self):
-        self.check_dis_error(b'Np1\np1\n.', '''\
+        self.check_dis(b'Np1\np1\nq\x01r\x01\x00\x00\x00\x94.', '''\
     0: N    NONE
     1: p    PUT        1
     4: p    PUT        1
-''', 'memo key 1 already defined')
-        self.check_dis_error(b'Np1\nq\x01.', '''\
-    0: N    NONE
-    1: p    PUT        1
-    4: q    BINPUT     1
-''', 'memo key 1 already defined')
-        self.check_dis_error(b'Np1\nr\x01\x00\x00\x00.', '''\
-    0: N    NONE
-    1: p    PUT        1
-    4: r    LONG_BINPUT 1
-''', 'memo key 1 already defined')
-        self.check_dis_error(b'Np1\n\x94.', '''\
-    0: N    NONE
-    1: p    PUT        1
-    4: \\x94 MEMOIZE    (as 1)
-''', 'memo key None already defined')
+    7: q    BINPUT     1
+    9: r    LONG_BINPUT 1
+   14: \\x94 MEMOIZE    (as 1)
+   15: .    STOP
+highest protocol among opcodes = 4
+''')
 
     def test_put_empty_stack(self):
         self.check_dis_error(b'p0\n', '''\
@@ -370,6 +360,88 @@ highest protocol among opcodes = 0
    14: .    STOP                                       Stop the unpickling machine.
 highest protocol among opcodes = 0
 ''', annotate=20)
+
+    def test_string(self):
+        self.check_dis(b"S'abc'\n.", '''\
+    0: S    STRING     'abc'
+    7: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b'S"abc"\n.', '''\
+    0: S    STRING     'abc'
+    7: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b"S'\xc3\xb5'\n.", '''\
+    0: S    STRING     '\\xc3\\xb5'
+    6: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_string_without_quotes(self):
+        self.check_dis_error(b"Sabc'\n.", '',
+                             'no string quotes around b"abc\'"')
+        self.check_dis_error(b'Sabc"\n.', '',
+                             "no string quotes around b'abc\"'")
+        self.check_dis_error(b"S'abc\n.", '',
+                             '''strinq quote b"'" not found at both ends of b"'abc"''')
+        self.check_dis_error(b'S"abc\n.', '',
+                             r"""strinq quote b'"' not found at both ends of b'"abc'""")
+        self.check_dis_error(b"S'abc\"\n.", '',
+                             r"""strinq quote b"'" not found at both ends of b'\\'abc"'""")
+        self.check_dis_error(b"S\"abc'\n.", '',
+                             r"""strinq quote b'"' not found at both ends of b'"abc\\''""")
+
+    def test_binstring(self):
+        self.check_dis(b"T\x03\x00\x00\x00abc.", '''\
+    0: T    BINSTRING  'abc'
+    8: .    STOP
+highest protocol among opcodes = 1
+''')
+        self.check_dis(b"T\x02\x00\x00\x00\xc3\xb5.", '''\
+    0: T    BINSTRING  '\\xc3\\xb5'
+    7: .    STOP
+highest protocol among opcodes = 1
+''')
+
+    def test_short_binstring(self):
+        self.check_dis(b"U\x03abc.", '''\
+    0: U    SHORT_BINSTRING 'abc'
+    5: .    STOP
+highest protocol among opcodes = 1
+''')
+        self.check_dis(b"U\x02\xc3\xb5.", '''\
+    0: U    SHORT_BINSTRING '\\xc3\\xb5'
+    4: .    STOP
+highest protocol among opcodes = 1
+''')
+
+    def test_global(self):
+        self.check_dis(b"cmodule\nname\n.", '''\
+    0: c    GLOBAL     'module name'
+   13: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b"cm\xc3\xb6dule\nn\xc3\xa4me\n.", '''\
+    0: c    GLOBAL     'm\xf6dule n\xe4me'
+   15: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_inst(self):
+        self.check_dis(b"(imodule\nname\n.", '''\
+    0: (    MARK
+    1: i        INST       'module name' (MARK at 0)
+   14: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_persid(self):
+        self.check_dis(b"Pabc\n.", '''\
+    0: P    PERSID     'abc'
+    5: .    STOP
+highest protocol among opcodes = 0
+''')
 
 
 class MiscTestCase(unittest.TestCase):

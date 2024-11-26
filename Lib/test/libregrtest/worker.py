@@ -20,7 +20,7 @@ NEED_TTY = {
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
     worker_json = runtests.as_json()
 
     cmd = runtests.create_python_cmd()
@@ -104,7 +104,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     sys.exit(0)
 
 
-def main():
+def main() -> NoReturn:
     if len(sys.argv) != 2:
         print("usage: python -m test.libregrtest.worker JSON")
         sys.exit(1)

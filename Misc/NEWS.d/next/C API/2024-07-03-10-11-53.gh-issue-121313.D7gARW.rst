@@ -1,1 +1,0 @@
-Limit reading size in multiprocessing connection._recv for pipes to default pipe size of 16 times base page size, in order to avoid memory overallocation and unnecessary memory management system calls.
