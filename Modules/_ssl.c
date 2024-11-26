@@ -5562,6 +5562,8 @@ _ssl_SSLSession_timeout_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.ticket_lifetime_hint
+
+Ticket life time hint.
 [clinic start generated code]*/
 
 static PyObject *
