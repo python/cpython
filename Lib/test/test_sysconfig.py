@@ -628,6 +628,7 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(os.name != 'posix', '_sysconfig-vars JSON file is only available on POSIX')
     @unittest.skipIf(is_wasi, "_sysconfig-vars JSON file currently isn't available on WASI")
+    @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS change the prefix')
     def test_sysconfigdata_json(self):
         if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
             data_dir = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
