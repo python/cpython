@@ -480,7 +480,7 @@ class _Stream:
         # taken from gzip.GzipFile with some alterations
         if self.__read(2) != b"\037\213":
             raise ReadError("not a gzip file")
-        (method, flag, _) = struct.unpack("<BBIxx", self.__read(8))
+        method, flag = struct.unpack("<BB4x", self.__read(8))
         if method != 8:
             raise CompressionError("unsupported compression method")
 
