@@ -627,6 +627,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
 
     @unittest.skipIf(os.name != 'posix', '_sysconfig-vars JSON file is only available on POSIX')
+    @unittest.skipIf(is_wasi, "_sysconfig-vars JSON file currently isn't available on WASI")
     def test_sysconfigdata_json(self):
         if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
             data_dir = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
