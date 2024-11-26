@@ -1415,8 +1415,10 @@ for base_code, base_c_type in [
     TABLE_ENTRY_SW(f, &ffi_type_float);
     TABLE_ENTRY(v, &ffi_type_sshort);    /* vBOOL */
 
-    TABLE_ENTRY(c, FIXINT_FIELDDESC_FOR(char)->pffi_type);
-    TABLE_ENTRY(u, FIXINT_FIELDDESC_FOR(wchar_t)->pffi_type);
+    // ctypes.c_char is signed for FFI, even where C wchar_t is unsigned.
+    TABLE_ENTRY(c, _ctypes_fixint_fielddesc(sizeof(char), true)->pffi_type);
+    // ctypes.c_wchar is signed for FFI, even where C wchar_t is unsigned.
+    TABLE_ENTRY(u, _ctypes_fixint_fielddesc(sizeof(wchar_t), true)->pffi_type);
 
     TABLE_ENTRY(s, &ffi_type_pointer);
     TABLE_ENTRY(P, &ffi_type_pointer);
@@ -1434,7 +1436,8 @@ for base_code, base_c_type in [
 
     /* bool has code '?', fill it in manually */
 
-    formattable.fmt_bool = *FIXINT_FIELDDESC_FOR(bool);
+    // ctypes.c_bool is unsigned for FFI, even where C bool is signed.
+    formattable.fmt_bool = *_ctypes_fixint_fielddesc(sizeof(bool), false);
     formattable.fmt_bool.code = '?';
     formattable.fmt_bool.setfunc = bool_set;
     formattable.fmt_bool.getfunc = bool_get;
