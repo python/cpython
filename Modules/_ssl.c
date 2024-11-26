@@ -5568,7 +5568,7 @@ Ticket life time hint.
 
 static PyObject *
 _ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=c8b6db498136c275 input=d0e06942ddd8d07f]*/
+/*[clinic end generated code: output=c8b6db498136c275 input=f0e2df50961a7806]*/
 {
     unsigned long hint = SSL_SESSION_get_ticket_lifetime_hint(self->session);
     return PyLong_FromUnsignedLong(hint);
