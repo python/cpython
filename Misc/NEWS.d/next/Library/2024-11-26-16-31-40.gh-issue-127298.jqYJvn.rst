@@ -1,0 +1,4 @@
+:mod:`hashlib`'s fallback builtin hash implementations now check
+usedforsecurity=False, when hashlib is in FIPS mode. This ensures that
+approved-only implementations are in use on FIPS systems by default.
+The builtin implemenations are made available for unapproved use only.
