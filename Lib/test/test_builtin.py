@@ -1907,8 +1907,12 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # smash sign of imaginary 0
         self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1]),
                                          complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1, complex(1, -0.0)]),
+                                         complex(2, -0.0))                                         
         self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1.0]),
                                          complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
+                                         complex(2, -0.0))                                         
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
