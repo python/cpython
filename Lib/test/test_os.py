@@ -4174,12 +4174,13 @@ class EventfdTests(unittest.TestCase):
         os.eventfd_read(fd)
 
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 100 ms (gh-124873).
+    # emulators, where we allow 10 ms (gh-108277).
     if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 1
+        CLOCK_RES_PLACES = 2
     else:
         CLOCK_RES_PLACES = 3
 
