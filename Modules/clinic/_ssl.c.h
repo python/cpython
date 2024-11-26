@@ -382,6 +382,12 @@ _ssl__SSLSocket_server_hostname_get(PySSLSocket *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_owner__doc__,
+"The Python-level owner of this object.\n"
+"\n"
+"Passed as \"self\" in servername callback.");
+#define _ssl__SSLSocket_owner_HAS_DOCSTR
+
 #if defined(_ssl__SSLSocket_owner_HAS_DOCSTR)
 #  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
 #else
@@ -671,6 +677,10 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLSocket_session__doc__,
+"The underlying SSLSession object.");
+#define _ssl__SSLSocket_session_HAS_DOCSTR
 
 #if defined(_ssl__SSLSocket_session_HAS_DOCSTR)
 #  define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
@@ -2847,4 +2857,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2a4d3d6cb794677b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dfcc8d2071861baf input=a9049054013a1b77]*/
