@@ -22,9 +22,9 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 #include "clinic/complexobject.c.h"
 
-static Py_complex c_1 = {1., 0.};
-
 /* elementary operations on complex numbers */
+
+static Py_complex c_1 = {1., 0.};
 
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
