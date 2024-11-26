@@ -9,6 +9,7 @@
 #
 
 import unittest
+import unicodedata
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
@@ -1074,6 +1075,73 @@ class ShortenTestCase(BaseTestCase):
 
     def test_first_word_too_long_but_placeholder_fits(self):
         self.check_shorten("Helloo", 5, "[...]")
+
+
+class WideCharacterTestCase(BaseTestCase):
+    def text_len(self, text):
+        return sum(
+            2 if unicodedata.east_asian_width(c) in {'F', 'W'} else 1
+            for c in text
+        )
+
+    def check_shorten(self, text, width, expect, **kwargs):
+        result = shorten(text, width, **kwargs)
+        self.check(result, expect)
+
+    def test_wrap(self):
+        text = "123 🔧"
+        self.check_wrap(text, 5, ["123 🔧"])
+        self.check_wrap(text, 5, ["123", "🔧"], text_len=self.text_len)
+
+    def test_wrap_initial_indent(self):
+        text = "12 12"
+        self.check_wrap(text, 6, ["🔧12 12"], initial_indent="🔧")
+        self.check_wrap(text, 6, ["🔧12", "12"], initial_indent="🔧",
+                        text_len=self.text_len)
+
+    def test_wrap_subsequent_indent(self):
+        text = "12 12 12 12"
+        self.check_wrap(text, 6, ["12 12", "🔧12 12"], subsequent_indent="🔧")
+        self.check_wrap(text, 6, ["12 12", "🔧12", "🔧12"],
+                        subsequent_indent="🔧", text_len=self.text_len)
+
+    def test_shorten(self):
+        text = "123 1234🔧"
+        expected = "123 [...]"
+        self.check_shorten(text, 9, "123 1234🔧")
+        self.check_shorten(text, 9, "123 [...]", text_len=self.text_len)
+
+    def test_shorten_placeholder(self):
+        text = "123 1 123"
+        self.check_shorten(text, 7, "123 1 🔧", placeholder=" 🔧")
+        self.check_shorten(text, 7, "123 🔧", placeholder=" 🔧",
+                           text_len=self.text_len)
+
+
+class CustomWidthTestCase(BaseTestCase):
+    def text_len(self, text):
+        lengths = {
+            'A': 4,
+            'B': 2,
+            'Q': 0,
+        }
+
+        return sum(
+            lengths[c] if c in lengths else 1
+            for c in text
+        )
+
+    def test_zero_width_text_len(self):
+        text = "0QQ1234QQ56789"
+        self.check_wrap(text, 6, ["0QQ1234QQ5", "6789"], text_len=self.text_len)
+
+    def test_char_longer_than_width(self):
+        text = "AA0123"
+        self.check_wrap(text, 3, ["A", "A", "012", "3"], text_len=self.text_len)
+
+    def test_next_char_overflow(self):
+        text = "BB0123"
+        self.check_wrap(text, 3, ["B", "B0", "123"], text_len=self.text_len)
 
 
 if __name__ == '__main__':
