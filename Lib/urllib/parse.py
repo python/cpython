@@ -511,7 +511,7 @@ def _urlsplit(url, scheme=None, allow_fragments=True):
                 raise ValueError('Invalid IPv6 URL')
             hostname, _, port = bracketed.partition(']')
             _check_bracketed_host(hostname)
-            bracket_suffix, _, port = port.partition(':')
+            bracket_suffix, _, _ = port.partition(':')
             if bracket_suffix:
                 raise ValueError('Invalid IPv6 URL')
     if allow_fragments and '#' in url:
