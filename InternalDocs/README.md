@@ -30,6 +30,8 @@ Runtime Objects
 
 - [Frames](frames.md)
 
+- [String Interning](string_interning.md)
+
 Program Execution
 ---
 
