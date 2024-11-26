@@ -1,0 +1,1 @@
+Add support for format strings like '{.name}' and '{[1]}' already supported by str.format to string.Formatter
