@@ -1263,17 +1263,17 @@ for nbytes in 8, 16, 32, 64:
     for sgn in 'i', 'u':
         is_signed = sgn == 'i'
         print(f'    case (_PACK({nbytes // 8}, {int(is_signed)})): '
-              + f'return formattable.fmt_{sgn}{nbytes};')
+              + f'return &formattable.fmt_{sgn}{nbytes};')
 [python start generated code]*/
-    case (_PACK(1, 1)): return formattable.fmt_i8;
-    case (_PACK(1, 0)): return formattable.fmt_u8;
-    case (_PACK(2, 1)): return formattable.fmt_i16;
-    case (_PACK(2, 0)): return formattable.fmt_u16;
-    case (_PACK(4, 1)): return formattable.fmt_i32;
-    case (_PACK(4, 0)): return formattable.fmt_u32;
-    case (_PACK(8, 1)): return formattable.fmt_i64;
-    case (_PACK(8, 0)): return formattable.fmt_u64;
-/*[python end generated code: output=8f85b8f329d7b5f6 input=22ef3654bd8451ae]*/
+    case (_PACK(1, 1)): return &formattable.fmt_i8;
+    case (_PACK(1, 0)): return &formattable.fmt_u8;
+    case (_PACK(2, 1)): return &formattable.fmt_i16;
+    case (_PACK(2, 0)): return &formattable.fmt_u16;
+    case (_PACK(4, 1)): return &formattable.fmt_i32;
+    case (_PACK(4, 0)): return &formattable.fmt_u32;
+    case (_PACK(8, 1)): return &formattable.fmt_i64;
+    case (_PACK(8, 0)): return &formattable.fmt_u64;
+/*[python end generated code: output=0194ba35c4d64ff3 input=ee9f6f5bb872d645]*/
 #undef _PACK
     }
     /* ctypes currently only supports platforms where the basic integer types
@@ -1347,7 +1347,7 @@ for base_code, base_c_type in [
         (base_code, 'signed ' + base_c_type, 's' + base_c_type),
         (base_code.upper(), 'unsigned ' + base_c_type, 'u' + base_c_type),
     ]:
-        print(f'    formattable.fmt_{code} = FIXINT_FIELDDESC_FOR({c_type});')
+        print(f'    formattable.fmt_{code} = *FIXINT_FIELDDESC_FOR({c_type});')
         print(f"    formattable.fmt_{code}.code = '{code}';")
         if base_code == 'q':
             # ffi doesn't have `long long`; keep use the fixint type
@@ -1355,35 +1355,35 @@ for base_code, base_c_type in [
         else:
             print(f'    formattable.fmt_{code}.pffi_type = &ffi_type_{ffi_type};')
 [python start generated code]*/
-    formattable.fmt_b = FIXINT_FIELDDESC_FOR(signed char);
+    formattable.fmt_b = *FIXINT_FIELDDESC_FOR(signed char);
     formattable.fmt_b.code = 'b';
     formattable.fmt_b.pffi_type = &ffi_type_schar;
-    formattable.fmt_B = FIXINT_FIELDDESC_FOR(unsigned char);
+    formattable.fmt_B = *FIXINT_FIELDDESC_FOR(unsigned char);
     formattable.fmt_B.code = 'B';
     formattable.fmt_B.pffi_type = &ffi_type_uchar;
-    formattable.fmt_h = FIXINT_FIELDDESC_FOR(signed short);
+    formattable.fmt_h = *FIXINT_FIELDDESC_FOR(signed short);
     formattable.fmt_h.code = 'h';
     formattable.fmt_h.pffi_type = &ffi_type_sshort;
-    formattable.fmt_H = FIXINT_FIELDDESC_FOR(unsigned short);
+    formattable.fmt_H = *FIXINT_FIELDDESC_FOR(unsigned short);
     formattable.fmt_H.code = 'H';
     formattable.fmt_H.pffi_type = &ffi_type_ushort;
-    formattable.fmt_i = FIXINT_FIELDDESC_FOR(signed int);
+    formattable.fmt_i = *FIXINT_FIELDDESC_FOR(signed int);
     formattable.fmt_i.code = 'i';
     formattable.fmt_i.pffi_type = &ffi_type_sint;
-    formattable.fmt_I = FIXINT_FIELDDESC_FOR(unsigned int);
+    formattable.fmt_I = *FIXINT_FIELDDESC_FOR(unsigned int);
     formattable.fmt_I.code = 'I';
     formattable.fmt_I.pffi_type = &ffi_type_uint;
-    formattable.fmt_l = FIXINT_FIELDDESC_FOR(signed long);
+    formattable.fmt_l = *FIXINT_FIELDDESC_FOR(signed long);
     formattable.fmt_l.code = 'l';
     formattable.fmt_l.pffi_type = &ffi_type_slong;
-    formattable.fmt_L = FIXINT_FIELDDESC_FOR(unsigned long);
+    formattable.fmt_L = *FIXINT_FIELDDESC_FOR(unsigned long);
     formattable.fmt_L.code = 'L';
     formattable.fmt_L.pffi_type = &ffi_type_ulong;
-    formattable.fmt_q = FIXINT_FIELDDESC_FOR(signed long long);
+    formattable.fmt_q = *FIXINT_FIELDDESC_FOR(signed long long);
     formattable.fmt_q.code = 'q';
-    formattable.fmt_Q = FIXINT_FIELDDESC_FOR(unsigned long long);
+    formattable.fmt_Q = *FIXINT_FIELDDESC_FOR(unsigned long long);
     formattable.fmt_Q.code = 'Q';
-/*[python end generated code: output=3aab96e70e704ccc input=6f6d00bc889a7107]*/
+/*[python end generated code: output=873c87a2e6b5075a input=ee814ca263aac18e]*/
 
 
     /* Other types have bespoke setters and getters named `@_set` and `@_get`,
