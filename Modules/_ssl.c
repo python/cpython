@@ -5576,11 +5576,13 @@ _ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.id
+
+Session ID.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_id_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=c532fb96b10c5adf input=e7322372cf6325dd]*/
+/*[clinic end generated code: output=c532fb96b10c5adf input=0a379e64312b776d]*/
 
 {
     const unsigned char *id;

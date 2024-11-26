@@ -2407,6 +2407,10 @@ _ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(con
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_id__doc__,
+"Session ID.");
+#define _ssl_SSLSession_id_HAS_DOCSTR
+
 #if defined(_ssl_SSLSession_id_HAS_DOCSTR)
 #  define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
 #else
@@ -2886,4 +2890,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=140bb3df9f225dd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=efd7420662847bfe input=a9049054013a1b77]*/
