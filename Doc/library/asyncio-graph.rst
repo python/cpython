@@ -14,7 +14,7 @@ Call Graph Introspection
 asyncio has powerful runtime call graph introspection utilities
 to trace the entire call graph of a running *coroutine* or *task*, or
 a suspended *future*.  These utilities and the underlying machinery
-can be used by users in their Python code or by external profilers
+can be used from within a Python program or by external profilers
 and debuggers.
 
 .. versionadded:: next

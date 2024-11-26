@@ -17,7 +17,7 @@ __all__ = (
     'FutureCallGraph',
 )
 
-# Sadly, we can't re-use the traceback's module datastructures as those
+# Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
 # async call graph.
 #
@@ -93,8 +93,7 @@ def capture_call_graph(
 
     * FutureCallGraph(future, call_stack, awaited_by)
 
-      Where 'future' is a reference to an asyncio.Future or asyncio.Task
-      (or their subclasses.)
+      Where 'future' is an instance of asyncio.Future or asyncio.Task.
 
       'call_stack' is a tuple of FrameGraphEntry objects.
 
@@ -256,14 +255,14 @@ def format_call_graph(
     if graph is None:
         return ""
 
+    buf: list[str] = []
     try:
-        buf: list[str] = []
         render_level(graph, buf, 0)
-        return '\n'.join(buf)
     finally:
         # 'graph' has references to frames so we should
         # make sure it's GC'ed as soon as we don't need it.
         del graph
+    return '\n'.join(buf)
 
 def print_call_graph(
     future: futures.Future | None = None,
