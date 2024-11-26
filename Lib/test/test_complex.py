@@ -430,30 +430,41 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # Check that complex numbers with special components
         # are correctly handled.
-        for x in [2, -2, +0.0, -0.0, INF, -INF, NAN]:
-            for y in [2, -2, +0.0, -0.0, INF, -INF, NAN]:
-                c = complex(x, y)
-                with self.subTest(c):
-                    self.assertComplexesAreIdentical(c**0, complex(1, +0.0))
-                    self.assertComplexesAreIdentical(c**1, c)
-                    self.assertComplexesAreIdentical(c**2, c*c)
-                    self.assertComplexesAreIdentical(c**3, c*(c*c))
-                    self.assertComplexesAreIdentical(c**4, (c*c)*(c*c))
-                    self.assertComplexesAreIdentical(c**5, c*((c*c)*(c*c)))
+        values = [complex(x, y)
+                  for x in [5, -5, +0.0, -0.0, INF, -INF, NAN]
+                  for y in [12, -12, +0.0, -0.0, INF, -INF, NAN]]
+        for c in values:
+            with self.subTest(value=c):
+                self.assertComplexesAreIdentical(c**0, complex(1, +0.0))
+                self.assertComplexesAreIdentical(c**1, c)
+                self.assertComplexesAreIdentical(c**2, c*c)
+                self.assertComplexesAreIdentical(c**3, c*(c*c))
+                self.assertComplexesAreIdentical(c**4, (c*c)*(c*c))
+                self.assertComplexesAreIdentical(c**5, c*((c*c)*(c*c)))
+                self.assertComplexesAreIdentical(c**6, (c*c)*((c*c)*(c*c)))
+                self.assertComplexesAreIdentical(c**7, c*(c*c)*((c*c)*(c*c)))
+                self.assertComplexesAreIdentical(c**8, ((c*c)*(c*c))*((c*c)*(c*c)))
+                if not c:
+                    continue
+                for n in range(1, 9):
+                    with self.subTest(exponent=-n):
+                        self.assertComplexesAreIdentical(c**-n, 1/(c**n))
         for x in [+2, -2]:
             for y in [+0.0, -0.0]:
-                with self.subTest(complex(x, y)):
-                    self.assertComplexesAreIdentical(complex(x, y)**-1, complex(1/x, -y))
-                with self.subTest(complex(y, x)):
-                    self.assertComplexesAreIdentical(complex(y, x)**-1, complex(y, -1/x))
+                c = complex(x, y)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(1/x, -y))
+                c = complex(y, x)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(y, -1/x))
         for x in [+INF, -INF]:
             for y in [+1, -1]:
                 c = complex(x, y)
-                with self.subTest(c):
+                with self.subTest(value=c):
                     self.assertComplexesAreIdentical(c**-1, complex(1/x, -0.0*y))
                     self.assertComplexesAreIdentical(c**-2, complex(0.0, -y/x))
                 c = complex(y, x)
-                with self.subTest(c):
+                with self.subTest(value=c):
                     self.assertComplexesAreIdentical(c**-1, complex(+0.0*y, -1/x))
                     self.assertComplexesAreIdentical(c**-2, complex(-0.0, -y/x))
 
