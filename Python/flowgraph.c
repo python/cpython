@@ -733,7 +733,7 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
-/* Return the stack effect of opcode with argument oparg.
+/* Compute the stack effects of opcode with argument oparg.
 
    Some opcodes have different stack effect when jump to the target and
    when not jump. The 'jump' parameter specifies the case:
@@ -742,25 +742,42 @@ make_cfg_traversal_stack(basicblock *entryblock) {
    * 1 -- when jump
    * -1 -- maximal
  */
+typedef struct {
+    /* The stack effect of the instruction. */
+    int net;
+
+    /* The maximum stack usage of the instruction. Some instructions may
+     * temporarily push extra values to the stack while they are executing.
+     */
+    int max;
+} stack_effects;
+
 Py_LOCAL(int)
-stack_effect(int opcode, int oparg, int jump)
+get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
 {
     if (opcode < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
         // Specialized instructions are not supported.
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     int popped = _PyOpcode_num_popped(opcode, oparg);
     int pushed = _PyOpcode_num_pushed(opcode, oparg);
     if (popped < 0 || pushed < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        effects->net = 0;
+        effects->max = 0;
         return 0;
     }
-    return pushed - popped;
+    if (_PyOpcode_max_stack_effect(opcode, oparg, &effects->max) < 0) {
+        return -1;
+    }
+    effects->net = pushed - popped;
+    assert(effects->max >= effects->net);
+    return 0;
 }
 
 Py_LOCAL_INLINE(int)
@@ -807,35 +824,30 @@ calculate_stackdepth(cfg_builder *g)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
-            if (effect == PY_INVALID_STACK_EFFECT) {
+            stack_effects effects;
+            if (get_stack_effects(instr->i_opcode, instr->i_oparg, 0, &effects) < 0) {
                 PyErr_Format(PyExc_SystemError,
                              "Invalid stack effect for opcode=%d, arg=%i",
                              instr->i_opcode, instr->i_oparg);
                 goto error;
             }
-            int new_depth = depth + effect;
+            int new_depth = depth + effects.net;
             if (new_depth < 0) {
-               PyErr_Format(PyExc_ValueError,
-                            "Invalid CFG, stack underflow");
-               goto error;
+                PyErr_Format(PyExc_ValueError,
+                             "Invalid CFG, stack underflow");
+                goto error;
             }
-            if (new_depth > maxdepth) {
-                maxdepth = new_depth;
-            }
+            maxdepth = Py_MAX(maxdepth, depth + effects.max);
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
-                if (effect == PY_INVALID_STACK_EFFECT) {
+                if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
                                  instr->i_opcode, instr->i_oparg);
                     goto error;
                 }
-                int target_depth = depth + effect;
+                int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                if (target_depth > maxdepth) {
-                    maxdepth = target_depth;
-                }
+                maxdepth = Py_MAX(maxdepth, depth + effects.max);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
                 }
@@ -2936,13 +2948,21 @@ _PyCfg_JumpLabelsToTargets(cfg_builder *g)
 int
 PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
 {
-    return stack_effect(opcode, oparg, jump);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, jump, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
-    return stack_effect(opcode, oparg, -1);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, -1, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 /* Access to compiler optimizations for unit tests.

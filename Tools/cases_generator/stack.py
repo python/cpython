@@ -1,8 +1,9 @@
 import re
 from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
+from collections import defaultdict
 from dataclasses import dataclass
 from cwriter import CWriter
-from typing import Iterator
+from typing import Iterator, Tuple
 
 UNUSED = {"unused"}
 
@@ -385,31 +386,46 @@ class Stack:
         self.align(other, out)
 
 
+def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
+    if isinstance(inst, Instruction):
+        for uop in inst.parts:
+            if isinstance(uop, Uop):
+                yield uop.stack
+    else:
+        assert isinstance(inst, PseudoInstruction)
+        yield inst.stack
+
+
+def apply_stack_effect(stack: Stack, effect: StackEffect) -> None:
+    locals: dict[str, Local] = {}
+    for var in reversed(effect.inputs):
+        _, local = stack.pop(var)
+        if var.name != "unused":
+            locals[local.name] = local
+    for var in effect.outputs:
+        if var.name in locals:
+            local = locals[var.name]
+        else:
+            local = Local.unused(var)
+        stack.push(local)
+
+
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
-
-    def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
-        if isinstance(inst, Instruction):
-            for uop in inst.parts:
-                if isinstance(uop, Uop):
-                    yield uop.stack
-        else:
-            assert isinstance(inst, PseudoInstruction)
-            yield inst.stack
-
     for s in stacks(inst):
-        locals: dict[str, Local] = {}
-        for var in reversed(s.inputs):
-            _, local = stack.pop(var)
-            if var.name != "unused":
-                locals[local.name] = local
-        for var in s.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.unused(var)
-            stack.push(local)
+        apply_stack_effect(stack, s)
     return stack
+
+
+def get_stack_effects(inst: Instruction | PseudoInstruction) -> list[Stack]:
+    """Returns a list of stack effects after each uop"""
+    result = []
+    stack = Stack()
+    for s in stacks(inst):
+        apply_stack_effect(stack, s)
+        result.append(stack.copy())
+    return result
+
 
 @dataclass
 class Storage:
