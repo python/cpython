@@ -1496,7 +1496,6 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
 
 /*
   Ideas: Implement VARIANT in this table, using 'V' code.
-  Use '?' as code for BOOL.
 */
 
 /*---------------- EOF ----------------*/
