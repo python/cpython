@@ -465,6 +465,9 @@ def future_discard_from_awaited_by(fut, waiter, /):
             fut._Future__asyncio_awaited_by.discard(waiter)
 
 
+_py_future_add_to_awaited_by = future_add_to_awaited_by
+_py_future_discard_from_awaited_by = future_discard_from_awaited_by
+
 try:
     import _asyncio
 except ImportError:
@@ -472,9 +475,7 @@ except ImportError:
 else:
     # _CFuture is needed for tests.
     Future = _CFuture = _asyncio.Future
-
-try:
-    from _asyncio import future_add_to_awaited_by, \
-                         future_discard_from_awaited_by
-except ImportError:
-    pass
+    future_add_to_awaited_by = _asyncio.future_add_to_awaited_by
+    future_discard_from_awaited_by = _asyncio.future_discard_from_awaited_by
+    _c_future_add_to_awaited_by = future_add_to_awaited_by
+    _c_future_discard_from_awaited_by = future_discard_from_awaited_by

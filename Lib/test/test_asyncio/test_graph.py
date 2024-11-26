@@ -45,8 +45,7 @@ def capture_test_stack(*, fut=None, depth=1):
     return walk(stack), buf.getvalue()
 
 
-class TestCallStack(unittest.IsolatedAsyncioTestCase):
-
+class CallStackTestBase:
 
     async def test_stack_tgroup(self):
 
@@ -107,7 +106,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
         ])
 
         self.assertIn(
-            ' async TestCallStack.test_stack_tgroup()',
+            ' async CallStackTestBase.test_stack_tgroup()',
             stack_for_c5[1])
 
 
@@ -143,8 +142,11 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             []
         ])
 
+        from pprint import pprint
+        pprint(stack_for_gen_nested_call[1])
+
         self.assertIn(
-            'async generator TestCallStack.test_stack_async_gen.<locals>.gen()',
+            'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
     async def test_stack_gather(self):
@@ -345,3 +347,93 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
+
+
+@unittest.skipIf(
+    not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),
+    "C-accelerated asyncio call graph backend missing",
+)
+class TestCallStackC(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        self._Future = asyncio.Future
+        asyncio.Future = futures.Future = futures._CFuture
+
+        self._Task = asyncio.Task
+        asyncio.Task = tasks.Task = tasks._CTask
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._c_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._c_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
+
+
+    def tearDown(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        del self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
+        del self._future_add_to_awaited_by
+
+        asyncio.Task = self._Task
+        tasks = self._Task
+        del self._Task
+
+        asyncio.Future = self._Future
+        futures.Future = self._Future
+        del self._Future
+
+
+@unittest.skipIf(
+    not hasattr(asyncio.futures, "_py_future_add_to_awaited_by"),
+    "Pure Python asyncio call graph backend missing",
+)
+class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        self._Future = asyncio.Future
+        asyncio.Future = futures.Future = futures._PyFuture
+
+        self._Task = asyncio.Task
+        asyncio.Task = tasks.Task = tasks._PyTask
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._py_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
+
+
+    def tearDown(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        del self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
+        del self._future_add_to_awaited_by
+
+        asyncio.Task = self._Task
+        tasks = self._Task
+        del self._Task
+
+        asyncio.Future = self._Future
+        futures.Future = self._Future
+        del self._Future
