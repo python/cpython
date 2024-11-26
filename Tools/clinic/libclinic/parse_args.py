@@ -158,9 +158,13 @@ METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
 """)
 GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #if defined({getset_basename}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #  if !defined({getset_basename}_DOCSTR)
+    #    define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #  endif
     #else
-    #  define {getset_basename}_DOCSTR NULL
+    #  if !defined({getset_basename}_DOCSTR)
+    #    define {getset_basename}_DOCSTR NULL
+    #  endif
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
@@ -170,10 +174,14 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_name}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #if defined({getset_basename}_HAS_DOCSTR)
+    #  if !defined({getset_basename}_DOCSTR)
+    #    define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #  endif
     #else
-    #  define {getset_basename}_DOCSTR NULL
+    #  if !defined({getset_basename}_DOCSTR)
+    #    define {getset_basename}_DOCSTR NULL
+    #  endif
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
