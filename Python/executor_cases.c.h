@@ -4533,21 +4533,24 @@
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            init_frame = _PyEvalFramePushAndInit(
+            _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer[-2 - oparg].bits = (uintptr_t)init_frame;
-            stack_pointer += -1 - oparg;
+            stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            if (init_frame == NULL) {
+            if (temp == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
                 JUMP_TO_ERROR();
             }
+            init_frame = temp;
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
              * as it will be checked after start_frame */
             tstate->py_recursion_remaining--;
+            stack_pointer[0].bits = (uintptr_t)init_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

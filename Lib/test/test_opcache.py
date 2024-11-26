@@ -500,6 +500,11 @@ class MyClass:
         pass
 
 
+class InitTakesArg:
+    def __init__(self, arg):
+        self.arg = arg
+
+
 class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
@@ -546,6 +551,20 @@ class TestCallCache(TestBase):
         # args
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
+
+    @disabling_optimizer
+    @requires_specialization_ft
+    def test_push_init_frame_fails(self):
+        def instantiate():
+            return InitTakesArg()
+
+        for _ in range(2):
+            with self.assertRaises(TypeError):
+                instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        with self.assertRaises(TypeError):
+            instantiate()
 
 
 @threading_helper.requires_working_threading()
