@@ -4681,11 +4681,18 @@ error:
 @critical_section
 @getter
 _ssl._SSLContext.sni_callback
+
+Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.
+
+If the argument is None then the callback is disabled. The method is called
+with the SSLSocket, the server name as a string, and the SSLContext object.
+
+See RFC 6066 for details of the SNI extension.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_sni_callback_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=961e6575cdfaf036 input=22dd28c31fdc4318]*/
+/*[clinic end generated code: output=961e6575cdfaf036 input=9b2473c5e984cfe6]*/
 {
     PyObject *cb = self->set_sni_cb;
     if (cb == NULL) {
