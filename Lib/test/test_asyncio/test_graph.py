@@ -386,7 +386,7 @@ class TestCallStackC(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         del self._future_add_to_awaited_by
 
         asyncio.Task = self._Task
-        tasks = self._Task
+        tasks.Task = self._Task
         del self._Task
 
         asyncio.Future = self._Future
@@ -431,7 +431,7 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         del self._future_add_to_awaited_by
 
         asyncio.Task = self._Task
-        tasks = self._Task
+        tasks.Task = self._Task
         del self._Task
 
         asyncio.Future = self._Future
