@@ -1,0 +1,1 @@
+Remove ``hostflags`` member from ``PySSLContext`` struct.
