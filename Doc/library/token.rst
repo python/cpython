@@ -79,6 +79,12 @@ the :mod:`tokenize` module.
    ``type_comments=True``.
 
 
+.. data:: EXACT_TOKEN_TYPES
+   A dictionary that stores the string representation of the token
+   as keys, and their numeric codes as values.
+
+   .. versionadded:: 3.8
+
 .. versionchanged:: 3.5
    Added :data:`!AWAIT` and :data:`!ASYNC` tokens.
 
