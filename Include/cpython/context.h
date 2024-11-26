@@ -28,11 +28,6 @@ PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
 typedef enum {
-    /*
-     * The current context has switched to a different context.  The object
-     * passed to the watch callback is the now-current contextvars.Context
-     * object, or None if no context is current.
-     */
     Py_CONTEXT_SWITCHED = 1,
 } PyContextEvent;
 
