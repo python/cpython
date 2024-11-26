@@ -1,0 +1,2 @@
+Fix :func:`urllib.parse.urlparse` and :func:`urllib.parse.urlsplit` to
+disallow IPv6 URLs with invalid prefix/suffix
