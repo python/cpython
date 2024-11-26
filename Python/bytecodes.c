@@ -29,7 +29,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_typeobject.h"    // _PySuper_LookupAttr() _PySuper_LookupMethod()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -2001,7 +2001,7 @@ dummy_func(
             DEOPT_IF(!PyType_Check(class));
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            PyObject *attr = _PySuper_LookupAttr((PyTypeObject *)class, self, name);
+            PyObject *attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
             DECREF_INPUTS();
             ERROR_IF(attr == NULL, error);
             attr_st = PyStackRef_FromPyObjectSteal(attr);
@@ -2019,7 +2019,8 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
-            PyObject *attr_o = _PySuper_LookupMethod(cls, self, name, &method_found);
+            PyObject *attr_o = _PySuper_Lookup(cls, self, name,
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             PyStackRef_CLOSE(global_super_st);
             PyStackRef_CLOSE(class_st);
             if (attr_o == NULL) {
