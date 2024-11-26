@@ -252,7 +252,7 @@ This results in several benefits that help balance the extra effort,
 including true multi-core parallelism,  For example, code written
 this way can make it easier to reason about concurrency.  Another
 major benefit is that you don't have to deal with several of the
-big pain points of using threads, like nrace conditions.
+big pain points of using threads, like race conditions.
 
 Each worker's interpreter is isolated from all the other interpreters.
 "Isolated" means each interpreter has its own runtime state and
