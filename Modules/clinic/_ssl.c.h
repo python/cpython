@@ -1167,6 +1167,10 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_security_level__doc__,
+"The current security level.");
+#define _ssl__SSLContext_security_level_HAS_DOCSTR
+
 #if defined(_ssl__SSLContext_security_level_HAS_DOCSTR)
 #  define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
 #else
@@ -2861,4 +2865,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=19f8bdb59b6f0f7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b04893e573373045 input=a9049054013a1b77]*/

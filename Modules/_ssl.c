@@ -3718,11 +3718,13 @@ _ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value)
 @critical_section
 @getter
 _ssl._SSLContext.security_level
+
+The current security level.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_security_level_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=56ece09e6a9572d0 input=a0416598e07c3183]*/
+/*[clinic end generated code: output=56ece09e6a9572d0 input=2bdeecb57bb86e3f]*/
 {
     PyObject *res = PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
     return res;
