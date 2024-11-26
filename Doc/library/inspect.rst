@@ -150,6 +150,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
@@ -161,12 +167,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_trace_opcodes   | indicate whether          |
 |                 |                   | per-opcode events are     |
 |                 |                   | requested                 |
-+-----------------+-------------------+---------------------------+
-|                 | f_generator       | returns the generator or  |
-|                 |                   | coroutine object that     |
-|                 |                   | owns this frame, or       |
-|                 |                   | ``None`` if the frame is  |
-|                 |                   | of a regular function     |
 +-----------------+-------------------+---------------------------+
 |                 | clear()           | used to clear all         |
 |                 |                   | references to local       |

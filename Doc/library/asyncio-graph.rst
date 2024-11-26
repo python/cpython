@@ -25,8 +25,7 @@ and debuggers.
    Print the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   This function prints entries starting from the currently executing frame,
-   i.e. the top frame, and going down towards the invocation point.
+   This function prints entries starting from the top frame and going
 
    The function receives an optional *future* argument.
    If not passed, the current running task will be used.
