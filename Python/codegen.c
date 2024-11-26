@@ -674,11 +674,11 @@ codegen_setup_annotations_scope(compiler *c, location loc,
                             key, loc.lineno, NULL, &umd));
 
     // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
-    PyObject *two = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
+    PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, two);
+    ADDOP_LOAD_CONST(c, loc, value_with_fake_globals);
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
