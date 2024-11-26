@@ -1283,12 +1283,20 @@ for nbytes in 8, 16, 32, 64:
     Py_UNREACHABLE();
 }
 
-/* Macro to call _ctypes_fixint_fielddesc for a given C type.
- * The signedness check expands an expression that's always true or false;
- * we silence the GCC warning '-Wtype-limits' for this.
- */
+
+/* Macro to call _ctypes_fixint_fielddesc for a given C type. */
+
 _Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_TYPE_LIMITS
+#if defined(__GNUC__) && (__GNUC__ < 14)
+/* The signedness check expands to an expression that's always true or false.
+ * Older GCC gives a '-Wtype-limits' warning for this, which is a GCC bug
+ * (docs say it should "not warn for constant expressions"):
+ *      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86647
+ * Silence that warning.
+ */
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+
 #define FIXINT_FIELDDESC_FOR(C_TYPE) \
     _ctypes_fixint_fielddesc(sizeof(C_TYPE), (C_TYPE)-1 < 0)
 
