@@ -2161,11 +2161,17 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.context
+
+This changes the context associated with the SSLSocket.
+
+This is typically used from within a callback function set by the sni_callback
+on the SSLContext to change the certificate information associated with the
+SSLSocket before the cryptographic exchange handshake messages.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_context_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=d23e82f72f32e3d7 input=25aa82e4d9fa344a]*/
+/*[clinic end generated code: output=d23e82f72f32e3d7 input=7cbb97407c2ace30]*/
 {
     return Py_NewRef(self->ctx);
 }

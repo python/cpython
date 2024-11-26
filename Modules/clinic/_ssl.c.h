@@ -258,6 +258,14 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
+"This changes the context associated with the SSLSocket.\n"
+"\n"
+"This is typically used from within a callback function set by the sni_callback\n"
+"on the SSLContext to change the certificate information associated with the\n"
+"SSLSocket before the cryptographic exchange handshake messages.");
+#define _ssl__SSLSocket_context_HAS_DOCSTR
+
 #if defined(_ssl__SSLSocket_context_HAS_DOCSTR)
 #  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
 #else
@@ -2839,4 +2847,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4c2af0c8fab7ec4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a4d3d6cb794677b input=a9049054013a1b77]*/
