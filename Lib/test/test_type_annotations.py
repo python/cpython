@@ -316,7 +316,7 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code("x: undefined = 1")
         anno = ns["__annotate__"]
         with self.assertRaises(NotImplementedError):
-            anno(2)
+            anno(3)
 
         with self.assertRaises(NameError):
             anno(1)
@@ -375,8 +375,8 @@ class DeferredEvaluationTests(unittest.TestCase):
                 with self.assertRaises(NotImplementedError):
                     annotate(annotationlib.Format.FORWARDREF)
                 with self.assertRaises(NotImplementedError):
-                    annotate(annotationlib.Format.SOURCE)
-                with self.assertRaises(NotImplementedError):
+                    annotate(annotationlib.Format.STRING)
+                with self.assertRaises(TypeError):
                     annotate(None)
                 self.assertEqual(annotate(annotationlib.Format.VALUE), {"x": int})
 

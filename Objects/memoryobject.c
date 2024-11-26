@@ -3286,6 +3286,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW__FROM_FLAGS_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
 
@@ -3355,6 +3356,7 @@ memory_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
+    CHECK_RELEASED(seq);
     PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
     int ndims = obj->view.ndim;
     if (ndims == 0) {
