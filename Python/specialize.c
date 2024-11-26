@@ -1814,86 +1814,54 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
-void
-_Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_CODEUNIT *instr)
-{
-    PyObject *container = PyStackRef_AsPyObjectBorrow(container_st);
-    PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
 
-    assert(ENABLE_SPECIALIZATION);
-    _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
-    PyTypeObject *container_type = Py_TYPE(container);
-    if (container_type == &PyList_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)
-                && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
-            {
-                instr->op.code = STORE_SUBSCR_LIST_INT;
-                goto success;
-            }
-            else {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-                goto fail;
-            }
-        }
-        else if (PySlice_Check(sub)) {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_LIST_SLICE);
-            goto fail;
-        }
-        else {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
-            goto fail;
-        }
-    }
-    if (container_type == &PyDict_Type) {
-        instr->op.code = STORE_SUBSCR_DICT;
-        goto success;
-    }
 #ifdef Py_STATS
+static int
+store_subscr_fail_kind(PyObject *container_type)
+{
     PyMappingMethods *as_mapping = container_type->tp_as_mapping;
     if (as_mapping && (as_mapping->mp_ass_subscript
                        == PyDict_Type.tp_as_mapping->mp_ass_subscript)) {
-        SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE);
-        goto fail;
+        return SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE;
     }
     if (PyObject_CheckBuffer(container)) {
         if (PyLong_CheckExact(sub) && (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub))) {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            return SPEC_FAIL_OUT_OF_RANGE;
         }
         else if (strcmp(container_type->tp_name, "array.array") == 0) {
             if (PyLong_CheckExact(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_ARRAY_INT);
+                return SPEC_FAIL_SUBSCR_ARRAY_INT;
             }
             else if (PySlice_Check(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_ARRAY_SLICE);
+                return SPEC_FAIL_SUBSCR_ARRAY_SLICE;
             }
             else {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+                return SPEC_FAIL_OTHER;
             }
         }
         else if (PyByteArray_CheckExact(container)) {
             if (PyLong_CheckExact(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_BYTEARRAY_INT);
+                return SPEC_FAIL_SUBSCR_BYTEARRAY_INT;
             }
             else if (PySlice_Check(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_BYTEARRAY_SLICE);
+                return SPEC_FAIL_SUBSCR_BYTEARRAY_SLICE;
             }
             else {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+                return SPEC_FAIL_OTHER;
             }
         }
         else {
             if (PyLong_CheckExact(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_BUFFER_INT);
+                return SPEC_FAIL_SUBSCR_BUFFER_INT;
             }
             else if (PySlice_Check(sub)) {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_BUFFER_SLICE);
+                return SPEC_FAIL_SUBSCR_BUFFER_SLICE;
             }
             else {
-                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+                return SPEC_FAIL_OTHER;
             }
         }
-        goto fail;
+        return SPEC_FAIL_OTHER;
     }
     PyObject *descriptor = _PyType_Lookup(container_type, &_Py_ID(__setitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
@@ -1901,25 +1869,55 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
         PyCodeObject *code = (PyCodeObject *)func->func_code;
         int kind = function_kind(code);
         if (kind == SIMPLE_FUNCTION) {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_PY_SIMPLE);
+            return SPEC_FAIL_SUBSCR_PY_SIMPLE;
         }
         else {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_PY_OTHER);
+            return SPEC_FAIL_SUBSCR_PY_OTHER;
         }
-        goto fail;
     }
-#endif   // Py_STATS
-    SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
-fail:
-    STAT_INC(STORE_SUBSCR, failure);
-    assert(!PyErr_Occurred());
-    instr->op.code = STORE_SUBSCR;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(STORE_SUBSCR, success);
-    assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_cooldown();
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+void
+_Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_CODEUNIT *instr)
+{
+    PyObject *container = PyStackRef_AsPyObjectBorrow(container_st);
+    PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+
+    assert(ENABLE_SPECIALIZATION_FT);
+    PyTypeObject *container_type = Py_TYPE(container);
+    if (container_type == &PyList_Type) {
+        if (PyLong_CheckExact(sub)) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)
+                && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
+            {
+                specialize(instr, STORE_SUBSCR_LIST_INT);
+                return;
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+                unspecialize(instr);
+                return;
+            }
+        }
+        else if (PySlice_Check(sub)) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_LIST_SLICE);
+            unspecialize(instr);
+            return;
+        }
+        else {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            unspecialize(instr);
+            return;
+        }
+    }
+    if (container_type == &PyDict_Type) {
+        specialize(instr, STORE_SUBSCR_DICT);
+        return;
+    }
+    SPECIALIZATION_FAIL(STORE_SUBSCR, store_subscr_fail_kind(container_type));
+    unspecialize(instr);
 }
 
 /* Returns a borrowed reference.
