@@ -5265,11 +5265,13 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
 @critical_section
 @getter
 _ssl.MemoryBIO.pending
+
+The number of bytes pending in the memory BIO.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self)
-/*[clinic end generated code: output=19236a32a51ac8ff input=c0b6d14eba107f6a]*/
+/*[clinic end generated code: output=19236a32a51ac8ff input=02d9063d8ac31732]*/
 {
     size_t res = BIO_ctrl_pending(self->bio);
     return PyLong_FromSize_t(res);

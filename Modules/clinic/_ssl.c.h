@@ -2156,6 +2156,10 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_MemoryBIO_pending__doc__,
+"The number of bytes pending in the memory BIO.");
+#define _ssl_MemoryBIO_pending_HAS_DOCSTR
+
 #if defined(_ssl_MemoryBIO_pending_HAS_DOCSTR) && !defined(_ssl_MemoryBIO_pending_DOCSTR)
 #  define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
 #elif !defined(_ssl_MemoryBIO_pending_DOCSTR)
@@ -2898,4 +2902,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=7c36e947ce42cd3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f44bca5cdedd3b22 input=a9049054013a1b77]*/
