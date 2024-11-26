@@ -393,7 +393,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
                 return NULL;                                                  \
             }                                                                 \
         }                                                                     \
-        *(CTYPE*)ptr = SET(CTYPE, *(CTYPE*)ptr, val, (NBITS) / 8);            \
+        *(CTYPE*)ptr = SET(CTYPE, *(CTYPE*)ptr, val, size_arg);               \
         _RET(value);                                                          \
     }                                                                         \
                                                                               \
@@ -415,7 +415,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
     TAG ## _set_sw(void *ptr, PyObject *value, Py_ssize_t size_arg)           \
     {                                                                         \
         CTYPE val;                                                            \
-        PyObject *res = TAG ## _set(&val, value, size_arg);                   \
+        PyObject *res = TAG ## _set(&val, value, (NBITS) / 8);                \
         if (res == NULL) {                                                    \
             return NULL;                                                      \
         }                                                                     \
