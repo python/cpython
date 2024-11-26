@@ -807,7 +807,13 @@ def gather(*coros_or_futures, return_exceptions=False):
         outer.set_result([])
         return outer
 
-    def _done_callback(fut, cur_task):
+    loop = events._get_running_loop()
+    if loop is not None:
+        cur_task = current_task(loop)
+    else:
+        cur_task = None
+
+    def _done_callback(fut, cur_task=cur_task):
         nonlocal nfinished
         nfinished += 1
 
@@ -871,11 +877,6 @@ def gather(*coros_or_futures, return_exceptions=False):
     nfinished = 0
     done_futs = []
     outer = None  # bpo-46672
-    loop = events._get_running_loop()
-    if loop is not None:
-        cur_task = current_task(loop)
-    else:
-        cur_task = None
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = ensure_future(arg, loop=loop)
@@ -894,7 +895,7 @@ def gather(*coros_or_futures, return_exceptions=False):
             else:
                 if cur_task is not None:
                     futures.future_add_to_awaited_by(fut, cur_task)
-                fut.add_done_callback(lambda fut: _done_callback(fut, cur_task))
+                fut.add_done_callback(_done_callback)
 
         else:
             # There's a duplicate Future object in coros_or_futures.
@@ -909,7 +910,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     # this will effectively complete the gather eagerly, with the last
     # callback setting the result (or exception) on outer before returning it
     for fut in done_futs:
-        _done_callback(fut, cur_task)
+        _done_callback(fut)
     return outer
 
 
