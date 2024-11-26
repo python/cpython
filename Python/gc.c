@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
-#include "pycore_dict.h"          // _PyDict_MaybeUntrack()
+#include "pycore_dict.h"          // _PyInlineValuesSize()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
@@ -747,21 +747,6 @@ untrack_tuples(PyGC_Head *head)
     }
 }
 
-/* Try to untrack all currently tracked dictionaries */
-static void
-untrack_dicts(PyGC_Head *head)
-{
-    PyGC_Head *next, *gc = GC_NEXT(head);
-    while (gc != head) {
-        PyObject *op = FROM_GC(gc);
-        next = GC_NEXT(gc);
-        if (PyDict_CheckExact(op)) {
-            _PyDict_MaybeUntrack(op);
-        }
-        gc = next;
-    }
-}
-
 /* Return true if object has a pre-PEP 442 finalization method. */
 static int
 has_legacy_finalizer(PyObject *op)
@@ -1258,15 +1243,10 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     gc_list_merge(resurrected, old_generation);
 }
 
-
-#define UNTRACK_TUPLES 1
-#define UNTRACK_DICTS 2
-
 static void
 gc_collect_region(PyThreadState *tstate,
                   PyGC_Head *from,
                   PyGC_Head *to,
-                  int untrack,
                   struct gc_collection_stats *stats);
 
 static inline Py_ssize_t
@@ -1328,7 +1308,7 @@ gc_collect_young(PyThreadState *tstate,
 
     PyGC_Head survivors;
     gc_list_init(&survivors);
-    gc_collect_region(tstate, young, &survivors, UNTRACK_TUPLES, stats);
+    gc_collect_region(tstate, young, &survivors, stats);
     Py_ssize_t survivor_count = 0;
     if (gcstate->visited_space) {
         /* objects in visited space have bit set, so we set it here */
@@ -1471,7 +1451,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&increment, gcstate->visited_space);
     PyGC_Head survivors;
     gc_list_init(&survivors);
-    gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
+    gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
@@ -1504,7 +1484,6 @@ gc_collect_full(PyThreadState *tstate,
     gc_list_merge(pending, visited);
 
     gc_collect_region(tstate, visited, visited,
-                      UNTRACK_TUPLES | UNTRACK_DICTS,
                       stats);
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
@@ -1522,7 +1501,6 @@ static void
 gc_collect_region(PyThreadState *tstate,
                   PyGC_Head *from,
                   PyGC_Head *to,
-                  int untrack,
                   struct gc_collection_stats *stats)
 {
     PyGC_Head unreachable; /* non-problematic unreachable trash */
@@ -1536,12 +1514,7 @@ gc_collect_region(PyThreadState *tstate,
     gc_list_init(&unreachable);
     deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
-    if (untrack & UNTRACK_TUPLES) {
-        untrack_tuples(from);
-    }
-    if (untrack & UNTRACK_DICTS) {
-        untrack_dicts(from);
-    }
+    untrack_tuples(from);
     validate_consistent_old_space(to);
     if (from != to) {
         gc_list_merge(from, to);
