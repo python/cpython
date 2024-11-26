@@ -385,7 +385,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
                 (PyLongObject *)value);                                       \
         }                                                                     \
         else {                                                                \
-            int res = PyLong_AsNativeBytes(                                   \
+            Py_ssize_t res = PyLong_AsNativeBytes(                            \
                 value, &val, (NBITS) / 8,                                     \
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN                                \
                 | Py_ASNATIVEBYTES_ALLOW_INDEX);                              \
@@ -1283,7 +1283,12 @@ for nbytes in 8, 16, 32, 64:
     Py_UNREACHABLE();
 }
 
-/* Macro to call _ctypes_fixint_fielddesc for a given C type */
+/* Macro to call _ctypes_fixint_fielddesc for a given C type.
+ * The signedness check expands an expression that's always true or false;
+ * we silence the GCC warning '-Wtype-limits' for this.
+ */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_TYPE_LIMITS
 #define FIXINT_FIELDDESC_FOR(C_TYPE) \
     _ctypes_fixint_fielddesc(sizeof(C_TYPE), (C_TYPE)-1 < 0)
 
@@ -1443,6 +1448,7 @@ for base_code, base_c_type in [
     formattable.fmt_bool.getfunc = bool_get;
 }
 #undef FIXINT_FIELDDESC_FOR
+_Py_COMP_DIAG_POP
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
