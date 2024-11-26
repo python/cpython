@@ -2033,7 +2033,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, loc, END_ASYNC_FOR);
 
     /* `else` block */
-    VISIT_SEQ(c, stmt, s->v.For.orelse);
+    VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
 
     USE_LABEL(c, end);
     return SUCCESS;
