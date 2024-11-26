@@ -5545,11 +5545,13 @@ _ssl_SSLSession_time_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.timeout
+
+Session timeout (delta in seconds).
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_timeout_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=82339c148ab2f7d1 input=ae5e84a9d85df60d]*/
+/*[clinic end generated code: output=82339c148ab2f7d1 input=cd17c2b087c442f2]*/
 {
     long timeout = SSL_SESSION_get_timeout(self->session);
     PyObject *res = PyLong_FromLong(timeout);

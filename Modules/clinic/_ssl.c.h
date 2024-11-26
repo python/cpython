@@ -2349,6 +2349,10 @@ _ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_timeout__doc__,
+"Session timeout (delta in seconds).");
+#define _ssl_SSLSession_timeout_HAS_DOCSTR
+
 #if defined(_ssl_SSLSession_timeout_HAS_DOCSTR)
 #  define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
 #else
@@ -2882,4 +2886,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=47936f2b645dbd0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=140bb3df9f225dd7 input=a9049054013a1b77]*/
