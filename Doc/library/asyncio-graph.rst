@@ -26,6 +26,7 @@ and debuggers.
    :class:`Task` or :class:`Future`.
 
    This function prints entries starting from the top frame and going
+   down towards the invocation point.
 
    The function receives an optional *future* argument.
    If not passed, the current running task will be used.
