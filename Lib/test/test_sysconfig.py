@@ -25,8 +25,9 @@ import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes)
-from sysconfig.__main__ import _main, _parse_makefile
+                       _expand_vars, _get_preferred_schemes,
+                       is_python_build, _PROJECT_BASE)
+from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
 import _sysconfig
@@ -624,6 +625,22 @@ class TestSysConfig(unittest.TestCase):
         # prefix/exec_prefix Makefile variables, so we use them in the comparison.
         self.assertNotEqual(data['prefix'], data['base_prefix'])
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
+
+    def test_sysconfigdata_json(self):
+        if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
+            data_dir = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
+        elif is_python_build():
+            data_dir = os.path.join(_PROJECT_BASE, _get_pybuilddir())
+        else:
+            data_dir = sys._stdlib_dir
+
+        json_data_path = os.path.join(data_dir, _get_json_data_name())
+
+        with open(json_data_path) as f:
+            json_config_vars = json.load(f)
+
+        self.assertEqual(get_config_vars(), json_config_vars)
+
 
 class MakefileTests(unittest.TestCase):
 
