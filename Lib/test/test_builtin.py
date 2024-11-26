@@ -35,6 +35,7 @@ from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
 from test.support import requires_IEEE_754
 from unittest.mock import MagicMock, patch
@@ -151,7 +152,7 @@ def map_char(arg):
 def pack(*args):
     return args
 
-class BuiltinTest(unittest.TestCase):
+class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     # Helper to check picklability
     def check_iter_pickle(self, it, seq, proto):
         itorg = it
@@ -1901,6 +1902,17 @@ class BuiltinTest(unittest.TestCase):
               for _ in range(10000)]
         self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
                                           sum(z.imag for z in xs)))
+
+        # test that sum() of complex and real numbers doesn't
+        # smash sign of imaginary 0
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1, complex(1, -0.0)]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1.0]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
+                                         complex(2, -0.0))
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
