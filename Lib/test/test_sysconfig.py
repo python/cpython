@@ -11,6 +11,7 @@ from copy import copy
 
 from test.support import (
     captured_stdout,
+    is_android,
     is_apple_mobile,
     is_wasi,
     PythonSymlink,
