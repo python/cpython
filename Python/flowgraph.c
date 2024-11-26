@@ -776,6 +776,7 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
         return -1;
     }
     effects->net = pushed - popped;
+    assert(effects->max >= effects->net);
     return 0;
 }
 
@@ -836,11 +837,6 @@ calculate_stackdepth(cfg_builder *g)
                              "Invalid CFG, stack underflow");
                 goto error;
             }
-            if (depth + effects.max < 0) {
-                PyErr_Format(PyExc_ValueError,
-                             "Invalid CFG, stack underflow");
-                goto error;
-            }
             maxdepth = Py_MAX(maxdepth, depth + effects.max);
             if (HAS_TARGET(instr->i_opcode)) {
                 if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
@@ -851,7 +847,6 @@ calculate_stackdepth(cfg_builder *g)
                 }
                 int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                assert(depth + effects.max >= 0);
                 maxdepth = Py_MAX(maxdepth, depth + effects.max);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
