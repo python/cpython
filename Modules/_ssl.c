@@ -3668,11 +3668,13 @@ _ssl__SSLContext_maximum_version_set_impl(PySSLContext *self,
 @critical_section
 @getter
 _ssl._SSLContext.num_tickets
+
+Control the number of TLSv1.3 session tickets.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_num_tickets_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=3d06d016318846c9 input=1dee26d75163c073]*/
+/*[clinic end generated code: output=3d06d016318846c9 input=1e2599a2e22564ff]*/
 {
     // Clinic seems to be misbehaving when the comment is wrapped with in directive
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)

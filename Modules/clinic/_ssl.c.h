@@ -1109,6 +1109,10 @@ _ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_num_tickets__doc__,
+"Control the number of TLSv1.3 session tickets.");
+#define _ssl__SSLContext_num_tickets_HAS_DOCSTR
+
 #if defined(_ssl__SSLContext_num_tickets_HAS_DOCSTR)
 #  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
 #else
@@ -2857,4 +2861,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=dfcc8d2071861baf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19f8bdb59b6f0f7d input=a9049054013a1b77]*/
