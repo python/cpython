@@ -81,8 +81,7 @@ the :mod:`tokenize` module.
 
 .. data:: EXACT_TOKEN_TYPES
 
-   A dictionary that stores the string representation of the token
-   as keys, and their numeric codes as values.
+   A dictionary mapping the string representation of a token to its numeric code.
 
    .. versionadded:: 3.8
 
