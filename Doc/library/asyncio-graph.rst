@@ -118,7 +118,7 @@ To introspect an async call graph asyncio requires cooperation from
 control flow structures, such as :func:`shield` or :class:`TaskGroup`.
 Any time an intermediate :class:`Future` object with low-level APIs like
 :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>` is
-involved, the following two functions should be used to inform *asyncio*
+involved, the following two functions should be used to inform asyncio
 about how exactly such intermediate future objects are connected with
 the tasks they wrap or control.
 
