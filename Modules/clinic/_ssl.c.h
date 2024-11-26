@@ -2442,6 +2442,10 @@ _ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_has_ticket__doc__,
+"Does the session contain a ticket?");
+#define _ssl_SSLSession_has_ticket_HAS_DOCSTR
+
 #if defined(_ssl_SSLSession_has_ticket_HAS_DOCSTR)
 #  define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
 #else
@@ -2894,4 +2898,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=47cf654183c8f76a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d56efa56bb6a3b4 input=a9049054013a1b77]*/

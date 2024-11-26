@@ -5603,7 +5603,7 @@ Does the session contain a ticket?
 
 static PyObject *
 _ssl_SSLSession_has_ticket_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=aa3ccfc40b10b96d input=1a48ae8955fa9601]*/
+/*[clinic end generated code: output=aa3ccfc40b10b96d input=fa475555f53a5086]*/
 {
     int res = SSL_SESSION_has_ticket(self->session);
     return res ? Py_True : Py_False;
