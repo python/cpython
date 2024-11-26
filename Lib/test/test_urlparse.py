@@ -1422,14 +1422,14 @@ class UrlParseTestCase(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 with self.assertRaises(ValueError):
-                    urllib.parse.urlsplit(case).hostname
+                    urllib.parse.urlsplit(case)
                 with self.assertRaises(ValueError):
-                    urllib.parse.urlparse(case).hostname
+                    urllib.parse.urlparse(case)
                 bytes_case = case.encode('utf8')
                 with self.assertRaises(ValueError):
-                    urllib.parse.urlsplit(bytes_case).hostname
+                    urllib.parse.urlsplit(bytes_case)
                 with self.assertRaises(ValueError):
-                    urllib.parse.urlparse(bytes_case).hostname
+                    urllib.parse.urlparse(bytes_case)
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
