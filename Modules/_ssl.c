@@ -5279,11 +5279,13 @@ _ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self)
 @critical_section
 @getter
 _ssl.MemoryBIO.eof
+
+Whether the memory BIO is at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_MemoryBIO_eof_get_impl(PySSLMemoryBIO *self)
-/*[clinic end generated code: output=c255a9ea16e31b92 input=0f5c6be69752e04c]*/
+/*[clinic end generated code: output=c255a9ea16e31b92 input=c6ecc12c4509de1f]*/
 {
     size_t pending = BIO_ctrl_pending(self->bio);
     return PyBool_FromLong((pending == 0) && self->eof_written);
@@ -5524,11 +5526,13 @@ PySSLSession_clear(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.time
+
+Session creation time (seconds since epoch).
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_time_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=4b887b9299de9be4 input=8d1e4afd09103279]*/
+/*[clinic end generated code: output=4b887b9299de9be4 input=67f2325284450ae2]*/
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30300000L
     return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));

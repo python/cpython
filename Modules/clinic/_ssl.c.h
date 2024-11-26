@@ -2183,6 +2183,10 @@ _ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_MemoryBIO_eof__doc__,
+"Whether the memory BIO is at EOF.");
+#define _ssl_MemoryBIO_eof_HAS_DOCSTR
+
 #if defined(_ssl_MemoryBIO_eof_HAS_DOCSTR)
 #  define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
 #else
@@ -2313,6 +2317,10 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl_SSLSession_time__doc__,
+"Session creation time (seconds since epoch).");
+#define _ssl_SSLSession_time_HAS_DOCSTR
 
 #if defined(_ssl_SSLSession_time_HAS_DOCSTR)
 #  define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
@@ -2874,4 +2882,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=e4b763ac8f5ac41a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47936f2b645dbd0e input=a9049054013a1b77]*/
