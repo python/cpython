@@ -5597,6 +5597,8 @@ _ssl_SSLSession_id_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.has_ticket
+
+Does the session contain a ticket?
 [clinic start generated code]*/
 
 static PyObject *
