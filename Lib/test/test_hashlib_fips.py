@@ -5,13 +5,17 @@
 #
 
 import os
+import sys
 import unittest
 
 OPENSSL_CONF_BACKUP = os.environ.get("OPENSSL_CONF")
 
+
 class HashLibFIPSTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if sys.modules.get("_hashlib") or sys.modules.get("_ssl"):
+            raise AssertionError("_hashlib or _ssl already imported, too late to change OPENSSL_CONF.")
         # This openssl.cnf mocks FIPS mode without any digest
         # loaded. It means all digests must raise ValueError when
         # usedforsecurity=True via either openssl or builtin
@@ -35,10 +39,10 @@ class HashLibFIPSTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if OPENSSL_CONF_BACKUP:
+        if OPENSSL_CONF_BACKUP is not None:
             os.environ["OPENSSL_CONF"] = OPENSSL_CONF_BACKUP
         else:
-            del(os.environ["OPENSSL_CONF"])
+            os.environ.pop("OPENSSL_CONF", None)
 
     def test_algorithms_available(self):
         import hashlib
