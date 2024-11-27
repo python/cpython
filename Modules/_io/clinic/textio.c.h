@@ -210,9 +210,9 @@ PyDoc_STRVAR(_io__TextIOBase_encoding__doc__,
 "Subclasses should override.");
 #define _io__TextIOBase_encoding_HAS_DOCSTR
 
-#if defined(_io__TextIOBase_encoding_HAS_DOCSTR)
+#if defined(_io__TextIOBase_encoding_HAS_DOCSTR) && !defined(_io__TextIOBase_encoding_DOCSTR)
 #  define _io__TextIOBase_encoding_DOCSTR _io__TextIOBase_encoding__doc__
-#else
+#elif !defined(_io__TextIOBase_encoding_DOCSTR)
 #  define _io__TextIOBase_encoding_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_ENCODING_GETSETDEF)
@@ -239,9 +239,9 @@ PyDoc_STRVAR(_io__TextIOBase_newlines__doc__,
 "Subclasses should override.");
 #define _io__TextIOBase_newlines_HAS_DOCSTR
 
-#if defined(_io__TextIOBase_newlines_HAS_DOCSTR)
+#if defined(_io__TextIOBase_newlines_HAS_DOCSTR) && !defined(_io__TextIOBase_newlines_DOCSTR)
 #  define _io__TextIOBase_newlines_DOCSTR _io__TextIOBase_newlines__doc__
-#else
+#elif !defined(_io__TextIOBase_newlines_DOCSTR)
 #  define _io__TextIOBase_newlines_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_NEWLINES_GETSETDEF)
@@ -266,9 +266,9 @@ PyDoc_STRVAR(_io__TextIOBase_errors__doc__,
 "Subclasses should override.");
 #define _io__TextIOBase_errors_HAS_DOCSTR
 
-#if defined(_io__TextIOBase_errors_HAS_DOCSTR)
+#if defined(_io__TextIOBase_errors_HAS_DOCSTR) && !defined(_io__TextIOBase_errors_DOCSTR)
 #  define _io__TextIOBase_errors_DOCSTR _io__TextIOBase_errors__doc__
-#else
+#elif !defined(_io__TextIOBase_errors_DOCSTR)
 #  define _io__TextIOBase_errors_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_ERRORS_GETSETDEF)
@@ -1138,9 +1138,9 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_name_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper_name_HAS_DOCSTR) && !defined(_io_TextIOWrapper_name_DOCSTR)
 #  define _io_TextIOWrapper_name_DOCSTR _io_TextIOWrapper_name__doc__
-#else
+#elif !defined(_io_TextIOWrapper_name_DOCSTR)
 #  define _io_TextIOWrapper_name_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NAME_GETSETDEF)
@@ -1165,9 +1165,9 @@ _io_TextIOWrapper_name_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_closed_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper_closed_HAS_DOCSTR) && !defined(_io_TextIOWrapper_closed_DOCSTR)
 #  define _io_TextIOWrapper_closed_DOCSTR _io_TextIOWrapper_closed__doc__
-#else
+#elif !defined(_io_TextIOWrapper_closed_DOCSTR)
 #  define _io_TextIOWrapper_closed_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_CLOSED_GETSETDEF)
@@ -1192,9 +1192,9 @@ _io_TextIOWrapper_closed_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_newlines_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper_newlines_HAS_DOCSTR) && !defined(_io_TextIOWrapper_newlines_DOCSTR)
 #  define _io_TextIOWrapper_newlines_DOCSTR _io_TextIOWrapper_newlines__doc__
-#else
+#elif !defined(_io_TextIOWrapper_newlines_DOCSTR)
 #  define _io_TextIOWrapper_newlines_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF)
@@ -1219,9 +1219,9 @@ _io_TextIOWrapper_newlines_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_errors_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper_errors_HAS_DOCSTR) && !defined(_io_TextIOWrapper_errors_DOCSTR)
 #  define _io_TextIOWrapper_errors_DOCSTR _io_TextIOWrapper_errors__doc__
-#else
+#elif !defined(_io_TextIOWrapper_errors_DOCSTR)
 #  define _io_TextIOWrapper_errors_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_ERRORS_GETSETDEF)
@@ -1246,9 +1246,9 @@ _io_TextIOWrapper_errors_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper__CHUNK_SIZE_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper__CHUNK_SIZE_HAS_DOCSTR) && !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR _io_TextIOWrapper__CHUNK_SIZE__doc__
-#else
+#elif !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
@@ -1273,9 +1273,9 @@ _io_TextIOWrapper__CHUNK_SIZE_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_HAS_DOCSTR)
+#if defined(_io_TextIOWrapper__CHUNK_SIZE_HAS_DOCSTR) && !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR _io_TextIOWrapper__CHUNK_SIZE__doc__
-#else
+#elif !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
@@ -1299,4 +1299,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=459c0e50acd772b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5466e359e6e3cea input=a9049054013a1b77]*/
