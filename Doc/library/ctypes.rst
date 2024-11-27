@@ -1992,28 +1992,20 @@ Utility functions
 
 .. function:: DllCanUnloadNow()
 
-   This function is a hook which allows implementing in-process COM servers with
-   ``ctypes``.  It is called from the ``DllCanUnloadNow`` function that the
-   ``_ctypes`` extension dll exports.
+   This function is a hook which allows implementing in-process
+   COM servers with ctypes.  It is called from the DllCanUnloadNow function that
+   the _ctypes extension dll exports.
 
    .. availability:: Windows
-
-   .. seealso::
-
-      `DllCanUnloadNow function official documentation <https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-dllcanunloadnow>`_
 
 
 .. function:: DllGetClassObject()
 
-   This function is a hook which allows implementing in-process COM servers with
-   ``ctypes``.  It is called from the ``DllGetClassObject`` function that the
-   ``_ctypes`` extension dll exports.
+   This function is a hook which allows implementing in-process
+   COM servers with ctypes.  It is called from the DllGetClassObject function
+   that the ``_ctypes`` extension dll exports.
 
    .. availability:: Windows
-
-   .. seealso::
-
-      `DllGetClassObject function official documentation <https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-dllgetclassobject>`_
 
 
 .. function:: find_library(name)
