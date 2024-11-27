@@ -24,7 +24,7 @@ You can use a command like:
 - If the new version removes or renumbers some definitions, keep both files and
   add a new #include in _ssl.c.
 
-A newly supported OpenSSL version should alsko be added to:
+A newly supported OpenSSL version should also be added to:
 - Tools/ssl/multissltests.py
 - .github/workflows/build.yml
 """
