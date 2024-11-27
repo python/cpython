@@ -107,8 +107,6 @@ static void
 track_module(PyModuleObject *m)
 {
     _PyDict_EnablePerThreadRefcounting(m->md_dict);
-    PyObject_GC_Track(m->md_dict);
-
     _PyObject_SetDeferredRefcount((PyObject *)m);
     PyObject_GC_Track(m);
 }
