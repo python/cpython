@@ -643,16 +643,16 @@ check_date_args(int year, int month, int day)
         return -1;
     }
     if (month < 1 || month > 12) {
-        PyErr_SetString(PyExc_ValueError,
-                        "month must be in 1..12, but got %d",
-                        month);
+        PyErr_Format(PyExc_ValueError,
+                    "month must be in 1..12, but got %d",
+                    month);
         return -1;
     }
-    int dim = days_in_month(year, month)
+    int dim = days_in_month(year, month);
     if (day < 1 || day > dim) {
-        PyErr_SetString(PyExc_ValueError,
-                        "day must be in 1..%d, but got %d",
-                        dim, day);
+        PyErr_Format(PyExc_ValueError,
+                    "day must be in 1..%d, but got %d",
+                    dim, day);
         return -1;
     }
     return 0;
@@ -665,28 +665,28 @@ static int
 check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
-        PyErr_SetString(PyExc_ValueError,
-                        "hour must be in 0..23, but got %i", h);
+        PyErr_Format(PyExc_ValueError,
+                    "hour must be in 0..23, but got %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "minute must be in 0..59, but got %i", m);
+        PyErr_Format(PyExc_ValueError,
+                    "minute must be in 0..59, but got %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "second must be in 0..59, but got %i", s);
+        PyErr_Format(PyExc_ValueError,
+                    "second must be in 0..59, but got %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
-        PyErr_SetString(PyExc_ValueError,
-                        "microsecond must be in 0..999999, but got %i", us);
+        PyErr_Format(PyExc_ValueError,
+                    "microsecond must be in 0..999999, but got %i", us);
         return -1;
     }
     if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1, but got %i", fold);
+        PyErr_Format(PyExc_ValueError,
+                    "fold must be either 0 or 1, but got %i", fold);
         return -1;
     }
     return 0;
