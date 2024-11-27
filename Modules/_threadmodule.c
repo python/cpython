@@ -17,6 +17,8 @@
 #  include <signal.h>             // SIGINT
 #endif
 
+#include "clinic/_threadmodule.c.h"
+
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
 
@@ -43,6 +45,13 @@ get_thread_state(PyObject *module)
     assert(state != NULL);
     return (thread_module_state *)state;
 }
+
+
+/*[clinic input]
+module _thread
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
+
 
 // _ThreadHandle type
 
@@ -2354,6 +2363,27 @@ PyDoc_STRVAR(thread__get_main_thread_ident_doc,
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+/*[clinic input]
+_thread.set_name
+
+    name: str
+
+Set the name of the current thread.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_set_name_impl(PyObject *module, const char *name)
+/*[clinic end generated code: output=f051ce549bcd6b8e input=7e29bbdbfb046a04]*/
+{
+    pthread_t thread = pthread_self();
+    pthread_setname_np(thread, name);
+    Py_RETURN_NONE;
+}
+#endif  // HAVE_PTHREAD_SETNAME_NP
+
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_thread_doc},
@@ -2393,6 +2423,7 @@ static PyMethodDef thread_methods[] = {
      METH_O, thread__make_thread_handle_doc},
     {"_get_main_thread_ident", thread__get_main_thread_ident,
      METH_NOARGS, thread__get_main_thread_ident_doc},
+    _THREAD_SET_NAME_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 
