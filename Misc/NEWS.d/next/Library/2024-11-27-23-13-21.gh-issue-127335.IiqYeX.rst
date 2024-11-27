@@ -1,0 +1,1 @@
+Add the latest ``termios`` macro constants to the :mod:`termios`.
