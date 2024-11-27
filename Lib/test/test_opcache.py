@@ -1372,6 +1372,51 @@ class TestSpecializer(TestBase):
         self.assert_specialized(unpack_sequence_list, "UNPACK_SEQUENCE_LIST")
         self.assert_no_opcode(unpack_sequence_list, "UNPACK_SEQUENCE")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_subscr(self):
+        def binary_subscr_list_int():
+            for _ in range(100):
+                a = [1, 2, 3]
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_list_int()
+        self.assert_specialized(binary_subscr_list_int,
+                                "BINARY_SUBSCR_LIST_INT")
+        self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
+
+        def binary_subscr_tuple_int():
+            for _ in range(100):
+                a = (1, 2, 3)
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_tuple_int()
+        self.assert_specialized(binary_subscr_tuple_int,
+                                "BINARY_SUBSCR_TUPLE_INT")
+        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
+
+        def binary_subscr_dict():
+            for _ in range(100):
+                a = {1: 2, 2: 3}
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+
+        binary_subscr_dict()
+        self.assert_specialized(binary_subscr_dict, "BINARY_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_dict, "BINARY_SUBSCR")
+
+        def binary_subscr_str_int():
+            for _ in range(100):
+                a = "foobar"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int()
+        self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
+        self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
 
 if __name__ == "__main__":
     unittest.main()
