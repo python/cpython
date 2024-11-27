@@ -1196,11 +1196,11 @@ class ThreadTests(BaseTestCase):
             except RuntimeError:
                 print('ok')
             else:
-                print('skip')
+                print('!skip!')
         """
         _, out, err = assert_python_ok("-u", "-c", code)
         out = out.strip()
-        if out == b'skip':
+        if b'!skip!' in out:
             self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
         self.assertEqual(out, b'ok')
         self.assertEqual(err, b'')
