@@ -1618,6 +1618,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
             for method in (annotated, unannotated):
                 with self.subTest(deco=deco, method=method):
+                    with self.assertRaises(AttributeError):
+                        del unannotated.__annotations__
+
                     original_annotations = dict(method.__wrapped__.__annotations__)
                     self.assertNotIn('__annotations__', method.__dict__)
                     self.assertEqual(method.__annotations__, original_annotations)
@@ -1643,6 +1646,17 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
                     del method.__annotate__
                     self.assertIs(method.__annotate__, original_annotate)
+
+    def test_staticmethod_annotations_without_dict_access(self):
+        # gh-125017: this used to crash
+        class Spam:
+            def __new__(cls, x, y):
+                pass
+
+        self.assertEqual(Spam.__new__.__annotations__, {})
+        obj = Spam.__dict__['__new__']
+        self.assertIsInstance(obj, staticmethod)
+        self.assertEqual(obj.__annotations__, {})
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
@@ -3225,8 +3239,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class C(base):
                 def __init__(self, value):
                     self.value = int(value)
-                def __cmp__(self_, other):
-                    self.fail("shouldn't call __cmp__")
                 def __eq__(self, other):
                     if isinstance(other, C):
                         return self.value == other.value
@@ -5062,7 +5074,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 cls.lst = [2**i for i in range(10000)]
         X.descr
 
-    @support.suppress_immortalization()
     def test_remove_subclass(self):
         # bpo-46417: when the last subclass of a type is deleted,
         # remove_subclass() clears the internal dictionary of subclasses:

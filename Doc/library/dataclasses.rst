@@ -231,7 +231,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -299,6 +299,10 @@ Module contents
      parameters are computed.
 
     .. versionadded:: 3.10
+
+   - ``doc``: optional docstring for this field.
+
+    .. versionadded:: 3.13
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -395,7 +399,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -410,6 +414,11 @@ Module contents
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
+
+   The *decorator* parameter is a callable that will be used to create the dataclass.
+   It should take the class object as a first argument and the same keyword arguments
+   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   function is used.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with :attr:`!__annotations__` can
@@ -433,6 +442,9 @@ Module contents
 
          def add_one(self):
              return self.x + 1
+
+   .. versionadded:: 3.14
+      Added the *decorator* parameter.
 
 .. function:: replace(obj, /, **changes)
 

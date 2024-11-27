@@ -1,1 +1,0 @@
-Ensure that ``Tools\msi\buildrelease.bat`` uses different directories for AMD64 and ARM64 builds.

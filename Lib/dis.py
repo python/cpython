@@ -35,9 +35,8 @@ SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
-LOAD_CONST = opmap['LOAD_CONST']
-RETURN_CONST = opmap['RETURN_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
+LOAD_SMALL_INT = opmap['LOAD_SMALL_INT']
 BINARY_OP = opmap['BINARY_OP']
 JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
@@ -152,16 +151,17 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets
 # list of CO_* constants. It is also used by pretty_flags to
 # turn the co_flags field into a human readable list.
 COMPILER_FLAG_NAMES = {
-     1: "OPTIMIZED",
-     2: "NEWLOCALS",
-     4: "VARARGS",
-     8: "VARKEYWORDS",
-    16: "NESTED",
-    32: "GENERATOR",
-    64: "NOFREE",
-   128: "COROUTINE",
-   256: "ITERABLE_COROUTINE",
-   512: "ASYNC_GENERATOR",
+            1: "OPTIMIZED",
+            2: "NEWLOCALS",
+            4: "VARARGS",
+            8: "VARKEYWORDS",
+           16: "NESTED",
+           32: "GENERATOR",
+           64: "NOFREE",
+          128: "COROUTINE",
+          256: "ITERABLE_COROUTINE",
+          512: "ASYNC_GENERATOR",
+    0x4000000: "HAS_DOCSTRING",
 }
 
 def pretty_flags(flags):
@@ -674,8 +674,10 @@ def _get_const_value(op, arg, co_consts):
        Otherwise (if it is a LOAD_CONST and co_consts is not
        provided) returns the dis.UNKNOWN sentinel.
     """
-    assert op in hasconst
+    assert op in hasconst or op == LOAD_SMALL_INT
 
+    if op == LOAD_SMALL_INT:
+        return arg
     argval = UNKNOWN
     if co_consts is not None:
         argval = co_consts[arg]
@@ -778,8 +780,10 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
 
         if caches:
             cache_info = []
+            cache_offset = offset
             for name, size in _cache_format[opname[deop]].items():
-                data = code[offset + 2: offset + 2 + 2 * size]
+                data = code[cache_offset + 2: cache_offset + 2 + 2 * size]
+                cache_offset += size * 2
                 cache_info.append((name, size, data))
         else:
             cache_info = None
@@ -992,7 +996,8 @@ def _find_imports(co):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
-            if (from_op[0] in hasconst and level_op[0] in hasconst):
+            if (from_op[0] in hasconst and
+                (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
                 yield (names[oparg], level, fromlist)

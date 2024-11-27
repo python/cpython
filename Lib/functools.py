@@ -6,7 +6,7 @@
 # Written by Nick Coghlan <ncoghlan at gmail.com>,
 # Raymond Hettinger <python at rcn.com>,
 # and Łukasz Langa <lukasz at langa.pl>.
-#   Copyright (C) 2006-2024 Python Software Foundation.
+#   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
@@ -16,14 +16,11 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 from abc import get_cache_token
 from collections import namedtuple
-# import types, weakref  # Deferred to single_dispatch()
+# import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import MethodType
+from types import GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
-
-# Avoid importing types, so we can speedup import time
-GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -239,14 +236,16 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial], /) -> value
+    reduce(function, iterable, /[, initial]) -> value
 
-    Apply a function of two arguments cumulatively to the items of a sequence
-    or iterable, from left to right, so as to reduce the iterable to a single
-    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
-    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-    of the iterable in the calculation, and serves as a default when the
-    iterable is empty.
+    Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
+
+    This effectively reduces the iterable to a single value.  If initial is present,
+    it is placed before the items of the iterable in the calculation, and serves as
+    a default when the iterable is empty.
+
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+    calculates ((((1 + 2) + 3) + 4) + 5).
     """
 
     it = iter(sequence)
@@ -900,7 +899,7 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import types, weakref
+    import weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -931,7 +930,7 @@ def singledispatch(func):
 
     def _is_union_type(cls):
         from typing import get_origin, Union
-        return get_origin(cls) in {Union, types.UnionType}
+        return get_origin(cls) in {Union, UnionType}
 
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
@@ -1008,7 +1007,7 @@ def singledispatch(func):
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
-    wrapper.registry = types.MappingProxyType(registry)
+    wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper

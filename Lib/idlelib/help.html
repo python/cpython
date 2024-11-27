@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>IDLE &#8212; Python 3.13.0a2 documentation</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDLE &#8212; Python 3.14.0a0 documentation</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/pydoctheme.css?digest=b37c26da2f7529d09fe70b41c4b2133fe4931a90" />
@@ -18,7 +18,7 @@
     <script src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.13.0a2 documentation"
+          title="Search within Python 3.14.0a0 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -26,6 +26,7 @@
     <link rel="copyright" title="Copyright" href="../copyright.html" />
     <link rel="next" title="Development Tools" href="development.html" />
     <link rel="prev" title="tkinter.ttk — Tk themed widgets" href="tkinter.ttk.html" />
+
     <link rel="canonical" href="https://docs.python.org/3/library/idle.html" />
 
 
@@ -45,6 +46,8 @@
             <script type="text/javascript" src="../_static/menu.js"></script>
             <script type="text/javascript" src="../_static/search-focus.js"></script>
             <script type="text/javascript" src="../_static/themetoggle.js"></script>
+            <script type="text/javascript" src="../_static/rtd_switcher.js"></script>
+            <meta name="readthedocs-addons-api-version" content="1">
 
   </head>
 <body>
@@ -184,7 +187,7 @@
 
           </li>
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.13.0a2 Documentation</a> &#187;
+      <a href="../index.html">3.14.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -554,7 +557,7 @@ the new character is entered in the new space.</p>
 delete characters.  Deletion does not puts text on the clipboard,
 but IDLE has an undo list.  Wherever this doc discusses keys,
 ‘C’ refers to the <kbd class="kbd docutils literal notranslate">Control</kbd> key on Windows and
-Unix and the <kbd class="kbd docutils literal notranslate">Command</kbd> key on macOS.  (And all such dicussions
+Unix and the <kbd class="kbd docutils literal notranslate">Command</kbd> key on macOS.  (And all such discussions
 assume that the keys have not been re-bound to something else.)</p>
 <ul class="simple">
 <li><p>Arrow keys move the cursor one character or line.</p></li>
@@ -562,8 +565,8 @@ assume that the keys have not been re-bound to something else.)</p>
 <li><p><kbd class="kbd docutils literal notranslate">Home</kbd> and <kbd class="kbd docutils literal notranslate">End</kbd> go to the beginning or end of the line.</p></li>
 <li><p><kbd class="kbd docutils literal notranslate">Page Up</kbd> and <kbd class="kbd docutils literal notranslate">Page Down</kbd> go up or down one screen.</p></li>
 <li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Home</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">End</kbd></kbd> go to beginning or end of the file.</p></li>
-<li><p><kbd class="kbd docutils literal notranslate">Backspace</kbd> and <kbd class="kbd docutils literal notranslate">Del</kbd> (or <cite>C-d</cite>) delete the previous or
-next character.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Backspace</kbd> and <kbd class="kbd docutils literal notranslate">Del</kbd> (or <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd></kbd>) delete the previous
+or next character.</p></li>
 <li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Backspace</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Del</kbd></kbd> delete one word left or right.</p></li>
 <li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">k</kbd></kbd> deletes (‘kills’) everything to the right.</p></li>
 </ul>
@@ -694,7 +697,7 @@ in an editor window.</p>
 <p>The editing features described in previous subsections work when entering
 code interactively.  IDLE’s Shell window also responds to the following:</p>
 <ul class="simple">
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd></kbd> attemps to interrupt statement execution (but may fail).</p></li>
+<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd></kbd> attempts to interrupt statement execution (but may fail).</p></li>
 <li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd></kbd> closes Shell if typed at a <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt.</p></li>
 <li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd></kbd> (<kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd></kbd> on macOS)
 retrieve to the current prompt the previous or next previously
@@ -1136,7 +1139,7 @@ sense that feature changes can be backported (see <span class="target" id="index
 
           </li>
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.13.0a2 Documentation</a> &#187;
+      <a href="../index.html">3.14.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -1180,7 +1183,7 @@ sense that feature changes can be backported (see <span class="target" id="index
 <br />
     <br />
 
-    Last updated on Jan 17, 2024 (06:57 UTC).
+    Last updated on Oct 14, 2024 (20:27 UTC).
     <a href="/bugs.html">Found a bug</a>?
     <br />
 

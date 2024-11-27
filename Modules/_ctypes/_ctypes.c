@@ -956,32 +956,48 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
     Py_END_ALLOW_THREADS
-    if (!address) {
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
 #else
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (void *)dlsym(handle, name);
-    if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_ValueError, dlerror());
 #endif
-        return NULL;
+
+    if (address) {
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+        return PyCData_AtAddress(st, type, address);
     }
-#endif
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-    return PyCData_AtAddress(st, type, address);
+
+    #ifdef USE_DLERROR
+    const char *dlerr = dlerror();
+    if (dlerr) {
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
+        if (message) {
+            PyErr_SetObject(PyExc_ValueError, message);
+            Py_DECREF(message);
+            return NULL;
+        }
+        // Ignore errors from PyUnicode_DecodeLocale,
+        // fall back to the generic error below.
+        PyErr_Clear();
+    }
+    #endif
+#undef USE_DLERROR
+    PyErr_Format(PyExc_ValueError, "symbol '%s' not found", name);
+    return NULL;
 }
 
 /*[clinic input]
@@ -1747,7 +1763,7 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
 #else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
@@ -2425,7 +2441,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
         return NULL;
     }
     if (as_parameter) {
-        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
             return NULL;
@@ -3759,6 +3775,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     address = FindAddress(handle, name, (PyObject *)type);
     if (!address) {
@@ -3774,20 +3791,41 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
+    #ifdef __CYGWIN__
+        //dlerror() isn't very helpful on cygwin */
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (PPROC)dlsym(handle, name);
+
     if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_AttributeError, dlerror());
-#endif
+	#ifdef USE_DLERROR
+        const char *dlerr = dlerror();
+        if (dlerr) {
+            PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
+            if (message) {
+                PyErr_SetObject(PyExc_AttributeError, message);
+                Py_DECREF(ftuple);
+                Py_DECREF(message);
+                return NULL;
+            }
+            // Ignore errors from PyUnicode_DecodeLocale,
+            // fall back to the generic error below.
+            PyErr_Clear();
+        }
+	#endif
+        PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;
     }
 #endif
+#undef USE_DLERROR
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {
         Py_DECREF(ftuple);
@@ -4732,7 +4770,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -4756,7 +4794,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -5418,7 +5456,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
@@ -5438,7 +5476,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);

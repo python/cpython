@@ -34,6 +34,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -1359,6 +1360,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
+        self.is_started = False
 
 
     def copy(self):
@@ -1471,6 +1473,9 @@ class _patch(object):
 
     def __enter__(self):
         """Perform the patch."""
+        if self.is_started:
+            raise RuntimeError("Patch is already started")
+
         new, spec, spec_set = self.new, self.spec, self.spec_set
         autospec, kwargs = self.autospec, self.kwargs
         new_callable = self.new_callable
@@ -1602,6 +1607,7 @@ class _patch(object):
         self.temp_original = original
         self.is_local = local
         self._exit_stack = contextlib.ExitStack()
+        self.is_started = True
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1621,6 +1627,9 @@ class _patch(object):
 
     def __exit__(self, *exc_info):
         """Undo the patch."""
+        if not self.is_started:
+            return
+
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
         else:
@@ -1637,6 +1646,7 @@ class _patch(object):
         del self.target
         exit_stack = self._exit_stack
         del self._exit_stack
+        self.is_started = False
         return exit_stack.__exit__(*exc_info)
 
 
@@ -2756,7 +2766,15 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
-    _kwargs = {'spec': spec}
+
+    entries = [(entry, _missing) for entry in dir(spec)]
+    if is_type and instance and is_dataclass(spec):
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+    else:
+        _kwargs = {'spec': spec}
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2813,7 +2831,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2827,10 +2845,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is _missing:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
         child_kwargs = {'spec': original}
         # Wrap child attributes also.

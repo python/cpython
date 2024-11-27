@@ -902,7 +902,7 @@ Statements
    (indicating a "simple" target). A "simple" target consists solely of a
    :class:`Name` node that does not appear between parentheses; all other
    targets are considered complex. Only simple targets appear in
-   the :attr:`__annotations__` dictionary of modules and classes.
+   the :attr:`~object.__annotations__` dictionary of modules and classes.
 
    .. doctest::
 
@@ -2491,7 +2491,7 @@ effects on the compilation of a program:
    differ in whitespace or similar details. Attributes include line numbers
    and column offsets.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _ast-cli:

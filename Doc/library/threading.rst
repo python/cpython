@@ -567,6 +567,9 @@ All methods are executed atomically.
          Lock acquisition can now be interrupted by signals on POSIX if the
          underlying threading implementation supports it.
 
+      .. versionchanged:: 3.14
+         Lock acquisition can now be interrupted by signals on Windows.
+
 
    .. method:: release()
 
