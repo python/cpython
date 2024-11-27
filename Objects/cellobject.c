@@ -92,27 +92,33 @@ cell_richcompare(PyObject *a, PyObject *b, int op)
     if (!PyCell_Check(a) || !PyCell_Check(b)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+    PyObject *a_ref = PyCell_GetRef((PyCellObject *)a);
+    PyObject *b_ref = PyCell_GetRef((PyCellObject *)b);
 
     /* compare cells by contents; empty cells come before anything else */
-    a = ((PyCellObject *)a)->ob_ref;
-    b = ((PyCellObject *)b)->ob_ref;
-    if (a != NULL && b != NULL)
-        return PyObject_RichCompare(a, b, op);
-
-    Py_RETURN_RICHCOMPARE(b == NULL, a == NULL, op);
+    if (a_ref == NULL) {
+        a_ref = Py_None;
+    }
+    if (b_ref == NULL) {
+        b_ref = Py_None;
+    }
+    PyObject *res = PyObject_RichCompare(a_ref, b_ref, op);
+    Py_DECREF(a_ref);
+    Py_DECREF(b_ref);
+    return res;
 }
 
 static PyObject *
 cell_repr(PyObject *self)
 {
-    PyCellObject *op = _PyCell_CAST(self);
-    if (op->ob_ref == NULL) {
-        return PyUnicode_FromFormat("<cell at %p: empty>", op);
+    PyObject *ref = PyCell_GetRef((PyCellObject *)self);
+    if (ref == NULL) {
+        return PyUnicode_FromFormat("<cell at %p: empty>", self);
     }
-
-    return PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
-                               op, Py_TYPE(op->ob_ref)->tp_name,
-                               op->ob_ref);
+    PyObject *res = PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
+                                         self, Py_TYPE(ref)->tp_name, ref);
+    Py_DECREF(ref);
+    return res;
 }
 
 static int
@@ -135,11 +141,12 @@ static PyObject *
 cell_get_contents(PyObject *self, void *closure)
 {
     PyCellObject *op = _PyCell_CAST(self);
-    if (op->ob_ref == NULL) {
+    PyObject *res = PyCell_GetRef(op);
+    if (res == NULL) {
         PyErr_SetString(PyExc_ValueError, "Cell is empty");
         return NULL;
     }
-    return Py_NewRef(op->ob_ref);
+    return res;
 }
 
 static int
