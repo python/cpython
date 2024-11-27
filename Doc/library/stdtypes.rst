@@ -4416,8 +4416,8 @@ The constructors for both classes work the same:
    set('bc')`` returns an instance of :class:`frozenset`.
 
    The following mutating operations are available for :class:`set` instances.
-   For :class:`frozenset` instances, only the in-place variants of these operations
-   (``|=``, ``&=``, ``-=``, and ``^=``) are supported.
+   For :class:`frozenset` instances, only the augmented assignment variants of
+   these operations (``|=``, ``&=``, ``-=``, and ``^=``) are supported.
 
    .. method:: update(*others)
                set |= other | ...
