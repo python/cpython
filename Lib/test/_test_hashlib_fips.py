@@ -4,22 +4,17 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
+"""Primarily executed by test_hashlib.py. It can run stand alone by humans."""
+
 import os
-import sys
 import unittest
 
 OPENSSL_CONF_BACKUP = os.environ.get("OPENSSL_CONF")
 
 
 class HashLibFIPSTestCase(unittest.TestCase):
-    _executions = 0  # prevent re-running on in refleak hunting mode, etc.
-
     @classmethod
     def setUpClass(cls):
-        if cls._executions > 0:
-            raise unittest.SkipTest("Cannot run this test within the same Python process.")
-        if sys.modules.get("_hashlib") or sys.modules.get("_ssl"):
-            raise AssertionError("_hashlib or _ssl already imported, too late to change OPENSSL_CONF.")
         # This openssl.cnf mocks FIPS mode without any digest
         # loaded. It means all digests must raise ValueError when
         # usedforsecurity=True via either openssl or builtin
@@ -47,7 +42,6 @@ class HashLibFIPSTestCase(unittest.TestCase):
             os.environ["OPENSSL_CONF"] = OPENSSL_CONF_BACKUP
         else:
             os.environ.pop("OPENSSL_CONF", None)
-        cls._executions += 1
 
     def test_algorithms_available(self):
         import hashlib
