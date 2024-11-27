@@ -1248,7 +1248,7 @@ class TestSpecializer(TestBase):
         g()
         self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
         self.assert_no_opcode(g, "BINARY_OP")
-        
+
     @cpython_only
     @requires_specialization_ft
     def test_load_super_attr(self):
