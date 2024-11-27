@@ -16,13 +16,15 @@ Allocating Objects on the Heap
 
    Initialize a newly allocated object *op* with its type and initial
    reference.  Returns the initialized object.  Other fields of the object are
-   not initialized.  Specifically, this function does **not** call the object's
-   :meth:`~object.__init__` method (:c:member:`~PyTypeObject.tp_init` slot).
+   not initialized.  Despite its name, this function is unrelated to the
+   object's :meth:`~object.__init__` method (:c:member:`~PyTypeObject.tp_init`
+   slot).  Specifically, this function does **not** call the object's
+   :meth:`!__init__` method.
 
    .. warning::
 
-      This function does not guarantee that the memory will be completely
-      zeroed before it is initialized.
+      This function only initializes some of the object's memory.  It does not
+      zero the rest.
 
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
@@ -32,8 +34,8 @@ Allocating Objects on the Heap
 
    .. warning::
 
-      This function does not guarantee that the memory will be completely
-      zeroed before it is initialized.
+      This function only initializes some of the object's memory.  It does not
+      zero the rest.
 
 
 .. c:macro:: PyObject_New(TYPE, typeobj)
@@ -42,9 +44,10 @@ Allocating Objects on the Heap
    Python type object *typeobj* (``PyTypeObject*``) by calling
    :c:func:`PyObject_Malloc` to allocate memory and initializing it like
    :c:func:`PyObject_Init`.  The caller will own the only reference to the
-   object (i.e. its reference count will be one).  The size of the memory
-   allocation is determined from the :c:member:`~PyTypeObject.tp_basicsize`
-   field of the type object.
+   object (i.e. its reference count will be one).
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
 
    When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
    :c:func:`PyType_GenericAlloc` is preferred over a custom function that
@@ -54,9 +57,8 @@ Allocating Objects on the Heap
    :c:member:`~PyTypeObject.tp_new` (:meth:`~object.__new__`), or
    :c:member:`~PyTypeObject.tp_init` (:meth:`~object.__init__`).
 
-   This macro should not be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC`
-   set in :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_New`
-   instead.
+   This cannot be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC` set in
+   :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_New` instead.
 
    Memory allocated by this function must be freed with :c:func:`PyObject_Free`
    (usually called via the object's :c:member:`~PyTypeObject.tp_free` slot).
@@ -74,6 +76,13 @@ Allocating Objects on the Heap
       fully initialized object, call *typeobj* instead.  For example::
 
          PyObject *foo = PyObject_CallNoArgs((PyObject *)&PyFoo_Type);
+
+   .. seealso::
+
+      * :c:func:`PyObject_Free`
+      * :c:macro:`PyObject_GC_New`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_alloc`
 
 
 .. c:macro:: PyObject_NewVar(TYPE, typeobj, size)
@@ -90,8 +99,15 @@ Allocating Objects on the Heap
    into the same allocation decreases the number of allocations, improving the
    memory management efficiency.
 
-   This should not be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC` set
-   in :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_NewVar`
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
+   :c:func:`PyType_GenericAlloc` is preferred over a custom function that
+   simply calls this macro.
+
+   This cannot be used for objects with :c:macro:`Py_TPFLAGS_HAVE_GC` set in
+   :c:member:`~PyTypeObject.tp_flags`; use :c:macro:`PyObject_GC_NewVar`
    instead.
 
    Memory allocated by this function must be freed with :c:func:`PyObject_Free`
@@ -110,6 +126,13 @@ Allocating Objects on the Heap
       fully initialized object, call *typeobj* instead.  For example::
 
          PyObject *foo = PyObject_CallNoArgs((PyObject *)&PyFoo_Type);
+
+   .. seealso::
+
+      * :c:func:`PyObject_Free`
+      * :c:macro:`PyObject_GC_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_alloc`
 
 
 .. c:function:: void PyObject_Del(void *op)

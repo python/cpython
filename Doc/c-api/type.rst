@@ -153,6 +153,9 @@ Type Objects
    for a new instance, zeros the memory, then initializes the memory as if by
    calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
 
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
    For types that support garbage collection (i.e., the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), this function behaves like
    :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar` (except the
