@@ -1993,6 +1993,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
             goto fail;
 
         if (bytes == Py_None){
+            Py_DECREF(bytes);
             PyErr_SetString(PyExc_BlockingIOError, "Read returned None.");
             return NULL;
 
