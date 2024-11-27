@@ -8,6 +8,25 @@ It takes two arguments:
 - the path to the OpenSSL git checkout
 - the path to the header file to be generated Modules/_ssl_data_{version}.h
 - error codes are version specific
+
+The OpenSSL git checkout should be at a specific tag, using commands like:
+    git tag --list 'openssl-*'
+    git switch --detach openssl-3.4.0
+
+
+After generating the definitions, the result with newest pre-existing file.
+You can use a command like:
+
+    git diff --no-index Modules/_ssl_data_31.h Modules/_ssl_data_34.h
+
+- If the new version *only* adds new definitions, remove the pre-existing file
+  and adjust the #include in _ssl.c to point to the new version.
+- If the new version removes or renumbers some definitions, keep both files and
+  add a new #include in _ssl.c.
+
+A newly supported OpenSSL version should alsko be added to:
+- Tools/ssl/multissltests.py
+- .github/workflows/build.yml
 """
 
 import argparse
