@@ -60,14 +60,14 @@ def _days_in_month(year, month):
 
 def _days_before_month(year, month):
     "year, month -> number of days in year preceding first day of month."
-    assert 1 <= month <= 12, 'month must be in 1..12'
+    assert 1 <= month <= 12, f"month must be in 1..12, but got {month}"
     return _DAYS_BEFORE_MONTH[month] + (month > 2 and _is_leap(year))
 
 def _ymd2ord(year, month, day):
     "year, month, day -> ordinal, considering 01-Jan-0001 as day 1."
-    assert 1 <= month <= 12, 'month must be in 1..12'
+    assert 1 <= month <= 12, f"month must be in 1..12, but got {month}"
     dim = _days_in_month(year, month)
-    assert 1 <= day <= dim, ('day must be in 1..%d' % dim)
+    assert 1 <= day <= dim, f"day must be in 1..{dim}, but got {day}"
     return (_days_before_year(year) +
             _days_before_month(year, month) +
             day)
@@ -512,7 +512,7 @@ def _parse_isoformat_time(tstr):
 def _isoweek_to_gregorian(year, week, day):
     # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError(f"Year is out of range: {year}")
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, but got {year}")
 
     if not 0 < week < 53:
         out_of_range = True
@@ -561,21 +561,21 @@ def _check_utc_offset(name, offset):
         raise TypeError("tzinfo.%s() must return None "
                         "or timedelta, not '%s'" % (name, type(offset)))
     if not -timedelta(1) < offset < timedelta(1):
-        raise ValueError("%s()=%s, must be strictly between "
-                         "-timedelta(hours=24) and timedelta(hours=24)" %
-                         (name, offset))
+        raise ValueError("offset must be a timedelta "
+                         "strictly between -timedelta(hours=24) and "
+                         f"timedelta(hours=24), not {offset.__repr__()}")
 
 def _check_date_fields(year, month, day):
     year = _index(year)
     month = _index(month)
     day = _index(day)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError('year must be in %d..%d' % (MINYEAR, MAXYEAR), year)
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, but got {year}")
     if not 1 <= month <= 12:
-        raise ValueError('month must be in 1..12', month)
+        raise ValueError(f"month must be in 1..12, but got {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError('day must be in 1..%d' % dim, day)
+        raise ValueError(f"day must be in 1..{dim}, but got {day}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
@@ -584,15 +584,15 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
     second = _index(second)
     microsecond = _index(microsecond)
     if not 0 <= hour <= 23:
-        raise ValueError('hour must be in 0..23', hour)
+        raise ValueError(f"hour must be in 0..23, but got {hour}")
     if not 0 <= minute <= 59:
-        raise ValueError('minute must be in 0..59', minute)
+        raise ValueError(f"minute must be in 0..59, but got {minute}")
     if not 0 <= second <= 59:
-        raise ValueError('second must be in 0..59', second)
+        raise ValueError(f"second must be in 0..59, but got {second}")
     if not 0 <= microsecond <= 999999:
-        raise ValueError('microsecond must be in 0..999999', microsecond)
+        raise ValueError(f"microsecond must be in 0..999999, but got {microsecond}")
     if fold not in (0, 1):
-        raise ValueError('fold must be either 0 or 1', fold)
+        raise ValueError(f"fold must be either 0 or 1, but got {fold}")
     return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
@@ -2419,7 +2419,7 @@ class timezone(tzinfo):
         if not cls._minoffset <= offset <= cls._maxoffset:
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
-                             "timedelta(hours=24).")
+                             f"timedelta(hours=24), not {offset.__repr__()}")
         return cls._create(offset, name)
 
     def __init_subclass__(cls):
