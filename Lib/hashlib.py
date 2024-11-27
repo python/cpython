@@ -91,7 +91,7 @@ def __usedforsecurity_check(md, name, *args, **kwargs):
 # implementations are treated as an unapproved implementation, as they
 # are unlikely to have been certified by NIST.
 def __get_wrapped_builtin(md, name):
-    if _hashlib is not None and _hashlib.get_fips_mode() == 1:
+    if _hashlib is not None and _hashlib.get_fips_mode() != 0:
         from functools import partial
         return partial(__usedforsecurity_check, md, name)
     return md
