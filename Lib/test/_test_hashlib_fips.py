@@ -50,12 +50,13 @@ class HashLibFIPSTestCase(unittest.TestCase):
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
         for name in hashlib.algorithms_available:
-            digest = hashlib.new(name, usedforsecurity=False)
+            with self.subTest(name):
+                digest = hashlib.new(name, usedforsecurity=False)
 
     def test_usedforsecurity_true(self):
         import hashlib
         for name in hashlib.algorithms_available:
-            with self.assertRaises(ValueError):
+            with self.subTest(name), self.assertRaises(ValueError):
                 digest = hashlib.new(name, usedforsecurity=True)
 
 if __name__ == "__main__":
