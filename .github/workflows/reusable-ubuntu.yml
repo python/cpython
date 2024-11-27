@@ -42,7 +42,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ input.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
