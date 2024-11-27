@@ -86,12 +86,12 @@ def __usedforsecurity_check(md, name, *args, **kwargs):
         raise ValueError(name + " is blocked when usedforsecurity=True")
     return md(*args, **kwargs)
 
-# If _hashlib is in FIPS mode, use the above wrapper to ensure builtin
-# implementation checks usedforsecurity kwarg. It means all builtin
-# implementations are treated as an unapproved implementation, as they
-# are unlikely to have been certified by NIST.
+# If the _hashlib OpenSSL wrapper is in FIPS mode, wrap other implementations
+# to check the usedforsecurity kwarg. All builtin implementations are treated
+# as only available for useforsecurity=False purposes in the presence of such
+# a configured and linked OpenSSL.
 def __get_wrapped_builtin(md, name):
-    if _hashlib is not None and _hashlib.get_fips_mode() != 0:
+    if __openssl_fips_mode != 0:
         from functools import partial
         return partial(__usedforsecurity_check, md, name)
     return md
@@ -209,10 +209,15 @@ try:
     __get_hash = __get_openssl_constructor
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
+    try:
+        __openssl_fips_mode = _hashlib.get_fips_mode()
+    except ValueError:
+        __openssl_fips_mode = 0
 except ImportError:
     _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
+    __openssl_fips_mode = 0
 
 try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
