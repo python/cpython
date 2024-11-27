@@ -70,7 +70,6 @@ In-memory text streams are also available as :class:`StringIO` objects::
    might raise a :exc:`BlockingIOError` if the stream cannot perform the operation
    immediately.
 
-
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
 

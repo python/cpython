@@ -1996,7 +1996,6 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
             Py_DECREF(bytes);
             PyErr_SetString(PyExc_BlockingIOError, "Read returned None.");
             return NULL;
-
         }
 
         _PyIO_State *state = self->state;
