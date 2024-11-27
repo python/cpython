@@ -5,6 +5,8 @@ import sys
 import os
 import subprocess
 import shutil
+import json
+import textwrap
 from copy import copy
 
 from test.support import (
@@ -17,6 +19,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
+from test.support.venv import VirtualEnvironment
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -100,6 +103,13 @@ class TestSysConfig(unittest.TestCase):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
+
+    def venv(self, **venv_create_args):
+        return VirtualEnvironment.from_tmpdir(
+            prefix=f'{self.id()}-venv-',
+            **venv_create_args,
+        )
+
 
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
@@ -581,6 +591,39 @@ class TestSysConfig(unittest.TestCase):
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+
+    @requires_subprocess()
+    def test_makefile_overwrites_config_vars(self):
+        script = textwrap.dedent("""
+            import sys, sysconfig
+
+            data = {
+                'prefix': sys.prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_prefix': sys.base_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'config_vars': sysconfig.get_config_vars(),
+            }
+
+            import json
+            print(json.dumps(data, indent=2))
+        """)
+
+        # We need to run the test inside a virtual environment so that
+        # sys.prefix/sys.exec_prefix have a different value from the
+        # prefix/exec_prefix Makefile variables.
+        with self.venv() as venv:
+            data = json.loads(venv.run('-c', script).stdout)
+
+        # We expect sysconfig.get_config_vars to correctly reflect sys.prefix/sys.exec_prefix
+        self.assertEqual(data['prefix'], data['config_vars']['prefix'])
+        self.assertEqual(data['exec_prefix'], data['config_vars']['exec_prefix'])
+        # As a sanity check, just make sure sys.prefix/sys.exec_prefix really
+        # are different from the Makefile values.
+        # sys.base_prefix/sys.base_exec_prefix should reflect the value of the
+        # prefix/exec_prefix Makefile variables, so we use them in the comparison.
+        self.assertNotEqual(data['prefix'], data['base_prefix'])
+        self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
 
 class MakefileTests(unittest.TestCase):
 

@@ -4761,10 +4761,10 @@ PyType_FromMetaclass(
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     weaklistoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__dictoffset__") == 0) {
+                else if (strcmp(memb->name, "__dictoffset__") == 0) {
                     dictoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                else if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
                     vectorcalloffset_member = memb;
                 }
             }
@@ -5643,6 +5643,24 @@ _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
     BEGIN_TYPE_LOCK();
     set_flags(self, mask, flags);
     END_TYPE_LOCK();
+}
+
+int
+_PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version)
+{
+    int err;
+    BEGIN_TYPE_LOCK();
+    err = validate(ty);
+    if (!err) {
+        if(assign_version_tag(_PyInterpreterState_GET(), ty)) {
+            *tp_version = ty->tp_version_tag;
+        }
+        else {
+            err = -1;
+        }
+    }
+    END_TYPE_LOCK();
+    return err;
 }
 
 static void
@@ -9314,13 +9332,13 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (flags > INT_MAX) {
+    if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
-    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+    return _PyMemoryView_FromBufferProc(self, (int)flags,
                                         (getbufferproc)wrapped);
 }
 

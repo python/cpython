@@ -1357,6 +1357,41 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
 
+    def test_bad_state(self):
+        c = C()
+        c.x = None
+        base = b'c__main__\nC\n)\x81'
+        self.assertEqual(self.loads(base + b'}X\x01\x00\x00\x00xNsb.'), c)
+        self.assertEqual(self.loads(base + b'N}X\x01\x00\x00\x00xNs\x86b.'), c)
+        # non-hashable dict key
+        self.check_unpickling_error(TypeError, base + b'}]Nsb.')
+        # state = list
+        error = (pickle.UnpicklingError, AttributeError)
+        self.check_unpickling_error(error, base + b'](}}eb.')
+        # state = 1-tuple
+        self.check_unpickling_error(error, base + b'}\x85b.')
+        # state = 3-tuple
+        self.check_unpickling_error(error, base + b'}}}\x87b.')
+        # non-hashable slot name
+        self.check_unpickling_error(TypeError, base + b'}}]Ns\x86b.')
+        # non-string slot name
+        self.check_unpickling_error(TypeError, base + b'}}NNs\x86b.')
+        # dict = True
+        self.check_unpickling_error(error, base + b'\x88}\x86b.')
+        # slots dict = True
+        self.check_unpickling_error(error, base + b'}\x88\x86b.')
+
+        class BadKey1:
+            count = 1
+            def __hash__(self):
+                if not self.count:
+                    raise CustomError
+                self.count -= 1
+                return 42
+        __main__.BadKey1 = BadKey1
+        # bad hashable dict key
+        self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP

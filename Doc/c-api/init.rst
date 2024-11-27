@@ -1379,6 +1379,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
+   .. versionchanged:: 3.13
+      The :c:member:`PyThreadState.on_delete` callback was removed.
+
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
@@ -1735,7 +1738,11 @@ function. You can create and destroy them using the following functions:
           .check_multi_interp_extensions = 1,
           .gil = PyInterpreterConfig_OWN_GIL,
       };
-      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+      PyThreadState *tstate = NULL;
+      PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+      if (PyStatus_Exception(status)) {
+          Py_ExitStatusException(status);
+      }
 
    Note that the config is used only briefly and does not get modified.
    During initialization the config's values are converted into various
@@ -2463,7 +2470,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection2 _py_cs2;
-          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
+          PyCriticalSection2_Begin(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
 
    In the default build, this macro expands to ``{``.
 
@@ -2475,7 +2482,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    In the free-threaded build, this macro expands to::
 
-          PyCriticalSection_End2(&_py_cs2);
+          PyCriticalSection2_End(&_py_cs2);
       }
 
    In the default build, this macro expands to ``}``.

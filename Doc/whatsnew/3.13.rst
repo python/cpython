@@ -1568,6 +1568,8 @@ and are now removed:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
   Use the :mod:`subprocess` module instead.
+  Use :func:`shlex.quote` to replace the undocumented ``pipes.quote``
+  function.
 * :mod:`!sndhdr`:
   The :pypi:`filetype`, :pypi:`puremagic`, or :pypi:`python-magic` libraries
   should be used as replacements.
