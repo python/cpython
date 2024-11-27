@@ -80,18 +80,18 @@ jobs:
         --with-openssl="$OPENSSL_DIR"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython out-of-tree
-      if: ${{ inputs.free-threading || inputs.os != 'ubuntu-24.04-aarch64' }}
+      if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
-      if: ${{ !inputs.free-threading && inputs.os == 'ubuntu-24.04-aarch64' }}
+      if: ${{ !inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: set -o pipefail; make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
     - name: Check compiler warnings
-      if: ${{ !inputs.free-threading && inputs.os == 'ubuntu-24.04-aarch64' }}
+      if: ${{ !inputs.free-threading }}
       run: >-
         python Tools/build/check_warnings.py
         --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output_ubuntu.txt
