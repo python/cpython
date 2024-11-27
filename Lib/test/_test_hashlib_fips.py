@@ -56,8 +56,9 @@ class HashLibFIPSTestCase(unittest.TestCase):
     def test_usedforsecurity_true(self):
         import hashlib
         for name in hashlib.algorithms_available:
-            with self.subTest(name), self.assertRaises(ValueError):
-                digest = hashlib.new(name, usedforsecurity=True)
+            with self.subTest(name):
+                with self.assertRaises(ValueError):
+                    digest = hashlib.new(name, usedforsecurity=True)
 
 if __name__ == "__main__":
     unittest.main()
