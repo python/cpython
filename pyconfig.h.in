@@ -981,6 +981,9 @@
 /* Define to 1 if you have the `pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
+/* Define to 1 if you have the `pthread_getname_np' function. */
+#undef HAVE_PTHREAD_GETNAME_NP
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 

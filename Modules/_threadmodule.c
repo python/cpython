@@ -2366,17 +2366,43 @@ of the main interpreter.");
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
 /*[clinic input]
+_thread._get_name
+
+Get the name of the current thread.
+[clinic start generated code]*/
+
+static PyObject *
+_thread__get_name_impl(PyObject *module)
+/*[clinic end generated code: output=20026e7ee3da3dd7 input=35cec676833d04c8]*/
+{
+    char name[17];
+    size_t size = Py_ARRAY_LENGTH(name) - 1;
+#ifdef __APPLE__
+    pthread_getname_np(name, size);
+#else
+    pthread_t thread = pthread_self();
+    pthread_getname_np(thread, name, size);
+#endif
+    name[size] = 0;
+    return PyUnicode_DecodeFSDefault(name);
+}
+#endif  // HAVE_PTHREAD_SETNAME_NP
+
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+/*[clinic input]
 _thread.set_name
 
-    name: str
+    name as name_obj: object(converter="PyUnicode_FSConverter")
 
 Set the name of the current thread.
 [clinic start generated code]*/
 
 static PyObject *
-_thread_set_name_impl(PyObject *module, const char *name)
-/*[clinic end generated code: output=f051ce549bcd6b8e input=7e29bbdbfb046a04]*/
+_thread_set_name_impl(PyObject *module, PyObject *name_obj)
+/*[clinic end generated code: output=402b0c68e0c0daed input=a0459bd64f771808]*/
 {
+    const char *name = PyBytes_AS_STRING(name_obj);
 #ifdef __APPLE__
     pthread_setname_np(name);
 #else
@@ -2428,6 +2454,7 @@ static PyMethodDef thread_methods[] = {
     {"_get_main_thread_ident", thread__get_main_thread_ident,
      METH_NOARGS, thread__get_main_thread_ident_doc},
     _THREAD_SET_NAME_METHODDEF
+    _THREAD__GET_NAME_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 

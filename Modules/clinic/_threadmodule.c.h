@@ -10,6 +10,28 @@ preserve
 
 #if defined(HAVE_PTHREAD_SETNAME_NP)
 
+PyDoc_STRVAR(_thread__get_name__doc__,
+"_get_name($module, /)\n"
+"--\n"
+"\n"
+"Get the name of the current thread.");
+
+#define _THREAD__GET_NAME_METHODDEF    \
+    {"_get_name", (PyCFunction)_thread__get_name, METH_NOARGS, _thread__get_name__doc__},
+
+static PyObject *
+_thread__get_name_impl(PyObject *module);
+
+static PyObject *
+_thread__get_name(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__get_name_impl(module);
+}
+
+#endif /* defined(HAVE_PTHREAD_SETNAME_NP) */
+
+#if defined(HAVE_PTHREAD_SETNAME_NP)
+
 PyDoc_STRVAR(_thread_set_name__doc__,
 "set_name($module, /, name)\n"
 "--\n"
@@ -20,7 +42,7 @@ PyDoc_STRVAR(_thread_set_name__doc__,
     {"set_name", _PyCFunction_CAST(_thread_set_name), METH_FASTCALL|METH_KEYWORDS, _thread_set_name__doc__},
 
 static PyObject *
-_thread_set_name_impl(PyObject *module, const char *name);
+_thread_set_name_impl(PyObject *module, PyObject *name_obj);
 
 static PyObject *
 _thread_set_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -52,27 +74,17 @@ _thread_set_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    const char *name;
+    PyObject *name_obj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("set_name", "argument 'name'", "str", args[0]);
+    if (!PyUnicode_FSConverter(args[0], &name_obj)) {
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = _thread_set_name_impl(module, name);
+    return_value = _thread_set_name_impl(module, name_obj);
 
 exit:
     return return_value;
@@ -80,7 +92,11 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_SETNAME_NP) */
 
+#ifndef _THREAD__GET_NAME_METHODDEF
+    #define _THREAD__GET_NAME_METHODDEF
+#endif /* !defined(_THREAD__GET_NAME_METHODDEF) */
+
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=bfb5c47ecc9e2cb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6611486fd37f22bf input=a9049054013a1b77]*/

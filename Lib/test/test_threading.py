@@ -2103,6 +2103,26 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
 
+    def test_set_name(self):
+        try:
+            get_name = _thread._get_name
+            set_name = _thread.set_name
+        except AttributeError:
+            self.skipTest("need thread._get_name() and thread.set_name()")
+
+        work_name = None
+        def work():
+            nonlocal work_name
+            work_name = get_name()
+
+        # name not too long to fit into Linux 15 bytes limit
+        name = "CustomName"
+
+        thread = threading.Thread(target=work, name=name)
+        thread.start()
+        thread.join()
+        self.assertEqual(work_name, name)
+
 
 class InterruptMainTests(unittest.TestCase):
     def check_interrupt_main_with_signal_handler(self, signum):
