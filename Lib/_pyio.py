@@ -2523,12 +2523,10 @@ class TextIOWrapper(TextIOBase):
                 size = size_index()
         decoder = self._decoder or self._get_decoder()
         if size < 0:
-
             chunk = self.buffer.read()
             if chunk is None:
                 raise BlockingIOError("Unexpected None encountered. This may be due to non-blocking I/O or an issue "
                                       "with the underlying I/O implementation.")
-
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(chunk, final=True))
