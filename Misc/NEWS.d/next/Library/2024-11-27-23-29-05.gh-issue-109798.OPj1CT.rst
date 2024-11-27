@@ -1,0 +1,2 @@
+Update error messages to be the same in :mod:`datetime`. Patch by Semyon
+Moroz.
