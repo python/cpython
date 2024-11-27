@@ -486,6 +486,13 @@ operator
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
 os
 --
 
