@@ -11,6 +11,7 @@ from copy import copy
 
 from test.support import (
     captured_stdout,
+    is_android,
     is_apple_mobile,
     is_wasi,
     PythonSymlink,
@@ -25,8 +26,9 @@ import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes)
-from sysconfig.__main__ import _main, _parse_makefile
+                       _expand_vars, _get_preferred_schemes,
+                       is_python_build, _PROJECT_BASE)
+from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
 import _sysconfig
@@ -39,6 +41,7 @@ class TestSysConfig(unittest.TestCase):
 
     def setUp(self):
         super(TestSysConfig, self).setUp()
+        self.maxDiff = None
         self.sys_path = sys.path[:]
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -624,6 +627,32 @@ class TestSysConfig(unittest.TestCase):
         # prefix/exec_prefix Makefile variables, so we use them in the comparison.
         self.assertNotEqual(data['prefix'], data['base_prefix'])
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
+
+    @unittest.skipIf(os.name != 'posix', '_sysconfig-vars JSON file is only available on POSIX')
+    @unittest.skipIf(is_wasi, "_sysconfig-vars JSON file currently isn't available on WASI")
+    @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS change the prefix')
+    def test_sysconfigdata_json(self):
+        if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
+            data_dir = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
+        elif is_python_build():
+            data_dir = os.path.join(_PROJECT_BASE, _get_pybuilddir())
+        else:
+            data_dir = sys._stdlib_dir
+
+        json_data_path = os.path.join(data_dir, _get_json_data_name())
+
+        with open(json_data_path) as f:
+            json_config_vars = json.load(f)
+
+        system_config_vars = get_config_vars()
+
+        # Ignore keys in the check
+        for key in ('projectbase', 'srcdir'):
+            json_config_vars.pop(key)
+            system_config_vars.pop(key)
+
+        self.assertEqual(system_config_vars, json_config_vars)
+
 
 class MakefileTests(unittest.TestCase):
 
