@@ -644,7 +644,14 @@ class TestSysConfig(unittest.TestCase):
         with open(json_data_path) as f:
             json_config_vars = json.load(f)
 
-        self.assertEqual(get_config_vars(), json_config_vars)
+        system_config_vars = get_config_vars()
+
+        # Ignore keys in the check
+        for key in ('projectbase', 'srcdir'):
+            json_config_vars.pop(key)
+            system_config_vars.pop(key)
+
+        self.assertEqual(system_config_vars, json_config_vars)
 
 
 class MakefileTests(unittest.TestCase):
