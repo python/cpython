@@ -318,6 +318,8 @@ or on combining URL components into a URL string.
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows to restore the URL that was parsed with option
    ``allow_none=True``.
+   By default, *keep_empty* is true if *parts* is the result of the
+   :func:`urlparse` call with ``allow_none=True``.
 
    .. versionchanged:: 3.14
       Added the *keep_empty* parameter.
@@ -417,6 +419,8 @@ or on combining URL components into a URL string.
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows to restore the URL that was parsed with option
    ``allow_none=True``.
+   By default, *keep_empty* is true if *parts* is the result of the
+   :func:`urlsplit` call with ``allow_none=True``.
 
    .. versionchanged:: 3.14
       Added the *keep_empty* parameter.
@@ -461,10 +465,8 @@ or on combining URL components into a URL string.
 
 
    .. versionchanged:: 3.5
-      Behavior updated to match the semantics defined in :rfc:`3986`.
 
-   .. versionchanged:: 3.14
-      Added the *keep_empty* parameter.
+      Behavior updated to match the semantics defined in :rfc:`3986`.
 
 
 .. function:: urldefrag(url, *, allow_none=False)
@@ -588,12 +590,13 @@ These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
 previous section, as well as an additional method:
 
-.. method:: urllib.parse.SplitResult.geturl(*, keep_empty=False)
+.. method:: urllib.parse.SplitResult.geturl()
 
    Return the re-combined version of the original URL as a string. This may
    differ from the original URL in that the scheme may be normalized to lower
    case and empty components may be dropped. Specifically, empty parameters,
-   queries, and fragment identifiers will be removed unless *keep_empty* is true.
+   queries, and fragment identifiers will be removed unless the URL was parsed
+   with ``allow_none=True``.
 
    For :func:`urldefrag` results, only empty fragment identifiers will be removed.
    For :func:`urlsplit` and :func:`urlparse` results, all noted changes will be
@@ -611,11 +614,8 @@ previous section, as well as an additional method:
       >>> r2.geturl()
       'http://www.Python.org/doc/'
       >>> r3 = urlsplit(url, allow_none=True)
-      >>> r1.geturl(keep_empty=True)
-      'http://www.Python.org/doc/'
-
-   .. versionchanged:: 3.14
-      Added the *keep_empty* parameter.
+      >>> r3.geturl()
+      'http://www.Python.org/doc/#'
 
 
 The following classes provide the implementations of the structured parse

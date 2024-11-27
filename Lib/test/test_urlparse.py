@@ -3,6 +3,7 @@ import sys
 import unicodedata
 import unittest
 import urllib.parse
+from urllib.parse import urlparse, urlsplit, urlunparse, urlunsplit
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -119,23 +120,50 @@ class UrlParseTestCase(unittest.TestCase):
             return tuple(self._encode(x) for x in s)
         return s
 
-    def checkRoundtrips(self, url, parsed, split, url2=None, *, allow_none=True):
+    def checkRoundtrips(self, url, parsed, split, url2=None):
         if url2 is None:
             url2 = url
-        result = urllib.parse.urlparse(url, allow_none=allow_none)
+        self.checkRoundtrips1(url, parsed, split, allow_none=True)
+        empty = url[:0]
+        parsed = tuple(x or empty for x in parsed)
+        split = tuple(x or empty for x in split)
+        self.checkRoundtrips1(url, parsed, split, url2, allow_none=False)
+
+        result = urlparse(url, allow_none=True)
+        self.assertEqual(urlunparse(result, keep_empty=False), url2)
+        self.assertEqual(urlunparse(tuple(result), keep_empty=False), url2)
+        result = urlparse(url, allow_none=False)
+        with self.assertRaises(ValueError):
+            urlunparse(result, keep_empty=True)
+        urlunparse(tuple(result), keep_empty=True)
+
+        result = urlsplit(url, allow_none=True)
+        self.assertEqual(urlunsplit(result, keep_empty=False), url2)
+        self.assertEqual(urlunsplit(tuple(result), keep_empty=False), url2)
+        result = urlsplit(url, allow_none=False)
+        with self.assertRaises(ValueError):
+            urlunsplit(result, keep_empty=True)
+        urlunsplit(tuple(result), keep_empty=True)
+
+    def checkRoundtrips1(self, url, parsed, split, url2=None, *, allow_none):
+        if url2 is None:
+            url2 = url
+        result = urlparse(url, allow_none=allow_none)
         self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
-             result.params, result.query, result.fragment)
+            result.params, result.query, result.fragment)
         self.assertSequenceEqual(t, parsed)
         # put it back together and it should be the same
-        result2 = urllib.parse.urlunparse(result, keep_empty=allow_none)
-        self.assertSequenceEqual(result2, url2)
-        self.assertSequenceEqual(result2, result.geturl(keep_empty=allow_none))
+        result2 = urlunparse(result)
+        self.assertEqual(result2, url2)
+        self.assertEqual(result2, result.geturl())
+        self.assertEqual(urlunparse(result, keep_empty=allow_none), url2)
+        self.assertEqual(urlunparse(tuple(result), keep_empty=allow_none), result2)
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
-        result3 = urllib.parse.urlparse(result.geturl(keep_empty=allow_none), allow_none=allow_none)
-        self.assertEqual(result3.geturl(keep_empty=allow_none), result.geturl(keep_empty=allow_none))
+        result3 = urlparse(result.geturl(), allow_none=allow_none)
+        self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
@@ -149,18 +177,19 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result3.port,     result.port)
 
         # check the roundtrip using urlsplit() as well
-        result = urllib.parse.urlsplit(url, allow_none=allow_none)
+        result = urlsplit(url, allow_none=allow_none)
         self.assertSequenceEqual(result, split)
         t = (result.scheme, result.netloc, result.path,
-             result.query, result.fragment)
+            result.query, result.fragment)
         self.assertSequenceEqual(t, split)
-        result2 = urllib.parse.urlunsplit(result, keep_empty=allow_none)
-        self.assertSequenceEqual(result2, url2)
-        self.assertSequenceEqual(result2, result.geturl(keep_empty=allow_none))
+        result2 = urlunsplit(result)
+        self.assertEqual(result2, url2)
+        self.assertEqual(result2, result.geturl())
+        self.assertEqual(urlunsplit(tuple(result), keep_empty=allow_none), result2)
 
         # check the fixpoint property of re-parsing the result of geturl()
-        result3 = urllib.parse.urlsplit(result.geturl(keep_empty=allow_none), allow_none=allow_none)
-        self.assertEqual(result3.geturl(keep_empty=allow_none), result.geturl(keep_empty=allow_none))
+        result3 = urlsplit(result.geturl(), allow_none=allow_none)
+        self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
@@ -288,32 +317,28 @@ class UrlParseTestCase(unittest.TestCase):
             ]
         for url, parsed, split in str_cases + bytes_cases:
             with self.subTest(url):
-                self.checkRoundtrips(url, parsed, split, allow_none=True)
-                empty = url[:0]
-                parsed = tuple(x or empty for x in parsed)
-                split = tuple(x or empty for x in split)
-                self.checkRoundtrips(url, parsed, split, allow_none=False)
+                self.checkRoundtrips(url, parsed, split)
 
     def test_roundtrips_normalization(self):
         str_cases = [
             ('///path/to/file',
-             '///path/to/file',
+             '/path/to/file',
              (None, '', '/path/to/file', None, None, None),
              (None, '', '/path/to/file', None, None)),
             ('scheme:///path/to/file',
-             'scheme:///path/to/file',
+             'scheme:/path/to/file',
              ('scheme', '', '/path/to/file', None, None, None),
              ('scheme', '', '/path/to/file', None, None)),
             ('file:/tmp/junk.txt',
-             'file:/tmp/junk.txt',
+             'file:///tmp/junk.txt',
              ('file', None, '/tmp/junk.txt', None, None, None),
              ('file', None, '/tmp/junk.txt', None, None)),
             ('http:/tmp/junk.txt',
-             'http:/tmp/junk.txt',
+             'http:///tmp/junk.txt',
              ('http', None, '/tmp/junk.txt', None, None, None),
              ('http', None, '/tmp/junk.txt', None, None)),
             ('https:/tmp/junk.txt',
-             'https:/tmp/junk.txt',
+             'https:///tmp/junk.txt',
              ('https', None, '/tmp/junk.txt', None, None, None),
              ('https', None, '/tmp/junk.txt', None, None)),
         ]
@@ -371,9 +396,9 @@ class UrlParseTestCase(unittest.TestCase):
                 relurlb2 = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb))
                 self.assertEqual(urllib.parse.urljoin(baseb, relurlb2), expectedb)
 
-            relurl3 = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl, allow_none=True), keep_empty=True)
+            relurl3 = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl, allow_none=True))
             self.assertEqual(urllib.parse.urljoin(base, relurl3), expected)
-            relurlb3 = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb, allow_none=True), keep_empty=True)
+            relurlb3 = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb, allow_none=True))
             self.assertEqual(urllib.parse.urljoin(baseb, relurlb3), expectedb)
 
     def test_unparse_parse(self):
@@ -796,7 +821,7 @@ class UrlParseTestCase(unittest.TestCase):
                         url = url.rstrip(hash)
                         if frag is None:
                             frag = url[:0]
-                    self.assertEqual(result.geturl(keep_empty=allow_none), url)
+                    self.assertEqual(result.geturl(), url)
                     self.assertEqual(result, (defrag, frag))
                     self.assertEqual(result.url, defrag)
                     self.assertEqual(result.fragment, frag)

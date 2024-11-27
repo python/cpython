@@ -267,11 +267,27 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         return hostname, port
 
 
-_DefragResultBase = namedtuple('_DefragResultBase', 'url fragment')
-_SplitResultBase = namedtuple(
-    '_SplitResultBase', 'scheme netloc path query fragment')
-_ParseResultBase = namedtuple(
-    '_ParseResultBase', 'scheme netloc path params query fragment')
+_UNSPECIFIED = ['not specified']
+_ALLOW_NONE_DEFAULT = False
+
+class _DefragResultBase(namedtuple('_DefragResultBase', 'url fragment')):
+    def geturl(self):
+        if self.fragment or (self.fragment is not None and
+                             getattr(self, '_keep_empty', _ALLOW_NONE_DEFAULT)):
+            return self.url + self._HASH + self.fragment
+        else:
+            return self.url
+
+class _SplitResultBase(namedtuple(
+    '_SplitResultBase', 'scheme netloc path query fragment')):
+    def geturl(self):
+        return urlunsplit(self)
+
+class _ParseResultBase(namedtuple(
+    '_ParseResultBase', 'scheme netloc path params query fragment')):
+    def geturl(self):
+        return urlunparse(self)
+
 
 _DefragResultBase.__doc__ = """
 DefragResult(url, fragment)
@@ -339,45 +355,27 @@ _ParseResultBase.fragment.__doc__ = _SplitResultBase.fragment.__doc__
 # retained since deprecating it isn't worth the hassle
 ResultBase = _NetlocResultMixinStr
 
-_ALLOW_NONE_DEFAULT = False
-
 # Structured result objects for string data
 class DefragResult(_DefragResultBase, _ResultMixinStr):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        if self.fragment or (keep_empty and self.fragment is not None):
-            return self.url + '#' + self.fragment
-        else:
-            return self.url
+    _HASH = '#'
 
 class SplitResult(_SplitResultBase, _NetlocResultMixinStr):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        return urlunsplit(self, keep_empty=keep_empty)
 
 class ParseResult(_ParseResultBase, _NetlocResultMixinStr):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        return urlunparse(self, keep_empty=keep_empty)
 
 # Structured result objects for bytes data
 class DefragResultBytes(_DefragResultBase, _ResultMixinBytes):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        if self.fragment or (keep_empty and self.fragment is not None):
-            return self.url + b'#' + self.fragment
-        else:
-            return self.url
+    _HASH = b'#'
 
 class SplitResultBytes(_SplitResultBase, _NetlocResultMixinBytes):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        return urlunsplit(self, keep_empty=keep_empty)
 
 class ParseResultBytes(_ParseResultBase, _NetlocResultMixinBytes):
     __slots__ = ()
-    def geturl(self, *, keep_empty=_ALLOW_NONE_DEFAULT):
-        return urlunparse(self, keep_empty=keep_empty)
 
 # Set up the encode/decode result pairs
 def _fix_result_transcoding():
@@ -424,7 +422,9 @@ def urlparse(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_D
         if query is None: query = ''
         if fragment is None: fragment = ''
     result = ParseResult(scheme, netloc, url, params, query, fragment)
-    return _coerce_result(result)
+    result = _coerce_result(result)
+    result._keep_empty = allow_none
+    return result
 
 def _urlparse(url, scheme=None, allow_fragments=True):
     scheme, netloc, url, query, fragment = _urlsplit(url, scheme, allow_fragments)
@@ -513,8 +513,10 @@ def urlsplit(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_D
         if netloc is None: netloc = ''
         if query is None: query = ''
         if fragment is None: fragment = ''
-    v = SplitResult(scheme, netloc, url, query, fragment)
-    return _coerce_result(v)
+    result = SplitResult(scheme, netloc, url, query, fragment)
+    result = _coerce_result(result)
+    result._keep_empty = allow_none
+    return result
 
 def _urlsplit(url, scheme=None, allow_fragments=True):
     # Only lstrip url as some applications rely on preserving trailing space.
@@ -551,13 +553,20 @@ def _urlsplit(url, scheme=None, allow_fragments=True):
     _checknetloc(netloc)
     return (scheme, netloc, url, query, fragment)
 
-def urlunparse(components, *, keep_empty=_ALLOW_NONE_DEFAULT):
+def urlunparse(components, *, keep_empty=_UNSPECIFIED):
     """Put a parsed URL back together again.  This may result in a
     slightly different, but equivalent URL, if the URL that was parsed
     originally had redundant delimiters, e.g. a ? with an empty query
-    (the draft states that these are equivalent)."""
+    (the draft states that these are equivalent) and keep_empty is false
+    or components is the result of the urlparse() call with allow_none=False."""
     scheme, netloc, url, params, query, fragment, _coerce_result = (
                                                   _coerce_args(*components))
+    if keep_empty is _UNSPECIFIED:
+        keep_empty = getattr(components, '_keep_empty', _ALLOW_NONE_DEFAULT)
+    elif keep_empty and not getattr(components, '_keep_empty', True):
+        raise ValueError('Cannot distinguish between empty and not defined '
+                         'URI components in the result of parsing URL with '
+                         'allow_none=False')
     if not keep_empty:
         if not netloc:
             if scheme and scheme in uses_netloc and (not url or url[:1] == '/'):
@@ -572,14 +581,22 @@ def urlunparse(components, *, keep_empty=_ALLOW_NONE_DEFAULT):
         url = "%s;%s" % (url, params)
     return _coerce_result(_urlunsplit(scheme, netloc, url, query, fragment))
 
-def urlunsplit(components, *, keep_empty=_ALLOW_NONE_DEFAULT):
+def urlunsplit(components, *, keep_empty=_UNSPECIFIED):
     """Combine the elements of a tuple as returned by urlsplit() into a
     complete URL as a string. The data argument can be any five-item iterable.
     This may result in a slightly different, but equivalent URL, if the URL that
     was parsed originally had unnecessary delimiters (for example, a ? with an
-    empty query; the RFC states that these are equivalent)."""
+    empty query; the RFC states that these are equivalent) and keep_empty
+    is false or components is the result of the urlsplit() call with
+    allow_none=False."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
+    if keep_empty is _UNSPECIFIED:
+        keep_empty = getattr(components, '_keep_empty', _ALLOW_NONE_DEFAULT)
+    elif keep_empty and not getattr(components, '_keep_empty', True):
+        raise ValueError('Cannot distinguish between empty and not defined '
+                         'URI components in the result of parsing URL with '
+                         'allow_none=False')
     if not keep_empty:
         if not netloc:
             if scheme and scheme in uses_netloc and (not url or url[:1] == '/'):
@@ -692,7 +709,9 @@ def urldefrag(url, *, allow_none=_ALLOW_NONE_DEFAULT):
         frag = None
         defrag = url
     if not allow_none and frag is None: frag = ''
-    return _coerce_result(DefragResult(defrag, frag))
+    result = _coerce_result(DefragResult(defrag, frag))
+    result._keep_empty = allow_none
+    return result
 
 _hexdig = '0123456789ABCDEFabcdef'
 _hextobyte = None
