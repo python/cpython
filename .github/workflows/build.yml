@@ -249,10 +249,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
-        include:
-          - os: ubuntu-24.04-aarch64
-            if: ${{ github.repository_owner != 'python' }}
+        os:
+        - ubuntu-24.04
+        - ubuntu-24.04-aarch64
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        exclude:
+        - os: ubuntu-24.04-aarch64
+          is-fork: true
         openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -432,10 +436,14 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       matrix:
-        os: [ubuntu-24.04]
-        include:
-          - os: ubuntu-24.04-aarch64
-            if: ${{ github.repository_owner != 'python' }}
+        os:
+        - ubuntu-24.04
+        - ubuntu-24.04-aarch64
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        exclude:
+        - os: ubuntu-24.04-aarch64
+          is-fork: true
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
