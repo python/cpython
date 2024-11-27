@@ -2377,12 +2377,8 @@ _thread__get_name_impl(PyObject *module)
 {
     char name[17];
     size_t size = Py_ARRAY_LENGTH(name) - 1;
-#ifdef __APPLE__
-    pthread_getname_np(name, size);
-#else
     pthread_t thread = pthread_self();
     pthread_getname_np(thread, name, size);
-#endif
     name[size] = 0;
     return PyUnicode_DecodeFSDefault(name);
 }
