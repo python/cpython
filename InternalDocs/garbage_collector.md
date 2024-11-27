@@ -16,7 +16,7 @@ count field can be examined using the `sys.getrefcount()` function (notice that 
 value returned by this function is always 1 more as the function also has a reference
 to the object when called):
 
-```pycon
+```python
     >>> x = object()
     >>> sys.getrefcount(x)
     2
@@ -31,7 +31,7 @@ to the object when called):
 The main problem with the reference counting scheme is that it does not handle reference
 cycles. For instance, consider this code:
 
-```pycon
+```python
     >>> container = []
     >>> container.append(container)
     >>> sys.getrefcount(container)
@@ -198,7 +198,7 @@ the case of a circular linked list which has one link referenced by a
 variable `A`, and one self-referencing object which is completely
 unreachable:
 
-```pycon
+```python
     >>> import gc
 
     >>> class Link:
@@ -438,7 +438,7 @@ These thresholds can be examined using the
 [`gc.get_threshold()`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
 function:
 
-```pycon
+```python
     >>> import gc
     >>> gc.get_threshold()
     (700, 10, 10)
@@ -448,7 +448,7 @@ The content of these generations can be examined using the
 `gc.get_objects(generation=NUM)` function and collections can be triggered
 specifically in a generation by calling `gc.collect(generation=NUM)`.
 
-```pycon
+```python
     >>> import gc
     >>> class MyObj:
     ...     pass
@@ -562,7 +562,7 @@ The garbage collector module provides the Python function `is_tracked(obj)`, whi
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
 
-```pycon
+```python
       >>> gc.is_tracked(0)
       False
       >>> gc.is_tracked("a")
