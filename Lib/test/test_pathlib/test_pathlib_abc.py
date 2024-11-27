@@ -2284,7 +2284,8 @@ class DummyPathTest(DummyPurePathTest):
     def test_glob_empty_pattern(self):
         P = self.cls
         p = P(self.base)
-        self.assertEqual(list(p.glob("")), [p])
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(""))
         self.assertEqual(list(p.glob(".")), [p / "."])
         self.assertEqual(list(p.glob("./")), [p / "./"])
 

@@ -680,6 +680,8 @@ class PathBase(PurePathBase):
         anchor, parts = pattern._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not parts:
+            raise ValueError(f"Unacceptable pattern: {pattern!r}")
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
         return select(self)
 
