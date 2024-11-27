@@ -41,6 +41,7 @@ class TestSysConfig(unittest.TestCase):
 
     def setUp(self):
         super(TestSysConfig, self).setUp()
+        self.maxDiff = None
         self.sys_path = sys.path[:]
         # patching os.uname
         if hasattr(os, 'uname'):
