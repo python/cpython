@@ -342,8 +342,7 @@ _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
         return NULL;
     }
 
-    if (size != (Py_ssize_t) strlen(str))
-    {
+    if (size != (Py_ssize_t)strlen(str)) {
         PyErr_SetString(PyExc_ValueError, "found embedded NULL character");
         return NULL;
     }
