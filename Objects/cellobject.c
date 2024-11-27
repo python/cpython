@@ -83,6 +83,17 @@ cell_dealloc(PyObject *self)
 }
 
 static PyObject *
+cell_compare_impl(PyObject *a, PyObject *b, int op)
+{
+    if (a != NULL && b != NULL) {
+        return PyObject_RichCompare(a, b, op);
+    }
+    else {
+        Py_RETURN_RICHCOMPARE(b == NULL, a == NULL, op);
+    }
+}
+
+static PyObject *
 cell_richcompare(PyObject *a, PyObject *b, int op)
 {
     /* neither argument should be NULL, unless something's gone wrong */
@@ -96,15 +107,10 @@ cell_richcompare(PyObject *a, PyObject *b, int op)
     PyObject *b_ref = PyCell_GetRef((PyCellObject *)b);
 
     /* compare cells by contents; empty cells come before anything else */
-    if (a_ref == NULL) {
-        a_ref = Py_None;
-    }
-    if (b_ref == NULL) {
-        b_ref = Py_None;
-    }
-    PyObject *res = PyObject_RichCompare(a_ref, b_ref, op);
-    Py_DECREF(a_ref);
-    Py_DECREF(b_ref);
+    PyObject *res = cell_compare_impl(a_ref, b_ref, op);
+
+    Py_XDECREF(a_ref);
+    Py_XDECREF(b_ref);
     return res;
 }
 
