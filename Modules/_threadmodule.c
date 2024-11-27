@@ -2377,8 +2377,12 @@ static PyObject *
 _thread_set_name_impl(PyObject *module, const char *name)
 /*[clinic end generated code: output=f051ce549bcd6b8e input=7e29bbdbfb046a04]*/
 {
+#ifdef __APPLE__
+    pthread_setname_np(name);
+#else
     pthread_t thread = pthread_self();
     pthread_setname_np(thread, name);
+#endif
     Py_RETURN_NONE;
 }
 #endif  // HAVE_PTHREAD_SETNAME_NP
