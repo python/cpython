@@ -66,8 +66,8 @@ In-memory text streams are also available as :class:`StringIO` objects::
 
 .. note::
 
-   When working with a non-blocking stream, be aware that operations on text I/O objects
-   might raise a :exc:`BlockingIOError` if the stream cannot perform a read operation
+   When working with a non-blocking stream, be aware that read operations on text I/O objects
+   might raise a :exc:`BlockingIOError` if the stream cannot perform the operation
    immediately.
 
 
