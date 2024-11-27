@@ -5303,9 +5303,7 @@ Test_meth_coexist_impl(TestObj *self)
 Test.property
 [clinic start generated code]*/
 
-#if defined(Test_property_HAS_DOCSTR) && !defined(Test_property_DOCSTR)
-#  define Test_property_DOCSTR Test_property__doc__
-#elif !defined(Test_property_DOCSTR)
+#if !defined(Test_property_DOCSTR)
 #  define Test_property_DOCSTR NULL
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
@@ -5326,16 +5324,14 @@ Test_property_get(TestObj *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=6badc79669979e96 input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=7cadd0f539805266 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
 Test.property
 [clinic start generated code]*/
 
-#if defined(Test_property_HAS_DOCSTR) && !defined(Test_property_DOCSTR)
-#  define Test_property_DOCSTR Test_property__doc__
-#elif !defined(Test_property_DOCSTR)
+#if !defined(Test_property_DOCSTR)
 #  define Test_property_DOCSTR NULL
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
@@ -5360,7 +5356,7 @@ Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=da7d5420a9ff8507 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=e4342fe9bb1d7817 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
