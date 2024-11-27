@@ -95,10 +95,12 @@ jobs:
             architecture: aarch64
             runner: ubuntu-24.04-aarch64
             compiler: gcc
+            if: ${{ github.repository_owner != 'python' }}
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-24.04-aarch64
             compiler: clang
+            if: ${{ github.repository_owner != 'python' }}
     env:
       CC: ${{ matrix.compiler }}
     steps:
