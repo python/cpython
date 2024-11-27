@@ -778,6 +778,7 @@ than raw I/O does.
       EOF or if the read call would block in non-blocking mode.
 
       .. note::
+
          When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
          may be raised if a read operation cannot be completed immediately.
 
@@ -791,6 +792,7 @@ than raw I/O does.
          The *size* argument is now optional.
 
       .. note::
+
          When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
          may be raised if a read operation cannot be completed immediately.
 
@@ -1022,6 +1024,7 @@ Text I/O
       The *encoding* argument now supports the ``"locale"`` dummy encoding name.
 
    .. note::
+
       When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
       may be raised if a read operation cannot be completed immediately.
 
