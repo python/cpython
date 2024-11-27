@@ -86,13 +86,13 @@ Module contents
 
    The parameters to ``@dataclass`` are:
 
-   - *init*: If true (the default), a :meth:`~object.__init__` method will be
+   - *init*: If ``True`` (the default), a :meth:`~object.__init__` method will be
      generated.
 
      If the class already defines :meth:`!__init__`, this parameter is
      ignored.
 
-   - *repr*: If true (the default), a :meth:`~object.__repr__` method will be
+   - *repr*: If ``True`` (the default), a :meth:`~object.__repr__` method will be
      generated.  The generated repr string will have the class name and
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
@@ -102,7 +102,7 @@ Module contents
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
 
-   - *eq*: If true (the default), an :meth:`~object.__eq__` method will be
+   - *eq*: If ``True`` (the default), an :meth:`~object.__eq__` method will be
      generated.  This method compares the class as if it were a tuple
      of its fields, in order.  Both instances in the comparison must
      be of the identical type.
@@ -110,7 +110,7 @@ Module contents
      If the class already defines :meth:`!__eq__`, this parameter is
      ignored.
 
-   - *order*: If true (the default is ``False``), :meth:`~object.__lt__`,
+   - *order*: If ``True`` (the default is ``False``), :meth:`~object.__lt__`,
      :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
      generated.  These compare the class as if it were a tuple of its
      fields, in order.  Both instances in the comparison must be of the
@@ -157,21 +157,21 @@ Module contents
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
-   - *frozen*: If true (the default is ``False``), assigning to fields will
+   - *frozen*: If ``True`` (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
 
-   - *match_args*: If true (the default is ``True``), the
+   - *match_args*: If ``True`` (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
      non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
-     :meth:`!__init__` is not generated, see above).  If false, or if
+     :meth:`!__init__` is not generated, see above).  If ``False``, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
 
     .. versionadded:: 3.10
 
-   - *kw_only*: If true (the default value is ``False``), then all
+   - *kw_only*: If ``True`` (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
@@ -183,7 +183,7 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - *slots*: If true (the default is ``False``), :attr:`~object.__slots__` attribute
+   - *slots*: If ``True`` (the default is ``False``), :attr:`~object.__slots__` attribute
      will be generated and new class will be returned instead of the original one.
      If :attr:`!__slots__` is already defined in the class, then :exc:`TypeError`
      is raised.
@@ -207,7 +207,7 @@ Module contents
        base class :attr:`!__slots__` may be any iterable, but *not* an iterator.
 
 
-   - *weakref_slot*: If true (the default is ``False``), add a slot
+   - *weakref_slot*: If ``True`` (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
      :func:`weakref-able <weakref.ref>`.
      It is an error to specify ``weakref_slot=True``
@@ -264,14 +264,14 @@ Module contents
      fields with mutable default values, as discussed below.  It is an
      error to specify both *default* and *default_factory*.
 
-   - *init*: If true (the default), this field is included as a
+   - *init*: If ``True`` (the default), this field is included as a
      parameter to the generated :meth:`~object.__init__` method.
 
-   - *repr*: If true (the default), this field is included in the
+   - *repr*: If ``True`` (the default), this field is included in the
      string returned by the generated :meth:`~object.__repr__` method.
 
-   - *hash*: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`~object.__hash__` method.  If false,
+   - *hash*: This can be a bool or ``None``.  If ``True``, this field is
+     included in the generated :meth:`~object.__hash__` method.  If ``False``,
      this field is excluded from the generated :meth:`~object.__hash__`.
      If ``None`` (the default), use the value of *compare*: this would
      normally be the expected behavior, since a field should be included
@@ -284,7 +284,7 @@ Module contents
      fields that contribute to the type's hash value.  Even if a field
      is excluded from the hash, it will still be used for comparisons.
 
-   - *compare*: If true (the default), this field is included in the
+   - *compare*: If ``True`` (the default), this field is included in the
      generated equality and comparison methods (:meth:`~object.__eq__`,
      :meth:`~object.__gt__`, et al.).
 
@@ -296,7 +296,7 @@ Module contents
      Multiple third-parties can each have their own key, to use as a
      namespace in the metadata.
 
-   - *kw_only*: If true, this field will be marked as keyword-only.
+   - *kw_only*: If ``True``, this field will be marked as keyword-only.
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
