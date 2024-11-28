@@ -31,8 +31,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Run sccache-cache on push
-      if: github.event_name == 'push'
+    - name: Run sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.6
       with:
         version: "v0.8.2"
