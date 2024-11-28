@@ -39,6 +39,7 @@ jobs:
     - name: Install Homebrew dependencies
       run: |
         brew install pkg-config openssl@3.0 xz gdbm tcl-tk@8 make
+        # Because alternate versions are not symlinked into place by default:
         brew link tcl-tk@8
     - name: Configure CPython
       run: |
