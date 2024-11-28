@@ -199,6 +199,31 @@ zero bytes.
    If *p* is ``NULL``, no operation is performed.
 
 
+The following type-oriented macros are provided for convenience.  Note  that
+*TYPE* refers to any C type.
+
+.. c:macro:: PyMem_RawNew(TYPE, n)
+
+   Same as :c:func:`PyMem_RawMalloc`, but allocates ``(n * sizeof(TYPE))``
+   bytes of memory.  Returns a pointer cast to ``TYPE*``.  The memory will
+   not have been initialized in any way.
+
+   .. versionadded:: next
+
+
+.. c:macro:: PyMem_RawResize(p, TYPE, n)
+
+   Same as :c:func:`PyMem_RawRealloc`, but the memory block is resized to
+   ``(n * sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``.
+   On return, *p* will be a pointer to the new memory area, or ``NULL`` in
+   the event of failure.
+
+   This is a C preprocessor macro; *p* is always reassigned.  Save the original
+   value of *p* to avoid losing memory when handling errors.
+
+   .. versionadded:: next
+
+
 .. _memoryinterface:
 
 Memory Interface

@@ -60,20 +60,21 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
  * overflow checking is always done.
  */
 
-#define PyMem_New(type, n) \
-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
-        ( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
+#define PyMem_New(TYPE, N)                          \
+    (((size_t)(N) <= PY_SSIZE_T_MAX / sizeof(TYPE)) \
+        ? (TYPE *)PyMem_Malloc((N) * sizeof(TYPE))  \
+        : NULL)
 
 /*
- * The value of (p) is always clobbered by this macro regardless of success.
- * The caller MUST check if (p) is NULL afterwards and deal with the memory
- * error if so.  This means the original value of (p) MUST be saved for the
+ * The value of (PTR) is always clobbered by this macro regardless of success.
+ * The caller MUST check if (PTR) is NULL afterwards and deal with the memory
+ * error if so.  This means the original value of (PTR) MUST be saved for the
  * caller's memory error handler to not lose track of it.
  */
-#define PyMem_Resize(p, type, n) \
-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
-        (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
-
+#define PyMem_Resize(PTR, TYPE, N)                          \
+    ((PTR) = ((size_t)(N) <= PY_SSIZE_T_MAX / sizeof(TYPE)) \
+        ? (TYPE *)PyMem_Realloc((PTR), (N) * sizeof(TYPE)) \
+        : NULL)
 
 // Deprecated aliases only kept for backward compatibility.
 // PyMem_Del and PyMem_DEL are defined with no parameter to be able to use
@@ -86,7 +87,6 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #define PyMem_Del(p)              PyMem_Free((p))
 #define PyMem_DEL(p)              PyMem_Free((p))
 
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 // Memory allocator which doesn't require the GIL to be held.
 // Usually, it's just a thin wrapper to functions of the standard C library:
@@ -96,6 +96,18 @@ PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#define PyMem_RawNew(TYPE, N)                           \
+    (((size_t)(N) <= PY_SSIZE_T_MAX / sizeof(TYPE))     \
+        ? (TYPE *)PyMem_RawMalloc((N) * sizeof(TYPE))   \
+        : NULL)
+
+#define PyMem_RawResize(PTR, TYPE, N)                           \
+    ((PTR) = ((size_t)(N) <= PY_SSIZE_T_MAX / sizeof(TYPE))     \
+        ? (TYPE *)PyMem_RawRealloc((PTR), (N) * sizeof(TYPE))   \
+        : NULL)
 #endif
 
 #ifndef Py_LIMITED_API

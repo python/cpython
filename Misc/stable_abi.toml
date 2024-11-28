@@ -2540,3 +2540,7 @@
     added = '3.14'
 [function.PyType_Freeze]
     added = '3.14'
+[macro.PyMem_RawNew]
+    added = '3.14'
+[macro.PyMem_RawResize]
+    added = '3.14'
