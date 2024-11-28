@@ -1609,7 +1609,6 @@ static PyObject *
 methodcaller_vectorcall(
         methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
 {
-    //printf("methodcaller_vectorcall\n");
     if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
@@ -1619,21 +1618,16 @@ methodcaller_vectorcall(
     Py_ssize_t number_of_arguments = PyTuple_GET_SIZE(mc->args) +
         (mc->vectorcall_kwnames? PyTuple_GET_SIZE(mc->vectorcall_kwnames):0);
 
-    //printf("methodcaller_vectorcall: number_of_arguments %ld\n", number_of_arguments);
-
     PyObject *tmp_args[_METHODCALLER_MAX_ARGS];
     tmp_args[0] = args[0];
-    tmp_args[1] = Py_None;
-    if (number_of_arguments) {
-        assert(1 + number_of_arguments <= _METHODCALLER_MAX_ARGS);
-        memcpy(tmp_args + 1, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments);
-    }
+    assert(1 + number_of_arguments <= _METHODCALLER_MAX_ARGS);
+    memcpy(tmp_args + 1, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments);
+
     PyObject *result = PyObject_VectorcallMethod(
             mc->name, tmp_args,
             (1 + PyTuple_GET_SIZE(mc->args)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
             mc->vectorcall_kwnames);
 
-    //printf("methodcaller_vectorcall done\n");
     return result;
 }
 
@@ -1643,8 +1637,6 @@ static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     PyObject* kwds = mc->kwds;
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    //    printf("_methodcaller_initialize_vectorcall: nargs %ld, vectorcall_args size \n", nargs, nargs + (kwds ? PyDict_Size(kwds) : 0));
-
     mc->vectorcall_args = PyMem_Calloc(
         nargs + (kwds ? PyDict_Size(kwds) : 0),
         sizeof(PyObject*));
@@ -1712,7 +1704,6 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _PyUnicode_InternMortal(interp, &name);
     mc->name = name;
 
-    //printf("methodcaller_new: %ld \n", PyTuple_GET_SIZE(args));
     mc->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (mc->args == NULL) {
         Py_DECREF(mc);
