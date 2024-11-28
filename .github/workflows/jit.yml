@@ -1,6 +1,9 @@
 name: JIT
 on:
   pull_request:
+    branches:
+    - 'main'
+    - '3.*'
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
@@ -9,6 +12,9 @@ on:
       - '!**/*.md'
       - '!**/*.ini'
   push:
+    branches:
+    - 'main'
+    - '3.*'
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
