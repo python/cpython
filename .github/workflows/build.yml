@@ -101,14 +101,6 @@ jobs:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.6
-        with:
-          version: "v0.8.2"
-      - name: Configure CC and CXX environment variables
-        run: |
-          echo "CC=sccache gcc" >> "$GITHUB_ENV"
-          echo "CXX=sccache gcc" >> "$GITHUB_ENV"
       - name: Restore config.cache
         uses: actions/cache@v4
         with:
@@ -117,6 +109,12 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
+      - name: Start sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.6
+      - name: Configure CC and CXX environment variables
+        run: |
+          echo "CC=sccache gcc" >> "$GITHUB_ENV"
+          echo "CXX=sccache gcc" >> "$GITHUB_ENV"
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library

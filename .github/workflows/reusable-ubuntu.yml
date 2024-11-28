@@ -25,22 +25,20 @@ jobs:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
-      TERM: linux
       SCCACHE_GHA_ENABLED: "true"
+      TERM: linux
     steps:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Run sccache-cache
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Start sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.6
-      with:
-        version: "v0.8.2"
     - name: Configure CC and CXX environment variables
       run: |
         echo "CC=sccache gcc" >> "$GITHUB_ENV"
         echo "CXX=sccache gcc" >> "$GITHUB_ENV"
-    - name: Install dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
