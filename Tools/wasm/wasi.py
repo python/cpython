@@ -173,13 +173,6 @@ def wasi_sdk_env(context):
     env = {"CC": "clang", "CPP": "clang-cpp", "CXX": "clang++",
            "AR": "llvm-ar", "RANLIB": "ranlib"}
 
-    # sccache available? wire it up!
-    # used in GHA CI via .github/workflows/reusable-wasi.yaml
-    if subprocess.call(["sccache", "--version"], stderr=subprocess.DEVNULL) == 0:
-        env["CC"] = f'sccache {env["CC"]}'
-        env["CPP"] = f'sccache {env["CPP"]}'
-        env["CXX"] = f'sccache {env["CXX"]}'
-
     for env_var, binary_name in list(env.items()):
         env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)
 
