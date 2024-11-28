@@ -2152,6 +2152,11 @@ class MiscTestCase(unittest.TestCase):
             # Test long non-ASCII name (truncated)
             create_test("x" * (limit - 1) + "é€"),
         ]
+        if os_helper.FS_NONASCII:
+            tests.append(create_test(f"nonascii:{os_helper.FS_NONASCII}"))
+        if os_helper.TESTFN_UNENCODABLE:
+            tests.append(create_test(os_helper.TESTFN_UNENCODABLE))
+
         for name, expected in tests:
             with self.subTest(name=name, expected=expected):
                 work_name = None
