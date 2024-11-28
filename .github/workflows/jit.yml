@@ -64,11 +64,6 @@ jobs:
           - 19
         is-fork:  # only used for the exclusion trick
         - ${{ github.repository_owner != 'python' }}
-        exclude:
-        - target: aarch64-unknown-linux-gnu/gcc
-          is-fork: true
-        - target: aarch64-unknown-linux-gnu/clang
-          is-fork: true
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -106,6 +101,11 @@ jobs:
             architecture: aarch64
             runner: ubuntu-24.04-aarch64
             compiler: clang
+        exclude:
+        - target: aarch64-unknown-linux-gnu/gcc
+          is-fork: true
+        - target: aarch64-unknown-linux-gnu/clang
+          is-fork: true
     env:
       CC: ${{ matrix.compiler }}
     steps:
