@@ -1596,8 +1596,6 @@ to sockets.
 
 .. method:: socket.ioctl(control, option)
 
-   :platform: Windows
-
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface.  Please refer to the `Win32 documentation
    <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
@@ -1609,8 +1607,11 @@ to sockets.
    Currently only the following control codes are supported:
    ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
 
+   .. availability:: Windows
+
    .. versionchanged:: 3.6
       ``SIO_LOOPBACK_FAST_PATH`` was added.
+
 
 .. method:: socket.listen([backlog])
 
