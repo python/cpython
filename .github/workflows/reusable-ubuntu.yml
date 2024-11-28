@@ -25,7 +25,6 @@ jobs:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
-      SCCACHE_GHA_ENABLED: "true"
       TERM: linux
     steps:
     - uses: actions/checkout@v4
@@ -35,10 +34,11 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Start sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.6
-    - name: Configure CC and CXX environment variables
+    - name: Configure CC and CXX env vars
       run: |
         echo "CC=sccache gcc" >> "$GITHUB_ENV"
         echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"

@@ -25,7 +25,6 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
-      SCCACHE_GHA_ENABLED: "true"
       TERM: linux
     runs-on: ${{ inputs.os }}
     steps:
@@ -44,10 +43,11 @@ jobs:
         brew link tcl-tk@8
     - name: Start sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.6
-    - name: Configure CC and CXX environment variables
+    - name: Configure CC and CXX env vars
       run: |
         echo "CC=sccache clang" >> "$GITHUB_ENV"
         echo "CXX=sccache clang" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \

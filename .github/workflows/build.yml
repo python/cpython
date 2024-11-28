@@ -92,8 +92,6 @@ jobs:
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    env:
-      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -111,10 +109,11 @@ jobs:
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Start sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.6
-      - name: Configure CC and CXX environment variables
+      - name: Configure CC and CXX env vars
         run: |
           echo "CC=sccache gcc" >> "$GITHUB_ENV"
           echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -286,13 +285,13 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
+    - name: Configure CC and CXX env vars
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
+        echo "CC=sccache gcc" >> "$GITHUB_ENV"
+        echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
@@ -339,13 +338,13 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
+    - name: Configure CC and CXX env vars
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
+        echo "CC=sccache gcc" >> "$GITHUB_ENV"
+        echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -468,14 +467,13 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
+    - name: Configure CC and CXX env vars
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
+        echo "CC=sccache gcc" >> "$GITHUB_ENV"
+        echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
