@@ -1762,7 +1762,6 @@ methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 static PyObject *
 methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
 {
-    printf("methodcaller_call\n");
     PyObject *method, *obj, *result;
 
     if (!_PyArg_NoKeywords("methodcaller", kw))
