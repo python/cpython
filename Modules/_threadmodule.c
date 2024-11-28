@@ -2378,7 +2378,12 @@ _thread__get_name_impl(PyObject *module)
     char name[17];
     size_t size = Py_ARRAY_LENGTH(name) - 1;
     pthread_t thread = pthread_self();
-    pthread_getname_np(thread, name, size);
+    int rc = pthread_getname_np(thread, name, size);
+    if (rc) {
+        errno = rc;
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
     name[size] = 0;
     return PyUnicode_DecodeFSDefault(name);
 }
@@ -2400,11 +2405,27 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
     const char *name = PyBytes_AS_STRING(name_obj);
 #ifdef __APPLE__
-    pthread_setname_np(name);
+    int rc = pthread_setname_np(name);
 #else
-    pthread_t thread = pthread_self();
-    pthread_setname_np(thread, name);
+
+#if defined(__linux__)
+    // Truncate to 16 bytes including the NUL byte
+    char buffer[16];
+    size_t len = strlen(name);
+    if (len > 15) {
+        memcpy(buffer, name, 15);
+        buffer[15] = 0;
+        name = buffer;
+    }
 #endif
+
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, name);
+#endif
+    if (rc) {
+        errno = rc;
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
     Py_RETURN_NONE;
 }
 #endif  // HAVE_PTHREAD_SETNAME_NP
