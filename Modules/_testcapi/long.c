@@ -145,6 +145,7 @@ static PyObject *
 layout_to_dict(const PyLongLayout *layout)
 {
     PyObject *dict = PyDict_New();
+
     if (dict == NULL) {
         goto error;
     }
