@@ -724,7 +724,7 @@ Export API
 
    .. c:member:: uint8_t negative
 
-      1 if the number is negative, 0 otherwise.
+      ``1`` if the number is negative, ``0`` otherwise.
       Only valid if :c:member:`digits` is not ``NULL``.
 
    .. c:member:: Py_ssize_t ndigits
@@ -741,11 +741,11 @@ Export API
 
    Export a Python :class:`int` object.
 
-   On success, set *\*export_long* and return 0.
-   On error, set an exception and return -1.
+   On success, set *\*export_long* and return ``0``.
+   On error, set an exception and return ``-1``.
 
-   If *export_long.digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must be
-   called when the export is no longer needed.
+   If *export_long->digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must
+   be called when the export is no longer needed.
 
 
 .. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
@@ -793,6 +793,9 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    On success, return a Python :class:`int` object.
    On error, set an exception and return ``NULL``.
+
+   The function takes care of normalizing the digits and converts the object
+   to a compact integer if needed.
 
 
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)

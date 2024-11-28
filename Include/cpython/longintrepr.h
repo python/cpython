@@ -142,20 +142,9 @@ _PyLong_CompactValue(const PyLongObject *op)
 /* --- Import/Export API -------------------------------------------------- */
 
 typedef struct PyLongLayout {
-    // Bits per digit
     uint8_t bits_per_digit;
-
-    // Digit size in bytes
     uint8_t digit_size;
-
-    // Digits order:
-    // * 1 for most significant digit first
-    // * -1 for least significant first
     int8_t digits_order;
-
-    // Digit endianness:
-    // * 1 for most significant byte first (big endian)
-    // * -1 for least significant first (little endian)
     int8_t endianness;
 } PyLongLayout;
 
