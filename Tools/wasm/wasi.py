@@ -180,6 +180,8 @@ def wasi_sdk_env(context):
     if wasi_sdk_path != pathlib.Path("/opt/wasi-sdk"):
         for compiler in compiler_env_names:
             env[compiler] += f" --sysroot={sysroot}"
+
+    # sccache used in CI via .github/workflows/reusable-wasi.yaml
     if subprocess.call(("sccache", "--version"), stderr=subprocess.DEVNULL) == 0:
         for compiler in compiler_env_names:
             env[compiler] = 'sccache ' + env[compiler]
