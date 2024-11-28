@@ -517,7 +517,10 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
                             "key length exceeds UINT32_MAX");       \
             return NULL;                                            \
         }                                                           \
-        GET_BUFFER_VIEW_OR_ERROUT((MSG), &msgview);                 \
+        GET_BUFFER_VIEW_OR_ERROR(                                   \
+            (MSG), &msgview,                                        \
+            PyBuffer_Release(&keyview); return NULL                 \
+        );                                                          \
         if (!has_uint32_t_buffer_length(&msgview)) {                \
             PyBuffer_Release(&msgview);                             \
             PyBuffer_Release(&keyview);                             \
