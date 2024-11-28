@@ -56,8 +56,7 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            'bindtextdomain', 'find', 'translation', 'install',
            'textdomain', 'dgettext', 'dngettext', 'gettext',
            'ngettext', 'pgettext', 'dpgettext', 'npgettext',
-           'dnpgettext'
-           ]
+           'dnpgettext', 'c2py']
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 
