@@ -23,6 +23,11 @@
 #  define Py_EVP_MD_free(MD)                    do {} while(0)
 #endif
 
+// --- Reusable error messages ------------------------------------------------
+
+#define INVALID_KEY_LENGTH  "key length exceeds UINT32_MAX"
+#define INVALID_MSG_LENGTH  "message length exceeds UINT32_MAX"
+
 // --- HMAC underlying hash function static information -----------------------
 
 #define Py_hmac_hash_max_digest_size            64
@@ -507,39 +512,36 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
  * lest an OverflowError is raised. The Python implementation takes care
  * of dispatching to the OpenSSL implementation in this case.
  */
-#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                    \
-    do {                                                            \
-        Py_buffer keyview, msgview;                                 \
-        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);                 \
-        if (!has_uint32_t_buffer_length(&keyview)) {                \
-            PyBuffer_Release(&keyview);                             \
-            PyErr_SetString(PyExc_OverflowError,                    \
-                            "key length exceeds UINT32_MAX");       \
-            return NULL;                                            \
-        }                                                           \
-        GET_BUFFER_VIEW_OR_ERROR(                                   \
-            (MSG), &msgview,                                        \
-            PyBuffer_Release(&keyview); return NULL                 \
-        );                                                          \
-        if (!has_uint32_t_buffer_length(&msgview)) {                \
-            PyBuffer_Release(&msgview);                             \
-            PyBuffer_Release(&keyview);                             \
-            PyErr_SetString(PyExc_OverflowError,                    \
-                            "message length exceeds UINT32_MAX");   \
-            return NULL;                                            \
-        }                                                           \
-        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];            \
-        Py_hmac_## HACL_HID ##_compute_func(                        \
-            out,                                                    \
-            (uint8_t *)keyview.buf, (uint32_t)keyview.len,          \
-            (uint8_t *)msgview.buf, (uint32_t)msgview.len           \
-        );                                                          \
-        PyBuffer_Release(&msgview);                                 \
-        PyBuffer_Release(&keyview);                                 \
-        return PyBytes_FromStringAndSize(                           \
-            (const char *)out,                                      \
-            Py_hmac_## HACL_HID ##_digest_size                      \
-        );                                                          \
+#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                        \
+    do {                                                                \
+        Py_buffer keyview, msgview;                                     \
+        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);                     \
+        if (!has_uint32_t_buffer_length(&keyview)) {                    \
+            PyBuffer_Release(&keyview);                                 \
+            PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);   \
+            return NULL;                                                \
+        }                                                               \
+        GET_BUFFER_VIEW_OR_ERROR((MSG), &msgview,                       \
+                                 PyBuffer_Release(&keyview);            \
+                                 return NULL);                          \
+        if (!has_uint32_t_buffer_length(&msgview)) {                    \
+            PyBuffer_Release(&msgview);                                 \
+            PyBuffer_Release(&keyview);                                 \
+            PyErr_SetString(PyExc_OverflowError, INVALID_MSG_LENGTH);   \
+            return NULL;                                                \
+        }                                                               \
+        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];                \
+        Py_hmac_## HACL_HID ##_compute_func(                            \
+            out,                                                        \
+            (uint8_t *)keyview.buf, (uint32_t)keyview.len,              \
+            (uint8_t *)msgview.buf, (uint32_t)msgview.len               \
+        );                                                              \
+        PyBuffer_Release(&msgview);                                     \
+        PyBuffer_Release(&keyview);                                     \
+        return PyBytes_FromStringAndSize(                               \
+            (const char *)out,                                          \
+            Py_hmac_## HACL_HID ##_digest_size                          \
+        );                                                              \
     } while (0)
 
 /*[clinic input]
