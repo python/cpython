@@ -2106,22 +2106,43 @@ class MiscTestCase(unittest.TestCase):
     def test_set_name(self):
         try:
             get_name = _thread._get_name
-            set_name = _thread.set_name
+            _thread.set_name
         except AttributeError:
             self.skipTest("need thread._get_name() and thread.set_name()")
 
-        work_name = None
         def work():
             nonlocal work_name
             work_name = get_name()
 
         # name not too long to fit into Linux 15 bytes limit
         name = "CustomName"
+        tests = [(name, name)]
 
-        thread = threading.Thread(target=work, name=name)
-        thread.start()
-        thread.join()
-        self.assertEqual(work_name, name)
+        if sys.platform == "linux":
+            # On Linux, set_name() truncates the name to 15 bytes.
+
+            # Test ASCII name
+            name = "x" * 100
+            tests.append((name, name[:15]))
+
+            # Test non-ASCII name
+            name = "x" * 14 + "é€"
+            try:
+                encoded = os.fsencode(name)
+            except UnicodeEncodeError:
+                # name cannot be encoded to the filesystem encoding
+                pass
+            else:
+                expected = os.fsdecode(encoded[:15])
+                tests.append((name, expected))
+
+        for name, expected in tests:
+            with self.subTest(name=name, expected=expected):
+                work_name = None
+                thread = threading.Thread(target=work, name=name)
+                thread.start()
+                thread.join()
+                self.assertEqual(work_name, expected)
 
 
 class InterruptMainTests(unittest.TestCase):
