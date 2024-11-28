@@ -1032,7 +1032,12 @@ class Thread:
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
             if _set_name is not None and self._name:
-                _set_name(self._name)
+                try:
+                    _set_name(self._name)
+                except UnicodeEncodeError:
+                    # cannot set the name if the name cannot be encoded
+                    # to the filesystem encoding
+                    pass
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self

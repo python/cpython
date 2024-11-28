@@ -2114,57 +2114,52 @@ class MiscTestCase(unittest.TestCase):
             nonlocal work_name
             work_name = get_name()
 
-        # name not too long to fit into Linux 15 bytes limit
-        name = "CustomName"
-        tests = [(name, name)]
-
-        # Test non-ASCII short name
-        name = "namé€"
-        try:
-            os.fsencode(name)
-        except UnicodeEncodeError:
-            # name cannot be encoded to the filesystem encoding
-            pass
-        else:
-            tests.append((name, name))
-
+        # On Linux and macOS, set_name() truncates the name to,
+        # respectively, 15 and 63 bytes.
         if sys.platform == "linux":
-            limit = 15
+            truncate = 15
         elif sys.platform == "darwin":
-            limit = 63
+            truncate = 63
         else:
-            limit = None
+            truncate = None
+        limit = truncate or 100
 
-        if limit is not None:
-            # On Linux and macOS, set_name() truncates the name to,
-            # respectively, 15 and 63 bytes.
-
-            # Test ASCII name
-            name = "x" * 100
-            tests.append((name, name[:limit]))
-
-            # Test non-ASCII name
-            name = "x" * (limit - 1) + "é€"
+        def create_test(name):
             try:
                 encoded = os.fsencode(name)
             except UnicodeEncodeError:
-                # name cannot be encoded to the filesystem encoding
-                pass
+                expected = None
             else:
-                expected = os.fsdecode(encoded[:limit])
-                tests.append((name, expected))
-        else:
-            # Test long name
-            name = "x" * 100
-            tests.append((name, name))
+                if truncate is not None:
+                    expected = os.fsdecode(encoded[:truncate])
+                else:
+                    expected = name
+            return (name, expected)
 
+        tests = [
+            # test short ASCII name
+            create_test("CustomName"),
+
+            # test short non-ASCII name
+            create_test("namé€"),
+
+            # Test long ASCII names (not truncated)
+            create_test("x" * limit),
+
+            # Test long ASCII names (truncated)
+            create_test("x" * (limit + 10)),
+
+            # Test long non-ASCII name (truncated)
+            create_test("x" * (limit - 1) + "é€"),
+        ]
         for name, expected in tests:
             with self.subTest(name=name, expected=expected):
                 work_name = None
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
                 thread.join()
-                self.assertEqual(work_name, expected)
+                if expected is not None:
+                    self.assertEqual(work_name, expected)
 
 
 class InterruptMainTests(unittest.TestCase):
