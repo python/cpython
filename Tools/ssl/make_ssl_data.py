@@ -141,7 +141,7 @@ def main():
         ['git', 'describe', '--long', '--dirty'],
         cwd=args.srcdir,
         capture_output=True,
-        encoding='latin-1',
+        encoding='utf-8',
         check=True,
         )
     lines = [
