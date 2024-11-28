@@ -90,11 +90,7 @@ jobs:
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
             runner: ubuntu-24.04-aarch64
-        exclude:
-        - target: aarch64-unknown-linux-gnu/gcc
-          architecture: aarch64
-          runner: ubuntu-24.04-aarch64
-          is-fork: true
+            is-fork: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
