@@ -995,8 +995,8 @@
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
-            UNLOCK_OBJECT(list);
             Py_INCREF(res_o);
+            UNLOCK_OBJECT(list);
             PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
             PyStackRef_CLOSE(list_st);
             res = PyStackRef_FromPyObjectSteal(res_o);
