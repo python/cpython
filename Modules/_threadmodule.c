@@ -2375,7 +2375,8 @@ static PyObject *
 _thread__get_name_impl(PyObject *module)
 /*[clinic end generated code: output=20026e7ee3da3dd7 input=35cec676833d04c8]*/
 {
-    char name[17];
+    // Linux and macOS are limited to respectively 16 and 64 bytes
+    char name[100];
     size_t size = Py_ARRAY_LENGTH(name) - 1;
     pthread_t thread = pthread_self();
     int rc = pthread_getname_np(thread, name, size);
@@ -2405,20 +2406,25 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
     const char *name = PyBytes_AS_STRING(name_obj);
 #ifdef __APPLE__
-    int rc = pthread_setname_np(name);
-#else
+#  define NAME_LIMIT 63
+#elif defined(__linux__)
+#  define NAME_LIMIT 15
+#endif
 
-#if defined(__linux__)
-    // Truncate to 16 bytes including the NUL byte
-    char buffer[16];
+#ifdef NAME_LIMIT
+    // Truncate to NAME_LIMIT bytes + the NUL byte
+    char buffer[NAME_LIMIT + 1];
     size_t len = strlen(name);
-    if (len > 15) {
-        memcpy(buffer, name, 15);
-        buffer[15] = 0;
+    if (len > NAME_LIMIT) {
+        memcpy(buffer, name, NAME_LIMIT);
+        buffer[NAME_LIMIT] = 0;
         name = buffer;
     }
 #endif
 
+#ifdef __APPLE__
+    int rc = pthread_setname_np(name);
+#else
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
 #endif
@@ -2427,6 +2433,8 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     Py_RETURN_NONE;
+
+#undef NAME_LIMIT
 }
 #endif  // HAVE_PTHREAD_SETNAME_NP
 

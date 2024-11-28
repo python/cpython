@@ -2129,21 +2129,29 @@ class MiscTestCase(unittest.TestCase):
             tests.append((name, name))
 
         if sys.platform == "linux":
-            # On Linux, set_name() truncates the name to 15 bytes.
+            limit = 15
+        elif sys.platform == "darwin":
+            limit = 63
+        else:
+            limit = None
+
+        if limit is not None:
+            # On Linux and macOS, set_name() truncates the name to,
+            # respectively, 15 and 63 bytes.
 
             # Test ASCII name
             name = "x" * 100
-            tests.append((name, name[:15]))
+            tests.append((name, name[:limit]))
 
             # Test non-ASCII name
-            name = "x" * 14 + "é€"
+            name = "x" * (limit - 1) + "é€"
             try:
                 encoded = os.fsencode(name)
             except UnicodeEncodeError:
                 # name cannot be encoded to the filesystem encoding
                 pass
             else:
-                expected = os.fsdecode(encoded[:15])
+                expected = os.fsdecode(encoded[:limit])
                 tests.append((name, expected))
         else:
             # Test long name
