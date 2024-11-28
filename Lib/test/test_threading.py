@@ -2145,6 +2145,10 @@ class MiscTestCase(unittest.TestCase):
             else:
                 expected = os.fsdecode(encoded[:15])
                 tests.append((name, expected))
+        else:
+            # Test long name
+            name = "x" * 100
+            tests.append((name, name))
 
         for name, expected in tests:
             with self.subTest(name=name, expected=expected):
