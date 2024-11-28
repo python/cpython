@@ -181,6 +181,10 @@ class _ConnectionBase:
             finally:
                 self._handle = None
 
+    def _detach(self):
+        """Stop managing the underlying file descriptor or handle."""
+        self._handle = None
+
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
         self._check_closed()
