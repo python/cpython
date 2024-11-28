@@ -85,7 +85,7 @@ jobs:
             architecture: aarch64
             runner: ubuntu-24.04-aarch64
         exclude:
-        - runner: ubuntu-24.04-aarch64
+        - target: aarch64-unknown-linux-gnu/gcc
           is-fork: true
     steps:
       - uses: actions/checkout@v4
