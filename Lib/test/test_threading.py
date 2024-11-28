@@ -2118,6 +2118,16 @@ class MiscTestCase(unittest.TestCase):
         name = "CustomName"
         tests = [(name, name)]
 
+        # Test non-ASCII short name
+        name = "namé€"
+        try:
+            os.fsencode(name)
+        except UnicodeEncodeError:
+            # name cannot be encoded to the filesystem encoding
+            pass
+        else:
+            tests.append((name, name))
+
         if sys.platform == "linux":
             # On Linux, set_name() truncates the name to 15 bytes.
 
