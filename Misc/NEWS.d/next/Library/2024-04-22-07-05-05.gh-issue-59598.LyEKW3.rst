@@ -1,0 +1,1 @@
+Ignore leading whitespace in :func:`JSONDecoder.raw_decode`
