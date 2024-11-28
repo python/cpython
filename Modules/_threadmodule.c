@@ -2364,7 +2364,7 @@ Internal only. Return a non-zero integer that uniquely identifies the main threa
 of the main interpreter.");
 
 
-#ifdef HAVE_PTHREAD_SETNAME_NP
+#ifdef HAVE_PTHREAD_GETNAME_NP
 /*[clinic input]
 _thread._get_name
 
@@ -2387,7 +2387,7 @@ _thread__get_name_impl(PyObject *module)
     name[size] = 0;
     return PyUnicode_DecodeFSDefault(name);
 }
-#endif  // HAVE_PTHREAD_SETNAME_NP
+#endif  // HAVE_PTHREAD_GETNAME_NP
 
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
