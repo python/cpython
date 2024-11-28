@@ -81,9 +81,7 @@ _thread_set_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (!PyUnicode_FSConverter(args[0], &name_obj)) {
-        goto exit;
-    }
+    name_obj = args[0];
     return_value = _thread_set_name_impl(module, name_obj);
 
 exit:
@@ -99,4 +97,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=82f504f284712f68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37809e7cbdb7f7ef input=a9049054013a1b77]*/

@@ -2125,15 +2125,12 @@ class MiscTestCase(unittest.TestCase):
         limit = truncate or 100
 
         def create_test(name):
-            try:
-                encoded = os.fsencode(name)
-            except UnicodeEncodeError:
-                expected = None
+            if truncate is not None:
+                encoding = sys.getfilesystemencoding()
+                encoded = name.encode(encoding, "replace")
+                expected = os.fsdecode(encoded[:truncate])
             else:
-                if truncate is not None:
-                    expected = os.fsdecode(encoded[:truncate])
-                else:
-                    expected = name
+                expected = name
             return (name, expected)
 
         tests = [
@@ -2163,8 +2160,7 @@ class MiscTestCase(unittest.TestCase):
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
                 thread.join()
-                if expected is not None:
-                    self.assertEqual(work_name, expected)
+                self.assertEqual(work_name, expected)
 
 
 class InterruptMainTests(unittest.TestCase):

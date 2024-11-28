@@ -2395,16 +2395,33 @@ _thread__get_name_impl(PyObject *module)
 /*[clinic input]
 _thread.set_name
 
-    name as name_obj: object(converter="PyUnicode_FSConverter")
+    name as name_obj: object
 
 Set the name of the current thread.
 [clinic start generated code]*/
 
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
-/*[clinic end generated code: output=402b0c68e0c0daed input=a0459bd64f771808]*/
+/*[clinic end generated code: output=402b0c68e0c0daed input=b55d3d4279e2e831]*/
 {
-    const char *name = PyBytes_AS_STRING(name_obj);
+    if (!PyUnicode_Check(name_obj)) {
+        PyErr_Format(PyExc_TypeError, "expected str, got %T", name_obj);
+        return NULL;
+    }
+
+    const PyConfig *config = _Py_GetConfig();
+    char *encoding = Py_EncodeLocale(config->filesystem_encoding, NULL);
+    if (encoding == NULL) {
+        return NULL;
+    }
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
+    PyMem_Free(encoding);
+    if (name_encoded == NULL) {
+        return NULL;
+    }
+
+    const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef __APPLE__
 #  define NAME_LIMIT 63
 #elif defined(__linux__)
