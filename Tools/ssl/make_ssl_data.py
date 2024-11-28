@@ -14,7 +14,7 @@ The OpenSSL git checkout should be at a specific tag, using commands like:
     git switch --detach openssl-3.4.0
 
 
-After generating the definitions, the result with newest pre-existing file.
+After generating the definitions, compare the result with newest pre-existing file.
 You can use a command like:
 
     git diff --no-index Modules/_ssl_data_31.h Modules/_ssl_data_34.h
