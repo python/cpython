@@ -2410,8 +2410,16 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     }
 
     const PyConfig *config = _Py_GetConfig();
-    char *encoding = Py_EncodeLocale(config->filesystem_encoding, NULL);
-    if (encoding == NULL) {
+    char *encoding;
+    int res = _Py_EncodeUTF8Ex(config->filesystem_encoding, &encoding,
+                               NULL, NULL, 0, _Py_ERROR_STRICT);
+    if (res == -2) {
+        PyErr_Format(PyExc_RuntimeWarning,
+                     "cannot encode filesystem_encoding");
+        return NULL;
+    }
+    if (res < 0) {
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -2445,6 +2453,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
 #endif
+    Py_DECREF(name_encoded);
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);

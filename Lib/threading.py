@@ -1034,9 +1034,7 @@ class Thread:
             if _set_name is not None and self._name:
                 try:
                     _set_name(self._name)
-                except UnicodeEncodeError:
-                    # cannot set the name if the name cannot be encoded
-                    # to the filesystem encoding
+                except OSError:
                     pass
             self._started.set()
             with _active_limbo_lock:
