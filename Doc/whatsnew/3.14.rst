@@ -117,11 +117,14 @@ Added support for converting any objects that have the
 :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
 (Contributed by Serhiy Storchaka in :gh:`82017`.)
 
-io
-___
 
-* Reading text from a non-blocking stream with ``read`` may now raise a :exc:`BlockingIOError` if the operation cannot immediately return bytes.
-(Contributed by Giovanni Siragusa in :gh:`109523`.)
+io
+--
+
+* Reading text from a non-blocking stream with ``read`` may now raise a
+  :exc:`BlockingIOError` if the operation cannot immediately return bytes.
+  (Contributed by Giovanni Siragusa in :gh:`109523`.)
+
 
 json
 ----
