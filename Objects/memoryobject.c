@@ -1589,7 +1589,9 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     self->exports++;
+    Py_END_CRITICAL_SECTION();
 
     return 0;
 }
@@ -1598,7 +1600,9 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    Py_BEGIN_CRITICAL_SECTION(self);
     self->exports--;
+    Py_END_CRITICAL_SECTION();
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
