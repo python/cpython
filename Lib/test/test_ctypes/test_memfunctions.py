@@ -83,7 +83,7 @@ class MemFunctionsTest(unittest.TestCase):
         b = (c_byte * 10)()
 
         foreign_ptr = cast(b, c_void_p)
-        foreign_ptr_size = len(b)
+        size = len(b)
         for foreign_ptr in (
             b,
             cast(b, c_void_p),
@@ -91,8 +91,10 @@ class MemFunctionsTest(unittest.TestCase):
             addressof(b)
         ):
             with self.subTest(foreign_ptr=type(foreign_ptr).__name__):
-                v = memoryview_at(foreign_ptr, foreign_ptr_size)
+                b[:] = b"initialval"
+                v = memoryview_at(foreign_ptr, size)
                 self.assertIsInstance(v, memoryview)
+                self.assertEqual(bytes(v), b"initialval")
 
                 # test that writes to source buffer get reflected in memoryview
                 b[:] = b"0123456789"
@@ -107,6 +109,31 @@ class MemFunctionsTest(unittest.TestCase):
 
                 v0 = memoryview_at(foreign_ptr, 0)
                 self.assertEqual(bytes(v0), b'')
+
+    def test_memoryview_at_readonly(self):
+        b = (c_byte * 10)()
+
+        foreign_ptr = cast(b, c_void_p)
+        size = len(b)
+        for foreign_ptr in (
+            b,
+            cast(b, c_void_p),
+            byref(b),
+            addressof(b)
+        ):
+            with self.subTest(foreign_ptr=type(foreign_ptr).__name__):
+                b[:] = b"initialval"
+                v = memoryview_at(foreign_ptr, size, readonly=True)
+                self.assertIsInstance(v, memoryview)
+                self.assertEqual(bytes(v), b"initialval")
+
+                # test that writes to source buffer get reflected in memoryview
+                b[:] = b"0123456789"
+                self.assertEqual(bytes(v), b"0123456789")
+
+                # test that writes to the memoryview are blocked
+                with self.assertRaises(TypeError):
+                    v[:] = b"9876543210"
 
 if __name__ == "__main__":
     unittest.main()
