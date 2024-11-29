@@ -36,7 +36,7 @@ class TaskGroup:
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
-        self._stop_on_enter = False
+        self._cancel_on_enter = False
 
     def __repr__(self):
         info = ['']
@@ -63,8 +63,8 @@ class TaskGroup:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
         self._entered = True
-        if self._stop_on_enter:
-            self.stop()
+        if self._cancel_on_enter:
+            self.cancel()
 
         return self
 
@@ -281,24 +281,24 @@ class TaskGroup:
             self._parent_cancel_requested = True
             self._parent_task.cancel()
 
-    def stop(self):
-        """Stop the task group
+    def cancel(self):
+        """Cancel the task group
 
         `cancel()` will be called on any tasks in the group that aren't yet
         done, as well as the parent (body) of the group.  This will cause the
-        task group context manager to exit *without* a Cancelled exception
+        task group context manager to exit *without* `asyncio.CancelledError`
         being raised.
 
-        If `stop()` is called before entering the task group, the group will be
-        stopped upon entry.  This is useful for patterns where one piece of
+        If `cancel()` is called before entering the task group, the group will be
+        cancelled upon entry.  This is useful for patterns where one piece of
         code passes an unused TaskGroup instance to another in order to have
-        the ability to stop anything run within the group.
+        the ability to cancel anything run within the group.
 
-        `stop()` is idempotent and may be called after the task group has
+        `cancel()` is idempotent and may be called after the task group has
         already exited.
         """
         if not self._entered:
-            self._stop_on_enter = True
+            self._cancel_on_enter = True
             return
         if self._exiting and not self._tasks:
             return

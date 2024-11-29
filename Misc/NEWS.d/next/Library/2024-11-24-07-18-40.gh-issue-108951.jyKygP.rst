@@ -1,1 +1,1 @@
-Add :meth:`~asyncio.TaskGroup.stop`.
+Add :meth:`~asyncio.TaskGroup.cancel`.

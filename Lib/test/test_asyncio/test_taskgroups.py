@@ -997,43 +997,43 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
-    async def test_taskgroup_stop_children(self):
+    async def test_taskgroup_cancel_children(self):
         # (asserting that TimeoutError is not raised)
         async with asyncio.timeout(1):
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(asyncio.sleep(10))
                 tg.create_task(asyncio.sleep(10))
                 await asyncio.sleep(0)
-                tg.stop()
+                tg.cancel()
 
-    async def test_taskgroup_stop_body(self):
+    async def test_taskgroup_cancel_body(self):
         count = 0
         async with asyncio.TaskGroup() as tg:
-            tg.stop()
+            tg.cancel()
             count += 1
             await asyncio.sleep(0)
             count += 1
         self.assertEqual(count, 1)
 
-    async def test_taskgroup_stop_idempotent(self):
+    async def test_taskgroup_cancel_idempotent(self):
         count = 0
         async with asyncio.TaskGroup() as tg:
-            tg.stop()
-            tg.stop()
+            tg.cancel()
+            tg.cancel()
             count += 1
             await asyncio.sleep(0)
             count += 1
         self.assertEqual(count, 1)
 
-    async def test_taskgroup_stop_after_exit(self):
+    async def test_taskgroup_cancel_after_exit(self):
         async with asyncio.TaskGroup() as tg:
             await asyncio.sleep(0)
         # (asserting that exception is not raised)
-        tg.stop()
+        tg.cancel()
 
-    async def test_taskgroup_stop_before_enter(self):
+    async def test_taskgroup_cancel_before_enter(self):
         tg = asyncio.TaskGroup()
-        tg.stop()
+        tg.cancel()
         count = 0
         async with tg:
             count += 1
@@ -1041,9 +1041,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             count += 1
         self.assertEqual(count, 1)
 
-    async def test_taskgroup_stop_before_exception(self):
+    async def test_taskgroup_cancel_before_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):
-            parent_tg.stop()
+            parent_tg.cancel()
             raise RuntimeError
 
         with self.assertRaises(ExceptionGroup):
@@ -1051,12 +1051,12 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 tg.create_task(raise_exc(tg))
                 await asyncio.sleep(1)
 
-    async def test_taskgroup_stop_after_exception(self):
+    async def test_taskgroup_cancel_after_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):
             try:
                 raise RuntimeError
             finally:
-                parent_tg.stop()
+                parent_tg.cancel()
 
         with self.assertRaises(ExceptionGroup):
             async with asyncio.TaskGroup() as tg:

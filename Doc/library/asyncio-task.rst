@@ -342,21 +342,21 @@ and reliable way to wait for all tasks in the group to finish.
 
          Close the given coroutine if the task group is not active.
 
-   .. method:: stop()
+   .. method:: cancel()
 
-      Stop the task group.
+      Cancel the task group.
 
       :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
       aren't yet done, as well as the parent (body) of the group.  This will
       cause the task group context manager to exit *without*
       :exc:`asyncio.CancelledError` being raised.
 
-      If :meth:`stop` is called before entering the task group, the group will be
-      stopped upon entry.  This is useful for patterns where one piece of
+      If :meth:`cancel` is called before entering the task group, the group will be
+      cancelled upon entry.  This is useful for patterns where one piece of
       code passes an unused :class:`asyncio.TaskGroup` instance to another in order to have
-      the ability to stop anything run within the group.
+      the ability to cancel anything run within the group.
 
-      :meth:`stop` is idempotent and may be called after the task group has
+      :meth:`cancel` is idempotent and may be called after the task group has
       already exited.
 
       .. versionadded:: next
