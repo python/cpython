@@ -108,3 +108,7 @@ dgettext('domain')
 dngettext('domain', 'foo')
 dpgettext('domain', 'context')
 dnpgettext('domain', 'context', 'foo')
+
+# f-strings
+f"Hello, {_('world')}!"
+f"Hello, {ngettext('world', 'worlds', 3)}!"

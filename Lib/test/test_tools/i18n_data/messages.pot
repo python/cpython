@@ -91,3 +91,9 @@ msgstr[1] ""
 msgid "domain foo"
 msgstr ""
 
+#: messages.py:113 messages.py:114
+msgid "world"
+msgid_plural "worlds"
+msgstr[0] ""
+msgstr[1] ""
+
