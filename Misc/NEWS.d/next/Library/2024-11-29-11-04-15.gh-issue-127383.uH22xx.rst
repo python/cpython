@@ -1,0 +1,1 @@
+Add the latest ``RDS`` macro constants to the :mod:`socket`.
