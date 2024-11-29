@@ -664,7 +664,7 @@ check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
         PyErr_Format(PyExc_ValueError,
-                    "hour must be in 0..23, but got %i", h);
+                     "hour must be in 0..23, but got %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
