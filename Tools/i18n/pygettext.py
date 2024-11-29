@@ -371,20 +371,23 @@ class GettextVisitor(NodeVisitor):
         if (spec := self.options.keywords.get(funcname)) is None:
             return
 
-        args_len = len(node.args)
+        if max(spec) >= len(node.args):
+            msg = _('*** %(file)s:%(lineno)s: Expected at least %(count)d positional arguments, '
+                    'got: %(args_count)d')
+            print(msg.format(file=self.filename, lineno=node.lineno,
+                             count=max(spec) + 1, args_count=len(node.args)),
+                  file=sys.stderr)
+            return
+
         msg_data = {}
         for position, arg_type in spec.items():
-            if position >= args_len:
-                return
             arg = node.args[position]
             if not self._is_string_const(arg):
-                print(_(
-                    '*** %(file)s:%(lineno)s: Expected a string constant for argument "%(arg)s"'
-                    ) % {
-                    'arg': ast.unparse(arg),
-                    'file': self.filename,
-                    'lineno': arg.lineno
-                    }, file=sys.stderr)
+                msg = _('*** %(file)s:%(lineno)s: Expected a string constant for '
+                        'argument %(position)d, got: %(arg)s')
+                print(msg.format(file=self.filename, lineno=arg.lineno,
+                                 position=position + 1, arg=ast.unparse(arg)),
+                      file=sys.stderr)
                 return
             msg_data[arg_type] = arg.value
 
