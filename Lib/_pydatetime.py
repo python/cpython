@@ -545,7 +545,7 @@ def _isoweek_to_gregorian(year, week, day):
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
         raise TypeError("tzinfo.tzname() must return None or string, "
-                        "not '%s'" % type(name))
+                        "not '%s'" % type(name).__name__)
 
 # name is the offset-producing method, "utcoffset" or "dst".
 # offset is what it returned.
@@ -559,7 +559,8 @@ def _check_utc_offset(name, offset):
         return
     if not isinstance(offset, timedelta):
         raise TypeError("tzinfo.%s() must return None "
-                        "or timedelta, not '%s'" % (name, type(offset)))
+                        "or timedelta, not '%s'"
+                        % (name, type(offset).__name__))
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("offset must be a timedelta "
                          "strictly between -timedelta(hours=24) and "
@@ -597,7 +598,10 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
 
 def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
-        raise TypeError("tzinfo argument must be None or of a tzinfo subclass")
+        raise TypeError(
+            "tzinfo argument must be None or of a tzinfo subclass, "
+            f"not type '{type(tz).__name__}'"
+        )
 
 def _divide_and_round(a, b):
     """divide a by b and round result to the nearest integer
