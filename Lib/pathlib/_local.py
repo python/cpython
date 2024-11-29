@@ -542,6 +542,13 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def lstat(self):
+        """
+        Like stat(), except if the path points to a symlink, the symlink's
+        status information is returned, rather than its target's.
+        """
+        return os.lstat(self)
+
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
