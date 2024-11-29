@@ -120,8 +120,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* Include generated data (error codes) */
+/* See make_ssl_data.h for notes on adding a new version. */
 #if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
-#include "_ssl_data_31.h"
+#include "_ssl_data_34.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)

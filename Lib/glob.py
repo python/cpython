@@ -312,7 +312,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
-                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
