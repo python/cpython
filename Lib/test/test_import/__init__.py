@@ -1133,6 +1133,19 @@ except ImportError as e:
                 stdout, stderr = popen.communicate()
                 self.assertRegex(stdout, expected_error)
 
+    def test_create_dynamic_null(self):
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec:
+                name = "a\x00b"
+                origin = "abc"
+            _imp.create_dynamic(Spec())
+
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec2:
+                name = "abc"
+                origin = "a\x00b"
+            _imp.create_dynamic(Spec2())
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
