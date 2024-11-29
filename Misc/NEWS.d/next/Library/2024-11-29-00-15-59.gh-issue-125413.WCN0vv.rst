@@ -1,0 +1,2 @@
+Revert addition of :meth:`!pathlib.Path.scandir`. This method was added in
+3.14.0a2.

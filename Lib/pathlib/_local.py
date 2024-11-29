@@ -627,7 +627,7 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def scandir(self):
+    def _scandir(self):
         """Yield os.DirEntry objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
