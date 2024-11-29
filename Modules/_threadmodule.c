@@ -2409,22 +2409,12 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-    const PyConfig *config = _Py_GetConfig();
-    char *encoding;
-    int res = _Py_EncodeUTF8Ex(config->filesystem_encoding, &encoding,
-                               NULL, NULL, 0, _Py_ERROR_STRICT);
-    if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning,
-                     "cannot encode filesystem_encoding");
-        return NULL;
-    }
-    if (res < 0) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
-    PyMem_Free(encoding);
+    // Encode the thread name to the filesystem encoding using the "replace"
+    // error handler
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    char *encoding = interp->unicode.fs_codec.encoding;
+    PyObject *name_encoded;
+    name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
     if (name_encoded == NULL) {
         return NULL;
     }
