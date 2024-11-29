@@ -1,2 +1,0 @@
-:func:`ctypes.ARRAY` is now :term:`soft deprecated`: it no longer emits deprecation
-warnings and is not scheduled for removal.
