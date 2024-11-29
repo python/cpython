@@ -347,7 +347,7 @@ dis
 
 * Add the :option:`dis --specialized` command-line option to
   show specialized bytecode.
-  (Contributed by Bénédikt Tran in :gh:`XXX`.)
+  (Contributed by Bénédikt Tran in :gh:`127413`.)
 
 
 fractions
