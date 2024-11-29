@@ -1694,5 +1694,13 @@ class LongTest(unittest.TestCase):
         # GH-117195 -- This shouldn't crash
         object.__sizeof__(1)
 
+    def test_long_add_overallocate(self):
+        # see gh-100688
+        x = (MASK//2) * (MASK+1)
+        x2 = (MASK//2 + 1) * (MASK+1)
+        z = x + x2
+        self.assertEqual(x + x2, MASK * (MASK + 1))
+
+
 if __name__ == "__main__":
     unittest.main()
