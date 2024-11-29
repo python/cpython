@@ -1,0 +1,2 @@
+Add the :c:macro:`PyMem_RawNew` and :c:macro:`PyMem_RawResize` convenience
+macros to the limited C API. Patch by Bénédikt Tran.

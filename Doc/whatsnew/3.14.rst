@@ -915,7 +915,7 @@ New features
 
 * Add the :c:macro:`PyMem_RawNew` and :c:macro:`PyMem_RawResize` convenience
   macros to the limited C API.
-  (Contributed by Bénédikt Tran in :gh:`XXX`.)
+  (Contributed by Bénédikt Tran in :gh:`127415`.)
 
 
 Porting to Python 3.14
