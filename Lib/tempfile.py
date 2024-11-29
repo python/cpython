@@ -849,9 +849,9 @@ class SpooledTemporaryFile(_io.IOBase):
 
     def writelines(self, iterable):
         file = self._file
-        rv = file.writelines(iterable)
-        self._check(file)
-        return rv
+        for line in iterable:
+            file.write(line)
+            self._check(file)
 
     def detach(self):
         return self._file.detach()
