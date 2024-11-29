@@ -4,6 +4,7 @@ import operator
 import os
 import posixpath
 import sys
+import warnings
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -451,7 +452,6 @@ class PurePath(PurePathBase):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        import warnings
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
@@ -462,6 +462,9 @@ class PurePath(PurePathBase):
 
     def as_uri(self):
         """Return the path as a URI."""
+        msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
+               "for removal in Python 3.16. Use pathlib.Path.as_uri().")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
@@ -524,7 +527,6 @@ class Path(PathBase, PurePath):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
-    as_uri = PurePath.as_uri
 
     @classmethod
     def _unsupported_msg(cls, attribute):
@@ -899,6 +901,13 @@ class Path(PathBase, PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    def as_uri(self):
+        """Return the path as a URI."""
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+        from urllib.request import pathname2url
+        return 'file:' + pathname2url(str(self))
 
     @classmethod
     def from_uri(cls, uri):
