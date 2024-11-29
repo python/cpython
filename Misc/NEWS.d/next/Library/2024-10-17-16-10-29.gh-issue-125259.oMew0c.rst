@@ -1,1 +1,0 @@
-Fix the notes removal logic for errors thrown in enum initialization.
