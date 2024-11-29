@@ -27,6 +27,12 @@ class Bdb:
     that originate in a module that matches one of these patterns.
     Whether a frame is considered to originate in a certain module
     is determined by the __name__ in the frame globals.
+
+    Each Bdb instance holds breakpoints. Breakpoints are indexed by
+    number through self.bpbynumber and by (file, line) using
+    self.breaks. The former maps to a single instance of the Breakpoint
+    class, while the latter maps to a list of such instances, as
+    there may be more than one breakpoint per line.
     """
 
     def __init__(self, skip=None):
@@ -794,12 +800,6 @@ class Breakpoint:
 
     Implements temporary breakpoints, ignore counts, disabling and
     (re)-enabling, and conditionals.
-
-    Breakpoints are indexed by number through bpbynumber and by
-    the (file, line) tuple using bplist.  The former points to a
-    single instance of class Breakpoint.  The latter points to a
-    list of such instances since there may be more than one
-    breakpoint per line.
 
     When creating a breakpoint, its associated filename should be
     in canonical form.  If funcname is defined, a breakpoint hit will be
