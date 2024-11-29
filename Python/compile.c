@@ -31,9 +31,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -901,7 +903,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;

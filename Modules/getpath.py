@@ -420,7 +420,7 @@ if real_executable:
         # Only warn if the file actually exists and was unresolvable
         # Otherwise users who specify a fake executable may get spurious warnings.
         if isfile(real_executable):
-            warn(f'Failed to find real location of {base_executable}')
+            warn(f'Failed to find real location of {real_executable}')
 
 if not executable_dir and os_name == 'darwin' and library:
     # QUIRK: macOS checks adjacent to its library early
@@ -640,11 +640,20 @@ else:
 
 
 # For a venv, update the main prefix/exec_prefix but leave the base ones unchanged
-# XXX: We currently do not update prefix here, but it happens in site.py
-#if venv_prefix:
-#    base_prefix = prefix
-#    base_exec_prefix = exec_prefix
-#    prefix = exec_prefix = venv_prefix
+if venv_prefix:
+    if not base_prefix:
+        base_prefix = prefix
+    if not base_exec_prefix:
+        base_exec_prefix = exec_prefix
+    prefix = exec_prefix = venv_prefix
+
+
+# After calculating prefix and exec_prefix, use their values for base_prefix and
+# base_exec_prefix if they haven't been set.
+if not base_prefix:
+    base_prefix = prefix
+if not base_exec_prefix:
+    base_exec_prefix = exec_prefix
 
 
 # ******************************************************************************
@@ -679,7 +688,7 @@ elif not pythonpath_was_set:
         # QUIRK: POSIX uses the default prefix when in the build directory
         pythonpath.append(joinpath(PREFIX, ZIP_LANDMARK))
     else:
-        pythonpath.append(joinpath(prefix, ZIP_LANDMARK))
+        pythonpath.append(joinpath(base_prefix, ZIP_LANDMARK))
 
     if os_name == 'nt' and use_environment and winreg:
         # QUIRK: Windows also lists paths in the registry. Paths are stored
@@ -714,13 +723,13 @@ elif not pythonpath_was_set:
     # Then add any entries compiled into the PYTHONPATH macro.
     if PYTHONPATH:
         for p in PYTHONPATH.split(DELIM):
-            pythonpath.append(joinpath(prefix, p))
+            pythonpath.append(joinpath(base_prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
-    if not stdlib_dir and prefix:
-        stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
-    if not platstdlib_dir and exec_prefix:
-        platstdlib_dir = joinpath(exec_prefix, PLATSTDLIB_LANDMARK)
+    if not stdlib_dir and base_prefix:
+        stdlib_dir = joinpath(base_prefix, STDLIB_SUBDIR)
+    if not platstdlib_dir and base_exec_prefix:
+        platstdlib_dir = joinpath(base_exec_prefix, PLATSTDLIB_LANDMARK)
 
     if os_name == 'nt':
         # QUIRK: Windows generates paths differently
@@ -750,9 +759,13 @@ elif not pythonpath_was_set:
 
 # QUIRK: Non-Windows replaces prefix/exec_prefix with defaults when running
 # in build directory. This happens after pythonpath calculation.
+# Virtual environments using the build directory Python still keep their prefix.
 if os_name != 'nt' and build_prefix:
-    prefix = config.get('prefix') or PREFIX
-    exec_prefix = config.get('exec_prefix') or EXEC_PREFIX or prefix
+    if not venv_prefix:
+        prefix = config.get('prefix') or PREFIX
+        exec_prefix = config.get('exec_prefix') or EXEC_PREFIX or prefix
+    base_prefix = config.get('base_prefix') or PREFIX
+    base_exec_prefix = config.get('base_exec_prefix') or EXEC_PREFIX or base_prefix
 
 
 # ******************************************************************************
@@ -788,8 +801,8 @@ config['executable'] = executable
 config['base_executable'] = base_executable
 config['prefix'] = prefix
 config['exec_prefix'] = exec_prefix
-config['base_prefix'] = base_prefix or prefix
-config['base_exec_prefix'] = base_exec_prefix or exec_prefix
+config['base_prefix'] = base_prefix
+config['base_exec_prefix'] = base_exec_prefix
 
 config['platlibdir'] = platlibdir
 # test_embed expects empty strings, not None
