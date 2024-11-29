@@ -1510,11 +1510,11 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
                 GET_TD_SECONDS(offset) == 0 &&
                 GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
-            Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                          " strictly between -timedelta(hours=24) and"
                          " timedelta(hours=24),"
                          " not %R", offset);
+            Py_DECREF(offset);
             return NULL;
         }
     }
