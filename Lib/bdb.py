@@ -31,15 +31,17 @@ class Bdb:
 
     def __init__(self, skip=None):
         self.skip = set(skip) if skip else None
-        self.breaks = {}
+
+        self.next_bp_number = 1
+        self.breaks = {}        # self.breaks[file][line] -> list of breakpoints
+        self.bpbynumber = [None]    # Each entry of bpbynumber is None or an
+                                    # instance of Breakpoint. index 0 is unused.
         self.fncache = {}
         self.frame_trace_lines_opcodes = {}
         self.frame_returning = None
         self.trace_opcodes = False
         self.enterframe = None
         self.code_linenos = weakref.WeakKeyDictionary()
-
-        self._load_breaks()
 
     def canonic(self, filename):
         """Return canonical form of filename.
@@ -310,8 +312,8 @@ class Bdb:
             if lineno not in self.breaks[filename]:
                 return False
 
-        # flag says ok to delete temp. bp
-        (bp, flag) = effective(filename, lineno, frame)
+        # flag says if it's ok to delete temporary bp
+        (bp, flag) = self.effective(filename, lineno, frame)
         if bp:
             self.currentbp = bp.number
             if (flag and bp.temporary):
@@ -484,18 +486,43 @@ class Bdb:
         self.quitting = True
         sys.settrace(None)
 
+    def _add_bp(self, bp, filename, lineno):
+        """Add breakpoint to breaks and bpbynumber if not already there.
+        """
+        bp_linenos = self.breaks.setdefault(filename, {})
+        blist = bp_linenos.setdefault(lineno, [])
+
+        if bp in blist:
+            return
+
+        blist.append(bp)
+        self.bpbynumber.append(bp)
+        self.next_bp_number += 1
+
+    def _remove_bp(self, bp):
+        assert (
+            bp in self.bpbynumber
+            and bp.file in self.breaks
+            and bp.line in self.breaks[bp.file]
+            and bp in self.breaks[bp.file][bp.line]
+        ), f"Breakpoint {bp} not in breaks"
+
+        self.bpbynumber[bp.number] = None   # No longer in list
+        self.breaks[bp.file][bp.line].remove(bp)
+
+        if not self.breaks[bp.file][bp.line]:
+            # No more bp for this f:l combo
+            del self.breaks[bp.file][bp.line]
+
+        if not self.breaks[bp.file]:
+            del self.breaks[bp.file]
+
     # Derived classes and clients can call the following methods
     # to manipulate breakpoints.  These methods return an
     # error message if something went wrong, None if all is well.
     # Set_break prints out the breakpoint line and file:lineno.
     # Call self.get_*break*() to see the breakpoints or better
-    # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
-
-    def _add_to_breaks(self, filename, lineno):
-        """Add breakpoint to breaks, if not already there."""
-        bp_linenos = self.breaks.setdefault(filename, [])
-        if lineno not in bp_linenos:
-            bp_linenos.append(lineno)
+    # for bp in self.bpbynumber: if bp: bp.bpprint().
 
     def set_break(self, filename, lineno, temporary=False, cond=None,
                   funcname=None):
@@ -509,8 +536,10 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        self._add_to_breaks(filename, lineno)
-        bp = Breakpoint(filename, lineno, temporary, cond, funcname)
+
+        bp = Breakpoint(filename, lineno, self.next_bp_number, temporary, cond, funcname)
+        self._add_bp(bp, filename, lineno)
+
         # After we set a new breakpoint, we need to search through all frames
         # and set f_trace to trace_dispatch if there could be a breakpoint in
         # that frame.
@@ -520,30 +549,6 @@ class Bdb:
                 frame.f_trace = self.trace_dispatch
             frame = frame.f_back
         return None
-
-    def _load_breaks(self):
-        """Apply all breakpoints (set in other instances) to this one.
-
-        Populates this instance's breaks list from the Breakpoint class's
-        list, which can have breakpoints set by another Bdb instance. This
-        is necessary for interactive sessions to keep the breakpoints
-        active across multiple calls to run().
-        """
-        for (filename, lineno) in Breakpoint.bplist.keys():
-            self._add_to_breaks(filename, lineno)
-
-    def _prune_breaks(self, filename, lineno):
-        """Prune breakpoints for filename:lineno.
-
-        A list of breakpoints is maintained in the Bdb instance and in
-        the Breakpoint class.  If a breakpoint in the Bdb instance no
-        longer exists in the Breakpoint class, then it's removed from the
-        Bdb instance.
-        """
-        if (filename, lineno) not in Breakpoint.bplist:
-            self.breaks[filename].remove(lineno)
-        if not self.breaks[filename]:
-            del self.breaks[filename]
 
     def clear_break(self, filename, lineno):
         """Delete breakpoints for filename:lineno.
@@ -557,13 +562,12 @@ class Bdb:
             return 'There is no breakpoint at %s:%d' % (filename, lineno)
         # If there's only one bp in the list for that file,line
         # pair, then remove the breaks entry
-        for bp in Breakpoint.bplist[filename, lineno][:]:
-            bp.deleteMe()
-        self._prune_breaks(filename, lineno)
+        for bp in self.breaks[filename][lineno][:]:
+            self._remove_bp(bp)
         return None
 
     def clear_bpbynumber(self, arg):
-        """Delete a breakpoint by its index in Breakpoint.bpbynumber.
+        """Delete a breakpoint by its index in self.bpbynumber.
 
         If arg is invalid, return an error message.
         """
@@ -571,8 +575,7 @@ class Bdb:
             bp = self.get_bpbynumber(arg)
         except ValueError as err:
             return str(err)
-        bp.deleteMe()
-        self._prune_breaks(bp.file, bp.line)
+        self._remove_bp(bp)
         return None
 
     def clear_all_file_breaks(self, filename):
@@ -584,9 +587,9 @@ class Bdb:
         if filename not in self.breaks:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
-            blist = Breakpoint.bplist[filename, line]
+            blist = self.breaks[filename][line]
             for bp in blist:
-                bp.deleteMe()
+                self._remove_bp(bp)
         del self.breaks[filename]
         return None
 
@@ -597,14 +600,14 @@ class Bdb:
         """
         if not self.breaks:
             return 'There are no breakpoints'
-        for bp in Breakpoint.bpbynumber:
+        for bp in self.bpbynumber:
             if bp:
-                bp.deleteMe()
+                self._remove_bp(bp)
         self.breaks = {}
         return None
 
     def get_bpbynumber(self, arg):
-        """Return a breakpoint by its index in Breakpoint.bybpnumber.
+        """Return a breakpoint by its index in self.bybynumber.
 
         For invalid arg values or if the breakpoint doesn't exist,
         raise a ValueError.
@@ -616,7 +619,7 @@ class Bdb:
         except ValueError:
             raise ValueError('Non-numeric breakpoint number %s' % arg) from None
         try:
-            bp = Breakpoint.bpbynumber[number]
+            bp = self.bpbynumber[number]
         except IndexError:
             raise ValueError('Breakpoint number %d out of range' % number) from None
         if bp is None:
@@ -627,7 +630,8 @@ class Bdb:
         """Return True if there is a breakpoint for filename:lineno."""
         filename = self.canonic(filename)
         return filename in self.breaks and \
-            lineno in self.breaks[filename]
+            lineno in self.breaks[filename] and \
+            bool(self.breaks[filename][lineno])
 
     def get_breaks(self, filename, lineno):
         """Return all breakpoints for filename:lineno.
@@ -637,7 +641,7 @@ class Bdb:
         filename = self.canonic(filename)
         return filename in self.breaks and \
             lineno in self.breaks[filename] and \
-            Breakpoint.bplist[filename, lineno] or []
+            self.breaks[filename][lineno] or []
 
     def get_file_breaks(self, filename):
         """Return all lines with breakpoints for filename.
@@ -646,13 +650,13 @@ class Bdb:
         """
         filename = self.canonic(filename)
         if filename in self.breaks:
-            return self.breaks[filename]
+            return list(self.breaks[filename].keys())
         else:
             return []
 
     def get_all_breaks(self):
         """Return all breakpoints that are set."""
-        return self.breaks
+        return {f: list(self.breaks[f].keys()) for f in self.breaks}
 
     # Derived classes and clients can call the following method
     # to get a data structure representing a stack trace.
@@ -804,16 +808,7 @@ class Breakpoint:
     conditional breakpoint always counts a hit.
     """
 
-    # XXX Keeping state in the class is a mistake -- this means
-    # you cannot have more than one active Bdb instance.
-
-    next = 1        # Next bp to be assigned
-    bplist = {}     # indexed by (file, lineno) tuple
-    bpbynumber = [None] # Each entry is None or an instance of Bpt
-                # index 0 is unused, except for marking an
-                # effective break .... see effective()
-
-    def __init__(self, file, line, temporary=False, cond=None, funcname=None):
+    def __init__(self, file, line, number, temporary=False, cond=None, funcname=None):
         self.funcname = funcname
         # Needed if funcname is not None.
         self.func_first_executable_line = None
@@ -824,20 +819,7 @@ class Breakpoint:
         self.enabled = True
         self.ignore = 0
         self.hits = 0
-        self.number = Breakpoint.next
-        Breakpoint.next += 1
-        # Build the two lists
-        self.bpbynumber.append(self)
-        if (file, line) in self.bplist:
-            self.bplist[file, line].append(self)
-        else:
-            self.bplist[file, line] = [self]
-
-    @staticmethod
-    def clearBreakpoints():
-        Breakpoint.next = 1
-        Breakpoint.bplist = {}
-        Breakpoint.bpbynumber = [None]
+        self.number = number
 
     def deleteMe(self):
         """Delete the breakpoint from the list associated to a file:line.
