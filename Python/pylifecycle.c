@@ -1869,7 +1869,6 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
-    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1890,6 +1889,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
+    _PyDtoa_Fini(tstate->interp);
 
     /* Free any delayed free requests immediately */
     _PyMem_FiniDelayed(tstate->interp);
