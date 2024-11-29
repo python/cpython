@@ -346,43 +346,14 @@ class GettextVisitor(NodeVisitor):
         self.filename = filename
         self.messages = {}
 
-    def _key_for(self, msgid, msgctxt=None):
-        if msgctxt is not None:
-            return (msgctxt, msgid)
-        return msgid
+    def visit(self, node):
+        if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
+            self._extract_docstring(node)
+        super().visit(node)
 
-    def _get_funcname(self, node):
-        match node.func:
-            case ast.Name(id=id):
-                return id
-            case ast.Attribute(attr=attr):
-                return attr
-            case _:
-                return None
-
-    def _is_string_const(self, node):
-        return isinstance(node, ast.Constant) and isinstance(node.value, str)
-
-    def _add_message(self, lineno, msgid, msgid_plural=None, msgctxt=None, *, is_docstring=False):
-        if msgid in self.options.toexclude:
-            return
-
-        key = self._key_for(msgid, msgctxt)
-        if message := self.messages.get(key):
-            message.add_location(
-                self.filename,
-                lineno,
-                msgid_plural,
-                is_docstring=is_docstring,
-            )
-        else:
-            self.messages[key] = Message(
-                msgid=msgid,
-                msgid_plural=msgid_plural,
-                msgctxt=msgctxt,
-                locations={Location(self.filename, lineno)},
-                is_docstring=is_docstring,
-            )
+    def visit_Call(self, node):
+        self._extract_message(node)
+        self.generic_visit(node)
 
     def _extract_docstring(self, node):
         if not self.options.docstrings or self.options.nodocstrings.get(self.filename):
@@ -423,14 +394,43 @@ class GettextVisitor(NodeVisitor):
         lineno = node.lineno
         self._add_message(lineno, **msg_data)
 
-    def visit(self, node):
-        if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
-            self._extract_docstring(node)
-        super().visit(node)
+    def _add_message(self, lineno, msgid, msgid_plural=None, msgctxt=None, *, is_docstring=False):
+        if msgid in self.options.toexclude:
+            return
 
-    def visit_Call(self, node):
-        self._extract_message(node)
-        self.generic_visit(node)
+        key = self._key_for(msgid, msgctxt)
+        if message := self.messages.get(key):
+            message.add_location(
+                self.filename,
+                lineno,
+                msgid_plural,
+                is_docstring=is_docstring,
+            )
+        else:
+            self.messages[key] = Message(
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                msgctxt=msgctxt,
+                locations={Location(self.filename, lineno)},
+                is_docstring=is_docstring,
+            )
+
+    def _key_for(self, msgid, msgctxt=None):
+        if msgctxt is not None:
+            return (msgctxt, msgid)
+        return msgid
+
+    def _get_funcname(self, node):
+        match node.func:
+            case ast.Name(id=id):
+                return id
+            case ast.Attribute(attr=attr):
+                return attr
+            case _:
+                return None
+
+    def _is_string_const(self, node):
+        return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 
 def write_pot_file(messages, options, fp):
