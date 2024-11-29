@@ -1,2 +1,2 @@
-Normalized error messages for both implementations :mod:`datetime`. Made more
+Normalized error messages for both implementations of :mod:`datetime`. Made more
 detailed error messages showing input values. Patch by Semyon Moroz.
