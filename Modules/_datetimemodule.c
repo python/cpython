@@ -647,10 +647,10 @@ check_date_args(int year, int month, int day)
                      "month must be in 1..12, but got %d", month);
         return -1;
     }
-    int dim = days_in_month(year, month);
-    if (day < 1 || day > dim) {
+    if (day < 1 || day > days_in_month(year, month)) {
         PyErr_Format(PyExc_ValueError,
-                     "day must be in 1..%d, but got %d", dim, day);
+                     "day must be in 1..%d, but got %d",
+                     days_in_month(year, month), day);
         return -1;
     }
     return 0;
