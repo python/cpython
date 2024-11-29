@@ -5934,7 +5934,6 @@ _ctypes_mod_exec(PyObject *mod)
     if (_ctypes_add_objects(mod) < 0) {
         return -1;
     }
-
     return 0;
 }
 

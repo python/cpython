@@ -88,7 +88,7 @@ class MemFunctionsTest(unittest.TestCase):
             b,
             cast(b, c_void_p),
             byref(b),
-            addressof(b)
+            addressof(b),
         ):
             with self.subTest(foreign_ptr=type(foreign_ptr).__name__):
                 b[:] = b"initialval"
@@ -122,7 +122,7 @@ class MemFunctionsTest(unittest.TestCase):
             b,
             cast(b, c_void_p),
             byref(b),
-            addressof(b)
+            addressof(b),
         ):
             with self.subTest(foreign_ptr=type(foreign_ptr).__name__):
                 b[:] = b"initialval"

@@ -2181,7 +2181,7 @@ Utility functions
    (While :meth:`~_CData.from_address` only takes integers, *ptr* can also
    be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
 
-   .. audit-event:: ctypes.memoryview_at address,size,readonly ctypes.buffer_at
+   .. audit-event:: ctypes.memoryview_at address,size,readonly
 
    .. versionadded:: next
 
