@@ -644,8 +644,7 @@ check_date_args(int year, int month, int day)
     }
     if (month < 1 || month > 12) {
         PyErr_Format(PyExc_ValueError,
-                    "month must be in 1..12, but got %d",
-                    month);
+                     "month must be in 1..12, but got %d", month);
         return -1;
     }
     int dim = days_in_month(year, month);
