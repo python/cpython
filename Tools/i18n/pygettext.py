@@ -73,10 +73,6 @@ Options:
     --default-domain=name
         Rename the default output file from messages.pot to name.pot.
 
-    --charset=charset
-        Character set used to read the input files and to write the
-        output file (default "utf-8").
-
     -E
     --escape
         Replace non-ASCII characters with octal escape sequences.
@@ -208,7 +204,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
