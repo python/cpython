@@ -669,22 +669,22 @@ check_time_args(int h, int m, int s, int us, int fold)
     }
     if (m < 0 || m > 59) {
         PyErr_Format(PyExc_ValueError,
-                    "minute must be in 0..59, but got %i", m);
+                     "minute must be in 0..59, but got %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
         PyErr_Format(PyExc_ValueError,
-                    "second must be in 0..59, but got %i", s);
+                     "second must be in 0..59, but got %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
         PyErr_Format(PyExc_ValueError,
-                    "microsecond must be in 0..999999, but got %i", us);
+                     "microsecond must be in 0..999999, but got %i", us);
         return -1;
     }
     if (fold != 0 && fold != 1) {
         PyErr_Format(PyExc_ValueError,
-                    "fold must be either 0 or 1, but got %i", fold);
+                     "fold must be either 0 or 1, but got %i", fold);
         return -1;
     }
     return 0;
