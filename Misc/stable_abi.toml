@@ -2540,3 +2540,5 @@
     added = '3.14'
 [function.PyType_Freeze]
     added = '3.14'
+[function.PyErr_SetLocaleString]
+    added = '3.14'
