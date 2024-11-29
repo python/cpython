@@ -318,14 +318,22 @@ def get_default_scheme():
 
 def get_makefile_filename():
     """Return the path of the Makefile."""
+
+    # GH-127429: When cross-compiling, use the Makefile from the target, instead of the host Python.
+    if cross_base := os.environ.get('_PYTHON_PROJECT_BASE'):
+        return os.path.join(cross_base, 'Makefile')
+
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
+
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
+
     if hasattr(sys.implementation, '_multiarch'):
         config_dir_name += f'-{sys.implementation._multiarch}'
+
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
