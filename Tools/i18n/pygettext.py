@@ -352,12 +352,13 @@ class GettextVisitor(NodeVisitor):
         return msgid
 
     def _get_funcname(self, node):
-        if isinstance(node.func, ast.Name):
-            return node.func.id
-        elif isinstance(node.func, ast.Attribute):
-            return node.func.attr
-        else:
-            return None
+        match node.func:
+            case ast.Name(id=id):
+                return id
+            case ast.Attribute(attr=attr):
+                return attr
+            case _:
+                return None
 
     def _is_string_const(self, node):
         return isinstance(node, ast.Constant) and isinstance(node.value, str)
