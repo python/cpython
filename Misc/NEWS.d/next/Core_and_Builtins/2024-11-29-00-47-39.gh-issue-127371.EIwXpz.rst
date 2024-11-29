@@ -1,2 +1,0 @@
-Issue: The writelines() method in SpooledTemporaryFile only checked whether to roll over to a disk-backed file after the entire iterable is written. This led to unexpectedly high memory usage when handling large iterators because the in-memory buffer grows without limit until the iterable was exhausted. 
-Solution: Modify the writelines() method to write each line individually and check the buffer size after each write. This ensures that if the max_size is exceeded, the file rolls over to disk immediately, preventing excessive memory consumption.
