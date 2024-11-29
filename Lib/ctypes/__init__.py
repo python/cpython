@@ -550,7 +550,7 @@ def string_at(ptr, size=-1):
     Return the byte string at void *ptr."""
     return _string_at(ptr, size)
 
-_memoryview_at = PYFUNCTYPE(py_object, c_void_p, c_int, c_int)(_memoryview_at_addr)
+_memoryview_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
 def memoryview_at(ptr, size, readonly=False):
     """memoryview_at(ptr[, size]) -> memoryview
 
