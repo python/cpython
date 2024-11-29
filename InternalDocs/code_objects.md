@@ -93,11 +93,11 @@ The first byte has the following format:
 
 The codes are enumerated in the `_PyCodeLocationInfoKind` enum.
 
-#### Variable-length integer encodings
+### Variable-length integer encodings
 
 Integers are often encoded using a variable length integer encoding
 
-##### Unsigned integers (`varint`)
+#### Unsigned integers (`varint`)
 
 Unsigned integers are encoded in 6-bit chunks, least significant first.
 Each chunk but the last has bit 6 set.
@@ -128,7 +128,7 @@ def decode_varint(chunks):
     return ret
 ```
 
-##### Signed integers (`svarint`)
+#### Signed integers (`svarint`)
 
 Signed integers are encoded by converting them to unsigned integers, using the following function:
 
@@ -147,7 +147,7 @@ def varint_to_svarint(uval):
     return -(uval >> 1) if uval & 1 else (uval >> 1)
 ```
 
-#### Location entries
+### Location entries
 
 The meaning of the codes and the following bytes are as follows:
 
@@ -164,7 +164,7 @@ The Δ means the value is encoded as a delta from another value:
 * Start line: Delta from the previous start line, or `co_firstlineno` for the first entry.
 * End line: Delta from the start line.
 
-##### The short forms
+### The short forms
 
 Codes 0-9 are the short forms. The short form consists of two bytes,
 the second byte holding additional column information. The code is the
