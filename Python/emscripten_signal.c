@@ -38,19 +38,17 @@ _Py_CheckEmscriptenSignals(void)
     }
 }
 
-
 #define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
-static int emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
+int _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
 
 void
 _Py_CheckEmscriptenSignalsPeriodically(void)
 {
-    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
-        return;
-    }
-    emscripten_signal_clock--;
-    if (emscripten_signal_clock == 0) {
-        emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
+    if (_Py_emscripten_signal_clock == 0) {
+        _Py_emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
         _Py_CheckEmscriptenSignals();
+    }
+    else if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
+        _Py_emscripten_signal_clock--;
     }
 }

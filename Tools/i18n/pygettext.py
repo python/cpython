@@ -169,12 +169,10 @@ import time
 from ast import (AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor,
                  unparse)
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 
 __version__ = '1.5'
-
-default_keywords = ['_']
-DEFAULTKEYWORDS = ', '.join(default_keywords)
 
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
@@ -301,12 +299,54 @@ def getFilesForName(name):
     return []
 
 
-@dataclass
-class Message:
+# Key is the function name, value is a dictionary mapping argument positions to the
+# type of the argument. The type is one of 'msgid', 'msgid_plural', or 'msgctxt'.
+DEFAULTKEYWORDS = {
+    '_': {0: 'msgid'},
+    'gettext': {0: 'msgid'},
+    'ngettext': {0: 'msgid', 1: 'msgid_plural'},
+    'pgettext': {0: 'msgctxt', 1: 'msgid'},
+    'npgettext': {0: 'msgctxt', 1: 'msgid', 2: 'msgid_plural'},
+    'dgettext': {1: 'msgid'},
+    'dngettext': {1: 'msgid', 2: 'msgid_plural'},
+    'dpgettext': {1: 'msgctxt', 2: 'msgid'},
+    'dnpgettext': {1: 'msgctxt', 2: 'msgid', 3: 'msgid_plural'},
+}
+
+
+def matches_spec(message, spec):
+    """Check if a message has all the keys defined by the keyword spec."""
+    return all(key in message for key in spec.values())
+
+
+@dataclass(frozen=True)
+class Location:
     filename: str
     lineno: int
+
+    def __lt__(self, other):
+        return (self.filename, self.lineno) < (other.filename, other.lineno)
+
+
+@dataclass
+class Message:
     msgid: str
+    msgid_plural: str | None
+    msgctxt: str | None
+    locations: set[Location] = field(default_factory=set)
     is_docstring: bool = False
+
+    def add_location(self, filename, lineno, msgid_plural=None, *, is_docstring=False):
+        if self.msgid_plural is None:
+            self.msgid_plural = msgid_plural
+        self.locations.add(Location(filename, lineno))
+        self.is_docstring |= is_docstring
+
+
+def key_for(msgid, msgctxt=None):
+    if msgctxt is not None:
+        return (msgctxt, msgid)
+    return msgid
 
 
 def get_funcname(node):
@@ -431,7 +471,6 @@ def format_pot_file(all_messages, options, encoding):
 
 
 def main():
-    global default_keywords
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
@@ -469,7 +508,7 @@ def main():
     locations = {'gnu' : options.GNU,
                  'solaris' : options.SOLARIS,
                  }
-
+    no_default_keywords = False
     # parse options
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -487,7 +526,7 @@ def main():
         elif opt in ('-k', '--keyword'):
             options.keywords.append(arg)
         elif opt in ('-K', '--no-default-keywords'):
-            default_keywords = []
+            no_default_keywords = True
         elif opt in ('-n', '--add-location'):
             options.writelocations = 1
         elif opt in ('--no-location',):
@@ -527,7 +566,9 @@ def main():
     make_escapes(not options.escape)
 
     # calculate all keywords
-    options.keywords.extend(default_keywords)
+    options.keywords = {kw: {0: 'msgid'} for kw in options.keywords}
+    if not no_default_keywords:
+        options.keywords |= DEFAULTKEYWORDS
 
     # initialize list of strings to exclude
     if options.excludefilename:

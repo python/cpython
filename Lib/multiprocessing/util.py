@@ -14,7 +14,7 @@ import weakref
 import atexit
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
-from subprocess import _args_from_interpreter_flags
+from subprocess import _args_from_interpreter_flags  # noqa: F401
 
 from . import process
 
@@ -43,19 +43,19 @@ _log_to_stderr = False
 
 def sub_debug(msg, *args):
     if _logger:
-        _logger.log(SUBDEBUG, msg, *args)
+        _logger.log(SUBDEBUG, msg, *args, stacklevel=2)
 
 def debug(msg, *args):
     if _logger:
-        _logger.log(DEBUG, msg, *args)
+        _logger.log(DEBUG, msg, *args, stacklevel=2)
 
 def info(msg, *args):
     if _logger:
-        _logger.log(INFO, msg, *args)
+        _logger.log(INFO, msg, *args, stacklevel=2)
 
 def sub_warning(msg, *args):
     if _logger:
-        _logger.log(SUBWARNING, msg, *args)
+        _logger.log(SUBWARNING, msg, *args, stacklevel=2)
 
 def get_logger():
     '''
@@ -64,8 +64,7 @@ def get_logger():
     global _logger
     import logging
 
-    logging._acquireLock()
-    try:
+    with logging._lock:
         if not _logger:
 
             _logger = logging.getLogger(LOGGER_NAME)
@@ -78,9 +77,6 @@ def get_logger():
             else:
                 atexit._exithandlers.remove((_exit_function, (), {}))
                 atexit._exithandlers.append((_exit_function, (), {}))
-
-    finally:
-        logging._releaseLock()
 
     return _logger
 
@@ -106,11 +102,7 @@ def log_to_stderr(level=None):
 # Abstract socket support
 
 def _platform_supports_abstract_sockets():
-    if sys.platform == "linux":
-        return True
-    if hasattr(sys, 'getandroidapilevel'):
-        return True
-    return False
+    return sys.platform in ("linux", "android")
 
 
 def is_abstract_socket_namespace(address):
@@ -446,15 +438,13 @@ def _flush_std_streams():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
-    import subprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
             args, [path], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, -1, None, None, None, -1, None,
-            subprocess._USE_VFORK)
+            False, False, -1, None, None, None, -1, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)

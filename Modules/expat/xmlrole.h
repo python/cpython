@@ -10,7 +10,7 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-   Copyright (c) 2017      Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2024 Sebastian Pipping <sebastian@pipping.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -127,9 +127,9 @@ typedef struct prolog_state {
 #endif /* XML_DTD */
 } PROLOG_STATE;
 
-void XmlPrologStateInit(PROLOG_STATE *);
+void XmlPrologStateInit(PROLOG_STATE *state);
 #ifdef XML_DTD
-void XmlPrologStateInitExternalEntity(PROLOG_STATE *);
+void XmlPrologStateInitExternalEntity(PROLOG_STATE *state);
 #endif /* XML_DTD */
 
 #define XmlTokenRole(state, tok, ptr, end, enc)                                \

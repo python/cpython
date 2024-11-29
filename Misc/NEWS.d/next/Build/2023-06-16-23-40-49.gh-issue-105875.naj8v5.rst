@@ -1,2 +1,0 @@
-SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension
-module. Patch by Erlend Aasland.

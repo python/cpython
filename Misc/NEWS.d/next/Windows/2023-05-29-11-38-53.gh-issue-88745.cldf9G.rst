@@ -1,3 +1,0 @@
-Improve performance of :func:`shutil.copy2` by using the operating system's
-``CopyFile2`` function. This may result in subtle changes to metadata copied
-along with some files, bringing them in line with normal OS behavior.

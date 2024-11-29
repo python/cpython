@@ -28,12 +28,12 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 
     PyObject *ssl_socket;  /* ssl.SSLSocket or ssl.SSLObject */
     if (ssl_obj->owner)
-        ssl_socket = _PyWeakref_GET_REF(ssl_obj->owner);
+        PyWeakref_GetRef(ssl_obj->owner, &ssl_socket);
     else if (ssl_obj->Socket)
-        ssl_socket = _PyWeakref_GET_REF(ssl_obj->Socket);
+        PyWeakref_GetRef(ssl_obj->Socket, &ssl_socket);
     else
         ssl_socket = (PyObject *)Py_NewRef(ssl_obj);
-    assert(ssl_socket != NULL);  // _PyWeakref_GET_REF() can return NULL
+    assert(ssl_socket != NULL);  // PyWeakref_GetRef() can return NULL
 
     /* assume that OpenSSL verifies all payload and buf len is of sufficient
        length */

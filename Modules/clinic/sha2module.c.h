@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(SHA256Type_copy__doc__,
 "copy($self, /)\n"
@@ -23,7 +23,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls);
 static PyObject *
 SHA256Type_copy(SHA256object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -45,7 +45,7 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(SHA512object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -188,7 +188,8 @@ _sha2_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -262,7 +263,8 @@ _sha2_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -336,7 +338,8 @@ _sha2_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -410,7 +413,8 @@ _sha2_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -437,4 +441,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f81dacb48f3fee72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=602a6939b8ec0927 input=a9049054013a1b77]*/

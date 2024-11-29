@@ -34,7 +34,7 @@ There are several ways to enable asyncio debug mode:
 In addition to enabling the debug mode, consider also:
 
 * setting the log level of the :ref:`asyncio logger <asyncio-logger>` to
-  :py:data:`logging.DEBUG`, for example the following snippet of code
+  :py:const:`logging.DEBUG`, for example the following snippet of code
   can be run at startup of the application::
 
     logging.basicConfig(level=logging.DEBUG)
@@ -99,11 +99,12 @@ To schedule a coroutine object from a different OS thread, the
      # Wait for the result:
      result = future.result()
 
-To handle signals and to execute subprocesses, the event loop must be
+To handle signals the event loop must be
 run in the main thread.
 
 The :meth:`loop.run_in_executor` method can be used with a
-:class:`concurrent.futures.ThreadPoolExecutor` to execute
+:class:`concurrent.futures.ThreadPoolExecutor` or
+:class:`~concurrent.futures.InterpreterPoolExecutor` to execute
 blocking code in a different OS thread without blocking the OS thread
 that the event loop runs in.
 
@@ -128,7 +129,8 @@ if a function performs a CPU-intensive calculation for 1 second,
 all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
-An executor can be used to run a task in a different thread or even in
+An executor can be used to run a task in a different thread,
+including in a different interpreter, or even in
 a different process to avoid blocking the OS thread with the
 event loop.  See the :meth:`loop.run_in_executor` method for more
 details.
@@ -142,7 +144,7 @@ Logging
 asyncio uses the :mod:`logging` module and all logging is performed
 via the ``"asyncio"`` logger.
 
-The default log level is :py:data:`logging.INFO`, which can be easily
+The default log level is :py:const:`logging.INFO`, which can be easily
 adjusted::
 
    logging.getLogger("asyncio").setLevel(logging.WARNING)

@@ -1,4 +1,4 @@
-# Copyright (C) 2004-2006 Python Software Foundation
+# Copyright (C) 2004 Python Software Foundation
 # Authors: Baxter, Wouters and Warsaw
 # Contact: email-sig@python.org
 
@@ -189,7 +189,7 @@ class FeedParser:
         assert not self._msgstack
         # Look for final set of defects
         if root.get_content_maintype() == 'multipart' \
-               and not root.is_multipart():
+               and not root.is_multipart() and not self._headersonly:
             defect = errors.MultipartInvariantViolationDefect()
             self.policy.handle_defect(root, defect)
         return root

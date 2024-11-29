@@ -1,1 +1,0 @@
-Avoid creating a reference to the test object in :meth:`~unittest.TestResult.collectedDurations`.

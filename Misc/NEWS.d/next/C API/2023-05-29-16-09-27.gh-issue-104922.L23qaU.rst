@@ -1,3 +1,0 @@
-``PY_SSIZE_T_CLEAN`` is no longer required to use ``'#'`` formats in APIs
-like :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue`. They uses
-``Py_ssize_t`` for ``'#'`` regardless ``PY_SSIZE_T_CLEAN``.

@@ -16,7 +16,7 @@ else:
     _setmode = None
 
 import io
-from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)
+from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)  # noqa: F401
 
 valid_seek_flags = {0, 1, 2}  # Hardwired values
 if hasattr(os, 'SEEK_HOLE') :
@@ -238,18 +238,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     result = raw
     try:
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        if buffering == 1 or buffering < 0 and raw._isatty_open_only():
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = DEFAULT_BUFFER_SIZE
-            try:
-                bs = os.fstat(raw.fileno()).st_blksize
-            except (OSError, AttributeError):
-                pass
-            else:
-                if bs > 1:
-                    buffering = bs
+            buffering = raw._blksize
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:
@@ -1197,7 +1190,8 @@ class BufferedReader(_BufferedIOMixin):
         return written
 
     def tell(self):
-        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+        # GH-95782: Keep return value non-negative
+        return max(_BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos, 0)
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
@@ -1486,6 +1480,7 @@ class FileIO(RawIOBase):
         """
         if self._fd >= 0:
             # Have to close the existing file first.
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1495,6 +1490,11 @@ class FileIO(RawIOBase):
         if isinstance(file, float):
             raise TypeError('integer argument expected, got float')
         if isinstance(file, int):
+            if isinstance(file, bool):
+                import warnings
+                warnings.warn("bool is used as a file descriptor",
+                              RuntimeWarning, stacklevel=2)
+                file = int(file)
             fd = file
             if fd < 0:
                 raise ValueError('negative file descriptor')
@@ -1559,18 +1559,15 @@ class FileIO(RawIOBase):
                     os.set_inheritable(fd, False)
 
             self._closefd = closefd
-            fdfstat = os.fstat(fd)
+            self._stat_atopen = os.fstat(fd)
             try:
-                if stat.S_ISDIR(fdfstat.st_mode):
+                if stat.S_ISDIR(self._stat_atopen.st_mode):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
                 # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
-            self._blksize = getattr(fdfstat, 'st_blksize', 0)
-            if self._blksize <= 1:
-                self._blksize = DEFAULT_BUFFER_SIZE
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1587,6 +1584,7 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
+            self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
             raise
@@ -1615,6 +1613,17 @@ class FileIO(RawIOBase):
         else:
             return ('<%s name=%r mode=%r closefd=%r>' %
                     (class_name, name, self.mode, self._closefd))
+
+    @property
+    def _blksize(self):
+        if self._stat_atopen is None:
+            return DEFAULT_BUFFER_SIZE
+
+        blksize = getattr(self._stat_atopen, "st_blksize", 0)
+        # WASI sets blsize to 0
+        if not blksize:
+            return DEFAULT_BUFFER_SIZE
+        return blksize
 
     def _checkReadable(self):
         if not self._readable:
@@ -1648,14 +1657,22 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        bufsize = DEFAULT_BUFFER_SIZE
-        try:
-            pos = os.lseek(self._fd, 0, SEEK_CUR)
-            end = os.fstat(self._fd).st_size
-            if end >= pos:
-                bufsize = end - pos + 1
-        except OSError:
-            pass
+        if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
+            bufsize = DEFAULT_BUFFER_SIZE
+        else:
+            # In order to detect end of file, need a read() of at least 1
+            # byte which returns size 0. Oversize the buffer by 1 byte so the
+            # I/O can be completed with two read() calls (one for all data, one
+            # for EOF) without needing to resize the buffer.
+            bufsize = self._stat_atopen.st_size + 1
+
+            if self._stat_atopen.st_size > 65536:
+                try:
+                    pos = os.lseek(self._fd, 0, SEEK_CUR)
+                    if self._stat_atopen.st_size >= pos:
+                        bufsize = self._stat_atopen.st_size - pos + 1
+                except OSError:
+                    pass
 
         result = bytearray()
         while True:
@@ -1731,6 +1748,7 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
+        self._stat_atopen = None
         return size
 
     def close(self):
@@ -1740,6 +1758,7 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1776,6 +1795,21 @@ class FileIO(RawIOBase):
     def isatty(self):
         """True if the file is connected to a TTY device."""
         self._checkClosed()
+        return os.isatty(self._fd)
+
+    def _isatty_open_only(self):
+        """Checks whether the file is a TTY using an open-only optimization.
+
+        TTYs are always character devices. If the interpreter knows a file is
+        not a character device when it would call ``isatty``, can skip that
+        call. Inside ``open()``  there is a fresh stat result that contains that
+        information. Use the stat result to skip a system call. Outside of that
+        context TOCTOU issues (the fd could be arbitrarily modified by
+        surrounding code).
+        """
+        if (self._stat_atopen is not None
+            and not stat.S_ISCHR(self._stat_atopen.st_mode)):
+            return False
         return os.isatty(self._fd)
 
     @property
@@ -2198,8 +2232,9 @@ class TextIOWrapper(TextIOBase):
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
-        self._set_decoded_chars('')
-        self._snapshot = None
+        if self._snapshot is not None:
+            self._set_decoded_chars('')
+            self._snapshot = None
         if self._decoder:
             self._decoder.reset()
         return length
@@ -2513,8 +2548,9 @@ class TextIOWrapper(TextIOBase):
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(self.buffer.read(), final=True))
-            self._set_decoded_chars('')
-            self._snapshot = None
+            if self._snapshot is not None:
+                self._set_decoded_chars('')
+                self._snapshot = None
             return result
         else:
             # Keep reading chunks until we have size characters to return.

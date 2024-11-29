@@ -1,5 +1,0 @@
-If Python is built in :ref:`debug mode <debug-build>` or :option:`with
-assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
-:c:func:`PyList_SET_ITEM` now check the index argument with an assertion. If
-the assertion fails, make sure that the size is set before. Patch by Victor
-Stinner.

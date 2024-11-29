@@ -62,11 +62,10 @@ typedef struct {
     (assert(PyAnySet_Check(so)), _Py_CAST(PySetObject*, so))
 
 static inline Py_ssize_t PySet_GET_SIZE(PyObject *so) {
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&(_PySet_CAST(so)->used));
+#else
     return _PySet_CAST(so)->used;
+#endif
 }
 #define PySet_GET_SIZE(so) PySet_GET_SIZE(_PyObject_CAST(so))
-
-PyAPI_DATA(PyObject *) _PySet_Dummy;
-
-PyAPI_FUNC(int) _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash);
-PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);

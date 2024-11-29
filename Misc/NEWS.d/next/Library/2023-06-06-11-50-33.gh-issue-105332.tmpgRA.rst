@@ -1,1 +1,0 @@
-Revert pickling method from by-name back to by-value.

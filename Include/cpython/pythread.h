@@ -2,14 +2,15 @@
 #  error "this header file must not be included directly"
 #endif
 
-#define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
+// PY_TIMEOUT_MAX is the highest usable value (in microseconds) of PY_TIMEOUT_T
+// type, and depends on the system threading API.
+//
+// NOTE: this isn't the same value as `_thread.TIMEOUT_MAX`. The _thread module
+// exposes a higher-level API, with timeouts expressed in seconds and
+// floating-point numbers allowed.
+PyAPI_DATA(const long long) PY_TIMEOUT_MAX;
 
-#ifdef HAVE_FORK
-/* Private function to reinitialize a lock at fork in the child process.
-   Reset the lock to the unlocked state.
-   Return 0 on success, return -1 on error. */
-PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
-#endif  /* HAVE_FORK */
+#define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
 
 #ifdef HAVE_PTHREAD_H
     /* Darwin needs pthread.h to know type name the pthread_key_t. */

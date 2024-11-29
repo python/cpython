@@ -1,3 +1,0 @@
-When running the Python test suite with ``-jN`` option, if a worker stdout
-cannot be decoded from the locale encoding report a failed testn so the
-exitcode is non-zero. Patch by Victor Stinner.

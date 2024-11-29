@@ -10,11 +10,22 @@ static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 
+// clinic/_curses_panel.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "py_curses.h"
 
-#include <panel.h>
+#if defined(HAVE_NCURSESW_PANEL_H)
+#  include <ncursesw/panel.h>
+#elif defined(HAVE_NCURSES_PANEL_H)
+#  include <ncurses/panel.h>
+#elif defined(HAVE_PANEL_H)
+#  include <panel.h>
+#endif
 
 typedef struct {
     PyObject *PyCursesError;
@@ -692,6 +703,7 @@ static PyModuleDef_Slot _curses_slots[] = {
     // XXX gh-103092: fix isolation.
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

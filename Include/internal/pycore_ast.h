@@ -10,7 +10,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_asdl.h"
+#include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
 typedef struct _mod *mod_ty;
 
@@ -657,14 +657,17 @@ struct _type_param {
         struct {
             identifier name;
             expr_ty bound;
+            expr_ty default_value;
         } TypeVar;
 
         struct {
             identifier name;
+            expr_ty default_value;
         } ParamSpec;
 
         struct {
             identifier name;
+            expr_ty default_value;
         } TypeVarTuple;
 
     } v;
@@ -892,14 +895,15 @@ pattern_ty _PyAST_MatchOr(asdl_pattern_seq * patterns, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);
 type_ignore_ty _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena);
-type_param_ty _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int
-                             col_offset, int end_lineno, int end_col_offset,
-                             PyArena *arena);
-type_param_ty _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int
-                               end_lineno, int end_col_offset, PyArena *arena);
-type_param_ty _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset,
-                                  int end_lineno, int end_col_offset, PyArena
-                                  *arena);
+type_param_ty _PyAST_TypeVar(identifier name, expr_ty bound, expr_ty
+                             default_value, int lineno, int col_offset, int
+                             end_lineno, int end_col_offset, PyArena *arena);
+type_param_ty _PyAST_ParamSpec(identifier name, expr_ty default_value, int
+                               lineno, int col_offset, int end_lineno, int
+                               end_col_offset, PyArena *arena);
+type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int
+                                  lineno, int col_offset, int end_lineno, int
+                                  end_col_offset, PyArena *arena);
 
 
 PyObject* PyAST_mod2obj(mod_ty t);

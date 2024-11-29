@@ -1,5 +1,5 @@
-:mod:`tokenize` --- Tokenizer for Python source
-===============================================
+:mod:`!tokenize` --- Tokenizer for Python source
+================================================
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
@@ -166,11 +166,11 @@ The following options are accepted:
 
 .. program:: tokenize
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    show this help message and exit
 
-.. cmdoption:: -e, --exact
+.. option:: -e, --exact
 
    display token names using the exact type
 

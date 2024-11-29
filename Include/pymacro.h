@@ -15,11 +15,11 @@
 // MSVC makes static_assert a keyword in C11-17, contrary to the standards.
 //
 // In C++11 and C2x, static_assert is a keyword, redefining is undefined
-// behaviour. So only define if building as C (if __STDC_VERSION__ is defined),
-// not C++, and only for C11-17.
+// behaviour. So only define if building as C, not C++ (if __cplusplus is
+// not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
-     && __STDC_VERSION__ <= 201710L
+     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
+     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -46,24 +46,42 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-/* Assert a build-time dependency, as an expression.
-
-   Your compile will fail if the condition isn't true, or can't be evaluated
-   by the compiler. This can be used in an expression: its value is 0.
-
-   Example:
-
-   #define foo_to_char(foo)  \
-       ((char *)(foo)        \
-        + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
-
-   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
-#define Py_BUILD_ASSERT_EXPR(cond) \
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && !defined(__cplusplus) && !defined(_MSC_VER))
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+    ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
+     0)
+#else
+   /* Assert a build-time dependency, as an expression.
+    *
+    * Your compile will fail if the condition isn't true, or can't be evaluated
+    * by the compiler. This can be used in an expression: its value is 0.
+    *
+    * Example:
+    *
+    * #define foo_to_char(foo)  \
+    *     ((char *)(foo)        \
+    *      + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+    *
+    * Written by Rusty Russell, public domain, http://ccodearchive.net/
+    */
+#  define Py_BUILD_ASSERT_EXPR(cond) \
     (sizeof(char [1 - 2*!(cond)]) - 1)
+#endif
 
-#define Py_BUILD_ASSERT(cond)  do {         \
-        (void)Py_BUILD_ASSERT_EXPR(cond);   \
-    } while(0)
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+     || (defined(__cplusplus) && __cplusplus >= 201103L))
+   // Use static_assert() on C11 and newer
+#  define Py_BUILD_ASSERT(cond) \
+        do { \
+            static_assert((cond), #cond); \
+        } while (0)
+#else
+#  define Py_BUILD_ASSERT(cond)  \
+        do { \
+            (void)Py_BUILD_ASSERT_EXPR(cond); \
+        } while(0)
+#endif
 
 /* Get the number of elements in a visible array
 
@@ -118,6 +136,15 @@
  */
 #if defined(__GNUC__) || defined(__clang__)
 #  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+#elif defined(_MSC_VER)
+   // Disable warning C4100: unreferenced formal parameter,
+   // declare the parameter,
+   // restore old compiler warnings.
+#  define Py_UNUSED(name) \
+        __pragma(warning(push)) \
+        __pragma(warning(suppress: 4100)) \
+        _unused_ ## name \
+        __pragma(warning(pop))
 #else
 #  define Py_UNUSED(name) _unused_ ## name
 #endif
@@ -150,6 +177,9 @@
 #  define Py_UNREACHABLE() \
     Py_FatalError("Unreachable C code path reached")
 #endif
+
+#define _Py_CONTAINER_OF(ptr, type, member) \
+    (type*)((char*)ptr - offsetof(type, member))
 
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
