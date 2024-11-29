@@ -6,7 +6,8 @@ from ctypes import (POINTER, sizeof, cast,
                     create_unicode_buffer, wstring_at,
                     memmove, memset,
                     memoryview_at, c_void_p,
-                    c_char_p, c_byte, c_ubyte, c_wchar)
+                    c_char_p, c_byte, c_ubyte, c_wchar,
+                    addressof, byref)
 
 
 class MemFunctionsTest(unittest.TestCase):
@@ -83,20 +84,29 @@ class MemFunctionsTest(unittest.TestCase):
 
         foreign_ptr = cast(b, c_void_p)
         foreign_ptr_size = len(b)
+        for foreign_ptr in (
+            b,
+            cast(b, c_void_p),
+            byref(b),
+            addressof(b)
+        ):
+            with self.subTest(foreign_ptr=type(foreign_ptr).__name__):
+                v = memoryview_at(foreign_ptr, foreign_ptr_size)
+                self.assertIsInstance(v, memoryview)
 
-        # memoryview_at() is normally used with pointers given to us
-        # by C APIs. It's an efficient way to get a buffer
-        # representing a dynamically-sized memory region without having
-        # to create an array type first.
-        v = memoryview_at(foreign_ptr, foreign_ptr_size)
+                # test that writes to source buffer get reflected in memoryview
+                b[:] = b"0123456789"
+                self.assertEqual(bytes(v), b"0123456789")
 
-        # test that writes to source buffer get reflected in memoryview
-        b[:] = b"0123456789"
-        self.assertEqual(bytes(v), b"0123456789")
+                # test that writes to memoryview get reflected in source buffer
+                v[:] = b"9876543210"
+                self.assertEqual(bytes(b), b"9876543210")
 
-        # test that writes to memoryview get reflected in source buffer
-        v[:] = b"9876543210"
-        self.assertEqual(bytes(b), b"9876543210")
+                with self.assertRaises(ValueError):
+                    memoryview_at(foreign_ptr, -1)
+
+                v0 = memoryview_at(foreign_ptr, 0)
+                self.assertEqual(bytes(v0), b'')
 
 if __name__ == "__main__":
     unittest.main()

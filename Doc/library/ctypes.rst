@@ -2164,21 +2164,22 @@ Utility functions
    .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
 
 
-.. function:: memoryview_at(address, size, readonly=False)
+.. function:: memoryview_at(ptr, size, readonly=False)
 
-   This function returns a :class:`memoryview` object that references the
-   memory starting at *address* up to (but not including) *address +
-   size*.  If *readonly* is set to a truthy value then the
-   :class:`!memoryview` object is immutable.
+   This function returns a :class:`memoryview` object of length *size* that
+   references the memory starting at *void \*ptr*, .
+   If *readonly* is true then the :class:`!memoryview` object is immutable.
 
    This function is similar to :func:`string_at` with the key
-   difference of not making a copy of the specified memory. It is a
-   semantically equivalent (but more efficient) alternative to
-   ``memoryview((c_byte * size).from_address(address))``
+   difference of not making a copy of the specified memory.
+   It is a semantically equivalent (but more efficient) alternative to
+   ``memoryview((c_byte * size).from_address(ptr))``.
+   (While :meth:`~_CData.from_address` only takes integer, *ptr* can also
+   be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
 
    .. audit-event:: ctypes.memoryview_at address,size,readonly ctypes.buffer_at
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. _ctypes-data-types:
