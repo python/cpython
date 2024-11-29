@@ -560,8 +560,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         if lineno not in self.breaks[filename]:
             return 'There is no breakpoint at %s:%d' % (filename, lineno)
-        # If there's only one bp in the list for that file,line
-        # pair, then remove the breaks entry
+
         for bp in self.breaks[filename][lineno][:]:
             self._remove_bp(bp)
         return None
