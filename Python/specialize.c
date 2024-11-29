@@ -2636,28 +2636,23 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
 {
     PyObject *receiver = PyStackRef_AsPyObjectBorrow(receiver_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
-    _PySendCache *cache = (_PySendCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(receiver);
     if (tp == &PyGen_Type || tp == &PyCoro_Type) {
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(SEND, SPEC_FAIL_OTHER);
             goto failure;
         }
-        instr->op.code = SEND_GEN;
+        specialize(instr, SEND_GEN);
         goto success;
     }
     SPECIALIZATION_FAIL(SEND,
                         _PySpecialization_ClassifyIterator(receiver));
 failure:
-    STAT_INC(SEND, failure);
-    instr->op.code = SEND;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
+    unspecialize(instr);
 success:
-    STAT_INC(SEND, success);
-    cache->counter = adaptive_counter_cooldown();
+    return;
 }
 
 #ifdef Py_STATS

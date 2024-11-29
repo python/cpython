@@ -1274,6 +1274,48 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization_ft
+    def test_send_with(self):
+        def run_async(coro):
+            while True:
+                try:
+                    coro.send(None)
+                except StopIteration:
+                    break
+
+        class CM:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                pass
+
+        async def f():
+            for i in range(100):
+                async with CM():
+                    x = 1
+
+        run_async(f())
+        # Note there are still unspecialized "SEND" opcodes in the
+        # cleanup paths of the 'with' statement.
+        self.assert_specialized(f, "SEND_GEN")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_send_yield_from(self):
+        def g():
+            yield None
+
+        def f():
+            yield from g()
+
+        for i in range(100):
+            list(f())
+
+        self.assert_specialized(f, "SEND_GEN")
+        self.assert_no_opcode(f, "SEND")
+
+    @cpython_only
+    @requires_specialization_ft
     def test_to_bool(self):
         def to_bool_bool():
             true_cnt, false_cnt = 0, 0
