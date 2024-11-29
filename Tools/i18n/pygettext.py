@@ -1,10 +1,11 @@
 #! /usr/bin/env python3
+# -*- coding: iso-8859-1 -*-
 # Originally written by Barry Warsaw <barry@python.org>
 #
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 JÃ¼rgen Hermann <jh@web.de>
+# 2002-11-22 Jürgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -166,10 +167,9 @@ import importlib.util
 import os
 import sys
 import time
-from ast import (AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor,
-                 unparse)
-from collections import defaultdict
+from ast import AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor
 from dataclasses import dataclass, field
+from operator import itemgetter
 
 
 __version__ = '1.5'
@@ -208,7 +208,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "HÃ¶he"' would not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -343,30 +343,49 @@ class Message:
         self.is_docstring |= is_docstring
 
 
-def key_for(msgid, msgctxt=None):
-    if msgctxt is not None:
-        return (msgctxt, msgid)
-    return msgid
-
-
-def get_funcname(node):
-    if isinstance(node.func, ast.Name):
-        return node.func.id
-    elif isinstance(node.func, ast.Attribute):
-        return node.func.attr
-    else:
-        return None
-
-
 class GettextVisitor(NodeVisitor):
     def __init__(self, options, filename=None):
         super().__init__()
         self.options = options
         self.filename = filename
-        self.messages = defaultdict(list)
+        self.messages = {}
+
+    def _key_for(self, msgid, msgctxt=None):
+        if msgctxt is not None:
+            return (msgctxt, msgid)
+        return msgid
+
+    def _get_funcname(self, node):
+        if isinstance(node.func, ast.Name):
+            return node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            return node.func.attr
+        else:
+            return None
 
     def _is_string_const(self, node):
         return isinstance(node, ast.Constant) and isinstance(node.value, str)
+
+    def _add_message(self, lineno, msgid, msgid_plural=None, msgctxt=None, *, is_docstring=False):
+        if msgid in self.options.toexclude:
+            return
+
+        key = self._key_for(msgid, msgctxt)
+        if message := self.messages.get(key):
+            message.add_location(
+                self.filename,
+                lineno,
+                msgid_plural,
+                is_docstring=is_docstring,
+            )
+        else:
+            self.messages[key] = Message(
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                msgctxt=msgctxt,
+                locations={Location(self.filename, lineno)},
+                is_docstring=is_docstring,
+            )
 
     def _extract_docstring(self, node):
         if not self.options.docstrings or self.options.nodocstrings.get(self.filename):
@@ -375,47 +394,37 @@ class GettextVisitor(NodeVisitor):
         if not node.body:
             return
 
-        expr = node.body[0]
-        if isinstance(expr, ast.Expr) and self._is_string_const(expr.value):
-            if docstring := ast.get_docstring(node):
-                message = Message(self.filename, expr.lineno, docstring, is_docstring=True)
-                self.messages[docstring].append(message)
+        if (docstring := ast.get_docstring(node, clean=True)) is not None:
+            lineno = node.body[0].lineno
+            self._add_message(lineno, docstring, is_docstring=True)
 
     def _extract_message(self, node):
-        funcname = get_funcname(node)
-        if funcname not in self.options.keywords:
+        funcname = self._get_funcname(node)
+        if (spec := self.options.keywords.get(funcname)) is None:
             return
 
-        filename = self.filename
+        args_len = len(node.args)
+        msg_data = {}
+        for position, arg_type in spec.items():
+            if position >= args_len:
+                return
+            arg = node.args[position]
+            if not self._is_string_const(arg):
+                print(_(
+                    '*** %(file)s:%(lineno)s: Expected a string constant for argument "%(arg)s"'
+                    ) % {
+                    'arg': ast.unparse(arg),
+                    'file': self.filename,
+                    'lineno': arg.lineno
+                    }, file=sys.stderr)
+                return
+            msg_data[arg_type] = arg.value
+
+        if not matches_spec(msg_data, spec):
+            return
+
         lineno = node.lineno
-
-        if len(node.args) != 1:
-            print(f'*** {filename}:{lineno}: Seen unexpected amount of '
-                  f'positional arguments in gettext call: {unparse(node)}',
-                  file=sys.stderr)
-            return
-
-        if node.keywords:
-            print(f'*** {filename}:{lineno}: Seen unexpected keyword arguments '
-                  f'in gettext call: {unparse(node)}', file=sys.stderr)
-            return
-
-        arg = node.args[0]
-        if not self._is_string_const(arg):
-            print(f'*** {filename}:{lineno}: Seen unexpected argument type '
-                  f'in gettext call: {unparse(node)}', file=sys.stderr)
-            return
-
-        msgid = arg.value
-        if msgid == '':
-            print(f'*** {filename}:{lineno}: Empty msgid. It is reserved by GNU gettext: '
-                  'gettext("") returns the header entry with '
-                  'meta information, not the empty string.',
-                  file=sys.stderr)
-            return
-
-        message = Message(filename, lineno, msgid)
-        self.messages[msgid].append(message)
+        self._add_message(lineno, **msg_data)
 
     def visit(self, node):
         if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
@@ -427,47 +436,57 @@ class GettextVisitor(NodeVisitor):
         self.generic_visit(node)
 
 
-def format_pot_file(all_messages, options, encoding):
+def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
-    output = pot_header % {'time': timestamp, 'version': __version__,
-                           'charset': encoding,
-                           'encoding': '8bit'}
-    inverted = defaultdict(dict)
+    encoding = fp.encoding if fp.encoding else 'UTF-8'
+    print(pot_header % {'time': timestamp, 'version': __version__,
+                        'charset': encoding,
+                        'encoding': '8bit'}, file=fp)
 
-    for msgid, messages in all_messages.items():
-        occurrences = set((msg.filename, msg.lineno) for msg in messages)
-        occurrences = tuple(sorted(occurrences))
-        inverted[occurrences][msgid] = messages
+    # Sort locations within each message by filename and lineno
+    sorted_keys = [
+        (key, sorted(msg.locations))
+        for key, msg in messages.items()
+    ]
+    # Sort messages by locations
+    # For example, a message with locations [('test.py', 1), ('test.py', 2)] will
+    # appear before a message with locations [('test.py', 1), ('test.py', 3)]
+    sorted_keys.sort(key=itemgetter(1))
 
-    sorted_occurrences = sorted(list(inverted.keys()))
-
-    for occurrences in sorted_occurrences:
-        messages_dict = inverted[occurrences]
-        for msgid, messages in messages_dict.items():
-            if options.writelocations:
+    for key, locations in sorted_keys:
+        msg = messages[key]
+        if options.writelocations:
+            # location comments are different b/w Solaris and GNU:
+            if options.locationstyle == options.SOLARIS:
+                for location in locations:
+                    print(f'# File: {location.filename}, line: {location.lineno}', file=fp)
+            elif options.locationstyle == options.GNU:
+                # fit as many locations on one line, as long as the
+                # resulting line length doesn't exceed 'options.width'
                 locline = '#:'
-                for (filename, lineno) in occurrences:
-                    s = f' {filename}:{lineno}'
+                for location in locations:
+                    s = f' {location.filename}:{location.lineno}'
                     if len(locline) + len(s) <= options.width:
                         locline = locline + s
                     else:
-                        output += locline + '\n'
-                        locline = '#:' + s
+                        print(locline, file=fp)
+                        locline = f'#:{s}'
                 if len(locline) > 2:
-                    output += locline + '\n'
-
+                    print(locline, file=fp)
+        if msg.is_docstring:
             # If the entry was gleaned out of a docstring, then add a
-            # comment stating so. This is to aid translators who may wish
+            # comment stating so.  This is to aid translators who may wish
             # to skip translating some unimportant docstrings.
-            is_docstring = all(msg.is_docstring for msg in messages)
-            if is_docstring:
-                output += '#, docstring\n'
-
-            output += f'msgid {normalize(msgid, encoding)}\n'
-            output += 'msgstr ""\n'
-            output += '\n'
-
-    return output
+            print('#, docstring', file=fp)
+        if msg.msgctxt is not None:
+            print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
+        print('msgid', normalize(msg.msgid, encoding), file=fp)
+        if msg.msgid_plural is not None:
+            print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
+            print('msgstr[0] ""', file=fp)
+            print('msgstr[1] ""\n', file=fp)
+        else:
+            print('msgstr ""\n', file=fp)
 
 
 def main():
@@ -475,7 +494,7 @@ def main():
         opts, args = getopt.getopt(
             sys.argv[1:],
             'ad:DEhk:Kno:p:S:Vvw:x:X:',
-            ['extract-all', 'default-domain=', 'charset=', 'escape', 'help',
+            ['extract-all', 'default-domain=', 'escape', 'help',
              'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
@@ -491,7 +510,6 @@ def main():
         SOLARIS = 2
         # defaults
         extractall = 0 # FIXME: currently this option has no effect at all.
-        charset = 'utf-8'
         escape = 0
         keywords = []
         outpath = ''
@@ -517,8 +535,6 @@ def main():
             options.extractall = 1
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
-        elif opt in ('--charset',):
-            options.charset = arg
         elif opt in ('-E', '--escape'):
             options.escape = 1
         elif opt in ('-D', '--docstrings'):
@@ -602,7 +618,7 @@ def main():
         else:
             if options.verbose:
                 print(_('Working on %s') % filename)
-            fp = open(filename, encoding=options.charset)
+            fp = open(filename, 'rb')
             closep = 1
         try:
             visitor.filename = filename
@@ -618,10 +634,10 @@ def main():
     else:
         if options.outpath:
             options.outfile = os.path.join(options.outpath, options.outfile)
-        fp = open(options.outfile, 'w', encoding=options.charset)
+        fp = open(options.outfile, 'w')
         closep = 1
     try:
-        fp.write(format_pot_file(visitor.messages, options, options.charset))
+        write_pot_file(visitor.messages, options, fp)
     finally:
         if closep:
             fp.close()
