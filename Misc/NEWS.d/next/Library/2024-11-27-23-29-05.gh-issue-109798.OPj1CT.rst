@@ -1,2 +1,3 @@
-Update error messages to be the same in :mod:`datetime`. Patch by Semyon
-Moroz.
+Normalized error messages for both implementations :mod:`_datetime` and
+:mod:`_pydatetime`. Made more detailed error output showing input values.
+Patch by Semyon Moroz.
