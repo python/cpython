@@ -226,7 +226,8 @@ token_py_template = f'''\
 # {AUTO_GENERATED_BY_SCRIPT}
 '''
 token_py_template += '''
-__all__ = ['tok_name', 'ISTERMINAL', 'ISNONTERMINAL', 'ISEOF']
+__all__ = ['tok_name', 'ISTERMINAL', 'ISNONTERMINAL', 'ISEOF',
+           'EXACT_TOKEN_TYPES']
 
 %s
 N_TOKENS = %d
