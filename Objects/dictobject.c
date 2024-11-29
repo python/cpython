@@ -7300,7 +7300,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     // We could be called with an unlocked dict when the caller knows the
     // values are already detached, so we assert after inline values check.
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
