@@ -820,20 +820,6 @@ class Breakpoint:
         self.hits = 0
         self.number = number
 
-    def deleteMe(self):
-        """Delete the breakpoint from the list associated to a file:line.
-
-        If it is the last breakpoint in that position, it also deletes
-        the entry for the file:line.
-        """
-
-        index = (self.file, self.line)
-        self.bpbynumber[self.number] = None   # No longer in list
-        self.bplist[index].remove(self)
-        if not self.bplist[index]:
-            # No more bp for this f:l combo
-            del self.bplist[index]
-
     def enable(self):
         """Mark the breakpoint as enabled."""
         self.enabled = True
