@@ -464,277 +464,288 @@ a file or socket object.");
 static int
 all_ins(PyObject* m)
 {
-    if (PyModule_AddIntMacro(m, LOCK_SH)) return -1;
-    if (PyModule_AddIntMacro(m, LOCK_EX)) return -1;
-    if (PyModule_AddIntMacro(m, LOCK_NB)) return -1;
-    if (PyModule_AddIntMacro(m, LOCK_UN)) return -1;
+#define ADD_INT_MACRO(MOD, INT) do {            \
+    if (PyModule_AddIntMacro(MOD, INT) != 0) {  \
+        return -1;                              \
+    }                                           \
+} while(0)
+    ADD_INT_MACRO(m, LOCK_SH);
+    ADD_INT_MACRO(m, LOCK_EX);
+    ADD_INT_MACRO(m, LOCK_NB);
+    ADD_INT_MACRO(m, LOCK_UN);
 /* GNU extensions, as of glibc 2.2.4 */
 #ifdef LOCK_MAND
-    if (PyModule_AddIntMacro(m, LOCK_MAND)) return -1;
+    ADD_INT_MACRO(m, LOCK_MAND);
 #endif
 #ifdef LOCK_READ
-    if (PyModule_AddIntMacro(m, LOCK_READ)) return -1;
+    ADD_INT_MACRO(m, LOCK_READ);
 #endif
 #ifdef LOCK_WRITE
-    if (PyModule_AddIntMacro(m, LOCK_WRITE)) return -1;
+    ADD_INT_MACRO(m, LOCK_WRITE);
 #endif
 #ifdef LOCK_RW
-    if (PyModule_AddIntMacro(m, LOCK_RW)) return -1;
+    ADD_INT_MACRO(m, LOCK_RW);
 #endif
 
 #ifdef F_DUPFD
-    if (PyModule_AddIntMacro(m, F_DUPFD)) return -1;
+    ADD_INT_MACRO(m, F_DUPFD);
 #endif
 #ifdef F_DUPFD_CLOEXEC
-    if (PyModule_AddIntMacro(m, F_DUPFD_CLOEXEC)) return -1;
+    ADD_INT_MACRO(m, F_DUPFD_CLOEXEC);
 #endif
 #ifdef F_GETFD
-    if (PyModule_AddIntMacro(m, F_GETFD)) return -1;
+    ADD_INT_MACRO(m, F_GETFD);
 #endif
 #ifdef F_SETFD
-    if (PyModule_AddIntMacro(m, F_SETFD)) return -1;
+    ADD_INT_MACRO(m, F_SETFD);
 #endif
 #ifdef F_GETFL
-    if (PyModule_AddIntMacro(m, F_GETFL)) return -1;
+    ADD_INT_MACRO(m, F_GETFL);
 #endif
 #ifdef F_SETFL
-    if (PyModule_AddIntMacro(m, F_SETFL)) return -1;
+    ADD_INT_MACRO(m, F_SETFL);
 #endif
 #ifdef F_GETLK
-    if (PyModule_AddIntMacro(m, F_GETLK)) return -1;
+    ADD_INT_MACRO(m, F_GETLK);
 #endif
 #ifdef F_SETLK
-    if (PyModule_AddIntMacro(m, F_SETLK)) return -1;
+    ADD_INT_MACRO(m, F_SETLK);
 #endif
 #ifdef F_SETLKW
-    if (PyModule_AddIntMacro(m, F_SETLKW)) return -1;
+    ADD_INT_MACRO(m, F_SETLKW);
 #endif
 #ifdef F_OFD_GETLK
-    if (PyModule_AddIntMacro(m, F_OFD_GETLK)) return -1;
+    ADD_INT_MACRO(m, F_OFD_GETLK);
 #endif
 #ifdef F_OFD_SETLK
-    if (PyModule_AddIntMacro(m, F_OFD_SETLK)) return -1;
+    ADD_INT_MACRO(m, F_OFD_SETLK);
 #endif
 #ifdef F_OFD_SETLKW
-    if (PyModule_AddIntMacro(m, F_OFD_SETLKW)) return -1;
+    ADD_INT_MACRO(m, F_OFD_SETLKW);
 #endif
 #ifdef F_GETOWN
-    if (PyModule_AddIntMacro(m, F_GETOWN)) return -1;
+    ADD_INT_MACRO(m, F_GETOWN);
 #endif
 #ifdef F_SETOWN
-    if (PyModule_AddIntMacro(m, F_SETOWN)) return -1;
+    ADD_INT_MACRO(m, F_SETOWN);
 #endif
 #ifdef F_GETPATH
-    if (PyModule_AddIntMacro(m, F_GETPATH)) return -1;
+    ADD_INT_MACRO(m, F_GETPATH);
 #endif
 #ifdef F_GETSIG
-    if (PyModule_AddIntMacro(m, F_GETSIG)) return -1;
+    ADD_INT_MACRO(m, F_GETSIG);
 #endif
 #ifdef F_SETSIG
-    if (PyModule_AddIntMacro(m, F_SETSIG)) return -1;
+    ADD_INT_MACRO(m, F_SETSIG);
 #endif
 #ifdef F_RDLCK
-    if (PyModule_AddIntMacro(m, F_RDLCK)) return -1;
+    ADD_INT_MACRO(m, F_RDLCK);
 #endif
 #ifdef F_WRLCK
-    if (PyModule_AddIntMacro(m, F_WRLCK)) return -1;
+    ADD_INT_MACRO(m, F_WRLCK);
 #endif
 #ifdef F_UNLCK
-    if (PyModule_AddIntMacro(m, F_UNLCK)) return -1;
+    ADD_INT_MACRO(m, F_UNLCK);
 #endif
 /* LFS constants */
 #ifdef F_GETLK64
-    if (PyModule_AddIntMacro(m, F_GETLK64)) return -1;
+    ADD_INT_MACRO(m, F_GETLK64);
 #endif
 #ifdef F_SETLK64
-    if (PyModule_AddIntMacro(m, F_SETLK64)) return -1;
+    ADD_INT_MACRO(m, F_SETLK64);
 #endif
 #ifdef F_SETLKW64
-    if (PyModule_AddIntMacro(m, F_SETLKW64)) return -1;
+    ADD_INT_MACRO(m, F_SETLKW64);
 #endif
 /* GNU extensions, as of glibc 2.2.4. */
 #ifdef FASYNC
-    if (PyModule_AddIntMacro(m, FASYNC)) return -1;
+    ADD_INT_MACRO(m, FASYNC);
 #endif
 #ifdef F_SETLEASE
-    if (PyModule_AddIntMacro(m, F_SETLEASE)) return -1;
+    ADD_INT_MACRO(m, F_SETLEASE);
 #endif
 #ifdef F_GETLEASE
-    if (PyModule_AddIntMacro(m, F_GETLEASE)) return -1;
+    ADD_INT_MACRO(m, F_GETLEASE);
 #endif
 #ifdef F_NOTIFY
-    if (PyModule_AddIntMacro(m, F_NOTIFY)) return -1;
+    ADD_INT_MACRO(m, F_NOTIFY);
+#endif
+#ifdef F_DUPFD_QUERY
+    ADD_INT_MACRO(m, F_DUPFD_QUERY);
 #endif
 /* Old BSD flock(). */
 #ifdef F_EXLCK
-    if (PyModule_AddIntMacro(m, F_EXLCK)) return -1;
+    ADD_INT_MACRO(m, F_EXLCK);
 #endif
 #ifdef F_SHLCK
-    if (PyModule_AddIntMacro(m, F_SHLCK)) return -1;
+    ADD_INT_MACRO(m, F_SHLCK);
 #endif
 
 /* Linux specifics */
 #ifdef F_SETPIPE_SZ
-    if (PyModule_AddIntMacro(m, F_SETPIPE_SZ)) return -1;
+    ADD_INT_MACRO(m, F_SETPIPE_SZ);
 #endif
 #ifdef F_GETPIPE_SZ
-    if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+    ADD_INT_MACRO(m, F_GETPIPE_SZ);
 #endif
 
 /* On Android, FICLONE is blocked by SELinux. */
 #ifndef __ANDROID__
 #ifdef FICLONE
-    if (PyModule_AddIntMacro(m, FICLONE)) return -1;
+    ADD_INT_MACRO(m, FICLONE);
 #endif
 #ifdef FICLONERANGE
-    if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
+    ADD_INT_MACRO(m, FICLONERANGE);
 #endif
 #endif
 
 #ifdef F_GETOWN_EX
     // since Linux 2.6.32
-    if (PyModule_AddIntMacro(m, F_GETOWN_EX)) return -1;
-    if (PyModule_AddIntMacro(m, F_SETOWN_EX)) return -1;
-    if (PyModule_AddIntMacro(m, F_OWNER_TID)) return -1;
-    if (PyModule_AddIntMacro(m, F_OWNER_PID)) return -1;
-    if (PyModule_AddIntMacro(m, F_OWNER_PGRP)) return -1;
+    ADD_INT_MACRO(m, F_GETOWN_EX);
+    ADD_INT_MACRO(m, F_SETOWN_EX);
+    ADD_INT_MACRO(m, F_OWNER_TID);
+    ADD_INT_MACRO(m, F_OWNER_PID);
+    ADD_INT_MACRO(m, F_OWNER_PGRP);
 #endif
 #ifdef F_GET_RW_HINT
     // since Linux 4.13
-    if (PyModule_AddIntMacro(m, F_GET_RW_HINT)) return -1;
-    if (PyModule_AddIntMacro(m, F_SET_RW_HINT)) return -1;
-    if (PyModule_AddIntMacro(m, F_GET_FILE_RW_HINT)) return -1;
-    if (PyModule_AddIntMacro(m, F_SET_FILE_RW_HINT)) return -1;
+    ADD_INT_MACRO(m, F_GET_RW_HINT);
+    ADD_INT_MACRO(m, F_SET_RW_HINT);
+    ADD_INT_MACRO(m, F_GET_FILE_RW_HINT);
+    ADD_INT_MACRO(m, F_SET_FILE_RW_HINT);
 #ifndef RWH_WRITE_LIFE_NOT_SET  // typo in Linux < 5.5
 # define RWH_WRITE_LIFE_NOT_SET RWF_WRITE_LIFE_NOT_SET
 #endif
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NOT_SET)) return -1;
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NONE)) return -1;
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_SHORT)) return -1;
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_MEDIUM)) return -1;
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_LONG)) return -1;
-    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_EXTREME)) return -1;
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_NOT_SET);
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_NONE);
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_SHORT);
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_MEDIUM);
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_LONG);
+    ADD_INT_MACRO(m, RWH_WRITE_LIFE_EXTREME);
 #endif
 
 /* OS X specifics */
 #ifdef F_FULLFSYNC
-    if (PyModule_AddIntMacro(m, F_FULLFSYNC)) return -1;
+    ADD_INT_MACRO(m, F_FULLFSYNC);
 #endif
 #ifdef F_NOCACHE
-    if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+    ADD_INT_MACRO(m, F_NOCACHE);
 #endif
 
 /* FreeBSD specifics */
 #ifdef F_DUP2FD
-    if (PyModule_AddIntMacro(m, F_DUP2FD)) return -1;
+    ADD_INT_MACRO(m, F_DUP2FD);
 #endif
 #ifdef F_DUP2FD_CLOEXEC
-    if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+    ADD_INT_MACRO(m, F_DUP2FD_CLOEXEC);
 #endif
 #ifdef F_READAHEAD
-    if (PyModule_AddIntMacro(m, F_READAHEAD)) return -1;
+    ADD_INT_MACRO(m, F_READAHEAD);
 #endif
 #ifdef F_RDAHEAD
-    if (PyModule_AddIntMacro(m, F_RDAHEAD)) return -1;
+    ADD_INT_MACRO(m, F_RDAHEAD);
 #endif
 #ifdef F_ISUNIONSTACK
-    if (PyModule_AddIntMacro(m, F_ISUNIONSTACK)) return -1;
+    ADD_INT_MACRO(m, F_ISUNIONSTACK);
 #endif
 #ifdef F_KINFO
-    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
+    ADD_INT_MACRO(m, F_KINFO);
 #endif
 
 /* NetBSD specifics */
 #ifdef F_CLOSEM
-    if (PyModule_AddIntMacro(m, F_CLOSEM)) return -1;
+    ADD_INT_MACRO(m, F_CLOSEM);
 #endif
 #ifdef F_MAXFD
-    if (PyModule_AddIntMacro(m, F_MAXFD)) return -1;
+    ADD_INT_MACRO(m, F_MAXFD);
 #endif
 #ifdef F_GETNOSIGPIPE
-    if (PyModule_AddIntMacro(m, F_GETNOSIGPIPE)) return -1;
+    ADD_INT_MACRO(m, F_GETNOSIGPIPE);
 #endif
 #ifdef F_SETNOSIGPIPE
-    if (PyModule_AddIntMacro(m, F_SETNOSIGPIPE)) return -1;
+    ADD_INT_MACRO(m, F_SETNOSIGPIPE);
 #endif
 
 /* For F_{GET|SET}FL */
 #ifdef FD_CLOEXEC
-    if (PyModule_AddIntMacro(m, FD_CLOEXEC)) return -1;
+    ADD_INT_MACRO(m, FD_CLOEXEC);
 #endif
 
 /* For F_NOTIFY */
 #ifdef DN_ACCESS
-    if (PyModule_AddIntMacro(m, DN_ACCESS)) return -1;
+    ADD_INT_MACRO(m, DN_ACCESS);
 #endif
 #ifdef DN_MODIFY
-    if (PyModule_AddIntMacro(m, DN_MODIFY)) return -1;
+    ADD_INT_MACRO(m, DN_MODIFY);
 #endif
 #ifdef DN_CREATE
-    if (PyModule_AddIntMacro(m, DN_CREATE)) return -1;
+    ADD_INT_MACRO(m, DN_CREATE);
 #endif
 #ifdef DN_DELETE
-    if (PyModule_AddIntMacro(m, DN_DELETE)) return -1;
+    ADD_INT_MACRO(m, DN_DELETE);
 #endif
 #ifdef DN_RENAME
-    if (PyModule_AddIntMacro(m, DN_RENAME)) return -1;
+    ADD_INT_MACRO(m, DN_RENAME);
 #endif
 #ifdef DN_ATTRIB
-    if (PyModule_AddIntMacro(m, DN_ATTRIB)) return -1;
+    ADD_INT_MACRO(m, DN_ATTRIB);
 #endif
 #ifdef DN_MULTISHOT
-    if (PyModule_AddIntMacro(m, DN_MULTISHOT)) return -1;
+    ADD_INT_MACRO(m, DN_MULTISHOT);
 #endif
 
 #ifdef HAVE_STROPTS_H
     /* Unix 98 guarantees that these are in stropts.h. */
-    if (PyModule_AddIntMacro(m, I_PUSH)) return -1;
-    if (PyModule_AddIntMacro(m, I_POP)) return -1;
-    if (PyModule_AddIntMacro(m, I_LOOK)) return -1;
-    if (PyModule_AddIntMacro(m, I_FLUSH)) return -1;
-    if (PyModule_AddIntMacro(m, I_FLUSHBAND)) return -1;
-    if (PyModule_AddIntMacro(m, I_SETSIG)) return -1;
-    if (PyModule_AddIntMacro(m, I_GETSIG)) return -1;
-    if (PyModule_AddIntMacro(m, I_FIND)) return -1;
-    if (PyModule_AddIntMacro(m, I_PEEK)) return -1;
-    if (PyModule_AddIntMacro(m, I_SRDOPT)) return -1;
-    if (PyModule_AddIntMacro(m, I_GRDOPT)) return -1;
-    if (PyModule_AddIntMacro(m, I_NREAD)) return -1;
-    if (PyModule_AddIntMacro(m, I_FDINSERT)) return -1;
-    if (PyModule_AddIntMacro(m, I_STR)) return -1;
-    if (PyModule_AddIntMacro(m, I_SWROPT)) return -1;
+    ADD_INT_MACRO(m, I_PUSH);
+    ADD_INT_MACRO(m, I_POP);
+    ADD_INT_MACRO(m, I_LOOK);
+    ADD_INT_MACRO(m, I_FLUSH);
+    ADD_INT_MACRO(m, I_FLUSHBAND);
+    ADD_INT_MACRO(m, I_SETSIG);
+    ADD_INT_MACRO(m, I_GETSIG);
+    ADD_INT_MACRO(m, I_FIND);
+    ADD_INT_MACRO(m, I_PEEK);
+    ADD_INT_MACRO(m, I_SRDOPT);
+    ADD_INT_MACRO(m, I_GRDOPT);
+    ADD_INT_MACRO(m, I_NREAD);
+    ADD_INT_MACRO(m, I_FDINSERT);
+    ADD_INT_MACRO(m, I_STR);
+    ADD_INT_MACRO(m, I_SWROPT);
 #ifdef I_GWROPT
     /* despite the comment above, old-ish glibcs miss a couple... */
-    if (PyModule_AddIntMacro(m, I_GWROPT)) return -1;
+    ADD_INT_MACRO(m, I_GWROPT);
 #endif
-    if (PyModule_AddIntMacro(m, I_SENDFD)) return -1;
-    if (PyModule_AddIntMacro(m, I_RECVFD)) return -1;
-    if (PyModule_AddIntMacro(m, I_LIST)) return -1;
-    if (PyModule_AddIntMacro(m, I_ATMARK)) return -1;
-    if (PyModule_AddIntMacro(m, I_CKBAND)) return -1;
-    if (PyModule_AddIntMacro(m, I_GETBAND)) return -1;
-    if (PyModule_AddIntMacro(m, I_CANPUT)) return -1;
-    if (PyModule_AddIntMacro(m, I_SETCLTIME)) return -1;
+    ADD_INT_MACRO(m, I_SENDFD);
+    ADD_INT_MACRO(m, I_RECVFD);
+    ADD_INT_MACRO(m, I_LIST);
+    ADD_INT_MACRO(m, I_ATMARK);
+    ADD_INT_MACRO(m, I_CKBAND);
+    ADD_INT_MACRO(m, I_GETBAND);
+    ADD_INT_MACRO(m, I_CANPUT);
+    ADD_INT_MACRO(m, I_SETCLTIME);
 #ifdef I_GETCLTIME
-    if (PyModule_AddIntMacro(m, I_GETCLTIME)) return -1;
+    ADD_INT_MACRO(m, I_GETCLTIME);
 #endif
-    if (PyModule_AddIntMacro(m, I_LINK)) return -1;
-    if (PyModule_AddIntMacro(m, I_UNLINK)) return -1;
-    if (PyModule_AddIntMacro(m, I_PLINK)) return -1;
-    if (PyModule_AddIntMacro(m, I_PUNLINK)) return -1;
+    ADD_INT_MACRO(m, I_LINK);
+    ADD_INT_MACRO(m, I_UNLINK);
+    ADD_INT_MACRO(m, I_PLINK);
+    ADD_INT_MACRO(m, I_PUNLINK);
 #endif
 #ifdef F_ADD_SEALS
     /* Linux: file sealing for memfd_create() */
-    if (PyModule_AddIntMacro(m, F_ADD_SEALS)) return -1;
-    if (PyModule_AddIntMacro(m, F_GET_SEALS)) return -1;
-    if (PyModule_AddIntMacro(m, F_SEAL_SEAL)) return -1;
-    if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
-    if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
-    if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
+    ADD_INT_MACRO(m, F_ADD_SEALS);
+    ADD_INT_MACRO(m, F_GET_SEALS);
+    ADD_INT_MACRO(m, F_SEAL_SEAL);
+    ADD_INT_MACRO(m, F_SEAL_SHRINK);
+    ADD_INT_MACRO(m, F_SEAL_GROW);
+    ADD_INT_MACRO(m, F_SEAL_WRITE);
 #ifdef F_SEAL_FUTURE_WRITE
-    if (PyModule_AddIntMacro(m, F_SEAL_FUTURE_WRITE)) return -1;
+    ADD_INT_MACRO(m, F_SEAL_FUTURE_WRITE);
 #endif
 #endif
+
+#undef ADD_INT_MACRO
+
     return 0;
 }
 
