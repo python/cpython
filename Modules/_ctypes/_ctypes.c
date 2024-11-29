@@ -5742,7 +5742,7 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 static PyObject *
-memoryview_at(void *ptr, int size, int readonly)
+memoryview_at(void *ptr, Py_ssize_t size, int readonly)
 {
     Py_ssize_t ssize = size;
     if (PySys_Audit("ctypes.memoryview_at", "nni",
@@ -5750,7 +5750,9 @@ memoryview_at(void *ptr, int size, int readonly)
         return NULL;
     }
     if (ssize < 0) {
-        PyErr_SetString(PyExc_ValueError, "size must not be negative");
+        PyErr_Format(PyExc_ValueError,
+                     "memoryview_at: size is negative (or overflowed): %zd",
+                     size);
         return NULL;
     }
     return PyMemoryView_FromMemory(ptr, size,

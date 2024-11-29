@@ -107,6 +107,9 @@ class MemFunctionsTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     memoryview_at(foreign_ptr, -1)
 
+                with self.assertRaises(ValueError):
+                    memoryview_at(foreign_ptr, sys.maxsize + 1)
+
                 v0 = memoryview_at(foreign_ptr, 0)
                 self.assertEqual(bytes(v0), b'')
 
