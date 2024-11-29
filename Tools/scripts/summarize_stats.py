@@ -45,6 +45,7 @@ SOURCE_DIR = Path(__file__).parents[2]
 
 
 TOTAL = "specialization.hit", "specialization.miss", "execution_count"
+UOPS_EXECUTED_LABEL = "Uops executed"
 
 
 def pretty(name: str) -> str:
@@ -313,7 +314,7 @@ class OpcodeStats:
     def is_specializable(self, opcode: str) -> bool:
         return "specializable" in self._get_stats_for_opcode(opcode)
 
-    def get_specialized_total_counts(self) -> tuple[int, int, int]:
+    def get_specialized_total_counts(self) -> tuple[int, int, int, int]:
         basic = 0
         specialized_hits = 0
         specialized_misses = 0
@@ -442,7 +443,7 @@ class Stats:
             gc_stats[gen_n][name] = value
         return gc_stats
 
-    def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
+    def get_optimization_stats(self) -> dict[Doc, tuple[int, int | None]]:
         if "Optimization attempts" not in self._data:
             return {}
 
@@ -483,7 +484,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoced because it it too short.",
+                "A potential trace is abandoned because it it too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
@@ -507,7 +508,7 @@ class Stats:
                 None,
             ),
             Doc(
-                "Uops executed",
+                UOPS_EXECUTED_LABEL,
                 "The total number of uops (micro-operations) that were executed",
             ): (
                 uops,
@@ -515,7 +516,7 @@ class Stats:
             ),
         }
 
-    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+    def get_optimizer_stats(self) -> dict[Doc, tuple[int, int | None]]:
         attempts = self._data["Optimization optimizer attempts"]
         successes = self._data["Optimization optimizer successes"]
         no_memory = self._data["Optimization optimizer failure no memory"]
@@ -1140,14 +1141,13 @@ def gc_stats_section() -> Section:
 def optimization_section() -> Section:
     def calc_optimization_table(stats: Stats) -> Rows:
         optimization_stats = stats.get_optimization_stats()
-
         return [
             (
-                label,
+                doc,
                 Count(value),
-                Ratio(value, den, percentage=label != "Uops executed"),
+                Ratio(value, den, percentage=doc.text != UOPS_EXECUTED_LABEL),
             )
-            for label, (value, den) in optimization_stats.items()
+            for doc, (value, den) in optimization_stats.items()
         ]
 
     def calc_optimizer_table(stats: Stats) -> Rows:
@@ -1264,7 +1264,7 @@ def optimization_section() -> Section:
 
 
 def rare_event_section() -> Section:
-    def calc_rare_event_table(stats: Stats) -> Table:
+    def calc_rare_event_table(stats: Stats) -> Rows:
         DOCS = {
             "set class": "Setting an object's class, `obj.__class__ = ...`",
             "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
@@ -1395,7 +1395,7 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=str | None):
+def output_stats(inputs: list[Path], json_output: str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
