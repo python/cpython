@@ -1,2 +1,1 @@
-Add the ``RDS_CMSG_RXPATH_LATENCY`` macro
-constants to the :mod:`socket`.
+Add the ``RDS_CMSG_RXPATH_LATENCY`` constant to the :mod:`socket` module.
