@@ -1,1 +1,1 @@
-Add the latest ``netlink`` macro constants to the :mod:`socket`.
+Add the latest ``NETLINK_*`` macro constants to the :mod:`socket`.
