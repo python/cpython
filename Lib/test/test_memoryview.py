@@ -14,8 +14,10 @@ import io
 import copy
 import pickle
 import struct
+import multiprocessing.shared_memory
+from threading import Thread
 
-from test.support import import_helper
+from test.support import import_helper, threading_helper
 
 
 class MyObject:
@@ -677,6 +679,25 @@ class OtherTest(unittest.TestCase):
         del pb, o
         gc.collect()
         self.assertIsNone(wr())
+
+
+@threading_helper.requires_working_threading()
+class RacingTest(unittest.TestCase):
+    def test_racing_getbuf_and_releasebuf(self):
+        """Repeatly access the memoryview for racing."""
+        n = 100
+
+        obj = multiprocessing.shared_memory.ShareableList("Uq..SeDAmB+EBrkLl.SG.Z+Z.ZdsV..wT+zLxKwdN\b")
+        threads = []
+        for _ in range(n):
+            # Issue gh-127085, the `ShareableList.count` is just a convenient way to mess the `exports`
+            # counter of `memoryview`, this issue has no direct relation with `ShareableList`.
+            threads.append(Thread(target=obj.count, args=(1,)))
+
+        with threading_helper.start_threads(threads):
+            pass
+
+        del obj
 
 
 if __name__ == "__main__":
