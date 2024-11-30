@@ -7594,9 +7594,6 @@ socket_exec(PyObject *m)
     /*  */
     ADD_INT_MACRO(m, AF_NETLINK);
     ADD_INT_MACRO(m, NETLINK_ROUTE);
-#ifdef NETLINK_SKIP
-    ADD_INT_MACRO(m, NETLINK_SKIP);
-#endif
 #ifdef NETLINK_UNUSED
     ADD_INT_MACRO(m, NETLINK_UNUSED);
 #endif
@@ -7623,9 +7620,6 @@ socket_exec(PyObject *m)
 #endif
 #ifdef NETLINK_KOBJECT_UEVENT
     ADD_INT_MACRO(m, NETLINK_KOBJECT_UEVENT);
-#endif
-#ifdef NETLINK_W1
-    ADD_INT_MACRO(m, NETLINK_W1);
 #endif
     ADD_INT_MACRO(m, NETLINK_USERSOCK);
     ADD_INT_MACRO(m, NETLINK_FIREWALL);
