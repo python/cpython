@@ -4,26 +4,27 @@ default stats folders.
 
 from __future__ import annotations
 
-# NOTE: Bytecode introspection modules (opcode, dis, etc.) should only
-# be imported when loading a single dataset. When comparing datasets, it
-# could get it wrong, leading to subtle errors.
-
 import argparse
 import collections
-from collections.abc import KeysView
-from dataclasses import dataclass
-from datetime import date
 import enum
 import functools
 import itertools
 import json
-from operator import itemgetter
 import os
-from pathlib import Path
 import re
 import sys
 import textwrap
+from collections.abc import KeysView
+from dataclasses import dataclass
+from datetime import date
+from operator import itemgetter
+from pathlib import Path
 from typing import Any, Callable, TextIO, TypeAlias
+
+# NOTE: Bytecode introspection modules (opcode, dis, etc.) should only
+# be imported when loading a single dataset. When comparing datasets, it
+# could get it wrong, leading to subtle errors.
+
 
 
 RawData: TypeAlias = dict[str, Any]
@@ -484,7 +485,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoned because it it too short.",
+                "A potential trace is abandoced because it it too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
