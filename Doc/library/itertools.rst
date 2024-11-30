@@ -877,15 +877,15 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns the sequence elements n times."
        return chain.from_iterable(repeat(tuple(iterable), n))
 
-   def tail(n, iterable):
-       "Return an iterator over the last n items."
-       # tail(3, 'ABCDEFG') → E F G
-       return iter(collections.deque(iterable, maxlen=n))
-
    def loops(n):
        "Loop n times. Like range(n) but without creating integers."
        # for _ in loops(100): ...
        return repeat(None, n)
+
+   def tail(n, iterable):
+       "Return an iterator over the last n items."
+       # tail(3, 'ABCDEFG') → E F G
+       return iter(collections.deque(iterable, maxlen=n))
 
    def consume(iterator, n=None):
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
@@ -1212,15 +1212,6 @@ The following recipes have a more mathematical flavor:
     [0, 2, 4, 6]
 
 
-    >>> list(tail(3, 'ABCDEFG'))
-    ['E', 'F', 'G']
-    >>> # Verify the input is consumed greedily
-    >>> input_iterator = iter('ABCDEFG')
-    >>> output_iterator = tail(3, input_iterator)
-    >>> list(input_iterator)
-    []
-
-
     >>> for _ in loops(5):
     ...     print('hi')
     ...
@@ -1229,6 +1220,15 @@ The following recipes have a more mathematical flavor:
     hi
     hi
     hi
+
+
+    >>> list(tail(3, 'ABCDEFG'))
+    ['E', 'F', 'G']
+    >>> # Verify the input is consumed greedily
+    >>> input_iterator = iter('ABCDEFG')
+    >>> output_iterator = tail(3, input_iterator)
+    >>> list(input_iterator)
+    []
 
 
     >>> it = iter(range(10))
