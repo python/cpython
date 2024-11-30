@@ -79,6 +79,9 @@ descriptor.
    On macOS and NetBSD, the :mod:`!fcntl` module exposes the ``F_GETNOSIGPIPE``
    and ``F_SETNOSIGPIPE`` constant.
 
+.. versionchanged:: 3.14
+   On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY`` constant.
+
 The module defines the following functions:
 
 
