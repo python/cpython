@@ -545,7 +545,7 @@ def _isoweek_to_gregorian(year, week, day):
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
         raise TypeError("tzinfo.tzname() must return None or string, "
-                        f"not {type(name).__name__!r}")
+                        f"not '{type(name).__name__!r}'")
 
 # name is the offset-producing method, "utcoffset" or "dst".
 # offset is what it returned.
@@ -559,7 +559,7 @@ def _check_utc_offset(name, offset):
         return
     if not isinstance(offset, timedelta):
         raise TypeError(f"tzinfo.{name}() must return None "
-                        f"or timedelta, not {type(offset).__name__!r}"
+                        f"or timedelta, not {type(offset).__name__!r}")
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("offset must be a timedelta "
                          "strictly between -timedelta(hours=24) and "
