@@ -80,7 +80,8 @@ descriptor.
    and ``F_SETNOSIGPIPE`` constant.
 
 .. versionchanged:: 3.14
-   On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY`` constant.
+   On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
+   to query a file descriptor pointing to the same file.
 
 The module defines the following functions:
 
