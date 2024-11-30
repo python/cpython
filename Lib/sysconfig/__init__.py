@@ -473,9 +473,6 @@ def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
-    if os.name == 'nt':
-        _init_non_posix(_CONFIG_VARS)
-        _CONFIG_VARS['VPATH'] = sys._vpath
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)
 
@@ -518,6 +515,9 @@ def _init_config_vars():
     except AttributeError:
         _CONFIG_VARS['py_version_nodot_plat'] = ''
 
+    if os.name == 'nt':
+        _init_non_posix(_CONFIG_VARS)
+        _CONFIG_VARS['VPATH'] = sys._vpath
     if _HAS_USER_BASE:
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
