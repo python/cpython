@@ -261,7 +261,7 @@ process and user.
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: chdir(path)

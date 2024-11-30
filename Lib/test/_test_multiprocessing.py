@@ -846,8 +846,8 @@ class _TestProcess(BaseTestCase):
                 finally:
                     setattr(sys, stream_name, old_stream)
 
-    @classmethod
-    def _sleep_and_set_event(self, evt, delay=0.0):
+    @staticmethod
+    def _sleep_and_set_event(evt, delay=0.0):
         time.sleep(delay)
         evt.set()
 
@@ -898,6 +898,56 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
+    def test_forkserver_auth_is_enabled(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey = forkserver._forkserver_authkey
+        self.assertTrue(authkey)
+        self.assertGreater(len(authkey), 15)
+        addr = forkserver._forkserver_address
+        self.assertTrue(addr)
+
+        # Demonstrate that a raw auth handshake, as Client performs, does not
+        # raise an error.
+        client = multiprocessing.connection.Client(addr, authkey=authkey)
+        client.close()
+
+        # That worked, now launch a quick process.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
+        self.assertEqual(proc.exitcode, 0)
+
+    def test_forkserver_without_auth_fails(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey_len = len(forkserver._forkserver_authkey)
+        with unittest.mock.patch.object(
+                forkserver, '_forkserver_authkey', None):
+            # With an incorrect authkey we should get an auth rejection
+            # rather than the above protocol error.
+            forkserver._forkserver_authkey = b'T' * authkey_len
+            proc = self.Process(target=sys.exit)
+            with self.assertRaises(multiprocessing.AuthenticationError):
+                proc.start()
+            del proc
+
+        # authkey restored, launching processes should work again.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
 
 #
 #
@@ -2464,6 +2514,19 @@ class _TestContainers(BaseTestCase):
         a = self.list()
         self.assertIsInstance(a, collections.abc.MutableSequence)
 
+        # MutableSequence also has __iter__, but we can iterate over
+        # ListProxy using __getitem__ instead. Adding __iter__ to ListProxy
+        # would change the behavior of a list modified during iteration.
+        mutable_sequence_methods = (
+            '__contains__', '__delitem__', '__getitem__', '__iadd__',
+            '__len__', '__reversed__', '__setitem__', 'append',
+            'clear', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
+            'reverse',
+        )
+        for name in mutable_sequence_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(a, name)))
+
     def test_list_iter(self):
         a = self.list(list(range(10)))
         it = iter(a)
@@ -2507,6 +2570,15 @@ class _TestContainers(BaseTestCase):
     def test_dict_isinstance(self):
         a = self.dict()
         self.assertIsInstance(a, collections.abc.MutableMapping)
+
+        mutable_mapping_methods = (
+            '__contains__', '__delitem__', '__eq__', '__getitem__', '__iter__',
+            '__len__', '__ne__', '__setitem__', 'clear', 'get', 'items',
+            'keys', 'pop', 'popitem', 'setdefault', 'update', 'values',
+        )
+        for name in mutable_mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(a, name)))
 
     def test_dict_iter(self):
         d = self.dict()

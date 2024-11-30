@@ -421,6 +421,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     PyThread_handle_t os_handle;
     if (PyThread_start_joinable_thread(thread_run, boot, &ident, &os_handle)) {
         PyThreadState_Clear(boot->tstate);
+        PyThreadState_Delete(boot->tstate);
         thread_bootstate_free(boot, 1);
         PyErr_SetString(ThreadError, "can't start new thread");
         goto start_failed;
@@ -1623,7 +1624,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
     }
     if (r == 1) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.100s' object attribute '%U' is read-only",
+                     "'%.100s' object attribute %R is read-only",
                      Py_TYPE(self)->tp_name, name);
         goto err;
     }

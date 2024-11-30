@@ -18,7 +18,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
+   Copyright (c) 2004 Python Software Foundation.
    All rights reserved.
 */
 
@@ -937,8 +937,8 @@ _functools.reduce
 
     function as func: object
     iterable as seq: object
-    initial as result: object = NULL
     /
+    initial as result: object = NULL
 
 Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
@@ -953,7 +953,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=d233c2670cba7f66]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
 {
     PyObject *args, *it;
 
