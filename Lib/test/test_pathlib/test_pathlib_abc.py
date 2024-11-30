@@ -7,6 +7,7 @@ import stat
 import unittest
 
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._types import Parser, DirEntry, StatResult
 import posixpath
 
 from test.support import is_wasi
@@ -95,6 +96,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.parser = p.parser
         self.sep = self.parser.sep
         self.altsep = self.parser.altsep
+
+    def test_parser(self):
+        self.assertIsInstance(self.cls.parser, Parser)
 
     def test_constructor_common(self):
         P = self.cls
@@ -2169,7 +2173,7 @@ class DummyPathTest(DummyPurePathTest):
         with p.scandir() as entries:
             for entry in entries:
                 child = p / entry.name
-                self.assertIsNotNone(entry)
+                self.assertIsInstance(entry, DirEntry)
                 self.assertEqual(entry.name, child.name)
                 self.assertEqual(entry.is_symlink(),
                                  child.is_symlink())
@@ -2591,6 +2595,10 @@ class DummyPathTest(DummyPurePathTest):
         statA = self.cls(self.base).joinpath('fileA').stat()
         statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
         statC = self.cls(self.base).joinpath('dirC').stat()
+        # all instances of StatResult
+        self.assertIsInstance(statA, StatResult)
+        self.assertIsInstance(statB, StatResult)
+        self.assertIsInstance(statC, StatResult)
         # st_mode: files are the same, directory differs.
         self.assertIsInstance(statA.st_mode, int)
         self.assertEqual(statA.st_mode, statB.st_mode)
