@@ -726,6 +726,14 @@ class Path(PathBase, PurePath):
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
 
+    @classmethod
+    def cwd(cls):
+        """Return a new path pointing to the current working directory."""
+        cwd = os.getcwd()
+        path = cls(cwd)
+        path._str = cwd  # getcwd() returns a normalized path
+        return path
+
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -906,6 +914,15 @@ class Path(PathBase, PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to expanduser('~').
+        """
+        homedir = os.path.expanduser("~")
+        if homedir == "~":
+            raise RuntimeError("Could not determine home directory.")
+        return cls(homedir)
 
     @classmethod
     def from_uri(cls, uri):
