@@ -558,7 +558,7 @@ def _check_utc_offset(name, offset):
     if offset is None:
         return
     if not isinstance(offset, timedelta):
-        raise TypeError("tzinfo.%s() must return None "
+        raise TypeError(f"tzinfo.{name}() must return None "
                         "or timedelta, not '%s'"
                         % (name, type(offset).__name__))
     if not -timedelta(1) < offset < timedelta(1):
