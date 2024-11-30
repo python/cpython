@@ -143,6 +143,22 @@ jobs:
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
 
+  check_refcounts:
+    name: 'Check if refcounts.dat is up to date'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Dependencies
+        run: sudo ./.github/workflows/posix-deps-apt.sh
+      - name: Check refcounts.dat
+        run: make -C Doc/tools check_refcounts
+
   build_windows:
     name: >-
       Windows
@@ -554,6 +570,7 @@ jobs:
     - check-docs
     - check_autoconf_regen
     - check_generated_files
+    - check_refcounts
     - build_macos
     - build_ubuntu
     - build_ubuntu_ssltests
@@ -590,6 +607,7 @@ jobs:
             && '
             check_autoconf_regen,
             check_generated_files,
+            check_refcounts,
             build_macos,
             build_ubuntu,
             build_ubuntu_ssltests,
