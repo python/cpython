@@ -1957,9 +1957,10 @@ Utility functions
    If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
    reference count.
 
-   In contrast, even if *dst* is not ``NULL``, its reference count will not be
-   decremented before assigning the new value.  You need to call its ``Release``
-   to free it appropriately.
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
 
    .. availability:: Windows
 
