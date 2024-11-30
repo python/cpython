@@ -204,7 +204,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -372,8 +372,8 @@ class GettextVisitor(NodeVisitor):
             return
 
         if max(spec) >= len(node.args):
-            msg = _('*** %(file)s:%(lineno)s: Expected at least %(count)d positional arguments, '
-                    'got: %(args_count)d')
+            msg = _('*** {file}:{lineno}: Expected at least {count} positional argument(s) '
+                    'in gettext call, got {args_count}')
             print(msg.format(file=self.filename, lineno=node.lineno,
                              count=max(spec) + 1, args_count=len(node.args)),
                   file=sys.stderr)
@@ -383,8 +383,8 @@ class GettextVisitor(NodeVisitor):
         for position, arg_type in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
-                msg = _('*** %(file)s:%(lineno)s: Expected a string constant for '
-                        'argument %(position)d, got: %(arg)s')
+                msg = _('*** {file}:{lineno}: Expected a string constant for '
+                        'argument {position}, got {arg}')
                 print(msg.format(file=self.filename, lineno=arg.lineno,
                                  position=position + 1, arg=ast.unparse(arg)),
                       file=sys.stderr)
