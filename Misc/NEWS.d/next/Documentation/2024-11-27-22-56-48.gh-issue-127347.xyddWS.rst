@@ -1,1 +1,1 @@
-Document :func:`traceback.print_list`.
+Publicly expose :func:`traceback.print_list` in :attr:`!traceback.__all__`.
