@@ -1035,6 +1035,12 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
+   .. warning::
+
+      This function does not strip null bytes from *unicode*, so the length of the
+      returned string (from ``strlen()``) is possibly smaller than the length of the
+      passed unicode object.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
