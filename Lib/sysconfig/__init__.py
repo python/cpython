@@ -473,21 +473,19 @@ def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
+    prefix = _PREFIX
+    exec_prefix = _EXEC_PREFIX
+    base_prefix = _BASE_PREFIX
+    base_exec_prefix = _BASE_EXEC_PREFIX
+
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)
-
-    # If we are cross-compiling, load the prefixes from the Makefile instead.
-    # (only available on POSIX)
-    if '_PYTHON_PROJECT_BASE' in os.environ and os.name == 'posix':
-        prefix = _CONFIG_VARS['prefix']
-        exec_prefix = _CONFIG_VARS['exec_prefix']
-        base_prefix = _CONFIG_VARS['prefix']
-        base_exec_prefix = _CONFIG_VARS['exec_prefix']
-    else:
-        prefix = _PREFIX
-        exec_prefix = _EXEC_PREFIX
-        base_prefix = _BASE_PREFIX
-        base_exec_prefix = _BASE_EXEC_PREFIX
+        # If we are cross-compiling, load the prefixes from the Makefile instead.
+        if '_PYTHON_PROJECT_BASE' in os.environ:
+            prefix = _CONFIG_VARS['prefix']
+            exec_prefix = _CONFIG_VARS['exec_prefix']
+            base_prefix = _CONFIG_VARS['prefix']
+            base_exec_prefix = _CONFIG_VARS['exec_prefix']
 
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
