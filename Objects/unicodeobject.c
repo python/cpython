@@ -5029,6 +5029,7 @@ load_unaligned(const unsigned char *p, size_t size)
     u.s = 0;
     switch (size) {
     default:
+#if SIZEOF_SIZE_T == 8
     case 8:
         u.b[7] = p[7];
         _Py_FALLTHROUGH;
@@ -5041,6 +5042,7 @@ load_unaligned(const unsigned char *p, size_t size)
     case 5:
         u.b[4] = p[4];
         _Py_FALLTHROUGH;
+#endif
     case 4:
         u.b[3] = p[3];
         _Py_FALLTHROUGH;
