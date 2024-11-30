@@ -257,11 +257,6 @@ Condition
       Once awakened, the Condition re-acquires its lock and this method
       returns ``True``.
 
-      Note that a task *may* return from this call spuriously,
-      which is why the caller should always re-check the state
-      and be prepared to :meth:`~Condition.wait` again. For this reason, you may
-      prefer to use :meth:`~Condition.wait_for` instead.
-
    .. coroutinemethod:: wait_for(predicate)
 
       Wait until a predicate becomes *true*.
