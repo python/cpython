@@ -419,11 +419,14 @@ class Test_pygettext(unittest.TestCase):
         _(1+2)
         ngettext('foo')
         '''))
-        self.maxDiff = None
+
+        # Normalize line endings on Windows
+        stderr = stderr.decode('utf-8').replace('\r', '')
+
         self.assertEqual(
             stderr,
-            b"*** test.py:1: Expected a string constant for argument 1, got 1 + 2\n"
-            b"*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
+            "*** test.py:1: Expected a string constant for argument 1, got 1 + 2\n"
+            "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
         )
 
 
