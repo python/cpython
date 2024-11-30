@@ -600,7 +600,7 @@ def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
         raise TypeError(
             "tzinfo argument must be None or of a tzinfo subclass, "
-            f"not type '{type(tz).__name__}'"
+            f"not type {type(tz).__name__!r}"
         )
 
 def _divide_and_round(a, b):
