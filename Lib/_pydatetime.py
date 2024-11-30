@@ -559,8 +559,7 @@ def _check_utc_offset(name, offset):
         return
     if not isinstance(offset, timedelta):
         raise TypeError(f"tzinfo.{name}() must return None "
-                        "or timedelta, not '%s'"
-                        % (name, type(offset).__name__))
+                        f"or timedelta, not {type(offset).__name__!r}"
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("offset must be a timedelta "
                          "strictly between -timedelta(hours=24) and "
