@@ -5014,21 +5014,26 @@ ctz(size_t v)
 #endif /* SIZEOF_SIZE_T */
     return pos;
 }
+#else
+#define HAVE_CTZ 0
 #endif
 
-#if HAVE_CTZ
-// load p[0]..p[size-1] as a little-endian size_t
-// without unaligned access nor read ahead.
+#if HAVE_CTZ && PY_LITTLE_ENDIAN
+// load p[0]..p[size-1] as a size_t without unaligned access nor read ahead.
 static size_t
 load_unaligned(const unsigned char *p, size_t size)
 {
-    assert(size <= SIZEOF_SIZE_T);
     union {
         size_t s;
         unsigned char b[SIZEOF_SIZE_T];
     } u;
     u.s = 0;
+    // This switch statement assumes little endian because:
+    // * union is faster than bitwise or and shift.
+    // * big endian machine is rare and hard to maintain.
     switch (size) {
+    default:
+#if SIZEOF_SIZE_T == 8
     case 8:
         u.b[7] = p[7];
         _Py_FALLTHROUGH;
@@ -5041,6 +5046,7 @@ load_unaligned(const unsigned char *p, size_t size)
     case 5:
         u.b[4] = p[4];
         _Py_FALLTHROUGH;
+#endif
     case 4:
         u.b[3] = p[3];
         _Py_FALLTHROUGH;
@@ -5055,8 +5061,6 @@ load_unaligned(const unsigned char *p, size_t size)
         break;
     case 0:
         break;
-    default:
-        Py_UNREACHABLE();
     }
     return u.s;
 }
@@ -5077,8 +5081,8 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
 
     if (end - start >= SIZEOF_SIZE_T) {
         const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
         if (p < p2) {
-#if HAVE_CTZ
 #if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
             // x86 and amd64 are little endian and can load unaligned memory.
             size_t u = *(const size_t*)p & ASCII_CHAR_MASK;
@@ -5086,11 +5090,11 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
 #endif
             if (u) {
-                return p - start + (ctz(u) - 7) / 8;
+                return (ctz(u) - 7) / 8;
             }
             p = p2;
         }
-#else
+#else /* PY_LITTLE_ENDIAN && HAVE_CTZ */
         while (p < p2) {
             if (*p & 0x80) {
                 return p - start;
@@ -5113,7 +5117,7 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             p += SIZEOF_SIZE_T;
         }
     }
-#if HAVE_CTZ
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
     // we can not use *(const size_t*)p to avoid buffer overrun.
     size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
     if (u) {
