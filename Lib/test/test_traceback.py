@@ -21,7 +21,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
-from test.support import force_not_colorized, is_emscripten
+from test.support import force_not_colorized
 
 import json
 import textwrap
@@ -2097,7 +2097,7 @@ class TracebackFormatMixin:
         return e
 
     @cpython_only
-    @unittest.skipIf(is_emscripten, "exhausts limited stack")
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_capi(self):
         from _testcapi import exception_print
         LIMIT = 75
@@ -2109,7 +2109,7 @@ class TracebackFormatMixin:
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
-    @unittest.skipIf(is_emscripten, "exhausts limited stack")
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()

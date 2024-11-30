@@ -1,7 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
-from test.support import cpython_only, import_helper, script_helper, is_emscripten
+from test.support import cpython_only, import_helper, script_helper, skip_emscripten_stack_overflow
 
 testmeths = [
 
@@ -554,7 +554,7 @@ class ClassTests(unittest.TestCase):
         self.assertFalse(hasattr(o, "__call__"))
         self.assertFalse(hasattr(c, "__call__"))
 
-    @unittest.skipIf(is_emscripten, "exhausts limited stack")
+    @skip_emscripten_stack_overflow()
     def testSFBug532646(self):
         # Test for SF bug 532646
 
