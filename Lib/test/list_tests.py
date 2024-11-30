@@ -3,7 +3,6 @@ Tests common to list and UserList.UserList
 """
 
 import sys
-import unittest
 from functools import cmp_to_key
 
 from test import seq_tests

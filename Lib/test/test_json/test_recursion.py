@@ -1,6 +1,5 @@
 from test import support
 from test.test_json import PyTest, CTest
-import unittest
 
 
 class JSONTestObject:
