@@ -882,6 +882,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # tail(3, 'ABCDEFG') → E F G
        return iter(collections.deque(iterable, maxlen=n))
 
+   def loops(n):
+       "Loop n times. Like range(n) but faster because no integers are produced."
+       # for _ in loops(100): ...
+       return repeat(None, n)
+
    def consume(iterator, n=None):
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
@@ -1214,6 +1219,16 @@ The following recipes have a more mathematical flavor:
     >>> output_iterator = tail(3, input_iterator)
     >>> list(input_iterator)
     []
+
+
+    >>> for _ in loops(5):
+    ...     print('hi')
+    ...
+    hi
+    hi
+    hi
+    hi
+    hi
 
 
     >>> it = iter(range(10))
