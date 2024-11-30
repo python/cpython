@@ -883,7 +883,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return iter(collections.deque(iterable, maxlen=n))
 
    def loops(n):
-       "Loop n times. Like range(n) but faster because no integers are produced."
+       "Loop n times. Like range(n) but without creating integers."
        # for _ in loops(100): ...
        return repeat(None, n)
 
