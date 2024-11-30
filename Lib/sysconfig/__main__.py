@@ -229,10 +229,14 @@ def _generate_posix_vars():
         f.write('build_time_vars = ')
         _print_config_dict(vars, stream=f)
 
+    print(f'Written {destfile}')
+
     # Write a JSON file with the output of sysconfig.get_config_vars
     jsonfile = os.path.join(pybuilddir, _get_json_data_name())
     with open(jsonfile, 'w') as f:
         json.dump(get_config_vars(), f, indent=2)
+
+    print(f'Written {jsonfile}')
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:
