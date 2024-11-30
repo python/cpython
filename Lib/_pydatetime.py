@@ -564,7 +564,7 @@ def _check_utc_offset(name, offset):
     if not -timedelta(1) < offset < timedelta(1):
         raise ValueError("offset must be a timedelta "
                          "strictly between -timedelta(hours=24) and "
-                         f"timedelta(hours=24), not {offset.__repr__()}")
+                         f"timedelta(hours=24), not {offset!r}")
 
 def _check_date_fields(year, month, day):
     year = _index(year)
