@@ -7,6 +7,7 @@ from sysconfig import (
     _PYTHON_BUILD,
     _get_sysconfigdata_name,
     get_config_h_filename,
+    get_config_var,
     get_config_vars,
     get_default_scheme,
     get_makefile_filename,
@@ -161,7 +162,7 @@ def _print_config_dict(d, stream):
 
 def _get_pybuilddir():
     pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if hasattr(sys, "gettotalrefcount"):
+    if get_config_var('Py_DEBUG') == '1':
         pybuilddir += '-pydebug'
     return pybuilddir
 
