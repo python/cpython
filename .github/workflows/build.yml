@@ -185,7 +185,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
+      run: |
+        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@8
+        # Because alternate versions are not symlinked into place by default:
+        brew link tcl-tk@8
     - name: Configure CPython
       run: |
         CPPFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
