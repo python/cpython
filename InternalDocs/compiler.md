@@ -42,10 +42,10 @@ The definitions for literal tokens (such as `:`, numbers, etc.) can be found in
 
 See Also:
 
-* [Guide to the parser](https://devguide.python.org/internals/parser/index.html)
+* [Guide to the parser](parser.md)
   for a detailed description of the parser.
 
-* [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
+* [Changing CPython’s grammar](changing_grammar.md)
   for a detailed description of the grammar.
 
 
@@ -443,14 +443,12 @@ reference to the source code (filename, etc). All of this is implemented by
 Code objects
 ============
 
-The result of `PyAST_CompileObject()` is a `PyCodeObject` which is defined in
+The result of `_PyAST_Compile()` is a `PyCodeObject` which is defined in
 [Include/cpython/code.h](../Include/cpython/code.h).
 And with that you now have executable Python bytecode!
 
-The code objects (byte code) are executed in [Python/ceval.c](../Python/ceval.c).
-This file will also need a new case statement for the new opcode in the big switch
-statement in `_PyEval_EvalFrameDefault()`.
-
+The code objects (byte code) are executed in `_PyEval_EvalFrameDefault()`
+in [Python/ceval.c](../Python/ceval.c).
 
 Important files
 ===============

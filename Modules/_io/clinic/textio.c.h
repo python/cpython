@@ -70,7 +70,8 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -124,7 +125,8 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -178,7 +180,8 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     PyObject *argsbuf[1];
     const char *s;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -205,11 +208,9 @@ PyDoc_STRVAR(_io__TextIOBase_encoding__doc__,
 "Encoding of the text stream.\n"
 "\n"
 "Subclasses should override.");
-#define _io__TextIOBase_encoding_HAS_DOCSTR
+#define _io__TextIOBase_encoding_DOCSTR _io__TextIOBase_encoding__doc__
 
-#if defined(_io__TextIOBase_encoding_HAS_DOCSTR)
-#  define _io__TextIOBase_encoding_DOCSTR _io__TextIOBase_encoding__doc__
-#else
+#if !defined(_io__TextIOBase_encoding_DOCSTR)
 #  define _io__TextIOBase_encoding_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_ENCODING_GETSETDEF)
@@ -234,11 +235,9 @@ PyDoc_STRVAR(_io__TextIOBase_newlines__doc__,
 "Only line endings translated during reading are considered.\n"
 "\n"
 "Subclasses should override.");
-#define _io__TextIOBase_newlines_HAS_DOCSTR
+#define _io__TextIOBase_newlines_DOCSTR _io__TextIOBase_newlines__doc__
 
-#if defined(_io__TextIOBase_newlines_HAS_DOCSTR)
-#  define _io__TextIOBase_newlines_DOCSTR _io__TextIOBase_newlines__doc__
-#else
+#if !defined(_io__TextIOBase_newlines_DOCSTR)
 #  define _io__TextIOBase_newlines_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_NEWLINES_GETSETDEF)
@@ -261,11 +260,9 @@ PyDoc_STRVAR(_io__TextIOBase_errors__doc__,
 "The error setting of the decoder or encoder.\n"
 "\n"
 "Subclasses should override.");
-#define _io__TextIOBase_errors_HAS_DOCSTR
+#define _io__TextIOBase_errors_DOCSTR _io__TextIOBase_errors__doc__
 
-#if defined(_io__TextIOBase_errors_HAS_DOCSTR)
-#  define _io__TextIOBase_errors_DOCSTR _io__TextIOBase_errors__doc__
-#else
+#if !defined(_io__TextIOBase_errors_DOCSTR)
 #  define _io__TextIOBase_errors_DOCSTR NULL
 #endif
 #if defined(_IO__TEXTIOBASE_ERRORS_GETSETDEF)
@@ -339,7 +336,8 @@ _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject 
     int translate;
     PyObject *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -405,7 +403,8 @@ _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *const *ar
     PyObject *input;
     int final = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -546,7 +545,8 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int line_buffering = 0;
     int write_through = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 6, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -681,7 +681,8 @@ _io_TextIOWrapper_reconfigure(textio *self, PyObject *const *args, Py_ssize_t na
     PyObject *line_buffering_obj = Py_None;
     PyObject *write_through_obj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1131,9 +1132,7 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_name_HAS_DOCSTR)
-#  define _io_TextIOWrapper_name_DOCSTR _io_TextIOWrapper_name__doc__
-#else
+#if !defined(_io_TextIOWrapper_name_DOCSTR)
 #  define _io_TextIOWrapper_name_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NAME_GETSETDEF)
@@ -1158,9 +1157,7 @@ _io_TextIOWrapper_name_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_closed_HAS_DOCSTR)
-#  define _io_TextIOWrapper_closed_DOCSTR _io_TextIOWrapper_closed__doc__
-#else
+#if !defined(_io_TextIOWrapper_closed_DOCSTR)
 #  define _io_TextIOWrapper_closed_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_CLOSED_GETSETDEF)
@@ -1185,9 +1182,7 @@ _io_TextIOWrapper_closed_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_newlines_HAS_DOCSTR)
-#  define _io_TextIOWrapper_newlines_DOCSTR _io_TextIOWrapper_newlines__doc__
-#else
+#if !defined(_io_TextIOWrapper_newlines_DOCSTR)
 #  define _io_TextIOWrapper_newlines_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF)
@@ -1212,9 +1207,7 @@ _io_TextIOWrapper_newlines_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper_errors_HAS_DOCSTR)
-#  define _io_TextIOWrapper_errors_DOCSTR _io_TextIOWrapper_errors__doc__
-#else
+#if !defined(_io_TextIOWrapper_errors_DOCSTR)
 #  define _io_TextIOWrapper_errors_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER_ERRORS_GETSETDEF)
@@ -1239,9 +1232,7 @@ _io_TextIOWrapper_errors_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_TextIOWrapper__CHUNK_SIZE_HAS_DOCSTR)
-#  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR _io_TextIOWrapper__CHUNK_SIZE__doc__
-#else
+#if !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
@@ -1266,9 +1257,7 @@ _io_TextIOWrapper__CHUNK_SIZE_get(textio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_HAS_DOCSTR)
-#  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR _io_TextIOWrapper__CHUNK_SIZE__doc__
-#else
+#if !defined(_io_TextIOWrapper__CHUNK_SIZE_DOCSTR)
 #  define _io_TextIOWrapper__CHUNK_SIZE_DOCSTR NULL
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
@@ -1292,4 +1281,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=04cb7c67791a9ec1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1172c500a022c65d input=a9049054013a1b77]*/

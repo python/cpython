@@ -810,7 +810,9 @@ internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
 
     /* s->sock_timeout is in seconds, timeout in ms */
     ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
-    assert(ms <= INT_MAX);
+    if (ms > INT_MAX) {
+        ms = INT_MAX;
+    }
 
     /* On some OSes, typically BSD-based ones, the timeout parameter of the
        poll() syscall, when negative, must be exactly INFTIM, where defined,
@@ -822,6 +824,7 @@ internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
         ms = -1;
 #endif
     }
+    assert(INT_MIN <= ms && ms <= INT_MAX);
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
@@ -7626,27 +7629,17 @@ socket_exec(PyObject *m)
 #endif
     ADD_INT_MACRO(m, NETLINK_USERSOCK);
     ADD_INT_MACRO(m, NETLINK_FIREWALL);
-#ifdef NETLINK_TCPDIAG
-    ADD_INT_MACRO(m, NETLINK_TCPDIAG);
-#endif
 #ifdef NETLINK_NFLOG
     ADD_INT_MACRO(m, NETLINK_NFLOG);
 #endif
 #ifdef NETLINK_XFRM
     ADD_INT_MACRO(m, NETLINK_XFRM);
 #endif
-#ifdef NETLINK_ARPD
-    ADD_INT_MACRO(m, NETLINK_ARPD);
-#endif
-#ifdef NETLINK_ROUTE6
-    ADD_INT_MACRO(m, NETLINK_ROUTE6);
-#endif
+#ifdef NETLINK_IP6_FW
     ADD_INT_MACRO(m, NETLINK_IP6_FW);
+#endif
 #ifdef NETLINK_DNRTMSG
     ADD_INT_MACRO(m, NETLINK_DNRTMSG);
-#endif
-#ifdef NETLINK_TAPBASE
-    ADD_INT_MACRO(m, NETLINK_TAPBASE);
 #endif
 #ifdef NETLINK_CRYPTO
     ADD_INT_MACRO(m, NETLINK_CRYPTO);
