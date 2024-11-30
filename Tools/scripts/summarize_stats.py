@@ -4,27 +4,26 @@ default stats folders.
 
 from __future__ import annotations
 
-import argparse
-import collections
-import enum
-import functools
-import itertools
-import json
-import os
-import re
-import sys
-import textwrap
-from collections.abc import KeysView
-from dataclasses import dataclass
-from datetime import date
-from operator import itemgetter
-from pathlib import Path
-from typing import Any, Callable, TextIO, TypeAlias
-
 # NOTE: Bytecode introspection modules (opcode, dis, etc.) should only
 # be imported when loading a single dataset. When comparing datasets, it
 # could get it wrong, leading to subtle errors.
 
+import argparse
+import collections
+from collections.abc import KeysView
+from dataclasses import dataclass
+from datetime import date
+import enum
+import functools
+import itertools
+import json
+from operator import itemgetter
+import os
+from pathlib import Path
+import re
+import sys
+import textwrap
+from typing import Any, Callable, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
