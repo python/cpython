@@ -505,6 +505,30 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
+    def test_cross_build(self):
+        # Build a host Python
+        host_build_dir = tempfile.mkdtemp()
+        host_install_dir = os.path.join(host_build_dir, 'host-python')
+        subprocess.run(['./configure', f'--prefix={host_install_dir}'], check=True)
+        subprocess.run(['make', 'install'], check=True)
+
+        # Configure a new build using --with-build-python
+        cross_build_dir = tempfile.mkdtemp()
+        cross_install_dir = os.path.join(cross_build_dir, 'cross-python')
+        build_python = os.path.join(host_install_dir, 'bin', 'python')
+        subprocess.run(['./configure', f'--with-build-python={build_python}', f'--prefix={cross_install_dir}'], check=True)
+        subprocess.run(['make'], check=True)
+
+        # Run the tests in the build directory
+        subprocess.run([os.path.join(cross_build_dir, 'python'), '-m', 'test', 'test_sysconfig', 'test_site', 'test_embed'], check=True)
+
+        # Install the cross-build
+        subprocess.run(['make', 'install'], check=True)
+
+        # Run the tests again with the installed Python
+        installed_python = os.path.join(cross_install_dir, 'bin', 'python')
+        subprocess.run([installed_python, '-m', 'test', 'test_sysconfig', 'test_site', 'test_embed'], check=True)
+
 
 def config_dev_mode(preconfig, config):
     preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG

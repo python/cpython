@@ -1,0 +1,44 @@
+name: Cross-Builds
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  cross-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: sudo apt-get install -y build-essential
+
+      - name: Build host Python
+        run: |
+          ./configure --prefix=$PWD/workdir/host-python
+          make -j4
+          make install
+
+      - name: Configure cross-build
+        run: |
+          ./configure --with-build-python=$PWD/workdir/host-python/bin/python --prefix=$PWD/workdir/cross-python
+          make -j4
+
+      - name: Run tests in build directory
+        run: ./python -m test test_sysconfig test_site test_embed
+
+      - name: Install cross-build
+        run: make install
+
+      - name: Run tests with installed Python
+        run: $PWD/workdir/cross-python/bin/python -m test test_sysconfig test_site test_embed
