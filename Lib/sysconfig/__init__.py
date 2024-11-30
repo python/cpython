@@ -472,18 +472,38 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
+
+    if os.name == 'nt':
+        _init_non_posix(_CONFIG_VARS)
+        _CONFIG_VARS['VPATH'] = sys._vpath
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+
+    # If we are cross-compiling, load the prefixes from the Makefile instead.
+    # (only available on POSIX)
+    if '_PYTHON_PROJECT_BASE' in os.environ and os.name == 'posix':
+        prefix = _CONFIG_VARS['prefix']
+        exec_prefix = _CONFIG_VARS['exec_prefix']
+        base_prefix = _CONFIG_VARS['prefix']
+        base_exec_prefix = _CONFIG_VARS['exec_prefix']
+    else:
+        prefix = _PREFIX
+        exec_prefix = _EXEC_PREFIX
+        base_prefix = _BASE_PREFIX
+        base_exec_prefix = _BASE_EXEC_PREFIX
+
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
     # Distutils.
-    _CONFIG_VARS['prefix'] = _PREFIX
-    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['prefix'] = prefix
+    _CONFIG_VARS['exec_prefix'] = exec_prefix
     _CONFIG_VARS['py_version'] = _PY_VERSION
     _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
     _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-    _CONFIG_VARS['base'] = _PREFIX
-    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['installed_base'] = base_prefix
+    _CONFIG_VARS['base'] = prefix
+    _CONFIG_VARS['installed_platbase'] = base_exec_prefix
+    _CONFIG_VARS['platbase'] = exec_prefix
     _CONFIG_VARS['projectbase'] = _PROJECT_BASE
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
     _CONFIG_VARS['implementation'] = _get_implementation()
@@ -498,11 +518,6 @@ def _init_config_vars():
     except AttributeError:
         _CONFIG_VARS['py_version_nodot_plat'] = ''
 
-    if os.name == 'nt':
-        _init_non_posix(_CONFIG_VARS)
-        _CONFIG_VARS['VPATH'] = sys._vpath
-    if os.name == 'posix':
-        _init_posix(_CONFIG_VARS)
     if _HAS_USER_BASE:
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
