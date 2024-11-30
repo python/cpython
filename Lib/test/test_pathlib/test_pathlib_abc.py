@@ -63,37 +63,6 @@ class ParserBaseTest(unittest.TestCase):
 class PurePathBaseTest(unittest.TestCase):
     cls = PurePathBase
 
-    def test_unsupported_operation_pure(self):
-        p = self.cls('foo')
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            p.drive
-        with self.assertRaises(e):
-            p.root
-        with self.assertRaises(e):
-            p.anchor
-        with self.assertRaises(e):
-            p.parts
-        with self.assertRaises(e):
-            p.parent
-        with self.assertRaises(e):
-            p.parents
-        with self.assertRaises(e):
-            p.name
-        with self.assertRaises(e):
-            p.stem
-        with self.assertRaises(e):
-            p.suffix
-        with self.assertRaises(e):
-            p.suffixes
-        self.assertRaises(e, p.with_name, 'bar')
-        self.assertRaises(e, p.with_stem, 'bar')
-        self.assertRaises(e, p.with_suffix, '.txt')
-        self.assertRaises(e, p.relative_to, '')
-        self.assertRaises(e, p.is_relative_to, '')
-        self.assertRaises(e, p.is_absolute)
-        self.assertRaises(e, p.match, '*')
-
     def test_magic_methods(self):
         P = self.cls
         self.assertFalse(hasattr(P, '__fspath__'))
@@ -108,12 +77,11 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
     def test_parser(self):
-        self.assertIsInstance(self.cls.parser, ParserBase)
+        self.assertIs(self.cls.parser, posixpath)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
-    parser = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -1367,10 +1335,9 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.write_bytes, b'foo')
         self.assertRaises(e, p.write_text, 'foo')
         self.assertRaises(e, p.iterdir)
-        self.assertRaises(e, p.glob, '*')
-        self.assertRaises(e, p.rglob, '*')
+        self.assertRaises(e, lambda: list(p.glob('*')))
+        self.assertRaises(e, lambda: list(p.rglob('*')))
         self.assertRaises(e, lambda: list(p.walk()))
-        self.assertRaises(e, p.absolute)
         self.assertRaises(e, p.expanduser)
         self.assertRaises(e, p.readlink)
         self.assertRaises(e, p.symlink_to, 'foo')
@@ -1442,7 +1409,6 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
-    parser = posixpath
 
     _files = {}
     _directories = {}

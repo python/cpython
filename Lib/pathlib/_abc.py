@@ -121,7 +121,7 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    parser = ParserBase()
+    parser = posixpath
     _globber = PathGlobber
 
     def __init__(self, *args):
