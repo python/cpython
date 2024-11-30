@@ -790,16 +790,17 @@ dummy_func(
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(!LOCK_OBJECT(list));
-            if (index >= PyList_GET_SIZE(list)) {
-                UNLOCK_OBJECT(list);
-                DEOPT_IF(true);
-            }
+#ifdef Py_GIL_DISABLED
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyObject *res_o = _PyList_GetItemRef(list, index);
+            DEOPT_IF(res_o == NULL);
+#else
+            DEOPT_IF(index >= PyList_GET_SIZE(list));
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             Py_INCREF(res_o);
-            UNLOCK_OBJECT(list);
+#endif
             PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
             DEAD(sub_st);
             PyStackRef_CLOSE(list_st);
