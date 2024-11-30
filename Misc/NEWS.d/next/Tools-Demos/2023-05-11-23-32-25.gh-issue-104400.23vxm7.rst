@@ -1,1 +1,1 @@
-Use an AST parser instead of a tokenizer in pygettext
+Fix several bugs in extraction by switching to an AST parser in :program:`pygettext`.
