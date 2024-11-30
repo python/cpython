@@ -6,7 +6,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 import posixpath
 
 from test.support import is_wasi
@@ -38,22 +38,6 @@ class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
         self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
-
-
-class ParserBaseTest(unittest.TestCase):
-    cls = ParserBase
-
-    def test_unsupported_operation(self):
-        m = self.cls()
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            m.sep
-        self.assertRaises(e, m.join, 'foo')
-        self.assertRaises(e, m.split, 'foo')
-        self.assertRaises(e, m.splitdrive, 'foo')
-        self.assertRaises(e, m.splitext, 'foo')
-        self.assertRaises(e, m.normcase, 'foo')
-        self.assertRaises(e, m.isabs, 'foo')
 
 #
 # Tests for the pure classes.

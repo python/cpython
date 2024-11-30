@@ -34,59 +34,6 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
-
-class ParserBase:
-    """Base class for path parsers, which do low-level path manipulation.
-
-    Path parsers provide a subset of the os.path API, specifically those
-    functions needed to provide PurePathBase functionality. Each PurePathBase
-    subclass references its path parser via a 'parser' class attribute.
-
-    Every method in this base class raises an UnsupportedOperation exception.
-    """
-
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported"
-
-    @property
-    def sep(self):
-        """The character used to separate path components."""
-        raise UnsupportedOperation(self._unsupported_msg('sep'))
-
-    def join(self, path, *paths):
-        """Join path segments."""
-        raise UnsupportedOperation(self._unsupported_msg('join()'))
-
-    def split(self, path):
-        """Split the path into a pair (head, tail), where *head* is everything
-        before the final path separator, and *tail* is everything after.
-        Either part may be empty.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('split()'))
-
-    def splitdrive(self, path):
-        """Split the path into a 2-item tuple (drive, tail), where *drive* is
-        a device name or mount point, and *tail* is everything after the
-        drive. Either part may be empty."""
-        raise UnsupportedOperation(self._unsupported_msg('splitdrive()'))
-
-    def splitext(self, path):
-        """Split the path into a pair (root, ext), where *ext* is empty or
-        begins with a period and contains at most one period,
-        and *root* is everything before the extension."""
-        raise UnsupportedOperation(self._unsupported_msg('splitext()'))
-
-    def normcase(self, path):
-        """Normalize the case of the path."""
-        raise UnsupportedOperation(self._unsupported_msg('normcase()'))
-
-    def isabs(self, path):
-        """Returns whether the path is absolute, i.e. unaffected by the
-        current directory or drive."""
-        raise UnsupportedOperation(self._unsupported_msg('isabs()'))
-
-
 class PathGlobber(_GlobberBase):
     """
     Class providing shell-style globbing for path objects.
