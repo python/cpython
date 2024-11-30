@@ -5022,13 +5022,13 @@ ctz(size_t v)
 static size_t
 load_unaligned(const unsigned char *p, size_t size)
 {
-    assert(size <= SIZEOF_SIZE_T);
     union {
         size_t s;
         unsigned char b[SIZEOF_SIZE_T];
     } u;
     u.s = 0;
     switch (size) {
+    default:
     case 8:
         u.b[7] = p[7];
         _Py_FALLTHROUGH;
@@ -5055,8 +5055,6 @@ load_unaligned(const unsigned char *p, size_t size)
         break;
     case 0:
         break;
-    default:
-        Py_UNREACHABLE();
     }
     return u.s;
 }
