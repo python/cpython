@@ -4,7 +4,7 @@ import posixpath
 import unittest
 
 from pathlib._abc import PathBase
-from pathlib._types import Parser, DirEntry
+from pathlib._types import Parser, DirEntry, StatResult
 
 from test.support.os_helper import TESTFN
 
@@ -27,6 +27,11 @@ class DirEntryTest(unittest.TestCase):
 
     def test_pathbase(self):
         self.assertTrue(isinstance(PathBase(), DirEntry))
+
+
+class StatResultTest(unittest.TestCase):
+    def test_os_stat_result(self):
+        self.assertTrue(isinstance(os.stat('.'), StatResult))
 
 
 if __name__ == "__main__":

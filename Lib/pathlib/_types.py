@@ -1,7 +1,6 @@
 """
 Protocols for supporting classes in pathlib.
 """
-
 from typing import Protocol, runtime_checkable
 
 
@@ -37,3 +36,16 @@ class DirEntry(Protocol):
     name: str
     def is_dir(self, *, follow_symlinks: bool = True) -> bool: ...
     def is_symlink(self) -> bool: ...
+
+
+@runtime_checkable
+class StatResult(Protocol):
+    """Protocol for stat results, which store low-level information about
+    files.
+
+    Stat results provide a subset of the os.stat_result API, specifically
+    attributes for the file type, permissions and offset."""
+
+    st_mode: int
+    st_ino: int
+    st_dev: int
