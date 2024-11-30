@@ -545,7 +545,7 @@ def _isoweek_to_gregorian(year, week, day):
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
         raise TypeError("tzinfo.tzname() must return None or string, "
-                        "not '%s'" % type(name).__name__)
+                        f"not {type(name).__name__!r}")
 
 # name is the offset-producing method, "utcoffset" or "dst".
 # offset is what it returned.
