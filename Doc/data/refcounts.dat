@@ -56,21 +56,21 @@ PyArg_ParseTupleAndKeywords::...::
 
 PyArg_UnpackTuple:int:::
 PyArg_UnpackTuple:PyObject *:args:0:
-PyArg_UnpackTuple:const char *:name:0:
+PyArg_UnpackTuple:const char *:name::
 PyArg_UnpackTuple:Py_ssize_t:min::
 PyArg_UnpackTuple:Py_ssize_t:max::
 PyArg_UnpackTuple::...::
 
 PyArg_VaParse:int:::
 PyArg_VaParse:PyObject *:args:0:
-PyArg_VaParse:const char *:format:0:
+PyArg_VaParse:const char *:format::
 PyArg_VaParse:va_list:vargs::
 
 PyArg_VaParseTupleAndKeywords:int:::
 PyArg_VaParseTupleAndKeywords:PyObject *:args:0:
 PyArg_VaParseTupleAndKeywords:PyObject *:kw:0:
-PyArg_VaParseTupleAndKeywords:const char *:format:0:
-PyArg_VaParseTupleAndKeywords:const char *:keywords:0:
+PyArg_VaParseTupleAndKeywords:const char *:format::
+PyArg_VaParseTupleAndKeywords:const char *:keywords::
 PyArg_VaParseTupleAndKeywords:va_list:vargs::
 
 PyArg_ValidateKeywordArguments:int:::
@@ -744,7 +744,7 @@ PyErr_Print:void:::
 PyErr_PrintEx:void:::
 PyErr_PrintEx:int:set_sys_last_vars::
 
-PyErr_ProgramText:PyObject *:+1::
+PyErr_ProgramText:PyObject *::+1:
 PyErr_ProgramText:const char *:filename::
 PyErr_ProgramText:int:lineno::
 
@@ -1257,7 +1257,7 @@ PyInterpreterState_Delete:PyInterpreterState*:interp::
 
 PyInterpreterState_Get:PyInterpreterState *:::
 
-PyInterpreterState_GetDict:PyObject *:+1::
+PyInterpreterState_GetDict:PyObject *::+1:
 PyInterpreterState_GetDict:PyInterpreterState *:interp::
 
 PyInterpreterState_GetID:int64_t:::
@@ -2117,7 +2117,7 @@ PyObject_HasAttrString:const char*:attr_name::
 
 PyObject_HasAttrStringWithError:int:::
 PyObject_HasAttrStringWithError:PyObject *:o:0:
-PyObject_HasAttrStringWithError:const char *:attr_name:0:
+PyObject_HasAttrStringWithError:const char *:attr_name::
 
 PyObject_Hash:int:::
 PyObject_Hash:PyObject*:o:0:
@@ -3609,10 +3609,10 @@ Py_GetCompiler:const char*:::
 
 Py_GetCopyright:const char*:::
 
-Py_GetConstant:PyObject *:+1:::
+Py_GetConstant:PyObject *::+1:
 Py_GetConstant:unsigned int:constant_id::
 
-Py_GetConstantBorrowed:PyObject *:0:::
+Py_GetConstantBorrowed:PyObject *::0:
 Py_GetConstantBorrowed:unsigned int:constant_id::
 
 Py_GetExecPrefix:wchar_t*:::
@@ -3639,7 +3639,7 @@ Py_INCREF:PyObject*:o:+1:
 Py_IncRef:void:::
 Py_IncRef:PyObject *:o:+1:
 
-Py_NewRef:PyObject *:o:0:
+Py_NewRef:PyObject *::0:
 Py_NewRef:PyObject *:o:+1:
 
 Py_Initialize:void:::
