@@ -735,26 +735,11 @@ class PathBase(PurePathBase):
             # Treat the root directory as the current working directory.
             return self.with_segments('/', *self._raw_paths)
 
-    @classmethod
-    def cwd(cls):
-        """Return a new path pointing to the current working directory."""
-        # We call 'absolute()' rather than using 'os.getcwd()' directly to
-        # enable users to replace the implementation of 'absolute()' in a
-        # subclass and benefit from the new behaviour here. This works because
-        # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
-
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
         (as returned by os.path.expanduser)
         """
         raise UnsupportedOperation(self._unsupported_msg('expanduser()'))
-
-    @classmethod
-    def home(cls):
-        """Return a new path pointing to expanduser('~').
-        """
-        return cls("~").expanduser()
 
     def readlink(self):
         """
