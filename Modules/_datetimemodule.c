@@ -638,8 +638,7 @@ check_date_args(int year, int month, int day)
 
     if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, not %d",
-                     MINYEAR, MAXYEAR, year);
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
     if (month < 1 || month > 12) {
@@ -663,18 +662,15 @@ static int
 check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
-        PyErr_Format(PyExc_ValueError,
-                     "hour must be in 0..23, not %i", h);
+        PyErr_Format(PyExc_ValueError, "hour must be in 0..23, not %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
-        PyErr_Format(PyExc_ValueError,
-                     "minute must be in 0..59, not %i", m);
+        PyErr_Format(PyExc_ValueError, "minute must be in 0..59, not %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
-        PyErr_Format(PyExc_ValueError,
-                     "second must be in 0..59, not %i", s);
+        PyErr_Format(PyExc_ValueError, "second must be in 0..59, not %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
@@ -1438,8 +1434,7 @@ new_timezone(PyObject *offset, PyObject *name)
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
-                     " timedelta(hours=24),"
-                     " not %R", offset);
+                     " timedelta(hours=24), not %R", offset);
         return NULL;
     }
 
@@ -1510,8 +1505,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                          " strictly between -timedelta(hours=24) and"
-                         " timedelta(hours=24),"
-                         " not %R", offset);
+                         " timedelta(hours=24), not %R", offset);
             Py_DECREF(offset);
             return NULL;
         }
@@ -3392,8 +3386,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
 
     if (rv == -4) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, not %d",
-                     MINYEAR, MAXYEAR, year);
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return NULL;
     }
 
@@ -4389,8 +4382,7 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
         return NULL;
     }
     if (!HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
-        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
-                        "is not self");
+        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo is not self");
         return NULL;
     }
 
@@ -5364,8 +5356,7 @@ utc_to_seconds(int year, int month, int day,
     /* ymd_to_ord() doesn't support year <= 0 */
     if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, not %d",
-                     MINYEAR, MAXYEAR, year);
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
 

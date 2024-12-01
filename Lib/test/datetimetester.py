@@ -4537,8 +4537,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
     def test_valuerror_messages(self):
         pattern = re.compile(
-            r"(hour|minute|second|microsecond) must "
-            r"be in \d+\.\.\d+, not \d+"
+            r"(hour|minute|second|microsecond) must be in \d+\.\.\d+, not \d+"
         )
         test_cases = [
             (12, 30, 90, 9999991),  # Microsecond out of range
