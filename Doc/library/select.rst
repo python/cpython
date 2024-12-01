@@ -317,9 +317,9 @@ Edge and Level Trigger Polling (epoll) Objects
    +---------------------------+-----------------------------------------------+
    | :const:`EPOLLMSG`         | Ignored.                                      |
    +---------------------------+-----------------------------------------------+
-   | :const:`EPOLL_URING_WAKE` | Optimizes event wake-up using io_uring.       |                                              |
+   | :const:`EPOLL_URING_WAKE` | Optimizes event wake-up using io_uring.       |
    +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLWAKEUP`      | Prevents sleep during event waiting.          |                                              |
+   | :const:`EPOLLWAKEUP`      | Prevents sleep during                         |
    +---------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.6
