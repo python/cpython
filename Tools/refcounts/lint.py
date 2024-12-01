@@ -5,7 +5,7 @@ from __future__ import annotations
 import itertools
 import re
 import tomllib
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
 from enum import auto as _auto, Enum
 from pathlib import Path
@@ -13,6 +13,10 @@ from typing import TYPE_CHECKING, LiteralString, NamedTuple
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
+
+ROOT = Path(__file__).parent.parent.parent.resolve()
+DEFAULT_REFCOUNT_DAT_PATH: str = str(ROOT / 'Doc/data/refcounts.dat')
+DEFAULT_STABLE_ABI_TOML_PATH: str = str(ROOT / 'Misc/stable_abi.toml')
 
 C_ELLIPSIS: LiteralString = '...'
 
@@ -251,20 +255,33 @@ def check(view: FileView) -> None:
         print('Entries are not sorted')
 
 def check_structure(view: FileView, stable_abi_file: str) -> None:
+    print(f"Stable ABI file: {stable_abi_file}")
+    print()
     stable_abi_str = Path(stable_abi_file).read_text()
     stable_abi = tomllib.loads(stable_abi_str)
     expect = stable_abi['function'].keys()
     # check if there are missing entries (those marked as "TODO" are ignored)
     actual = IGNORE_LIST | view.incomplete | view.signatures.keys()
     if missing := (expect - actual):
-        print('[!] missing stable ABI entries:')
+        print(f'Missing {len(missing)} stable ABI entries:')
         for name in sorted(missing):
             print(name)
 
+STABLE_ABI_FILE_SENTINEL = object()
+
 def _create_parser() -> ArgumentParser:
-    parser = ArgumentParser(prog='lint.py')
-    parser.add_argument('file', help='the file to check')
-    parser.add_argument('--stable-abi', help='the stable ABI TOML file to use')
+    parser = ArgumentParser(
+        prog='lint.py',
+        formatter_class=RawDescriptionHelpFormatter,
+        description='Lint the refcounts.dat file.\n\n'
+                    'Use --abi or --abi=FILE to check against the stable ABI.',
+    )
+    parser.add_argument('file', nargs='?', default=DEFAULT_REFCOUNT_DAT_PATH,
+                        help='the refcounts.dat file to check '
+                             '(default: %(default)s)')
+    parser.add_argument('--abi', nargs='?', default=STABLE_ABI_FILE_SENTINEL,
+                        help='check against the given stable_abi.toml file '
+                             '(default: %s)' % DEFAULT_STABLE_ABI_TOML_PATH)
     return parser
 
 def main() -> None:
@@ -275,9 +292,10 @@ def main() -> None:
     view = parse(lines)
     print(' CHECKING '.center(80, '-'))
     check(view)
-    if args.stable_abi:
+    if args.abi is not STABLE_ABI_FILE_SENTINEL:
+        abi = args.abi or DEFAULT_STABLE_ABI_TOML_PATH
         print(' CHECKING STABLE ABI '.center(80, '-'))
-        check_structure(view, args.stable_abi)
+        check_structure(view, abi)
 
 if __name__ == '__main__':
     main()
