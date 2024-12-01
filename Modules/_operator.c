@@ -1644,11 +1644,8 @@ static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
         PyErr_NoMemory();
         return -1;
     }
-    /* The first item of vectorcall_args will be filled with obj later */
-    if (nargs > 0) {
-        memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
+    memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
             nargs * sizeof(PyObject*));
-    }
     if (kwds && PyDict_Size(kwds)) {
         const Py_ssize_t nkwds = PyDict_Size(kwds);
         mc->vectorcall_kwnames = PyTuple_New(nkwds);
