@@ -9,14 +9,14 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
 from enum import auto as _auto, Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, LiteralString, NamedTuple
+from typing import TYPE_CHECKING, LiteralString
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Callable, Final, Iterable, Mapping
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
-DEFAULT_REFCOUNT_DAT_PATH: str = str(ROOT / 'Doc/data/refcounts.dat')
-DEFAULT_STABLE_ABI_TOML_PATH: str = str(ROOT / 'Misc/stable_abi.toml')
+DEFAULT_REFCOUNT_DAT_PATH: Final[str] = str(ROOT / 'Doc/data/refcounts.dat')
+DEFAULT_STABLE_ABI_TOML_PATH: Final[str] = str(ROOT / 'Misc/stable_abi.toml')
 
 C_ELLIPSIS: LiteralString = '...'
 
@@ -62,7 +62,8 @@ class RefType(Enum):
     STEALS = _auto()
     NULL = _auto()  # for return values only
 
-class LineInfo(NamedTuple):
+@dataclass(slots=True, frozen=True)
+class LineInfo:
     func: str
     ctype: str | None
     name: str | None
@@ -79,12 +80,14 @@ class LineInfo(NamedTuple):
     strip_name: bool
     strip_reftype: bool
 
-class Return(NamedTuple):
+@dataclass(slots=True, frozen=True)
+class Return:
     ctype: str | None
     reftype: RefType | None
     comment: str
 
-class Param(NamedTuple):
+@dataclass(slots=True, frozen=True)
+class Param:
     name: str
     lineno: int
 
@@ -99,7 +102,8 @@ class Signature:
     rparam: Return
     params: dict[str, Param] = field(default_factory=dict)
 
-class FileView(NamedTuple):
+@dataclass(slots=True, frozen=True)
+class FileView:
     signatures: Mapping[str, Signature]
     incomplete: frozenset[str]
 
@@ -255,7 +259,7 @@ def check(view: FileView) -> None:
 def check_structure(view: FileView, stable_abi_file: str) -> None:
     print(f"Stable ABI file: {stable_abi_file}")
     print()
-    stable_abi_str = Path(stable_abi_file).read_text()
+    stable_abi_str = Path(stable_abi_file).read_text(encoding='utf-8')
     stable_abi = tomllib.loads(stable_abi_str)
     expect = stable_abi['function'].keys()
     # check if there are missing entries (those marked as "TODO" are ignored)
@@ -265,7 +269,7 @@ def check_structure(view: FileView, stable_abi_file: str) -> None:
         for name in sorted(missing):
             print(name)
 
-STABLE_ABI_FILE_SENTINEL = object()
+_STABLE_ABI_FILE_SENTINEL: Final = object()
 
 def _create_parser() -> ArgumentParser:
     parser = ArgumentParser(
@@ -277,7 +281,7 @@ def _create_parser() -> ArgumentParser:
     parser.add_argument('file', nargs='?', default=DEFAULT_REFCOUNT_DAT_PATH,
                         help='the refcounts.dat file to check '
                              '(default: %(default)s)')
-    parser.add_argument('--abi', nargs='?', default=STABLE_ABI_FILE_SENTINEL,
+    parser.add_argument('--abi', nargs='?', default=_STABLE_ABI_FILE_SENTINEL,
                         help='check against the given stable_abi.toml file '
                              '(default: %s)' % DEFAULT_STABLE_ABI_TOML_PATH)
     return parser
@@ -285,7 +289,7 @@ def _create_parser() -> ArgumentParser:
 def main() -> None:
     parser = _create_parser()
     args = parser.parse_args()
-    lines = Path(args.file).read_text().splitlines()
+    lines = Path(args.file).read_text(encoding='utf-8').splitlines()
     print(' PARSING '.center(80, '-'))
     view = parse(lines)
     print(' CHECKING '.center(80, '-'))
