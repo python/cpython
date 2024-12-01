@@ -27,6 +27,7 @@ objects, so are not allocated in the per-thread stack. See `PyGenObject` in
 ## Layout
 
 Each activation record is laid out as:
+
 * Specials
 * Locals
 * Stack

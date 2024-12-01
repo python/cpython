@@ -96,6 +96,7 @@ quality of specialization and keeping the overhead of specialization low.
 Specialized instructions must be fast. In order to be fast,
 specialized instructions should be tailored for a particular
 set of values that allows them to:
+
 1. Verify that incoming value is part of that set with low overhead.
 2. Perform the operation quickly.
 
@@ -107,9 +108,11 @@ For example, `LOAD_GLOBAL_MODULE` is specialized for `globals()`
 dictionaries that have a keys with the expected version.
 
 This can be tested quickly:
+
 * `globals->keys->dk_version == expected_version`
 
 and the operation can be performed quickly:
+
 * `value = entries[cache->index].me_value;`.
 
 Because it is impossible to measure the performance of an instruction without
@@ -122,10 +125,11 @@ base instruction.
 ### Implementation of specialized instructions
 
 In general, specialized instructions should be implemented in two parts:
+
 1. A sequence of guards, each of the form
-  `DEOPT_IF(guard-condition-is-false, BASE_NAME)`.
+   `DEOPT_IF(guard-condition-is-false, BASE_NAME)`.
 2. The operation, which should ideally have no branches and
-  a minimum number of dependent memory accesses.
+   a minimum number of dependent memory accesses.
 
 In practice, the parts may overlap, as data required for guards
 can be re-used in the operation.
