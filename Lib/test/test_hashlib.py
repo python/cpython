@@ -143,7 +143,15 @@ class HashLibTestCase(unittest.TestCase):
         # For each algorithm, test the direct constructor and the use
         # of hashlib.new given the algorithm name.
         for algorithm, constructors in self.constructors_to_test.items():
-            constructors.add(getattr(hashlib, algorithm))
+            if get_fips_mode():
+                # Arbitrary algorithms may be missing via openssl.cnf
+                try:
+                    constructor = getattr(hashlib, algorithm)
+                except AttributeError:
+                    continue
+                constructors.add(constructor)
+            else:
+                constructors.add(getattr(hashlib, algorithm))
             def _test_algorithm_via_hashlib_new(data=None, _alg=algorithm, **kwargs):
                 if data is None:
                     return hashlib.new(_alg, **kwargs)
@@ -219,15 +227,23 @@ class HashLibTestCase(unittest.TestCase):
             set(_algo for _algo in self.supported_hash_names
                   if _algo.islower()))
 
+    @unittest.skipIf(get_fips_mode(), reason="guaranteed algorithms may not be available in FIPS mode")
     def test_algorithms_available(self):
+        print(f"{get_fips_mode()=}")
         self.assertTrue(set(hashlib.algorithms_guaranteed).
-                            issubset(hashlib.algorithms_available))
+                            issubset(hashlib.algorithms_available),
+                        msg=f"\n{sorted(hashlib.algorithms_guaranteed)=}\n{sorted(hashlib.algorithms_available)=}")
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
         for name in hashlib.algorithms_available:
-            digest = hashlib.new(name, usedforsecurity=False)
+            with self.subTest(name=name):
+                if name in self.blakes and not _blake2:
+                    self.skipTest("requires _blake2")
+                hashlib.new(name, usedforsecurity=False)
 
     @requires_usedforsecurity
+    @unittest.skipUnless(hasattr(hashlib, "sha256"), "sha256 unavailable")
+    @unittest.skipUnless(hasattr(hashlib, "md5"), "md5 unavailable")
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
         for cons in self.hash_constructors:
@@ -239,6 +255,8 @@ class HashLibTestCase(unittest.TestCase):
             self._hashlib.new("md5", usedforsecurity=True)
             self._hashlib.openssl_md5(usedforsecurity=True)
 
+    @unittest.skipUnless(hasattr(hashlib, "sha256"), "sha256 unavailable")
+    @unittest.skipUnless(hasattr(hashlib, "md5"), "md5 unavailable")
     def test_usedforsecurity_false(self):
         hashlib.new("sha256", usedforsecurity=False)
         for cons in self.hash_constructors:
@@ -254,6 +272,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
 
+    @unittest.skipUnless(hasattr(hashlib, "sha256"), "sha256 unavailable")
     def test_new_upper_to_lower(self):
         self.assertEqual(hashlib.new("SHA256", usedforsecurity=False).name, "sha256")
 
@@ -387,7 +406,8 @@ class HashLibTestCase(unittest.TestCase):
         hexdigest = hexdigest.lower()
         constructors = self.constructors_to_test[name]
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
-        self.assertGreaterEqual(len(constructors), 2)
+        if get_fips_mode() == 0:
+            self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
             m = hash_object_constructor(data, **kwargs)
             computed = m.hexdigest() if not shake else m.hexdigest(length)
@@ -407,8 +427,6 @@ class HashLibTestCase(unittest.TestCase):
             # skip shake and blake2 extended parameter tests
             self.check_file_digest(name, data, hexdigest)
 
-    # defaults True because file_digest doesn't support the parameter.
-    @requires_usedforsecurity
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
         try:
@@ -914,6 +932,7 @@ class HashLibTestCase(unittest.TestCase):
         for msg, md in read_vectors('shake_256'):
             self.check('shake_256', msg, md, True)
 
+    @unittest.skipUnless(hasattr(hashlib, "sha256"), "sha256 unavailable")
     def test_gil(self):
         # Check things work fine with an input larger than the size required
         # for multithreaded operation (which is hardwired to 2048).
@@ -928,7 +947,7 @@ class HashLibTestCase(unittest.TestCase):
             m = cons(b'x' * gil_minsize, usedforsecurity=False)
             m.update(b'1')
 
-        m = hashlib.sha256()
+        m = hashlib.sha256(usedforsecurity=False)
         m.update(b'1')
         m.update(b'#' * gil_minsize)
         m.update(b'1')
@@ -937,7 +956,8 @@ class HashLibTestCase(unittest.TestCase):
             '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
         )
 
-        m = hashlib.sha256(b'1' + b'#' * gil_minsize + b'1')
+        m = hashlib.sha256(b'1' + b'#' * gil_minsize + b'1',
+                           usedforsecurity=False)
         self.assertEqual(
             m.hexdigest(),
             '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
@@ -945,6 +965,7 @@ class HashLibTestCase(unittest.TestCase):
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(hashlib, "sha1"), "sha1 unavailable")
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
@@ -952,7 +973,7 @@ class HashLibTestCase(unittest.TestCase):
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        hasher = hashlib.sha1()
+        hasher = hashlib.sha1(usedforsecurity=False)
         num_threads = 5
         smallest_data = b'swineflu'
         data = smallest_data * 200000
@@ -1174,6 +1195,9 @@ class KDFTests(unittest.TestCase):
         self.assertNotIn("blake2b512", hashlib.algorithms_available)
         self.assertNotIn("sha3-512", hashlib.algorithms_available)
 
+    # defaults True because file_digest doesn't support the parameter.
+    @requires_usedforsecurity
+    @unittest.skipUnless(hasattr(hashlib, "sha256"), "sha256 unavailable")
     def test_file_digest(self):
         data = b'a' * 65536
         d1 = hashlib.sha256()
