@@ -324,16 +324,11 @@ class FTP:
     def makepasv(self):
         """Internal: Does the PASV or EPSV handshake -> (address, port)"""
         if self.af == socket.AF_INET:
-            try:
-                untrusted_host, port = parse227(self.sendcmd('PASV'))
-                if self.trust_server_pasv_ipv4_address:
-                    host = untrusted_host
-                else:
-                    host = self.sock.getpeername()[0]
-            except error_reply as resp:
-                resp = str(resp)
-                if resp[:3] == '229':
-                    host, port = parse229(resp, self.sock.getpeername())
+            untrusted_host, port = parse227(self.sendcmd('PASV'))
+            if self.trust_server_pasv_ipv4_address:
+                host = untrusted_host
+            else:
+                host = self.sock.getpeername()[0]
         else:
             host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
         return host, port
