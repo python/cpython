@@ -576,6 +576,14 @@ sys
   from other interpreters than the one it's called in.
 
 
+tkinter
+-------
+
+* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+  arguments passed by keyword.
+  (Contributed by Zhikang Yan in :gh:`126899`.)
+
+
 unicodedata
 -----------
 

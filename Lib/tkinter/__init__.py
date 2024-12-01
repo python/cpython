@@ -847,7 +847,7 @@ class Misc:
         if not name: return None
         return self._nametowidget(name)
 
-    def after(self, ms, func=None, *args):
+    def after(self, ms, func=None, *args, **kw):
         """Call function once after given time.
 
         MS specifies the time in milliseconds. FUNC gives the
@@ -861,7 +861,7 @@ class Misc:
         else:
             def callit():
                 try:
-                    func(*args)
+                    func(*args, **kw)
                 finally:
                     try:
                         self.deletecommand(name)
@@ -875,13 +875,13 @@ class Misc:
             name = self._register(callit)
             return self.tk.call('after', ms, name)
 
-    def after_idle(self, func, *args):
+    def after_idle(self, func, *args, **kw):
         """Call FUNC once if the Tcl main loop has no event to
         process.
 
         Return an identifier to cancel the scheduling with
         after_cancel."""
-        return self.after('idle', func, *args)
+        return self.after('idle', func, *args, **kw)
 
     def after_cancel(self, id):
         """Cancel scheduling of function identified with ID.
