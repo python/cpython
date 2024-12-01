@@ -66,6 +66,11 @@ requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 SKIP_SHA3 = support.check_sanitizer(ub=True)
 requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
 
+requires_usedforsecurity = unittest.skipIf(
+        get_fips_mode(),
+        "If an OpenSSL FIPS mode configuration has disabled any algorithms"+
+        " in the default provider, this test would fail."
+)
 
 def hexstr(s):
     assert isinstance(s, bytes), repr(s)
@@ -102,6 +107,7 @@ class HashLibTestCase(unittest.TestCase):
                              'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
                              'shake_128', 'shake_256')
 
+    blakes = {'blake2b', 'blake2s'}
     shakes = {'shake_128', 'shake_256'}
 
     # gh-58898: Fallback modules are always compiled under POSIX.
@@ -121,9 +127,12 @@ class HashLibTestCase(unittest.TestCase):
         for algorithm in self.supported_hash_names:
             algorithms.add(algorithm.lower())
 
+        # blake2s and blake2b *require* the _blake2 builtin.
         _blake2 = self._conditional_import_module('_blake2')
         if _blake2:
-            algorithms.update({'blake2b', 'blake2s'})
+            algorithms.update(self.blakes)
+        else:
+            algorithms.difference_update(self.blakes)
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
@@ -196,10 +205,6 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test.values()
         return itertools.chain.from_iterable(constructors)
 
-    @property
-    def is_fips_mode(self):
-        return get_fips_mode()
-
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -222,10 +227,9 @@ class HashLibTestCase(unittest.TestCase):
         for name in hashlib.algorithms_available:
             digest = hashlib.new(name, usedforsecurity=False)
 
+    @requires_usedforsecurity
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
-        if self.is_fips_mode:
-            self.skipTest("skip in FIPS mode")
         for cons in self.hash_constructors:
             cons(usedforsecurity=True)
             cons(b'', usedforsecurity=True)
@@ -251,7 +255,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(TypeError, hashlib.new, 1)
 
     def test_new_upper_to_lower(self):
-        self.assertEqual(hashlib.new("SHA256").name, "sha256")
+        self.assertEqual(hashlib.new("SHA256", usedforsecurity=False).name, "sha256")
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
@@ -309,10 +313,6 @@ class HashLibTestCase(unittest.TestCase):
         for cons in self.hash_constructors:
             h = cons(usedforsecurity=False)
             self.assertIsInstance(h.name, str)
-            if h.name in self.supported_hash_names:
-                self.assertIn(h.name, self.supported_hash_names)
-            else:
-                self.assertNotIn(h.name, self.supported_hash_names)
             self.assertEqual(
                 h.name,
                 hashlib.new(h.name, usedforsecurity=False).name
@@ -353,7 +353,7 @@ class HashLibTestCase(unittest.TestCase):
     @requires_resource('cpu')
     def test_sha256_update_over_4gb(self):
         zero_1mb = b"\0" * 1024 * 1024
-        h = hashlib.sha256()
+        h = hashlib.sha256(usedforsecurity=False)
         for i in range(0, 4096):
             h.update(zero_1mb)
         h.update(b"hello world")
@@ -362,24 +362,27 @@ class HashLibTestCase(unittest.TestCase):
     @requires_resource('cpu')
     def test_sha3_256_update_over_4gb(self):
         zero_1mb = b"\0" * 1024 * 1024
-        h = hashlib.sha3_256()
+        h = hashlib.sha3_256(usedforsecurity=False)
         for i in range(0, 4096):
             h.update(zero_1mb)
         h.update(b"hello world")
         self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
+    @requires_blake2
     @requires_resource('cpu')
     def test_blake2_update_over_4gb(self):
         # blake2s or blake2b doesn't matter based on how our C code is structured, this tests the
         # common loop macro logic.
         zero_1mb = b"\0" * 1024 * 1024
-        h = hashlib.blake2s()
+        h = hashlib.blake2s(usedforsecurity=False)
         for i in range(0, 4096):
             h.update(zero_1mb)
         h.update(b"hello world")
         self.assertEqual(h.hexdigest(), "8a268e83dd30528bc0907fa2008c91de8f090a0b6e0e60a5ff0d999d8485526f")
 
     def check(self, name, data, hexdigest, shake=False, **kwargs):
+        if 'usedforsecurity' not in kwargs:
+            kwargs['usedforsecurity'] = False
         length = len(hexdigest)//2
         hexdigest = hexdigest.lower()
         constructors = self.constructors_to_test[name]
@@ -404,6 +407,8 @@ class HashLibTestCase(unittest.TestCase):
             # skip shake and blake2 extended parameter tests
             self.check_file_digest(name, data, hexdigest)
 
+    # defaults True because file_digest doesn't support the parameter.
+    @requires_usedforsecurity
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
         try:
@@ -434,7 +439,8 @@ class HashLibTestCase(unittest.TestCase):
         # Unicode objects are not allowed as input.
         constructors = self.constructors_to_test[algorithm_name]
         for hash_object_constructor in constructors:
-            self.assertRaises(TypeError, hash_object_constructor, 'spam')
+            with self.assertRaises(TypeError):
+                hash_object_constructor('spam', usedforsecurity=False)
 
     def test_no_unicode(self):
         self.check_no_unicode('md5')
@@ -497,7 +503,7 @@ class HashLibTestCase(unittest.TestCase):
     def check_sha3(self, name, capacity, rate, suffix):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
-            m = hash_object_constructor()
+            m = hash_object_constructor(usedforsecurity=False)
             if HASH is not None and isinstance(m, HASH):
                 # _hashopenssl's variant does not have extra SHA3 attributes
                 continue
@@ -661,7 +667,7 @@ class HashLibTestCase(unittest.TestCase):
                      digest_size, max_offset):
         self.assertEqual(constructor.SALT_SIZE, salt_size)
         for i in range(salt_size + 1):
-            constructor(salt=b'a' * i)
+            constructor(salt=b'a' * i, usedforsecurity=False)
         salt = b'a' * (salt_size + 1)
         self.assertRaises(ValueError, constructor, salt=salt)
 
@@ -975,8 +981,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(expected_hash, hasher.hexdigest())
 
     def test_get_fips_mode(self):
-        fips_mode = self.is_fips_mode
-        if fips_mode is not None:
+        if (fips_mode := get_fips_mode()) is not None:
             self.assertIsInstance(fips_mode, int)
 
     @support.cpython_only
