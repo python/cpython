@@ -638,19 +638,19 @@ check_date_args(int year, int month, int day)
 
     if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, but got %d",
+                     "year must be in %d..%d, not %d",
                      MINYEAR, MAXYEAR, year);
         return -1;
     }
     if (month < 1 || month > 12) {
         PyErr_Format(PyExc_ValueError,
-                     "month must be in 1..12, but got %d", month);
+                     "month must be in 1..12, not %d", month);
         return -1;
     }
     int dim = days_in_month(year, month);
     if (day < 1 || day > dim) {
         PyErr_Format(PyExc_ValueError,
-                     "day must be in 1..%d, but got %d", dim, day);
+                     "day must be in 1..%d, not %d", dim, day);
         return -1;
     }
     return 0;
@@ -664,27 +664,27 @@ check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
         PyErr_Format(PyExc_ValueError,
-                     "hour must be in 0..23, but got %i", h);
+                     "hour must be in 0..23, not %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
         PyErr_Format(PyExc_ValueError,
-                     "minute must be in 0..59, but got %i", m);
+                     "minute must be in 0..59, not %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
         PyErr_Format(PyExc_ValueError,
-                     "second must be in 0..59, but got %i", s);
+                     "second must be in 0..59, not %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
         PyErr_Format(PyExc_ValueError,
-                     "microsecond must be in 0..999999, but got %i", us);
+                     "microsecond must be in 0..999999, not %i", us);
         return -1;
     }
     if (fold != 0 && fold != 1) {
         PyErr_Format(PyExc_ValueError,
-                     "fold must be either 0 or 1, but got %i", fold);
+                     "fold must be either 0 or 1, not %i", fold);
         return -1;
     }
     return 0;
@@ -2270,7 +2270,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     if (!PyTuple_Check(ratio)) {
         PyErr_Format(PyExc_TypeError,
                      "unexpected return type from as_integer_ratio(): "
-                     "expected tuple, got '%.200s'",
+                     "expected tuple, not '%.200s'",
                      Py_TYPE(ratio)->tp_name);
         Py_DECREF(ratio);
         return NULL;
@@ -3392,7 +3392,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
 
     if (rv == -4) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, but got %d",
+                     "year must be in %d..%d, not %d",
                      MINYEAR, MAXYEAR, year);
         return NULL;
     }
@@ -5364,7 +5364,7 @@ utc_to_seconds(int year, int month, int day,
     /* ymd_to_ord() doesn't support year <= 0 */
     if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError,
-                     "year must be in %d..%d, but got %d",
+                     "year must be in %d..%d, not %d",
                      MINYEAR, MAXYEAR, year);
         return -1;
     }

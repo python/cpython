@@ -60,14 +60,14 @@ def _days_in_month(year, month):
 
 def _days_before_month(year, month):
     "year, month -> number of days in year preceding first day of month."
-    assert 1 <= month <= 12, f"month must be in 1..12, but got {month}"
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     return _DAYS_BEFORE_MONTH[month] + (month > 2 and _is_leap(year))
 
 def _ymd2ord(year, month, day):
     "year, month, day -> ordinal, considering 01-Jan-0001 as day 1."
-    assert 1 <= month <= 12, f"month must be in 1..12, but got {month}"
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     dim = _days_in_month(year, month)
-    assert 1 <= day <= dim, f"day must be in 1..{dim}, but got {day}"
+    assert 1 <= day <= dim, f"day must be in 1..{dim}, not {day}"
     return (_days_before_year(year) +
             _days_before_month(year, month) +
             day)
@@ -512,7 +512,7 @@ def _parse_isoformat_time(tstr):
 def _isoweek_to_gregorian(year, week, day):
     # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, but got {year}")
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}")
 
     if not 0 < week < 53:
         out_of_range = True
@@ -570,12 +570,12 @@ def _check_date_fields(year, month, day):
     month = _index(month)
     day = _index(day)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, but got {year}")
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}")
     if not 1 <= month <= 12:
-        raise ValueError(f"month must be in 1..12, but got {month}")
+        raise ValueError(f"month must be in 1..12, not {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError(f"day must be in 1..{dim}, but got {day}")
+        raise ValueError(f"day must be in 1..{dim}, not {day}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
@@ -584,22 +584,22 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
     second = _index(second)
     microsecond = _index(microsecond)
     if not 0 <= hour <= 23:
-        raise ValueError(f"hour must be in 0..23, but got {hour}")
+        raise ValueError(f"hour must be in 0..23, not {hour}")
     if not 0 <= minute <= 59:
-        raise ValueError(f"minute must be in 0..59, but got {minute}")
+        raise ValueError(f"minute must be in 0..59, not {minute}")
     if not 0 <= second <= 59:
-        raise ValueError(f"second must be in 0..59, but got {second}")
+        raise ValueError(f"second must be in 0..59, not {second}")
     if not 0 <= microsecond <= 999999:
-        raise ValueError(f"microsecond must be in 0..999999, but got {microsecond}")
+        raise ValueError(f"microsecond must be in 0..999999, not {microsecond}")
     if fold not in (0, 1):
-        raise ValueError(f"fold must be either 0 or 1, but got {fold}")
+        raise ValueError(f"fold must be either 0 or 1, not {fold}")
     return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
         raise TypeError(
             "tzinfo argument must be None or of a tzinfo subclass, "
-            f"but got {type(tz).__name__!r}"
+            f"not {type(tz).__name__!r}"
         )
 
 def _divide_and_round(a, b):
@@ -2422,7 +2422,7 @@ class timezone(tzinfo):
         if not cls._minoffset <= offset <= cls._maxoffset:
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
-                             f"timedelta(hours=24), but got {offset!r}")
+                             f"timedelta(hours=24), not {offset!r}")
         return cls._create(offset, name)
 
     def __init_subclass__(cls):

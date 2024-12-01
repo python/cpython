@@ -1964,7 +1964,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_valuerror_messages(self):
         pattern = re.compile(
-            r"(year|month|day) must be in \d+\.\.\d+, but got \d+"
+            r"(year|month|day) must be in \d+\.\.\d+, not \d+"
         )
         test_cases = [
             (2009, 1, 32),      # Day out of range
@@ -3232,7 +3232,7 @@ class TestDateTime(TestDate):
     def test_valuerror_messages(self):
         pattern = re.compile(
             r"(year|month|day|hour|minute|second) must "
-            r"be in \d+\.\.\d+, but got \d+"
+            r"be in \d+\.\.\d+, not \d+"
         )
         test_cases = [
             (2009, 4, 1, 12, 30, 90),   # Second out of range
@@ -3543,7 +3543,7 @@ class TestDateTime(TestDate):
     def test_fromisoformat_fails_datetime_valueerror(self):
         pattern = re.compile(
             r"(year|month|day|hour|minute|second) must "
-            r"be in \d+\.\.\d+, but got \d+"
+            r"be in \d+\.\.\d+, not \d+"
         )
         bad_strs = [
             "2009-04-01T12:30:90",          # Second out of range
@@ -4538,7 +4538,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     def test_valuerror_messages(self):
         pattern = re.compile(
             r"(hour|minute|second|microsecond) must "
-            r"be in \d+\.\.\d+, but got \d+"
+            r"be in \d+\.\.\d+, not \d+"
         )
         test_cases = [
             (12, 30, 90, 9999991),  # Microsecond out of range
