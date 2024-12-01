@@ -1187,7 +1187,7 @@ PyList_Reverse:PyObject*:list:0:
 PyList_SET_ITEM:void:::
 PyList_SET_ITEM:PyObject*:list:0:
 PyList_SET_ITEM:Py_ssize_t:i::
-PyList_SET_ITEM:PyObject*:o:0:
+PyList_SET_ITEM:PyObject*:o:$:
 
 PyList_SetItem:int:::
 PyList_SetItem:PyObject*:list:0:
@@ -1414,7 +1414,7 @@ PyModule_AddIntMacro::macro::
 PyModule_AddObject:int:::
 PyModule_AddObject:PyObject*:module:0:
 PyModule_AddObject:const char*:name::
-PyModule_AddObject:PyObject*:value:+1:
+PyModule_AddObject:PyObject*:value:$:steals on success, +1 on failure
 
 PyModule_AddStringConstant:int:::
 PyModule_AddStringConstant:PyObject*:module:0:
@@ -2187,7 +2187,7 @@ PyStructSequence_SET_ITEM:PyObject*:o:0:
 PyStructSequence_SetItem:void:::
 PyStructSequence_SetItem:PyObject*:p:0:
 PyStructSequence_SetItem:Py_ssize_t:pos::
-PyStructSequence_SetItem:PyObject*:o:0:
+PyStructSequence_SetItem:PyObject*:o:$:stolen
 
 PySys_AddWarnOption:void:::
 PySys_AddWarnOption:const wchar_t*:s::
@@ -2335,12 +2335,12 @@ PyTuple_Pack:PyObject*:...:0:
 PyTuple_SET_ITEM:void:::
 PyTuple_SET_ITEM:PyObject*:p:0:
 PyTuple_SET_ITEM:Py_ssize_t:pos::
-PyTuple_SET_ITEM:PyObject*:o:0:
+PyTuple_SET_ITEM:PyObject*:o:$:stolen
 
 PyTuple_SetItem:int:::
 PyTuple_SetItem:PyObject*:p:0:
 PyTuple_SetItem:Py_ssize_t:pos::
-PyTuple_SetItem:PyObject*:o:0:
+PyTuple_SetItem:PyObject*:o:$:stolen
 
 PyTuple_Size:Py_ssize_t:::
 PyTuple_Size:PyObject*:p:0:
