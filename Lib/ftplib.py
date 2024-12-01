@@ -330,10 +330,8 @@ class FTP:
                     host = untrusted_host
                 else:
                     host = self.sock.getpeername()[0]
-            except error_reply as resp:
-                resp = str(resp)
-                if resp[:3] == '229':
-                    host, port = parse229(resp, self.sock.getpeername())
+            except:
+                host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
         else:
             host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
         return host, port
