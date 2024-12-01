@@ -2422,7 +2422,7 @@ class timezone(tzinfo):
         if not cls._minoffset <= offset <= cls._maxoffset:
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
-                             f"timedelta(hours=24), not {offset!r}")
+                             f"timedelta(hours=24), but got {offset!r}")
         return cls._create(offset, name)
 
     def __init_subclass__(cls):
