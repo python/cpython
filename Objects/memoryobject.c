@@ -1600,11 +1600,11 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
-    #ifdef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     _Py_atomic_add_ssize(&self->exports, 1);
-    #else
+#else
     self->exports++;
-    #endif
+#endif
 
     return 0;
 }
@@ -1613,11 +1613,11 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    #ifdef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     _Py_atomic_add_ssize(&self->exports, -1);
-    #else
+#else
     self->exports--;
-    #endif
+#endif
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
