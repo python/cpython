@@ -9,10 +9,11 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
 from enum import auto as _auto, Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, LiteralString
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Final, Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping
+    from typing import Final, LiteralString
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
 DEFAULT_REFCOUNT_DAT_PATH: Final[str] = str(ROOT / 'Doc/data/refcounts.dat')
@@ -283,7 +284,7 @@ def _create_parser() -> ArgumentParser:
                              '(default: %(default)s)')
     parser.add_argument('--abi', nargs='?', default=_STABLE_ABI_FILE_SENTINEL,
                         help='check against the given stable_abi.toml file '
-                             '(default: %s)' % DEFAULT_STABLE_ABI_TOML_PATH)
+                             f'(default: {DEFAULT_STABLE_ABI_TOML_PATH})')
     return parser
 
 def main() -> None:
@@ -294,7 +295,7 @@ def main() -> None:
     view = parse(lines)
     print(' CHECKING '.center(80, '-'))
     check(view)
-    if args.abi is not STABLE_ABI_FILE_SENTINEL:
+    if args.abi is not _STABLE_ABI_FILE_SENTINEL:
         abi = args.abi or DEFAULT_STABLE_ABI_TOML_PATH
         print(' CHECKING STABLE ABI '.center(80, '-'))
         check_structure(view, abi)
