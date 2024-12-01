@@ -612,7 +612,8 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 static inline _PyCodeArray *
 _PyCode_GetTLBCArray(PyCodeObject *co)
 {
-    return _Py_CAST(_PyCodeArray*, _Py_atomic_load_ptr_acquire(&co->co_tlbc));
+    return _Py_STATIC_CAST(_PyCodeArray *,
+                           _Py_atomic_load_ptr_acquire(&co->co_tlbc));
 }
 
 // Return a pointer to the thread-local bytecode for the current thread, if it
