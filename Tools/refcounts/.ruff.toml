@@ -1,17 +1,34 @@
 target-version = "py312"
-line-length = 80
+line-length = 79
 fix = true
+
+[format]
+quote-style = "single"
 
 [lint]
 select = [
-    "ALL"
+    "ALL",
+    "TCH",
 ]
 ignore = [
-    "D", # docstrings
-    "I001", # split imports
-    "Q00", # prefer double quotes over single quotes
-    "T201", # print() found
-    "PLR2004", # magic values
-    "C901", # too complex
-    "PLR0912", # too many branches
+    # isort
+    'I001', # unsorted or unformatted import
+    # mccabbe
+    "C901",
+    # pydocstyle
+    "D",
+    # flake8-quotes (Q)
+    'Q000', # double quotes found but single quotes preferred
+    'Q001', # single quote docstring found but double quotes preferred
+    # flake8-print (T20)
+    'T201', # print found
+    # pylint (PL)
+    'PLR0912', # too many branches
+    'PLR2004', # avoid magic values
 ]
+
+[lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+[lint.pycodestyle]
+max-doc-length = 79

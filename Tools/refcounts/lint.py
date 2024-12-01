@@ -205,7 +205,7 @@ def parse(lines: Iterable[str]) -> FileView:
 
     if w.count:
         print()
-        print(f"Found {w.count} issue(s)")
+        print(f'Found {w.count} issue(s)')
 
     return FileView(signatures, frozenset(incomplete))
 
@@ -229,26 +229,26 @@ def check(view: FileView) -> None:
         # check the return value
         rparam = sig.rparam
         if not rparam.ctype:
-            w.block(sig, "missing return value type")
+            w.block(sig, 'missing return value type')
         if rparam.reftype is RefType.UNKNOWN:
-            w.block(sig, "unknown return value type")
+            w.block(sig, 'unknown return value type')
         # check the parameters
         for name, param in sig.params.items():  # type: (str, Param)
             ctype, reftype = param.ctype, param.reftype
             if ctype in OBJECT_TYPES and reftype is RefType.UNUSED:
-                w.param(sig, param, "missing reference count management")
+                w.param(sig, param, 'missing reference count management')
             if ctype not in OBJECT_TYPES and reftype is not RefType.UNUSED:
-                w.param(sig, param, "unused reference count management")
+                w.param(sig, param, 'unused reference count management')
             if name != C_ELLIPSIS and not name.isidentifier():
                 # Python accepts the same identifiers as in C
-                w.param(sig, param, "invalid parameter name")
+                w.param(sig, param, 'invalid parameter name')
 
     if w.count:
         print()
-        print(f"Found {w.count} issue(s)")
+        print(f'Found {w.count} issue(s)')
     names = view.signatures.keys()
     if sorted(names) != list(names):
-        print("Entries are not sorted")
+        print('Entries are not sorted')
 
 def check_structure(view: FileView, stable_abi_file: str) -> None:
     stable_abi_str = Path(stable_abi_file).read_text()
@@ -263,21 +263,21 @@ def check_structure(view: FileView, stable_abi_file: str) -> None:
 
 def _create_parser() -> ArgumentParser:
     parser = ArgumentParser(prog='lint.py')
-    parser.add_argument('file', help="the file to check")
-    parser.add_argument('--stable-abi', help="the stable ABI TOML file to use")
+    parser.add_argument('file', help='the file to check')
+    parser.add_argument('--stable-abi', help='the stable ABI TOML file to use')
     return parser
 
 def main() -> None:
     parser = _create_parser()
     args = parser.parse_args()
     lines = Path(args.file).read_text().splitlines()
-    print(" PARSING ".center(80, '-'))
+    print(' PARSING '.center(80, '-'))
     view = parse(lines)
-    print(" CHECKING ".center(80, '-'))
+    print(' CHECKING '.center(80, '-'))
     check(view)
     if args.stable_abi:
-        print(" CHECKING STABLE ABI ".center(80, '-'))
+        print(' CHECKING STABLE ABI '.center(80, '-'))
         check_structure(view, args.stable_abi)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
