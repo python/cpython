@@ -478,6 +478,11 @@ def _init_config_vars():
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
+    try:
+        abiflags = sys.abiflags
+    except AttributeError:
+        abiflags = ''
+
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)
         # If we are cross-compiling, load the prefixes from the Makefile instead.
@@ -486,6 +491,7 @@ def _init_config_vars():
             exec_prefix = _CONFIG_VARS['exec_prefix']
             base_prefix = _CONFIG_VARS['prefix']
             base_exec_prefix = _CONFIG_VARS['exec_prefix']
+            abiflags = _CONFIG_VARS['ABIFLAGS']
 
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
@@ -503,11 +509,7 @@ def _init_config_vars():
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
     _CONFIG_VARS['implementation'] = _get_implementation()
     _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
-    try:
-        _CONFIG_VARS['abiflags'] = sys.abiflags
-    except AttributeError:
-        # sys.abiflags may not be defined on all platforms.
-        _CONFIG_VARS['abiflags'] = ''
+    _CONFIG_VARS['abiflags'] = abiflags
     try:
         _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
     except AttributeError:
