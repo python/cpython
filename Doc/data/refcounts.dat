@@ -720,7 +720,6 @@ PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 PyErr_GetHandledException:PyObject *::+1:
 
 PyErr_SetHandledException:void:::
-# TODO(picnixz): is this correct?
 PyErr_SetHandledException:PyObject *:exc:+1:
 
 PyErr_GetRaisedException:PyObject*::+1:
@@ -2879,7 +2878,6 @@ PyType_FromSpec:PyObject*::+1:
 PyType_FromSpec:PyType_Spec*:spec::
 
 PyType_FromModuleAndSpec:PyObject*::+1:
-# TODO(picnixz): is there really a +1 on 'module' here?
 PyType_FromModuleAndSpec:PyObject*:module:+1:
 PyType_FromModuleAndSpec:PyType_Spec*:spec::
 PyType_FromModuleAndSpec:PyObject*:bases:0:
