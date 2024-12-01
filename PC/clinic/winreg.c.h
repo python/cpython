@@ -351,7 +351,8 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -534,7 +535,8 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -966,7 +968,8 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1083,7 +1086,8 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1762,4 +1766,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=1ee4098b2f143b6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aef4aa8ab8ddf38f input=a9049054013a1b77]*/

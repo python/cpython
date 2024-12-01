@@ -753,16 +753,17 @@ The ``queue`` and ``listener`` keys are optional.
 
 If the ``queue`` key is present, the corresponding value can be one of the following:
 
-* An object implementing the :class:`queue.Queue` public API. For instance,
-  this may be an actual instance of :class:`queue.Queue` or a subclass thereof,
-  or a proxy obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
+* An object implementing the :meth:`Queue.put_nowait <queue.Queue.put_nowait>`
+  and :meth:`Queue.get <queue.Queue.get>` public API. For instance, this may be
+  an actual instance of :class:`queue.Queue` or a subclass thereof, or a proxy
+  obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
 
   This is of course only possible if you are constructing or modifying
   the configuration dictionary in code.
 
 * A string that resolves to a callable which, when called with no arguments, returns
-  the :class:`queue.Queue` instance to use. That callable could be a
-  :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
+  the queue instance to use. That callable could be a :class:`queue.Queue` subclass
+  or a function which returns a suitable queue instance,
   such as ``my.module.queue_factory()``.
 
 * A dict with a ``'()'`` key which is constructed in the usual way as discussed in

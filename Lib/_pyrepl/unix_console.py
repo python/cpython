@@ -199,8 +199,14 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
+    def more_in_buffer(self) -> bool:
+        return bool(
+            self.input_buffer
+            and self.input_buffer_pos < len(self.input_buffer)
+        )
+
     def __read(self, n: int) -> bytes:
-        if not self.input_buffer or self.input_buffer_pos >= len(self.input_buffer):
+        if not self.more_in_buffer():
             self.input_buffer = os.read(self.input_fd, 10000)
 
         ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
@@ -393,6 +399,7 @@ class UnixConsole(Console):
         """
         if not block and not self.wait(timeout=0):
             return None
+
         while self.event_queue.empty():
             while True:
                 try:
@@ -413,7 +420,11 @@ class UnixConsole(Console):
         """
         Wait for events on the console.
         """
-        return bool(self.pollob.poll(timeout))
+        return (
+            not self.event_queue.empty()
+            or self.more_in_buffer()
+            or bool(self.pollob.poll(timeout))
+        )
 
     def set_cursor_vis(self, visible):
         """

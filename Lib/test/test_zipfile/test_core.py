@@ -1116,7 +1116,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # Because this is hard to verify by parsing the data as a zip, the raw
         # bytes are checked to ensure that they line up with the zip spec.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.5.3 for zip64 extra field
 
@@ -1187,7 +1187,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # in as a zip, this test looks at the raw bytes created to ensure that
         # the correct data has been generated.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.3.9 for the data descriptor
         #  - 4.5.3 for zip64 extra field
@@ -1969,10 +1969,16 @@ class OtherTests(unittest.TestCase):
             zip_contents = fp.read()
         # - passing a file-like object
         fp = io.BytesIO()
-        fp.write(zip_contents)
+        end = fp.write(zip_contents)
+        self.assertEqual(fp.tell(), end)
+        mid = end // 2
+        fp.seek(mid, 0)
         self.assertTrue(zipfile.is_zipfile(fp))
-        fp.seek(0, 0)
+        # check that the position is left unchanged after the call
+        # see: https://github.com/python/cpython/issues/122356
+        self.assertEqual(fp.tell(), mid)
         self.assertTrue(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), mid)
 
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed

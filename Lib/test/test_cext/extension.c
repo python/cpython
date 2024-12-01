@@ -37,7 +37,13 @@ static PyMethodDef _testcext_methods[] = {
 
 
 static int
-_testcext_exec(PyObject *module)
+_testcext_exec(
+#ifdef __STDC_VERSION__
+    PyObject *module
+#else
+    PyObject *Py_UNUSED(module)
+#endif
+    )
 {
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
@@ -53,7 +59,7 @@ _testcext_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _testcext_slots[] = {
-    {Py_mod_exec, _testcext_exec},
+    {Py_mod_exec, (void*)_testcext_exec},
     {0, NULL}
 };
 
