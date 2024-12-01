@@ -313,14 +313,14 @@ An :class:`IMAP4` instance has the following methods:
    Return an :class:`!Idler`: an iterable context manager implementing the IMAP4 ``IDLE``
    command as defined in :rfc:`2177`.
 
-   The context manager sends the ``IDLE`` command when activated by the
+   The returned object sends the ``IDLE`` command when activated by the
    :keyword:`with` statement, produces IMAP untagged responses via the
    :term:`iterator` protocol, and sends ``DONE`` upon context exit.
 
    The *dur* argument sets a maximum duration (in seconds) to keep idling,
-   after which iteration will stop.  It defaults to ``None``, meaning no time
-   limit.  Callers wishing to avoid inactivity timeouts on servers that impose
-   them should keep this at most 29 minutes.
+   after which any ongoing iteration will stop.  It defaults to ``None``,
+   meaning no time limit.  Callers wishing to avoid inactivity timeouts on
+   servers that impose them should keep this at most 29 minutes.
    See the :ref:`warning below <windows-pipe-timeout-warning>` if using
    :class:`IMAP4_stream` on Windows.
 
@@ -343,7 +343,7 @@ An :class:`IMAP4` instance has the following methods:
    Instead of iterating one response at a time, it is also possible to retrieve
    the next response along with any immediately available subsequent responses
    (e.g. a rapid series of ``EXPUNGE`` events from a bulk delete).  This
-   batch processing aid is provided by the context's ``burst()``
+   batch processing aid is provided by the context's :meth:`Idler.burst`
    :term:`generator`:
 
    .. method:: Idler.burst(interval=0.1)
@@ -386,14 +386,14 @@ An :class:`IMAP4` instance has the following methods:
       inactivity timeouts would make 27 minutes a sensible value for *dur* in
       this situation.
 
-      There is no such fallback for ``burst()``, which will yield endless
-      responses and block indefinitely for each one.  It is therefore advised
-      not to use ``burst()`` with an :class:`IMAP4_stream` connection on
-      Windows.
+      There is no such fallback for :meth:`Idler.burst`, which will yield
+      endless responses and block indefinitely for each one.  It is therefore
+      advised not to use :meth:`Idler.burst` with an :class:`IMAP4_stream`
+      connection on Windows.
 
    .. note::
 
-      Note: The :class:`!Idler` class name and structure are internal interfaces,
+      The :class:`!Idler` class name and structure are internal interfaces,
       subject to change.  Calling code can rely on its context management,
       iteration, and public method to remain stable, but should not
       subclass, instantiate, or otherwise directly reference the class.
