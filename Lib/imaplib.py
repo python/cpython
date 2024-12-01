@@ -1410,7 +1410,7 @@ class Idler:
 
     def __init__(self, imap, dur=None):
         if 'IDLE' not in imap.capabilities:
-            raise imap.error("Server does not support IDLE")
+            raise imap.error("Server does not support IMAP4 IDLE")
         self._dur = dur
         self._imap = imap
         self._tag = None
