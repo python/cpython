@@ -2676,7 +2676,7 @@ PyThread_exit_thread:void:::deprecated
 PyThread_free_lock:void:::
 PyThread_free_lock:PyThread_type_lock:lock::
 
-PyThread_GetInfo:PyObject *:::
+PyThread_GetInfo:PyObject *::+1:
 
 PyThread_get_key_value:void *:::deprecated
 PyThread_get_key_value:int:key::
