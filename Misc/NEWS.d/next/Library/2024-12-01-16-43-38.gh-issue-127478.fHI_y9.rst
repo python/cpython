@@ -1,0 +1,1 @@
+Support "229 Entering Extended Passive Mode" response in :meth:`ftplib.FTP.sendcmd`.
