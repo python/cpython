@@ -1187,12 +1187,12 @@ PyList_Reverse:PyObject*:list:0:
 PyList_SET_ITEM:void:::
 PyList_SET_ITEM:PyObject*:list:0:
 PyList_SET_ITEM:Py_ssize_t:i::
-PyList_SET_ITEM:PyObject*:o:$:
+PyList_SET_ITEM:PyObject*:o:$:stolen
 
 PyList_SetItem:int:::
 PyList_SetItem:PyObject*:list:0:
 PyList_SetItem:Py_ssize_t:index::
-PyList_SetItem:PyObject*:item:$:
+PyList_SetItem:PyObject*:item:$:stolen
 
 PyList_SetSlice:int:::
 PyList_SetSlice:PyObject*:list:0:
