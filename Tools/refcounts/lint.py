@@ -79,14 +79,12 @@ class LineInfo(NamedTuple):
     strip_name: bool
     strip_reftype: bool
 
-@dataclass(slots=True)
-class Return:
+class Return(NamedTuple):
     ctype: str | None
     reftype: RefType | None
     comment: str
 
-@dataclass(slots=True)
-class Param:
+class Param(NamedTuple):
     name: str
     lineno: int
 
@@ -94,7 +92,7 @@ class Param:
     reftype: RefType | None
     comment: str
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Signature:
     name: str
     lineno: int
