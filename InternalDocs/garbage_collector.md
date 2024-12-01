@@ -1,4 +1,3 @@
-
 Garbage collector design
 ========================
 
@@ -117,7 +116,7 @@ general, the collection of all objects tracked by GC is partitioned into disjoin
 doubly linked list.  Between collections, objects are partitioned into "generations", reflecting how
 often they've survived collection attempts.  During collections, the generation(s) being collected
 are further partitioned into, for example, sets of reachable and unreachable objects.  Doubly linked lists
-support moving an object from one partition to another, adding a new object,  removing an object
+support moving an object from one partition to another, adding a new object, removing an object
 entirely (objects tracked by GC are most often reclaimed by the refcounting system when GC
 isn't running at all!), and merging partitions, all with a small constant number of pointer updates.
 With care, they also support iterating over a partition while objects are being added to - and
