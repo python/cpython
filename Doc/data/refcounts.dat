@@ -180,7 +180,7 @@ PyCapsule_IsValid:const char*:name::
 PyCapsule_New:PyObject*::+1:
 PyCapsule_New:void*:pointer::
 PyCapsule_New:const char *:name::
-PyCapsule_New::void (* destructor)(PyObject* )::
+PyCapsule_New:void (*)(PyObject *):destructor::
 
 PyCapsule_SetContext:int:::
 PyCapsule_SetContext:PyObject*:self:0:
@@ -349,11 +349,11 @@ PyComplex_CheckExact:int:::
 PyComplex_CheckExact:PyObject*:p:0:
 
 PyComplex_FromCComplex:PyObject*::+1:
-PyComplex_FromCComplex::Py_complex v::
+PyComplex_FromCComplex:Py_complex:v::
 
 PyComplex_FromDoubles:PyObject*::+1:
-PyComplex_FromDoubles::double real::
-PyComplex_FromDoubles::double imag::
+PyComplex_FromDoubles:double:real::
+PyComplex_FromDoubles:double:imag::
 
 PyComplex_ImagAsDouble:double:::
 PyComplex_ImagAsDouble:PyObject*:op:0:
@@ -1476,7 +1476,7 @@ PyModule_GetState:void*:::
 PyModule_GetState:PyObject*:module:0:
 
 PyModule_New:PyObject*::+1:
-PyModule_New::char* name::
+PyModule_New:char*:name::
 
 PyModule_NewObject:PyObject*::+1:
 PyModule_NewObject:PyObject*:name:+1:
@@ -2490,7 +2490,7 @@ PyUnicode_FromWideChar:const wchar_t*:w::
 PyUnicode_FromWideChar:Py_ssize_t:size::
 
 PyUnicode_AsWideChar:Py_ssize_t:::
-PyUnicode_AsWideChar:PyObject*:*unicode:0:
+PyUnicode_AsWideChar:PyObject*:unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
 PyUnicode_AsWideChar:Py_ssize_t:size::
 
