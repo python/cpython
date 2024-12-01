@@ -1,1 +1,2 @@
-Add the var-keyword parameter to :meth:`!tkinter.Misc.after` and :meth:`!tkinter.Misc.after_idle`.
+Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+arguments passed by keyword.

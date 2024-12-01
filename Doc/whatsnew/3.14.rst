@@ -517,8 +517,8 @@ sys
 tkinter
 -------
 
-* The methods :meth:`!tkinter.Misc.after` and :meth:`!tkinter.Misc.after_idle`
-  now support passing keyword arguments to the function.
+* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+  arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
