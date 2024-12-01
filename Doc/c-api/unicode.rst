@@ -1039,7 +1039,7 @@ These are the UTF-8 codec APIs:
 
       This function does not handle null bytes within the unicode object. As a result, the length of the
       returned string (from ``strlen()``) could be smaller than the length of the
-      passed unicode object, if the string contained embedded null characters. When handling user input, 
+      passed unicode object, if the string contained embedded null characters. When handling user input,
       it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize` instead.
 
    .. versionadded:: 3.3
