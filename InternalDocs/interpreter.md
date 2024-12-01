@@ -1,4 +1,3 @@
-
 The bytecode interpreter
 ========================
 
@@ -32,7 +31,7 @@ It also has a reference to the `CodeObject` itself.
 In addition to the frame, `_PyEval_EvalFrame()` also receives a
 [`Thread State`](https://docs.python.org/3/c-api/init.html#c.PyThreadState)
 object, `tstate`, which includes things like the exception state and the
-recursion depth.  The thread state also provides access to the per-interpreter
+recursion depth. The thread state also provides access to the per-interpreter
 state (`tstate->interp`), which has a pointer to the per-runtime (that is,
 truly global) state (`tstate->interp->runtime`).
 
@@ -131,7 +130,7 @@ The size of the inline cache for a particular instruction is fixed by its `opcod
 Moreover, the inline cache size for all instructions in a
 [family of specialized/specializable instructions](adaptive.md)
 (for example, `LOAD_ATTR`, `LOAD_ATTR_SLOT`, `LOAD_ATTR_MODULE`) must all be
-the same.  Cache entries are reserved by the compiler and initialized with zeros.
+the same. Cache entries are reserved by the compiler and initialized with zeros.
 Although they are represented by code units, cache entries do not conform to the
 `opcode` / `oparg` format.
 
@@ -139,7 +138,7 @@ If an instruction has an inline cache, the layout of its cache is described by
 a `struct` definition in (`pycore_code.h`)[../Include/internal/pycore_code.h].
 This allows us to access the cache by casting `next_instr` to a pointer to this `struct`.
 The size of such a `struct` must be independent of the machine architecture, word size
-and alignment requirements.  For a 32-bit field, the `struct` should use `_Py_CODEUNIT field[2]`.
+and alignment requirements. For a 32-bit field, the `struct` should use `_Py_CODEUNIT field[2]`.
 
 The instruction implementation is responsible for advancing `next_instr` past the inline cache.
 For example, if an instruction's inline cache is four bytes (that is, two code units) in size,
@@ -211,12 +210,12 @@ In 3.10 and before, this was the case even when a Python function called
 another Python function:
 The `CALL` opcode would call the `tp_call` dispatch function of the
 callee, which would extract the code object, create a new frame for the call
-stack, and then call back into the interpreter.  This approach is very general
+stack, and then call back into the interpreter. This approach is very general
 but consumes several C stack frames for each nested Python call, thereby
 increasing the risk of an (unrecoverable) C stack overflow.
 
 Since 3.11, the `CALL` instruction special-cases function objects to "inline"
-the call.  When a call gets inlined, a new frame gets pushed onto the call
+the call. When a call gets inlined, a new frame gets pushed onto the call
 stack and the interpreter "jumps" to the start of the callee's bytecode.
 When an inlined callee executes a `RETURN_VALUE` instruction, the frame is
 popped off the call stack and the interpreter returns to its caller,
@@ -249,12 +248,12 @@ In this case we allocate a proper `PyFrameObject` and initialize it from the
 
 Things get more complicated when generators are involved, since those do not
 follow the push/pop model. This includes async functions, which are based on
-the same mechanism.  A generator object has space for a `_PyInterpreterFrame`
+the same mechanism. A generator object has space for a `_PyInterpreterFrame`
 structure, including the variable-size part (used for locals and the eval stack).
 When a generator (or async) function is first called, a special opcode
 `RETURN_GENERATOR` is executed, which is responsible for creating the
-generator object.  The generator object's `_PyInterpreterFrame` is initialized
-with a copy of the current stack frame.  The current stack frame is then popped
+generator object. The generator object's `_PyInterpreterFrame` is initialized
+with a copy of the current stack frame. The current stack frame is then popped
 off the frame stack and the generator object is returned.
 (Details differ depending on the `is_entry` flag.)
 When the generator is resumed, the interpreter pushes its `_PyInterpreterFrame`
@@ -318,9 +317,9 @@ With a new bytecode you must also change what is called the "magic number" for
 .pyc files: bump the value of the variable `MAGIC_NUMBER` in
 [`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py).
 Changing this number will lead to all .pyc files with the old `MAGIC_NUMBER`
-to be recompiled by the interpreter on import.  Whenever `MAGIC_NUMBER` is
+to be recompiled by the interpreter on import. Whenever `MAGIC_NUMBER` is
 changed, the ranges in the `magic_values` array in
-[`PC/launcher.c`](../PC/launcher.c) may also need to be updated.  Changes to
+[`PC/launcher.c`](../PC/launcher.c) may also need to be updated. Changes to
 [`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py)
 will take effect only after running `make regen-importlib`.
 
@@ -334,12 +333,12 @@ will take effect only after running `make regen-importlib`.
 > On Windows, running the `./build.bat` script will automatically
 > regenerate the required files without requiring additional arguments.
 
-Finally, you need to introduce the use of the new bytecode.  Update
+Finally, you need to introduce the use of the new bytecode. Update
 [`Python/codegen.c`](../Python/codegen.c) to emit code with this bytecode.
 Optimizations in [`Python/flowgraph.c`](../Python/flowgraph.c) may also
-need to be updated.  If the new opcode affects a control flow or the block
+need to be updated. If the new opcode affects a control flow or the block
 stack, you may have to update the `frame_setlineno()` function in
-[`Objects/frameobject.c`](../Objects/frameobject.c).  It may also be necessary
+[`Objects/frameobject.c`](../Objects/frameobject.c). It may also be necessary
 to update [`Lib/dis.py`](../Lib/dis.py) if the new opcode interprets its
 argument in a special way (like `FORMAT_VALUE` or `MAKE_FUNCTION`).
 
@@ -348,12 +347,12 @@ is already in existence and you do not change the magic number, make
 sure to delete your old .py(c|o) files!  Even though you will end up changing
 the magic number if you change the bytecode, while you are debugging your work
 you may be changing the bytecode output without constantly bumping up the
-magic number.  This can leave you with stale .pyc files that will not be
+magic number. This can leave you with stale .pyc files that will not be
 recreated.
 Running `find . -name '*.py[co]' -exec rm -f '{}' +` should delete all .pyc
 files you have, forcing new ones to be created and thus allow you test out your
-new bytecode properly.  Run `make regen-importlib` for updating the
-bytecode of frozen importlib files.  You have to run `make` again after this
+new bytecode properly. Run `make regen-importlib` for updating the
+bytecode of frozen importlib files. You have to run `make` again after this
 to recompile the generated C files.
 
 Additional resources

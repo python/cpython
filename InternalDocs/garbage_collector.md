@@ -1,4 +1,3 @@
-
 Garbage collector design
 ========================
 
@@ -56,7 +55,7 @@ Starting in version 3.13, CPython contains two GC implementations:
   performing a collection for thread safety.
 
 Both implementations use the same basic algorithms, but operate on different
-data structures.  See the section on
+data structures. See the section on
 [Differences between GC implementations](#Differences-between-GC-implementations)
 for the details.
 
@@ -65,7 +64,7 @@ Memory layout and object structure
 ==================================
 
 The garbage collector requires additional fields in Python objects to support
-garbage collection.  These extra fields are different in the default and the
+garbage collection. These extra fields are different in the default and the
 free-threaded builds.
 
 
@@ -112,12 +111,12 @@ that in the [Optimization: incremental collection](#Optimization-incremental-col
 they are also reused to fulfill other purposes when the full doubly linked list
 structure is not needed as a memory optimization.
 
-Doubly linked lists are used because they efficiently support the most frequently required operations.  In
+Doubly linked lists are used because they efficiently support the most frequently required operations. In
 general, the collection of all objects tracked by GC is partitioned into disjoint sets, each in its own
-doubly linked list.  Between collections, objects are partitioned into "generations", reflecting how
-often they've survived collection attempts.  During collections, the generation(s) being collected
-are further partitioned into, for example, sets of reachable and unreachable objects.  Doubly linked lists
-support moving an object from one partition to another, adding a new object,  removing an object
+doubly linked list. Between collections, objects are partitioned into "generations", reflecting how
+often they've survived collection attempts. During collections, the generation(s) being collected
+are further partitioned into, for example, sets of reachable and unreachable objects. Doubly linked lists
+support moving an object from one partition to another, adding a new object, removing an object
 entirely (objects tracked by GC are most often reclaimed by the refcounting system when GC
 isn't running at all!), and merging partitions, all with a small constant number of pointer updates.
 With care, they also support iterating over a partition while objects are being added to - and
@@ -129,7 +128,7 @@ GC for the free-threaded build
 In the free-threaded build, Python objects contain a 1-byte field
 `ob_gc_bits` that is used to track garbage collection related state. The
 field exists in all objects, including ones that do not support cyclic
-garbage collection.  The field is used to identify objects that are tracked
+garbage collection. The field is used to identify objects that are tracked
 by the collector, ensure that finalizers are called only once per object,
 and, during garbage collection, differentiate reachable vs. unreachable objects.
 
@@ -193,7 +192,7 @@ the interpreter create cycles everywhere. Some notable examples:
   have internal links to themselves.
 
 To correctly dispose of these objects once they become unreachable, they need
-to be identified first.  To understand how the algorithm works, let’s take
+to be identified first. To understand how the algorithm works, let’s take
 the case of a circular linked list which has one link referenced by a
 variable `A`, and one self-referencing object which is completely
 unreachable:
@@ -221,15 +220,15 @@ unreachable:
 2
 ```
 
-The GC starts with a set of candidate objects it wants to scan.  In the
+The GC starts with a set of candidate objects it wants to scan. In the
 default build, these "objects to scan" might be all container objects or a
-smaller subset (or "generation").  In the free-threaded build, the collector
+smaller subset (or "generation"). In the free-threaded build, the collector
 always scans all container objects.
 
-The objective is to identify all the unreachable objects.  The collector does
+The objective is to identify all the unreachable objects. The collector does
 this by identifying reachable objects; the remaining objects must be
-unreachable.  The first step is to identify all of the "to scan" objects that
-are **directly** reachable from outside the set of candidate objects.  These
+unreachable. The first step is to identify all of the "to scan" objects that
+are **directly** reachable from outside the set of candidate objects. These
 objects have a refcount larger than the number of incoming references from
 within the candidate set.
 
@@ -242,7 +241,7 @@ interpreter will not modify the real reference count field.
 ![gc-image1](images/python-cyclic-gc-1-new-page.png)
 
 The GC then iterates over all containers in the first list and decrements by one the
-`gc_ref` field of any other object that container is referencing.  Doing
+`gc_ref` field of any other object that container is referencing. Doing
 this makes use of the `tp_traverse` slot in the container class (implemented
 using the C API or inherited by a superclass) to know what objects are referenced by
 each container. After all the objects have been scanned, only the objects that have
@@ -274,7 +273,7 @@ When the GC encounters an object which is reachable (`gc_ref > 0`), it traverses
 its references using the `tp_traverse` slot to find all the objects that are
 reachable from it, moving them to the end of the list of reachable objects (where
 they started originally) and setting its `gc_ref` field to 1. This is what happens
-to `link_2` and `link_3` below as they are reachable from `link_1`.  From the
+to `link_2` and `link_3` below as they are reachable from `link_1`. From the
 state in the previous image and after examining the objects referred to by `link_1`
 the GC knows that `link_3` is reachable after all, so it is moved back to the
 original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
@@ -294,7 +293,7 @@ list are really unreachable and can thus be garbage collected.
 
 Pragmatically, it's important to note that no recursion is required by any of this,
 and neither does it in any other way require additional memory proportional to the
-number of objects, number of pointers, or the lengths of pointer chains.  Apart from
+number of objects, number of pointers, or the lengths of pointer chains. Apart from
 `O(1)` storage for internal C needs, the objects themselves contain all the storage
 the GC algorithms require.
 
@@ -318,8 +317,8 @@ list.
 So instead of not moving at all, the reachable objects B and A are each moved twice.
 Why is this a win? A straightforward algorithm to move the reachable objects instead
 would move A, B, and C once each. The key is that this dance leaves the objects in
-order C, B, A - it's reversed from the original order.  On all *subsequent* scans,
-none of them will move.  Since most objects aren't in cycles, this can save an
+order C, B, A - it's reversed from the original order. On all *subsequent* scans,
+none of them will move. Since most objects aren't in cycles, this can save an
 unbounded number of moves across an unbounded number of later collections. The only
 time the cost can be higher is the first time the chain is scanned.
 
@@ -332,7 +331,7 @@ follows these steps in order:
 
 1. Handle and clear weak references (if any). Weak references to unreachable objects
    are set to `None`. If the weak reference has an associated callback, the callback
-   is enqueued to be called once the clearing of weak references is finished.  We only
+   is enqueued to be called once the clearing of weak references is finished. We only
    invoke callbacks for weak references that are themselves reachable. If both the weak
    reference and the pointed-to object are unreachable we do not execute the callback.
    This is partly for historical reasons: the callback could resurrect an unreachable
@@ -491,7 +490,7 @@ to the size of the data, often a word or multiple thereof. This discrepancy
 leaves a few of the least significant bits of the pointer unused, which can be
 used for tags or to keep other information – most often as a bit field (each
 bit a separate tag) – as long as code that uses the pointer masks out these
-bits before accessing memory.  For example, on a 32-bit architecture (for both
+bits before accessing memory. For example, on a 32-bit architecture (for both
 addresses and word size), a word is 32 bits = 4 bytes, so word-aligned
 addresses are always a multiple of 4, hence end in `00`, leaving the last 2 bits
 available; while on a 64-bit architecture, a word is 64 bits = 8 bytes, so
@@ -520,10 +519,10 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
 - The `_gc_next` field is used as the "next" pointer to maintain the doubly linked
   list but during collection its lowest bit is used to keep the
   `NEXT_MASK_UNREACHABLE` flag that indicates if an object is tentatively
-  unreachable during the cycle detection algorithm.  This is a drawback to using only
+  unreachable during the cycle detection algorithm. This is a drawback to using only
   doubly linked lists to implement partitions:  while most needed operations are
   constant-time, there is no efficient way to determine which partition an object is
-  currently in.  Instead, when that's needed, ad hoc tricks (like the
+  currently in. Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
 
 Optimization: delayed untracking containers
@@ -582,29 +581,29 @@ structure, while the free-threaded build implementation does not use that
 data structure.
 
 - The default build implementation stores all tracked objects in a doubly
-  linked list using `PyGC_Head`.  The free-threaded build implementation
+  linked list using `PyGC_Head`. The free-threaded build implementation
   instead relies on the embedded mimalloc memory allocator to scan the heap
   for tracked objects.
 - The default build implementation uses `PyGC_Head` for the unreachable
-  object list.  The free-threaded build implementation repurposes the
+  object list. The free-threaded build implementation repurposes the
   `ob_tid` field to store a unreachable objects linked list.
 - The default build implementation stores flags in the `_gc_prev` field of
-  `PyGC_Head`.  The free-threaded build implementation stores these flags
+  `PyGC_Head`. The free-threaded build implementation stores these flags
   in `ob_gc_bits`.
 
 
 The default build implementation relies on the
 [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock)
-for thread safety.  The free-threaded build implementation has two "stop the
+for thread safety. The free-threaded build implementation has two "stop the
 world" pauses, in which all other executing threads are temporarily paused so
 that the GC can safely access reference counts and object attributes.
 
-The default build implementation is a generational collector.  The
+The default build implementation is a generational collector. The
 free-threaded build is non-generational; each collection scans the entire
 heap.
 
 - Keeping track of object generations is simple and inexpensive in the default
-  build.  The free-threaded build relies on mimalloc for finding tracked
+  build. The free-threaded build relies on mimalloc for finding tracked
   objects; identifying "young" objects without scanning the entire heap would
   be more difficult.
 

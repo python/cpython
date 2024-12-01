@@ -27,6 +27,7 @@ objects, so are not allocated in the per-thread stack. See `PyGenObject` in
 ## Layout
 
 Each activation record is laid out as:
+
 * Specials
 * Locals
 * Stack
@@ -124,10 +125,10 @@ the next instruction to be executed. During a call to a python function,
 to see in an exception traceback.
 
 The `return_offset` field determines where a `RETURN` should go in the caller,
-relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
+relative to `instr_ptr`. It is only meaningful to the callee, so it needs to
 be set in any instruction that implements a call (to a Python function),
 including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
-callee, then return_offset is meaningless.  It is necessary to have a separate
+callee, then return_offset is meaningless. It is necessary to have a separate
 field for the return offset because (1) if we apply this offset to `instr_ptr`
 while executing the `RETURN`, this is too early and would lose us information
 about the previous instruction which we could need for introspecting and
