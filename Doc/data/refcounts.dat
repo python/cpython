@@ -478,6 +478,11 @@ PyCFunction_NewEx:PyObject*:module:+1:
 PyCFunction_GetFlags:int:::
 PyCFunction_GetFlags:PyObject *:self:0:
 
+# The following are deprecated but still part of the stable ABI
+# TODO: PyCFunction_Call
+# TODO: PyCFunction_GetFunction
+# TODO: PyCFunction_GetSelf
+
 PyCMethod_New:PyObject*::+1:
 PyCMethod_New:PyMethodDef*:ml::
 PyCMethod_New:PyObject*:self:+1:
@@ -880,6 +885,11 @@ PyErr_WriteUnraisable:PyObject*:obj:0:
 PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 
+# TODO: PyEval_AcquireLock
+# TODO: PyEval_CallFunction
+# TODO: PyEval_CallMethod
+# TODO: PyEval_CallObjectWithKeywords
+
 PyEval_GetBuiltins:PyObject*::0:
 
 PyEval_GetLocals:PyObject*::0:
@@ -904,6 +914,8 @@ PyEval_GetFuncName:PyObject*:func:0:
 
 PyEval_ReleaseThread:void:::
 PyEval_ReleaseThread:PyThreadState*:tstate::
+
+# TODO: PyEval_ReleaseLock
 
 PyEval_RestoreThread:void:::
 PyEval_RestoreThread:PyThreadState*:tstate::
@@ -953,6 +965,8 @@ PyEval_EvalFrameEx:int:throwflag::
 
 PyEval_MergeCompilerFlags:int:::
 PyEval_MergeCompilerFlags:PyCompilerFlags*:cf::
+
+# TODO: PyEval_ThreadsInitialized
 
 PyException_GetArgs:PyObject*::+1:
 
@@ -1873,6 +1887,10 @@ PyNumber_Xor:PyObject*:o2:0:
 PyObject_AsFileDescriptor:int:::
 PyObject_AsFileDescriptor:PyObject*:o:0:
 
+# TODO: PyObject_AsCharBuffer
+# TODO: PyObject_AsReadBuffer
+# TODO: PyObject_AsWriteBuffer
+
 PyOS_AfterFork:void:::
 
 PyOS_AfterFork_Child:void:::
@@ -2600,6 +2618,8 @@ PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
 
+# TODO: PySys_HasWarnOptions
+
 PySys_SetArgv:void:::
 PySys_SetArgv:int:argc::
 PySys_SetArgv:wchar_t**:argv::
@@ -2612,6 +2632,8 @@ PySys_SetArgvEx:int:updatepath::
 PySys_SetObject:int:::
 PySys_SetObject:const char*:name::
 PySys_SetObject:PyObject*:v:+1:
+
+# TODO: PySys_SetPath
 
 PySys_ResetWarnOptions:void:::
 
@@ -2628,6 +2650,8 @@ PyThreadState_Clear:PyThreadState*:tstate::
 
 PyThreadState_Delete:void:::
 PyThreadState_Delete:PyThreadState*:tstate::
+
+# TODO: PyThreadState_DeleteCurrent
 
 PyThreadState_Get:PyThreadState*:::
 
@@ -3255,6 +3279,8 @@ PyUnicode_Contains:PyObject*:element:0:
 PyUnicode_InternInPlace:void:::
 PyUnicode_InternInPlace:PyObject**:string:+1:
 
+# TODO: PyUnicode_InternImmortal
+
 PyUnicode_InternFromString:PyObject*::+1:
 PyUnicode_InternFromString:const char*:v::
 
@@ -3292,6 +3318,8 @@ PyUnicode_GetDefaultEncoding:const char *:::
 
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:
+
+# TODO: PyUnicode_GetSize
 
 PyUnicode_CopyCharacters:Py_ssize_t:::
 PyUnicode_CopyCharacters:PyObject*:to:0:
@@ -3603,6 +3631,8 @@ Py_GenericAlias:PyObject *::+1:
 Py_GenericAlias:PyObject *:origin:0:
 Py_GenericAlias:PyObject *:args:0:
 
+# TODO: Py_GetArgcArgv
+
 Py_GetBuildInfo:const char*:::
 
 Py_GetCompiler:const char*:::
@@ -3683,6 +3713,8 @@ Py_ReprEnter:PyObject*:object:+1:
 Py_ReprLeave:void:::
 Py_ReprLeave:PyObject*:object:-1:
 
+# TODO: Py_SetPath
+
 Py_SetProgramName:void:::
 Py_SetProgramName:const wchar_t*:name::
 
@@ -3701,6 +3733,14 @@ Py_XINCREF:PyObject*:o:+1:if o is not NULL
 Py_XNewRef:void:::
 Py_XNewRef:PyObject*:o:+1:if o is not NULL
 
+# TODO: _PyArg_ParseTupleAndKeywords_SizeT
+# TODO: _PyArg_ParseTuple_SizeT
+# TODO: _PyArg_Parse_SizeT
+# TODO: _PyArg_VaParseTupleAndKeywords_SizeT
+# TODO: _PyArg_VaParse_SizeT
+
+# TODO: _PyErr_BadInternalCall
+
 _PyImport_Fini:void:::
 
 _PyObject_New:PyObject*::+1:
@@ -3714,9 +3754,22 @@ _PyBytes_Resize:int:::
 _PyBytes_Resize:PyObject**:bytes:0:
 _PyBytes_Resize:Py_ssize_t:newsize::
 
+# TODO: _PyObject_CallFunction_SizeT
+# TODO: _PyObject_CallMethod_SizeT
+# TODO: _PyObject_GC_New
+# TODO: _PyObject_GC_NewVar
+# TODO: _PyObject_GC_Resize
+
+# TODO: _PyState_AddModule
+# TODO: _PyThreadState_Init
+# TODO: _PyThreadState_Prealloc
+
 _PyTuple_Resize:int:::
 _PyTuple_Resize:PyObject**:p:0:
 _PyTuple_Resize:Py_ssize_t:new::
+
+# TODO: _Py_BuildValue_SizeT
+# TODO: _Py_CheckRecursiveCall
 
 _Py_c_diff:Py_complex:::
 _Py_c_diff:Py_complex:left::
@@ -3740,3 +3793,10 @@ _Py_c_quot:Py_complex:divisor::
 _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
+
+# TODO: _Py_Dealloc
+# TODO: _Py_DecRef
+# TODO: _Py_IncRef
+# TODO: _Py_NegativeRefcount
+# TODO: _Py_SetRefcnt
+# TODO: _Py_VaBuildValue_SizeT
