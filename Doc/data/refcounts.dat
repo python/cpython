@@ -9,27 +9,26 @@
 # function's return value.  Successive lines with the same function name
 # correspond to the function's parameter list and appear in the order the
 # parameters appear in the function's prototype.
+#
+# Whenever possible, the parameter names are as they appear in the API manual,
+# not the source code.
 
 # For readability, each function's lines are surrounded by a blank line.
-# The blocks are sorted alphabetically by function name.
+# The blocks should be sorted alphabetically by function name.
 
-# Refcount behavior is given for all PyObject* types: 0 (no change), +1
-# (increment) and -1 (decrement).  A blank refcount field indicates the
-# parameter or function value is not a PyObject* and is therefore not
-# subject to reference counting.  A special case for the value "null"
-# (without quotes) is used for functions which return a PyObject* type but
-# always return NULL.  This is used by some of the PyErr_*() functions, in
-# particular.
-
-# XXX NOTE: the 0/+1/-1 refcount information for arguments is
-# confusing!  Much more useful would be to indicate whether the
-# function "steals" a reference to the argument or not.  Take for
-# example PyList_SetItem(list, i, item).  This lists as a 0 change for
-# both the list and the item arguments.  However, in fact it steals a
-# reference to the item argument!
-
-# The parameter names are as they appear in the API manual, not the source
-# code.
+# Refcount behavior is given for all PyObject* types:
+#
+#   0   (no change)
+#   +1  (increment)
+#   -1  (decrement)
+#   $   (stolen reference)
+#
+# A blank refcount field indicates the parameter or function value is not
+# a PyObject* object and is therefore not subject to reference counting.
+#
+# A special case for the value "null" (without quotes) is used for functions
+# which return a PyObject* type but always return NULL. For instance, this is
+# used by the PyErr_*() functions.
 
 PyAnySet_Check:int:::
 PyAnySet_Check:PyObject*:p:0:
@@ -1193,7 +1192,7 @@ PyList_SET_ITEM:PyObject*:o:0:
 PyList_SetItem:int:::
 PyList_SetItem:PyObject*:list:0:
 PyList_SetItem:Py_ssize_t:index::
-PyList_SetItem:PyObject*:item:0:
+PyList_SetItem:PyObject*:item:$:
 
 PyList_SetSlice:int:::
 PyList_SetSlice:PyObject*:list:0:
