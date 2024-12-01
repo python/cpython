@@ -10,7 +10,7 @@
 .. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
-.. changes for IDLE by Forest <forestix@nom.one> August 2024
+.. changes for IMAP4 IDLE by Forest <forestix@nom.one> August 2024
 
 **Source code:** :source:`Lib/imaplib.py`
 
@@ -310,7 +310,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.idle(dur=None)
 
-   Return an :class:`!Idler`: an iterable context manager implementing the ``IDLE``
+   Return an :class:`!Idler`: an iterable context manager implementing the IMAP4 ``IDLE``
    command as defined in :rfc:`2177`.
 
    The context manager sends the ``IDLE`` command when activated by the
