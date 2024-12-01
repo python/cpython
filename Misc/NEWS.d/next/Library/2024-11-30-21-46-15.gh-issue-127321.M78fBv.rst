@@ -1,0 +1,1 @@
+:func:`pdb.set_trace` will not stop at an opcode that does not have an associated line number anymore.
