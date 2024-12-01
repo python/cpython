@@ -1,0 +1,17 @@
+target-version = "py312"
+line-length = 80
+fix = true
+
+[lint]
+select = [
+    "ALL"
+]
+ignore = [
+    "D", # docstrings
+    "I001", # split imports
+    "Q00", # prefer double quotes over single quotes
+    "T201", # print() found
+    "PLR2004", # magic values
+    "C901", # too complex
+    "PLR0912", # too many branches
+]
