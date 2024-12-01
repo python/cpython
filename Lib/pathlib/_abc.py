@@ -580,7 +580,7 @@ class PathBase(PurePathBase):
             return f.write(data)
 
     def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+        """Yield DirEntry objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
