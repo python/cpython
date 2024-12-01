@@ -326,12 +326,12 @@ class FTP:
         if self.af == socket.AF_INET:
             try:
                 untrusted_host, port = parse227(self.sendcmd('PASV'))
-                if self.trust_server_pasv_ipv4_address:
-                    host = untrusted_host
-                else:
-                    host = self.sock.getpeername()[0]
-            except:
-                host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
+            except error_reply:
+                untrusted_host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
+            if self.trust_server_pasv_ipv4_address:
+                host = untrusted_host
+            else:
+                host = self.sock.getpeername()[0]
         else:
             host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
         return host, port
