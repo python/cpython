@@ -2715,6 +2715,12 @@ _select_exec(PyObject *m)
 #ifdef EPOLLMSG
     ADD_INT(EPOLLMSG);
 #endif
+#ifdef EPOLL_URING_WAKE
+    ADD_INT(EPOLL_URING_WAKE);
+#endif
+#ifdef EPOLLWAKEUP
+    ADD_INT(EPOLLWAKEUP);
+#endif
 
 #ifdef EPOLL_CLOEXEC
     ADD_INT(EPOLL_CLOEXEC);
