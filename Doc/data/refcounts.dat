@@ -466,6 +466,11 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyCFunction_Call:PyObject*::+1:deprecated
+PyCFunction_Call:PyObject*:callable_object:0:
+PyCFunction_Call:PyObject*:args:0:
+PyCFunction_Call:PyObject*:kw:0:
+
 PyCFunction_New:PyObject*::+1:
 PyCFunction_New:PyMethodDef*:ml::
 PyCFunction_New:PyObject*:self:+1:
@@ -478,10 +483,11 @@ PyCFunction_NewEx:PyObject*:module:+1:
 PyCFunction_GetFlags:int:::
 PyCFunction_GetFlags:PyObject *:self:0:
 
-# The following are deprecated but still part of the stable ABI
-# TODO: PyCFunction_Call
-# TODO: PyCFunction_GetFunction
-# TODO: PyCFunction_GetSelf
+PyCFunction_GetFunction:PyCFunction:::
+PyCFunction_GetFunction:PyObject *:op:0:
+
+PyCFunction_GetSelf:PyObject *::0:
+PyCFunction_GetSelf:PyObject *:op:0:
 
 PyCMethod_New:PyObject*::+1:
 PyCMethod_New:PyMethodDef*:ml::
@@ -885,10 +891,23 @@ PyErr_WriteUnraisable:PyObject*:obj:0:
 PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 
-# TODO: PyEval_AcquireLock
-# TODO: PyEval_CallFunction
-# TODO: PyEval_CallMethod
-# TODO: PyEval_CallObjectWithKeywords
+PyEval_AcquireLock:void:::deprecated
+
+PyEval_CallFunction:PyObject *::+1:deprecated
+PyEval_CallFunction:PyObject *:callable:0:
+PyEval_CallFunction:const char *:format::
+PyEval_CallFunction::...::
+
+PyEval_CallMethod:PyObject *::+1:deprecated
+PyEval_CallMethod:PyObject *:obj:0:
+PyEval_CallMethod:const char *:name::
+PyEval_CallMethod:const char *:format::
+PyEval_CallMethod::...::
+
+PyEval_CallObjectWithKeywords:PyObject *::+1:deprecated
+PyEval_CallObjectWithKeywords:PyObject *:callable:0:
+PyEval_CallObjectWithKeywords:PyObject *:args:0:
+PyEval_CallObjectWithKeywords:PyObject *:kwargs:0:
 
 PyEval_GetBuiltins:PyObject*::0:
 
@@ -915,7 +934,7 @@ PyEval_GetFuncName:PyObject*:func:0:
 PyEval_ReleaseThread:void:::
 PyEval_ReleaseThread:PyThreadState*:tstate::
 
-# TODO: PyEval_ReleaseLock
+PyEval_ReleaseLock:void:::deprecated
 
 PyEval_RestoreThread:void:::
 PyEval_RestoreThread:PyThreadState*:tstate::
@@ -966,7 +985,7 @@ PyEval_EvalFrameEx:int:throwflag::
 PyEval_MergeCompilerFlags:int:::
 PyEval_MergeCompilerFlags:PyCompilerFlags*:cf::
 
-# TODO: PyEval_ThreadsInitialized
+PyEval_ThreadsInitialized:void:::deprecated
 
 PyException_GetArgs:PyObject*::+1:
 
@@ -1887,9 +1906,20 @@ PyNumber_Xor:PyObject*:o2:0:
 PyObject_AsFileDescriptor:int:::
 PyObject_AsFileDescriptor:PyObject*:o:0:
 
-# TODO: PyObject_AsCharBuffer
-# TODO: PyObject_AsReadBuffer
-# TODO: PyObject_AsWriteBuffer
+PyObject_AsCharBuffer:int:::abi_only
+PyObject_AsCharBuffer:PyObject *:obj:0:
+PyObject_AsCharBuffer:const char **:buffer::
+PyObject_AsCharBuffer:Py_ssize_t *:buffer_len::
+
+PyObject_AsReadBuffer:int:::abi_only
+PyObject_AsReadBuffer:PyObject *:obj:0:
+PyObject_AsReadBuffer:const void **:buffer::
+PyObject_AsReadBuffer:Py_ssize_t *:buffer_len::
+
+PyObject_AsWriteBuffer:int:::abi_only
+PyObject_AsWriteBuffer:PyObject *:obj:0:
+PyObject_AsWriteBuffer:void **:buffer::
+PyObject_AsWriteBuffer:Py_ssize_t *:buffer_len::
 
 PyOS_AfterFork:void:::
 
@@ -2618,7 +2648,7 @@ PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
 
-# TODO: PySys_HasWarnOptions
+PySys_HasWarnOptions:int:::deprecated(3.13)
 
 PySys_SetArgv:void:::
 PySys_SetArgv:int:argc::
@@ -2633,7 +2663,8 @@ PySys_SetObject:int:::
 PySys_SetObject:const char*:name::
 PySys_SetObject:PyObject*:v:+1:
 
-# TODO: PySys_SetPath
+PySys_SetPath:void:::deprecated(3.13)
+PySys_SetPath:const wchar_t *:path::
 
 PySys_ResetWarnOptions:void:::
 
@@ -2651,7 +2682,7 @@ PyThreadState_Clear:PyThreadState*:tstate::
 PyThreadState_Delete:void:::
 PyThreadState_Delete:PyThreadState*:tstate::
 
-# TODO: PyThreadState_DeleteCurrent
+PyThreadState_DeleteCurrent:void:::
 
 PyThreadState_Get:PyThreadState*:::
 
@@ -3279,7 +3310,8 @@ PyUnicode_Contains:PyObject*:element:0:
 PyUnicode_InternInPlace:void:::
 PyUnicode_InternInPlace:PyObject**:string:+1:
 
-# TODO: PyUnicode_InternImmortal
+PyUnicode_InternImmortal:void:::deprecated(3.10)
+PyUnicode_InternImmortal:PyObject **:p:+1:
 
 PyUnicode_InternFromString:PyObject*::+1:
 PyUnicode_InternFromString:const char*:v::
@@ -3318,8 +3350,6 @@ PyUnicode_GetDefaultEncoding:const char *:::
 
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:
-
-# TODO: PyUnicode_GetSize
 
 PyUnicode_CopyCharacters:Py_ssize_t:::
 PyUnicode_CopyCharacters:PyObject*:to:0:
@@ -3631,7 +3661,9 @@ Py_GenericAlias:PyObject *::+1:
 Py_GenericAlias:PyObject *:origin:0:
 Py_GenericAlias:PyObject *:args:0:
 
-# TODO: Py_GetArgcArgv
+Py_GetArgcArgv:void:::
+Py_GetArgcArgv:int *:argc::
+Py_GetArgcArgv:wchar_t **:argv::
 
 Py_GetBuildInfo:const char*:::
 
@@ -3713,7 +3745,8 @@ Py_ReprEnter:PyObject*:object:+1:
 Py_ReprLeave:void:::
 Py_ReprLeave:PyObject*:object:-1:
 
-# TODO: Py_SetPath
+Py_SetPath:void:::deprecated(3.13)
+Py_SetPath:const wchar_t *:path::
 
 Py_SetProgramName:void:::
 Py_SetProgramName:const wchar_t*:name::
@@ -3733,13 +3766,38 @@ Py_XINCREF:PyObject*:o:+1:if o is not NULL
 Py_XNewRef:void:::
 Py_XNewRef:PyObject*:o:+1:if o is not NULL
 
-# TODO: _PyArg_ParseTupleAndKeywords_SizeT
-# TODO: _PyArg_ParseTuple_SizeT
-# TODO: _PyArg_Parse_SizeT
-# TODO: _PyArg_VaParseTupleAndKeywords_SizeT
-# TODO: _PyArg_VaParse_SizeT
+_PyArg_ParseTupleAndKeywords_SizeT:int:::
+_PyArg_ParseTupleAndKeywords_SizeT:PyObject *:args:0:
+_PyArg_ParseTupleAndKeywords_SizeT:PyObject *:keywords:0:
+_PyArg_ParseTupleAndKeywords_SizeT:const char *:format::
+_PyArg_ParseTupleAndKeywords_SizeT:const char * const *:kwlist::
+_PyArg_ParseTupleAndKeywords_SizeT::...::
 
-# TODO: _PyErr_BadInternalCall
+_PyArg_ParseTuple_SizeT:int:::
+_PyArg_ParseTuple_SizeT:PyObject *:args:0:
+_PyArg_ParseTuple_SizeT:const char *:format::
+_PyArg_ParseTuple_SizeT::...::
+
+_PyArg_Parse_SizeT:int:::
+_PyArg_Parse_SizeT:PyObject *:args:0:
+_PyArg_Parse_SizeT:const char *:format::
+_PyArg_Parse_SizeT::...::
+
+_PyArg_VaParseTupleAndKeywords_SizeT:int:::
+_PyArg_VaParseTupleAndKeywords_SizeT:PyObject *:args:0:
+_PyArg_VaParseTupleAndKeywords_SizeT:PyObject *:keywords:0:
+_PyArg_VaParseTupleAndKeywords_SizeT:const char *:format::
+_PyArg_VaParseTupleAndKeywords_SizeT:const char * const *:kwlist::
+_PyArg_VaParseTupleAndKeywords_SizeT:va_list:va::
+
+_PyArg_VaParse_SizeT:int:::
+_PyArg_VaParse_SizeT:PyObject *:args:0:
+_PyArg_VaParse_SizeT:const char *:format::
+_PyArg_VaParse_SizeT:va_list:va::
+
+_PyErr_BadInternalCall:void:::
+_PyErr_BadInternalCall:const char *:filename::
+_PyErr_BadInternalCall:int:lineno::
 
 _PyImport_Fini:void:::
 
@@ -3754,22 +3812,49 @@ _PyBytes_Resize:int:::
 _PyBytes_Resize:PyObject**:bytes:0:
 _PyBytes_Resize:Py_ssize_t:newsize::
 
-# TODO: _PyObject_CallFunction_SizeT
-# TODO: _PyObject_CallMethod_SizeT
-# TODO: _PyObject_GC_New
-# TODO: _PyObject_GC_NewVar
-# TODO: _PyObject_GC_Resize
+_PyObject_CallFunction_SizeT:PyObject *::+1:abi-only
+_PyObject_CallFunction_SizeT:PyObject *:callable:0:
+_PyObject_CallFunction_SizeT:const char *:format::
+_PyObject_CallFunction_SizeT::...::
 
-# TODO: _PyState_AddModule
-# TODO: _PyThreadState_Init
-# TODO: _PyThreadState_Prealloc
+_PyObject_CallMethod_SizeT:PyObject *::+1:abi-only
+_PyObject_CallMethod_SizeT:PyObject *:obj:0:
+_PyObject_CallMethod_SizeT:const char *:name::
+_PyObject_CallMethod_SizeT:const char *:format::
+_PyObject_CallMethod_SizeT::...::
+
+_PyObject_GC_New:PyObject *::+1:
+_PyObject_GC_New:PyTypeObject *:tp:0:
+
+_PyObject_GC_NewVar:PyObject *::+1:
+_PyObject_GC_NewVar:PyTypeObject *:tp:0:
+_PyObject_GC_NewVar:Py_ssize_t:size::
+
+_PyObject_GC_Resize:PyVarObject *::0:
+_PyObject_GC_Resize:PyVarObject *:op:0:
+_PyObject_GC_Resize:Py_ssize_t:nitems::
+
+_PyState_AddModule:int:::abi-only(removed)
+_PyState_AddModule:PyThreadState *:tstate::
+_PyState_AddModule:PyObject *:module:0:
+_PyState_AddModule:PyModuleDef *:def::
+
+_PyThreadState_Init:void:::UNUSABLE
+
+_PyThreadState_Prealloc:PyThreadState *:::abi-only
+_PyThreadState_Prealloc:PyInterpreterState *:interp::
 
 _PyTuple_Resize:int:::
 _PyTuple_Resize:PyObject**:p:0:
 _PyTuple_Resize:Py_ssize_t:new::
 
-# TODO: _Py_BuildValue_SizeT
-# TODO: _Py_CheckRecursiveCall
+_Py_BuildValue_SizeT:PyObject *::0:abi-only
+_Py_BuildValue_SizeT:const char *:format::
+_Py_BuildValue_SizeT::...::
+
+_Py_CheckRecursiveCall:int:::abi-only(internal)
+_Py_CheckRecursiveCall:PyThreadState *:tstate::
+_Py_CheckRecursiveCall:const char *:where::
 
 _Py_c_diff:Py_complex:::
 _Py_c_diff:Py_complex:left::
@@ -3794,9 +3879,26 @@ _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
 
-# TODO: _Py_Dealloc
-# TODO: _Py_DecRef
-# TODO: _Py_IncRef
-# TODO: _Py_NegativeRefcount
-# TODO: _Py_SetRefcnt
-# TODO: _Py_VaBuildValue_SizeT
+_Py_Dealloc:void:::
+_Py_Dealloc:PyObject *:op:0:
+
+_Py_DecRef:void:::internal
+_Py_DecRef:PyObject *:op:-1:
+
+_Py_IncRef:void:::internal
+_Py_IncRef:PyObject *:op:+1:
+
+_Py_NegativeRefcount:void:::
+_Py_NegativeRefcount:const char *:filename::
+_Py_NegativeRefcount:int:lineno::
+_Py_NegativeRefcount:PyObject *:op:0:
+
+# The refcount is changed dynamically, so to ease
+# the syntax, we mark the refcount delta to be 0.
+_Py_SetRefcnt:void:::
+_Py_SetRefcnt:PyObject *:op:0:
+_Py_SetRefcnt:Py_ssize_t:refcnt::
+
+_Py_VaBuildValue_SizeT:PyObject *::+1:abi-only
+_Py_VaBuildValue_SizeT:const char *:format::
+_Py_VaBuildValue_SizeT:va_list:va::
