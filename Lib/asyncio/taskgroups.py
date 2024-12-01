@@ -150,10 +150,6 @@ class TaskGroup:
                 # If there are no pending cancellations left,
                 # don't propagate CancelledError.
                 propagate_cancellation_error = None
-                # If Cancelled would actually be raised out of the TaskGroup,
-                # suppress it-- this is significant when using stop().
-                if not self._errors:
-                    return True
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
@@ -184,6 +180,10 @@ class TaskGroup:
             finally:
                 exc = None
 
+        # If we wanted to raise an error, it would have been done explicitly
+        # above.  Otherwise, either there is no error or we want to suppress
+        # the original error.
+        return True
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.

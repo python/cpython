@@ -1063,6 +1063,20 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 tg.create_task(raise_exc(tg))
                 await asyncio.sleep(1)
 
+    async def test_taskgroup_body_cancel_before_exception(self):
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                tg.cancel()
+                raise RuntimeError
+
+    async def test_taskgroup_body_cancel_after_exception(self):
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                try:
+                    raise RuntimeError
+                finally:
+                    tg.cancel()
+
 
 if __name__ == "__main__":
     unittest.main()
