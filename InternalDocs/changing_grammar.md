@@ -18,7 +18,7 @@ Below is a checklist of things that may need to change.
   to regenerate [`Parser/parser.c`](../Parser/parser.c).
   (This runs Python's parser generator, [`Tools/peg_generator`](../Tools/peg_generator)).
 
-* [`Grammar/Tokens`](../Grammar/Tokens) is a place for adding new token types. After
+* [`Grammar/Tokens`](../Grammar/Tokens) is a place for adding new token types.  After
   changing it, run ``make regen-token`` to regenerate
   [`Include/internal/pycore_token.h`](../Include/internal/pycore_token.h),
   [`Parser/token.c`](../Parser/token.c), [`Lib/token.py`](../Lib/token.py)

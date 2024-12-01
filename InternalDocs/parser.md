@@ -56,11 +56,11 @@ an input string as its argument, and yields one of the following results:
 
 Note that "failure" results do not imply that the program is incorrect, nor do
 they necessarily mean that the parsing has failed. Since the choice operator is
-ordered, a failure very often merely indicates "try the following option". A
+ordered, a failure very often merely indicates "try the following option".  A
 direct implementation of a PEG parser as a recursive descent parser will present
 exponential time performance in the worst case, because PEG parsers have
 infinite lookahead (this means that they can consider an arbitrary number of
-tokens before deciding for a rule). Usually, PEG parsers avoid this exponential
+tokens before deciding for a rule).  Usually, PEG parsers avoid this exponential
 time complexity with a technique called
 ["packrat parsing"](https://pdos.csail.mit.edu/~baford/packrat/thesis/)
 which not only loads the entire program in memory before parsing it but also
@@ -447,7 +447,7 @@ parser (the one used by the interpreter) just execute:
 $ make regen-pegen
 ```
 
-using the `Makefile` in the main directory. If you are on Windows you can
+using the `Makefile` in the main directory.  If you are on Windows you can
 use the Visual Studio project files to regenerate the parser or to execute:
 
 ```dos

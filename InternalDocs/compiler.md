@@ -20,8 +20,8 @@ In CPython, the compilation from source code to bytecode involves several steps:
 This document outlines how these steps of the process work.
 
 This document only describes parsing in enough depth to explain what is needed
-for understanding compilation. This document provides a detailed, though not
-exhaustive, view of the how the entire system works. You will most likely need
+for understanding compilation.  This document provides a detailed, though not
+exhaustive, view of the how the entire system works.  You will most likely need
 to read some source code to have an exact understanding of all details.
 
 
@@ -36,7 +36,7 @@ parsers.
 The grammar file for Python can be found in
 [Grammar/python.gram](../Grammar/python.gram).
 The definitions for literal tokens (such as `:`, numbers, etc.) can be found in
-[Grammar/Tokens](../Grammar/Tokens). Various C files, including
+[Grammar/Tokens](../Grammar/Tokens).  Various C files, including
 [Parser/parser.c](../Parser/parser.c) are generated from these.
 
 See Also:
@@ -54,7 +54,7 @@ Abstract syntax trees (AST)
 
 The abstract syntax tree (AST) is a high-level representation of the
 program structure without the necessity of containing the source code;
-it can be thought of as an abstract representation of the source code. The
+it can be thought of as an abstract representation of the source code.  The
 specification of the AST nodes is specified using the Zephyr Abstract
 Syntax Definition Language (ASDL) [^1], [^2].
 
@@ -63,9 +63,9 @@ The definition of the AST nodes for Python is found in the file
 
 Each AST node (representing statements, expressions, and several
 specialized types, like list comprehensions and exception handlers) is
-defined by the ASDL. Most definitions in the AST correspond to a
+defined by the ASDL.  Most definitions in the AST correspond to a
 particular source construct, such as an 'if' statement or an attribute
-lookup. The definition is independent of its realization in any
+lookup.  The definition is independent of its realization in any
 particular programming language.
 
 The following fragment of the Python ASDL construct demonstrates the
@@ -84,7 +84,7 @@ approach and syntax:
 The preceding example describes two different kinds of statements and an
 expression: function definitions, return statements, and yield expressions.
 All three kinds are considered of type `stmt` as shown by `|` separating
-the various kinds. They all take arguments of various kinds and amounts.
+the various kinds.  They all take arguments of various kinds and amounts.
 
 Modifiers on the argument type specify the number of values needed; `?`
 means it is optional, `*` means 0 or more, while no modifier means only one
@@ -128,47 +128,46 @@ The statement definitions above generate the following C structure type:
 ```
 
 Also generated are a series of constructor functions that allocate (in
-this case) a `stmt_ty` struct with the appropriate initialization. The
-`kind` field specifies which component of the union is initialized. The
+this case) a `stmt_ty` struct with the appropriate initialization.  The
+`kind` field specifies which component of the union is initialized.  The
 `FunctionDef()` constructor function sets 'kind' to `FunctionDef_kind` and
 initializes the *name*, *args*, *body*, and *attributes* fields.
 
-See also
-[Green Tree Snakes - The missing Python AST docs](https://greentreesnakes.readthedocs.io/en/latest)
-by Thomas Kluyver.
+See also [Green Tree Snakes - The missing Python AST docs](
+https://greentreesnakes.readthedocs.io/en/latest) by Thomas Kluyver.
 
 Memory management
 =================
 
 Before discussing the actual implementation of the compiler, a discussion of
-how memory is handled is in order. To make memory management simple, an **arena**
+how memory is handled is in order.  To make memory management simple, an **arena**
 is used that pools memory in a single location for easy
-allocation and removal. This enables the removal of explicit memory
-deallocation. Because memory allocation for all needed memory in the compiler
+allocation and removal.  This enables the removal of explicit memory
+deallocation.  Because memory allocation for all needed memory in the compiler
 registers that memory with the arena, a single call to free the arena is all
 that is needed to completely free all memory used by the compiler.
 
 In general, unless you are working on the critical core of the compiler, memory
-management can be completely ignored. But if you are working at either the
+management can be completely ignored.  But if you are working at either the
 very beginning of the compiler or the end, you need to care about how the arena
-works. All code relating to the arena is in either
+works.  All code relating to the arena is in either
 [Include/internal/pycore_pyarena.h](../Include/internal/pycore_pyarena.h)
 or [Python/pyarena.c](../Python/pyarena.c).
 
-`PyArena_New()` will create a new arena. The returned `PyArena` structure
-will store pointers to all memory given to it. This does the bookkeeping of
+`PyArena_New()` will create a new arena.  The returned `PyArena` structure
+will store pointers to all memory given to it.  This does the bookkeeping of
 what memory needs to be freed when the compiler is finished with the memory it
-used. That freeing is done with `PyArena_Free()`. This only needs to be
+used. That freeing is done with `PyArena_Free()`.  This only needs to be
 called in strategic areas where the compiler exits.
 
 As stated above, in general you should not have to worry about memory
-management when working on the compiler. The technical details of memory
+management when working on the compiler.  The technical details of memory
 management have been designed to be hidden from you for most cases.
 
-The only exception comes about when managing a PyObject. Since the rest
+The only exception comes about when managing a PyObject.  Since the rest
 of Python uses reference counting, there is extra support added
-to the arena to cleanup each PyObject that was allocated. These cases
-are very rare. However, if you've allocated a PyObject, you must tell
+to the arena to cleanup each PyObject that was allocated.  These cases
+are very rare.  However, if you've allocated a PyObject, you must tell
 the arena about it by calling `PyArena_AddPyObject()`.
 
 
@@ -182,22 +181,22 @@ The AST is generated from source code using the function
 After some checks, a helper function in
 [Parser/parser.c](../Parser/parser.c)
 begins applying production rules on the source code it receives; converting source
-code to tokens and matching these tokens recursively to their corresponding rule. The
-production rule's corresponding rule function is called on every match. These rule
-functions follow the format `xx_rule`. Where *xx* is the grammar rule
+code to tokens and matching these tokens recursively to their corresponding rule.  The
+production rule's corresponding rule function is called on every match.  These rule
+functions follow the format `xx_rule`.  Where *xx* is the grammar rule
 that the function handles and is automatically derived from
 [Grammar/python.gram](../Grammar/python.gram) by
 [Tools/peg_generator/pegen/c_generator.py](../Tools/peg_generator/pegen/c_generator.py).
 
-Each rule function in turn creates an AST node as it goes along. It does this
+Each rule function in turn creates an AST node as it goes along.  It does this
 by allocating all the new nodes it needs, calling the proper AST node creation
 functions for any required supporting functions and connecting them as needed.
-This continues until all nonterminal symbols are replaced with terminals. If an
-error occurs, the rule functions backtrack and try another rule function. If
+This continues until all nonterminal symbols are replaced with terminals.  If an
+error occurs, the rule functions backtrack and try another rule function.  If
 there are no more rules, an error is set and the parsing ends.
 
 The AST node creation helper functions have the name `_PyAST_{xx}`
-where *xx* is the AST node that the function creates. These are defined by the
+where *xx* is the AST node that the function creates.  These are defined by the
 ASDL grammar and contained in [Python/Python-ast.c](../Python/Python-ast.c)
 (which is generated by [Parser/asdl_c.py](../Parser/asdl_c.py)
 from [Parser/Python.asdl](../Parser/Python.asdl)).
@@ -205,9 +204,9 @@ This all leads to a sequence of AST nodes stored in `asdl_seq` structs.
 
 To demonstrate everything explained so far, here's the
 rule function responsible for a simple named import statement such as
-`import sys`. Note that error-checking and debugging code has been
-omitted. Removed parts are represented by `...`.
-Furthermore, some comments have been added for explanation. These comments
+`import sys`.  Note that error-checking and debugging code has been
+omitted.  Removed parts are represented by `...`.
+Furthermore, some comments have been added for explanation.  These comments
 may not be present in the actual code.
 
 
@@ -248,13 +247,13 @@ may not be present in the actual code.
 
 
 To improve backtracking performance, some rules (chosen by applying a
-`(memo)` flag in the grammar file) are memoized. Each rule function checks if
+`(memo)` flag in the grammar file) are memoized.  Each rule function checks if
 a memoized version exists and returns that if so, else it continues in the
 manner stated in the previous paragraphs.
 
 There are macros for creating and using `asdl_xx_seq *` types, where *xx* is
-a type of the ASDL sequence. Three main types are defined
-manually -- `generic`, `identifier` and `int`. These types are found in
+a type of the ASDL sequence.  Three main types are defined
+manually -- `generic`, `identifier` and `int`.  These types are found in
 [Python/asdl.c](../Python/asdl.c) and its corresponding header file
 [Include/internal/pycore_asdl.h](../Include/internal/pycore_asdl.h).
 Functions and macros for creating `asdl_xx_seq *` types are as follows:
@@ -288,11 +287,11 @@ when a function needs to manipulate a generic ASDL sequence:
   Return the length of an `asdl_seq` or `asdl_xx_seq`
 
 Note that typed macros and functions are recommended over their untyped
-counterparts. Typed macros carry out checks in debug mode and aid
+counterparts.  Typed macros carry out checks in debug mode and aid
 debugging errors caused by incorrectly casting from `void *`.
 
 If you are working with statements, you must also worry about keeping
-track of what line number generated the statement. Currently the line
+track of what line number generated the statement.  Currently the line
 number is passed as the last parameter to each `stmt_ty` function.
 
 See also [PEP 617: New PEG parser for CPython](https://peps.python.org/pep-0617/).
@@ -302,12 +301,12 @@ Control flow graphs
 ===================
 
 A **control flow graph** (often referenced by its acronym, **CFG**) is a
-directed graph that models the flow of a program. A node of a CFG is
+directed graph that models the flow of a program.  A node of a CFG is
 not an individual bytecode instruction, but instead represents a
 sequence of bytecode instructions that always execute sequentially.
 Each node is called a *basic block* and must always execute from
 start to finish, with a single entry point at the beginning and a
-single exit point at the end. If some bytecode instruction *a* needs
+single exit point at the end.  If some bytecode instruction *a* needs
 to jump to some other bytecode instruction *b*, then *a* must occur at
 the end of its basic block, and *b* must occur at the start of its
 basic block.
@@ -325,8 +324,8 @@ end()
 
 The `x < 10` guard is represented by its own basic block that
 compares `x` with `10` and then ends in a conditional jump based on
-the result of the comparison. This conditional jump allows the block
-to point to both the body of the `if` and the body of the `else`. The
+the result of the comparison.  This conditional jump allows the block
+to point to both the body of the `if` and the body of the `else`.  The
 `if` basic block contains the `f1()` and `f2()` calls and points to
 the `end()` basic block. The `else` basic block contains the `g()`
 call and similarly points to the `end()` block.
@@ -351,7 +350,7 @@ The first step is to construct the symbol table. This is implemented by
 `_PySymtable_Build()` in [Python/symtable.c](../Python/symtable.c).
 This function begins by entering the starting code block for the AST (passed-in)
 and then calling the proper `symtable_visit_{xx}` function (with *xx* being the
-AST node type). Next, the AST tree is walked with the various code blocks that
+AST node type).  Next, the AST tree is walked with the various code blocks that
 delineate the reach of a local variable as blocks are entered and exited using
 `symtable_enter_block()` and `symtable_exit_block()`, respectively.
 
@@ -361,10 +360,10 @@ These are similar to bytecode, but in some cases they are more abstract, and are
 resolved later into actual bytecode. The construction of this instruction sequence
 is handled by several functions that break the task down by various AST node types.
 The functions are all named `compiler_visit_{xx}` where *xx* is the name of the node
-type (such as `stmt`, `expr`, etc.). Each function receives a `struct compiler *`
-and `{xx}_ty` where *xx* is the AST node type. Typically these functions
+type (such as `stmt`, `expr`, etc.).  Each function receives a `struct compiler *`
+and `{xx}_ty` where *xx* is the AST node type.  Typically these functions
 consist of a large 'switch' statement, branching based on the kind of
-node type passed to it. Simple things are handled inline in the
+node type passed to it.  Simple things are handled inline in the
 'switch' statement with more complex transformations farmed out to other
 functions named `compiler_{xx}` with *xx* being a descriptive name of what is
 being handled.
@@ -372,7 +371,7 @@ being handled.
 When transforming an arbitrary AST node, use the `VISIT()` macro.
 The appropriate `compiler_visit_{xx}` function is called, based on the value
 passed in for <node type> (so `VISIT({c}, expr, {node})` calls
-`compiler_visit_expr({c}, {node})`). The `VISIT_SEQ()` macro is very similar,
+`compiler_visit_expr({c}, {node})`).  The `VISIT_SEQ()` macro is very similar,
 but is called on AST node sequences (those values that were created as
 arguments to a node that used the '*' modifier).
 
@@ -416,7 +415,7 @@ line in the source code.
 
 There are several helper functions that will emit pseudo-instructions
 and are named `compiler_{xx}()` where *xx* is what the function helps
-with (`list`, `boolop`, etc.). A rather useful one is `compiler_nameop()`.
+with (`list`, `boolop`, etc.).  A rather useful one is `compiler_nameop()`.
 This function looks up the scope of a variable and, based on the
 expression context, emits the proper opcode to load, store, or delete
 the variable.
@@ -462,15 +461,15 @@ Important files
     Reads in an ASDL description and parses it into an AST that describes it.
 
   * [Parser/asdl_c.py](../Parser/asdl_c.py):
-    Generate C code from an ASDL description. Generates
+    Generate C code from an ASDL description.  Generates
     [Python/Python-ast.c](../Python/Python-ast.c) and
     [Include/internal/pycore_ast.h](../Include/internal/pycore_ast.h).
 
   * [Parser/parser.c](../Parser/parser.c):
-    The new PEG parser introduced in Python 3.9. Generated by
+    The new PEG parser introduced in Python 3.9.  Generated by
     [Tools/peg_generator/pegen/c_generator.py](../Tools/peg_generator/pegen/c_generator.py)
     from the grammar [Grammar/python.gram](../Grammar/python.gram).
-    Creates the AST from source code. Rule functions for their corresponding production
+    Creates the AST from source code.  Rule functions for their corresponding production
     rules are found here.
 
   * [Parser/peg_api.c](../Parser/peg_api.c):
@@ -479,7 +478,7 @@ Important files
 
   * [Parser/pegen.c](../Parser/pegen.c):
     Contains helper functions which are used by functions in
-    [Parser/parser.c](../Parser/parser.c) to construct the AST. Also contains
+    [Parser/parser.c](../Parser/parser.c) to construct the AST.  Also contains
     helper functions which help raise better error messages when parsing source code.
 
   * [Parser/pegen.h](../Parser/pegen.h):
@@ -489,7 +488,7 @@ Important files
 * [Python/](../Python)
 
   * [Python/Python-ast.c](../Python/Python-ast.c):
-    Creates C structs corresponding to the ASDL types. Also contains code for
+    Creates C structs corresponding to the ASDL types.  Also contains code for
     marshalling AST nodes (core ASDL types have marshalling code in
     [Python/asdl.c](../Python/asdl.c)).
     File automatically generated by [Parser/asdl_c.py](../Parser/asdl_c.py).
@@ -500,7 +499,7 @@ Important files
   * [Python/asdl.c](../Python/asdl.c):
     Contains code to handle the ASDL sequence type.
     Also has code to handle marshalling the core ASDL types, such as number
-    and identifier. Used by [Python/Python-ast.c](../Python/Python-ast.c)
+    and identifier.  Used by [Python/Python-ast.c](../Python/Python-ast.c)
     for marshalling AST nodes.
 
   * [Python/ast.c](../Python/ast.c):
@@ -610,9 +609,9 @@ References
 ==========
 
 [^1]:  Daniel C. Wang, Andrew W. Appel, Jeff L. Korn, and Chris
-S. Serra.  `The Zephyr Abstract Syntax Description Language.`_
-In Proceedings of the Conference on Domain-Specific Languages,
-pp. 213--227, 1997.
+       S. Serra.  `The Zephyr Abstract Syntax Description Language.`_
+       In Proceedings of the Conference on Domain-Specific Languages,
+       pp. 213--227, 1997.
 
 [^2]: The Zephyr Abstract Syntax Description Language.:
-https://www.cs.princeton.edu/research/techreps/TR-554-97
+      https://www.cs.princeton.edu/research/techreps/TR-554-97
