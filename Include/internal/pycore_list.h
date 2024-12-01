@@ -10,7 +10,8 @@ extern "C" {
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
-extern PyObject* _PyList_GetItemRef(PyObject *, Py_ssize_t i);
+// _PyList_GetItemRef should be used only when the object is known to be a list.
+extern PyObject* _PyList_GetItemRef(PyListObject *, Py_ssize_t i);
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 

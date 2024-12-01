@@ -617,7 +617,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "BINARY_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_binary_subscr_list_int(self):
         def get_items():
             items = []
@@ -1023,7 +1023,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_store_subscr_list_int(self):
         def get_items():
             items = []

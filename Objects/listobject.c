@@ -392,9 +392,9 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
 }
 
 PyObject *
-_PyList_GetItemRef(PyObject *op, Py_ssize_t i)
+_PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
 {
-    return list_get_item_ref((PyListObject *)op, i);
+    return list_get_item_ref(list, i);
 }
 
 int
