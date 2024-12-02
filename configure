@@ -944,8 +944,8 @@ AR
 LINK_PYTHON_OBJS
 LINK_PYTHON_DEPS
 LIBRARY_DEPS
-NODE
 HOSTRUNNER
+NODE
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1147,7 +1147,6 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
-HOSTRUNNER
 PROFILE_TASK
 BOLT_INSTRUMENT_FLAGS
 BOLT_APPLY_FLAGS
@@ -1968,7 +1967,6 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
-  HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_INSTRUMENT_FLAGS
@@ -7622,9 +7620,9 @@ if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+# HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
 printf %s "checking HOSTRUNNER... " >&6; }
-
 if test -z "$HOSTRUNNER"
 then
   case $ac_sys_system in #(
