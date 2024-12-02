@@ -85,16 +85,18 @@ CLI you will need to write your own alternative to `node_entry.mjs`.
 ### The Web Example
 
 When building for Emscripten, the web example will be built automatically. It is
-in the ``web_example`` directory. The web example uses ``SharedArrayBuffer``.
-For security reasons browsers only provide ``SharedArrayBuffer`` in secure
-environments with cross-origin isolation. The webserver must send cross-origin
-headers and correct MIME types for the JavaScript and WebAssembly files.
-Otherwise the terminal will fail to load with an error message like
-``ReferenceError: SharedArrayBuffer is not defined``. See more information here:
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
+in the ``web_example`` directory. To run the web example, ``cd`` into the
+``web_example`` directory, then run ``python server.py``. This will start a web
+server; you can then visit ``http://localhost:8000/python.html`` in a browser to
+see a simple REPL example.
 
-If you serve the web example with ``python server.py`` and then visit
-``localhost:8000`` in a browser it should work.
+The web example uses ``SharedArrayBuffer``. For security reasons browsers only
+provide ``SharedArrayBuffer`` in secure environments with cross-origin
+isolation. The webserver must send cross-origin headers and correct MIME types
+for the JavaScript and WebAssembly files. Otherwise the terminal will fail to
+load with an error message like ``ReferenceError: SharedArrayBuffer is not
+defined``. See more information here:
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
 
 Note that ``SharedArrayBuffer`` is _not required_ to use Python itself, only the
 web example. If cross-origin isolation is not appropriate for your use case you
@@ -117,9 +119,13 @@ file system into the Emscripten file system:
 import createEmscriptenModule from "./python.mjs";
 
 await createEmscriptenModule({
-  preRun(Module) {
-    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: "/path/to/python/stdlib" }, "/lib/");
-  }
+    preRun(Module) {
+        Module.FS.mount(
+            Module.FS.filesystems.NODEFS,
+            { root: "/path/to/python/stdlib" },
+            "/lib/",
+        );
+    },
 });
 ```
 
@@ -131,14 +137,16 @@ file it and install it. With Python 3.14 this could look like:
 import createEmscriptenModule from "./python.mjs";
 
 await createEmscriptenModule({
-  preRun(Module) {
+  async preRun(Module) {
     Module.FS.mkdirTree("/lib/python3.14/lib-dynload/");
     Module.addRunDependency("install-stdlib");
     const resp = await fetch("python3.14.zip");
     const stdlibBuffer = await resp.arrayBuffer();
-    Module.FS.writeFile(`/lib/python314.zip`, new Uint8Array(stdlibBuffer), { canOwn: true });
+    Module.FS.writeFile(`/lib/python314.zip`, new Uint8Array(stdlibBuffer), {
+      canOwn: true,
+    });
     Module.removeRunDependency("install-stdlib");
-  }
+  },
 });
 ```
 
