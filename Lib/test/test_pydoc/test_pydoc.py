@@ -901,15 +901,12 @@ class PydocDocTest(unittest.TestCase):
 
     def test_source_synopsis(self):
         test_cases = [
-            # Single line docstring
             ('"""Single line docstring."""',
             "Single line docstring."),
 
-            # Multi-line docstring - should only return first line
             ('"""First line of docstring.\nSecond line.\nThird line."""',
             "First line of docstring."),
 
-            # Docstring with leading/trailing whitespace
             ('"""  Whitespace around docstring.  """',
             "Whitespace around docstring."),
 
@@ -917,7 +914,6 @@ class PydocDocTest(unittest.TestCase):
             ('x = 1\ny = 2',
             None),
 
-            # Comments before docstring
             ('# Comment\n"""Docstring after comment."""',
             "Docstring after comment."),
 
@@ -925,7 +921,6 @@ class PydocDocTest(unittest.TestCase):
             ('""""""',
             ""),
 
-            # Unicode docstring
             ('"""Café and résumé."""',
             "Café and résumé."),
         ]
