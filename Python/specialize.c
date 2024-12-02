@@ -1816,8 +1816,9 @@ success:
 
 #ifdef Py_STATS
 static int
-store_subscr_fail_kind(PyObject *container_type)
+store_subscr_fail_kind(PyObject *container, PyObject *sub)
 {
+    PyTypeObject *container_type = Py_TYPE(container);
     PyMappingMethods *as_mapping = container_type->tp_as_mapping;
     if (as_mapping && (as_mapping->mp_ass_subscript
                        == PyDict_Type.tp_as_mapping->mp_ass_subscript)) {
@@ -1915,7 +1916,7 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
-    SPECIALIZATION_FAIL(STORE_SUBSCR, store_subscr_fail_kind(container_type));
+    SPECIALIZATION_FAIL(STORE_SUBSCR, store_subscr_fail_kind(container, sub));
     unspecialize(instr);
 }
 
