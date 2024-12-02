@@ -258,6 +258,14 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
+"This changes the context associated with the SSLSocket.\n"
+"\n"
+"This is typically used from within a callback function set by the sni_callback\n"
+"on the SSLContext to change the certificate information associated with the\n"
+"SSLSocket before the cryptographic exchange handshake messages.");
+#define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+
 #if !defined(_ssl__SSLSocket_context_DOCSTR)
 #  define _ssl__SSLSocket_context_DOCSTR NULL
 #endif
@@ -365,6 +373,12 @@ _ssl__SSLSocket_server_hostname_get(PySSLSocket *self, void *Py_UNUSED(context))
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLSocket_owner__doc__,
+"The Python-level owner of this object.\n"
+"\n"
+"Passed as \"self\" in servername callback.");
+#define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
 
 #if !defined(_ssl__SSLSocket_owner_DOCSTR)
 #  define _ssl__SSLSocket_owner_DOCSTR NULL
@@ -651,6 +665,10 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLSocket_session__doc__,
+"The underlying SSLSession object.");
+#define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
 
 #if !defined(_ssl__SSLSocket_session_DOCSTR)
 #  define _ssl__SSLSocket_session_DOCSTR NULL
@@ -1057,6 +1075,10 @@ _ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_num_tickets__doc__,
+"Control the number of TLSv1.3 session tickets.");
+#define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+
 #if !defined(_ssl__SSLContext_num_tickets_DOCSTR)
 #  define _ssl__SSLContext_num_tickets_DOCSTR NULL
 #endif
@@ -1106,6 +1128,10 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLContext_security_level__doc__,
+"The current security level.");
+#define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
 
 #if !defined(_ssl__SSLContext_security_level_DOCSTR)
 #  define _ssl__SSLContext_security_level_DOCSTR NULL
@@ -1745,6 +1771,15 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_sni_callback__doc__,
+"Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n"
+"\n"
+"If the argument is None then the callback is disabled. The method is called\n"
+"with the SSLSocket, the server name as a string, and the SSLContext object.\n"
+"\n"
+"See RFC 6066 for details of the SNI extension.");
+#define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+
 #if !defined(_ssl__SSLContext_sni_callback_DOCSTR)
 #  define _ssl__SSLContext_sni_callback_DOCSTR NULL
 #endif
@@ -2063,6 +2098,10 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_MemoryBIO_pending__doc__,
+"The number of bytes pending in the memory BIO.");
+#define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
+
 #if !defined(_ssl_MemoryBIO_pending_DOCSTR)
 #  define _ssl_MemoryBIO_pending_DOCSTR NULL
 #endif
@@ -2087,6 +2126,10 @@ _ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl_MemoryBIO_eof__doc__,
+"Whether the memory BIO is at EOF.");
+#define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
 
 #if !defined(_ssl_MemoryBIO_eof_DOCSTR)
 #  define _ssl_MemoryBIO_eof_DOCSTR NULL
@@ -2217,6 +2260,10 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_time__doc__,
+"Session creation time (seconds since epoch).");
+#define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
+
 #if !defined(_ssl_SSLSession_time_DOCSTR)
 #  define _ssl_SSLSession_time_DOCSTR NULL
 #endif
@@ -2241,6 +2288,10 @@ _ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl_SSLSession_timeout__doc__,
+"Session timeout (delta in seconds).");
+#define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
 
 #if !defined(_ssl_SSLSession_timeout_DOCSTR)
 #  define _ssl_SSLSession_timeout_DOCSTR NULL
@@ -2267,6 +2318,10 @@ _ssl_SSLSession_timeout_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_ticket_lifetime_hint__doc__,
+"Ticket life time hint.");
+#define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
+
 #if !defined(_ssl_SSLSession_ticket_lifetime_hint_DOCSTR)
 #  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR NULL
 #endif
@@ -2292,6 +2347,10 @@ _ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(con
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_SSLSession_id__doc__,
+"Session ID.");
+#define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
+
 #if !defined(_ssl_SSLSession_id_DOCSTR)
 #  define _ssl_SSLSession_id_DOCSTR NULL
 #endif
@@ -2316,6 +2375,10 @@ _ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl_SSLSession_has_ticket__doc__,
+"Does the session contain a ticket?");
+#define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
 
 #if !defined(_ssl_SSLSession_has_ticket_DOCSTR)
 #  define _ssl_SSLSession_has_ticket_DOCSTR NULL
@@ -2767,4 +2830,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=44ab066d21277ee5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=654d6d7af659f6cd input=a9049054013a1b77]*/
