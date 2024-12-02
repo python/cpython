@@ -326,6 +326,10 @@ Edge and Level Trigger Polling (epoll) Objects
       :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
       or later.
 
+   .. versionadded:: 3.14
+      :const:`EPOLL_URING_WAKE` and :const:`EPOLLWAKEUP` was added. It's only
+      supported by Linux Kernel 6.1 or later.
+
 .. method:: epoll.close()
 
    Close the control file descriptor of the epoll object.
