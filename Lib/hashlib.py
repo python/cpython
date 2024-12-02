@@ -55,17 +55,18 @@ More condensed:
 
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
-__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
-                      'blake2b', 'blake2s',
-                      'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-                      'shake_128', 'shake_256')
+__always_supported = [
+    'md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
+    'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
+    'shake_128', 'shake_256', 'blake2b', 'blake2s'
+]
 
 
 algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
-__all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'file_digest')
+__all__ = __always_supported + [
+    'new', 'algorithms_guaranteed', 'algorithms_available', 'file_digest']
 
 
 __builtin_constructor_cache = {}
@@ -243,9 +244,11 @@ for __func_name in __always_supported:
     # version not supporting that algorithm.
     try:
         globals()[__func_name] = __get_hash(__func_name)
-    except ValueError:
-        import logging
-        logging.exception('code for hash %s was not found.', __func_name)
+    except ValueError as exc:
+        # Errors logged here would be seen as noise by most people.
+        # Code using a missing hash will get an obvious exception.
+        __all__.remove(__func_name)
+        algorithms_available.remove(__func_name)
 
 
 # Cleanup locals()

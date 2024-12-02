@@ -123,9 +123,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_after(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Without function, sleeps for ms.
         self.assertIsNone(root.after(1))
@@ -161,12 +161,18 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         root.update()  # Process all pending events.
         self.assertEqual(count, 53)
 
+        # Set up with callback with keyword args.
+        count = 0
+        timer1 = root.after(0, callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
+
     def test_after_idle(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Set up with callback with no args.
         count = 0
@@ -192,6 +198,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(count, 53)
         with self.assertRaises(tkinter.TclError):
             root.tk.call(script)
+
+        # Set up with callback with keyword args.
+        count = 0
+        idle1 = root.after_idle(callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
 
     def test_after_cancel(self):
         root = self.root
