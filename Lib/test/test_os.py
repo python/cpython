@@ -2447,8 +2447,8 @@ class TestInvalidFD(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
-    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
+        self.assertIn("PC_NAME_MAX", os.pathconf_names)
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
         self.check_bool(os.pathconf, "PC_NAME_MAX")
@@ -4174,6 +4174,7 @@ class EventfdTests(unittest.TestCase):
         os.eventfd_read(fd)
 
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
