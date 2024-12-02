@@ -74,7 +74,7 @@ def is_c_parameter_name(name: str) -> bool:
     return name == C_ELLIPSIS or name.isidentifier()
 
 
-class RefEffect(enum.Enum):
+class Effect(enum.Enum):
     """The reference count effect of a parameter or a return value."""
 
     UNKNOWN = enum.auto()
@@ -128,7 +128,7 @@ class LineInfo:
     name: str | None
     """The cleaned parameter name or None for the return parameter."""
 
-    effect: RefEffect
+    effect: Effect
     """The reference count effect."""
 
     comment: str
@@ -160,7 +160,7 @@ class Return:
     A missing type is reported during the checking phase.
     """
 
-    effect: RefEffect
+    effect: Effect
     """The reference count effect.
 
     A nonsensical reference count effect is reported during the checking phase.
@@ -186,7 +186,7 @@ class Param:
     A missing type is reported during the checking phase.
     """
 
-    effect: RefEffect
+    effect: Effect
     """The reference count effect.
 
     A nonsensical reference count effect is reported during the checking phase.
@@ -250,9 +250,9 @@ def parse_line(line: str) -> LineInfo | None:
     clean_effect = raw_effect.strip()
     strip_effect = clean_effect != raw_effect
     try:
-        effect = RefEffect(clean_effect)
+        effect = Effect(clean_effect)
     except ValueError:
-        effect = RefEffect.UNKNOWN
+        effect = Effect.UNKNOWN
 
     comment = comment.strip()
     return LineInfo(
@@ -404,20 +404,20 @@ def check(view: FileView) -> None:
         if not rparam.ctype:
             r.warn_block(sig, "missing return value type")
         match rparam.effect:
-            case RefEffect.TODO:
+            case Effect.TODO:
                 r.todo_block(sig, "incomplete reference count effect")
-            case RefEffect.STEAL:
+            case Effect.STEAL:
                 r.warn_block(sig, "stolen reference on return value")
-            case RefEffect.UNKNOWN:
+            case Effect.UNKNOWN:
                 r.warn_block(sig, "unknown return value type")
         # check the parameters
         for param in sig.params.values():  # type: Param
             ctype, effect = param.ctype, param.effect
-            if effect is RefEffect.TODO:
+            if effect is Effect.TODO:
                 r.todo_param(sig, param, "incomplete reference count effect")
-            if ctype in OBJECT_TYPES and effect is RefEffect.UNUSED:
+            if ctype in OBJECT_TYPES and effect is Effect.UNUSED:
                 r.warn_param(sig, param, "missing reference count effect")
-            if ctype not in OBJECT_TYPES and effect is not RefEffect.UNUSED:
+            if ctype not in OBJECT_TYPES and effect is not Effect.UNUSED:
                 r.warn_param(sig, param, "unused reference count effect")
             if not is_c_parameter_name(param.name):
                 r.warn_param(sig, param, "invalid parameter name")
