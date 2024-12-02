@@ -995,11 +995,6 @@ New features
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
 
-* Add :c:func:`PyErr_SetLocaleString` to allow defining a locale-dependent
-  exception message.
-  (Contributed by Bénédikt Tran in :gh:`126742`.)
-
-
 Porting to Python 3.14
 ----------------------
 

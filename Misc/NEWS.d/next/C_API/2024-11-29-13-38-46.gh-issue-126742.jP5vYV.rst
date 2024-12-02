@@ -1,2 +1,0 @@
-Add :c:func:`PyErr_SetLocaleString` to allow defining a locale-dependent
-exception message. Patch by Bénédikt Tran.

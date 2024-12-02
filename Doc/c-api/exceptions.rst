@@ -136,19 +136,6 @@ For convenience, some of these functions will always return a
    The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
-.. c:function:: int PyErr_SetLocaleString(PyObject *type, const char *message)
-
-   Similar to :c:func:`PyErr_SetString` but decodes the *message* from the
-   current locale via :c:func:`PyUnicode_DecodeLocale` configured with the
-   :ref:`surrogateescape` error handler.
-
-   Exceptions occurring in decoding take priority over the desired exception,
-   in which case, this returns -1. Otherwise this returns 0 if the localized
-   exception has been successfully set.
-
-   .. versionadded:: next
-
-
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
 
    This function is similar to :c:func:`PyErr_SetString` but lets you specify an
