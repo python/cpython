@@ -304,10 +304,9 @@ PyErr_SetString(PyObject *exception, const char *string)
 int
 _PyErr_SetLocaleString(PyObject *exception, const char *string)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
     if (value != NULL) {
-        _PyErr_SetObject(tstate, exception, value);
+        PyErr_SetObject(exception, value);
         Py_DECREF(value);
         return 0;
     }
