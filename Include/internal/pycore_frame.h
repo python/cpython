@@ -157,6 +157,7 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     dest->stackpointer = dest->localsplus + stacktop;
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_HeapSafe(src->localsplus[i]);
+        PyStackRef_CheckValid(dest->localsplus[i]);
     }
 
 #ifdef Py_GIL_DISABLED
@@ -408,7 +409,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
-                        PyObject *locals, _PyStackRef const* args,
+                        PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
 
