@@ -129,6 +129,112 @@ class TestRaces(TestBase):
         # with the cell binding being changed).
         do_race(access, mutate)
 
+    def test_racing_to_bool(self):
+
+        seq = [1]
+
+        class C:
+            def __bool__(self):
+                return False
+
+        def access():
+            if seq:
+                return 1
+            else:
+                return 2
+
+        def mutate():
+            nonlocal seq
+            seq = [1]
+            time.sleep(0)
+            seq = C()
+            time.sleep(0)
+
+        do_race(access, mutate)
+
+    def test_racing_store_attr_slot(self):
+        class C:
+            __slots__ = ['x', '__dict__']
+
+        c = C()
+
+        def set_slot():
+            for i in range(10):
+                c.x = i
+            time.sleep(0)
+
+        def change_type():
+            def set_x(self, x):
+                pass
+
+            def get_x(self):
+                pass
+
+            C.x = property(get_x, set_x)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(set_slot, change_type)
+
+        def set_getattribute():
+            C.__getattribute__ = lambda self, x: x
+            time.sleep(0)
+            del C.__getattribute__
+            time.sleep(0)
+
+        do_race(set_slot, set_getattribute)
+
+    def test_racing_store_attr_instance_value(self):
+        class C:
+            pass
+
+        c = C()
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        def read():
+            x = c.x
+
+        def mutate():
+            # Adding a property for 'x' should unspecialize it.
+            C.x = property(lambda self: None, lambda self, x: None)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(read, mutate)
+
+    def test_racing_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        def read():
+            x = c.x
+
+        def mutate():
+            # Adding a property for 'x' should unspecialize it.
+            C.x = property(lambda self: None, lambda self, x: None)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(read, mutate)
+
 
 if __name__ == "__main__":
     unittest.main()

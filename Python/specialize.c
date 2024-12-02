@@ -741,8 +741,8 @@ static int function_kind(PyCodeObject *code);
 #ifndef Py_GIL_DISABLED
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
-#endif
 static uint32_t type_get_version(PyTypeObject *t, int opcode);
+#endif
 
 static int
 specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, PyObject *name)
@@ -881,6 +881,14 @@ classify_descriptor(PyObject *descriptor, bool has_getattr)
     return NON_DESCRIPTOR;
 }
 
+static bool
+descriptor_is_class(PyObject *descriptor, PyObject *name)
+{
+    return ((PyUnicode_CompareWithASCIIString(name, "__class__") == 0) &&
+            (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)));
+}
+
+#ifndef Py_GIL_DISABLED
 static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
@@ -901,12 +909,13 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
             getattro_slot == _Py_slot_tp_getattro) {
             /* One or both of __getattribute__ or __getattr__ may have been
              overridden See typeobject.c for why these functions are special. */
-            PyObject *getattribute = _PyType_Lookup(type,
-                &_Py_ID(__getattribute__));
+            PyObject *getattribute = _PyType_LookupRef(type, &_Py_ID(__getattribute__));
             PyInterpreterState *interp = _PyInterpreterState_GET();
             bool has_custom_getattribute = getattribute != NULL &&
                 getattribute != interp->callable_cache.object__getattribute__;
-            has_getattr = _PyType_Lookup(type, &_Py_ID(__getattr__)) != NULL;
+            PyObject *getattr = _PyType_LookupRef(type, &_Py_ID(__getattr__));
+            has_getattr = getattr != NULL;
+            Py_XDECREF(getattr);
             if (has_custom_getattribute) {
                 if (getattro_slot == _Py_slot_tp_getattro &&
                     !has_getattr &&
@@ -916,6 +925,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                 }
                 /* Potentially both __getattr__ and __getattribute__ are set.
                    Too complicated */
+                Py_DECREF(getattribute);
                 *descr = NULL;
                 return GETSET_OVERRIDDEN;
             }
@@ -926,13 +936,14 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
                raised. This means some specializations, e.g. specializing
                for property() isn't safe.
             */
+            Py_XDECREF(getattribute);
         }
         else {
             *descr = NULL;
             return GETSET_OVERRIDDEN;
         }
     }
-    PyObject *descriptor = _PyType_Lookup(type, name);
+    PyObject *descriptor = _PyType_LookupRef(type, name);
     *descr = descriptor;
     if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
         if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
@@ -941,6 +952,62 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     }
     return classify_descriptor(descriptor, has_getattr);
 }
+#endif //!Py_GIL_DISABLED
+
+static int
+specialize_dict_access_inline(
+    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    DescriptorClassification kind, PyObject *name,
+    int base_op, int values_op)
+{
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+    PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+    assert(PyUnicode_CheckExact(name));
+    Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+    assert (index != DKIX_ERROR);
+    if (index == DKIX_EMPTY) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
+        return 0;
+    }
+    assert(index >= 0);
+    char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
+    Py_ssize_t offset = value_addr - (char *)owner;
+    if (offset != (uint16_t)offset) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    cache->index = (uint16_t)offset;
+    write_u32(cache->version, type->tp_version_tag);
+    specialize(instr, values_op);
+    return 1;
+}
+
+static int
+specialize_dict_access_hint(
+    PyDictObject *dict, _Py_CODEUNIT *instr, PyTypeObject *type,
+    DescriptorClassification kind, PyObject *name,
+    int base_op, int hint_op)
+{
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+    // We found an instance with a __dict__.
+    if (_PyDict_HasSplitTable(dict)) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
+        return 0;
+    }
+    Py_ssize_t index = _PyDict_LookupIndex(dict, name);
+    if (index != (uint16_t)index) {
+        SPECIALIZATION_FAIL(base_op,
+                            index == DKIX_EMPTY ?
+                            SPEC_FAIL_ATTR_NOT_IN_DICT :
+                            SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    cache->index = (uint16_t)index;
+    write_u32(cache->version, type->tp_version_tag);
+    specialize(instr, hint_op);
+    return 1;
+}
+
 
 static int
 specialize_dict_access(
@@ -956,29 +1023,15 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
         _PyObject_InlineValues(owner)->valid &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
-        PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
-        assert(PyUnicode_CheckExact(name));
-        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
-        assert (index != DKIX_ERROR);
-        if (index == DKIX_EMPTY) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
-            return 0;
-        }
-        assert(index >= 0);
-        char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
-        Py_ssize_t offset = value_addr - (char *)owner;
-        if (offset != (uint16_t)offset) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
-        }
-        write_u32(cache->version, type->tp_version_tag);
-        cache->index = (uint16_t)offset;
-        specialize(instr, values_op);
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(owner);
+        res = specialize_dict_access_inline(owner, instr, type, kind, name, base_op, values_op);
+        Py_END_CRITICAL_SECTION();
+        return res;
     }
     else {
         PyDictObject *dict = _PyObject_GetManagedDict(owner);
@@ -986,25 +1039,12 @@ specialize_dict_access(
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
         }
-        // We found an instance with a __dict__.
-        if (dict->ma_values) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
-            return 0;
-        }
-        Py_ssize_t index =
-            _PyDict_LookupIndex(dict, name);
-        if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op,
-                                index == DKIX_EMPTY ?
-                                SPEC_FAIL_ATTR_NOT_IN_DICT :
-                                SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
-        }
-        cache->index = (uint16_t)index;
-        write_u32(cache->version, type->tp_version_tag);
-        specialize(instr, hint_op);
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(dict);
+        res =  specialize_dict_access_hint(dict, instr, type, kind, name, base_op, hint_op);
+        Py_END_CRITICAL_SECTION();
+        return res;
     }
-    return 1;
 }
 
 #ifndef Py_GIL_DISABLED
@@ -1051,6 +1091,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     bool shadow = instance_has_key(owner, name);
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
+    Py_XDECREF(descr); // turn strong ref into a borrowed ref
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (type_get_version(type, LOAD_ATTR) == 0) {
         return -1;
@@ -1257,8 +1298,9 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
 {
     PyObject *owner = PyStackRef_AsPyObjectBorrow(owner_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[STORE_ATTR] == INLINE_CACHE_ENTRIES_STORE_ATTR);
+    PyObject *descr = NULL;
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyTypeObject *type = Py_TYPE(owner);
     if (!_PyType_IsReady(type)) {
@@ -1272,11 +1314,12 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
         goto fail;
     }
-    PyObject *descr;
-    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 1);
-    if (type_get_version(type, STORE_ATTR) == 0) {
+    uint32_t tp_version = type_get_version(type, STORE_ATTR);
+    if (tp_version == 0) {
         goto fail;
     }
+    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -1307,8 +1350,8 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             assert(dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
-            write_u32(cache->version, type->tp_version_tag);
-            instr->op.code = STORE_ATTR_SLOT;
+            write_u32(cache->version, tp_version);
+            specialize(instr, STORE_ATTR_SLOT);
             goto success;
         }
         case DUNDER_CLASS:
@@ -1338,19 +1381,17 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
                                     STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
             {
+                write_u32(cache->version, tp_version);
                 goto success;
             }
     }
 fail:
-    STAT_INC(STORE_ATTR, failure);
-    assert(!PyErr_Occurred());
-    instr->op.code = STORE_ATTR;
-    cache->counter = adaptive_counter_backoff(cache->counter);
+    Py_XDECREF(descr);
+    unspecialize(instr);
     return;
 success:
-    STAT_INC(STORE_ATTR, success);
-    assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_cooldown();
+    Py_XDECREF(descr);
+    return;
 }
 
 #ifndef Py_GIL_DISABLED
@@ -1420,6 +1461,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor(cls, name, &descr, 0);
+    Py_XDECREF(descr); // turn strong ref into a borrowed ref
     if (type_get_version(cls, LOAD_ATTR) == 0) {
         return -1;
     }
@@ -1712,19 +1754,19 @@ function_get_version(PyObject *o, int opcode)
     }
     return version;
 }
-#endif  // Py_GIL_DISABLED
 
 /* Returning 0 indicates a failure. */
 static uint32_t
 type_get_version(PyTypeObject *t, int opcode)
 {
-    uint32_t version = t->tp_version_tag;
+    uint32_t version = FT_ATOMIC_LOAD_UINT32_RELAXED(t->tp_version_tag);
     if (version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return 0;
     }
     return version;
 }
+#endif  // Py_GIL_DISABLED
 
 void
 _Py_Specialize_BinarySubscr(
