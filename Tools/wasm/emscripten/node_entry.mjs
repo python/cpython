@@ -24,6 +24,8 @@ function mountDirectories(Module) {
   }
 }
 
+const pythonShIndex = process.argv.findIndex(x => x.endsWith("python.sh"));
+
 const settings = {
   preRun(Module) {
     Module.FS.mkdirTree("/home/");
@@ -31,13 +33,12 @@ const settings = {
     Module.FS.chdir(process.cwd());
     Object.assign(Module.ENV, process.env);
   },
-  // The first three arguments are: "node", path to this file, path to
-  // python.sh. After that come the arguments the user passed to python.sh.
-  arguments: process.argv.slice(3),
   // Ensure that sys.executable, sys._base_executable, etc point to python.sh
   // not to this file. To properly handle symlinks, python.sh needs to compute
   // its own path.
-  thisProgram: process.argv[2],
+  thisProgram: process.argv[pythonShIndex],
+  // After python.sh come the arguments that the user passed to python.sh.
+  arguments: process.argv.slice(pythonShIndex + 1),
 };
 
 await EmscriptenModule(settings);
