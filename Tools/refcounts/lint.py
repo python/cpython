@@ -5,6 +5,7 @@ from __future__ import annotations
 import enum
 import itertools
 import re
+import sys
 import tomllib
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
@@ -24,27 +25,27 @@ C_ELLIPSIS: LiteralString = "..."
 MATCH_TODO: Callable[[str], re.Match[str] | None]
 MATCH_TODO = re.compile(r"^#\s*TODO:\s*(\w+)$").match
 
-#: Set of declarations whose variable has a reference count.
-OBJECT_TYPES: frozenset[str] = frozenset()
 
-for qualifier, object_type, suffix in itertools.product(
-    ("const ", ""),
-    (
-        "PyObject", "PyLongObject", "PyTypeObject",
-        "PyCodeObject", "PyFrameObject", "PyModuleObject",
-        "PyVarObject",
-    ),
-    (
-        "*",
-        "**", "* *",
-        "*const*", "*const *", "* const*", "* const *",
-    ),
-):
-    OBJECT_TYPES |= {
-        f"{qualifier}{object_type}{suffix}",
-        f"{qualifier}{object_type} {suffix}",
-    }
-del suffix, object_type, qualifier
+def generate_object_types(universe: Iterable[str]) -> Iterable[str]:
+    for qualifier, object_type, suffix in itertools.product(
+        ("const ", ""),
+        universe,
+        (
+            "*",
+            "**", "* *",
+            "*const*", "*const *", "* const*", "* const *",
+        ),
+    ):
+        yield f"{qualifier}{object_type}{suffix}"
+        yield f"{qualifier}{object_type} {suffix}"
+
+
+#: Set of declarations whose variable has a reference count.
+OBJECT_TYPES: frozenset[str] = frozenset(generate_object_types((
+    "PyObject", "PyVarObject", "PyTypeObject",
+    "PyLongObject", "PyCodeObject", "PyFrameObject",
+    "PyModuleDef", "PyModuleObject",
+)))
 
 #: Set of functions part of the stable ABI that are not
 #: in the refcounts.dat file if:
@@ -81,28 +82,28 @@ class RefEffect(enum.Enum):
     Such annotated entities are reported during the checking phase.
     """
 
-    UNUSED = enum.auto()
+    UNUSED = ""
     """Indicate that the entity has no reference count."""
 
-    DECREF = enum.auto()
+    DECREF = "-1"
     """Indicate that the reference count is decremented."""
 
-    INCREF = enum.auto()
+    INCREF = "+1"
     """Indicate that the reference count is incremented."""
 
-    BORROW = enum.auto()
+    BORROW = "0"
     """Indicate that the reference count is left unchanged.
 
     Parameters annotated with this effect do not steal a reference.
     """
 
-    STEAL = enum.auto()
+    STEAL = "$"
     """Indicate that the reference count is left unchanged.
 
     Parameters annotated with this effect steal a reference.
     """
 
-    NULL = enum.auto()  # for return values only
+    NULL = "null"  # for return values only
     """Only used for a NULL return value.
 
     This is used by functions that always return NULL as a "PyObject *".
@@ -241,22 +242,10 @@ def parse_line(line: str) -> LineInfo | None:
 
     clean_effect = raw_effect.strip()
     strip_effect = clean_effect != raw_effect
-
-    match clean_effect:
-        case "-1":
-            effect = RefEffect.DECREF
-        case "+1":
-            effect = RefEffect.INCREF
-        case "0":
-            effect = RefEffect.BORROW
-        case "$":
-            effect = RefEffect.STEAL
-        case "null":
-            effect = RefEffect.NULL
-        case "":
-            effect = RefEffect.UNUSED
-        case _:
-            effect = RefEffect.UNKNOWN
+    try:
+        effect = RefEffect(clean_effect)
+    except ValueError:
+        effect = RefEffect.UNKNOWN
 
     comment = comment.strip()
     return LineInfo(
@@ -282,19 +271,25 @@ class ParserReporter:
         """The number of issues encountered so far."""
         return self.warnings_count + self.errors_count
 
+    def _print(  # type: ignore[no-untyped-def]
+        self, lineno: int, message: str, *, file=None,
+    ) -> None:
+        """Forward to print()."""
+        print(f"{flno_(lineno)} {message}", file=file)
+
     def info(self, lineno: int, message: str) -> None:
         """Print a simple message."""
-        print(f"{flno_(lineno)} {message}")
+        self._print(lineno, message)
 
     def warn(self, lineno: int, message: str) -> None:
         """Print a warning message."""
         self.warnings_count += 1
-        self.info(lineno, message)
+        self._print(lineno, message)
 
     def error(self, lineno: int, message: str) -> None:
         """Print an error message."""
         self.errors_count += 1
-        self.info(lineno, message)
+        self._print(lineno, message, file=sys.stderr)
 
 
 def parse(lines: Iterable[str]) -> FileView:
@@ -429,12 +424,15 @@ def create_parser() -> ArgumentParser:
             "Use --abi or --abi=FILE to check against the stable ABI."
         ),
     )
-    _ = parser.add_argument
-    _("file", nargs="?", default=DEFAULT_REFCOUNT_DAT_PATH,
-      help="the refcounts.dat file to check (default: %(default)s)")
-    _("--abi", nargs="?", default=_STABLE_ABI_PATH_SENTINEL,
-      help=(f"check against the given stable_abi.toml file "
-            f"(default: {DEFAULT_STABLE_ABI_TOML_PATH})"))
+    parser.add_argument(
+        "file", nargs="?", default=DEFAULT_REFCOUNT_DAT_PATH,
+        help="the refcounts.dat file to check (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--abi", nargs="?", default=_STABLE_ABI_PATH_SENTINEL,
+        help=(f"check against the given stable_abi.toml file "
+              f"(default: {DEFAULT_STABLE_ABI_TOML_PATH})"),
+    )
     return parser
 
 
