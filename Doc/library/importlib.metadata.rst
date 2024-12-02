@@ -133,7 +133,7 @@ Entry points
 
    Details of a collection of installed entry points.
 
-   Also provides a ``.groups`` attribute that reports all identifed entry
+   Also provides a ``.groups`` attribute that reports all identified entry
    point groups, and a ``.names`` attribute that reports all identified entry
    point names.
 

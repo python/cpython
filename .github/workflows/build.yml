@@ -42,7 +42,7 @@ jobs:
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04  # 24.04 causes spurious errors
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:
@@ -131,7 +131,7 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -193,16 +193,28 @@ jobs:
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
+      fail-fast: false
       matrix:
+        os:
+          - windows-latest
         arch:
-        - Win32
-        - x64
-        - arm64
+          - x64
         free-threading:
-        - false
-        - true
+          - false
+          - true
+        include:
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: false
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: true
+          - os: windows-latest
+            arch: Win32
+            free-threading: false
     uses: ./.github/workflows/reusable-windows.yml
     with:
+      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -280,7 +292,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -340,7 +352,7 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -453,10 +465,13 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
