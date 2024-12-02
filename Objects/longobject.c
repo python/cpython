@@ -3633,6 +3633,7 @@ _PyLong_IsSmallInt(PyObject *self)
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
+    assert(PyLong_CheckExact(self));
     if (_PyLong_IsCompact((PyLongObject *)self)) {
         #ifndef Py_GIL_DISABLED
         if (_PyLong_IsSmallInt(self)) {
