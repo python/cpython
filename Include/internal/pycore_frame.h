@@ -75,6 +75,7 @@ typedef struct _PyInterpreterFrame {
     _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
+    char visited;
     /* Locals and stack */
     _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
@@ -207,6 +208,7 @@ _PyFrame_Initialize(
 #endif
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
@@ -389,6 +391,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
     frame->return_offset = 0;
 
 #ifdef Py_GIL_DISABLED

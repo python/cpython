@@ -99,6 +99,8 @@ typedef struct _gc_stats {
     uint64_t collections;
     uint64_t object_visits;
     uint64_t objects_collected;
+    uint64_t objects_transitively_reachable;
+    uint64_t objects_not_transitively_reachable;
 } GCStats;
 
 typedef struct _uop_stats {
