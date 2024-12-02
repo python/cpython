@@ -648,15 +648,15 @@ class IMAP4:
         return typ, [quotaroot, quota]
 
 
-    def idle(self, dur=None):
+    def idle(self, duration=None):
         """Return an Idler: an iterable context manager for the IDLE command
 
-        :param dur:     Maximum duration (in seconds) to keep idling,
-                        or None for no time limit.
-                        To avoid inactivity timeouts on servers that impose
-                        them, callers are advised to keep this <= 29 minutes.
-                        See the note below regarding IMAP4_stream on Windows.
-        :type dur:      int|float|None
+        :param duration:  Maximum duration (in seconds) to keep idling,
+                          or None for no time limit.
+                          To avoid inactivity timeouts on servers that impose
+                          them, callers are advised to keep this <= 29 minutes.
+                          See the note below regarding IMAP4_stream on Windows.
+        :type duration:   int|float|None
 
         The context manager sends the IDLE command upon entry, produces
         responses via iteration, and sends DONE upon exit.
@@ -666,7 +666,7 @@ class IMAP4:
 
         Example:
 
-        with imap.idle(dur=29*60) as idler:
+        with imap.idle(duration=29 * 60) as idler:
             for typ, datum in idler:
                 print(typ, datum)
 
@@ -674,20 +674,20 @@ class IMAP4:
         cache for retrieval by response().
 
         Note: Windows IMAP4_stream connections have no way to accurately
-        respect 'dur', since Windows select() only works on sockets.
+        respect 'duration', since Windows select() only works on sockets.
         However, if the server regularly sends status messages during IDLE,
         they will wake our selector and keep iteration from blocking for long.
         Dovecot's imap_idle_notify_interval is two minutes by default.
         Assuming that's typical of IMAP servers, subtracting it from the 29
         minutes needed to avoid server inactivity timeouts would make 27
-        minutes a sensible value for 'dur' in this situation.
+        minutes a sensible value for 'duration' in this situation.
 
         Note: The Idler class name and structure are internal interfaces,
         subject to change.  Calling code can rely on its context management,
         iteration, and public method to remain stable, but should not
         subclass, instantiate, or otherwise directly reference the class.
         """
-        return Idler(self, dur)
+        return Idler(self, duration)
 
 
     def list(self, directory='""', pattern='*'):
@@ -1408,10 +1408,10 @@ class Idler:
     subclass, instantiate, or otherwise directly reference the class.
     """
 
-    def __init__(self, imap, dur=None):
+    def __init__(self, imap, duration=None):
         if 'IDLE' not in imap.capabilities:
             raise imap.error("Server does not support IMAP4 IDLE")
-        self._dur = dur
+        self._duration = duration
         self._imap = imap
         self._tag = None
         self._sock_timeout = None
@@ -1422,7 +1422,7 @@ class Idler:
         assert not (imap._idle_responses or imap._idle_capture)
 
         if __debug__ and imap.debug >= 4:
-            imap._mesg(f'idle start duration={self._dur}')
+            imap._mesg(f'idle start duration={self._duration}')
 
         try:
             # Start capturing untagged responses before sending IDLE,
@@ -1497,7 +1497,7 @@ class Idler:
         # :type timeout:    int|float|None
         # :param default:   Value to return on timeout
         #
-        # Note: This method ignores 'dur' in favor of the timeout argument.
+        # Note: This method ignores 'duration' in favor of the timeout argument.
         #
         # Note: Windows IMAP4_stream connections will ignore the timeout
         # argument and block until the next response arrives, because
@@ -1554,7 +1554,7 @@ class Idler:
             print(f'processing {len(batch)} responses...')
 
         Produces no responses and returns immediately if the IDLE
-        context's maximum duration (the 'dur' argument) has elapsed.
+        context's maximum duration (the 'duration' argument) has elapsed.
         Callers should plan accordingly if using this method in a loop.
 
         Note: Windows IMAP4_stream connections will ignore the interval
@@ -1572,19 +1572,19 @@ class Idler:
 
         yield from iter(functools.partial(self._pop, interval, None), None)
 
-        if self._dur is not None:
+        if self._duration is not None:
             elapsed = time.monotonic() - start
-            self._dur = max(self._dur - elapsed, 0)
+            self._duration = max(self._duration - elapsed, 0)
 
     def __next__(self):
         imap = self._imap
         start = time.monotonic()
 
-        typ, datum = self._pop(self._dur)
+        typ, datum = self._pop(self._duration)
 
-        if self._dur is not None:
+        if self._duration is not None:
             elapsed = time.monotonic() - start
-            self._dur = max(self._dur - elapsed, 0)
+            self._duration = max(self._duration - elapsed, 0)
 
         if not typ:
             if __debug__ and imap.debug >= 4:

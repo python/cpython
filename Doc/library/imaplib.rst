@@ -308,7 +308,7 @@ An :class:`IMAP4` instance has the following methods:
    of the IMAP4 QUOTA extension defined in rfc2087.
 
 
-.. method:: IMAP4.idle(dur=None)
+.. method:: IMAP4.idle(duration=None)
 
    Return an :class:`!Idler`: an iterable context manager implementing the IMAP4 ``IDLE``
    command as defined in :rfc:`2177`.
@@ -317,7 +317,7 @@ An :class:`IMAP4` instance has the following methods:
    :keyword:`with` statement, produces IMAP untagged responses via the
    :term:`iterator` protocol, and sends ``DONE`` upon context exit.
 
-   The *dur* argument sets a maximum duration (in seconds) to keep idling,
+   The *duration* argument sets a maximum duration (in seconds) to keep idling,
    after which any ongoing iteration will stop.  It defaults to ``None``,
    meaning no time limit.  Callers wishing to avoid inactivity timeouts on
    servers that impose them should keep this at most 29 minutes.
@@ -333,7 +333,7 @@ An :class:`IMAP4` instance has the following methods:
 
    Example::
 
-      with M.idle(dur=29 * 60) as idler:
+      with M.idle(duration=29 * 60) as idler:
           for typ, datum in idler:
               print(typ, datum)
 
@@ -363,9 +363,9 @@ An :class:`IMAP4` instance has the following methods:
          processing 3 responses...
          [('EXPUNGE', b'2'), ('EXPUNGE', b'1'), ('RECENT', b'0')]
 
-      The ``IDLE`` context's maximum duration (the *dur* argument to
-      :meth:`IMAP4.idle`) is respected when waiting for the first response
-      in a burst.  Therefore, an expired ``IDLE`` context will cause this generator
+      The ``IDLE`` context's maximum duration (the argument to
+      :meth:`IMAP4.idle`) is respected when waiting for the first response in a
+      burst.  Therefore, an expired ``IDLE`` context will cause this generator
       to return immediately without producing anything.  Callers should
       consider this if using it in a loop.
 
@@ -375,16 +375,16 @@ An :class:`IMAP4` instance has the following methods:
    .. warning::
 
       Windows' :class:`IMAP4_stream` connections have no way to accurately
-      respect the *dur* or *interval* arguments, since Windows' ``select()``
-      only works on sockets.
+      respect the *duration* or *interval* arguments, since Windows'
+      ``select()`` only works on sockets.
 
       If the server regularly sends status messages during ``IDLE``, they will
-      wake our iterator anyway, allowing *dur* to behave roughly as intended,
-      although usually late.  Dovecot's ``imap_idle_notify_interval`` default
-      setting does this every 2 minutes.  Assuming that's typical of IMAP
-      servers, subtracting it from the 29 minutes needed to avoid server
-      inactivity timeouts would make 27 minutes a sensible value for *dur* in
-      this situation.
+      wake our iterator anyway, allowing *duration* to behave roughly as
+      intended, although usually late.  Dovecot's ``imap_idle_notify_interval``
+      default setting does this every 2 minutes.  Assuming that's typical of
+      IMAP servers, subtracting it from the 29 minutes needed to avoid server
+      inactivity timeouts would make 27 minutes a sensible value for *duration*
+      in this situation.
 
       There is no such fallback for ``Idler.burst()``, which will yield
       endless responses and block indefinitely for each one.  It is therefore
