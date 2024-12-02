@@ -367,18 +367,18 @@ class IMAP4:
         parts = []
         length = 0
         while length < _MAXLINE:
-            try:
-                pos = self._readbuf.index(LF) + 1
+            pos = self._readbuf.find(LF)
+            if pos != -1:
+                pos += 1
                 parts.append(self._readbuf[:pos])
                 length += len(parts[-1])
                 self._readbuf = self._readbuf[pos:]
                 break
-            except ValueError:
-                parts.append(self._readbuf)
-                length += len(parts[-1])
-                self._readbuf = read(DEFAULT_BUFFER_SIZE)
-                if not self._readbuf:
-                    break
+            parts.append(self._readbuf)
+            length += len(parts[-1])
+            self._readbuf = read(DEFAULT_BUFFER_SIZE)
+            if not self._readbuf:
+                break
 
         line = b''.join(parts)
         if len(line) > _MAXLINE:
