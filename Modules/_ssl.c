@@ -2900,7 +2900,7 @@ static PyType_Spec PySSLSocket_spec = {
     .name = "_ssl._SSLSocket",
     .basicsize = sizeof(PySSLSocket),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSocket_slots,
 };
 
@@ -4951,13 +4951,13 @@ PySSLSession_dealloc(PySSLSession *self)
 static PyObject *
 PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
 {
-    int result;
-    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
-
     if (left == NULL || right == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
+
+    int result;
+    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;

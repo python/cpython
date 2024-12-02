@@ -352,6 +352,42 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoint_on_annotated_function_def():
+    """Test breakpoints on function definitions with annotation.
+
+    >>> def foo[T]():
+    ...     return 0
+
+    >>> def bar() -> int:
+    ...     return 0
+
+    >>> def foobar[T]() -> int:
+    ...     return 0
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break foo',
+    ...     'break bar',
+    ...     'break foobar',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(3)test_function()
+    -> pass
+    (Pdb) break foo
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:1
+    (Pdb) break bar
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[1]>:1
+    (Pdb) break foobar
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[2]>:1
+    (Pdb) continue
+    """
+
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 

@@ -184,7 +184,22 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of removal in deprecations
+# Support for documenting version of changes, additions, deprecations
+
+def expand_version_arg(argument, release):
+    """Expand "next" to the current version"""
+    if argument == 'next':
+        return sphinx_gettext('{} (unreleased)').format(release)
+    return argument
+
+
+class PyVersionChange(VersionChange):
+    def run(self):
+        # Replace the 'next' special token with the current development version
+        self.arguments[0] = expand_version_arg(self.arguments[0],
+                                               self.config.release)
+        return super().run()
+
 
 class DeprecatedRemoved(VersionChange):
     required_arguments = 2
@@ -195,8 +210,12 @@ class DeprecatedRemoved(VersionChange):
     def run(self):
         # Replace the first two arguments (deprecated version and removed version)
         # with a single tuple of both versions.
-        version_deprecated = self.arguments[0]
+        version_deprecated = expand_version_arg(self.arguments[0],
+                                                self.config.release)
         version_removed = self.arguments.pop(1)
+        if version_removed == 'next':
+            raise ValueError(
+                'deprecated-removed:: second argument cannot be `next`')
         self.arguments[0] = version_deprecated, version_removed
 
         # Set the label based on if we have reached the removal version
@@ -398,6 +417,10 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('versionadded', PyVersionChange, override=True)
+    app.add_directive('versionchanged', PyVersionChange, override=True)
+    app.add_directive('versionremoved', PyVersionChange, override=True)
+    app.add_directive('deprecated', PyVersionChange, override=True)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
@@ -412,5 +435,6 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.add_css_file('sidebar-wrap.css')
     app.connect('env-check-consistency', patch_pairindextypes)
     return {'version': '1.0', 'parallel_read_safe': True}

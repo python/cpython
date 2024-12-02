@@ -105,7 +105,7 @@ def reload(module):
         try:
             name = module.__name__
         except AttributeError:
-            raise TypeError("reload() argument must be a module")
+            raise TypeError("reload() argument must be a module") from None
 
     if sys.modules.get(name) is not module:
         raise ImportError(f"module {name} not in sys.modules", name=name)

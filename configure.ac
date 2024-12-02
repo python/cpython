@@ -1308,6 +1308,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])
@@ -5676,28 +5679,26 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
 # * Check for various properties of floating point *
 # **************************************************
 
-AX_C_FLOAT_WORDS_BIGENDIAN
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-  AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the most significant byte first])
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-  AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
-  # or little, then it must be this?
-  AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   in ARM mixed-endian order (byte order 45670123)])
-fi
+AX_C_FLOAT_WORDS_BIGENDIAN(
+  [AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the most significant byte first])],
+  [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the least significant byte first])],
+  [AS_CASE([$host_cpu],
+           [*arm*], [# Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
+                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
+                               [Define if C doubles are 64-bit IEEE 754 binary format,
+                                stored in ARM mixed-endian order (byte order 45670123)])],
+           [wasm*], [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+                               [Define if C doubles are 64-bit IEEE 754 binary format,
+                                stored with the least significant byte first])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from

@@ -37,6 +37,17 @@ Pending Removal in Python 3.15
     (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed in
     3.15. Use the class-based syntax or the functional syntax instead.
 
+* :mod:`types`:
+
+  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+    deprecated in :pep:`626`
+    since 3.10 and was planned to be removed in 3.12,
+    but it only got a proper :exc:`DeprecationWarning` in 3.12.
+    May be removed in 3.15.
+    (Contributed by Nikita Sobolev in :gh:`101866`.)
+
+* :mod:`typing`:
+
   * When using the functional syntax to create a :class:`!NamedTuple` class, failing to
     pass a value to the *fields* parameter (``NT = NamedTuple("NT")``) is
     deprecated. Passing ``None`` to the *fields* parameter

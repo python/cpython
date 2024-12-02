@@ -588,6 +588,11 @@ are always available.  They are listed here in alphabetical order.
    :returns: The result of the evaluated expression.
    :raises: Syntax errors are reported as exceptions.
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
@@ -633,6 +638,11 @@ are always available.  They are listed here in alphabetical order.
 .. index:: pair: built-in function; exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
+
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -1213,9 +1223,10 @@ are always available.  They are listed here in alphabetical order.
 
 .. class:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all classes.
-   It has methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   This is the ultimate base class of all other classes. It has methods
+   that are common to all instances of Python classes. When the constructor
+   is called, it returns a new featureless object. The constructor does not
+   accept any arguments.
 
    .. note::
 

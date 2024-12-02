@@ -4037,6 +4037,9 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
                 PyErr_Clear();
                 fast_mode = 0;
             }
+            else if (cnt == PY_SSIZE_T_MAX) {
+                fast_mode = 0;
+            }
         }
     } else {
         cnt = 0;
