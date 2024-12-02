@@ -131,7 +131,8 @@ PyAPI_FUNC(void) _PyErr_SetString(
     const char *string);
 
 /*
- * Set an exception with the error message decoded from the current locale.
+ * Set an exception with the error message decoded from the current locale
+ * encoding (LC_CTYPE).
  *
  * Exceptions occurring in decoding take priority over the desired exception,
  * in which case, this returns -1. Otherwise this returns 0 if the localized
