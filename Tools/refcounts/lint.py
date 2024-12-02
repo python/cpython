@@ -65,12 +65,12 @@ def is_c_parameter_name(name: str) -> bool:
     return name == C_ELLIPSIS or name.isidentifier()
 
 
-class RefType(enum.Enum):
+class RefEffect(enum.Enum):
     UNKNOWN = enum.auto()
     UNUSED = enum.auto()
     DECREF = enum.auto()
-    BORROW = enum.auto()
     INCREF = enum.auto()
+    BORROW = enum.auto()
     STEAL = enum.auto()
     NULL = enum.auto()  # for return values only
 
@@ -80,24 +80,24 @@ class LineInfo:
     func: str
     ctype: str | None
     name: str | None
-    reftype: RefType | None
+    effect: RefEffect
     comment: str
 
     raw_func: str
     raw_ctype: str
     raw_name: str
-    raw_reftype: str
+    raw_effect: str
 
     strip_func: bool
     strip_ctype: bool
     strip_name: bool
-    strip_reftype: bool
+    strip_effect: bool
 
 
 @dataclass(slots=True, frozen=True)
 class Return:
     ctype: str | None
-    reftype: RefType | None
+    effect: RefEffect
     comment: str
     lineno: int = field(kw_only=True)
 
@@ -107,7 +107,7 @@ class Param:
     name: str
 
     ctype: str | None
-    reftype: RefType | None
+    effect: RefEffect
     comment: str
 
     lineno: int = field(kw_only=True)
@@ -132,7 +132,7 @@ def parse_line(line: str) -> LineInfo | None:
     if len(parts) != 5:
         return None
 
-    raw_func, raw_ctype, raw_name, raw_reftype, comment = parts
+    raw_func, raw_ctype, raw_name, raw_effect, comment = parts
 
     func = raw_func.strip()
     strip_func = func != raw_func
@@ -147,32 +147,32 @@ def parse_line(line: str) -> LineInfo | None:
     name = clean_name or None
     strip_name = clean_name != raw_name
 
-    clean_reftype = raw_reftype.strip()
-    strip_reftype = clean_reftype != raw_reftype
+    clean_effect = raw_effect.strip()
+    strip_effect = clean_effect != raw_effect
 
-    match clean_reftype:
+    match clean_effect:
         case "-1":
-            reftype = RefType.DECREF
-        case "0":
-            reftype = RefType.BORROW
+            effect = RefEffect.DECREF
         case "+1":
-            reftype = RefType.INCREF
+            effect = RefEffect.INCREF
+        case "0":
+            effect = RefEffect.BORROW
         case "$":
-            reftype = RefType.STEAL
+            effect = RefEffect.STEAL
         case "null":
-            reftype = RefType.NULL
+            effect = RefEffect.NULL
         case "":
-            reftype = RefType.UNUSED
+            effect = RefEffect.UNUSED
         case _:
-            reftype = RefType.UNKNOWN
+            effect = RefEffect.UNKNOWN
 
     comment = comment.strip()
     return LineInfo(
-        func=func, ctype=ctype, name=name, reftype=reftype, comment=comment,
+        func=func, ctype=ctype, name=name, effect=effect, comment=comment,
         raw_func=raw_func, raw_ctype=raw_ctype,
-        raw_name=raw_name, raw_reftype=raw_reftype,
+        raw_name=raw_name, raw_effect=raw_effect,
         strip_func=strip_func, strip_ctype=strip_ctype,
-        strip_name=strip_name, strip_reftype=strip_reftype,
+        strip_name=strip_name, strip_effect=strip_effect,
     )
 
 
@@ -218,18 +218,18 @@ def parse(lines: Iterable[str]) -> FileView:
             w.warn(lineno, f"[type] whitespaces around {e.raw_ctype!r}")
         if e.strip_name:
             w.warn(lineno, f"[name] whitespaces around {e.raw_name!r}")
-        if e.strip_reftype:
-            w.warn(lineno, f"[ref] whitespaces around {e.raw_reftype!r}")
+        if e.strip_effect:
+            w.warn(lineno, f"[ref] whitespaces around {e.raw_effect!r}")
 
         func, name = e.func, e.name
-        ctype, reftype = e.ctype, e.reftype
+        ctype, effect = e.ctype, e.effect
         comment = e.comment
 
         if func not in signatures:
             # process return value
             if name is not None:
                 w.warn(lineno, f"named return value in {line!r}")
-            ret_param = Return(ctype, reftype, comment, lineno=lineno)
+            ret_param = Return(ctype, effect, comment, lineno=lineno)
             signatures[func] = Signature(func, ret_param, lineno=lineno)
         else:
             # process parameter
@@ -241,7 +241,7 @@ def parse(lines: Iterable[str]) -> FileView:
             if name in params:
                 w.error(lineno, f"duplicated parameter name in {line!r}")
                 continue
-            params[name] = Param(name, ctype, reftype, comment, lineno=lineno)
+            params[name] = Param(name, ctype, effect, comment, lineno=lineno)
 
     if w.count:
         print()
@@ -272,14 +272,14 @@ def check(view: FileView) -> None:
         rparam = sig.rparam
         if not rparam.ctype:
             w.block(sig, "missing return value type")
-        if rparam.reftype is RefType.UNKNOWN:
+        if rparam.effect is RefEffect.UNKNOWN:
             w.block(sig, "unknown return value type")
         # check the parameters
         for param in sig.params.values():  # type: Param
-            ctype, reftype = param.ctype, param.reftype
-            if ctype in OBJECT_TYPES and reftype is RefType.UNUSED:
+            ctype, effect = param.ctype, param.effect
+            if ctype in OBJECT_TYPES and effect is RefEffect.UNUSED:
                 w.param(sig, param, "missing reference count management")
-            if ctype not in OBJECT_TYPES and reftype is not RefType.UNUSED:
+            if ctype not in OBJECT_TYPES and effect is not RefEffect.UNUSED:
                 w.param(sig, param, "unused reference count management")
             if not is_c_parameter_name(param.name):
                 w.param(sig, param, "invalid parameter name")
