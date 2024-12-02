@@ -371,7 +371,6 @@ class IMAP4:
             if pos != -1:
                 pos += 1
                 parts.append(self._readbuf[:pos])
-                length += len(parts[-1])
                 self._readbuf = self._readbuf[pos:]
                 break
             parts.append(self._readbuf)
