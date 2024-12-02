@@ -722,9 +722,9 @@ PyErr_SetImportErrorSubclass:PyObject*:path:+1:
 
 PyErr_SetInterrupt:void:::
 
-PyErr_SetLocaleString:int:::
-PyErr_SetLocaleString:PyObject*:type:+1:
-PyErr_SetLocaleString:const char*:message::
+_PyErr_SetLocaleString:int:::
+_PyErr_SetLocaleString:PyObject*:type:+1:
+_PyErr_SetLocaleString:const char*:message::
 
 PyErr_SetNone:void:::
 PyErr_SetNone:PyObject*:type:+1:

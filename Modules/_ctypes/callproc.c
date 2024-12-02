@@ -1589,7 +1589,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (!handle) {
         const char *errmsg = dlerror();
         if (errmsg) {
-            if (PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
+            if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
                 return NULL;
             }
             // Ignore decoding errors and fall back to the generic error.
@@ -1610,7 +1610,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
     if (dlclose(handle)) {
         const char *errmsg = dlerror();
         if (errmsg) {
-            if (PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
+            if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
                 return NULL;
             }
             // Ignore decoding errors and fall back to the generic error.
@@ -1653,7 +1653,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     #ifdef USE_DLERROR
     const char *errmsg = dlerror();
     if (errmsg) {
-        if (PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
+        if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
             return NULL;
         }
         // Ignore decoding errors and fall back to the generic error below.

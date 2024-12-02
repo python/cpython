@@ -8,10 +8,11 @@
 #endif
 
 #include "Python.h"
+#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
 #include "gdbm.h"
 
 #include <fcntl.h>
-#include <stdlib.h>               // free()
+#include <stdlib.h>                 // free()
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -44,7 +45,7 @@ set_gdbm_error(_gdbm_state *state, const char *generic_error)
 {
     const char *gdbm_errmsg = gdbm_strerror(gdbm_errno);
     if (gdbm_errmsg) {
-        if (PyErr_SetLocaleString(state->gdbm_error, gdbm_errmsg) == 0) {
+        if (_PyErr_SetLocaleString(state->gdbm_error, gdbm_errmsg) == 0) {
             return;
         }
         // Ignore decoding errors and fall back to the generic error.

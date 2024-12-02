@@ -984,7 +984,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
-        if (PyErr_SetLocaleString(PyExc_ValueError, dlerr) == 0) {
+        if (_PyErr_SetLocaleString(PyExc_ValueError, dlerr) == 0) {
             return NULL;
         }
         // Ignore decoding errors and fall back to the generic error.
@@ -3804,7 +3804,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	#ifdef USE_DLERROR
         const char *dlerr = dlerror();
         if (dlerr) {
-            if (PyErr_SetLocaleString(PyExc_AttributeError, dlerr) == 0) {
+            if (_PyErr_SetLocaleString(PyExc_AttributeError, dlerr) == 0) {
                 Py_DECREF(ftuple);
                 return NULL;
             }
