@@ -15,8 +15,8 @@ on:
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
-      - "Tools/requirements-dev.txt"
       - "Tools/refcounts/lint.py"
+      - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
   workflow_dispatch:
 
