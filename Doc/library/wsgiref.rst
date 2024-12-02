@@ -120,7 +120,7 @@ in type annotations.
    servers or applications, since the data is fake!
 
    Example usage, where the *start_response* callable should follow the
-   :class:`StartResponse` protocol::
+   :class:`.StartResponse` protocol::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
@@ -313,8 +313,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
    as :mod:`wsgiref.simple_server`) is able to run a simple WSGI application
    correctly.
 
-   The *start_response* callable should follow the :class:`StartResponse`
-   protocol.
+   The *start_response* callable should follow the :class:`.StartResponse` protocol.
 
 
 .. class:: WSGIServer(server_address, RequestHandlerClass)
@@ -684,7 +683,7 @@ input, output, and error streams.
       This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
       described in the "Error Handling" section of :pep:`3333`). In particular,
-      the *start_response* callable should follow the :class:`StartResponse`
+      the *start_response* callable should follow the :class:`.StartResponse`
       protocol.
 
       The default implementation just uses the :attr:`error_status`,
@@ -823,7 +822,7 @@ Examples
 --------
 
 This is a working "Hello World" WSGI application, where the *start_response*
-callable should follow the :class:`StartResponse` protocol::
+callable should follow the :class:`.StartResponse` protocol::
 
    """
    Every WSGI application must have an application object - a callable
