@@ -14,13 +14,6 @@ parser.add_argument(
 
 
 class MyHTTPRequestHandler(server.SimpleHTTPRequestHandler):
-    extensions_map = server.SimpleHTTPRequestHandler.extensions_map.copy()
-    extensions_map.update(
-        {
-            ".wasm": "application/wasm",
-        }
-    )
-
     def end_headers(self) -> None:
         self.send_my_headers()
         super().end_headers()
@@ -41,6 +34,7 @@ def main() -> None:
         port=args.port,
         bind=args.bind,
     )
+
 
 if __name__ == "__main__":
     main()

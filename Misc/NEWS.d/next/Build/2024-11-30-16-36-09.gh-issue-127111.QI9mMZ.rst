@@ -1,0 +1,2 @@
+Updated the Emscripten web example to use ES6 modules and be built into a
+distinct ``web_example`` subfolder.
