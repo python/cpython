@@ -1438,7 +1438,7 @@ dummy_func(
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o));
-            LOCK_OBJECT(seq_o);
+            DEOPT_IF(!LOCK_OBJECT(seq_o));
             if (PyList_GET_SIZE(seq_o) != oparg) {
                 UNLOCK_OBJECT(seq_o);
                 DEOPT_IF(true);

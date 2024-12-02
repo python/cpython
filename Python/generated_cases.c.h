@@ -8040,7 +8040,7 @@
             values = &stack_pointer[-1];
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o), UNPACK_SEQUENCE);
-            LOCK_OBJECT(seq_o);
+            DEOPT_IF(!LOCK_OBJECT(seq_o), UNPACK_SEQUENCE);
             if (PyList_GET_SIZE(seq_o) != oparg) {
                 UNLOCK_OBJECT(seq_o);
                 DEOPT_IF(true, UNPACK_SEQUENCE);
