@@ -215,12 +215,29 @@ def configure_emscripten_python(context, working_dir):
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
         dedent(
-            f"""\
+            """\
             #!/bin/sh
 
+            # Macs come with free BSD coreutils which doesn't have the -s option
+            # so feature detect and work around it.
+            if which grealpath > /dev/null; then
+                # It has brew installed gnu core utils, use that
+                REALPATH="grealpath -s"
+            elif which realpath > /dev/null && realpath --version | grep GNU > /dev/null; then
+                # realpath points to GNU realpath so use it.
+                REALPATH="realpath -s"
+            else
+                # Shim for macs without GNU coreutils
+                abs_path () {
+                    echo "$(cd "$(dirname "$1")" || exit; pwd)/$(basename "$1")"
+                }
+                REALPATH=abs_path
+            fi
+            """
+            f"""
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
-            exec {host_runner} {node_entry} "$(realpath -s $0)" "$@"
+            exec {host_runner} {node_entry} "$($REALPATH "$0")" "$@"
             """
         )
     )
