@@ -49,7 +49,7 @@ del suffix, object_type, qualifier
 #: Set of functions part of the stable ABI that are not
 #: in the refcounts.dat file if:
 #:
-#:  - They are ABI-only (either fully deprecated or even removed)
+#:  - They are ABI-only (either fully deprecated or even removed).
 #:  - They are so internal that they should not be used at all because
 #:    they raise a fatal error.
 IGNORE_LIST: frozenset[str] = frozenset((
@@ -105,7 +105,7 @@ class RefEffect(enum.Enum):
     NULL = enum.auto()  # for return values only
     """Only used for a NULL return value.
 
-    This is used by functions that return always return NULL as a "PyObject *".
+    This is used by functions that always return NULL as a "PyObject *".
     """
 
 
@@ -145,6 +145,7 @@ class LineInfo:
 @dataclass(slots=True, frozen=True)
 class Return:
     """Indicate a return value."""
+
     ctype: str | None
     """The return C type, if any.
 
@@ -166,6 +167,8 @@ class Return:
 
 @dataclass(slots=True, frozen=True)
 class Param:
+    """Indicate a formal parameter."""
+
     name: str
     """The parameter name."""
 
@@ -190,6 +193,8 @@ class Param:
 
 @dataclass(slots=True, frozen=True)
 class Signature:
+    """An entry in refcounts.dat."""
+
     name: str
     """The function name."""
 
@@ -205,6 +210,8 @@ class Signature:
 
 @dataclass(slots=True, frozen=True)
 class FileView:
+    """View of the refcounts.dat file."""
+
     signatures: Mapping[str, Signature]
     """A mapping from function names to the corresponding signature."""
 
@@ -414,7 +421,7 @@ def check_structure(view: FileView, stable_abi_file: str) -> None:
 _STABLE_ABI_PATH_SENTINEL: Final = object()
 
 
-def _create_parser() -> ArgumentParser:
+def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="lint.py", formatter_class=RawDescriptionHelpFormatter,
         description=(
@@ -432,7 +439,7 @@ def _create_parser() -> ArgumentParser:
 
 
 def main() -> None:
-    parser = _create_parser()
+    parser = create_parser()
     args = parser.parse_args()
     lines = Path(args.file).read_text(encoding="utf-8").splitlines()
     print(" PARSING ".center(80, "-"))
