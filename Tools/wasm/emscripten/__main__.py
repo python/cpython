@@ -237,7 +237,8 @@ def configure_emscripten_python(context, working_dir):
             f"""
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
-            exec {host_runner} {node_entry} "$($REALPATH "$0")" "$@"
+            # Intentionally allow word splitting on NODEFLAGS.
+            exec {host_runner} {node_entry} ${NODEFLAGS} "$($REALPATH "$0")" "$@"
             """
         )
     )
