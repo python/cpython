@@ -500,7 +500,7 @@ class NewIMAPTestsMixin():
     def test_idle_capability(self):
         client, _ = self._setup(SimpleIMAPHandler)
         with self.assertRaisesRegex(imaplib.IMAP4.error,
-                'does not support IDLE'):
+                'does not support IMAP4 IDLE'):
             with client.idle():
                 pass
 
