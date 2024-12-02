@@ -899,6 +899,50 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
+    def test_source_synopsis(self):
+        test_cases = [
+            # Single line docstring
+            ('"""Single line docstring."""',
+            "Single line docstring."),
+
+            # Multi-line docstring - should only return first line
+            ('"""First line of docstring.\nSecond line.\nThird line."""',
+            "First line of docstring."),
+
+            # Docstring with leading/trailing whitespace
+            ('"""  Whitespace around docstring.  """',
+            "Whitespace around docstring."),
+
+            # No docstring
+            ('x = 1\ny = 2',
+            None),
+
+            # Comments before docstring
+            ('# Comment\n"""Docstring after comment."""',
+            "Docstring after comment."),
+
+            # Empty docstring
+            ('""""""',
+            ""),
+
+            # Unicode docstring
+            ('"""Café and résumé."""',
+            "Café and résumé."),
+        ]
+
+        for source, expected in test_cases:
+            with self.subTest(source=source):
+                source_file = StringIO(source)
+                result = pydoc.source_synopsis(source_file)
+                self.assertEqual(result, expected)
+
+        with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8') as temp_file:
+            temp_file.write('"""Real file test."""\n')
+            temp_file.flush()
+            temp_file.seek(0)
+            result = pydoc.source_synopsis(temp_file)
+            self.assertEqual(result, "Real file test.")
+
     @requires_docstrings
     def test_synopsis_sourceless(self):
         os = import_helper.import_fresh_module('os')
