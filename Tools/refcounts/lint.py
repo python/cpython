@@ -33,7 +33,11 @@ for qualifier, object_type, suffix in itertools.product(
         "PyCodeObject", "PyFrameObject", "PyModuleObject",
         "PyVarObject",
     ),
-    ("*", "**", "* const *", "* const*"),
+    (
+        "*",
+        "**", "* *",
+        "*const*", "*const *", "* const*", "* const *",
+    ),
 ):
     OBJECT_TYPES |= {
         f"{qualifier}{object_type}{suffix}",
