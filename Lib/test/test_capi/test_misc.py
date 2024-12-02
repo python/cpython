@@ -109,7 +109,7 @@ class CAPITest(unittest.TestCase):
         else:
             msg = ("Fatal Python error: PyThreadState_Get: "
                    "the function must be called with an active thread state, "
-                   "after Python initialization and before Python finalization, but it is NULL "
+                   "after Python initialization and before Python finalization, but the thread state is NULL "
                    "(are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?)").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
