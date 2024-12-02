@@ -1,6 +1,5 @@
 import EmscriptenModule from "./python.mjs";
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
 
 if (process?.versions?.node) {
   const nodeVersion = Number(process.versions.node.split(".", 1)[0]);
@@ -12,11 +11,24 @@ if (process?.versions?.node) {
   }
 }
 
+function rootDirsToMount(Module) {
+  return fs
+      .readdirSync("/")
+      .filter((dir) => !["dev", "lib", "proc"].includes(dir)).map(dir => "/" + dir);
+}
+
+function mountDirectories(Module) {
+  for (const dir of rootDirsToMount(Module)) {
+    Module.FS.mkdirTree(dir);
+    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: dir }, dir);
+  }
+}
+
 const settings = {
   preRun(Module) {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    Module.FS.mkdirTree("/lib/");
-    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: __dirname + "/lib/" }, "/lib/");
+    Module.FS.mkdirTree("/home/");
+    mountDirectories(Module);
+    Module.FS.chdir(process.cwd());
   },
   // The first three arguments are: "node", path to this file, path to
   // python.sh. After that come the arguments the user passed to python.sh.
