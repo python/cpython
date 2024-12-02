@@ -26,10 +26,11 @@ MATCH_TODO: Callable[[str], re.Match[str] | None]
 MATCH_TODO = re.compile(r"^#\s*TODO:\s*(\w+)$").match
 
 
-def generate_object_types(universe: Iterable[str]) -> Iterable[str]:
+def generate_object_types(object_types: Iterable[str]) -> Iterable[str]:
+    """Generate the type declarations that expect a reference count."""
     for qualifier, object_type, suffix in itertools.product(
         ("const ", ""),
-        universe,
+        object_types,
         (
             "*",
             "**", "* *",
@@ -53,7 +54,7 @@ OBJECT_TYPES: frozenset[str] = frozenset(generate_object_types((
 #:  - They are ABI-only (either fully deprecated or even removed).
 #:  - They are so internal that they should not be used at all because
 #:    they raise a fatal error.
-IGNORE_LIST: frozenset[str] = frozenset((
+STABLE_ABI_IGNORE_LIST: frozenset[str] = frozenset((
     # part of the stable ABI but should not be used at all
     "PyUnicode_GetSize",
     # part of the stable ABI but completely removed
@@ -64,7 +65,7 @@ IGNORE_LIST: frozenset[str] = frozenset((
 def flno_(lineno: int) -> str:
     # Format the line so that users can C/C from the terminal
     # the line number and jump with their editor using Ctrl+G.
-    return f"{lineno:>5} "
+    return f"{lineno:>6} "
 
 
 def is_c_parameter_name(name: str) -> bool:
@@ -406,7 +407,7 @@ def check_structure(view: FileView, stable_abi_file: str) -> None:
     stable_abi = tomllib.loads(stable_abi_str)
     expect = stable_abi["function"].keys()
     # check if there are missing entries (those marked as "TODO" are ignored)
-    actual = IGNORE_LIST | view.incomplete | view.signatures.keys()
+    actual = STABLE_ABI_IGNORE_LIST | view.incomplete | view.signatures.keys()
     if missing := (expect - actual):
         print(f"Missing {len(missing)} stable ABI entries:")
         for name in sorted(missing):
