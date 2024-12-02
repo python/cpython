@@ -6,11 +6,17 @@ preview = true
 [lint]
 select = [
     "I", # isort
+    "D204", # 1 blank line required after class docstring
+    "D205", # 1 blank line required between summary line and description
+    "D400", # First line should end with a period
+    "D401", # First line of docstring should be in imperative mood
     "F", # Enable all pyflakes rules
     "E", # Enable all pycodestyle error rules
     "W", # Enable all pycodestyle warning rules
     "UP", # Enable all pyupgrade rules
     "RUF100", # Ban unused `# noqa` comments
+    "PGH003", # Use specific rule codes when ignoring type issues
+    "PGH004", # Use specific rule codes when using noqa
     "C4", # flake8-comprehensions
     "ISC", # flake8-implicit-str-concat
     "TCH", # flake8-type-checking
