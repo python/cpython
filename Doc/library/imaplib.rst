@@ -343,7 +343,7 @@ An :class:`IMAP4` instance has the following methods:
    Instead of iterating one response at a time, it is also possible to retrieve
    the next response along with any immediately available subsequent responses
    (e.g. a rapid series of ``EXPUNGE`` events from a bulk delete).  This
-   batch processing aid is provided by the context's :meth:`Idler.burst`
+   batch processing aid is provided by the context object's ``burst()``
    :term:`generator`:
 
    .. method:: Idler.burst(interval=0.1)
@@ -386,9 +386,9 @@ An :class:`IMAP4` instance has the following methods:
       inactivity timeouts would make 27 minutes a sensible value for *dur* in
       this situation.
 
-      There is no such fallback for :meth:`Idler.burst`, which will yield
+      There is no such fallback for ``Idler.burst()``, which will yield
       endless responses and block indefinitely for each one.  It is therefore
-      advised not to use :meth:`Idler.burst` with an :class:`IMAP4_stream`
+      advised not to use ``Idler.burst()`` with an :class:`IMAP4_stream`
       connection on Windows.
 
    .. note::
