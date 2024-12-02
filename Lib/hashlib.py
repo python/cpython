@@ -130,7 +130,8 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
     try:
         # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
-        # SHA3/shake are available in OpenSSL 1.1.1+
+        # SHA3/shake are available in OpenSSL 1.1.1+; some forks omit
+        # the latter.
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
         # defined but the hash not actually available.  Don't fall back to
@@ -162,8 +163,6 @@ def __hash_new(name, data=b'', **kwargs):
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
-        # This allows for SHA224/256 and SHA384/512 support even though
-        # the OpenSSL library prior to 0.9.8 doesn't provide them.
         return __get_builtin_constructor(name)(data)
 
 
