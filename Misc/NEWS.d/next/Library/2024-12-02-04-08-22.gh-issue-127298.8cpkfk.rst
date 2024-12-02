@@ -1,0 +1,3 @@
+:mod:`hashlib` now avoids emitting a message to stderr when used in custom
+build or system environment excluding any of our otherwise guaranteed
+available hash functions.

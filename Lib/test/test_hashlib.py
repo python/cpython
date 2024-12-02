@@ -229,7 +229,6 @@ class HashLibTestCase(unittest.TestCase):
 
     @unittest.skipIf(get_fips_mode(), reason="guaranteed algorithms may not be available in FIPS mode")
     def test_algorithms_available(self):
-        print(f"{get_fips_mode()=}")
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available),
                         msg=f"\n{sorted(hashlib.algorithms_guaranteed)=}\n{sorted(hashlib.algorithms_available)=}")
