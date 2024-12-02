@@ -404,6 +404,15 @@ inspect
   (Contributed by Zhikang Yan in :gh:`125634`.)
 
 
+
+io
+--
+
+* Reading text from a non-blocking stream with ``read`` may now raise a
+  :exc:`BlockingIOError` if the operation cannot immediately return bytes.
+  (Contributed by Giovanni Siragusa in :gh:`109523`.)
+
+
 json
 ----
 
@@ -574,6 +583,14 @@ sys
 * The previously undocumented special function :func:`sys.getobjects`,
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
+
+
+tkinter
+-------
+
+* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+  arguments passed by keyword.
+  (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
 unicodedata

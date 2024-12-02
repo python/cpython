@@ -16158,7 +16158,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot encode %s", name);
+        PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {

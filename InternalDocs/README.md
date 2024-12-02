@@ -1,4 +1,3 @@
-
 # CPython Internals Documentation
 
 The documentation in this folder is intended for CPython maintainers.
