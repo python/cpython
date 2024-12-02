@@ -44,7 +44,7 @@ jobs:
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/jit",
-        - "Tools/refcounts",
+          "Tools/refcounts",
           "Tools/peg_generator",
           "Tools/wasm",
         ]
