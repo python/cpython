@@ -617,7 +617,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "BINARY_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_binary_subscr_list_int(self):
         def get_items():
             items = []
@@ -1023,7 +1023,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_store_subscr_list_int(self):
         def get_items():
             items = []
@@ -1229,48 +1229,48 @@ class TestSpecializer(TestBase):
     @cpython_only
     @requires_specialization_ft
     def test_binary_op(self):
-        def f():
+        def binary_op_add_int():
             for _ in range(100):
                 a, b = 1, 2
                 c = a + b
                 self.assertEqual(c, 3)
 
-        f()
-        self.assert_specialized(f, "BINARY_OP_ADD_INT")
-        self.assert_no_opcode(f, "BINARY_OP")
+        binary_op_add_int()
+        self.assert_specialized(binary_op_add_int, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_add_int, "BINARY_OP")
 
-        def g():
+        def binary_op_add_unicode():
             for _ in range(100):
                 a, b = "foo", "bar"
                 c = a + b
                 self.assertEqual(c, "foobar")
 
-        g()
-        self.assert_specialized(g, "BINARY_OP_ADD_UNICODE")
-        self.assert_no_opcode(g, "BINARY_OP")
+        binary_op_add_unicode()
+        self.assert_specialized(binary_op_add_unicode, "BINARY_OP_ADD_UNICODE")
+        self.assert_no_opcode(binary_op_add_unicode, "BINARY_OP")
 
     @cpython_only
     @requires_specialization_ft
     def test_contain_op(self):
-        def f():
+        def contains_op_dict():
             for _ in range(100):
                 a, b = 1, {1: 2, 2: 5}
                 self.assertTrue(a in b)
                 self.assertFalse(3 in b)
 
-        f()
-        self.assert_specialized(f, "CONTAINS_OP_DICT")
-        self.assert_no_opcode(f, "CONTAINS_OP")
+        contains_op_dict()
+        self.assert_specialized(contains_op_dict, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(contains_op_dict, "CONTAINS_OP")
 
-        def g():
+        def contains_op_set():
             for _ in range(100):
                 a, b = 1, {1, 2}
                 self.assertTrue(a in b)
                 self.assertFalse(3 in b)
 
-        g()
-        self.assert_specialized(g, "CONTAINS_OP_SET")
-        self.assert_no_opcode(g, "CONTAINS_OP")
+        contains_op_set()
+        self.assert_specialized(contains_op_set, "CONTAINS_OP_SET")
+        self.assert_no_opcode(contains_op_set, "CONTAINS_OP")
 
     @cpython_only
     @requires_specialization_ft
@@ -1342,34 +1342,81 @@ class TestSpecializer(TestBase):
     @cpython_only
     @requires_specialization_ft
     def test_unpack_sequence(self):
-        def f():
+        def unpack_sequence_two_tuple():
             for _ in range(100):
                 a, b = 1, 2
                 self.assertEqual(a, 1)
                 self.assertEqual(b, 2)
 
-        f()
-        self.assert_specialized(f, "UNPACK_SEQUENCE_TWO_TUPLE")
-        self.assert_no_opcode(f, "UNPACK_SEQUENCE")
+        unpack_sequence_two_tuple()
+        self.assert_specialized(unpack_sequence_two_tuple,
+                                "UNPACK_SEQUENCE_TWO_TUPLE")
+        self.assert_no_opcode(unpack_sequence_two_tuple, "UNPACK_SEQUENCE")
 
-        def g():
+        def unpack_sequence_tuple():
             for _ in range(100):
                 a, = 1,
                 self.assertEqual(a, 1)
 
-        g()
-        self.assert_specialized(g, "UNPACK_SEQUENCE_TUPLE")
-        self.assert_no_opcode(g, "UNPACK_SEQUENCE")
+        unpack_sequence_tuple()
+        self.assert_specialized(unpack_sequence_tuple, "UNPACK_SEQUENCE_TUPLE")
+        self.assert_no_opcode(unpack_sequence_tuple, "UNPACK_SEQUENCE")
 
-        def x():
+        def unpack_sequence_list():
             for _ in range(100):
                 a, b = [1, 2]
                 self.assertEqual(a, 1)
                 self.assertEqual(b, 2)
 
-        x()
-        self.assert_specialized(x, "UNPACK_SEQUENCE_LIST")
-        self.assert_no_opcode(x, "UNPACK_SEQUENCE")
+        unpack_sequence_list()
+        self.assert_specialized(unpack_sequence_list, "UNPACK_SEQUENCE_LIST")
+        self.assert_no_opcode(unpack_sequence_list, "UNPACK_SEQUENCE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_subscr(self):
+        def binary_subscr_list_int():
+            for _ in range(100):
+                a = [1, 2, 3]
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_list_int()
+        self.assert_specialized(binary_subscr_list_int,
+                                "BINARY_SUBSCR_LIST_INT")
+        self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
+
+        def binary_subscr_tuple_int():
+            for _ in range(100):
+                a = (1, 2, 3)
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_tuple_int()
+        self.assert_specialized(binary_subscr_tuple_int,
+                                "BINARY_SUBSCR_TUPLE_INT")
+        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
+
+        def binary_subscr_dict():
+            for _ in range(100):
+                a = {1: 2, 2: 3}
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+
+        binary_subscr_dict()
+        self.assert_specialized(binary_subscr_dict, "BINARY_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_dict, "BINARY_SUBSCR")
+
+        def binary_subscr_str_int():
+            for _ in range(100):
+                a = "foobar"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int()
+        self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
+        self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
 
 if __name__ == "__main__":
     unittest.main()
