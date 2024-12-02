@@ -546,12 +546,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
-    def test_matches_pathbase_api(self):
-        our_names = {name for name in dir(self.cls) if name[0] != '_'}
-        our_names.remove('is_reserved')  # only present in PurePath
+    def test_matches_pathbase_docstrings(self):
         path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
-        self.assertEqual(our_names, path_names)
-        for attr_name in our_names:
+        for attr_name in path_names:
             if attr_name == 'parser':
                 # On Windows, Path.parser is ntpath, but PathBase.parser is
                 # posixpath, and so their docstrings differ.
@@ -1356,6 +1353,17 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         q = P / 'dirA' / 'fileAA'
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
+
+    @needs_symlinks
+    def test_lstat(self):
+        p = self.cls(self.base)/ 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.lstat())
+
+    def test_lstat_nosymlink(self):
+        p = self.cls(self.base) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.lstat())
 
     def test_is_junction(self):
         P = self.cls(self.base)
