@@ -1992,6 +1992,12 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
+        if (bytes == Py_None){
+            Py_DECREF(bytes);
+            PyErr_SetString(PyExc_BlockingIOError, "Read returned None.");
+            return NULL;
+        }
+
         _PyIO_State *state = self->state;
         if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,

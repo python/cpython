@@ -64,6 +64,12 @@ In-memory text streams are also available as :class:`StringIO` objects::
 
    f = io.StringIO("some initial text data")
 
+.. note::
+
+   When working with a non-blocking stream, be aware that read operations on text I/O objects
+   might raise a :exc:`BlockingIOError` if the stream cannot perform the operation
+   immediately.
+
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
 
@@ -770,6 +776,11 @@ than raw I/O does.
       Read and return *size* bytes, or if *size* is not given or negative, until
       EOF or if the read call would block in non-blocking mode.
 
+      .. note::
+
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
+
    .. method:: read1(size=-1, /)
 
       Read and return up to *size* bytes with only one call on the raw stream.
@@ -779,6 +790,10 @@ than raw I/O does.
       .. versionchanged:: 3.7
          The *size* argument is now optional.
 
+      .. note::
+
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
@@ -1006,6 +1021,11 @@ Text I/O
 
    .. versionchanged:: 3.10
       The *encoding* argument now supports the ``"locale"`` dummy encoding name.
+
+   .. note::
+
+      When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+      may be raised if a read operation cannot be completed immediately.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
