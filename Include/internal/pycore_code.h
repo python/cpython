@@ -609,12 +609,19 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
+static inline _PyCodeArray *
+_PyCode_GetTLBCArray(PyCodeObject *co)
+{
+    return _Py_STATIC_CAST(_PyCodeArray *,
+                           _Py_atomic_load_ptr_acquire(&co->co_tlbc));
+}
+
 // Return a pointer to the thread-local bytecode for the current thread, if it
 // exists.
 static inline _Py_CODEUNIT *
 _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 {
-    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    _PyCodeArray *code = _PyCode_GetTLBCArray(co);
     int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx];
