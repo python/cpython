@@ -2729,7 +2729,7 @@ unicode_error_adjust_start(Py_ssize_t start, Py_ssize_t objlen)
 }
 
 /*
- * Adjust the (eclusive) 'end' value of a UnicodeError object.
+ * Adjust the (exclusive) 'end' value of a UnicodeError object.
  *
  * The END can be negative or not, but when adjusting the value,
  * we clip it in [MIN(1, OBJLEN), MAX(MIN(1, OBJLEN), OBJLEN)] but
