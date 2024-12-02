@@ -93,24 +93,26 @@ class Return:
     ctype: str | None
     reftype: RefType | None
     comment: str
+    lineno: int = field(kw_only=True)
 
 
 @dataclass(slots=True, frozen=True)
 class Param:
     name: str
-    lineno: int
 
     ctype: str | None
     reftype: RefType | None
     comment: str
 
+    lineno: int = field(kw_only=True)
+
 
 @dataclass(slots=True, frozen=True)
 class Signature:
     name: str
-    lineno: int
     rparam: Return
     params: dict[str, Param] = field(default_factory=dict)
+    lineno: int = field(kw_only=True)
 
 
 @dataclass(slots=True, frozen=True)
@@ -221,18 +223,19 @@ def parse(lines: Iterable[str]) -> FileView:
             # process return value
             if name is not None:
                 w.warn(lineno, f"named return value in {line!r}")
-            ret_param = Return(ctype, reftype, comment)
-            signatures[func] = Signature(func, lineno, ret_param)
+            ret_param = Return(ctype, reftype, comment, lineno=lineno)
+            signatures[func] = Signature(func, ret_param, lineno=lineno)
         else:
             # process parameter
             if name is None:
                 w.error(lineno, f"missing parameter name in {line!r}")
                 continue
             sig: Signature = signatures[func]
-            if name in sig.params:
+            params = sig.params
+            if name in params:
                 w.error(lineno, f"duplicated parameter name in {line!r}")
                 continue
-            sig.params[name] = Param(name, lineno, ctype, reftype, comment)
+            params[name] = Param(name, ctype, reftype, comment, lineno=lineno)
 
     if w.count:
         print()
