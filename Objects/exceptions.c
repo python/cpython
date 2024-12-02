@@ -2818,6 +2818,7 @@ PyUnicodeTranslateError_GetStart(PyObject *exc, Py_ssize_t *start)
 static inline int
 unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 {
+    assert(PyObject_TypeCheck(self, (PyTypeObject*)&PyExc_UnicodeError));
     ((PyUnicodeErrorObject *)self)->start = start;
     return 0;
 }
