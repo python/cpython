@@ -59,6 +59,12 @@ def flno_(lineno: int) -> str:
     return f"{lineno:>5} "
 
 
+def is_c_parameter_name(name: str) -> bool:
+    """Check if *name* is a valid C parameter name."""
+    # C accepts the same identifiers as in Python
+    return name == C_ELLIPSIS or name.isidentifier()
+
+
 class RefType(enum.Enum):
     UNKNOWN = enum.auto()
     UNUSED = enum.auto()
@@ -269,14 +275,13 @@ def check(view: FileView) -> None:
         if rparam.reftype is RefType.UNKNOWN:
             w.block(sig, "unknown return value type")
         # check the parameters
-        for name, param in sig.params.items():  # type: (str, Param)
+        for param in sig.params.values():  # type: Param
             ctype, reftype = param.ctype, param.reftype
             if ctype in OBJECT_TYPES and reftype is RefType.UNUSED:
                 w.param(sig, param, "missing reference count management")
             if ctype not in OBJECT_TYPES and reftype is not RefType.UNUSED:
                 w.param(sig, param, "unused reference count management")
-            if name != C_ELLIPSIS and not name.isidentifier():
-                # C accepts the same identifiers as in Python
+            if not is_c_parameter_name(param.name):
                 w.param(sig, param, "invalid parameter name")
 
     if w.count:
