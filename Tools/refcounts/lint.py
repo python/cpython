@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import enum
 import itertools
 import re
 import sys
 import tomllib
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -74,10 +74,10 @@ def is_c_parameter_name(name: str) -> bool:
     return name == C_ELLIPSIS or name.isidentifier()
 
 
-class Effect(enum.Enum):
+class Effect(Enum):
     """The reference count effect of a parameter or a return value."""
 
-    UNKNOWN = enum.auto()
+    UNKNOWN = None
     """Indicate an unparsable reference count effect.
 
     Such annotated entities are reported during the checking phase.
