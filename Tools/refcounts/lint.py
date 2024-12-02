@@ -395,32 +395,38 @@ class CheckerReporter:
         self._print_param(sig, param, message)
 
 
-def check(view: FileView) -> None:
+def check_signature(r: CheckerReporter, sig: Signature) -> None:
+    rparam = sig.rparam
+    if not rparam.ctype:
+        r.warn_block(sig, "missing return value type")
+    match rparam.effect:
+        case Effect.TODO:
+            r.todo_block(sig, "incomplete reference count effect")
+        case Effect.STEAL:
+            r.warn_block(sig, "stolen reference on return value")
+        case Effect.UNKNOWN:
+            r.warn_block(sig, "unknown return value type")
+
+
+def check_parameter(r: CheckerReporter, sig: Signature, param: Param) -> None:
+    ctype, effect = param.ctype, param.effect
+    if effect is Effect.TODO:
+        r.todo_param(sig, param, "incomplete reference count effect")
+    if ctype in OBJECT_TYPES and effect is Effect.UNUSED:
+        r.warn_param(sig, param, "missing reference count effect")
+    if ctype not in OBJECT_TYPES and effect is not Effect.UNUSED:
+        r.warn_param(sig, param, "unused reference count effect")
+    if not is_c_parameter_name(param.name):
+        r.warn_param(sig, param, "invalid parameter name")
+
+
+def check(view: FileView) -> int:
     r = CheckerReporter()
 
     for sig in view.signatures.values():  # type: Signature
-        # check the return value
-        rparam = sig.rparam
-        if not rparam.ctype:
-            r.warn_block(sig, "missing return value type")
-        match rparam.effect:
-            case Effect.TODO:
-                r.todo_block(sig, "incomplete reference count effect")
-            case Effect.STEAL:
-                r.warn_block(sig, "stolen reference on return value")
-            case Effect.UNKNOWN:
-                r.warn_block(sig, "unknown return value type")
-        # check the parameters
+        check_signature(r, sig)
         for param in sig.params.values():  # type: Param
-            ctype, effect = param.ctype, param.effect
-            if effect is Effect.TODO:
-                r.todo_param(sig, param, "incomplete reference count effect")
-            if ctype in OBJECT_TYPES and effect is Effect.UNUSED:
-                r.warn_param(sig, param, "missing reference count effect")
-            if ctype not in OBJECT_TYPES and effect is not Effect.UNUSED:
-                r.warn_param(sig, param, "unused reference count effect")
-            if not is_c_parameter_name(param.name):
-                r.warn_param(sig, param, "invalid parameter name")
+            check_parameter(r, sig, param)
 
     if r.count:
         print()
