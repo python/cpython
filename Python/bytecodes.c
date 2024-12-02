@@ -704,7 +704,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             assert(frame->stackpointer == NULL);
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -713,7 +713,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(BINARY_SUBSCR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_BINARY_SUBSCR, (container, sub -- res)) {
@@ -790,11 +790,17 @@ dummy_func(
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+#ifdef Py_GIL_DISABLED
+            PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
+            DEOPT_IF(res_o == NULL);
+            STAT_INC(BINARY_SUBSCR, hit);
+#else
             DEOPT_IF(index >= PyList_GET_SIZE(list));
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             Py_INCREF(res_o);
+#endif
             PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
             DEAD(sub_st);
             PyStackRef_CLOSE(list_st);
@@ -1432,14 +1438,9 @@ dummy_func(
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o));
-            #ifdef Py_GIL_DISABLED
-            PyCriticalSection cs;
-            PyCriticalSection_Begin(&cs, seq_o);
-            #endif
+            DEOPT_IF(!LOCK_OBJECT(seq_o));
             if (PyList_GET_SIZE(seq_o) != oparg) {
-                #ifdef Py_GIL_DISABLED
-                PyCriticalSection_End(&cs);
-                #endif
+                UNLOCK_OBJECT(seq_o);
                 DEOPT_IF(true);
             }
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1447,9 +1448,7 @@ dummy_func(
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
-            #ifdef Py_GIL_DISABLED
-            PyCriticalSection_End(&cs);
-            #endif
+            UNLOCK_OBJECT(seq_o);
             DECREF_INPUTS();
         }
 
