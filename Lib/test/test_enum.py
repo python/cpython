@@ -11,6 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
+from functools import partial
 from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
@@ -1537,6 +1538,19 @@ class TestSpecial(unittest.TestCase):
             [Outer.a, Outer.b, Outer.Inner],
             )
 
+    def test_partial(self):
+        def func(a, b=5):
+            return a, b
+        with self.assertWarnsRegex(FutureWarning, r'partial.*enum\.member') as cm:
+            class E(Enum):
+                a = 1
+                b = partial(func)
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(E.b, partial)
+        self.assertEqual(E.b(2), (2, 5))
+        with self.assertWarnsRegex(FutureWarning, 'partial'):
+            self.assertEqual(E.a.b(2), (2, 5))
+
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1
@@ -1887,6 +1901,25 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaises(TypeError):
             class Wrong(Enum, str):
                 NotHere = 'error before this point'
+
+    def test_raise_custom_error_on_creation(self):
+        class InvalidRgbColorError(ValueError):
+            def __init__(self, r, g, b):
+                self.r = r
+                self.g = g
+                self.b = b
+                super().__init__(f'({r}, {g}, {b}) is not a valid RGB color')
+
+        with self.assertRaises(InvalidRgbColorError):
+            class RgbColor(Enum):
+                RED = (255, 0, 0)
+                GREEN = (0, 255, 0)
+                BLUE = (0, 0, 255)
+                INVALID = (256, 0, 0)
+
+                def __init__(self, r, g, b):
+                    if not all(0 <= val <= 255 for val in (r, g, b)):
+                        raise InvalidRgbColorError(r, g, b)
 
     def test_intenum_transitivity(self):
         class number(IntEnum):
@@ -3459,6 +3492,13 @@ class TestSpecial(unittest.TestCase):
                 self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
+
+    def test_nonhashable_matches_hashable(self):    # issue 125710
+        class Directions(Enum):
+            DOWN_ONLY = frozenset({"sc"})
+            UP_ONLY = frozenset({"cs"})
+            UNRESTRICTED = frozenset({"sc", "cs"})
+        self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
 
 
 class TestOrder(unittest.TestCase):

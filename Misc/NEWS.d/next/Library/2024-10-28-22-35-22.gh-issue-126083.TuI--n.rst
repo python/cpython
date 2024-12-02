@@ -1,0 +1,1 @@
+Fixed a reference leak in :class:`asyncio.Task` objects when reinitializing the same object with a non-``None`` context. Patch by Nico Posada.

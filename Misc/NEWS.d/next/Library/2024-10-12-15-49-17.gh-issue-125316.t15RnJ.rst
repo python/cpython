@@ -1,0 +1,3 @@
+Fix using :func:`functools.partial` as :class:`enum.Enum` member. A
+FutureWarning with suggestion to use :func:`enum.member` is now emitted when
+the ``partial`` instance is used as an enum member.

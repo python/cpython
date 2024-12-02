@@ -44,7 +44,7 @@ using function-call syntax::
    ...     BLUE = 3
 
    >>> # functional syntax
-   >>> Color = Enum('Color', ['RED', 'GREEN', 'BLUE'])
+   >>> Color = Enum('Color', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
 
 Even though we can use :keyword:`class` syntax to create Enums, Enums
 are not normal Python classes.  See

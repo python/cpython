@@ -97,6 +97,8 @@ exception:
 
 An example using only Unix style options:
 
+.. doctest::
+
    >>> import getopt
    >>> args = '-a -b -cfoo -d bar a1 a2'.split()
    >>> args
@@ -109,6 +111,8 @@ An example using only Unix style options:
 
 Using long option names is equally easy:
 
+.. doctest::
+
    >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
    >>> args = s.split()
    >>> args
@@ -120,7 +124,9 @@ Using long option names is equally easy:
    >>> args
    ['a1', 'a2']
 
-In a script, typical usage is something like this::
+In a script, typical usage is something like this:
+
+.. testcode::
 
    import getopt, sys
 
@@ -150,7 +156,9 @@ In a script, typical usage is something like this::
        main()
 
 Note that an equivalent command line interface could be produced with less code
-and more informative help and error messages by using the :mod:`argparse` module::
+and more informative help and error messages by using the :mod:`argparse` module:
+
+.. testcode::
 
    import argparse
 

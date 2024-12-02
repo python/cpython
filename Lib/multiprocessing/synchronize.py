@@ -174,7 +174,7 @@ class Lock(SemLock):
                 name = process.current_process().name
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name = 'None'
             elif self._semlock._count() > 0:
                 name = 'SomeOtherThread'
@@ -200,7 +200,7 @@ class RLock(SemLock):
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
                 count = self._semlock._count()
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name, count = 'None', 0
             elif self._semlock._count() > 0:
                 name, count = 'SomeOtherThread', 'nonzero'

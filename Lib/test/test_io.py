@@ -1148,6 +1148,21 @@ class TestIOCTypes(unittest.TestCase):
         _io = self._io
         support.check_disallow_instantiation(self, _io._BytesIOBuffer)
 
+    def test_stringio_setstate(self):
+        # gh-127182: Calling __setstate__() with invalid arguments must not crash
+        obj = self._io.StringIO()
+        with self.assertRaisesRegex(
+            TypeError,
+            'initial_value must be str or None, not int',
+        ):
+            obj.__setstate__((1, '', 0, {}))
+
+        obj.__setstate__((None, '', 0, {}))  # should not crash
+        self.assertEqual(obj.getvalue(), '')
+
+        obj.__setstate__(('', '', 0, {}))
+        self.assertEqual(obj.getvalue(), '')
+
 class PyIOTest(IOTest):
     pass
 

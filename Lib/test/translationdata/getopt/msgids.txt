@@ -1,0 +1,6 @@
+option -%s not recognized
+option -%s requires argument
+option --%s must not have an argument
+option --%s not a unique prefix
+option --%s not recognized
+option --%s requires argument

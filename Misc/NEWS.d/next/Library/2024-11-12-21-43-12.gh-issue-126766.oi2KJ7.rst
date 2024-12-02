@@ -1,0 +1,2 @@
+Fix issue where :func:`urllib.request.url2pathname` failed to discard two
+leading slashes introducing an empty authority section.

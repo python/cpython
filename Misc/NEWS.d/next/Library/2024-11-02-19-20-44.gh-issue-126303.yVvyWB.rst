@@ -1,0 +1,1 @@
+Fix pickling and copying of :class:`os.sched_param` objects.
