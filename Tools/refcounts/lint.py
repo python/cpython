@@ -178,18 +178,23 @@ def parse_line(line: str) -> LineInfo | None:
 
 @dataclass(slots=True)
 class ParserReporter:
-    count: int = 0
+
+    warnings_count: int = 0
+    errors_count: int = 0
+
+    @property
+    def issues_count(self) -> int:
+        return self.warnings_count + self.errors_count
 
     def info(self, lineno: int, message: str) -> None:
-        self.count += 1
         print(f"{flno_(lineno)} {message}")
 
     def warn(self, lineno: int, message: str) -> None:
-        # same as info() but semantically different
+        self.warnings_count += 1
         self.info(lineno, message)
 
     def error(self, lineno: int, message: str) -> None:
-        # same as info() but semantically different
+        self.errors_count += 1
         self.info(lineno, message)
 
 
@@ -197,7 +202,7 @@ def parse(lines: Iterable[str]) -> FileView:
     signatures: dict[str, Signature] = {}
     incomplete: set[str] = set()
 
-    w = ParserReporter()
+    r = ParserReporter()
 
     for lineno, line in enumerate(map(str.strip, lines), 1):
         if not line:
@@ -209,17 +214,17 @@ def parse(lines: Iterable[str]) -> FileView:
 
         e = parse_line(line)
         if e is None:
-            w.error(lineno, f"cannot parse: {line!r}")
+            r.error(lineno, f"cannot parse: {line!r}")
             continue
 
         if e.strip_func:
-            w.warn(lineno, f"[func] whitespaces around {e.raw_func!r}")
+            r.warn(lineno, f"[func] whitespaces around {e.raw_func!r}")
         if e.strip_ctype:
-            w.warn(lineno, f"[type] whitespaces around {e.raw_ctype!r}")
+            r.warn(lineno, f"[type] whitespaces around {e.raw_ctype!r}")
         if e.strip_name:
-            w.warn(lineno, f"[name] whitespaces around {e.raw_name!r}")
+            r.warn(lineno, f"[name] whitespaces around {e.raw_name!r}")
         if e.strip_effect:
-            w.warn(lineno, f"[ref] whitespaces around {e.raw_effect!r}")
+            r.warn(lineno, f"[ref] whitespaces around {e.raw_effect!r}")
 
         func, name = e.func, e.name
         ctype, effect = e.ctype, e.effect
@@ -228,24 +233,24 @@ def parse(lines: Iterable[str]) -> FileView:
         if func not in signatures:
             # process return value
             if name is not None:
-                w.warn(lineno, f"named return value in {line!r}")
+                r.warn(lineno, f"named return value in {line!r}")
             ret_param = Return(ctype, effect, comment, lineno=lineno)
             signatures[func] = Signature(func, ret_param, lineno=lineno)
         else:
             # process parameter
             if name is None:
-                w.error(lineno, f"missing parameter name in {line!r}")
+                r.error(lineno, f"missing parameter name in {line!r}")
                 continue
             sig: Signature = signatures[func]
             params = sig.params
             if name in params:
-                w.error(lineno, f"duplicated parameter name in {line!r}")
+                r.error(lineno, f"duplicated parameter name in {line!r}")
                 continue
             params[name] = Param(name, ctype, effect, comment, lineno=lineno)
 
-    if w.count:
+    if r.issues_count:
         print()
-        print(f"Found {w.count} issue(s)")
+        print(f"Found {r.issues_count} issue(s)")
 
     return FileView(signatures, frozenset(incomplete))
 
