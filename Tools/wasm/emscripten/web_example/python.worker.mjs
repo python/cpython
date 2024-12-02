@@ -70,13 +70,15 @@ const emscriptenSettings = {
         postMessage({type: 'ready', stdinBuffer: stdinBuffer.sab})
     },
     async preRun(Module) {
-        // TODO: remove fixed version number
+        const versionHex = Module.HEAPU32[Module._Py_Version/4].toString(16);
+        const versionTuple = versionHex.padStart(8, "0").match(/.{1,2}/g).map((x) => parseInt(x, 16));
+        const [major, minor, ..._] = versionTuple;
         // Prevent complaints about not finding exec-prefix by making a lib-dynload directory
-        Module.FS.mkdirTree("/lib/python3.14/lib-dynload/");
+        Module.FS.mkdirTree(`/lib/python${major}.${minor}/lib-dynload/`);
         Module.addRunDependency("install-stdlib");
-        const resp = await fetch("python3.14.zip");
+        const resp = await fetch(`python${major}.${minor}.zip`);
         const stdlibBuffer = await resp.arrayBuffer();
-        Module.FS.writeFile(`/lib/python314.zip`, new Uint8Array(stdlibBuffer), { canOwn: true });
+        Module.FS.writeFile(`/lib/python${major}${minor}.zip`, new Uint8Array(stdlibBuffer), { canOwn: true });
         Module.removeRunDependency("install-stdlib");
     }
 }
