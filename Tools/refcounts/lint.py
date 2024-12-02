@@ -110,6 +110,18 @@ class Effect(enum.Enum):
     Parameters annotated with this effect steal a reference.
     """
 
+    STEAL_AND_DECREF = "$-1"
+    """Indicate that the reference count is decremented.
+
+    Parameters annotated with this effect steal a reference.
+    """
+
+    STEAL_AND_INCREF = "$+1"
+    """Indicate that the reference count is incremented.
+
+    Parameters annotated with this effect steal a reference.
+    """
+
     NULL = "null"  # for return values only
     """Only used for a NULL return value.
 
@@ -405,7 +417,7 @@ def check_signature(r: CheckerReporter, sig: Signature) -> None:
     match rparam.effect:
         case Effect.TODO:
             r.todo_block(sig, "incomplete reference count effect")
-        case Effect.STEAL:
+        case Effect.STEAL | Effect.STEAL_AND_DECREF | Effect.STEAL_AND_INCREF:
             r.warn_block(sig, "stolen reference on return value")
         case Effect.UNKNOWN:
             r.warn_block(sig, "unknown return value type")
