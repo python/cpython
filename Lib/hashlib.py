@@ -243,7 +243,7 @@ for __func_name in __always_supported:
     # version not supporting that algorithm.
     try:
         globals()[__func_name] = __get_hash(__func_name)
-    except ValueError as exc:
+    except ValueError:
         # Errors logged here would be seen as noise by most people.
         # Code using a missing hash will get an obvious exception.
         __all__.remove(__func_name)
