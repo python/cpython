@@ -250,7 +250,7 @@ def configure_emscripten_python(context, working_dir):
 def make_emscripten_python(context, working_dir):
     """Run `make` for the emscripten/host build."""
     call(
-        ["make", "--jobs", str(cpu_count()), "commoninstall"],
+        ["make", "--jobs", str(cpu_count()), "all"],
         env=updated_env(),
         quiet=context.quiet,
     )
