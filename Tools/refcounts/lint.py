@@ -83,6 +83,12 @@ class RefEffect(enum.Enum):
     Such annotated entities are reported during the checking phase.
     """
 
+    TODO = "?"
+    """Indicate a reference count effect to be completed (not yet done).
+
+    Such annotated entities are reported during the checking phase as TODOs.
+    """
+
     UNUSED = ""
     """Indicate that the entity has no reference count."""
 
@@ -351,50 +357,74 @@ def parse(lines: Iterable[str]) -> FileView:
 
 
 @dataclass(slots=True)
-class CheckerWarnings:
-    """Utility for emitting warnings during the checking phrase."""
+class CheckerReporter:
+    """Utility for emitting messages during the checking phrase."""
 
-    count: int = 0
+    warnings_count: int = 0
     """The number of warnings emitted so far."""
+    todo_count: int = 0
+    """The number of TODOs emitted so far."""
 
-    def block(self, sig: Signature, message: str) -> None:
-        """Print a warning message for the given signature."""
-        self.count += 1
+    def _print_block(self, sig: Signature, message: str) -> None:
+        """Print a message for the given signature."""
         print(f"{flno_(sig.lineno)} {sig.name:50} {message}")
 
-    def param(self, sig: Signature, param: Param, message: str) -> None:
-        """Print a warning message for the given formal parameter."""
-        self.count += 1
+    def _print_param(self, sig: Signature, param: Param, message: str) -> None:
+        """Print a message for the given formal parameter."""
         fullname = f"{sig.name}[{param.name}]"
         print(f"{flno_(param.lineno)} {fullname:50} {message}")
 
+    def warn_block(self, sig: Signature, message: str) -> None:
+        """Print a warning message for the given signature."""
+        self.warnings_count += 1
+        self._print_block(sig, message)
+
+    def todo_block(self, sig: Signature, message: str) -> None:
+        """Print a TODO message for the given signature."""
+        self.todo_count += 1
+        self._print_block(sig, message)
+
+    def warn_param(self, sig: Signature, param: Param, message: str) -> None:
+        """Print a warning message for the given formal parameter."""
+        self.warnings_count += 1
+        self._print_param(sig, param, message)
+
+    def todo_param(self, sig: Signature, param: Param, message: str) -> None:
+        """Print a TODO message for the given formal parameter."""
+        self.todo_count += 1
+        self._print_param(sig, param, message)
+
 
 def check(view: FileView) -> None:
-    w = CheckerWarnings()
+    r = CheckerReporter()
 
     for sig in view.signatures.values():  # type: Signature
         # check the return value
         rparam = sig.rparam
         if not rparam.ctype:
-            w.block(sig, "missing return value type")
+            r.warn_block(sig, "missing return value type")
         match rparam.effect:
-            case RefEffect.UNKNOWN:
-                w.block(sig, "unknown return value type")
+            case RefEffect.TODO:
+                r.todo_block(sig, "incomplete reference count effect")
             case RefEffect.STEAL:
-                w.block(sig, "stolen reference on return value")
+                r.warn_block(sig, "stolen reference on return value")
+            case RefEffect.UNKNOWN:
+                r.warn_block(sig, "unknown return value type")
         # check the parameters
         for param in sig.params.values():  # type: Param
             ctype, effect = param.ctype, param.effect
+            if effect is RefEffect.TODO:
+                r.todo_param(sig, param, "incomplete reference count effect")
             if ctype in OBJECT_TYPES and effect is RefEffect.UNUSED:
-                w.param(sig, param, "missing reference count management")
+                r.warn_param(sig, param, "missing reference count effect")
             if ctype not in OBJECT_TYPES and effect is not RefEffect.UNUSED:
-                w.param(sig, param, "unused reference count management")
+                r.warn_param(sig, param, "unused reference count effect")
             if not is_c_parameter_name(param.name):
-                w.param(sig, param, "invalid parameter name")
+                r.warn_param(sig, param, "invalid parameter name")
 
-    if w.count:
+    if r.count:
         print()
-        print(f"Found {w.count} issue(s)")
+        print(f"Found {r.count} issue(s)")
     names = view.signatures.keys()
     if sorted(names) != list(names):
         print("Entries are not sorted")

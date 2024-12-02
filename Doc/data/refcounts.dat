@@ -1433,22 +1433,22 @@ PyModule_CheckExact:int:::
 PyModule_CheckExact:PyObject*:p:0:
 
 PyModule_Create:PyObject*::+1:
-PyModule_Create:PyModuleDef*:def::
+PyModule_Create:PyModuleDef*:def:?:
 
 PyModule_Create2:PyObject*::+1:
-PyModule_Create2:PyModuleDef*:def::
+PyModule_Create2:PyModuleDef*:def:?:
 PyModule_Create2:int:module_api_version::
 
 PyModule_ExecDef:int:::
 PyModule_ExecDef:PyObject*:module:0:
-PyModule_ExecDef:PyModuleDef*:def::
+PyModule_ExecDef:PyModuleDef*:def:?:
 
 PyModule_FromDefAndSpec:PyObject*::+1:
-PyModule_FromDefAndSpec:PyModuleDef*:def::
+PyModule_FromDefAndSpec:PyModuleDef*:def:?:
 PyModule_FromDefAndSpec:PyObject*:spec:0:
 
 PyModule_FromDefAndSpec2:PyObject*::+1:
-PyModule_FromDefAndSpec2:PyModuleDef*:def::
+PyModule_FromDefAndSpec2:PyModuleDef*:def:?:
 PyModule_FromDefAndSpec2:PyObject*:spec:0:
 PyModule_FromDefAndSpec2:int:module_api_version::
 
@@ -1484,7 +1484,7 @@ PyModule_SetDocString:PyObject*:module:0:
 PyModule_SetDocString:const char*:docstring::
 
 PyModuleDef_Init:PyObject*::0:
-PyModuleDef_Init:PyModuleDef*:def:0:
+PyModuleDef_Init:PyModuleDef*:def:?:
 
 PyNumber_Absolute:PyObject*::+1:
 PyNumber_Absolute:PyObject*:o:0:
@@ -2150,13 +2150,13 @@ PySlice_Unpack:Py_ssize_t*:step::
 
 PyState_AddModule:int:::
 PyState_AddModule:PyObject*:module:+1:
-PyState_AddModule:PyModuleDef*:def::
+PyState_AddModule:PyModuleDef*:def:?:
 
 PyState_FindModule:PyObject*::0:
-PyState_FindModule:PyModuleDef*:def::
+PyState_FindModule:PyModuleDef*:def:?:
 
 PyState_RemoveModule:int:::
-PyState_RemoveModule:PyModuleDef*:def::
+PyState_RemoveModule:PyModuleDef*:def:?:
 
 PyStructSequence_GET_ITEM:PyObject*::0:
 PyStructSequence_GET_ITEM:PyObject*:p:0:
