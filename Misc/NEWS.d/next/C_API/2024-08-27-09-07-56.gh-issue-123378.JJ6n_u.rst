@@ -1,5 +1,5 @@
-Ensure that *start* is correctly set on :exc:`UnicodeEncodeError` objects.
-A negative *start* is not allowed by :c:func:`PyUnicodeEncodeError_SetStart`
-and will not be returned by :c:func:`PyUnicodeEncodeError_GetStart`. Similar
+Ensure that the value of :attr:`UnicodeEncodeError.start` retrieved by
+:c:func:`PyUnicodeEncodeError_GetStart` lie in ``[0, max(0, objlen - 1)]``
+where *objlen* is the length of :attr:`UnicodeEncodeError.object`. Similar
 arguments apply to :exc:`UnicodeDecodeError` and :exc:`UnicodeTranslateError`
 and their corresponding C interface. Patch by Bénédikt Tran.
