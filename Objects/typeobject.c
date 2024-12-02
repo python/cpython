@@ -6232,7 +6232,7 @@ PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
 "type(name, bases, dict, **kwds) -> a new type");
 
-
+#ifndef Py_GIL_DISABLED
 void
 _PyType_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
@@ -6244,6 +6244,7 @@ _PyType_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
     _PyGC_MoveUnvisited((PyObject *)type->tp_base, to, visited_space);
     _PyGC_MoveUnvisited(((PyHeapTypeObject *)type)->ht_module, to, visited_space);
 }
+#endif
 
 static int
 type_traverse(PyObject *self, visitproc visit, void *arg)

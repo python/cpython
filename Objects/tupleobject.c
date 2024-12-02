@@ -623,6 +623,7 @@ tuple_count(PyTupleObject *self, PyObject *value)
     return PyLong_FromSsize_t(count);
 }
 
+#ifndef Py_GIL_DISABLED
 void
 _PyTuple_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
@@ -632,6 +633,7 @@ _PyTuple_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
         _PyGC_MoveUnvisited(item, to, visited_space);
     }
 }
+#endif
 
 static int
 tuple_traverse(PyObject *self, visitproc visit, void *arg)

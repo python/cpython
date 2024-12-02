@@ -4494,6 +4494,7 @@ dict_popitem_impl(PyDictObject *self)
     return res;
 }
 
+#ifndef Py_GIL_DISABLED
 void
 _PyDict_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
@@ -4529,6 +4530,7 @@ _PyDict_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
         }
     }
 }
+#endif
 
 static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)

@@ -3282,6 +3282,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
     return NULL;
 }
 
+#ifndef Py_GIL_DISABLED
 void
 _PyList_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
 {
@@ -3292,6 +3293,7 @@ _PyList_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
         _PyGC_MoveUnvisited(item, to, visited_space);
     }
 }
+#endif
 
 static int
 list_traverse(PyObject *self, visitproc visit, void *arg)
