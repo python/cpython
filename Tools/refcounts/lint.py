@@ -16,44 +16,43 @@ if TYPE_CHECKING:
     from typing import Final, LiteralString
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
-DEFAULT_REFCOUNT_DAT_PATH: Final[str] = str(ROOT / 'Doc/data/refcounts.dat')
-DEFAULT_STABLE_ABI_TOML_PATH: Final[str] = str(ROOT / 'Misc/stable_abi.toml')
+DEFAULT_REFCOUNT_DAT_PATH: Final[str] = str(ROOT / "Doc/data/refcounts.dat")
+DEFAULT_STABLE_ABI_TOML_PATH: Final[str] = str(ROOT / "Misc/stable_abi.toml")
 
-C_ELLIPSIS: LiteralString = '...'
+C_ELLIPSIS: LiteralString = "..."
 
 MATCH_TODO: Callable[[str], re.Match[str] | None]
-MATCH_TODO = re.compile(r'^#\s*TODO:\s*(\w+)$').match
+MATCH_TODO = re.compile(r"^#\s*TODO:\s*(\w+)$").match
 
 OBJECT_TYPES: frozenset[str] = frozenset()
 
 for qualifier, object_type, suffix in itertools.product(
-    ('const ', ''),
+    ("const ", ""),
     (
-        'PyObject',
-        'PyLongObject', 'PyTypeObject',
-        'PyCodeObject', 'PyFrameObject',
-        'PyModuleObject', 'PyVarObject',
+        "PyObject", "PyLongObject", "PyTypeObject",
+        "PyCodeObject", "PyFrameObject", "PyModuleObject",
+        "PyVarObject",
     ),
-    ('*', '**', '* const *', '* const*'),
+    ("*", "**", "* const *", "* const*"),
 ):
     OBJECT_TYPES |= {
-        f'{qualifier}{object_type}{suffix}',
-        f'{qualifier}{object_type} {suffix}',
+        f"{qualifier}{object_type}{suffix}",
+        f"{qualifier}{object_type} {suffix}",
     }
 del suffix, object_type, qualifier
 
 IGNORE_LIST: frozenset[str] = frozenset((
     # part of the stable ABI but should not be used at all
-    'PyUnicode_GetSize',
+    "PyUnicode_GetSize",
     # part of the stable ABI but completely removed
-    '_PyState_AddModule',
+    "_PyState_AddModule",
 ))
 
 
 def flno_(lineno: int) -> str:
     # Format the line so that users can C/C from the terminal
     # the line number and jump with their editor using Ctrl+G.
-    return f'{lineno:>5} '
+    return f"{lineno:>5} "
 
 
 class RefType(enum.Enum):
@@ -117,7 +116,7 @@ class FileView:
 
 
 def parse_line(line: str) -> LineInfo | None:
-    parts = line.split(':', maxsplit=4)
+    parts = line.split(":", maxsplit=4)
     if len(parts) != 5:
         return None
 
@@ -140,25 +139,24 @@ def parse_line(line: str) -> LineInfo | None:
     strip_reftype = clean_reftype != raw_reftype
 
     match clean_reftype:
-        case '-1':
+        case "-1":
             reftype = RefType.DECREF
-        case '0':
+        case "0":
             reftype = RefType.BORROW
-        case '+1':
+        case "+1":
             reftype = RefType.INCREF
-        case '$':
+        case "$":
             reftype = RefType.STEALS
-        case 'null':
+        case "null":
             reftype = RefType.NULL
-        case '':
+        case "":
             reftype = RefType.UNUSED
         case _:
             reftype = RefType.UNKNOWN
 
     comment = comment.strip()
     return LineInfo(
-        func=func, ctype=ctype, name=name,
-        reftype=reftype, comment=comment,
+        func=func, ctype=ctype, name=name, reftype=reftype, comment=comment,
         raw_func=raw_func, raw_ctype=raw_ctype,
         raw_name=raw_name, raw_reftype=raw_reftype,
         strip_func=strip_func, strip_ctype=strip_ctype,
@@ -172,9 +170,15 @@ class ParserReporter:
 
     def info(self, lineno: int, message: str) -> None:
         self.count += 1
-        print(f'{flno_(lineno)} {message}')
+        print(f"{flno_(lineno)} {message}")
 
-    warn = error = info
+    def warn(self, lineno: int, message: str) -> None:
+        # same as info() but semantically different
+        self.info(lineno, message)
+
+    def error(self, lineno: int, message: str) -> None:
+        # same as info() but semantically different
+        self.info(lineno, message)
 
 
 def parse(lines: Iterable[str]) -> FileView:
@@ -186,24 +190,24 @@ def parse(lines: Iterable[str]) -> FileView:
     for lineno, line in enumerate(map(str.strip, lines), 1):
         if not line:
             continue
-        if line.startswith('#'):
+        if line.startswith("#"):
             if match := MATCH_TODO(line):
                 incomplete.add(match.group(1))
             continue
 
         e = parse_line(line)
         if e is None:
-            w.error(lineno, f'cannot parse: {line!r}')
+            w.error(lineno, f"cannot parse: {line!r}")
             continue
 
         if e.strip_func:
-            w.warn(lineno, f'[func] whitespaces around {e.raw_func!r}')
+            w.warn(lineno, f"[func] whitespaces around {e.raw_func!r}")
         if e.strip_ctype:
-            w.warn(lineno, f'[type] whitespaces around {e.raw_ctype!r}')
+            w.warn(lineno, f"[type] whitespaces around {e.raw_ctype!r}")
         if e.strip_name:
-            w.warn(lineno, f'[name] whitespaces around {e.raw_name!r}')
+            w.warn(lineno, f"[name] whitespaces around {e.raw_name!r}")
         if e.strip_reftype:
-            w.warn(lineno, f'[ref] whitespaces around {e.raw_reftype!r}')
+            w.warn(lineno, f"[ref] whitespaces around {e.raw_reftype!r}")
 
         func, name = e.func, e.name
         ctype, reftype = e.ctype, e.reftype
@@ -212,23 +216,23 @@ def parse(lines: Iterable[str]) -> FileView:
         if func not in signatures:
             # process return value
             if name is not None:
-                w.warn(lineno, f'named return value in {line!r}')
+                w.warn(lineno, f"named return value in {line!r}")
             ret_param = Return(ctype, reftype, comment)
             signatures[func] = Signature(func, lineno, ret_param)
         else:
             # process parameter
             if name is None:
-                w.error(lineno, f'missing parameter name in {line!r}')
+                w.error(lineno, f"missing parameter name in {line!r}")
                 continue
             sig: Signature = signatures[func]
             if name in sig.params:
-                w.error(lineno, f'duplicated parameter name in {line!r}')
+                w.error(lineno, f"duplicated parameter name in {line!r}")
                 continue
             sig.params[name] = Param(name, lineno, ctype, reftype, comment)
 
     if w.count:
         print()
-        print(f'Found {w.count} issue(s)')
+        print(f"Found {w.count} issue(s)")
 
     return FileView(signatures, frozenset(incomplete))
 
@@ -239,12 +243,12 @@ class CheckerWarnings:
 
     def block(self, sig: Signature, message: str) -> None:
         self.count += 1
-        print(f'{flno_(sig.lineno)} {sig.name:50} {message}')
+        print(f"{flno_(sig.lineno)} {sig.name:50} {message}")
 
     def param(self, sig: Signature, param: Param, message: str) -> None:
         self.count += 1
-        fullname = f'{sig.name}[{param.name}]'
-        print(f'{flno_(param.lineno)} {fullname:50} {message}')
+        fullname = f"{sig.name}[{param.name}]"
+        print(f"{flno_(param.lineno)} {fullname:50} {message}")
 
 
 def check(view: FileView) -> None:
@@ -254,38 +258,38 @@ def check(view: FileView) -> None:
         # check the return value
         rparam = sig.rparam
         if not rparam.ctype:
-            w.block(sig, 'missing return value type')
+            w.block(sig, "missing return value type")
         if rparam.reftype is RefType.UNKNOWN:
-            w.block(sig, 'unknown return value type')
+            w.block(sig, "unknown return value type")
         # check the parameters
         for name, param in sig.params.items():  # type: (str, Param)
             ctype, reftype = param.ctype, param.reftype
             if ctype in OBJECT_TYPES and reftype is RefType.UNUSED:
-                w.param(sig, param, 'missing reference count management')
+                w.param(sig, param, "missing reference count management")
             if ctype not in OBJECT_TYPES and reftype is not RefType.UNUSED:
-                w.param(sig, param, 'unused reference count management')
+                w.param(sig, param, "unused reference count management")
             if name != C_ELLIPSIS and not name.isidentifier():
                 # C accepts the same identifiers as in Python
-                w.param(sig, param, 'invalid parameter name')
+                w.param(sig, param, "invalid parameter name")
 
     if w.count:
         print()
-        print(f'Found {w.count} issue(s)')
+        print(f"Found {w.count} issue(s)")
     names = view.signatures.keys()
     if sorted(names) != list(names):
-        print('Entries are not sorted')
+        print("Entries are not sorted")
 
 
 def check_structure(view: FileView, stable_abi_file: str) -> None:
     print(f"Stable ABI file: {stable_abi_file}")
     print()
-    stable_abi_str = Path(stable_abi_file).read_text(encoding='utf-8')
+    stable_abi_str = Path(stable_abi_file).read_text(encoding="utf-8")
     stable_abi = tomllib.loads(stable_abi_str)
-    expect = stable_abi['function'].keys()
+    expect = stable_abi["function"].keys()
     # check if there are missing entries (those marked as "TODO" are ignored)
     actual = IGNORE_LIST | view.incomplete | view.signatures.keys()
     if missing := (expect - actual):
-        print(f'Missing {len(missing)} stable ABI entries:')
+        print(f"Missing {len(missing)} stable ABI entries:")
         for name in sorted(missing):
             print(name)
 
@@ -295,33 +299,34 @@ _STABLE_ABI_PATH_SENTINEL: Final = object()
 
 def _create_parser() -> ArgumentParser:
     parser = ArgumentParser(
-        prog='lint.py',
-        formatter_class=RawDescriptionHelpFormatter,
-        description='Lint the refcounts.dat file.\n\n'
-                    'Use --abi or --abi=FILE to check against the stable ABI.',
+        prog="lint.py", formatter_class=RawDescriptionHelpFormatter,
+        description=(
+            "Lint the refcounts.dat file.\n\n"
+            "Use --abi or --abi=FILE to check against the stable ABI."
+        ),
     )
-    parser.add_argument('file', nargs='?', default=DEFAULT_REFCOUNT_DAT_PATH,
-                        help='the refcounts.dat file to check '
-                             '(default: %(default)s)')
-    parser.add_argument('--abi', nargs='?', default=_STABLE_ABI_PATH_SENTINEL,
-                        help='check against the given stable_abi.toml file '
-                             f'(default: {DEFAULT_STABLE_ABI_TOML_PATH})')
+    _ = parser.add_argument
+    _("file", nargs="?", default=DEFAULT_REFCOUNT_DAT_PATH,
+      help="the refcounts.dat file to check (default: %(default)s)")
+    _("--abi", nargs="?", default=_STABLE_ABI_PATH_SENTINEL,
+      help=(f"check against the given stable_abi.toml file "
+            f"(default: {DEFAULT_STABLE_ABI_TOML_PATH})"))
     return parser
 
 
 def main() -> None:
     parser = _create_parser()
     args = parser.parse_args()
-    lines = Path(args.file).read_text(encoding='utf-8').splitlines()
-    print(' PARSING '.center(80, '-'))
+    lines = Path(args.file).read_text(encoding="utf-8").splitlines()
+    print(" PARSING ".center(80, "-"))
     view = parse(lines)
-    print(' CHECKING '.center(80, '-'))
+    print(" CHECKING ".center(80, "-"))
     check(view)
     if args.abi is not _STABLE_ABI_PATH_SENTINEL:
         abi = args.abi or DEFAULT_STABLE_ABI_TOML_PATH
-        print(' CHECKING STABLE ABI '.center(80, '-'))
+        print(" CHECKING STABLE ABI ".center(80, "-"))
         check_structure(view, abi)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
