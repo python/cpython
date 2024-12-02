@@ -399,7 +399,7 @@ def source_synopsis(file_):
 
     # tokenize always returns atleast ENCODING and ENDMARKER
     for _token in tokens:
-        _token.name = token.tok_name[token.type]
+        _token.name = token.tok_name[_token.type]
         if _token.name not in ['COMMENT', 'NL', 'ENCODING']:
             break
     if _token.name == 'STRING':
