@@ -837,20 +837,26 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
 #endif
-        if (buflen == 0 && *bufsize < 256 * fmtlen) {
-            *bufsize += *bufsize;
-            continue;
-        }
-        /* If the buffer is 256 times as long as the format,
-           it's probably not failing for lack of room!
-           More likely, the format yields an empty result,
-           e.g. an empty format, or %Z when the timezone
-           is unknown. */
+        if ((*outbuf)[buflen] == '\0') {
 #ifdef HAVE_WCSFTIME
-        return PyUnicode_FromWideChar(*outbuf, buflen);
+            return PyUnicode_FromWideChar(*outbuf, buflen);
 #else
-        return PyUnicode_DecodeLocaleAndSize(*outbuf, buflen, "surrogateescape");
+            return PyUnicode_DecodeLocaleAndSize(*outbuf, buflen, "surrogateescape");
 #endif
+        }
+        if (buflen != 0) {
+            PyErr_SetString(PyExc_SystemError, "Unexpected behavior from strftime");
+            return NULL;
+        }
+        if (*bufsize >= 256 * fmtlen) {
+            /* If the buffer is 256 times as long as the format, it's probably not
+                failing for lack of room! More likely, `format_time` doesn't like the
+                format string. For instance we end up here with musl if the format
+                string ends with a '%'.
+            */
+            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            return NULL;
+        }
     }
 }
 
