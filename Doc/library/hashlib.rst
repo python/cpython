@@ -159,7 +159,7 @@ Hashlib provides the following constant module attributes:
 .. data:: algorithms_guaranteed
 
    A set containing the names of the hash algorithms guaranteed to be supported
-   by this module on all platforms.  Note that the guarnatees do not hold true
+   by this module on all platforms.  Note that the guarantees do not hold true
    in the face of vendors offering "FIPS compliant" Python builds that exclude
    some algorithms entirely.  Similarly when OpenSSL is used and its FIPS mode
    configuration disables some in the default provider.
