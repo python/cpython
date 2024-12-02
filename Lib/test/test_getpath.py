@@ -386,7 +386,7 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
-    def test_venv_with_invalid_home_posix(self):
+    def test_venv_with_invalid_home_in_pyvenv_posix(self):
         ns = MockPosixNamespace(
             argv0="/venv/bin/python",
             PREFIX="/usr",
@@ -408,8 +408,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/path/to/copy_dir",
-            exec_prefix="/path/to/copy_dir",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/path/to/copy_dir/bin/python",
             base_prefix="/path/to/copy_dir",
             base_exec_prefix="/path/to/copy_dir",
