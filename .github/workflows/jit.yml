@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LLVM: 19
+  llvm: 19
 
 jobs:
   interpreter:
@@ -73,7 +73,7 @@ jobs:
       - name: Native Windows
         if: matrix.arch != 'ARM64'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ env.LLVM }}.1.0
+          choco install llvm --allow-downgrade --no-progress --version ${{ env.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.arch }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.arch }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -81,11 +81,11 @@ jobs:
       - name: Emulated Windows
         if: matrix.arch == 'ARM64'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ env.LLVM }}.1.0
+          choco install llvm --allow-downgrade --no-progress --version ${{ env.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.arch }}
 
   jit-mac:
-    name: macOS (${{ matrix.os }}, ${{ matrix.debug && 'Debug' || 'Release' }})
+    name: macOS (${{ matrix.os == 'macos-14' && 'aarch64' || 'x86_64' }}, ${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -112,14 +112,14 @@ jobs:
         run: |
           brew update
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
-          brew install llvm@${{ env.LLVM }}
+          brew install llvm@${{ env.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   jit-ubuntu:
-    name: Ubuntu (${{ matrix.os }}, ${{ matrix.debug && 'Debug' || 'Release' }})
+    name: Ubuntu (${{ matrix.os == 'ubuntu-24.04-aarch64' && 'aarch64' || 'x86_64' }}, ${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -145,7 +145,7 @@ jobs:
 
       - name: ${{ runner.os }} (${{ runner.arch }})
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM }}
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.llvm }}
           export PATH="$(llvm-config-${{ env.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
@@ -162,7 +162,7 @@ jobs:
           python-version: '3.11'
       - name: Build with JIT enabled and GIL disabled
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM }}
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.llvm }}
           export PATH="$(llvm-config-${{ env.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug --disable-gil
           make all --jobs 4
