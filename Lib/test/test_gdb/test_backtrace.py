@@ -20,14 +20,14 @@ class PyBtTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 Traceback \(most recent call first\):
-  <built-in method id of module object .*>
-  File ".*gdb_sample.py", line 10, in baz
-    id\(42\)
-  File ".*gdb_sample.py", line 7, in bar
+  <built-in method _idfunc of module object .*>
+  File ".*gdb_sample.py", line 11, in baz
+    _idfunc\(42\)
+  File ".*gdb_sample.py", line 8, in bar
     baz\(a, b, c\)
-  File ".*gdb_sample.py", line 4, in foo
+  File ".*gdb_sample.py", line 5, in foo
     bar\(a=a, b=b, c=c\)
-  File ".*gdb_sample.py", line 12, in <module>
+  File ".*gdb_sample.py", line 13, in <module>
     foo\(1, 2, 3\)
 ''')
 
@@ -39,11 +39,11 @@ Traceback \(most recent call first\):
                                   cmds_after_breakpoint=['py-bt-full'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 8, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 5, in foo \(a=1, b=2, c=3\)
     bar\(a=a, b=b, c=c\)
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 13, in <module> \(\)
     foo\(1, 2, 3\)
 ''')
 
@@ -55,6 +55,7 @@ Traceback \(most recent call first\):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
 from threading import Thread
+from _typing import _idfunc
 
 class TestThread(Thread):
     # These threads would run forever, but we'll interrupt things with the
@@ -70,7 +71,7 @@ for i in range(4):
    t[i].start()
 
 # Trigger a breakpoint on the main thread
-id(42)
+_idfunc(42)
 
 '''
         # Verify with "py-bt":
@@ -90,8 +91,8 @@ id(42)
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
     def test_gc(self):
         'Verify that "py-bt" indicates if a thread is garbage-collecting'
-        cmd = ('from gc import collect\n'
-               'id(42)\n'
+        cmd = ('from gc import collect; from _typing import _idfunc\n'
+               '_idfunc(42)\n'
                'def foo():\n'
                '    collect()\n'
                'def bar():\n'
@@ -113,11 +114,12 @@ id(42)
                      "Python was compiled with optimizations")
     def test_wrapper_call(self):
         cmd = textwrap.dedent('''
+            from typing import _idfunc
             class MyList(list):
                 def __init__(self):
                     super(*[]).__init__()   # wrapper_call()
 
-            id("first break point")
+            _idfunc("first break point")
             l = MyList()
         ''')
         cmds_after_breakpoint = ['break wrapper_call', 'continue']
