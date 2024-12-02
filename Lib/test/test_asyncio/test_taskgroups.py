@@ -1,7 +1,7 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
-
+import gc
 import asyncio
 import contextvars
 import contextlib
@@ -9,7 +9,6 @@ from asyncio import taskgroups
 import unittest
 
 from test.test_asyncio.utils import await_without_task
-
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
@@ -823,6 +822,95 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             tg.create_task(coro)
         # We still have to await coro to avoid a warning
         await coro
+
+    async def test_exception_refcycles_direct(self):
+        """Test that TaskGroup doesn't keep a reference to the raised ExceptionGroup"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except ExceptionGroup as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    async def test_exception_refcycles_errors(self):
+        """Test that TaskGroup deletes self._errors, and __aexit__ args"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except* _Done as excs:
+            exc = excs.exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    async def test_exception_refcycles_parent_task(self):
+        """Test that TaskGroup deletes self._parent_task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        try:
+            async with asyncio.TaskGroup() as tg2:
+                tg2.create_task(coro_fn())
+        except* _Done as excs:
+            exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    async def test_exception_refcycles_propagate_cancellation_error(self):
+        """Test that TaskGroup deletes propagate_cancellation_error"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with asyncio.timeout(-1):
+                async with tg:
+                    await asyncio.sleep(0)
+        except TimeoutError as e:
+            exc = e.__cause__
+
+        self.assertIsInstance(exc, asyncio.CancelledError)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    async def test_exception_refcycles_base_error(self):
+        """Test that TaskGroup deletes self._base_error"""
+        class MyKeyboardInterrupt(KeyboardInterrupt):
+            pass
+
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with tg:
+                raise MyKeyboardInterrupt
+        except MyKeyboardInterrupt as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
 
 
 if __name__ == "__main__":

@@ -4018,6 +4018,18 @@ PyUnicode_AsUTF8(PyObject *unicode)
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
 
+const char *
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
+{
+    Py_ssize_t size;
+    const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (s && strlen(s) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return s;
+}
+
 /*
 PyUnicode_GetSize() has been deprecated since Python 3.3
 because it returned length of Py_UNICODE.
@@ -15468,7 +15480,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {

@@ -604,6 +604,12 @@ setBuiltins(ProfilerObject *pObj, int nvalue)
 
 PyObject* pystart_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
 {
+    if (size < 2) {
+        PyErr_Format(PyExc_TypeError,
+                     "_pystart_callback expected 2 arguments, got %zd",
+                     size);
+        return NULL;
+    }
     PyObject* code = args[0];
     ptrace_enter_call((PyObject*)self, (void *)code, (PyObject *)code);
 
@@ -612,6 +618,12 @@ PyObject* pystart_callback(ProfilerObject* self, PyObject *const *args, Py_ssize
 
 PyObject* pyreturn_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
 {
+    if (size < 3) {
+        PyErr_Format(PyExc_TypeError,
+                     "_pyreturn_callback expected 3 arguments, got %zd",
+                     size);
+        return NULL;
+    }
     PyObject* code = args[0];
     ptrace_leave_call((PyObject*)self, (void *)code);
 
@@ -647,6 +659,12 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
 
 PyObject* ccall_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
 {
+    if (size < 4) {
+        PyErr_Format(PyExc_TypeError,
+                     "_ccall_callback expected 4 arguments, got %zd",
+                     size);
+        return NULL;
+    }
     if (self->flags & POF_BUILTINS) {
         PyObject* callable = args[2];
         PyObject* self_arg = args[3];
@@ -665,6 +683,12 @@ PyObject* ccall_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t
 
 PyObject* creturn_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
 {
+    if (size < 4) {
+        PyErr_Format(PyExc_TypeError,
+                     "_creturn_callback expected 4 arguments, got %zd",
+                     size);
+        return NULL;
+    }
     if (self->flags & POF_BUILTINS) {
         PyObject* callable = args[2];
         PyObject* self_arg = args[3];
@@ -726,34 +750,47 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (PyObject_CallMethod(monitoring, "use_tool_id", "is", self->tool_id, "cProfile") == NULL) {
+    PyObject *check = PyObject_CallMethod(monitoring,
+                                          "use_tool_id", "is",
+                                          self->tool_id, "cProfile");
+    if (check == NULL) {
         PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
-        Py_DECREF(monitoring);
-        return NULL;
+        goto error;
     }
+    Py_DECREF(check);
 
     for (int i = 0; callback_table[i].callback_method; i++) {
+        int event = (1 << callback_table[i].event);
         PyObject* callback = PyObject_GetAttrString((PyObject*)self, callback_table[i].callback_method);
         if (!callback) {
-            Py_DECREF(monitoring);
-            return NULL;
+            goto error;
         }
-        Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                       (1 << callback_table[i].event),
-                                       callback));
+        PyObject *register_result = PyObject_CallMethod(monitoring, "register_callback",
+                                                        "iiO", self->tool_id,
+                                                        event, callback);
         Py_DECREF(callback);
-        all_events |= (1 << callback_table[i].event);
+        if (register_result == NULL) {
+            goto error;
+        }
+        Py_DECREF(register_result);
+        all_events |= event;
     }
 
-    if (!PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, all_events)) {
-        Py_DECREF(monitoring);
-        return NULL;
+    PyObject *event_result = PyObject_CallMethod(monitoring, "set_events", "ii",
+                                                 self->tool_id, all_events);
+    if (event_result == NULL) {
+        goto error;
     }
 
+    Py_DECREF(event_result);
     Py_DECREF(monitoring);
 
     self->flags |= POF_ENABLED;
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(monitoring);
+    return NULL;
 }
 
 static void

@@ -1815,7 +1815,8 @@ def _allow_reckless_class_checks(depth=2):
 _PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
-        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible', 'Buffer',
+        'AsyncIterator', 'Hashable', 'Sized', 'Container', 'Collection',
+        'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
 }

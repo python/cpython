@@ -336,7 +336,8 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         'show', 'state', 'style', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
     )
-    IDENTIFY_AS = 'Entry.field' if sys.platform == 'darwin' else 'textarea'
+    # bpo-27313: macOS Tk/Tcl may or may not report 'Entry.field'.
+    IDENTIFY_AS = {'Entry.field', 'textarea'}
 
     def setUp(self):
         super().setUp()
@@ -373,8 +374,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry.pack()
         self.entry.update()
 
-        # bpo-27313: macOS Cocoa widget differs from X, allow either
-        self.assertEqual(self.entry.identify(5, 5), self.IDENTIFY_AS)
+        self.assertIn(self.entry.identify(5, 5), self.IDENTIFY_AS)
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
@@ -461,7 +461,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         'validate', 'validatecommand', 'values',
         'width', 'xscrollcommand',
     )
-    IDENTIFY_AS = 'Combobox.button' if sys.platform == 'darwin' else 'textarea'
+    IDENTIFY_AS = {'Combobox.button', 'textarea'}
 
     def setUp(self):
         super().setUp()
@@ -1204,7 +1204,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         'takefocus', 'textvariable', 'to', 'validate', 'validatecommand',
         'values', 'width', 'wrap', 'xscrollcommand',
     )
-    IDENTIFY_AS = 'Spinbox.field' if sys.platform == 'darwin' else 'textarea'
+    IDENTIFY_AS = {'Spinbox.field', 'textarea'}
 
     def setUp(self):
         super().setUp()

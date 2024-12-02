@@ -1,3 +1,5 @@
+name: Reusable Thread Sanitizer
+
 on:
   workflow_call:
     inputs:

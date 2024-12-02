@@ -1750,7 +1750,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
+      <https://learn.microsoft.com/windows/win32/fileio/i-o-completion-ports>`_.
 
 
 .. class:: AbstractEventLoop

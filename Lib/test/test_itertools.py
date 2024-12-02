@@ -599,6 +599,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3, 4)
         self.assertRaises(TypeError, count, 'a')
+        self.assertEqual(take(3, count(maxsize)),
+                        [maxsize, maxsize + 1, maxsize + 2])
         self.assertEqual(take(10, count(maxsize-5)),
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(take(10, count(-maxsize-5)),
@@ -621,6 +623,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(c), -8)
         self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(repr(count(10.0)), 'count(10.0)')
+
+        self.assertEqual(repr(count(maxsize)), f'count({maxsize})')
+        c = count(maxsize - 1)
+        self.assertEqual(repr(c), f'count({maxsize - 1})')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize})')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 1})')
+
         self.assertEqual(type(next(count(10.0))), float)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr
@@ -654,6 +665,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(20, count(-maxsize-15, 3)), take(20, range(-maxsize-15,-maxsize+100, 3)))
         self.assertEqual(take(3, count(10, maxsize+5)),
                          list(range(10, 10+3*(maxsize+5), maxsize+5)))
+        self.assertEqual(take(3, count(maxsize, 2)),
+                         [maxsize, maxsize + 2, maxsize + 4])
+        self.assertEqual(take(3, count(maxsize, maxsize)),
+                         [maxsize, 2 * maxsize, 3 * maxsize])
+        self.assertEqual(take(3, count(-maxsize, maxsize)),
+                        [-maxsize, 0, maxsize])
         self.assertEqual(take(3, count(2, 1.25)), [2, 3.25, 4.5])
         self.assertEqual(take(3, count(2, 3.25-4j)), [2, 5.25-4j, 8.5-8j])
         self.assertEqual(take(3, count(Decimal('1.1'), Decimal('.1'))),
@@ -694,6 +711,20 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(r1, r2)
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     self.pickletest(proto, count(i, j))
+
+        c = count(maxsize -2, 2)
+        self.assertEqual(repr(c), f'count({maxsize - 2}, 2)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, 2)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 2}, 2)')
+
+        c = count(maxsize + 1, -1)
+        self.assertEqual(repr(c), f'count({maxsize + 1}, -1)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, -1)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize - 1}, -1)')
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))

@@ -2377,16 +2377,16 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
 
 * The function call opcodes have been heavily reworked for better performance
   and simpler implementation.
-  The :opcode:`MAKE_FUNCTION`, :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`BUILD_MAP_UNPACK_WITH_CALL` opcodes
+  The :opcode:`MAKE_FUNCTION`, :opcode:`!CALL_FUNCTION`,
+  :opcode:`!CALL_FUNCTION_KW` and :opcode:`!BUILD_MAP_UNPACK_WITH_CALL` opcodes
   have been modified, the new :opcode:`CALL_FUNCTION_EX` and
-  :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
+  :opcode:`!BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
   ``CALL_FUNCTION_VAR``, ``CALL_FUNCTION_VAR_KW`` and ``MAKE_CLOSURE`` opcodes
   have been removed.
   (Contributed by Demur Rumed in :issue:`27095`, and Serhiy Storchaka in
   :issue:`27213`, :issue:`28257`.)
 
-* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
+* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`!STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
 
