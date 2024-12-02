@@ -206,7 +206,6 @@ SYMBOL_NAMES = (
     "PyErr_SetImportErrorSubclass",
     "PyErr_SetInterrupt",
     "PyErr_SetInterruptEx",
-    "PyErr_SetLocaleString",
     "PyErr_SetNone",
     "PyErr_SetObject",
     "PyErr_SetRaisedException",

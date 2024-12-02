@@ -302,10 +302,9 @@ PyErr_SetString(PyObject *exception, const char *string)
 }
 
 int
-_PyErr_SetLocaleString(PyThreadState *tstate,
-                       PyObject *exception,
-                       const char *string)
+_PyErr_SetLocaleString(PyObject *exception, const char *string)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
     if (value != NULL) {
         _PyErr_SetObject(tstate, exception, value);
@@ -313,13 +312,6 @@ _PyErr_SetLocaleString(PyThreadState *tstate,
         return 0;
     }
     return -1;
-}
-
-int
-PyErr_SetLocaleString(PyObject *exception, const char *string)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_SetLocaleString(tstate, exception, string);
 }
 
 PyObject* _Py_HOT_FUNCTION
