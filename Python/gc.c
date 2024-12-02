@@ -1475,13 +1475,12 @@ move_all_transitively_reachable(PyGC_Head *reachable, PyGC_Head *visited, int vi
                 }
                 op = m->md_dict;
                 assert (op != NULL);
-                /* fall through */
+                _Py_FALLTHROUGH;
             }
             case _Py_TYPE_VERSION_DICT:
                 _PyDict_MoveUnvisited(op, reachable, visited_space);
                 break;
-            case _Py_TYPE_VERSION_SET:
-                /* fall through */
+            case _Py_TYPE_VERSION_SET: _Py_FALLTHROUGH;
             case _Py_TYPE_VERSION_FROZEN_SET:
                 _PySet_MoveUnvisited(op, reachable, visited_space);
                 break;
@@ -1491,8 +1490,7 @@ move_all_transitively_reachable(PyGC_Head *reachable, PyGC_Head *visited, int vi
             case _Py_TYPE_VERSION_ASYNC_ASEND:
                 _PyAsyncAsend_MoveUnvisited(op, reachable, visited_space);
                 break;
-            case _Py_TYPE_VERSION_COROUTINE:
-                /* fall through */
+            case _Py_TYPE_VERSION_COROUTINE: _Py_FALLTHROUGH;
             case _Py_TYPE_VERSION_GENERATOR:
                 _PyGen_MoveUnvisited(op, reachable, visited_space);
                 break;
