@@ -8040,18 +8040,9 @@
             values = &stack_pointer[-1];
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o), UNPACK_SEQUENCE);
-            #ifdef Py_GIL_DISABLED
-            PyCriticalSection cs;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyCriticalSection_Begin(&cs, seq_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif
+            DEOPT_IF(!LOCK_OBJECT(seq_o), UNPACK_SEQUENCE);
             if (PyList_GET_SIZE(seq_o) != oparg) {
-                #ifdef Py_GIL_DISABLED
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyCriticalSection_End(&cs);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                #endif
+                UNLOCK_OBJECT(seq_o);
                 DEOPT_IF(true, UNPACK_SEQUENCE);
             }
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -8059,11 +8050,7 @@
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
-            #ifdef Py_GIL_DISABLED
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyCriticalSection_End(&cs);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif
+            UNLOCK_OBJECT(seq_o);
             PyStackRef_CLOSE(seq);
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
