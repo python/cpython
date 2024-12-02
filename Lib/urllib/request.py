@@ -1681,12 +1681,27 @@ else:
     def url2pathname(pathname):
         """OS-specific conversion from a relative URL of the 'file' scheme
         to a file system path; not recommended for general use."""
-        return unquote(pathname)
+        if pathname[:3] == '///':
+            # URL has an empty authority section, so the path begins on the
+            # third character.
+            pathname = pathname[2:]
+        elif pathname[:12] == '//localhost/':
+            # Skip past 'localhost' authority.
+            pathname = pathname[11:]
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return unquote(pathname, encoding=encoding, errors=errors)
 
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
+        if pathname[:2] == '//':
+            # Add explicitly empty authority to avoid interpreting the path
+            # as authority.
+            pathname = '//' + pathname
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        return quote(pathname, encoding=encoding, errors=errors)
 
 
 ftpcache = {}

@@ -87,16 +87,22 @@ class Test_pygettext(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
-    def extract_docstrings_from_str(self, module_content):
-        """ utility: return all msgids extracted from module_content """
-        filename = 'test_docstrings.py'
-        with temp_cwd(None) as cwd:
+    def extract_from_str(self, module_content, *, args=(), strict=True):
+        """Return all msgids extracted from module_content."""
+        filename = 'test.py'
+        with temp_cwd(None):
             with open(filename, 'w', encoding='utf-8') as fp:
                 fp.write(module_content)
-            assert_python_ok('-Xutf8', self.script, '-D', filename)
+            res = assert_python_ok('-Xutf8', self.script, *args, filename)
+            if strict:
+                self.assertEqual(res.err, b'')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
         return self.get_msgids(data)
+
+    def extract_docstrings_from_str(self, module_content):
+        """Return all docstrings extracted from module_content."""
+        return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
 
     def test_header(self):
         """Make sure the required fields are in the header, according to:
@@ -343,6 +349,23 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertNotIn('foo', msgids)
         self.assertIn('bar', msgids)
+
+    def test_function_and_class_names(self):
+        """Test that function and class names are not mistakenly extracted."""
+        msgids = self.extract_from_str(dedent('''\
+        def _(x):
+            pass
+
+        def _(x="foo"):
+            pass
+
+        async def _(x):
+            pass
+
+        class _(object):
+            pass
+        '''))
+        self.assertEqual(msgids, [''])
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""

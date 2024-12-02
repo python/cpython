@@ -1352,6 +1352,8 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
+.. _whatsnew312-removed:
+
 Removed
 =======
 
@@ -1376,6 +1378,8 @@ configparser
     shorter :class:`~configparser.ConfigParser` name instead.
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+.. _whatsnew312-removed-distutils:
 
 distutils
 ---------
@@ -1457,6 +1461,8 @@ importlib
 
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+.. _whatsnew312-removed-imp:
 
 imp
 ---

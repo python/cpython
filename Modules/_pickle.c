@@ -6726,6 +6726,7 @@ load_build(PickleState *st, UnpicklerObject *self)
             }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
+                Py_DECREF(dict);
                 goto error;
             }
             Py_DECREF(d_key);
