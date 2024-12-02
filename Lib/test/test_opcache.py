@@ -1289,15 +1289,15 @@ class TestSpecializer(TestBase):
             async def __aexit__(self, *exc):
                 pass
 
-        async def f():
+        async def send_with():
             for i in range(100):
                 async with CM():
                     x = 1
 
-        run_async(f())
+        run_async(send_with())
         # Note there are still unspecialized "SEND" opcodes in the
         # cleanup paths of the 'with' statement.
-        self.assert_specialized(f, "SEND_GEN")
+        self.assert_specialized(send_with, "SEND_GEN")
 
     @cpython_only
     @requires_specialization_ft
@@ -1305,14 +1305,14 @@ class TestSpecializer(TestBase):
         def g():
             yield None
 
-        def f():
+        def send_yield_from():
             yield from g()
 
         for i in range(100):
-            list(f())
+            list(send_yield_from())
 
-        self.assert_specialized(f, "SEND_GEN")
-        self.assert_no_opcode(f, "SEND")
+        self.assert_specialized(send_yield_from, "SEND_GEN")
+        self.assert_no_opcode(send_yield_from, "SEND")
 
     @cpython_only
     @requires_specialization_ft
