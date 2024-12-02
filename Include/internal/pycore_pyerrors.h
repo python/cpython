@@ -137,7 +137,7 @@ PyAPI_FUNC(void) _PyErr_SetString(
  * in which case, this returns -1. Otherwise this returns 0 if the localized
  * exception has been successfully set.
  *
- * Exported for shared extensions but not part of the stable ABI.
+ * Exported for '_ctypes' shared extensions.
  */
 PyAPI_FUNC(int) _PyErr_SetLocaleString(PyObject *exception, const char *string);
 
