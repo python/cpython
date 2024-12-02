@@ -231,6 +231,8 @@ print_gc_stats(FILE *out, GCStats *stats)
         fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
         fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
         fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
+        fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
+        fprintf(out, "GC[%d] objects not reachable from roots: %" PRIu64 "\n", i, stats[i].objects_not_transitively_reachable);
     }
 }
 
