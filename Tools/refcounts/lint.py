@@ -24,6 +24,7 @@ C_ELLIPSIS: LiteralString = "..."
 MATCH_TODO: Callable[[str], re.Match[str] | None]
 MATCH_TODO = re.compile(r"^#\s*TODO:\s*(\w+)$").match
 
+#: Set of declarations whose variable has a reference count.
 OBJECT_TYPES: frozenset[str] = frozenset()
 
 for qualifier, object_type, suffix in itertools.product(
@@ -45,6 +46,12 @@ for qualifier, object_type, suffix in itertools.product(
     }
 del suffix, object_type, qualifier
 
+#: Set of functions part of the stable ABI that are not
+#: in the refcounts.dat file if:
+#:
+#:  - They are ABI-only (either fully deprecated or even removed)
+#:  - They are so internal that they should not be used at all because
+#:    they raise a fatal error.
 IGNORE_LIST: frozenset[str] = frozenset((
     # part of the stable ABI but should not be used at all
     "PyUnicode_GetSize",
@@ -66,28 +73,69 @@ def is_c_parameter_name(name: str) -> bool:
 
 
 class RefEffect(enum.Enum):
+    """The reference count effect of a parameter or a return value."""
+
     UNKNOWN = enum.auto()
+    """Indicate an unparsable reference count effect.
+
+    Such annotated entities are reported during the checking phase.
+    """
+
     UNUSED = enum.auto()
+    """Indicate that the entity has no reference count."""
+
     DECREF = enum.auto()
+    """Indicate that the reference count is decremented."""
+
     INCREF = enum.auto()
+    """Indicate that the reference count is incremented."""
+
     BORROW = enum.auto()
+    """Indicate that the reference count is left unchanged.
+
+    Parameters annotated with this effect do not steal a reference.
+    """
+
     STEAL = enum.auto()
+    """Indicate that the reference count is left unchanged.
+
+    Parameters annotated with this effect steal a reference.
+    """
+
     NULL = enum.auto()  # for return values only
+    """Only used for a NULL return value.
+
+    This is used by functions that return always return NULL as a "PyObject *".
+    """
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class LineInfo:
     func: str
-    ctype: str | None
-    name: str | None
-    effect: RefEffect
-    comment: str
+    """The cleaned function name."""
 
+    ctype: str | None
+    """"The cleaned parameter or return C type, or None if missing."""
+
+    name: str | None
+    """The cleaned parameter name or None for the return parameter."""
+
+    effect: RefEffect
+    """The reference count effect."""
+
+    comment: str
+    """Optional comment, stripped from surrounding whitespaces."""
+
+    # The raw_* attributes contain the strings before they are cleaned,
+    # and are only used when reporting an issue during the parsing phase.
     raw_func: str
     raw_ctype: str
     raw_name: str
     raw_effect: str
 
+    # The strip_* attributes indicate whether surrounding whitespaces were
+    # stripped or not from the corresponding strings. Such action will be
+    # reported during the parsing phase.
     strip_func: bool
     strip_ctype: bool
     strip_name: bool
@@ -96,35 +144,72 @@ class LineInfo:
 
 @dataclass(slots=True, frozen=True)
 class Return:
+    """Indicate a return value."""
     ctype: str | None
+    """The return C type, if any.
+
+    A missing type is reported during the checking phase.
+    """
+
     effect: RefEffect
+    """The reference count effect.
+
+    A nonsensical reference count effect is reported during the checking phase.
+    """
+
     comment: str
+    """An optional comment."""
+
     lineno: int = field(kw_only=True)
+    """The position in the file where the parameter is documented."""
 
 
 @dataclass(slots=True, frozen=True)
 class Param:
     name: str
+    """The parameter name."""
 
     ctype: str | None
+    """The parameter C type, if any.
+
+    A missing type is reported during the checking phase.
+    """
+
     effect: RefEffect
+    """The reference count effect.
+
+    A nonsensical reference count effect is reported during the checking phase.
+    """
+
     comment: str
+    """An optional comment."""
 
     lineno: int = field(kw_only=True)
+    """The position in the file where the parameter is documented."""
 
 
 @dataclass(slots=True, frozen=True)
 class Signature:
     name: str
+    """The function name."""
+
     rparam: Return
+    """The return value specifications."""
+
     params: dict[str, Param] = field(default_factory=dict)
+    """The (ordered) formal parameters specifications"""
+
     lineno: int = field(kw_only=True)
+    """The position in the file where the function is documented."""
 
 
 @dataclass(slots=True, frozen=True)
 class FileView:
     signatures: Mapping[str, Signature]
+    """A mapping from function names to the corresponding signature."""
+
     incomplete: frozenset[str]
+    """A set of function names that are yet to be documented."""
 
 
 def parse_line(line: str) -> LineInfo | None:
@@ -178,22 +263,29 @@ def parse_line(line: str) -> LineInfo | None:
 
 @dataclass(slots=True)
 class ParserReporter:
+    """Utility for printing messages during the parsing phase."""
 
     warnings_count: int = 0
+    """The number of warnings emitted so far."""
     errors_count: int = 0
+    """The number of errors emitted so far."""
 
     @property
     def issues_count(self) -> int:
+        """The number of issues encountered so far."""
         return self.warnings_count + self.errors_count
 
     def info(self, lineno: int, message: str) -> None:
+        """Print a simple message."""
         print(f"{flno_(lineno)} {message}")
 
     def warn(self, lineno: int, message: str) -> None:
+        """Print a warning message."""
         self.warnings_count += 1
         self.info(lineno, message)
 
     def error(self, lineno: int, message: str) -> None:
+        """Print an error message."""
         self.errors_count += 1
         self.info(lineno, message)
 
@@ -257,13 +349,18 @@ def parse(lines: Iterable[str]) -> FileView:
 
 @dataclass(slots=True)
 class CheckerWarnings:
+    """Utility for emitting warnings during the checking phrase."""
+
     count: int = 0
+    """The number of warnings emitted so far."""
 
     def block(self, sig: Signature, message: str) -> None:
+        """Print a warning message for the given signature."""
         self.count += 1
         print(f"{flno_(sig.lineno)} {sig.name:50} {message}")
 
     def param(self, sig: Signature, param: Param, message: str) -> None:
+        """Print a warning message for the given formal parameter."""
         self.count += 1
         fullname = f"{sig.name}[{param.name}]"
         print(f"{flno_(param.lineno)} {fullname:50} {message}")
