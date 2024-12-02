@@ -3615,10 +3615,32 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static inline int
+_PyLong_IsSmallInt(PyObject *self)
+{
+    PyLongObject *pylong = (PyLongObject *)self;
+    assert(_PyLong_IsCompact(pylong));
+    stwodigits ival = medium_value(pylong);
+    if (IS_SMALL_INT(ival)) {
+        PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+        if (pylong == small_pylong) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
     if (_PyLong_IsCompact((PyLongObject *)self)) {
+        #ifndef Py_GIL_DISABLED
+        if (_PyLong_IsSmallInt(self)) {
+            // See PEP 683, section Accidental De-Immortalizing for details
+            _Py_SetImmortal(self);
+            return;
+        }
+        #endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
@@ -3628,23 +3650,17 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-    PyLongObject *pylong = (PyLongObject*)self;
-    assert(pylong);
-
-    if (_PyLong_IsCompact(pylong)) {
-        stwodigits ival = medium_value(pylong);
-        if (IS_SMALL_INT(ival)) {
-            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
-            if (pylong == small_pylong) {
-                /* This should never get called, but we also don't want to SEGV if
-                 * we accidentally decref small Ints out of existence. Instead,
-                 * since small Ints are immortal, re-set the reference count.
-                 *
-                 * With a fixed refcount for immortal objects this should not happen
-                 */
-                _Py_SetImmortal(self);
-                return;
-            }
+    assert(self);
+    if (_PyLong_IsCompact((PyLongObject *)self)) {
+        if (_PyLong_IsSmallInt(self)) {
+            /* This should never get called, but we also don't want to SEGV if
+             * we accidentally decref small Ints out of existence. Instead,
+             * since small Ints are immortal, re-set the reference count.
+             *
+             *  See PEP 683, section Accidental De-Immortalizing for details
+             */
+            _Py_SetImmortal(self);
+            return;
         }
         if (PyLong_CheckExact(self)) {
             _Py_FREELIST_FREE(ints, self, PyObject_Free);
