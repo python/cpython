@@ -621,7 +621,7 @@ PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 PyErr_GetRaisedException:PyObject*::+1:
 
 PyErr_SetRaisedException:void:::
-PyErr_SetRaisedException:PyObject *:exc:0:stolen
+PyErr_SetRaisedException:PyObject *:exc:$:stolen
 
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
