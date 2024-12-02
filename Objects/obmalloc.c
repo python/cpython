@@ -2918,7 +2918,7 @@ _PyMem_DebugCheckGIL(const char *func)
         _Py_FatalErrorFunc(func,
                            "Python memory allocator called "
                            "without an active thread state. "
-                           "(Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?)");
+                           "Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?");
 #endif
     }
 }
