@@ -391,6 +391,12 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
     return item;
 }
 
+PyObject *
+_PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
+{
+    return list_get_item_ref(list, i);
+}
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -3774,6 +3780,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_LIST,
 };
 
 /*********************** List Iterator **************************/

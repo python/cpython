@@ -1,0 +1,2 @@
+Fix faulthandler for trampoline frames. If the top-most frame is a
+trampoline frame, skip it. Patch by Victor Stinner.

@@ -84,7 +84,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
                 return x
             return inner() % 2
 
-        inner_code = mod_two.__code__.co_consts[1]
+        inner_code = mod_two.__code__.co_consts[0]
         assert isinstance(inner_code, types.CodeType)
 
         metadata = {

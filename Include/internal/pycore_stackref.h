@@ -68,6 +68,11 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
 
+// Checks that mask out the deferred bit in the free threading build.
+#define PyStackRef_IsNone(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_None)
+#define PyStackRef_IsTrue(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_True)
+#define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
+
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
@@ -100,8 +105,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     assert(obj != NULL);
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    unsigned int tag = _Py_IsImmortal(obj) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
-    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+    return (_PyStackRef){ .bits = (uintptr_t)obj };
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
@@ -209,6 +213,10 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL })
 
+#define PyStackRef_IsTrue(ref) ((ref).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL))
+#define PyStackRef_IsFalse(ref) ((ref).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))
+#define PyStackRef_IsNone(ref) ((ref).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))
+
 static inline int
 PyStackRef_HasCount(_PyStackRef ref)
 {
@@ -249,6 +257,12 @@ PyStackRef_FromPyObjectSteal(PyObject *obj)
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
     return ref;
 }
+
+// Check if a stackref is exactly the same as another stackref, including the
+// the deferred bit. This can only be used safely if you know that the deferred
+// bits of `a` and `b` match.
+#define PyStackRef_IsExactly(a, b) \
+    (assert(((a).bits & Py_TAG_BITS) == ((b).bits & Py_TAG_BITS)), (a).bits == (b).bits)
 
 static inline _PyStackRef
 _PyStackRef_FromPyObjectNew(PyObject *obj)

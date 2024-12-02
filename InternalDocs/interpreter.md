@@ -1,4 +1,3 @@
-
 The bytecode interpreter
 ========================
 
@@ -16,7 +15,7 @@ from the instruction definitions in [Python/bytecodes.c](../Python/bytecodes.c)
 which are written in [a DSL](../Tools/cases_generator/interpreter_definition.md)
 developed for this purpose.
 
-Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_object.md),
+Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_objects.md),
 which contains the bytecode instructions along with static data that is required to execute them,
 such as the consts list, variable names,
 [exception table](exception_handling.md#format-of-the-exception-table), and so on.

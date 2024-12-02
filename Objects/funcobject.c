@@ -162,7 +162,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *consts = code_obj->co_consts;
     assert(PyTuple_Check(consts));
     PyObject *doc;
-    if (PyTuple_Size(consts) >= 1) {
+    if (code_obj->co_flags & CO_HAS_DOCSTRING) {
+        assert(PyTuple_Size(consts) >= 1);
         doc = PyTuple_GetItem(consts, 0);
         if (!PyUnicode_Check(doc)) {
             doc = Py_None;
@@ -288,12 +289,14 @@ functions is running.
 
 */
 
+#ifndef Py_GIL_DISABLED
 static inline struct _func_version_cache_item *
 get_cache_item(PyInterpreterState *interp, uint32_t version)
 {
     return interp->func_state.func_version_cache +
            (version % FUNC_VERSION_CACHE_SIZE);
 }
+#endif
 
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
