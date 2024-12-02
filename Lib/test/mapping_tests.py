@@ -622,7 +622,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
 
-    @skip_emscripten_stack_overflow
+    @skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = self._empty_mapping()
         for i in range(get_c_recursion_limit() + 1):
