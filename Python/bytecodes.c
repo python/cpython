@@ -1438,14 +1438,9 @@ dummy_func(
         inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             DEOPT_IF(!PyList_CheckExact(seq_o));
-            #ifdef Py_GIL_DISABLED
-            PyCriticalSection cs;
-            PyCriticalSection_Begin(&cs, seq_o);
-            #endif
+            DEOPT_IF(!LOCK_OBJECT(seq_o));
             if (PyList_GET_SIZE(seq_o) != oparg) {
-                #ifdef Py_GIL_DISABLED
-                PyCriticalSection_End(&cs);
-                #endif
+                UNLOCK_OBJECT(seq_o);
                 DEOPT_IF(true);
             }
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1453,9 +1448,7 @@ dummy_func(
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
-            #ifdef Py_GIL_DISABLED
-            PyCriticalSection_End(&cs);
-            #endif
+            UNLOCK_OBJECT(seq_o);
             DECREF_INPUTS();
         }
 
