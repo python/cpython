@@ -382,7 +382,7 @@ extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
                                            gcvisitobjects_t callback, void *arg);
 #endif
 
-PyAPI_FUNC(void) _PyGC_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space);
+extern void _PyGC_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space);
 
 #ifdef __cplusplus
 }

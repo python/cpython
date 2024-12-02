@@ -1475,8 +1475,8 @@ move_all_transitively_reachable(PyGC_Head *reachable, PyGC_Head *visited, int vi
                 }
                 op = m->md_dict;
                 assert (op != NULL);
-                /* fall through */
             }
+                /* fall through */
             case _Py_TYPE_VERSION_DICT:
                 _PyDict_MoveUnvisited(op, reachable, visited_space);
                 break;
