@@ -1431,6 +1431,7 @@ class _TestLock(BaseTestCase):
         event.set()
         time.sleep(1.0)
 
+    @hashlib_helper.requires_hashdigest('sha256')  # Manager RPC connection auth
     def test_repr_lock(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1496,6 +1497,7 @@ class _TestLock(BaseTestCase):
         for _ in range(n):
             lock.release()
 
+    @hashlib_helper.requires_hashdigest('sha256')  # Manager RPC connection auth
     def test_repr_rlock(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -3417,6 +3419,7 @@ class TestManagerExceptions(unittest.TestCase):
         self.mgr.shutdown()
         self.mgr.join()
 
+    @hashlib_helper.requires_hashdigest('sha256')  # multiprocessing.connection
     def test_queue_get(self):
         queue = self.mgr.Queue()
         if gc.isenabled():
@@ -3730,6 +3733,7 @@ class _TestListener(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
+    @hashlib_helper.requires_hashdigest('sha256')  # connection auth
     def test_empty_authkey(self):
         # bpo-43952: allow empty bytes as authkey
         def handler(*args):
@@ -5782,9 +5786,11 @@ class TestStartMethod(unittest.TestCase):
             self.assertIn(methods[0], {'forkserver', 'spawn'},
                           msg='3.14+ default must not be fork')
             if methods[0] == 'spawn':
-                # Confirm that the current default selection logic prefers
-                # forkserver vs spawn when available.
-                self.assertNotIn('forkserver', methods)
+                if not hashlib_helper.in_openssl_fips_mode():
+                    # Confirm that the current default selection logic prefers
+                    # forkserver vs spawn when available.
+                    # OpenSSL FIPS mode can disable this by blocking sha256.
+                    self.assertNotIn('forkserver', methods)
 
     def test_preload_resources(self):
         if multiprocessing.get_start_method() != 'forkserver':
@@ -5805,7 +5811,11 @@ class TestStartMethod(unittest.TestCase):
         # Fork-based locks cannot be used with spawned process
         for process_method in ["spawn", "forkserver"]:
             queue = multiprocessing.get_context("fork").Queue()
-            process_ctx = multiprocessing.get_context(process_method)
+            try:
+                process_ctx = multiprocessing.get_context(process_method)
+            except ValueError as err:
+                self.skipTest(err)
+                continue
             p = process_ctx.Process(target=close_queue, args=(queue,))
             err_msg = "A SemLock created in a fork"
             with self.assertRaisesRegex(RuntimeError, err_msg):
@@ -5814,8 +5824,13 @@ class TestStartMethod(unittest.TestCase):
         # non-fork-based locks can be used with all other start methods
         for queue_method in ["spawn", "forkserver"]:
             for process_method in multiprocessing.get_all_start_methods():
-                queue = multiprocessing.get_context(queue_method).Queue()
-                process_ctx = multiprocessing.get_context(process_method)
+                try:
+                    queue_ctx = multiprocessing.get_context(queue_method)
+                    process_ctx = multiprocessing.get_context(process_method)
+                except ValueError as err:
+                    self.skipTest(err)
+                    continue
+                queue = queue_ctx.Queue()
                 p = process_ctx.Process(target=close_queue, args=(queue,))
                 p.start()
                 p.join()

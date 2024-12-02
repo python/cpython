@@ -119,7 +119,10 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
             self.skipTest("require unix system")
         if support.check_sanitizer(thread=True):
             self.skipTest("TSAN doesn't support threads after fork")
-        return super().get_context()
+        try:
+            return super().get_context()
+        except ValueError as err:
+            self.skipTest(str(err))
 
 
 def create_executor_tests(remote_globals, mixin, bases=(BaseTestCase,),
