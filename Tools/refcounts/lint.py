@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-    from typing import Final, LiteralString
+    from typing import Final, LiteralString, NoReturn
 
 ROOT = Path(__file__).parent.parent.parent.resolve()
 DEFAULT_REFCOUNT_DAT_PATH: Final[str] = str(ROOT / "Doc/data/refcounts.dat")
@@ -226,6 +226,9 @@ class FileView:
     incomplete: frozenset[str]
     """A set of function names that are yet to be documented."""
 
+    has_errors: bool
+    """Indicate whether errors were found during the parsing."""
+
 
 def parse_line(line: str) -> LineInfo | None:
     parts = line.split(":", maxsplit=4)
@@ -349,11 +352,11 @@ def parse(lines: Iterable[str]) -> FileView:
                 continue
             params[name] = Param(name, ctype, effect, comment, lineno=lineno)
 
-    if r.issues_count:
+    if has_errors := (r.issues_count > 0):
         print()
         print(f"Found {r.issues_count} issue(s)")
 
-    return FileView(signatures, frozenset(incomplete))
+    return FileView(signatures, frozenset(incomplete), has_errors)
 
 
 @dataclass(slots=True)
@@ -420,7 +423,7 @@ def check_parameter(r: CheckerReporter, sig: Signature, param: Param) -> None:
         r.warn_param(sig, param, "invalid parameter name")
 
 
-def check(view: FileView) -> int:
+def check(view: FileView, *, strict: bool = False) -> int:
     r = CheckerReporter()
 
     for sig in view.signatures.values():  # type: Signature
@@ -428,15 +431,23 @@ def check(view: FileView) -> int:
         for param in sig.params.values():  # type: Param
             check_parameter(r, sig, param)
 
-    if r.count:
+    exit_code = 0
+    if r.warnings_count:
         print()
-        print(f"Found {r.count} issue(s)")
+        print(f"Found {r.warnings_count} issue(s)")
+        exit_code = 1
+    if r.todo_count:
+        print()
+        print(f"Found {r.todo_count} todo(s)")
+        exit_code = 1 if exit_code or strict else 0
     names = view.signatures.keys()
     if sorted(names) != list(names):
         print("Entries are not sorted")
+        exit_code = 1 if exit_code or strict else 0
+    return exit_code
 
 
-def check_structure(view: FileView, stable_abi_file: str) -> None:
+def check_structure(view: FileView, stable_abi_file: str) -> int:
     print(f"Stable ABI file: {stable_abi_file}")
     print()
     stable_abi_str = Path(stable_abi_file).read_text(encoding="utf-8")
@@ -448,6 +459,8 @@ def check_structure(view: FileView, stable_abi_file: str) -> None:
         print(f"Missing {len(missing)} stable ABI entries:")
         for name in sorted(missing):
             print(name)
+        return 1
+    return 0
 
 
 _STABLE_ABI_PATH_SENTINEL: Final = object()
@@ -470,21 +483,30 @@ def create_parser() -> ArgumentParser:
         help=(f"check against the given stable_abi.toml file "
               f"(default: {DEFAULT_STABLE_ABI_TOML_PATH})"),
     )
+    parser.add_argument(
+        "--strict", action="store_true",
+        help="treat warnings and TODOs as errors",
+    )
+
     return parser
 
 
-def main() -> None:
+def main() -> NoReturn:
     parser = create_parser()
     args = parser.parse_args()
     lines = Path(args.file).read_text(encoding="utf-8").splitlines()
     print(" PARSING ".center(80, "-"))
     view = parse(lines)
+    exit_code = 1 if view.has_errors else 0
     print(" CHECKING ".center(80, "-"))
-    check(view)
+    exit_code |= check(view, strict=args.strict)
     if args.abi is not _STABLE_ABI_PATH_SENTINEL:
         abi = args.abi or DEFAULT_STABLE_ABI_TOML_PATH
         print(" CHECKING STABLE ABI ".center(80, "-"))
-        check_structure(view, abi)
+        check_abi_exit_code = check_structure(view, abi)
+        if args.strict:
+            exit_code = exit_code | check_abi_exit_code
+    raise SystemExit(exit_code)
 
 
 if __name__ == "__main__":
