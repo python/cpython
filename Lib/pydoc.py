@@ -52,7 +52,8 @@ Richard Chamberlain, for the first implementation of textdoc.
 #   - If the __file__ attribute on a module is a relative path and
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
-
+import ast
+import token
 import __future__
 import builtins
 import importlib._bootstrap
@@ -383,22 +384,27 @@ def ispackage(path):
                 return True
     return False
 
-def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+def source_synopsis(file_):
+    """Takes a file object and returns the one-line summary if present"""
+    if hasattr(file_, 'buffer'):
+        file_ = file_.buffer
+    if isinstance(file_, io.TextIOBase):
+        try:
+            file_ = io.BytesIO(bytes(file_.read(), 'utf-8'))
+        except UnicodeEncodeError:
+            # exception is raised if both utf-8 and latin-1 don't work
+            file_ = io.BytesIO(bytes(file_.read(), 'latin-1'))
+
+    tokens = tokenize.tokenize(file_.readline)
+
+    # tokenize always returns atleast ENCODING and ENDMARKER
+    for _token in tokens:
+        _token.name = token.tok_name[token.type]
+        if _token.name not in ['COMMENT', 'NL', 'ENCODING']:
+            break
+    if _token.name == 'STRING':
+        return ast.literal_eval(_token.string).strip().split('\n')[0].strip()
+    return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
