@@ -1330,15 +1330,6 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
 }
 
-#ifndef NDEBUG
-static inline int
-IS_IN_VISITED(PyGC_Head *gc, int visited_space)
-{
-    assert(visited_space == 0 || other_space(visited_space) == 0);
-    return gc_old_space(gc) == visited_space;
-}
-#endif
-
 struct container_and_flag {
     PyGC_Head *container;
     int visited_space;
@@ -1406,8 +1397,6 @@ _PyGC_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
         }
     }
 }
-
-/* TO DO -- Move this into pycore_stackref.h */
 
 void
 _PyFrame_MoveUnvisited(_PyInterpreterFrame *frame, PyGC_Head *to, int visited_space)
@@ -1486,12 +1475,13 @@ move_all_transitively_reachable(PyGC_Head *reachable, PyGC_Head *visited, int vi
                 }
                 op = m->md_dict;
                 assert (op != NULL);
+                /* fall through */
             }
-            /* fall through */
             case _Py_TYPE_VERSION_DICT:
                 _PyDict_MoveUnvisited(op, reachable, visited_space);
                 break;
             case _Py_TYPE_VERSION_SET:
+                /* fall through */
             case _Py_TYPE_VERSION_FROZEN_SET:
                 _PySet_MoveUnvisited(op, reachable, visited_space);
                 break;
@@ -1502,6 +1492,7 @@ move_all_transitively_reachable(PyGC_Head *reachable, PyGC_Head *visited, int vi
                 _PyAsyncAsend_MoveUnvisited(op, reachable, visited_space);
                 break;
             case _Py_TYPE_VERSION_COROUTINE:
+                /* fall through */
             case _Py_TYPE_VERSION_GENERATOR:
                 _PyGen_MoveUnvisited(op, reachable, visited_space);
                 break;
