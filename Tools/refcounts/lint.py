@@ -277,8 +277,11 @@ def check(view: FileView) -> None:
         rparam = sig.rparam
         if not rparam.ctype:
             w.block(sig, "missing return value type")
-        if rparam.effect is RefEffect.UNKNOWN:
-            w.block(sig, "unknown return value type")
+        match rparam.effect:
+            case RefEffect.UNKNOWN:
+                w.block(sig, "unknown return value type")
+            case RefEffect.STEAL:
+                w.block(sig, "stolen reference on return value")
         # check the parameters
         for param in sig.params.values():  # type: Param
             ctype, effect = param.ctype, param.effect
