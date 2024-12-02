@@ -23,9 +23,9 @@ https://github.com/psf/webassembly for more information.
 
 To cross compile to the ``wasm32-emscripten`` platform you need
 [the Emscripten compiler toolchain](https://emscripten.org/), 
-a Python interpreter, and an installation of Node version 18 or newer. Emscripten
-version 3.1.42 or newer is recommended. All commands below are relative to a checkout
-of the Python repository.
+a Python interpreter, and an installation of Node version 18 or newer.
+Emscripten version 3.1.73 or newer is recommended. All commands below are
+relative to a checkout of the Python repository.
 
 #### Install [the Emscripten compiler toolchain](https://emscripten.org/docs/getting_started/downloads.html)
 
@@ -90,12 +90,14 @@ in the ``web_example`` directory. To run the web example, ``cd`` into the
 server; you can then visit ``http://localhost:8000/python.html`` in a browser to
 see a simple REPL example.
 
-The web example uses ``SharedArrayBuffer``. For security reasons browsers only
-provide ``SharedArrayBuffer`` in secure environments with cross-origin
-isolation. The webserver must send cross-origin headers and correct MIME types
-for the JavaScript and WebAssembly files. Otherwise the terminal will fail to
-load with an error message like ``ReferenceError: SharedArrayBuffer is not
-defined``. See more information here:
+The web example relies on a bug fix in Emscripten version 3.1.73 so if you build
+with earlier versions of Emscripten it may not work. The web example uses
+``SharedArrayBuffer``. For security reasons browsers only provide
+``SharedArrayBuffer`` in secure environments with cross-origin isolation. The
+webserver must send cross-origin headers and correct MIME types for the
+JavaScript and WebAssembly files. Otherwise the terminal will fail to load with
+an error message like ``ReferenceError: SharedArrayBuffer is not defined``. See
+more information here:
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
 
 Note that ``SharedArrayBuffer`` is _not required_ to use Python itself, only the
