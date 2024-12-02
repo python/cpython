@@ -72,8 +72,8 @@ python Tools/wasm/emscripten build --with-py-debug
 
 ### Running from node
 
-If you want to run the normal Python cli, you can use `python.sh`. It takes the
-same options as the normal Python cli entrypoint, though the REPL does not
+If you want to run the normal Python CLI, you can use `python.sh`. It takes the
+same options as the normal Python CLI entrypoint, though the REPL does not
 function and will crash.
 
 `python.sh` invokes `node_entry.mjs` which imports the Emscripten module for the
