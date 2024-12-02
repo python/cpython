@@ -218,7 +218,7 @@ def configure_emscripten_python(context, working_dir):
             """\
             #!/bin/sh
 
-            # Macs come with free BSD coreutils which doesn't have the -s option
+            # Macs come with FreeBSD coreutils which doesn't have the -s option
             # so feature detect and work around it.
             if which grealpath > /dev/null; then
                 # It has brew installed gnu core utils, use that
@@ -228,13 +228,12 @@ def configure_emscripten_python(context, working_dir):
                 REALPATH="realpath -s"
             else
                 # Shim for macs without GNU coreutils
-                abs_path () {
+                abs_path () {{
                     echo "$(cd "$(dirname "$1")" || exit; pwd)/$(basename "$1")"
-                }
+                }}
                 REALPATH=abs_path
             fi
-            """
-            f"""
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
             # Intentionally allow word splitting on NODEFLAGS.
