@@ -61,7 +61,7 @@ class RefType(enum.Enum):
     DECREF = enum.auto()
     BORROW = enum.auto()
     INCREF = enum.auto()
-    STEALS = enum.auto()
+    STEAL = enum.auto()
     NULL = enum.auto()  # for return values only
 
 
@@ -146,7 +146,7 @@ def parse_line(line: str) -> LineInfo | None:
         case "+1":
             reftype = RefType.INCREF
         case "$":
-            reftype = RefType.STEALS
+            reftype = RefType.STEAL
         case "null":
             reftype = RefType.NULL
         case "":
