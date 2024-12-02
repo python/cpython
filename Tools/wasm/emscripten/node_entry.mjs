@@ -29,6 +29,7 @@ const settings = {
     Module.FS.mkdirTree("/home/");
     mountDirectories(Module);
     Module.FS.chdir(process.cwd());
+    Object.assign(Module.ENV, process.env);
   },
   // The first three arguments are: "node", path to this file, path to
   // python.sh. After that come the arguments the user passed to python.sh.

@@ -2328,7 +2328,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS,ENV"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
