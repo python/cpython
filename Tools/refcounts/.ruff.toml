@@ -15,7 +15,11 @@ select = [
     "ISC", # flake8-implicit-str-concat
     "TCH", # flake8-type-checking
     "PTH", # flake8-use-pathlib
-    "PERF", # perflint
+    "PERF101", # unnecessary-list-cast
+    "PERF102", # incorrect-dict-iterator
+    "PERF401", # manual-list-comprehension
+    "PERF402", # manual-list-copy
+    "PERF403", # manual-dict-comprehension
     "FURB101", # read-whole-file
     "FURB103", # write-whole-file
     "FURB110", # if-exp-instead-of-operator
