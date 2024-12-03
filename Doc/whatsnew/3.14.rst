@@ -565,6 +565,12 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+socket
+------
+
+Add constants for the ISO-TP CAN protocol.
+(Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
+
 symtable
 --------
 
