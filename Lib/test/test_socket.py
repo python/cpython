@@ -5059,14 +5059,13 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # send data: recv() will no longer block
         self.cli.sendall(MSG)
 
+    @support.cpython_only
     def testLargeTimeout(self):
         # gh-126876: Check that a timeout larger than INT_MAX is replaced with
         # INT_MAX in the poll() code path. The following assertion must not
         # fail: assert(INT_MIN <= ms && ms <= INT_MAX).
-        if _testcapi is not None:
-            large_timeout = _testcapi.INT_MAX + 1
-        else:
-            large_timeout = 2147483648
+        import _testcapi
+        large_timeout = _testcapi.INT_MAX + 1
 
         # test recv() with large timeout
         conn, addr = self.serv.accept()
@@ -5081,10 +5080,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testLargeTimeout(self):
         # test sendall() with large timeout
-        if _testcapi is not None:
-            large_timeout = _testcapi.INT_MAX + 1
-        else:
-            large_timeout = 2147483648
+        import _testcapi
+        large_timeout = _testcapi.INT_MAX + 1
         self.cli.connect((HOST, self.port))
         try:
             self.cli.settimeout(large_timeout)
