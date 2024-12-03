@@ -859,6 +859,7 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             PyErr_Format(PyExc_ValueError, "Invalid format string attempts: %d *outbuf: '%.8s'", attempts, *outbuf);
             return NULL;
         }
+        *bufsize += *bufsize;
     }
 }
 
