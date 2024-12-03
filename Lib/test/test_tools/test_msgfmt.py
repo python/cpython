@@ -105,7 +105,7 @@ class CLITest(unittest.TestCase):
 
     def test_no_input_file(self):
         res = assert_python_ok(msgfmt)
-        err = res.err.decode('utf-8')
+        err = res.err.decode('utf-8').replace('\r\n', '\n')
         self.assertIn('No input file given\n'
                       "Try `msgfmt --help' for more information.", err)
 
