@@ -59,6 +59,8 @@ try:
 except ImportError:
     pass
 
+heapq = None  # Lazily imported
+
 
 ################################################################################
 ### OrderedDict
@@ -633,7 +635,10 @@ class Counter(dict):
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
-        import heapq
+        global heapq
+        if heapq is None:
+            import heapq
+
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
