@@ -1,3 +1,5 @@
+import createEmscriptenModule from "./python.mjs";
+
 class StdinBuffer {
     constructor() {
         this.sab = new SharedArrayBuffer(128 * Int32Array.BYTES_PER_ELEMENT)
@@ -59,24 +61,40 @@ const stderr = (charCode) => {
 
 const stdinBuffer = new StdinBuffer()
 
-var Module = {
+const emscriptenSettings = {
     noInitialRun: true,
     stdin: stdinBuffer.stdin,
     stdout: stdout,
     stderr: stderr,
     onRuntimeInitialized: () => {
         postMessage({type: 'ready', stdinBuffer: stdinBuffer.sab})
+    },
+    async preRun(Module) {
+        const versionHex = Module.HEAPU32[Module._Py_Version/4].toString(16);
+        const versionTuple = versionHex.padStart(8, "0").match(/.{1,2}/g).map((x) => parseInt(x, 16));
+        const [major, minor, ..._] = versionTuple;
+        // Prevent complaints about not finding exec-prefix by making a lib-dynload directory
+        Module.FS.mkdirTree(`/lib/python${major}.${minor}/lib-dynload/`);
+        Module.addRunDependency("install-stdlib");
+        const resp = await fetch(`python${major}.${minor}.zip`);
+        const stdlibBuffer = await resp.arrayBuffer();
+        Module.FS.writeFile(`/lib/python${major}${minor}.zip`, new Uint8Array(stdlibBuffer), { canOwn: true });
+        Module.removeRunDependency("install-stdlib");
     }
 }
 
-onmessage = (event) => {
+const modulePromise = createEmscriptenModule(emscriptenSettings);
+
+
+onmessage = async (event) => {
     if (event.data.type === 'run') {
+        const Module = await modulePromise;
         if (event.data.files) {
             for (const [filename, contents] of Object.entries(event.data.files)) {
                 Module.FS.writeFile(filename, contents)
             }
         }
-        const ret = callMain(event.data.args)
+        const ret = Module.callMain(event.data.args);
         postMessage({
             type: 'finished',
             returnCode: ret
@@ -84,4 +102,3 @@ onmessage = (event) => {
     }
 }
 
-importScripts('python.js')
