@@ -883,7 +883,6 @@ PyTypeObject PyGen_Type = {
     gen_memberlist,                             /* tp_members */
     gen_getsetlist,                             /* tp_getset */
     .tp_finalize = _PyGen_Finalize,
-    .tp_version_tag = _Py_TYPE_VERSION_GENERATOR,
 };
 
 static PyObject *
@@ -1226,7 +1225,6 @@ PyTypeObject PyCoro_Type = {
     coro_memberlist,                            /* tp_members */
     coro_getsetlist,                            /* tp_getset */
     .tp_finalize = _PyGen_Finalize,
-    .tp_version_tag = _Py_TYPE_VERSION_COROUTINE,
 };
 
 static void
@@ -1640,7 +1638,6 @@ PyTypeObject PyAsyncGen_Type = {
     async_gen_memberlist,                       /* tp_members */
     async_gen_getsetlist,                       /* tp_getset */
     .tp_finalize = _PyGen_Finalize,
-    .tp_version_tag = _Py_TYPE_VERSION_ASYNC_GENERATOR,
 };
 
 
@@ -1886,7 +1883,6 @@ PyTypeObject _PyAsyncGenASend_Type = {
     async_gen_asend_iternext,                   /* tp_iternext */
     async_gen_asend_methods,                    /* tp_methods */
     .tp_finalize = async_gen_asend_finalize,
-    .tp_version_tag = _Py_TYPE_VERSION_ASYNC_ASEND,
 };
 
 

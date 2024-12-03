@@ -1436,9 +1436,11 @@ frame_move_unvisited(_PyInterpreterFrame *frame, WorkStack *stack, int visited_s
     while (sp > locals) {
         sp--;
         _PyStackRef ref = *sp;
-        if (PyStackRef_IsNonNullMortal(ref)) {
+        if (!PyStackRef_IsNull(ref)) {
             PyObject *op = PyStackRef_AsPyObjectBorrow(ref);
-            move_unvisited(op, stack, visited_space);
+            if (!_Py_IsImmortal(op)) {
+                move_unvisited(op, stack, visited_space);
+            }
         }
     }
 }
