@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
 
 // This value is added to `ob_ref_shared` for objects that use deferred
@@ -470,8 +471,8 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    /* Young objects will be moved into the visited space during GC, so set the bit here */
-    gc->_gc_next = ((uintptr_t)generation0) | (uintptr_t)interp->gc.visited_space;
+    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
+    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
@@ -593,6 +594,20 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
         return 0;
     }
     return 1;
+}
+
+static inline int
+_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
+{
+    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        return 1;
+    }
+    if (_Py_TryIncrefCompare(src, op)) {
+        *out = PyStackRef_FromPyObjectSteal(op);
+        return 1;
+    }
+    return 0;
 }
 
 /* Loads and increfs an object from ptr, which may contain a NULL value.
@@ -903,6 +918,13 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 PyAPI_DATA(int) _Py_SwappedOp[];
 
 extern void _Py_GetConstant_Init(void);
+
+enum _PyAnnotateFormat {
+    _Py_ANNOTATE_FORMAT_VALUE = 1,
+    _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS = 2,
+    _Py_ANNOTATE_FORMAT_FORWARDREF = 3,
+    _Py_ANNOTATE_FORMAT_STRING = 4,
+};
 
 #ifdef __cplusplus
 }
