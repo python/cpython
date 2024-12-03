@@ -24,7 +24,8 @@ function mountDirectories(Module) {
   }
 }
 
-const pythonShIndex = process.argv.findIndex(x => x.endsWith("python.sh"));
+const thisProgram = "--this-program=";
+const thisProgramIndex = process.argv.findIndex(x => x.startsWith(thisProgram));
 
 const settings = {
   preRun(Module) {
@@ -36,9 +37,9 @@ const settings = {
   // Ensure that sys.executable, sys._base_executable, etc point to python.sh
   // not to this file. To properly handle symlinks, python.sh needs to compute
   // its own path.
-  thisProgram: process.argv[pythonShIndex],
-  // After python.sh come the arguments that the user passed to python.sh.
-  arguments: process.argv.slice(pythonShIndex + 1),
+  thisProgram: process.argv[thisProgramIndex],
+  // After python.sh come the arguments thatthe user passed to python.sh.
+  arguments: process.argv.slice(thisProgramIndex + 1),
 };
 
 await EmscriptenModule(settings);
