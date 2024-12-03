@@ -4156,7 +4156,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
         type->tp_dictoffset = -1;
-        if (type->tp_basicsize == sizeof(PyObject *)) {
+        if (type->tp_basicsize == sizeof(PyObject)) {
             type->tp_traverse = plain_object_traverse;
         }
     }
