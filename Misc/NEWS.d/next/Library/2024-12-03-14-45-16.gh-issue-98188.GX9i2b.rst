@@ -1,2 +1,2 @@
 Fix an issue in :meth:`email.message.EmailMessage.get_payload` where data
-cannot be decoded if there is a trailing whitespace following the mechanism.
+cannot be decoded if there is a trailing whitespace and/or texts following the mechanism.
