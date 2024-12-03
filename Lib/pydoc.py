@@ -54,7 +54,6 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     path will be displayed.
 
 import ast
-import token
 import __future__
 import builtins
 import importlib._bootstrap
@@ -77,6 +76,7 @@ from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
+from token import tok_name
 
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
@@ -400,7 +400,7 @@ def source_synopsis(file):
 
     # tokenize always returns at least ENCODING and ENDMARKER
     for token in tokens:
-        token_name = token.tok_name[token.type]
+        token_name = tok_name[token.type]
         if token.name not in {'COMMENT', 'NL', 'ENCODING'}:
             break
 
