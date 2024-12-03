@@ -56,10 +56,10 @@ See also the main documentation section about the
     * - :meth:`loop.close`
       - Close the event loop.
 
-    * - :meth:`loop.is_running()`
+    * - :meth:`loop.is_running`
       - Return ``True`` if the event loop is running.
 
-    * - :meth:`loop.is_closed()`
+    * - :meth:`loop.is_closed`
       - Return ``True`` if the event loop is closed.
 
     * - ``await`` :meth:`loop.shutdown_asyncgens`

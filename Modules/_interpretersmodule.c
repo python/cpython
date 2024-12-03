@@ -403,7 +403,11 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
         }
     }
     else if (PyUnicode_Check(configobj)) {
-        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+        const char *utf8name = PyUnicode_AsUTF8(configobj);
+        if (utf8name == NULL) {
+            return -1;
+        }
+        if (init_named_config(config, utf8name) < 0) {
             return -1;
         }
     }
@@ -935,6 +939,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;

@@ -735,11 +735,11 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_internal_caches()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches` and :func:`gc.collect` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
-   information, :func:`getallocatedblocks()` is allowed to return 0 instead.
+   information, :func:`getallocatedblocks` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
 
@@ -918,6 +918,35 @@ always available.
 
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
+
+
+.. function:: getobjects(limit[, type])
+
+   This function only exists if CPython was built using the
+   specialized configure option :option:`--with-trace-refs`.
+   It is intended only for debugging garbage-collection issues.
+
+   Return a list of up to *limit* dynamically allocated Python objects.
+   If *type* is given, only objects of that exact type (not subtypes)
+   are included.
+
+   Objects from the list are not safe to use.
+   Specifically, the result will include objects from all interpreters that
+   share their object allocator state (that is, ones created with
+   :c:member:`PyInterpreterConfig.use_main_obmalloc` set to 1
+   or using :c:func:`Py_NewInterpreter`, and the
+   :ref:`main interpreter <sub-interpreter-support>`).
+   Mixing objects from different interpreters may lead to crashes
+   or other unexpected behavior.
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+   .. versionchanged:: next
+
+      The result may include objects from other interpreters.
 
 
 .. function:: getprofile()
@@ -1274,7 +1303,8 @@ always available.
     that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
-    imported is contained in a package, then the parent package's :attr:`__path__`
+    imported is contained in a package, then the parent package's
+    :attr:`~module.__path__`
     attribute is passed in as a second argument. The method returns a
     :term:`module spec`, or ``None`` if the module cannot be found.
 

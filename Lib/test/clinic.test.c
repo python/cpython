@@ -3935,8 +3935,8 @@ test_vararg_and_posonly
 
 
     a: object
-    *args: object
     /
+    *args: object
 
 [clinic start generated code]*/
 
@@ -3978,7 +3978,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=79b75dc07decc8d6 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=79b75dc07decc8d6 input=9cfa748bbff09877]*/
 
 /*[clinic input]
 test_vararg
@@ -4721,7 +4721,7 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 /*[clinic input]
 Test.__init__
     *args: object
-    /
+
 Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4759,14 +4759,14 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=0ed1009fe0dcf98d input=96c3ddc0cd38fc0c]*/
+/*[clinic end generated code: output=0ed1009fe0dcf98d input=2a8bd0033c9ac772]*/
 
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: object
-    /
+
 Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4803,7 +4803,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=8b219f6633e2a2e9 input=26a672e2e9750120]*/
+/*[clinic end generated code: output=8b219f6633e2a2e9 input=70ad829df3dd9b84]*/
 
 
 /*[clinic input]
@@ -4956,9 +4956,7 @@ Test_meth_coexist_impl(TestObj *self)
 Test.property
 [clinic start generated code]*/
 
-#if defined(Test_property_HAS_DOCSTR)
-#  define Test_property_DOCSTR Test_property__doc__
-#else
+#if !defined(Test_property_DOCSTR)
 #  define Test_property_DOCSTR NULL
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
@@ -4979,16 +4977,14 @@ Test_property_get(TestObj *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=27b519719d992e03 input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=7cadd0f539805266 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
 Test.property
 [clinic start generated code]*/
 
-#if defined(TEST_PROPERTY_HAS_DOCSTR)
-#  define Test_property_DOCSTR Test_property__doc__
-#else
+#if !defined(Test_property_DOCSTR)
 #  define Test_property_DOCSTR NULL
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
@@ -5013,7 +5009,7 @@ Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=d51023f17c4ac3a1 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=e4342fe9bb1d7817 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push

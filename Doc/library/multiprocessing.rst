@@ -8,7 +8,7 @@
 
 --------------
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Introduction
 ------------
@@ -282,7 +282,7 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
-   The :meth:`~Connection.send` method serializes the the object and
+   The :meth:`~Connection.send` method serializes the object and
    :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
@@ -505,7 +505,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    The constructor should always be called with keyword arguments. *group*
    should always be ``None``; it exists solely for compatibility with
    :class:`threading.Thread`.  *target* is the callable object to be invoked by
-   the :meth:`run()` method.  It defaults to ``None``, meaning nothing is
+   the :meth:`run` method.  It defaults to ``None``, meaning nothing is
    called. *name* is the process name (see :attr:`name` for more details).
    *args* is the argument tuple for the target invocation.  *kwargs* is a
    dictionary of keyword arguments for the target invocation.  If provided,
@@ -642,7 +642,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       You can use this value if you want to wait on several events at
       once using :func:`multiprocessing.connection.wait`.  Otherwise
-      calling :meth:`join()` is simpler.
+      calling :meth:`join` is simpler.
 
       On Windows, this is an OS handle usable with the ``WaitForSingleObject``
       and ``WaitForMultipleObjects`` family of API calls.  On POSIX, this is
@@ -669,7 +669,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. method:: kill()
 
-      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on POSIX.
+      Same as :meth:`terminate` but using the ``SIGKILL`` signal on POSIX.
 
       .. versionadded:: 3.7
 
@@ -712,7 +712,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
 .. exception:: BufferTooShort
 
-   Exception raised by :meth:`Connection.recv_bytes_into()` when the supplied
+   Exception raised by :meth:`Connection.recv_bytes_into` when the supplied
    buffer object is too small for the message read.
 
    If ``e`` is an instance of :exc:`BufferTooShort` then ``e.args[0]`` will give
@@ -819,7 +819,7 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
-   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   The :meth:`~multiprocessing.Connection.send` method serializes the object using
    :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])
@@ -2961,7 +2961,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
     resulting in a bad file descriptor error, but introduces a potential danger
     to applications which replace :func:`sys.stdin` with a "file-like object"
     with output buffering.  This danger is that if multiple processes call
-    :meth:`~io.IOBase.close()` on this file-like object, it could result in the same
+    :meth:`~io.IOBase.close` on this file-like object, it could result in the same
     data being flushed to the object multiple times, resulting in corruption.
 
     If you write a file-like object and implement your own caching, you can

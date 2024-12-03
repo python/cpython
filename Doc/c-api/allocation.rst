@@ -15,10 +15,8 @@ Allocating Objects on the Heap
 .. c:function:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
 
    Initialize a newly allocated object *op* with its type and initial
-   reference.  Returns the initialized object.  If *type* indicates that the
-   object participates in the cyclic garbage detector, it is added to the
-   detector's set of observed objects. Other fields of the object are not
-   affected.
+   reference.  Returns the initialized object.  Other fields of the object are
+   not affected.
 
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)

@@ -1856,44 +1856,44 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
    functionality in tb_displayline() in traceback.c. */
 
 static PyObject *
-err_programtext(PyThreadState *tstate, FILE *fp, int lineno, const char* encoding)
+err_programtext(FILE *fp, int lineno, const char* encoding)
 {
-    int i;
     char linebuf[1000];
-    if (fp == NULL) {
-        return NULL;
-    }
+    size_t line_size = 0;
 
-    for (i = 0; i < lineno; i++) {
-        char *pLastChar = &linebuf[sizeof(linebuf) - 2];
-        do {
-            *pLastChar = '\0';
-            if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf,
-                                         fp, NULL) == NULL) {
-                goto after_loop;
-            }
-            /* fgets read *something*; if it didn't get as
-               far as pLastChar, it must have found a newline
-               or hit the end of the file; if pLastChar is \n,
-               it obviously found a newline; else we haven't
-               yet seen a newline, so must continue */
-        } while (*pLastChar != '\0' && *pLastChar != '\n');
-    }
-
-after_loop:
-    fclose(fp);
-    if (i == lineno) {
-        PyObject *res;
-        if (encoding != NULL) {
-            res = PyUnicode_Decode(linebuf, strlen(linebuf), encoding, "replace");
-        } else {
-            res = PyUnicode_FromString(linebuf);
+    for (int i = 0; i < lineno; ) {
+        line_size = 0;
+        if (_Py_UniversalNewlineFgetsWithSize(linebuf, sizeof(linebuf),
+                                              fp, NULL, &line_size) == NULL)
+        {
+            /* Error or EOF. */
+            return NULL;
         }
-        if (res == NULL)
-            _PyErr_Clear(tstate);
-        return res;
+        /* fgets read *something*; if it didn't fill the
+           whole buffer, it must have found a newline
+           or hit the end of the file; if the last character is \n,
+           it obviously found a newline; else we haven't
+           yet seen a newline, so must continue */
+        if (i + 1 < lineno
+            && line_size == sizeof(linebuf) - 1
+            && linebuf[sizeof(linebuf) - 2] != '\n')
+        {
+            continue;
+        }
+        i++;
     }
-    return NULL;
+
+    const char *line = linebuf;
+    /* Skip BOM. */
+    if (lineno == 1 && line_size >= 3 && memcmp(line, "\xef\xbb\xbf", 3) == 0) {
+        line += 3;
+        line_size -= 3;
+    }
+    PyObject *res = PyUnicode_Decode(line, line_size, encoding, "replace");
+    if (res == NULL) {
+        PyErr_Clear();
+    }
+    return res;
 }
 
 PyObject *
@@ -1913,20 +1913,41 @@ PyErr_ProgramText(const char *filename, int lineno)
     return res;
 }
 
+/* Function from Parser/tokenizer/file_tokenizer.c */
+extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
+
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)
 {
+    char *found_encoding = NULL;
     if (filename == NULL || lineno <= 0) {
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
     FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL) {
-        _PyErr_Clear(tstate);
+        PyErr_Clear();
         return NULL;
     }
-    return err_programtext(tstate, fp, lineno, encoding);
+    if (encoding == NULL) {
+        int fd = fileno(fp);
+        found_encoding = _PyTokenizer_FindEncodingFilename(fd, filename);
+        encoding = found_encoding;
+        if (encoding == NULL) {
+            PyErr_Clear();
+            encoding = "utf-8";
+        }
+        /* Reset position */
+        if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+            fclose(fp);
+            PyMem_Free(found_encoding);
+            return NULL;
+        }
+    }
+    PyObject *res = err_programtext(fp, lineno, encoding);
+    fclose(fp);
+    PyMem_Free(found_encoding);
+    return res;
 }
 
 PyObject *

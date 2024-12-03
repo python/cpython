@@ -76,8 +76,9 @@ typedef struct {
 #ifndef WITH_DECIMAL_CONTEXTVAR
     /* Key for thread state dictionary */
     PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
-    struct PyDecContextObject *cached_context;
+    /* Invariant: NULL or a strong reference to the most recently accessed
+       thread local context. */
+    struct PyDecContextObject *cached_context;  /* Not borrowed */
 #else
     PyObject *current_context_var;
 #endif
@@ -1390,6 +1391,10 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
     CtxCaps(self) = 1;
     self->tstate = NULL;
 
+    if (type == state->PyDecContext_Type) {
+        PyObject_GC_Track(self);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)self));
     return (PyObject *)self;
 }
 
@@ -1415,12 +1420,6 @@ context_dealloc(PyDecContextObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
-    if (self == state->cached_context) {
-        state->cached_context = NULL;
-    }
-#endif
     (void)context_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1519,7 +1518,7 @@ init_extended_context(PyObject *v)
 #ifdef EXTRA_FUNCTIONALITY
 /* Factory function for creating IEEE interchange format contexts */
 static PyObject *
-ieee_context(PyObject *dummy UNUSED, PyObject *v)
+ieee_context(PyObject *module, PyObject *v)
 {
     PyObject *context;
     mpd_ssize_t bits;
@@ -1536,7 +1535,7 @@ ieee_context(PyObject *dummy UNUSED, PyObject *v)
         goto error;
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = get_module_state(module);
     context = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
     if (context == NULL) {
         return NULL;
@@ -1697,7 +1696,8 @@ current_context_from_dict(decimal_state *modstate)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    modstate->cached_context = (PyDecContextObject *)tl_context;
+    Py_XSETREF(modstate->cached_context,
+               (PyDecContextObject *)Py_NewRef(tl_context));
     modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
@@ -1765,7 +1765,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
         Py_INCREF(v);
     }
 
-    state->cached_context = NULL;
+    Py_CLEAR(state->cached_context);
     if (PyDict_SetItem(dict, state->tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;
@@ -2038,6 +2038,10 @@ PyDecType_New(PyTypeObject *type)
     MPD(dec)->alloc = _Py_DEC_MINALLOC;
     MPD(dec)->data = dec->data;
 
+    if (type == state->PyDec_Type) {
+        PyObject_GC_Track(dec);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)dec));
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
@@ -6114,6 +6118,16 @@ decimal_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Rational);
     Py_VISIT(state->SignalTuple);
 
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
+    if (state->cond_map != NULL) {
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
     return 0;
 }
 
@@ -6143,8 +6157,22 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->SignalTuple);
     Py_CLEAR(state->PyDecimal);
 
-    PyMem_Free(state->signal_map);
-    PyMem_Free(state->cond_map);
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->signal_map);
+        state->signal_map = NULL;
+    }
+
+    if (state->cond_map != NULL) {
+        // cond_map[0].ex has borrowed a reference from signal_map[0].ex
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->cond_map);
+        state->cond_map = NULL;
+    }
     return 0;
 }
 

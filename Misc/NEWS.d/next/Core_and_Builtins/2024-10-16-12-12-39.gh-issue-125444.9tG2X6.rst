@@ -1,0 +1,1 @@
+Fix illegal instruction for older Arm architectures. Patch by Diego Russo, testing by Ross Burton.

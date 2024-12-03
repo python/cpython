@@ -518,21 +518,6 @@ no_redundant_jumps(cfg_builder *g) {
     return true;
 }
 
-static bool
-all_exits_have_lineno(basicblock *entryblock) {
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (instr->i_opcode == RETURN_VALUE) {
-                if (instr->i_loc.lineno < 0) {
-                    assert(0);
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
 #endif
 
 /***** CFG preprocessing (jump targets and exceptions) *****/
@@ -975,13 +960,14 @@ remove_unreachable(basicblock *entryblock) {
     basicblock **sp = stack;
     entryblock->b_predecessors = 1;
     *sp++ = entryblock;
+    entryblock->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        b->b_visited = 1;
         if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
             if (!b->b_next->b_visited) {
                 assert(b->b_next->b_predecessors == 0);
                 *sp++ = b->b_next;
+                b->b_next->b_visited = 1;
             }
             b->b_next->b_predecessors++;
         }
@@ -991,8 +977,8 @@ remove_unreachable(basicblock *entryblock) {
             if (is_jump(instr) || is_block_push(instr)) {
                 target = instr->i_target;
                 if (!target->b_visited) {
-                    assert(target->b_predecessors == 0 || target == b->b_next);
                     *sp++ = target;
+                    target->b_visited = 1;
                 }
                 target->b_predecessors++;
             }
@@ -2500,7 +2486,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
-    assert(all_exits_have_lineno(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     return SUCCESS;
 }

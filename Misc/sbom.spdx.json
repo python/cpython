@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4076a884f0ca96873589b5c8159e2e5bfb8b829a"
+          "checksumValue": "373cc00d87782a736970644d863ff2ebbd0e4886"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1a434bf3d2f9fb8a0b5adb79201a942788d11824c3e5b46a0b9962c0c482016c"
+          "checksumValue": "0f750bc336e510d14ac9a3e63fc2399f60f3f04f0061c426e86751ed5fba90e4"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -62,11 +62,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b70ce53fdc25ae482681ae2f6623c3c8edc9c1b7"
+          "checksumValue": "9e615c6e5c3ba00670f674a6b071bb855b0b563d"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "86afb425ec9999eb4f1ec9ab2fb41c58c4aa5cb9bf934b8c94264670fc5a961d"
+          "checksumValue": "3d90a4b65c40a3f848c36100f4d73b933a015c7b7cd85c28e4331a6b845c1ad0"
         }
       ],
       "fileName": "Modules/expat/expat_external.h"
@@ -128,29 +128,29 @@
       "fileName": "Modules/expat/nametab.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
+      "SPDXID": "SPDXRef-FILE-Modules-expat-refresh.sh",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "f50c899172acd93fc539007bfb43315b83d407e4"
+          "checksumValue": "a9b0a33b8359cfe94b23972a1605daf8dcc605d9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d571b8258cfaa067a20adef553e5fcedd6671ca4a8841483496de031bd904567"
+          "checksumValue": "19eb541460bc2ca8b87118acd3c048f6af77affbf8719ac29aa7b6c8d70f83fd"
         }
       ],
-      "fileName": "Modules/expat/pyexpatns.h"
+      "fileName": "Modules/expat/refresh.sh"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-siphash.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4c49b5df2bc702f663ba3b5a52d1940ec363226b"
+          "checksumValue": "aca27f46d9fd387b63ce7ff2e4f172cad130b39b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b5ec29f6560acc183f1ee8ab92bb3aea17b87b4c2120cd2e3f78deba7a12491e"
+          "checksumValue": "f537add526ecda8389503b7ef45fb52b6217e4dc171dcc3a8dc6903ff6134726"
         }
       ],
       "fileName": "Modules/expat/siphash.h"
@@ -188,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "fed1311be8577491b7f63085a27014eabf2caec8"
+          "checksumValue": "3199fbd38b6fb158f73d5c8de6b6e6e3812ef803"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3dc233eca5fa1bb7387c503f8a12d840707e4374b229e05d5657db9645725040"
+          "checksumValue": "c1518244dd5ea397e345d00e12cc45d42f43453ed208218559c981c97a0583e2"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -1562,14 +1562,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "d4cf38d26e21a56654ffe4acd9cd5481164619626802328506a2869afab29ab3"
+          "checksumValue": "17aa6cfc5c4c219c09287abfc10bc13f0c06f30bb654b28bfe6f567ca646eb79"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-2.6.2.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.2:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.3:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1577,7 +1577,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.6.2"
+      "versionInfo": "2.6.3"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
@@ -1715,7 +1715,7 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-refresh.sh",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },

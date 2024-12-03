@@ -14,6 +14,7 @@ test.test_init.ProcessPoolForkFailingInitializerTest.test_initializer
 test.test_logging.ConfigDictTest.test_111615
 test.test_logging.ConfigDictTest.test_config_queue_handler
 test.test_logging.ConfigDictTest.test_multiprocessing_queues
+test.test_logging.ConfigDictTest.test_config_queue_handler_multiprocessing_context
 test.test_os.ForkTests.test_fork_warns_when_non_python_thread_exists
 test.test_os.TimerfdTests.test_timerfd_initval
 test.test_os.TimerfdTests.test_timerfd_interval

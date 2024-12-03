@@ -26,7 +26,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support import (
-    TestFailed, run_with_locale, no_tracing,
+    TestFailed, run_with_locales, no_tracing,
     _2G, _4G, bigmemtest
     )
 from test.support.import_helper import forget
@@ -1297,6 +1297,35 @@ class AbstractUnpickleTests:
         self.assertEqual(loads(b'cmath\nlog\n.'), ('math', 'log'))
         self.assertEqual(loads(b'\x8c\x04math\x8c\x03log\x93.'), ('math', 'log'))
 
+    def test_bad_ext_code(self):
+        # unregistered extension code
+        self.check_unpickling_error(ValueError, b'\x82\x01.')
+        self.check_unpickling_error(ValueError, b'\x82\xff.')
+        self.check_unpickling_error(ValueError, b'\x83\x01\x00.')
+        self.check_unpickling_error(ValueError, b'\x83\xff\xff.')
+        self.check_unpickling_error(ValueError, b'\x84\x01\x00\x00\x00.')
+        self.check_unpickling_error(ValueError, b'\x84\xff\xff\xff\x7f.')
+        # EXT specifies code <= 0
+        self.check_unpickling_error(pickle.UnpicklingError, b'\x82\x00.')
+        self.check_unpickling_error(pickle.UnpicklingError, b'\x83\x00\x00.')
+        self.check_unpickling_error(pickle.UnpicklingError, b'\x84\x00\x00\x00\x00.')
+        self.check_unpickling_error(pickle.UnpicklingError, b'\x84\x00\x00\x00\x80.')
+        self.check_unpickling_error(pickle.UnpicklingError, b'\x84\xff\xff\xff\xff.')
+
+    @support.cpython_only
+    def test_bad_ext_inverted_registry(self):
+        code = 1
+        def check(key, exc):
+            with support.swap_item(copyreg._inverted_registry, code, key):
+                with self.assertRaises(exc):
+                    self.loads(b'\x82\x01.')
+        check(None, ValueError)
+        check((), ValueError)
+        check((__name__,), (TypeError, ValueError))
+        check((__name__, "MyList", "x"), (TypeError, ValueError))
+        check((__name__, None), (TypeError, ValueError))
+        check((None, "MyList"), (TypeError, ValueError))
+
     def test_bad_reduce(self):
         self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
         self.check_unpickling_error(TypeError, b'N)R.')
@@ -1314,6 +1343,41 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
+    def test_bad_state(self):
+        c = C()
+        c.x = None
+        base = b'c__main__\nC\n)\x81'
+        self.assertEqual(self.loads(base + b'}X\x01\x00\x00\x00xNsb.'), c)
+        self.assertEqual(self.loads(base + b'N}X\x01\x00\x00\x00xNs\x86b.'), c)
+        # non-hashable dict key
+        self.check_unpickling_error(TypeError, base + b'}]Nsb.')
+        # state = list
+        error = (pickle.UnpicklingError, AttributeError)
+        self.check_unpickling_error(error, base + b'](}}eb.')
+        # state = 1-tuple
+        self.check_unpickling_error(error, base + b'}\x85b.')
+        # state = 3-tuple
+        self.check_unpickling_error(error, base + b'}}}\x87b.')
+        # non-hashable slot name
+        self.check_unpickling_error(TypeError, base + b'}}]Ns\x86b.')
+        # non-string slot name
+        self.check_unpickling_error(TypeError, base + b'}}NNs\x86b.')
+        # dict = True
+        self.check_unpickling_error(error, base + b'\x88}\x86b.')
+        # slots dict = True
+        self.check_unpickling_error(error, base + b'}\x88\x86b.')
+
+        class BadKey1:
+            count = 1
+            def __hash__(self):
+                if not self.count:
+                    raise CustomError
+                self.count -= 1
+                return 42
+        __main__.BadKey1 = BadKey1
+        # bad hashable dict key
+        self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
     def test_bad_stack(self):
         badpickles = [
@@ -1988,12 +2052,10 @@ class AbstractPicklingErrorTests:
                     'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
-        if self.pickler is pickle._Pickler:
-            self.skipTest('CRASHES (see gh-122306)')
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
@@ -2030,6 +2092,28 @@ class AbstractPicklingErrorTests:
             check({Clearer(): 1})
             check({Clearer(): 1, Clearer(): 2})
             check({1: Clearer(), 2: Clearer()})
+
+    @support.cpython_only
+    def test_bad_ext_code(self):
+        # This should never happen in normal circumstances, because the type
+        # and the value of the extension code is checked in copyreg.add_extension().
+        key = (__name__, 'MyList')
+        def check(code, exc):
+            assert key not in copyreg._extension_registry
+            assert code not in copyreg._inverted_registry
+            with (support.swap_item(copyreg._extension_registry, key, code),
+                  support.swap_item(copyreg._inverted_registry, code, key)):
+                for proto in protocols[2:]:
+                    with self.assertRaises(exc):
+                        self.dumps(MyList, proto)
+
+        check(object(), TypeError)
+        check(None, TypeError)
+        check(-1, (RuntimeError, struct.error))
+        check(0, RuntimeError)
+        check(2**31, (RuntimeError, OverflowError, struct.error))
+        check(2**1000, (OverflowError, struct.error))
+        check(-2**1000, (OverflowError, struct.error))
 
 
 class AbstractPickleTests:
@@ -2540,7 +2624,7 @@ class AbstractPickleTests:
                 got = self.loads(pickle)
                 self.assert_is_copy(value, got)
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locales('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
@@ -3990,7 +4074,9 @@ class MyIntWithNew2(MyIntWithNew):
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-class SimpleNewObj(int):
+# Ruff "redefined while unused" false positive here due to `global` variables
+# being assigned (and then restored) from within test methods earlier in the file
+class SimpleNewObj(int):  # noqa: F811
     def __init__(self, *args, **kwargs):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")

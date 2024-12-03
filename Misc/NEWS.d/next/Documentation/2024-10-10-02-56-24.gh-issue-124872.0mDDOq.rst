@@ -1,0 +1,3 @@
+Added definitions for :term:`context`, :term:`current context`, and
+:term:`context management protocol`, updated related definitions to be
+consistent, and expanded the documentation for :class:`contextvars.Context`.

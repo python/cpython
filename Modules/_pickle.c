@@ -612,6 +612,7 @@ typedef struct PicklerObject {
                                    objects to support self-referential objects
                                    pickling. */
     PyObject *persistent_id;    /* persistent_id() method, can be NULL */
+    PyObject *persistent_id_attr; /* instance attribute, can be NULL */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
     PyObject *reducer_override; /* hook for invoking user-defined callbacks
                                    instead of save_global when pickling
@@ -654,6 +655,7 @@ typedef struct UnpicklerObject {
     size_t memo_len;        /* Number of objects in the memo */
 
     PyObject *persistent_load;  /* persistent_load() method, can be NULL. */
+    PyObject *persistent_load_attr;  /* instance attribute, can be NULL. */
 
     Py_buffer buffer;
     char *input_buffer;
@@ -1107,6 +1109,7 @@ _Pickler_New(PickleState *st)
 
     self->memo = memo;
     self->persistent_id = NULL;
+    self->persistent_id_attr = NULL;
     self->dispatch_table = NULL;
     self->reducer_override = NULL;
     self->write = NULL;
@@ -1287,6 +1290,10 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
             else {
                 read_size = _Unpickler_SetStringInput(self, data);
                 Py_DECREF(data);
+                if (read_size < 0) {
+                    return -1;
+                }
+
                 self->prefetched_idx = 0;
                 if (n <= read_size)
                     return n;
@@ -1601,6 +1608,7 @@ _Unpickler_New(PyObject *module)
     self->memo_size = MEMO_SIZE;
     self->memo_len = 0;
     self->persistent_load = NULL;
+    self->persistent_load_attr = NULL;
     memset(&self->buffer, 0, sizeof(Py_buffer));
     self->input_buffer = NULL;
     self->input_line = NULL;
@@ -3663,34 +3671,24 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         if (extension_key == NULL) {
             goto error;
         }
-        code_obj = PyDict_GetItemWithError(st->extension_registry,
-                                           extension_key);
+        if (PyDict_GetItemRef(st->extension_registry, extension_key, &code_obj) < 0) {
+            Py_DECREF(extension_key);
+            goto error;
+        }
         Py_DECREF(extension_key);
-        /* The object is not registered in the extension registry.
-           This is the most likely code path. */
         if (code_obj == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
+            /* The object is not registered in the extension registry.
+               This is the most likely code path. */
             goto gen_global;
         }
 
-        /* XXX: pickle.py doesn't check neither the type, nor the range
-           of the value returned by the extension_registry. It should for
-           consistency. */
-
-        /* Verify code_obj has the right type and value. */
-        if (!PyLong_Check(code_obj)) {
-            PyErr_Format(st->PicklingError,
-                         "Can't pickle %R: extension code %R isn't an integer",
-                         obj, code_obj);
-            goto error;
-        }
-        code = PyLong_AS_LONG(code_obj);
+        code = PyLong_AsLong(code_obj);
+        Py_DECREF(code_obj);
         if (code <= 0 || code > 0x7fffffffL) {
+            /* Should never happen in normal circumstances, since the type and
+               the value of the code are checked in copyreg.add_extension(). */
             if (!PyErr_Occurred())
-                PyErr_Format(st->PicklingError, "Can't pickle %R: extension "
-                             "code %ld is out of range", obj, code);
+                PyErr_Format(PyExc_RuntimeError, "extension code %ld is out of range", code);
             goto error;
         }
 
@@ -5027,6 +5025,33 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
     return -1;
 }
 
+static PyObject *
+Pickler_getattr(PyObject *self, PyObject *name)
+{
+    if (PyUnicode_Check(name)
+        && PyUnicode_EqualToUTF8(name, "persistent_id")
+        && ((PicklerObject *)self)->persistent_id_attr)
+    {
+        return Py_NewRef(((PicklerObject *)self)->persistent_id_attr);
+    }
+
+    return PyObject_GenericGetAttr(self, name);
+}
+
+static int
+Pickler_setattr(PyObject *self, PyObject *name, PyObject *value)
+{
+    if (PyUnicode_Check(name)
+        && PyUnicode_EqualToUTF8(name, "persistent_id"))
+    {
+        Py_XINCREF(value);
+        Py_XSETREF(((PicklerObject *)self)->persistent_id_attr, value);
+        return 0;
+    }
+
+    return PyObject_GenericSetAttr(self, name, value);
+}
+
 static PyMemberDef Pickler_members[] = {
     {"bin", Py_T_INT, offsetof(PicklerObject, bin)},
     {"fast", Py_T_INT, offsetof(PicklerObject, fast)},
@@ -5042,6 +5067,8 @@ static PyGetSetDef Pickler_getsets[] = {
 
 static PyType_Slot pickler_type_slots[] = {
     {Py_tp_dealloc, Pickler_dealloc},
+    {Py_tp_getattro, Pickler_getattr},
+    {Py_tp_setattro, Pickler_setattr},
     {Py_tp_methods, Pickler_methods},
     {Py_tp_members, Pickler_members},
     {Py_tp_getset, Pickler_getsets},
@@ -6632,6 +6659,7 @@ load_build(PickleState *st, UnpicklerObject *self)
             }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
+                Py_DECREF(dict);
                 goto error;
             }
             Py_DECREF(d_key);
@@ -7482,6 +7510,33 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
     return -1;
 }
 
+static PyObject *
+Unpickler_getattr(PyObject *self, PyObject *name)
+{
+    if (PyUnicode_Check(name)
+        && PyUnicode_EqualToUTF8(name, "persistent_load")
+        && ((UnpicklerObject *)self)->persistent_load_attr)
+    {
+        return Py_NewRef(((UnpicklerObject *)self)->persistent_load_attr);
+    }
+
+    return PyObject_GenericGetAttr(self, name);
+}
+
+static int
+Unpickler_setattr(PyObject *self, PyObject *name, PyObject *value)
+{
+    if (PyUnicode_Check(name)
+        && PyUnicode_EqualToUTF8(name, "persistent_load"))
+    {
+        Py_XINCREF(value);
+        Py_XSETREF(((UnpicklerObject *)self)->persistent_load_attr, value);
+        return 0;
+    }
+
+    return PyObject_GenericSetAttr(self, name, value);
+}
+
 static PyGetSetDef Unpickler_getsets[] = {
     {"memo", (getter)Unpickler_get_memo, (setter)Unpickler_set_memo},
     {NULL}
@@ -7490,6 +7545,8 @@ static PyGetSetDef Unpickler_getsets[] = {
 static PyType_Slot unpickler_type_slots[] = {
     {Py_tp_dealloc, Unpickler_dealloc},
     {Py_tp_doc, (char *)_pickle_Unpickler___init____doc__},
+    {Py_tp_getattro, Unpickler_getattr},
+    {Py_tp_setattro, Unpickler_setattr},
     {Py_tp_traverse, Unpickler_traverse},
     {Py_tp_clear, Unpickler_clear},
     {Py_tp_methods, Unpickler_methods},

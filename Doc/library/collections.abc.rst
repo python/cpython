@@ -216,6 +216,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for classes that provide the :meth:`~object.__call__` method.
 
+   See :ref:`annotating-callables` for details on how to use
+   :class:`!Callable` in type annotations.
+
 .. class:: Iterable
 
    ABC for classes that provide the :meth:`~container.__iter__` method.
@@ -252,6 +255,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
    :pep:`342` that extends :term:`iterators <iterator>` with the
    :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
+
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!Generator` in type annotations.
 
    .. versionadded:: 3.5
 
@@ -331,6 +337,11 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!Coroutine` in type annotations.
+   The variance and order of type parameters correspond to those of
+   :class:`Generator`.
+
    .. versionadded:: 3.5
 
 .. class:: AsyncIterable
@@ -351,6 +362,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
+
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!AsyncGenerator` in type annotations.
 
    .. versionadded:: 3.6
 

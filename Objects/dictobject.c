@@ -1549,7 +1549,7 @@ read_failed:
     *value_addr = value;
     if (value != NULL) {
         assert(ix >= 0);
-        Py_INCREF(value);
+        _Py_NewRefWithLock(value);
     }
     Py_END_CRITICAL_SECTION();
     return ix;
@@ -1762,6 +1762,8 @@ insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, 
         uint64_t new_version = _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
         STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
         mp->ma_version_tag = new_version;
+        // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+        // when dict only holds the strong reference to value in ep->me_value.
         Py_DECREF(old_value);
     }
     ASSERT_CONSISTENT(mp);
@@ -3916,13 +3918,13 @@ dict_copy_impl(PyDictObject *self)
 }
 
 /* Copies the values, but does not change the reference
- * counts of the objects in the array. */
+ * counts of the objects in the array.
+ * Return NULL, but does *not* set an exception on failure  */
 static PyDictValues *
 copy_values(PyDictValues *values)
 {
     PyDictValues *newvalues = new_values(values->capacity);
     if (newvalues == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     newvalues->size = values->size;
@@ -4623,8 +4625,8 @@ PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
-If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
+"D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.\n\
+If E is present and has a .keys() method, then does:  for k in E.keys(): D[k] = E[k]\n\
 If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
 In either case, this is followed by: for k in F:  D[k] = F[k]");
 
@@ -6823,15 +6825,24 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     PyObject *old_value = values->values[ix];
+    if (old_value == NULL && value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        Py_TYPE(obj)->tp_name, name);
+        return -1;
+    }
+
+    if (dict) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
+                                   value == NULL ? PyDict_EVENT_DELETED :
+                                   PyDict_EVENT_MODIFIED);
+        _PyDict_NotifyEvent(interp, event, dict, name, value);
+    }
+
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
 
     if (old_value == NULL) {
-        if (value == NULL) {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         Py_TYPE(obj)->tp_name, name);
-            return -1;
-        }
         _PyDictValues_AddToInsertionOrder(values, ix);
         if (dict) {
             assert(dict->ma_values == values);
@@ -6986,7 +6997,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
             // Still no dict, we can read from the values
             assert(values->valid);
             value = values->values[ix];
-            *attr = Py_XNewRef(value);
+            *attr = _Py_XNewRefWithLock(value);
             success = true;
         }
 
@@ -7006,7 +7017,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
         value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-        *attr = Py_XNewRef(value);
+        *attr = _Py_XNewRefWithLock(value);
         success = true;
     } else {
         // Caller needs to lookup from the dictionary
@@ -7179,7 +7190,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     // We could be called with an unlocked dict when the caller knows the
     // values are already detached, so we assert after inline values check.
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -7187,6 +7198,13 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     PyDictValues *values = copy_values(mp->ma_values);
 
     if (values == NULL) {
+        /* Out of memory. Clear the dict */
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDictKeysObject *oldkeys = mp->ma_keys;
+        set_keys(mp, Py_EMPTY_KEYS);
+        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+        STORE_USED(mp, 0);
+        PyErr_NoMemory();
         return -1;
     }
     mp->ma_values = values;

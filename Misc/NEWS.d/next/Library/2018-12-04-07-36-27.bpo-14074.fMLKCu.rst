@@ -1,0 +1,2 @@
+Fix :mod:`argparse` metavar processing to allow positional arguments to have a
+tuple metavar.

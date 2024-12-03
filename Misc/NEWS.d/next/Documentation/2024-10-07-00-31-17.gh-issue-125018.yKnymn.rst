@@ -1,0 +1,4 @@
+The :mod:`importlib.metadata` documentation now includes semantic
+cross-reference targets for the significant documented APIs. This means
+intersphinx references like :func:`importlib.metadata.version` will
+now work as expected.

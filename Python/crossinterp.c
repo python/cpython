@@ -346,6 +346,11 @@ _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
         return NULL;
     }
 
+    if (size != (Py_ssize_t)strlen(str)) {
+        PyErr_SetString(PyExc_ValueError, "found embedded NULL character");
+        return NULL;
+    }
+
     char *copied = PyMem_RawMalloc(size+1);
     if (copied == NULL) {
         PyErr_NoMemory();
@@ -699,7 +704,7 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
         Py_DECREF(tbexc);
         if (info->errdisplay == NULL) {
 #ifdef Py_DEBUG
-            PyErr_FormatUnraisable("Exception ignored while formating TracebackException");
+            PyErr_FormatUnraisable("Exception ignored while formatting TracebackException");
 #endif
             PyErr_Clear();
         }
@@ -985,8 +990,8 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         break;
     case _PyXI_ERR_ALREADY_RUNNING:
         assert(interp != NULL);
-        assert(_PyInterpreterState_IsRunningMain(interp));
-        _PyInterpreterState_FailIfRunningMain(interp);
+        // In 3.14+ we use _PyErr_SetInterpreterAlreadyRunning().
+        PyErr_SetString(PyExc_InterpreterError, "interpreter already running");
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
         PyErr_SetString(PyExc_InterpreterError,

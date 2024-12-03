@@ -89,12 +89,13 @@ class Regrtest:
         self.cmdline_args: TestList = ns.args
 
         # Workers
-        if ns.use_mp is None:
-            num_workers = 0  # run sequentially
+        self.single_process: bool = ns.single_process
+        if self.single_process or ns.use_mp is None:
+            num_workers = 0   # run sequentially in a single process
         elif ns.use_mp <= 0:
-            num_workers = -1  # use the number of CPUs
+            num_workers = -1  # run in parallel, use the number of CPUs
         else:
-            num_workers = ns.use_mp
+            num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
         self.worker_json: StrJSON | None = ns.worker_json
 
@@ -122,7 +123,7 @@ class Regrtest:
             self.python_cmd = None
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
-        self.tmp_dir: StrPath | None = ns.tempdir
+        self._tmp_dir: StrPath | None = ns.tempdir
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -158,6 +159,8 @@ class Regrtest:
         self.logger.log(line)
 
     def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        if tests is None:
+            tests = []
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
@@ -236,7 +239,7 @@ class Regrtest:
 
     def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
-        if self.num_workers == 0:
+        if self.num_workers == 0 and not self.single_process:
             # Always run tests in fresh processes to have more deterministic
             # initial state. Don't re-run tests in parallel but limit to a
             # single worker process to have side effects (on the system load
@@ -246,7 +249,6 @@ class Regrtest:
         tests, match_tests_dict = self.results.prepare_rerun()
 
         # Re-run failed tests
-        self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(
             tests=tests,
             rerun=True,
@@ -256,7 +258,15 @@ class Regrtest:
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
         self.logger.set_tests(runtests)
-        self._run_tests_mp(runtests, self.num_workers)
+
+        msg = f"Re-running {len(tests)} failed tests in verbose mode"
+        if not self.single_process:
+            msg = f"{msg} in subprocesses"
+            self.log(msg)
+            self._run_tests_mp(runtests, self.num_workers)
+        else:
+            self.log(msg)
+            self.run_tests_sequentially(runtests)
         return runtests
 
     def rerun_failed_tests(self, runtests: RunTests):
@@ -371,7 +381,7 @@ class Regrtest:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        msg = f"Run {tests} sequentially"
+        msg = f"Run {tests} sequentially in a single process"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
@@ -445,7 +455,12 @@ class Regrtest:
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
 
-    def display_summary(self):
+    def display_summary(self) -> None:
+        if self.first_runtests is None:
+            raise ValueError(
+                "Should never call `display_summary()` before calling `_run_test()`"
+            )
+
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
 
@@ -515,7 +530,7 @@ class Regrtest:
         setup_process()
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
-            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+            # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
         else:
             # WindowsLoadTracker is only needed on Windows
@@ -586,6 +601,7 @@ class Regrtest:
                 '_PYTHON_PROJECT_BASE',
                 '_PYTHON_HOST_PLATFORM',
                 '_PYTHON_SYSCONFIGDATA_NAME',
+                "_PYTHON_SYSCONFIGDATA_PATH",
                 'PYTHONPATH'
             }
             old_environ = os.environ
@@ -599,7 +615,7 @@ class Regrtest:
             keep_environ = True
 
         if cross_compile and hostrunner:
-            if self.num_workers == 0:
+            if self.num_workers == 0 and not self.single_process:
                 # For now use only two cores for cross-compiled builds;
                 # hostrunner can be expensive.
                 regrtest_opts.extend(['-j', '2'])
@@ -702,7 +718,15 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        self.tmp_dir = get_temp_dir(self.tmp_dir)
+        self._tmp_dir = get_temp_dir(self._tmp_dir)
+
+    @property
+    def tmp_dir(self) -> StrPath:
+        if self._tmp_dir is None:
+            raise ValueError(
+                "Should never use `.tmp_dir` before calling `.main()`"
+            )
+        return self._tmp_dir
 
     def main(self, tests: TestList | None = None):
         if self.want_add_python_opts:
