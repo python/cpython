@@ -2354,6 +2354,16 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+
+static int
+plain_object_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    Py_VISIT(type);
+    return PyObject_VisitManagedDict(self, visit, arg);
+}
+
 static void
 clear_slots(PyTypeObject *type, PyObject *self)
 {
@@ -4146,6 +4156,10 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
         type->tp_dictoffset = -1;
+
+        if (type->tp_basicsize == sizeof(PyObject *)) {
+            type->tp_traverse = plain_object_traverse;
+        }
     }
 
     type->tp_basicsize = slotoffset;
@@ -6232,19 +6246,6 @@ PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
 "type(name, bases, dict, **kwds) -> a new type");
 
-#ifndef Py_GIL_DISABLED
-void
-_PyType_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PyTypeObject *type = (PyTypeObject *)op;
-    _PyGC_MoveUnvisited(type->tp_dict, to, visited_space);
-    _PyGC_MoveUnvisited(type->tp_cache, to, visited_space);
-    _PyGC_MoveUnvisited(type->tp_mro, to, visited_space);
-    _PyGC_MoveUnvisited(type->tp_bases, to, visited_space);
-    _PyGC_MoveUnvisited((PyObject *)type->tp_base, to, visited_space);
-    _PyGC_MoveUnvisited(((PyHeapTypeObject *)type)->ht_module, to, visited_space);
-}
-#endif
 
 static int
 type_traverse(PyObject *self, visitproc visit, void *arg)

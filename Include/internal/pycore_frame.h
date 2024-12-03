@@ -409,9 +409,6 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
 
-PyAPI_FUNC(void)
-_PyFrame_MoveUnvisited(_PyInterpreterFrame *frame, PyGC_Head *to, int visited_space);
-
 #ifdef __cplusplus
 }
 #endif

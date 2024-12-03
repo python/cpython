@@ -700,19 +700,6 @@ set_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-#ifndef Py_GIL_DISABLED
-void
-_PySet_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PySetObject *so = (PySetObject *)op;
-    Py_ssize_t pos = 0;
-    setentry *entry;
-    while (set_next(so, &pos, &entry)) {
-        _PyGC_MoveUnvisited(entry->key, to, visited_space);
-    }
-}
-#endif
-
 /* Work to increase the bit dispersion for closely spaced hash values.
    This is important because some use cases have many combinations of a
    small number of elements with nearby hashes so that many distinct

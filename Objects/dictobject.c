@@ -4494,44 +4494,6 @@ dict_popitem_impl(PyDictObject *self)
     return res;
 }
 
-#ifndef Py_GIL_DISABLED
-void
-_PyDict_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PyDictObject *mp = (PyDictObject *)op;
-    PyDictKeysObject *keys = mp->ma_keys;
-    Py_ssize_t i, n = keys->dk_nentries;
-    if (DK_IS_UNICODE(keys)) {
-        if (_PyDict_HasSplitTable(mp)) {
-            if (!mp->ma_values->embedded) {
-                for (i = 0; i < n; i++) {
-                    PyObject *value = mp->ma_values->values[i];
-                    _PyGC_MoveUnvisited(value, to, visited_space);
-                }
-            }
-        }
-        else {
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
-            for (i = 0; i < n; i++) {
-                PyObject *value = entries[i].me_value;
-                _PyGC_MoveUnvisited(value, to, visited_space);
-            }
-        }
-    }
-    else {
-        PyDictKeyEntry *entries = DK_ENTRIES(keys);
-        for (i = 0; i < n; i++) {
-            if (entries[i].me_value != NULL) {
-                PyObject *key = entries[i].me_key;
-                _PyGC_MoveUnvisited(key, to, visited_space);
-                PyObject *value = entries[i].me_value;
-                _PyGC_MoveUnvisited(value, to, visited_space);
-            }
-        }
-    }
-}
-#endif
-
 static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -7105,9 +7067,7 @@ int
 PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        return 0;
-    }
+    assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {

@@ -78,24 +78,6 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-#ifndef Py_GIL_DISABLED
-void
-_PyGen_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PyGenObject *gen = (PyGenObject *)op;
-    if (gen->gi_frame_state == FRAME_CLEARED) {
-        return;
-    }
-    _PyGC_MoveUnvisited(gen->gi_exc_state.exc_value, to, visited_space);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
-        /* if executing we already traversed it on the stack */
-        return;
-    }
-    _PyInterpreterFrame *frame = &gen->gi_iframe;
-   _PyFrame_MoveUnvisited(frame, to, visited_space);
-}
-#endif
-
 void
 _PyGen_Finalize(PyObject *self)
 {
@@ -1449,16 +1431,6 @@ typedef struct _PyAsyncGenWrappedValue {
     (assert(_PyAsyncGenWrappedValue_CheckExact(op)), \
      _Py_CAST(_PyAsyncGenWrappedValue*, (op)))
 
-#ifndef Py_GIL_DISABLED
-void
-_PyAsyncGen_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PyAsyncGenObject *ag = _PyAsyncGenObject_CAST(op);
-    _PyGC_MoveUnvisited(ag->ag_origin_or_finalizer, to, visited_space);
-    _PyGen_MoveUnvisited(op, to, visited_space);
-}
-#endif
-
 static int
 async_gen_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1740,16 +1712,6 @@ async_gen_asend_dealloc(PyObject *self)
 
     _Py_FREELIST_FREE(async_gen_asends, self, PyObject_GC_Del);
 }
-
-#ifndef Py_GIL_DISABLED
-void
-_PyAsyncAsend_MoveUnvisited(PyObject *op, PyGC_Head *to, int visited_space)
-{
-    PyAsyncGenASend *ags = _PyAsyncGenASend_CAST(op);
-    _PyGC_MoveUnvisited((PyObject *)ags->ags_sendval, to, visited_space);
-    _PyAsyncGen_MoveUnvisited((PyObject *)ags->ags_gen, to, visited_space);
-}
-#endif
 
 static int
 async_gen_asend_traverse(PyObject *self, visitproc visit, void *arg)
