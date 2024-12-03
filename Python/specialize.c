@@ -2645,14 +2645,12 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
             goto failure;
         }
         specialize(instr, SEND_GEN);
-        goto success;
+        return;
     }
     SPECIALIZATION_FAIL(SEND,
                         _PySpecialization_ClassifyIterator(receiver));
 failure:
     unspecialize(instr);
-success:
-    return;
 }
 
 #ifdef Py_STATS
