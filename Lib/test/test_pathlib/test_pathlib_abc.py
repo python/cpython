@@ -1387,8 +1387,11 @@ class DummyDirEntry:
     def is_symlink(self):
         return self._is_symlink
 
+    def is_file(self, *, follow_symlinks=True):
+        return (follow_symlinks or not self._is_symlink) and not self._is_dir
+
     def is_dir(self, *, follow_symlinks=True):
-        return self._is_dir and (follow_symlinks or not self._is_symlink)
+        return (follow_symlinks or not self._is_symlink) and self._is_dir
 
 
 class DummyPath(PathBase):
