@@ -407,7 +407,7 @@ def source_synopsis(file):
         tree = ast.parse(source)
         if (tree.body and isinstance(tree.body[0], ast.Expr) and
             isinstance(tree.body[0].value, ast.Constant) and
-            isinstance(tree.body[0].value.vlaue, str)):
+            isinstance(tree.body[0].value.value, str)):
             docstring = tree.body[0].value.value
             return docstring.strip().split('\n')[0].strip()
         return None
