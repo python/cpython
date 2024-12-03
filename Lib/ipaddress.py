@@ -310,7 +310,7 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterator of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Network or IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.
@@ -1840,9 +1840,6 @@ class _BaseV6:
     def _explode_shorthand_ip_string(self):
         """Expand a shortened IPv6 address.
 
-        Args:
-            ip_str: A string, the IPv6 address.
-
         Returns:
             A string, the expanded IPv6 address.
 
@@ -1986,6 +1983,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             See RFC 2373 2.7 for details.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_multicast
         return self in self._constants._multicast_network
 
     @property
@@ -1997,6 +1997,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             reserved IPv6 Network ranges.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_reserved
         return any(self in x for x in self._constants._reserved_networks)
 
     @property
@@ -2007,6 +2010,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             A boolean, True if the address is reserved per RFC 4291.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_link_local
         return self in self._constants._linklocal_network
 
     @property
@@ -2063,6 +2069,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
         ``is_global`` has value opposite to :attr:`is_private`, except for the ``100.64.0.0/10``
         IPv4 range where they are both ``False``.
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_global
         return not self.is_private
 
     @property
@@ -2074,6 +2083,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.2.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_unspecified
         return self._ip == 0
 
     @property
@@ -2085,6 +2097,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.3.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_loopback
         return self._ip == 1
 
     @property
@@ -2201,7 +2216,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_loopback(self):
-        return self._ip == 1 and self.network.is_loopback
+        return super().is_loopback and self.network.is_loopback
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):
@@ -2314,6 +2329,8 @@ class _IPv6Constants:
         IPv6Network('2001:db8::/32'),
         # IANA says N/A, let's consider it not globally reachable to be safe
         IPv6Network('2002::/16'),
+        # RFC 9637: https://www.rfc-editor.org/rfc/rfc9637.html#section-6-2.2
+        IPv6Network('3fff::/20'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]
