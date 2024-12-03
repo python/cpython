@@ -52,6 +52,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #   - If the __file__ attribute on a module is a relative path and
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
+
 import ast
 import token
 import __future__
