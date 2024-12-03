@@ -81,6 +81,8 @@ def stop_signal_thread():
     global _signal_thread, _signal_queue
     if _signal_thread is not None:
         _signal_queue.put('STOP_SIGNAL_HANDLER')
+        _signal_thread.join()
+        _signal_thread = None
 
 def _signal_queue_handler():
     try:
@@ -98,12 +100,15 @@ def _signal_queue_handler():
                     _log_missing_signal_handler(signo)
             except Exception:
                 traceback.print_exc()
-                pass
+    except SystemExit:
+        pass # TODO: what should be done in the event of a handler calling `sys.exit()`?
     except:
-        pass
+        traceback.print_exc()
+        # import _thread
+        # _thread.interrupt_main()
+        # print(dir(threading.main_thread()))
     finally:
-        global _signal_thread
-        _signal_thread = None
+        pass
 
 # Similar to functools.wraps(), but only assign __doc__.
 # __module__ should be preserved,
@@ -132,6 +137,8 @@ def signal(signalnum, handler, use_dedicated_thread=True):
     else:
         if signal_int in _signo_to_handler:
             del _signo_to_handler[signal_int]
+        if 0 == len(_signo_to_handler):
+            stop_signal_thread()
         handler = _signal.signal(signal_int, _enum_to_int(handler))
         return old_handler or _int_to_enum(handler, Handlers)
 

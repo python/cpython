@@ -3,6 +3,7 @@ import signal
 import threading
 import time
 import multiprocessing
+import sys
 
 def sigint_self():
     time.sleep(1)
@@ -18,9 +19,9 @@ def run_signal_handler_dedicated_thread():
     event = multiprocessing.Event()
     def sigint_handler(_signo, _stack_frame):
         try:
-            x = 1 / 0
             print(f'{threading.current_thread().name}: sigint_handler is setting event')
-            event.set()
+            #event.set()
+            sys.exit()
         finally:
             print(f'{threading.current_thread().name}: sigint_handler is done')
 
@@ -28,14 +29,17 @@ def run_signal_handler_dedicated_thread():
         print(f'{threading.current_thread().name}: sigterm_handler is running')
         pass
 
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.signal(signal.SIGINT, sigint_handler)
+    signal.signal(signal.SIGINT, sigint_handler, True)
 
     threading.Thread(target=sigint_self, daemon=True).start()
     threading.Thread(target=sigkill_self, daemon=True).start() # Used for debugging only.
 
     print(f'{threading.current_thread().name}: Waiting on event. PID = {os.getpid()}')
-    event.wait()
+    while True:
+        if event.is_set():
+            break
+        else:
+            time.sleep(0.1)
     print(f'{threading.current_thread().name}: Waiting is done')
 
 if __name__ == '__main__':
