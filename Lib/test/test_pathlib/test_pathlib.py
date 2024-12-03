@@ -1,3 +1,4 @@
+import contextlib
 import io
 import os
 import sys
@@ -23,18 +24,36 @@ from test.test_pathlib import test_pathlib_abc
 from test.test_pathlib.test_pathlib_abc import needs_posix, needs_windows, needs_symlinks
 
 try:
+    import fcntl
+except ImportError:
+    fcntl = None
+try:
     import grp, pwd
 except ImportError:
     grp = pwd = None
+try:
+    import posix
+except ImportError:
+    posix = None
 
 
 root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
 
-delete_use_fd_functions = (
-    {os.open, os.stat, os.unlink, os.rmdir} <= os.supports_dir_fd and
-    os.listdir in os.supports_fd and os.stat in os.supports_follow_symlinks)
+
+def patch_replace(old_test):
+    def new_replace(self, target):
+        raise OSError(errno.EXDEV, "Cross-device link", self, target)
+
+    def new_test(self):
+        old_replace = self.cls.replace
+        self.cls.replace = new_replace
+        try:
+            old_test(self)
+        finally:
+            self.cls.replace = old_replace
+    return new_test
 
 #
 # Tests for the pure classes.
@@ -112,6 +131,15 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
 
+    @needs_windows
+    def test_constructor_nested_foreign_flavour(self):
+        # See GH-125069.
+        p1 = pathlib.PurePosixPath('b/c:\\d')
+        p2 = pathlib.PurePosixPath('b/', 'c:\\d')
+        self.assertEqual(p1, p2)
+        self.assertEqual(self.cls(p1), self.cls('b/c:/d'))
+        self.assertEqual(self.cls(p2), self.cls('b/c:/d'))
+
     def _check_parse_path(self, raw_path, *expected):
         sep = self.parser.sep
         actual = self.cls._parse_path(raw_path.replace('/', sep))
@@ -143,15 +171,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(str(p), '.')
         # Special case for the empty path.
         self._check_str('.', ('',))
-
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
 
     def test_join_nested(self):
         P = self.cls
@@ -527,12 +546,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
-    def test_matches_pathbase_api(self):
-        our_names = {name for name in dir(self.cls) if name[0] != '_'}
-        our_names.remove('is_reserved')  # only present in PurePath
+    def test_matches_pathbase_docstrings(self):
         path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
-        self.assertEqual(our_names, path_names)
-        for attr_name in our_names:
+        for attr_name in path_names:
             if attr_name == 'parser':
                 # On Windows, Path.parser is ntpath, but PathBase.parser is
                 # posixpath, and so their docstrings differ.
@@ -707,6 +723,45 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
+    def test_copy_error_handling(self):
+        def make_raiser(err):
+            def raiser(*args, **kwargs):
+                raise OSError(err, os.strerror(err))
+            return raiser
+
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+
+        # Raise non-fatal OSError from all available fast copy functions.
+        with contextlib.ExitStack() as ctx:
+            if fcntl and hasattr(fcntl, 'FICLONE'):
+                ctx.enter_context(mock.patch('fcntl.ioctl', make_raiser(errno.EXDEV)))
+            if posix and hasattr(posix, '_fcopyfile'):
+                ctx.enter_context(mock.patch('posix._fcopyfile', make_raiser(errno.ENOTSUP)))
+            if hasattr(os, 'copy_file_range'):
+                ctx.enter_context(mock.patch('os.copy_file_range', make_raiser(errno.EXDEV)))
+            if hasattr(os, 'sendfile'):
+                ctx.enter_context(mock.patch('os.sendfile', make_raiser(errno.ENOTSOCK)))
+
+            source.copy(target)
+            self.assertTrue(target.exists())
+            self.assertEqual(source.read_text(), target.read_text())
+
+        # Raise fatal OSError from first available fast copy function.
+        if fcntl and hasattr(fcntl, 'FICLONE'):
+            patchpoint = 'fcntl.ioctl'
+        elif posix and hasattr(posix, '_fcopyfile'):
+            patchpoint = 'posix._fcopyfile'
+        elif hasattr(os, 'copy_file_range'):
+            patchpoint = 'os.copy_file_range'
+        elif hasattr(os, 'sendfile'):
+            patchpoint = 'os.sendfile'
+        else:
+            return
+        with mock.patch(patchpoint, make_raiser(errno.ENOENT)):
+            self.assertRaises(FileNotFoundError, source.copy, target)
+
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
     @unittest.skipIf(root_in_posix, "test fails with root privilege")
     def test_copy_dir_no_read_permission(self):
@@ -714,11 +769,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         source = base / 'dirE'
         target = base / 'copyE'
         self.assertRaises(PermissionError, source.copy, target)
-        self.assertFalse(target.exists())
-        errors = []
-        source.copy(target, on_error=errors.append)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], PermissionError)
         self.assertFalse(target.exists())
 
     def test_copy_dir_preserve_metadata(self):
@@ -750,6 +800,85 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         source.copy(target, preserve_metadata=True)
         target_file = target.joinpath('dirD', 'fileD')
         self.assertEqual(os.getxattr(target_file, b'user.foo'), b'42')
+
+    @patch_replace
+    def test_move_file_other_fs(self):
+        self.test_move_file()
+
+    @patch_replace
+    def test_move_file_to_file_other_fs(self):
+        self.test_move_file_to_file()
+
+    @patch_replace
+    def test_move_file_to_dir_other_fs(self):
+        self.test_move_file_to_dir()
+
+    @patch_replace
+    def test_move_dir_other_fs(self):
+        self.test_move_dir()
+
+    @patch_replace
+    def test_move_dir_to_dir_other_fs(self):
+        self.test_move_dir_to_dir()
+
+    @patch_replace
+    def test_move_dir_into_itself_other_fs(self):
+        self.test_move_dir_into_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_other_fs(self):
+        self.test_move_file_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_file_symlink_to_itself_other_fs(self):
+        self.test_move_file_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_other_fs(self):
+        self.test_move_dir_symlink()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dir_symlink_to_itself_other_fs(self):
+        self.test_move_dir_symlink_to_itself()
+
+    @patch_replace
+    @needs_symlinks
+    def test_move_dangling_symlink_other_fs(self):
+        self.test_move_dangling_symlink()
+
+    @patch_replace
+    def test_move_into_other_os(self):
+        self.test_move_into()
+
+    @patch_replace
+    def test_move_into_empty_name_other_os(self):
+        self.test_move_into_empty_name()
+
+    def _check_complex_symlinks(self, link0_target):
+        super()._check_complex_symlinks(link0_target)
+        P = self.cls(self.base)
+        # Resolve relative paths.
+        old_path = os.getcwd()
+        os.chdir(self.base)
+        try:
+            p = self.cls('link0').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link1').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link2').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+            p = self.cls('link3').resolve()
+            self.assertEqual(p, P)
+            self.assertEqualNormCase(str(p), self.base)
+        finally:
+            os.chdir(old_path)
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
@@ -862,27 +991,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
 
-    def test_delete_uses_safe_fd_version_if_available(self):
-        if delete_use_fd_functions:
-            self.assertTrue(self.cls.delete.avoids_symlink_attacks)
-            d = self.cls(self.base, 'a')
-            d.mkdir()
-            try:
-                real_open = os.open
-
-                class Called(Exception):
-                    pass
-
-                def _raiser(*args, **kwargs):
-                    raise Called
-
-                os.open = _raiser
-                self.assertRaises(Called, d.delete)
-            finally:
-                os.open = real_open
-        else:
-            self.assertFalse(self.cls.delete.avoids_symlink_attacks)
-
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
@@ -904,10 +1012,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             child_dir_path.chmod(new_mode)
             tmp.chmod(new_mode)
 
-            errors = []
-            tmp.delete(on_error=errors.append)
-            # Test whether onerror has actually been called.
-            self.assertEqual(len(errors), 3)
+            self.assertRaises(PermissionError, tmp._delete)
         finally:
             tmp.chmod(old_dir_mode)
             child_file_path.chmod(old_child_file_mode)
@@ -932,7 +1037,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         link3 = dir1 / 'link3'
         _winapi.CreateJunction(str(file1), str(link3))
         # make sure junctions are removed but not followed
-        dir1.delete()
+        dir1._delete()
         self.assertFalse(dir1.exists())
         self.assertTrue(dir3.exists())
         self.assertTrue(file1.exists())
@@ -942,76 +1047,16 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         import _winapi
         tmp = self.cls(self.base, 'delete')
         tmp.mkdir()
-        try:
-            src = tmp / 'cheese'
-            dst = tmp / 'shop'
-            src.mkdir()
-            spam = src / 'spam'
-            spam.write_text('')
-            _winapi.CreateJunction(str(src), str(dst))
-            self.assertRaises(OSError, dst.delete)
-            dst.delete(ignore_errors=True)
-        finally:
-            tmp.delete(ignore_errors=True)
-
-    @needs_windows
-    def test_delete_outer_junction_on_error(self):
-        import _winapi
-        tmp = self.cls(self.base, 'delete')
-        tmp.mkdir()
-        dir_ = tmp / 'dir'
-        dir_.mkdir()
-        link = tmp / 'link'
-        _winapi.CreateJunction(str(dir_), str(link))
-        try:
-            self.assertRaises(OSError, link.delete)
-            self.assertTrue(dir_.exists())
-            self.assertTrue(link.exists(follow_symlinks=False))
-            errors = []
-
-            def on_error(error):
-                errors.append(error)
-
-            link.delete(on_error=on_error)
-            self.assertEqual(len(errors), 1)
-            self.assertIsInstance(errors[0], OSError)
-            self.assertEqual(errors[0].filename, str(link))
-        finally:
-            os.unlink(str(link))
-
-    @unittest.skipUnless(delete_use_fd_functions, "requires safe delete")
-    def test_delete_fails_on_close(self):
-        # Test that the error handler is called for failed os.close() and that
-        # os.close() is only called once for a file descriptor.
-        tmp = self.cls(self.base, 'delete')
-        tmp.mkdir()
-        dir1 = tmp / 'dir1'
-        dir1.mkdir()
-        dir2 = dir1 / 'dir2'
-        dir2.mkdir()
-
-        def close(fd):
-            orig_close(fd)
-            nonlocal close_count
-            close_count += 1
-            raise OSError
-
-        close_count = 0
-        with swap_attr(os, 'close', close) as orig_close:
-            with self.assertRaises(OSError):
-                dir1.delete()
-        self.assertTrue(dir2.is_dir())
-        self.assertEqual(close_count, 2)
-
-        close_count = 0
-        errors = []
-
-        with swap_attr(os, 'close', close) as orig_close:
-            dir1.delete(on_error=errors.append)
-        self.assertEqual(len(errors), 2)
-        self.assertEqual(errors[0].filename, str(dir2))
-        self.assertEqual(errors[1].filename, str(dir1))
-        self.assertEqual(close_count, 2)
+        src = tmp / 'cheese'
+        dst = tmp / 'shop'
+        src.mkdir()
+        spam = src / 'spam'
+        spam.write_text('')
+        _winapi.CreateJunction(str(src), str(dst))
+        dst._delete()
+        self.assertFalse(dst.exists())
+        self.assertTrue(spam.exists())
+        self.assertTrue(src.exists())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1019,71 +1064,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_delete_on_named_pipe(self):
         p = self.cls(self.base, 'pipe')
         os.mkfifo(p)
-        p.delete()
+        p._delete()
         self.assertFalse(p.exists())
 
         p = self.cls(self.base, 'dir')
         p.mkdir()
         os.mkfifo(p / 'mypipe')
-        p.delete()
+        p._delete()
         self.assertFalse(p.exists())
-
-    @unittest.skipIf(sys.platform[:6] == 'cygwin',
-                     "This test can't be run on Cygwin (issue #1071513).")
-    @os_helper.skip_if_dac_override
-    @os_helper.skip_unless_working_chmod
-    def test_delete_deleted_race_condition(self):
-        # bpo-37260
-        #
-        # Test that a file or a directory deleted after it is enumerated
-        # by scandir() but before unlink() or rmdr() is called doesn't
-        # generate any errors.
-        def on_error(exc):
-            assert exc.filename
-            if not isinstance(exc, PermissionError):
-                raise
-            # Make the parent and the children writeable.
-            for p, mode in zip(paths, old_modes):
-                p.chmod(mode)
-            # Remove other dirs except one.
-            keep = next(p for p in dirs if str(p) != exc.filename)
-            for p in dirs:
-                if p != keep:
-                    p.rmdir()
-            # Remove other files except one.
-            keep = next(p for p in files if str(p) != exc.filename)
-            for p in files:
-                if p != keep:
-                    p.unlink()
-
-        tmp = self.cls(self.base, 'delete')
-        tmp.mkdir()
-        paths = [tmp] + [tmp / f'child{i}' for i in range(6)]
-        dirs = paths[1::2]
-        files = paths[2::2]
-        for path in dirs:
-            path.mkdir()
-        for path in files:
-            path.write_text('')
-
-        old_modes = [path.stat().st_mode for path in paths]
-
-        # Make the parent and the children non-writeable.
-        new_mode = stat.S_IREAD | stat.S_IEXEC
-        for path in reversed(paths):
-            path.chmod(new_mode)
-
-        try:
-            tmp.delete(on_error=on_error)
-        except:
-            # Test failed, so cleanup artifacts.
-            for path, mode in zip(paths, old_modes):
-                try:
-                    path.chmod(mode)
-                except OSError:
-                    pass
-            tmp.delete()
-            raise
 
     def test_delete_does_not_choke_on_failing_lstat(self):
         try:
@@ -1091,7 +1079,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             tmp = self.cls(self.base, 'delete')
 
             def raiser(fn, *args, **kwargs):
-                if fn != str(tmp):
+                if fn != tmp:
                     raise OSError()
                 else:
                     return orig_lstat(fn)
@@ -1101,7 +1089,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             tmp.mkdir()
             foo = tmp / 'foo'
             foo.write_text('')
-            tmp.delete()
+            tmp._delete()
         finally:
             os.lstat = orig_lstat
 
@@ -1366,6 +1354,17 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    @needs_symlinks
+    def test_lstat(self):
+        p = self.cls(self.base)/ 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.lstat())
+
+    def test_lstat_nosymlink(self):
+        p = self.cls(self.base) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.lstat())
+
     def test_is_junction(self):
         P = self.cls(self.base)
 
@@ -1433,84 +1432,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_passing_kwargs_errors(self):
         with self.assertRaises(TypeError):
             self.cls(foo="bar")
-
-    def setUpWalk(self):
-        super().setUpWalk()
-        sub21_path= self.sub2_path / "SUB21"
-        tmp5_path = sub21_path / "tmp3"
-        broken_link3_path = self.sub2_path / "broken_link3"
-
-        os.makedirs(sub21_path)
-        tmp5_path.write_text("I am tmp5, blame test_pathlib.")
-        if self.can_symlink:
-            os.symlink(tmp5_path, broken_link3_path)
-            self.sub2_tree[2].append('broken_link3')
-            self.sub2_tree[2].sort()
-        if not is_emscripten:
-            # Emscripten fails with inaccessible directories.
-            os.chmod(sub21_path, 0)
-        try:
-            os.listdir(sub21_path)
-        except PermissionError:
-            self.sub2_tree[1].append('SUB21')
-        else:
-            os.chmod(sub21_path, stat.S_IRWXU)
-            os.unlink(tmp5_path)
-            os.rmdir(sub21_path)
-
-    def test_walk_bad_dir(self):
-        self.setUpWalk()
-        errors = []
-        walk_it = self.walk_path.walk(on_error=errors.append)
-        root, dirs, files = next(walk_it)
-        self.assertEqual(errors, [])
-        dir1 = 'SUB1'
-        path1 = root / dir1
-        path1new = (root / dir1).with_suffix(".new")
-        path1.rename(path1new)
-        try:
-            roots = [r for r, _, _ in walk_it]
-            self.assertTrue(errors)
-            self.assertNotIn(path1, roots)
-            self.assertNotIn(path1new, roots)
-            for dir2 in dirs:
-                if dir2 != dir1:
-                    self.assertIn(root / dir2, roots)
-        finally:
-            path1new.rename(path1)
-
-    def test_walk_many_open_files(self):
-        depth = 30
-        base = self.cls(self.base, 'deep')
-        path = self.cls(base, *(['d']*depth))
-        path.mkdir(parents=True)
-
-        iters = [base.walk(top_down=False) for _ in range(100)]
-        for i in range(depth + 1):
-            expected = (path, ['d'] if i else [], [])
-            for it in iters:
-                self.assertEqual(next(it), expected)
-            path = path.parent
-
-        iters = [base.walk(top_down=True) for _ in range(100)]
-        path = base
-        for i in range(depth + 1):
-            expected = (path, ['d'] if i < depth else [], [])
-            for it in iters:
-                self.assertEqual(next(it), expected)
-            path = path / 'd'
-
-    def test_walk_above_recursion_limit(self):
-        recursion_limit = 40
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with infinite_recursion(recursion_limit):
-            list(base.walk())
-            list(base.walk(top_down=False))
 
     def test_glob_empty_pattern(self):
         p = self.cls('')
@@ -1893,6 +1814,94 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         P = self.cls
         with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').group()
+
+
+class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
+    cls = pathlib.Path
+    base = PathTest.base
+    can_symlink = PathTest.can_symlink
+
+    def setUp(self):
+        super().setUp()
+        sub21_path= self.sub2_path / "SUB21"
+        tmp5_path = sub21_path / "tmp3"
+        broken_link3_path = self.sub2_path / "broken_link3"
+
+        os.makedirs(sub21_path)
+        tmp5_path.write_text("I am tmp5, blame test_pathlib.")
+        if self.can_symlink:
+            os.symlink(tmp5_path, broken_link3_path)
+            self.sub2_tree[2].append('broken_link3')
+            self.sub2_tree[2].sort()
+        if not is_emscripten:
+            # Emscripten fails with inaccessible directories.
+            os.chmod(sub21_path, 0)
+        try:
+            os.listdir(sub21_path)
+        except PermissionError:
+            self.sub2_tree[1].append('SUB21')
+        else:
+            os.chmod(sub21_path, stat.S_IRWXU)
+            os.unlink(tmp5_path)
+            os.rmdir(sub21_path)
+
+    def tearDown(self):
+        if 'SUB21' in self.sub2_tree[1]:
+            os.chmod(self.sub2_path / "SUB21", stat.S_IRWXU)
+        super().tearDown()
+
+    def test_walk_bad_dir(self):
+        errors = []
+        walk_it = self.walk_path.walk(on_error=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertEqual(errors, [])
+        dir1 = 'SUB1'
+        path1 = root / dir1
+        path1new = (root / dir1).with_suffix(".new")
+        path1.rename(path1new)
+        try:
+            roots = [r for r, _, _ in walk_it]
+            self.assertTrue(errors)
+            self.assertNotIn(path1, roots)
+            self.assertNotIn(path1new, roots)
+            for dir2 in dirs:
+                if dir2 != dir1:
+                    self.assertIn(root / dir2, roots)
+        finally:
+            path1new.rename(path1)
+
+    def test_walk_many_open_files(self):
+        depth = 30
+        base = self.cls(self.base, 'deep')
+        path = self.cls(base, *(['d']*depth))
+        path.mkdir(parents=True)
+
+        iters = [base.walk(top_down=False) for _ in range(100)]
+        for i in range(depth + 1):
+            expected = (path, ['d'] if i else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            path = path.parent
+
+        iters = [base.walk(top_down=True) for _ in range(100)]
+        path = base
+        for i in range(depth + 1):
+            expected = (path, ['d'] if i < depth else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with infinite_recursion(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 @unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')

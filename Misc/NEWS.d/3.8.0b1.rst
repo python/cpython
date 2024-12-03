@@ -176,8 +176,8 @@ Added new ``replace()`` method to the code type (:class:`types.CodeType`).
 .. nonce: d1SOtF
 .. section: Core and Builtins
 
-Implement :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`,
-and :func:`socket.if_indextoname()` on Windows.
+Implement :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`,
+and :func:`socket.if_indextoname` on Windows.
 
 ..
 
@@ -538,7 +538,7 @@ module.
 .. nonce: TQFOR4
 .. section: Library
 
-:meth:`!msilib.Directory.start_component()` no longer fails if *keyfile* is
+:meth:`!msilib.Directory.start_component` no longer fails if *keyfile* is
 not ``None``.
 
 ..
@@ -1371,7 +1371,7 @@ Asyncio: Remove inner callback on outer cancellation in shield
 .. nonce: d8djAJ
 .. section: Library
 
-Fix :meth:`asyncio.SelectorEventLoop.subprocess_exec()` leaks file
+Fix :meth:`asyncio.SelectorEventLoop.subprocess_exec` leaks file
 descriptors if ``Popen`` fails and called with ``stdin=subprocess.PIPE``.
 Patch by Niklas Fiekas.
 

@@ -1,4 +1,4 @@
-name: Docs
+name: Reusable Docs
 
 on:
   workflow_call:
@@ -10,6 +10,9 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
 
 jobs:
   build_doc:
@@ -81,7 +84,7 @@ jobs:
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'  # known to work with Sphinx 6.2.1
+        python-version: '3.13'  # known to work with Sphinx 7.2.6
         cache: 'pip'
         cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
     - name: 'Install build dependencies'
@@ -92,7 +95,7 @@ jobs:
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
