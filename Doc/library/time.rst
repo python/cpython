@@ -608,7 +608,7 @@ Functions
    documented as supported.
 
    If a format directive is unrecognized, the behavior is platform-dependent.
-   glibc will return the format string unmodified, Windows will raise a
+   glibc will return the directive unmodified, Windows will raise a
    :exc:`ValueError`, and macOS, musl, and BSD will return an empty string.
 
 
