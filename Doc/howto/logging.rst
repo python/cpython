@@ -127,7 +127,7 @@ that; formatting options will also be explained later.
 
 Notice that in this example, we use functions directly on the ``logging``
 module, like ``logging.debug``, rather than creating a logger and calling
-functions on it. These functions operation on the root logger, but can be useful
+functions on it. These functions operate on the root logger, but can be useful
 as they will call :func:`~logging.basicConfig` for you if it has not been called yet, like in
 this example.  In larger programs you'll usually want to control the logging
 configuration explicitly however - so for that reason as well as others, it's
