@@ -19,6 +19,7 @@
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "opcode.h"               // MAKE_CELL
 
 #include <stddef.h>               // ptrdiff_t
@@ -11676,23 +11677,28 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
 
     assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
     PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[0]);
+    if (firstarg == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+        return -1;
+    }
     // The first argument might be a cell.
-    if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
-        // "firstarg" is a cell here unless (very unlikely) super()
-        // was called from the C-API before the first MAKE_CELL op.
-        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
-            // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
-            // to use _PyOpcode_Deopt here:
-            assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
-                   _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
-            assert(PyCell_Check(firstarg));
-            firstarg = PyCell_GET(firstarg);
+    // "firstarg" is a cell here unless (very unlikely) super()
+    // was called from the C-API before the first MAKE_CELL op.
+    if ((_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL) &&
+            (_PyInterpreterFrame_LASTI(cframe) >= 0)) {
+        // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
+        // to use _PyOpcode_Deopt here:
+        assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
+                _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
+        assert(PyCell_Check(firstarg));
+        firstarg = PyCell_GetRef((PyCellObject *)firstarg);
+        if (firstarg == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+            return -1;
         }
     }
-    if (firstarg == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "super(): arg[0] deleted");
-        return -1;
+    else {
+        Py_INCREF(firstarg);
     }
 
     // Look for __class__ in the free vars.
@@ -11707,18 +11713,22 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
-            type = (PyTypeObject *) PyCell_GET(cell);
+            type = (PyTypeObject *) PyCell_GetRef((PyCellObject *)cell);
             if (type == NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): empty __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
             if (!PyType_Check(type)) {
                 PyErr_Format(PyExc_RuntimeError,
                   "super(): __class__ is not a type (%s)",
                   Py_TYPE(type)->tp_name);
+                Py_DECREF(type);
+                Py_DECREF(firstarg);
                 return -1;
             }
             break;
@@ -11727,6 +11737,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
     if (type == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): __class__ cell not found");
+        Py_DECREF(firstarg);
         return -1;
     }
 
@@ -11773,16 +11784,24 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
             return -1;
         }
     }
+    else {
+        Py_INCREF(type);
+        Py_XINCREF(obj);
+    }
 
-    if (obj == Py_None)
+    if (obj == Py_None) {
+        Py_DECREF(obj);
         obj = NULL;
+    }
     if (obj != NULL) {
         obj_type = supercheck(type, obj);
-        if (obj_type == NULL)
+        if (obj_type == NULL) {
+            Py_DECREF(type);
+            Py_DECREF(obj);
             return -1;
-        Py_INCREF(obj);
+        }
     }
-    Py_XSETREF(su->type, (PyTypeObject*)Py_NewRef(type));
+    Py_XSETREF(su->type, (PyTypeObject*)type);
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;

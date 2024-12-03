@@ -13,6 +13,7 @@
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_cell.h"          // PyCell_GetRef()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -209,7 +210,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         PyObject *margs[3] = {name, bases, ns};
         cls = PyObject_VectorcallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
-            PyObject *cell_cls = PyCell_GET(cell);
+            PyObject *cell_cls = PyCell_GetRef((PyCellObject *)cell);
             if (cell_cls != cls) {
                 if (cell_cls == NULL) {
                     const char *msg =
@@ -221,8 +222,12 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
+                Py_XDECREF(cell_cls);
                 Py_SETREF(cls, NULL);
                 goto error;
+            }
+            else {
+                Py_DECREF(cell_cls);
             }
         }
     }
