@@ -1644,7 +1644,7 @@ static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
         PyErr_NoMemory();
         return -1;
     }
-    memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
+    memcpy(mc->vectorcall_args, _PyTuple_ITEMS(args),
             nargs * sizeof(PyObject*));
     if (kwds && PyDict_Size(kwds)) {
         const Py_ssize_t nkwds = PyDict_Size(kwds);
@@ -1694,6 +1694,10 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (mc == NULL) {
         return NULL;
     }
+    mc->vectorcall = NULL;
+    mc->vectorcall_args = NULL;
+    mc->vectorcall_kwnames = NULL;
+    mc->kwds = Py_XNewRef(kwds);
 
     Py_INCREF(name);
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1705,17 +1709,12 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(mc);
         return NULL;
     }
-    mc->kwds = Py_XNewRef(kwds);
-    mc->vectorcall = NULL;
-    mc->vectorcall_args = NULL;
-    mc->vectorcall_kwnames = NULL;
 
     Py_ssize_t vectorcall_size = PyTuple_GET_SIZE(args)
                                    + (kwds ? PyDict_Size(kwds) : 0);
     if (vectorcall_size < (_METHODCALLER_MAX_ARGS)) {
         if (_methodcaller_initialize_vectorcall(mc) < 0) {
-            Py_XDECREF(mc->args);
-            Py_XDECREF(mc->kwds);
+            Py_DECREF(mc);
             return NULL;
         }
     }
