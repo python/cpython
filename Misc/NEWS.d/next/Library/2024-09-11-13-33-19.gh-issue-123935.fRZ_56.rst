@@ -1,0 +1,2 @@
+Fix parent slots detection for dataclasses that inherit from classes with
+``__dictoffset__``.
