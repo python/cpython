@@ -313,8 +313,11 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-* The :exc:`~ctypes.COMError` exception is now public.
+* On Windows, the :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
+
+* On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
+  (Contributed by Jun Komoda in :gh:`127275`.)
 
 datetime
 --------
