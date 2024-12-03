@@ -7594,9 +7594,6 @@ socket_exec(PyObject *m)
     /*  */
     ADD_INT_MACRO(m, AF_NETLINK);
     ADD_INT_MACRO(m, NETLINK_ROUTE);
-#ifdef NETLINK_UNUSED
-    ADD_INT_MACRO(m, NETLINK_UNUSED);
-#endif
 #ifdef NETLINK_SOCK_DIAG
     ADD_INT_MACRO(m, NETLINK_SOCK_DIAG);
 #endif
