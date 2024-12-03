@@ -2426,6 +2426,8 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #  define NAME_LIMIT 15
 #elif defined(__FreeBSD__)
 #  define NAME_LIMIT 98
+#elif defined(__sun)
+#  define NAME_LIMIT 31
 #endif
 
 #ifdef NAME_LIMIT

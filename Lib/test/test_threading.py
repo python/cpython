@@ -2121,6 +2121,8 @@ class MiscTestCase(unittest.TestCase):
             truncate = 63
         elif sys.platform.startswith("freebsd"):
             truncate = 98
+        elif sys.platform.startswith("solaris"):
+            truncate = 31
         else:
             truncate = None
         limit = truncate or 100
