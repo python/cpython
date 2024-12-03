@@ -252,11 +252,17 @@ class up(MotionCommand):
             new_y = y - 1
 
             if r.bol() == 0:
-                if r.historyi > 0:
-                    r.select_item(r.historyi - 1)
+                # move to the previous item in history
+                if r.historyi == 0:
+                    r.pos = 0
+                    r.error("start of buffer")
                     return
-                r.pos = 0
-                r.error("start of buffer")
+                nexti = r.historyi - 1
+                if r.historyi < len(r.history):
+                    # skip to the first different item encountered
+                    while nexti > 0 and r.history[nexti] == r.history[r.historyi]:
+                        nexti -= 1
+                r.select_item(nexti)
                 return
 
             if (
@@ -283,12 +289,17 @@ class down(MotionCommand):
             new_y = y + 1
 
             if new_y > r.max_row():
-                if r.historyi < len(r.history):
-                    r.select_item(r.historyi + 1)
-                    r.pos = r.eol(0)
+                # move to the next item in history
+                if r.historyi == len(r.history):
+                    r.pos = len(b)
+                    r.error("end of buffer")
                     return
-                r.pos = len(b)
-                r.error("end of buffer")
+                nexti = r.historyi + 1
+                # if there are repeated items, skip to the last one
+                while nexti + 1 < len(r.history) and r.history[nexti] == r.history[nexti + 1]:
+                    nexti += 1
+                r.select_item(nexti)
+                r.pos = r.eol(0)
                 return
 
             if (

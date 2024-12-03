@@ -59,7 +59,11 @@ class next_history(commands.Command):
         if r.historyi == len(r.history):
             r.error("end of history list")
             return
-        r.select_item(r.historyi + 1)
+        nexti = r.historyi + 1
+        # if there are repeated items, skip to the last one
+        while nexti + 1 < len(r.history) and r.history[nexti] == r.history[nexti + 1]:
+            nexti += 1
+        r.select_item(nexti)
 
 
 class previous_history(commands.Command):
@@ -68,7 +72,12 @@ class previous_history(commands.Command):
         if r.historyi == 0:
             r.error("start of history list")
             return
-        r.select_item(r.historyi - 1)
+        nexti = r.historyi - 1
+        if r.historyi < len(r.history):
+            # skip to the first different item encountered
+            while nexti > 0 and r.history[nexti] == r.history[r.historyi]:
+                nexti -= 1
+        r.select_item(nexti)
 
 
 class history_search_backward(commands.Command):
@@ -105,7 +114,12 @@ class last_history(commands.Command):
 
 class operate_and_get_next(commands.FinishCommand):
     def do(self) -> None:
-        self.reader.next_history = self.reader.historyi + 1
+        r = self.reader
+        nexti = r.historyi + 1
+        # if there are repeated items, skip to the last one
+        while nexti + 1 < len(r.history) and r.history[nexti] == r.history[nexti + 1]:
+            nexti += 1
+        r.next_history = nexti
 
 
 class yank_arg(commands.Command):
@@ -379,6 +393,7 @@ class HistoricalReader(Reader):
         p = self.pos
         i = self.historyi
         s = self.get_unicode()
+        current = s
         forwards = self.isearch_direction == ISEARCH_DIRECTION_FORWARDS
         while 1:
             if forwards:
@@ -389,18 +404,22 @@ class HistoricalReader(Reader):
                 self.select_item(i)
                 self.pos = p
                 return
-            elif (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
-                self.error("not found")
-                return
             else:
-                if forwards:
-                    i += 1
-                    s = self.get_item(i)
-                    p = -1
-                else:
-                    i -= 1
-                    s = self.get_item(i)
-                    p = len(s)
+                while 1:
+                    if (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
+                        self.error("not found")
+                        return
+                    if forwards:
+                        i += 1
+                        s = self.get_item(i)
+                        p = -1
+                    else:
+                        i -= 1
+                        s = self.get_item(i)
+                        p = len(s)
+                    # skip over repeated history items until we find something different
+                    if s != current:
+                        break
 
     def finish(self) -> None:
         super().finish()
