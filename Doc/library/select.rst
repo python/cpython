@@ -280,45 +280,45 @@ Edge and Level Trigger Polling (epoll) Objects
 
    *eventmask*
 
-   +---------------------------+-----------------------------------------------+
-   | Constant                  | Meaning                                       |
-   +===========================+===============================================+
-   | :const:`EPOLLIN`          | Available for read                            |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLOUT`         | Available for write                           |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLPRI`         | Urgent data for read                          |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLERR`         | Error condition happened on the assoc. fd     |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLHUP`         | Hang up happened on the assoc. fd             |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLET`          | Set Edge Trigger behavior, the default is     |
-   |                           | Level Trigger behavior                        |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLONESHOT`     | Set one-shot behavior. After one event is     |
-   |                           | pulled out, the fd is internally disabled     |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLEXCLUSIVE`   | Wake only one epoll object when the           |
-   |                           | associated fd has an event. The default (if   |
-   |                           | this flag is not set) is to wake all epoll    |
-   |                           | objects polling on a fd.                      |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDHUP`       | Stream socket peer closed connection or shut  |
-   |                           | down writing half of connection.              |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDNORM`      | Equivalent to :const:`EPOLLIN`                |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLRDBAND`      | Priority data band can be read.               |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLWRNORM`      | Equivalent to :const:`EPOLLOUT`               |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLWRBAND`      | Priority data may be written.                 |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLMSG`         | Ignored.                                      |
-   +---------------------------+-----------------------------------------------+
-   | :const:`EPOLLWAKEUP`      | Prevents sleep during.                        |
-   +---------------------------+-----------------------------------------------+
+   +-------------------------+-----------------------------------------------+
+   | Constant                | Meaning                                       |
+   +=========================+===============================================+
+   | :const:`EPOLLIN`        | Available for read                            |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLOUT`       | Available for write                           |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLPRI`       | Urgent data for read                          |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLERR`       | Error condition happened on the assoc. fd     |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLHUP`       | Hang up happened on the assoc. fd             |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLET`        | Set Edge Trigger behavior, the default is     |
+   |                         | Level Trigger behavior                        |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLONESHOT`   | Set one-shot behavior. After one event is     |
+   |                         | pulled out, the fd is internally disabled     |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLEXCLUSIVE` | Wake only one epoll object when the           |
+   |                         | associated fd has an event. The default (if   |
+   |                         | this flag is not set) is to wake all epoll    |
+   |                         | objects polling on a fd.                      |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLRDHUP`     | Stream socket peer closed connection or shut  |
+   |                         | down writing half of connection.              |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLRDNORM`    | Equivalent to :const:`EPOLLIN`                |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLRDBAND`    | Priority data band can be read.               |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLWRNORM`    | Equivalent to :const:`EPOLLOUT`               |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLWRBAND`    | Priority data may be written.                 |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLMSG`       | Ignored.                                      |
+   +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLWAKEUP`    | Prevents sleep during event waiting.          |
+   +-------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.6
       :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
