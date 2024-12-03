@@ -5672,7 +5672,7 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
     can_cache = can_cache && _PyObject_HasDeferredRefcount(init);
     #endif
     if (can_cache) {
-        FT_ATOMIC_STORE_PTR_RELAXED(type->_spec_cache.init, init);
+        FT_ATOMIC_STORE_PTR_RELEASE(type->_spec_cache.init, init);
     }
     END_TYPE_LOCK();
     return can_cache;

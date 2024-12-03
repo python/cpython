@@ -3725,7 +3725,7 @@ dummy_func(
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
             assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
-            PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_RELAXED(cls->_spec_cache.init);
+            PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize));
             STAT_INC(CALL, hit);
