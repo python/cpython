@@ -145,8 +145,9 @@ cell_get_contents(PyObject *self, void *closure)
 static int
 cell_set_contents(PyObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 {
-    PyCellObject *op = _PyCell_CAST(self);
-    Py_XSETREF(op->ob_ref, Py_XNewRef(obj));
+    PyCellObject *cell = _PyCell_CAST(self);
+    Py_XINCREF(obj);
+    PyCell_SetTakeRef((PyCellObject *)cell, obj);
     return 0;
 }
 
