@@ -244,6 +244,7 @@ class BZ2FileTest(BaseTest):
         # This call will deadlock if the above call failed to release the lock.
         self.assertRaises(ValueError, bz2f.readlines)
 
+    @support.requires_subprocess()
     def testWrite(self):
         with BZ2File(self.filename, "w") as bz2f:
             self.assertRaises(TypeError, bz2f.write)
@@ -251,6 +252,7 @@ class BZ2FileTest(BaseTest):
         with open(self.filename, 'rb') as f:
             self.assertEqual(ext_decompress(f.read()), self.TEXT)
 
+    @support.requires_subprocess()
     def testWriteChunks10(self):
         with BZ2File(self.filename, "w") as bz2f:
             n = 0
@@ -270,6 +272,7 @@ class BZ2FileTest(BaseTest):
         with open(self.filename, "rb") as f:
             self.assertEqual(f.read(), expected)
 
+    @support.requires_subprocess()
     def testWriteLines(self):
         with BZ2File(self.filename, "w") as bz2f:
             self.assertRaises(TypeError, bz2f.writelines)
@@ -288,6 +291,7 @@ class BZ2FileTest(BaseTest):
             self.assertRaises(OSError, bz2f.write, b"a")
             self.assertRaises(OSError, bz2f.writelines, [b"a"])
 
+    @support.requires_subprocess()
     def testAppend(self):
         with BZ2File(self.filename, "w") as bz2f:
             self.assertRaises(TypeError, bz2f.write)
@@ -771,6 +775,7 @@ class BZ2FileTest(BaseTest):
                 self.assertTrue(self.TEXT.startswith(pdata))
                 self.assertEqual(bz2f.read(), self.TEXT)
 
+    @support.requires_subprocess()
     def testWriteBytesIO(self):
         with BytesIO() as bio:
             with BZ2File(bio, "w") as bz2f:
@@ -819,6 +824,7 @@ class BZ2FileTest(BaseTest):
 
 
 class BZ2CompressorTest(BaseTest):
+    @support.requires_subprocess()
     def testCompress(self):
         bz2c = BZ2Compressor()
         self.assertRaises(TypeError, bz2c.compress)
@@ -832,6 +838,7 @@ class BZ2CompressorTest(BaseTest):
         data += bz2c.flush()
         self.assertEqual(data, self.EMPTY_DATA)
 
+    @support.requires_subprocess()
     def testCompressChunks10(self):
         bz2c = BZ2Compressor()
         n = 0
@@ -1037,6 +1044,7 @@ class BZ2DecompressorTest(BaseTest):
 
 
 class CompressDecompressTest(BaseTest):
+    @support.requires_subprocess()
     def testCompress(self):
         data = bz2.compress(self.TEXT)
         self.assertEqual(ext_decompress(data), self.TEXT)
@@ -1082,6 +1090,7 @@ class OpenTest(BaseTest):
     def open(self, *args, **kwargs):
         return bz2.open(*args, **kwargs)
 
+    @support.requires_subprocess()
     def test_binary_modes(self):
         for mode in ("wb", "xb"):
             if mode == "xb":
@@ -1099,6 +1108,7 @@ class OpenTest(BaseTest):
                 file_data = ext_decompress(f.read())
                 self.assertEqual(file_data, self.TEXT * 2)
 
+    @support.requires_subprocess()
     def test_implicit_binary_modes(self):
         # Test implicit binary modes (no "b" or "t" in mode string).
         for mode in ("w", "x"):
@@ -1117,6 +1127,7 @@ class OpenTest(BaseTest):
                 file_data = ext_decompress(f.read())
                 self.assertEqual(file_data, self.TEXT * 2)
 
+    @support.requires_subprocess()
     def test_text_modes(self):
         text = self.TEXT.decode("ascii")
         text_native_eol = text.replace("\n", os.linesep)
@@ -1168,6 +1179,7 @@ class OpenTest(BaseTest):
         self.assertRaises(ValueError,
                           self.open, self.filename, "rb", newline="\n")
 
+    @support.requires_subprocess()
     def test_encoding(self):
         # Test non-default encoding.
         text = self.TEXT.decode("ascii")
