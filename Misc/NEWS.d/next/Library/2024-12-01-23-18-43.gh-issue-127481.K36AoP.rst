@@ -1,2 +1,1 @@
-Add the ``EPOLLWAKEUP`` constants to the :mod:`select`
-module.
+Add the ``EPOLLWAKEUP`` constant to the :mod:`select` module.
