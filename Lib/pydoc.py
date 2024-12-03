@@ -76,7 +76,6 @@ from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
-from token import tok_name
 
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
@@ -387,28 +386,33 @@ def ispackage(path):
 
 def source_synopsis(file):
     """Return the one-line summary of a file object, if present"""
+
     if hasattr(file, 'buffer'):
         file = file.buffer
     if isinstance(file, io.TextIOBase):
         try:
-            file = io.BytesIO(bytes(file.read(), 'utf-8'))
+            source = file.read()
+            if isinstance(source, bytes):
+                source = source.decode('utf-8')
         except UnicodeEncodeError:
-            # an exception will be raised if both utf-8 and latin-1 don't work
-            file = io.BytesIO(bytes(file.read(), 'latin-1'))
+            source = file.read().decode('latin-1')
+    else:
+        # Binary file
+        try:
+            source = tokenize.untokenize(tokenize.tokenize(file.readline))
+        except (SyntaxError, tokenize.TokenError, UnicodeDecodeError, ValueError):
+            return None
 
-    tokens = tokenize.tokenize(file.readline)
-
-    # tokenize always returns at least ENCODING and ENDMARKER
-    for token in tokens:
-        token_name = tok_name[token.type]
-        if token.name not in {'COMMENT', 'NL', 'ENCODING'}:
-            break
-
-	# xxx may not be set
-    if token_name == 'STRING':
-        return ast.literal_eval(token.string).strip().split('\n')[0].strip()
-
-    return None
+    try:
+        tree = ast.parse(source)
+        if (tree.body and isinstance(tree.body[0], ast.Expr) and
+            isinstance(tree.body[0].value, ast.Constant) and
+            isinstance(tree.body[0].value.vlaue, str)):
+            docstring = tree.body[0].value.value
+            return docstring.strip().split('\n')[0].strip()
+        return None
+    except (SyntaxError, ValueError) as e:
+        return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
