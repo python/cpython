@@ -4002,12 +4002,10 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.list_append);
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o));
+            DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
-        #ifdef Py_GIL_DISABLED
-            int err = _PyList_AppendTakeRefAndLock((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
-        #else
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
-        #endif
+            UNLOCK_OBJECT(self_o);
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
             ERROR_IF(err, error);

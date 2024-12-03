@@ -4912,14 +4912,13 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            if (!LOCK_OBJECT(self_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(CALL, hit);
-            #ifdef Py_GIL_DISABLED
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyList_AppendTakeRefAndLock((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #else
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
-            #endif
+            UNLOCK_OBJECT(self_o);
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
             if (err) JUMP_TO_ERROR();
