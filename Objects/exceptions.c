@@ -2818,7 +2818,6 @@ PyUnicodeTranslateError_GetStart(PyObject *exc, Py_ssize_t *start)
 static inline int
 unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 {
-    assert(PyObject_TypeCheck(self, (PyTypeObject*)&PyExc_UnicodeError));
     ((PyUnicodeErrorObject *)self)->start = start;
     return 0;
 }
@@ -2885,7 +2884,6 @@ PyUnicodeTranslateError_GetEnd(PyObject *exc, Py_ssize_t *end)
 static inline int
 unicode_error_set_end_impl(PyObject *exc, Py_ssize_t end)
 {
-    assert(PyObject_TypeCheck(exc, (PyTypeObject*)&PyExc_UnicodeError));
     ((PyUnicodeErrorObject *)exc)->end = end;
     return 0;
 }
