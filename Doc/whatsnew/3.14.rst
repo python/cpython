@@ -324,6 +324,10 @@ concurrent.futures
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
+* Introduced the optional ``buffersize`` parameter to :meth:`concurrent.futures.Executor.map`,
+  which specifies the number of results that can be buffered before being yielded.
+  (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
+
 ctypes
 ------
 
