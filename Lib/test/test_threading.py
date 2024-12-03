@@ -2118,7 +2118,7 @@ class MiscTestCase(unittest.TestCase):
         # respectively, 15 and 63 bytes.
         if sys.platform == "linux":
             truncate = 15
-        elif sys.platform == "darwin":
+        elif sys.platform in ("darwin", "ios"):
             truncate = 63
         elif sys.platform.startswith("freebsd"):
             truncate = 98
