@@ -1,0 +1,1 @@
+In the :mod:`trace` module, increase the coverage precision (``cov%``) to one decimal.
