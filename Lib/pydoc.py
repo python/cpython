@@ -384,26 +384,29 @@ def ispackage(path):
                 return True
     return False
 
-def source_synopsis(file_):
-    """Takes a file object and returns the one-line summary if present"""
-    if hasattr(file_, 'buffer'):
-        file_ = file_.buffer
-    if isinstance(file_, io.TextIOBase):
+def source_synopsis(file):
+    """Return the one-line summary of a file object, if present"""
+    if hasattr(file, 'buffer'):
+        file = file.buffer
+    if isinstance(file, io.TextIOBase):
         try:
-            file_ = io.BytesIO(bytes(file_.read(), 'utf-8'))
+            file = io.BytesIO(bytes(file.read(), 'utf-8'))
         except UnicodeEncodeError:
-            # exception is raised if both utf-8 and latin-1 don't work
-            file_ = io.BytesIO(bytes(file_.read(), 'latin-1'))
+            # an exception will be raised if both utf-8 and latin-1 don't work
+            file = io.BytesIO(bytes(file.read(), 'latin-1'))
 
-    tokens = tokenize.tokenize(file_.readline)
+    tokens = tokenize.tokenize(file.readline)
 
-    # tokenize always returns atleast ENCODING and ENDMARKER
-    for _token in tokens:
-        _token.name = token.tok_name[_token.type]
-        if _token.name not in ['COMMENT', 'NL', 'ENCODING']:
+    # tokenize always returns at least ENCODING and ENDMARKER
+    for token in tokens:
+        token_name = token.tok_name[token.type]
+        if token.name not in {'COMMENT', 'NL', 'ENCODING'}:
             break
-    if _token.name == 'STRING':
-        return ast.literal_eval(_token.string).strip().split('\n')[0].strip()
+
+	# xxx may not be set
+    if token_name == 'STRING':
+        return ast.literal_eval(token.string).strip().split('\n')[0].strip()
+
     return None
 
 def synopsis(filename, cache={}):
