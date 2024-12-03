@@ -615,7 +615,7 @@ defined by the module.  The specific list of defined symbols is available as
 
 .. data:: EHWPOISON
 
-   Memory page has hardware error
+   Memory page has hardware error.
 
    .. versionadded:: next
 
