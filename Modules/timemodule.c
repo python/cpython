@@ -813,9 +813,7 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
     /* I hate these functions that presume you know how big the output
      * will be ahead of time...
      */
-    int attempts = 0;
     while (1) {
-        attempts ++;
         if (*bufsize > PY_SSIZE_T_MAX/sizeof(time_char)) {
             PyErr_NoMemory();
             return NULL;
@@ -851,13 +849,15 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
         if (*bufsize >= 256 * fmtlen) {
-            /* If the buffer is 256 times as long as the format, it's probably not
-                failing for lack of room! More likely, `format_time` doesn't like the
-                format string. For instance we end up here with musl if the format
-                string ends with a '%'.
+            /* If the buffer is 256 times as long as the format, it's probably
+                not failing for lack of room! More likely, `format_time` doesn't
+                like the format string. For instance we end up here with musl if
+                the format string ends with a '%'.
+
+                Ideally we should raise ValueError("Invalid format string")
+                here. For backwards compatibility, return empty string instead.
             */
-            PyErr_Format(PyExc_ValueError, "Invalid format string attempts: %d *outbuf: '%.8s'", attempts, *outbuf);
-            return NULL;
+            return PyUnicode_FromStringAndSize(NULL, 0);
         }
         *bufsize += *bufsize;
     }
