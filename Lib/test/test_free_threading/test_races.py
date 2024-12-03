@@ -16,7 +16,10 @@ def do_race(func1, func2):
     """Run func1() and func2() repeatedly in separate threads."""
     n = 1000
 
+    barrier = threading.Barrier(2)
+
     def repeat(func):
+        barrier.wait()
         for _i in range(n):
             func()
 
