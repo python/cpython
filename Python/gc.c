@@ -1570,7 +1570,7 @@ assess_work_to_do(GCState *gcstate)
         heap_fraction = max_heap_fraction;
     }
     gcstate->young.count = 0;
-    return new_objects + heap_fraction;
+    return new_objects + heap_fraction * 2;
 }
 
 static void
@@ -1617,6 +1617,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         increment_size += move_all_transitively_reachable(&working, &increment, gcstate->visited_space);
         assert(working.top == NULL);
     }
+    assert(increment_size == gc_list_size(&increment));
     GC_STAT_ADD(1, objects_not_transitively_reachable, increment_size);
     validate_list(&increment, collecting_clear_unreachable_clear);
     gc_list_validate_space(&increment, gcstate->visited_space);
@@ -1625,7 +1626,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     add_stats(gcstate, 1, stats);
