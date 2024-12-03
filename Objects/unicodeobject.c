@@ -5018,7 +5018,8 @@ ctz(size_t v)
 #define HAVE_CTZ 0
 #endif
 
-#if HAVE_CTZ && PY_LITTLE_ENDIAN
+#if PY_LITTLE_ENDIAN
+#if HAVE_CTZ
 // load p[0]..p[size-1] as a size_t without unaligned access nor read ahead.
 static size_t
 load_unaligned(const unsigned char *p, size_t size)
@@ -5065,6 +5066,21 @@ load_unaligned(const unsigned char *p, size_t size)
     return u.s;
 }
 #endif
+#  if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+// x86 and amd64 are little endian and can load unaligned memory.
+#    if defined(__clang__) && defined(__has_feature)    \
+        && __has_feature(undefined_behavior_sanitizer)
+static inline size_t
+__attribute__((no_sanitize("alignment")))
+load_unaligned_x86_amd64(const unsigned char *p)
+{
+    return *(const size_t *)p;
+}
+#    else
+#      define load_unaligned_x86_amd64(p)   *(const size_t *)p
+#    endif
+#endif
+#endif // PY_LITTLE_ENDIAN
 
 /*
  * Find the first non-ASCII character in a byte sequence.
@@ -5084,8 +5100,7 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
         if (p < p2) {
 #if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-            // x86 and amd64 are little endian and can load unaligned memory.
-            size_t u = *(const size_t*)p & ASCII_CHAR_MASK;
+            size_t u = load_unaligned_x86_amd64(p) & ASCII_CHAR_MASK;
 #else
             size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
 #endif
