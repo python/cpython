@@ -2114,8 +2114,7 @@ class MiscTestCase(unittest.TestCase):
             nonlocal work_name
             work_name = get_name()
 
-        # On Linux and macOS, set_name() truncates the name to,
-        # respectively, 15 and 63 bytes.
+        # set_name() limit in bytes
         if sys.platform == "linux":
             truncate = 15
         elif sys.platform in ("darwin", "ios"):
@@ -2127,12 +2126,12 @@ class MiscTestCase(unittest.TestCase):
         limit = truncate or 100
 
         def create_test(name):
+            encoding = sys.getfilesystemencoding()
+            encoded = name.encode(encoding, "replace")
             if truncate is not None:
-                encoding = sys.getfilesystemencoding()
-                encoded = name.encode(encoding, "replace")
                 expected = os.fsdecode(encoded[:truncate])
             else:
-                expected = name
+                expected = os.fsdecode(encoded)
             return (name, expected)
 
         tests = [
@@ -2162,7 +2161,8 @@ class MiscTestCase(unittest.TestCase):
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
                 thread.join()
-                self.assertEqual(work_name, expected)
+                self.assertEqual(work_name, expected,
+                                 f"{len(work_name)=} and {len(expected)=}")
 
 
 class InterruptMainTests(unittest.TestCase):
