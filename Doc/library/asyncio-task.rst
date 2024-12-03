@@ -1068,10 +1068,10 @@ Scheduling From Other Threads
    than the one where the event loop is running.  Example::
 
      # Create a contextvar in your module
-     ctx_loop: ContextVar[asyncio.AbstractEventLoop] = contextvars.ContextVar('ctx_loop')
+     ctx_loop: contextvars.ContextVar[asyncio.AbstractEventLoop]('ctx_loop')
 
 
-     def in_thread():
+     def in_thread() -> None:
          # Get the loop from the context
          loop = ctx_loop.get()
 
@@ -1085,9 +1085,9 @@ Scheduling From Other Threads
          future = asyncio.run_coroutine_threadsafe(coro, loop)
 
          # Wait for the result with an optional timeout argument
-         assert future.result(timeout) == 3
+         assert future.result(timeout=2) == 3
 
-     async def amain():
+     async def amain() -> None:
          # Set the loop in the ContextVar
          token = ctx_loop.set(asyncio.get_running_loop())
          try:
@@ -1100,7 +1100,7 @@ Scheduling From Other Threads
    It's also possible to run the other way around.  Example::
 
      @contextlib.contextmanager
-     def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]
+     def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]:
          loop_fut = concurrent.futures.Future[asyncio.AbstractEventLoop]()
          stop_event = asyncio.Event()
 
@@ -1129,7 +1129,7 @@ Scheduling From Other Threads
          future = asyncio.run_coroutine_threadsafe(coro, loop)
 
          # Wait for the result with an optional timeout argument
-         assert future.result(timeout) == 3
+         assert future.result(timeout=2) == 3
 
    If an exception is raised in the coroutine, the returned Future
    will be notified.  It can also be used to cancel the task in
