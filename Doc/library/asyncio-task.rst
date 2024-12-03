@@ -1067,14 +1067,69 @@ Scheduling From Other Threads
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::
 
-     # Create a coroutine
-     coro = asyncio.sleep(1, result=3)
+     # Create a contextvar in your module
+     ctx_loop: ContextVar[asyncio.AbstractEventLoop] = contextvars.ContextVar('ctx_loop')
 
-     # Submit the coroutine to a given loop
-     future = asyncio.run_coroutine_threadsafe(coro, loop)
 
-     # Wait for the result with an optional timeout argument
-     assert future.result(timeout) == 3
+     def in_thread():
+         # Get the loop from the context
+         loop = ctx_loop.get()
+
+         # Run some blocking IO
+         pathlib.Path("example").read_text(encoding="utf8")
+
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
+
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout) == 3
+
+     async def amain():
+         # Set the loop in the ContextVar
+         token = ctx_loop.set(asyncio.get_running_loop())
+         try:
+             # Run something in a thread
+             await asyncio.to_thread(in_thread)
+         finally:
+             # Reset the ContextVar
+             ctx_loop.reset(token)
+
+   It's also possible to run the other way around.  Example::
+
+     @contextlib.contextmanager
+     def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]
+         loop_fut = concurrent.futures.Future[asyncio.AbstractEventLoop]()
+         stop_event = asyncio.Event()
+
+         async def main() -> None:
+             loop_fut.set_result(asyncio.get_running_loop())
+             await stop_event.wait()
+
+         with concurrent.futures.ThreadPoolExecutor(1) as tpe:
+             complete_fut = tpe.submit(asyncio.run, main())
+             for fut in concurrent.futures.as_completed((loop_fut, complete_fut)):
+                 if fut is loop_fut:
+                     loop = loop_fut.result()
+                     try:
+                         yield loop
+                     finally:
+                         loop.call_soon_threadsafe(stop_event.set)
+                 else:
+                     fut.result()
+
+     # Create a loop in another thread
+     with loop_in_thread() as loop:
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
+
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout) == 3
 
    If an exception is raised in the coroutine, the returned Future
    will be notified.  It can also be used to cancel the task in
