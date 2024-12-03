@@ -2715,10 +2715,6 @@ _select_exec(PyObject *m)
 #ifdef EPOLLMSG
     ADD_INT(EPOLLMSG);
 #endif
-#ifdef EPOLL_URING_WAKE
-    /* Kernel 6.1+ */
-    ADD_INT(EPOLL_URING_WAKE);
-#endif
 #ifdef EPOLLWAKEUP
     /* Kernel 3.5+ */
     ADD_INT(EPOLLWAKEUP);

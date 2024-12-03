@@ -1,2 +1,2 @@
-Add the ``EPOLL_URING_WAKE`` and ``EPOLLWAKEUP`` constants to the :mod:`select`
+Add the ``EPOLLWAKEUP`` constants to the :mod:`select`
 module.
