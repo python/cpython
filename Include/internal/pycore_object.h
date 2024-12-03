@@ -835,6 +835,20 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
                                             PyObject *name, PyObject *value);
 extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
+extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
+                                             unsigned int *);
+
+// Cache the provided init method in the specialization cache of type if the
+// provided type version matches the current version of the type.
+//
+// The cached value is borrowed and is only valid if guarded by a type
+// version check. In free-threaded builds the init method must also use
+// deferred reference counting.
+//
+// Returns 1 if the value was cached or 0 otherwise.
+extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
+                                              PyObject *init,
+                                              unsigned int tp_version);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
