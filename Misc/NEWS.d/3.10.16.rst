@@ -1,0 +1,60 @@
+.. date: 2024-10-07-14-13-38
+.. gh-issue: 125041
+.. nonce: PKLWDf
+.. release date: 2024-12-03
+.. section: Tests
+
+Re-enable skipped tests for :mod:`zlib` on the s390x architecture: only skip
+checks of the compressed bytes, which can be different between zlib's
+software implementation and the hardware-accelerated implementation.
+
+..
+
+.. date: 2023-09-14-22-58-47
+.. gh-issue: 109396
+.. nonce: J1a4jR
+.. section: Tests
+
+Fix ``test_socket.test_hmac_sha1()`` in FIPS mode. Use a longer key: FIPS
+mode requires at least of at least 112 bits. The previous key was only 32
+bits. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-11-13-11-09-12
+.. gh-issue: 126623
+.. nonce: TO7NnR
+.. section: Security
+
+Upgrade libexpat to 2.6.4
+
+..
+
+.. date: 2024-08-07-10-42-13
+.. gh-issue: 122792
+.. nonce: oiTMo9
+.. section: Security
+
+Changed IPv4-mapped ``ipaddress.IPv6Address`` to consistently use the mapped
+IPv4 address value for deciding properties. Properties which have their
+behavior fixed are ``is_multicast``, ``is_reserved``, ``is_link_local``,
+``is_global``, and ``is_unspecified``.
+
+..
+
+.. date: 2024-09-28-02-03-04
+.. gh-issue: 124651
+.. nonce: bLBGtH
+.. section: Library
+
+Properly quote template strings in :mod:`venv` activation scripts.
+
+..
+
+.. date: 2023-04-26-09-54-25
+.. gh-issue: 103848
+.. nonce: aDSnpR
+.. section: Library
+
+Add checks to ensure that ``[`` bracketed ``]`` hosts found by
+:func:`urllib.parse.urlsplit` are of IPv6 or IPvFuture format.
