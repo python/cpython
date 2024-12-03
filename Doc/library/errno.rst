@@ -50,7 +50,7 @@ defined by the module.  The specific list of defined symbols is available as
      - No such device or address
 
    * - .. data:: E2BIG
-     - Arg list too long
+     - Argument list too long
 
    * - .. data:: ENOEXEC
      - Exec format error
@@ -59,16 +59,16 @@ defined by the module.  The specific list of defined symbols is available as
      - Bad file number
 
    * - .. data:: ECHILD
-     - No child processes. [#ChildProcessError]_
+     - No child processes [#ChildProcessError]_
 
    * - .. data:: EAGAIN
-     - Try again. [#BlockingIOError]_
+     - Try again [#BlockingIOError]_
 
    * - .. data:: ENOMEM
      - Out of memory
 
    * - .. data:: EACCES
-     - Permission denied. [#PermissionError]_
+     - Permission denied [#PermissionError]_
 
    * - .. data:: EFAULT
      - Bad address
@@ -80,7 +80,7 @@ defined by the module.  The specific list of defined symbols is available as
      - Device or resource busy
 
    * - .. data:: EEXIST
-     - File exists. [#FileExistsError]_
+     - File exists [#FileExistsError]_
 
    * - .. data:: EXDEV
      - Cross-device link
@@ -89,10 +89,10 @@ defined by the module.  The specific list of defined symbols is available as
      - No such device
 
    * - .. data:: ENOTDIR
-     - Not a directory. [#NotADirectoryError]_
+     - Not a directory [#NotADirectoryError]_
 
    * - .. data:: EISDIR
-     - Is a directory. [#IsADirectoryError]_
+     - Is a directory [#IsADirectoryError]_
 
    * - .. data:: EINVAL
      - Invalid argument
@@ -125,7 +125,7 @@ defined by the module.  The specific list of defined symbols is available as
      - Too many links
 
    * - .. data:: EPIPE
-     - Broken pipe. [#BrokenPipeError]_
+     - Broken pipe [#BrokenPipeError]_
 
    * - .. data:: EDOM
      - Math argument out of domain of func
@@ -152,7 +152,7 @@ defined by the module.  The specific list of defined symbols is available as
      - Too many symbolic links encountered
 
    * - .. data:: EWOULDBLOCK
-     - Operation would block. [#BlockingIOError]_
+     - Operation would block [#BlockingIOError]_
 
    * - .. data:: ENOMSG
      - No message of desired type
@@ -341,10 +341,10 @@ defined by the module.  The specific list of defined symbols is available as
      - Network dropped connection because of reset
 
    * - .. data:: ECONNABORTED
-     - Software caused connection abort. [#ConnectionAbortedError]_
+     - Software caused connection abort [#ConnectionAbortedError]_
 
    * - .. data:: ECONNRESET
-     - Connection reset by peer. [#ConnectionResetError]_
+     - Connection reset by peer [#ConnectionResetError]_
 
    * - .. data:: ENOBUFS
      - No buffer space available
@@ -356,16 +356,16 @@ defined by the module.  The specific list of defined symbols is available as
      - Transport endpoint is not connected
 
    * - .. data:: ESHUTDOWN
-     - Cannot send after transport endpoint shutdown. [#BrokenPipeError]_
+     - Cannot send after transport endpoint shutdown [#BrokenPipeError]_
 
    * - .. data:: ETOOMANYREFS
      - Too many references: cannot splice
 
    * - .. data:: ETIMEDOUT
-     - Connection timed out. [#TimeoutError]_
+     - Connection timed out [#TimeoutError]_
 
    * - .. data:: ECONNREFUSED
-     - Connection refused. [#ConnectionRefusedError]_
+     - Connection refused [#ConnectionRefusedError]_
 
    * - .. data:: EHOSTDOWN
      - Host is down
@@ -377,10 +377,10 @@ defined by the module.  The specific list of defined symbols is available as
      - Memory page has hardware error.
 
    * - .. data:: EALREADY
-     - Operation already in progress. [#BlockingIOError]_
+     - Operation already in progress [#BlockingIOError]_
 
    * - .. data:: EINPROGRESS
-     - Operation now in progress. [#BlockingIOError]_
+     - Operation now in progress [#BlockingIOError]_
 
    * - .. data:: ESTALE
      - Stale NFS file handle
@@ -407,7 +407,7 @@ defined by the module.  The specific list of defined symbols is available as
      - Interface output queue is full
 
    * - .. data:: ENOTCAPABLE
-     - Capabilities insufficient. [#PermissionError]_
+     - Capabilities insufficient [#PermissionError]_
 
    * - .. data:: ECANCELED
      - Operation canceled
