@@ -1,4 +1,5 @@
 import _signal
+import sys
 from _signal import *
 from enum import IntEnum as _IntEnum
 import threading
@@ -46,6 +47,7 @@ def _enum_to_int(value):
         return value
 
 _signal_queue = queue.SimpleQueue() # SimpleQueue has reentrant put, so it can safely be called from signal handlers. https://github.com/python/cpython/issues/59181
+_sys_exit_queue = queue.SimpleQueue()
 _signal_thread = None
 _signo_to_handler = {}
 
@@ -59,8 +61,12 @@ def _init_signal_thread():
 
 def _push_signal_to_queue_handler(signo, _stack_frame):
     assert threading.current_thread() is threading.main_thread()
-    global _signal_queue
-    _signal_queue.put(signo)
+    global _signal_queue, _sys_exit_queue
+    try:
+        exit_code = _sys_exit_queue.get(block=False)
+        sys.exit(exit_code)
+    except queue.Empty:
+        _signal_queue.put(signo)
 
 def _sigint_to_str(signo):
     for x in valid_signals():
@@ -85,30 +91,29 @@ def stop_signal_thread():
         _signal_thread = None
 
 def _signal_queue_handler():
-    try:
-        assert threading.current_thread() is not threading.main_thread()
-        global _signal_queue, _signo_to_handler
-        while True:
-            signo = _signal_queue.get()
-            if signo == 'STOP_SIGNAL_HANDLER':
-                break
-            try:
-                handler = _signo_to_handler.get(signo, None)
-                if handler is not None:
-                    handler(signo, None)
-                else:
-                    _log_missing_signal_handler(signo)
-            except Exception:
-                traceback.print_exc()
-    except SystemExit:
-        pass # TODO: what should be done in the event of a handler calling `sys.exit()`?
-    except:
-        traceback.print_exc()
-        # import _thread
-        # _thread.interrupt_main()
-        # print(dir(threading.main_thread()))
-    finally:
-        pass
+    assert threading.current_thread() is not threading.main_thread()
+    global _signal_queue, _signo_to_handler
+    while True:
+        signo = _signal_queue.get()
+        if signo == 'STOP_SIGNAL_HANDLER':
+            break
+        raise_systemexit = False
+        exitcode = 'NOTSET'
+        try:
+            handler = _signo_to_handler.get(signo, None)
+            if handler is not None:
+                handler(signo, None)
+            else:
+                _log_missing_signal_handler(signo)
+        except SystemExit as se:
+            exitcode = se.code
+            raise_systemexit = True
+        except Exception:
+            traceback.print_exc()
+        if raise_systemexit:
+            global _sys_exit_queue
+            _sys_exit_queue.put(exitcode)
+            raise_signal(signo)
 
 # Similar to functools.wraps(), but only assign __doc__.
 # __module__ should be preserved,
