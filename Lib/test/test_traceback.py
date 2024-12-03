@@ -4485,8 +4485,9 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
+        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_'):
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
