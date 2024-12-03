@@ -1,3 +1,4 @@
+from email.errors import InvalidHeaderDefect
 import textwrap
 import unittest
 from email import message_from_bytes, message_from_string, policy
@@ -1053,6 +1054,37 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         """), policy=policy.default)
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
+
+    def test_string_payload_with_base64_cte(self):
+        msg = message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
+    def test_string_payload_with_extra_space_after_cte(self):
+        # https://github.com/python/cpython/issues/98188
+        cte = "base64 "
+        msg = message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
+    def test_string_payload_with_extra_text_after_cte(self):
+        msg = message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64 some text
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        cte = msg['content-transfer-encoding']
+        self.assertDefectsEqual(cte.defects, [InvalidHeaderDefect])
+
 
 
 if __name__ == '__main__':
