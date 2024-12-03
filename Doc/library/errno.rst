@@ -32,16 +32,16 @@ defined by the module.  The specific list of defined symbols is available as
      - Description
 
    * - .. data:: EPERM
-     - Operation not permitted. [#PermissionError]_
+     - Operation not permitted [#PermissionError]_
 
    * - .. data:: ENOENT
-     - No such file or directory. [#FileNotFoundError]_
+     - No such file or directory [#FileNotFoundError]_
 
    * - .. data:: ESRCH
      - No such process. [#ProcessLookupError]_
 
    * - .. data:: EINTR
-     - Interrupted system call. [#InterruptedError]_
+     - Interrupted system call [#InterruptedError]_
 
    * - .. data:: EIO
      - I/O error
