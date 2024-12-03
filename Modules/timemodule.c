@@ -845,19 +845,28 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
 #endif
         }
         if (buflen != 0) {
+            // I believe this is unreachable in glibc, musl, and BSD.
             PyErr_SetString(PyExc_SystemError, "Unexpected behavior from strftime");
             return NULL;
         }
         if (*bufsize >= 256 * fmtlen) {
-            /* If the buffer is 256 times as long as the format, it's probably
-                not failing for lack of room! More likely, `format_time` doesn't
-                like the format string. For instance we end up here with musl if
-                the format string ends with a '%'.
-
-                Ideally we should raise ValueError("Invalid format string")
-                here. For backwards compatibility, return empty string instead.
-            */
+            // If the buffer is 256 times as long as the format, it's probably
+            // not failing for lack of room! More likely, `format_time` doesn't
+            // like the format string.
+            // I believe that this is unreachable in glibc, but both musl and
+            // BSD can end up here.
+#ifdef HAVE_WCSFTIME
+            // For backwards compatibility, return empty string instead of
+            // raising a ValueError.
             return PyUnicode_FromStringAndSize(NULL, 0);
+#else
+            // Previously we raised ValueError("embedded null byte") here, so
+            // this is backwards compatible as long as we are concerned only
+            // about error type.
+            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            return NULL;
+#endif
+
         }
         *bufsize += *bufsize;
     }
