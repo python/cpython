@@ -1,0 +1,1 @@
+Add the ``NETLINK_*`` constants to the :mod:`socket` module.
