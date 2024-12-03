@@ -1,5 +1,5 @@
 import unittest
-from test.support import import_helper
+from test.support import import_helper, skip_on_s390x
 
 # Skip this test if the _testcapi module isn't available.
 import_helper.import_module('_testcapi')
@@ -165,6 +165,7 @@ class ReadWriteTests:
         self.assertRaises(TypeError, setattr, ts, "T_STRING_INPLACE", "s")
         self.assertRaises(TypeError, delattr, ts, "T_STRING_INPLACE")
 
+    @skip_on_s390x  # gh-127572: test fails on s390x
     def test_char(self):
         ts = self.ts
         self.assertEqual(ts.T_CHAR, "c")
