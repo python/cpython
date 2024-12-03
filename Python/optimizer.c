@@ -205,8 +205,8 @@ _PyOptimizer_Optimize(
     return 1;
 }
 
-_PyExecutorObject *
-_Py_GetExecutor(PyCodeObject *code, int offset)
+static _PyExecutorObject *
+get_executor_lock_held(PyCodeObject *code, int offset)
 {
     int code_len = (int)Py_SIZE(code);
     for (int i = 0 ; i < code_len;) {
@@ -220,6 +220,16 @@ _Py_GetExecutor(PyCodeObject *code, int offset)
     }
     PyErr_SetString(PyExc_ValueError, "no executor at given byte offset");
     return NULL;
+}
+
+_PyExecutorObject *
+_Py_GetExecutor(PyCodeObject *code, int offset)
+{
+    _PyExecutorObject *executor;
+    Py_BEGIN_CRITICAL_SECTION(code);
+    executor = get_executor_lock_held(code, offset);
+    Py_END_CRITICAL_SECTION();
+    return executor;
 }
 
 static PyObject *

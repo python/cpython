@@ -373,6 +373,9 @@ defined by the module.  The specific list of defined symbols is available as
    * - .. data:: EHOSTUNREACH
      - No route to host
 
+   * - .. data:: EHWPOISON
+     - Memory page has hardware error.
+
    * - .. data:: EALREADY
      - Operation already in progress. [#BlockingIOError]_
 
@@ -429,6 +432,10 @@ defined by the module.  The specific list of defined symbols is available as
 .. versionadded:: 3.11.1
 
    * :data:`errno.ENOTCAPABLE`
+
+.. versionadded:: next
+
+   * :data:`errno.EHWPOISON`
 
 .. rubric:: Footnotes
 
