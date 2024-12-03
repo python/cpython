@@ -38,7 +38,7 @@ defined by the module.  The specific list of defined symbols is available as
      - No such file or directory [#FileNotFoundError]_
 
    * - .. data:: ESRCH
-     - No such process. [#ProcessLookupError]_
+     - No such process [#ProcessLookupError]_
 
    * - .. data:: EINTR
      - Interrupted system call [#InterruptedError]_
