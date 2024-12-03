@@ -4156,7 +4156,6 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
         type->tp_dictoffset = -1;
-
         if (type->tp_basicsize == sizeof(PyObject *)) {
             type->tp_traverse = plain_object_traverse;
         }
@@ -6245,7 +6244,6 @@ static PyMethodDef type_methods[] = {
 PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
 "type(name, bases, dict, **kwds) -> a new type");
-
 
 static int
 type_traverse(PyObject *self, visitproc visit, void *arg)

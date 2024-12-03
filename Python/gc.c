@@ -1340,7 +1340,6 @@ push_to_stack(PyGC_Head *gc, WorkStack *stack)
 {
     PyGC_Head *prev = GC_PREV(gc);
     PyGC_Head *next = GC_NEXT(gc);
-
     _PyGCHead_SET_NEXT(prev, next);
     _PyGCHead_SET_PREV(next, prev);
     _PyGCHead_SET_PREV(gc, stack->top);
