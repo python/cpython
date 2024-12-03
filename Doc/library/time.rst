@@ -611,6 +611,7 @@ Functions
    glibc will return the format string unmodified, Windows will raise a
    :exc:`ValueError`, and macOS, musl, and BSD will return an empty string.
 
+
 .. class:: struct_time
 
    The type of the time value sequence returned by :func:`gmtime`,
