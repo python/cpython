@@ -1192,11 +1192,12 @@ class ThreadTests(BaseTestCase):
             resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
 
             try:
-                _thread.start_new_thread(f, ())
+                handle = _thread.start_joinable_thread(f)
             except RuntimeError:
                 print('ok')
             else:
                 print('!skip!')
+                handle.join()
         """
         _, out, err = assert_python_ok("-u", "-c", code)
         out = out.strip()
