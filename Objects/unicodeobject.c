@@ -5068,14 +5068,17 @@ load_unaligned(const unsigned char *p, size_t size)
 #endif
 #  if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 // x86 and amd64 are little endian and can load unaligned memory.
-#    if defined(__clang__) && defined(__has_feature)    \
-        && __has_feature(undefined_behavior_sanitizer)
+#    if defined(__clang__) && defined(__has_feature)
+#      if __has_feature(undefined_behavior_sanitizer)
 static inline size_t
 __attribute__((no_sanitize("alignment")))
 load_unaligned_x86_amd64(const unsigned char *p)
 {
     return *(const size_t *)p;
 }
+#      else
+#        define load_unaligned_x86_amd64(p)   *(const size_t *)p
+#      endif
 #    else
 #      define load_unaligned_x86_amd64(p)   *(const size_t *)p
 #    endif
