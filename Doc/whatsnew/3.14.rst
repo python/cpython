@@ -316,6 +316,13 @@ ctypes
 * The :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
 
+* :func:`ctypes.memoryview_at` now exists to create a
+  :class:`memoryview` object that refers to the supplied pointer and
+  length. Works just like :func:`ctypes.string_at` except it avoids a
+  buffer copy. Useful when implementing callback functions in Python
+  that are passed dynamically-sized buffers.
+  (Contributed by Rian Hunter in :gh:`112018`.)
+
 datetime
 --------
 
