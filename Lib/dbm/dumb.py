@@ -98,7 +98,8 @@ class _Database(collections.abc.MutableMapping):
         except OSError:
             if flag not in ('c', 'n'):
                 raise
-            self._modified = True
+            with self._io.open(self._dirfile, 'w', encoding="Latin-1") as f:
+                self._chmod(self._dirfile)
         else:
             with f:
                 for line in f:
@@ -134,6 +135,7 @@ class _Database(collections.abc.MutableMapping):
                 # position; UTF-8, though, does care sometimes.
                 entry = "%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair)
                 f.write(entry)
+        self._modified = False
 
     sync = _commit
 

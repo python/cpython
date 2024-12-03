@@ -1,3 +1,0 @@
-The built-in extension modules for :mod:`hashlib` SHA2 algorithms, used when
-OpenSSL does not provide them, now live in a single internal ``_sha2`` module
-instead of separate ``_sha256`` and ``_sha512`` modules.

@@ -201,17 +201,27 @@
 
    Token value for ``":="``.
 
+.. data:: EXCLAMATION
+
+   Token value for ``"!"``.
+
 .. data:: OP
-
-.. data:: AWAIT
-
-.. data:: ASYNC
 
 .. data:: TYPE_IGNORE
 
 .. data:: TYPE_COMMENT
 
 .. data:: SOFT_KEYWORD
+
+.. data:: FSTRING_START
+
+.. data:: FSTRING_MIDDLE
+
+.. data:: FSTRING_END
+
+.. data:: COMMENT
+
+.. data:: NL
 
 .. data:: ERRORTOKEN
 

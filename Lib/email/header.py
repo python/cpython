@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -52,12 +52,10 @@ fcre = re.compile(r'[\041-\176]+:$')
 _embedded_header = re.compile(r'\n[^ \t]+:')
 
 
-
 # Helpers
 _max_append = email.quoprimime._max_append
 
 
-
 def decode_header(header):
     """Decode a message header value without converting charset.
 
@@ -152,7 +150,6 @@ def decode_header(header):
     return collapsed
 
 
-
 def make_header(decoded_seq, maxlinelen=None, header_name=None,
                 continuation_ws=' '):
     """Create a Header from a sequence of pairs as returned by decode_header()
@@ -175,7 +172,6 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     return h
 
 
-
 class Header:
     def __init__(self, s=None, charset=None,
                  maxlinelen=None, header_name=None,
@@ -196,7 +192,7 @@ class Header:
 
         The maximum line length can be specified explicitly via maxlinelen. For
         splitting the first line to a shorter value (to account for the field
-        header which isn't included in s, e.g. `Subject') pass in the name of
+        header which isn't included in s, e.g. 'Subject') pass in the name of
         the field in header_name.  The default maxlinelen is 78 as recommended
         by RFC 2822.
 
@@ -280,7 +276,7 @@ class Header:
         output codec of the charset.  If the string cannot be encoded to the
         output codec, a UnicodeError will be raised.
 
-        Optional `errors' is passed as the errors argument to the decode
+        Optional 'errors' is passed as the errors argument to the decode
         call if s is a byte string.
         """
         if charset is None:
@@ -330,7 +326,7 @@ class Header:
 
         Optional splitchars is a string containing characters which should be
         given extra weight by the splitting algorithm during normal header
-        wrapping.  This is in very rough support of RFC 2822's `higher level
+        wrapping.  This is in very rough support of RFC 2822's 'higher level
         syntactic breaks':  split points preceded by a splitchar are preferred
         during line splitting, with the characters preferred in the order in
         which they appear in the string.  Space and tab may be included in the
@@ -409,7 +405,6 @@ class Header:
         self._chunks = chunks
 
 
-
 class _ValueFormatter:
     def __init__(self, headerlen, maxlen, continuation_ws, splitchars):
         self._maxlen = maxlen

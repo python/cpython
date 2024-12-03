@@ -71,6 +71,8 @@ The following constructs bind names:
   + in a capture pattern in structural pattern matching
 
 * :keyword:`import` statements.
+* :keyword:`type` statements.
+* :ref:`type parameter lists <type-params>`.
 
 The :keyword:`!import` statement of the form ``from ... import *`` binds all
 names defined in the imported module, except those beginning with an underscore.
@@ -88,7 +90,7 @@ If a name is bound in a block, it is a local variable of that block, unless
 declared as :keyword:`nonlocal` or :keyword:`global`.  If a name is bound at
 the module level, it is a global variable.  (The variables of the module code
 block are local and global.)  If a variable is used in a code block but not
-defined there, it is a :dfn:`free variable`.
+defined there, it is a :term:`free variable`.
 
 Each occurrence of a name in the program text refers to the :dfn:`binding` of
 that name established by the following name resolution rules.
@@ -137,8 +139,9 @@ namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
-builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the listed names.
+builtins namespace is searched next. If the names are also not found in the
+builtins namespace, new variables are created in the global namespace.
+The global statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
@@ -149,9 +152,10 @@ a global statement, the free variable is treated as a global.
 The :keyword:`nonlocal` statement causes corresponding names to refer
 to previously bound variables in the nearest enclosing function scope.
 :exc:`SyntaxError` is raised at compile time if the given name does not
-exist in any enclosing function scope.
+exist in any enclosing function scope. :ref:`Type parameters <type-params>`
+cannot be rebound with the :keyword:`!nonlocal` statement.
 
-.. index:: module: __main__
+.. index:: pair: module; __main__
 
 The namespace for a module is automatically created the first time a module is
 imported.  The main module for a script is always called :mod:`__main__`.
@@ -163,13 +167,129 @@ These references follow the normal rules for name resolution with an exception
 that unbound local variables are looked up in the global namespace.
 The namespace of the class definition becomes the attribute dictionary of
 the class. The scope of names defined in a class block is limited to the
-class block; it does not extend to the code blocks of methods -- this includes
-comprehensions and generator expressions since they are implemented using a
-function scope.  This means that the following will fail::
+class block; it does not extend to the code blocks of methods. This includes
+comprehensions and generator expressions, but it does not include
+:ref:`annotation scopes <annotation-scopes>`,
+which have access to their enclosing class scopes.
+This means that the following will fail::
 
    class A:
        a = 42
        b = list(a + i for i in range(10))
+
+However, the following will succeed::
+
+   class A:
+       type Alias = Nested
+       class Nested: pass
+
+   print(A.Alias.__value__)  # <type 'A.Nested'>
+
+.. _annotation-scopes:
+
+Annotation scopes
+-----------------
+
+:term:`Annotations <annotation>`, :ref:`type parameter lists <type-params>`
+and :keyword:`type` statements
+introduce *annotation scopes*, which behave mostly like function scopes,
+but with some exceptions discussed below.
+
+Annotation scopes are used in the following contexts:
+
+* :term:`Function annotations <function annotation>`.
+* :term:`Variable annotations <variable annotation>`.
+* Type parameter lists for :ref:`generic type aliases <generic-type-aliases>`.
+* Type parameter lists for :ref:`generic functions <generic-functions>`.
+  A generic function's annotations are
+  executed within the annotation scope, but its defaults and decorators are not.
+* Type parameter lists for :ref:`generic classes <generic-classes>`.
+  A generic class's base classes and
+  keyword arguments are executed within the annotation scope, but its decorators are not.
+* The bounds, constraints, and default values for type parameters
+  (:ref:`lazily evaluated <lazy-evaluation>`).
+* The value of type aliases (:ref:`lazily evaluated <lazy-evaluation>`).
+
+Annotation scopes differ from function scopes in the following ways:
+
+* Annotation scopes have access to their enclosing class namespace.
+  If an annotation scope is immediately within a class scope, or within another
+  annotation scope that is immediately within a class scope, the code in the
+  annotation scope can use names defined in the class scope as if it were
+  executed directly within the class body. This contrasts with regular
+  functions defined within classes, which cannot access names defined in the class scope.
+* Expressions in annotation scopes cannot contain :keyword:`yield`, ``yield from``,
+  :keyword:`await`, or :token:`:= <python-grammar:assignment_expression>`
+  expressions. (These expressions are allowed in other scopes contained within the
+  annotation scope.)
+* Names defined in annotation scopes cannot be rebound with :keyword:`nonlocal`
+  statements in inner scopes. This includes only type parameters, as no other
+  syntactic elements that can appear within annotation scopes can introduce new names.
+* While annotation scopes have an internal name, that name is not reflected in the
+  :term:`qualified name` of objects defined within the scope.
+  Instead, the :attr:`~definition.__qualname__`
+  of such objects is as if the object were defined in the enclosing scope.
+
+.. versionadded:: 3.12
+   Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
+
+.. versionchanged:: 3.13
+   Annotation scopes are also used for type parameter defaults, as
+   introduced by :pep:`696`.
+
+.. versionchanged:: 3.14
+   Annotation scopes are now also used for annotations, as specified in
+   :pep:`649` and :pep:`749`.
+
+.. _lazy-evaluation:
+
+Lazy evaluation
+---------------
+
+Most annotation scopes are *lazily evaluated*. This includes annotations,
+the values of type aliases created through the :keyword:`type` statement, and
+the bounds, constraints, and default values of type
+variables created through the :ref:`type parameter syntax <type-params>`.
+This means that they are not evaluated when the type alias or type variable is
+created, or when the object carrying annotations is created. Instead, they
+are only evaluated when necessary, for example when the ``__value__``
+attribute on a type alias is accessed.
+
+Example:
+
+.. doctest::
+
+   >>> type Alias = 1/0
+   >>> Alias.__value__
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
+   >>> def func[T: 1/0](): pass
+   >>> T = func.__type_params__[0]
+   >>> T.__bound__
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
+
+Here the exception is raised only when the ``__value__`` attribute
+of the type alias or the ``__bound__`` attribute of the type variable
+is accessed.
+
+This behavior is primarily useful for references to types that have not
+yet been defined when the type alias or type variable is created. For example,
+lazy evaluation enables creation of mutually recursive type aliases::
+
+   from typing import Literal
+
+   type SimpleExpr = int | Parenthesized
+   type Parenthesized = tuple[Literal["("], Expr, Literal[")"]]
+   type Expr = SimpleExpr | tuple[SimpleExpr, Literal["+", "-"], Expr]
+
+Lazily evaluated values are evaluated in :ref:`annotation scope <annotation-scopes>`,
+which means that names that appear inside the lazily evaluated value are looked up
+as if they were used in the immediately enclosing scope.
+
+.. versionadded:: 3.12
 
 .. _restrict_exec:
 
@@ -217,6 +337,9 @@ enclosing namespace, but in the global namespace.  [#]_ The :func:`exec` and
 :func:`eval` functions have optional arguments to override the global and local
 namespace.  If only one namespace is specified, it is used for both.
 
+.. XXX(ncoghlan) above is only accurate for string execution. When executing code objects,
+   closure cells may now be passed explicitly to resolve co_freevars references.
+   Docs issue: https://github.com/python/cpython/issues/122826
 
 .. _exceptions:
 

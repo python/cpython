@@ -10,9 +10,6 @@ extern "C" {
 #define Py_eval_input 258
 #define Py_func_type_input 345
 
-/* This doesn't need to match anything */
-#define Py_fstring_input 800
-
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_COMPILE_H
 #  include "cpython/compile.h"

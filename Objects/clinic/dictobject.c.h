@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(dict_fromkeys__doc__,
 "fromkeys($type, iterable, value=None, /)\n"
@@ -40,6 +37,24 @@ skip_optional:
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(dict_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a shallow copy of the dict.");
+
+#define DICT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)dict_copy, METH_NOARGS, dict_copy__doc__},
+
+static PyObject *
+dict_copy_impl(PyDictObject *self);
+
+static PyObject *
+dict_copy(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_copy_impl(self);
 }
 
 PyDoc_STRVAR(dict___contains____doc__,
@@ -79,7 +94,9 @@ dict_get(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_get_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -116,10 +133,30 @@ dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_setdefault_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(dict_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the dict.");
+
+#define DICT_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)dict_clear, METH_NOARGS, dict_clear__doc__},
+
+static PyObject *
+dict_clear_impl(PyDictObject *self);
+
+static PyObject *
+dict_clear(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_clear_impl(self);
 }
 
 PyDoc_STRVAR(dict_pop__doc__,
@@ -177,7 +214,31 @@ dict_popitem_impl(PyDictObject *self);
 static PyObject *
 dict_popitem(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return dict_popitem_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dict_popitem_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(dict___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Return the size of the dict in memory, in bytes.");
+
+#define DICT___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)dict___sizeof__, METH_NOARGS, dict___sizeof____doc__},
+
+static PyObject *
+dict___sizeof___impl(PyDictObject *self);
+
+static PyObject *
+dict___sizeof__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict___sizeof___impl(self);
 }
 
 PyDoc_STRVAR(dict___reversed____doc__,
@@ -197,4 +258,58 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=c0064abbea6091c5 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(dict_keys__doc__,
+"keys($self, /)\n"
+"--\n"
+"\n"
+"Return a set-like object providing a view on the dict\'s keys.");
+
+#define DICT_KEYS_METHODDEF    \
+    {"keys", (PyCFunction)dict_keys, METH_NOARGS, dict_keys__doc__},
+
+static PyObject *
+dict_keys_impl(PyDictObject *self);
+
+static PyObject *
+dict_keys(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_keys_impl(self);
+}
+
+PyDoc_STRVAR(dict_items__doc__,
+"items($self, /)\n"
+"--\n"
+"\n"
+"Return a set-like object providing a view on the dict\'s items.");
+
+#define DICT_ITEMS_METHODDEF    \
+    {"items", (PyCFunction)dict_items, METH_NOARGS, dict_items__doc__},
+
+static PyObject *
+dict_items_impl(PyDictObject *self);
+
+static PyObject *
+dict_items(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_items_impl(self);
+}
+
+PyDoc_STRVAR(dict_values__doc__,
+"values($self, /)\n"
+"--\n"
+"\n"
+"Return an object providing a view on the dict\'s values.");
+
+#define DICT_VALUES_METHODDEF    \
+    {"values", (PyCFunction)dict_values, METH_NOARGS, dict_values__doc__},
+
+static PyObject *
+dict_values_impl(PyDictObject *self);
+
+static PyObject *
+dict_values(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_values_impl(self);
+}
+/*[clinic end generated code: output=f3dd5f3fb8122aef input=a9049054013a1b77]*/

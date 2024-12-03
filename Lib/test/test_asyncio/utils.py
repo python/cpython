@@ -15,6 +15,7 @@ import threading
 import unittest
 import weakref
 import warnings
+from ast import literal_eval
 from unittest import mock
 
 from http.server import HTTPServer
@@ -36,39 +37,28 @@ from test.support import socket_helper
 from test.support import threading_helper
 
 
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+# Use the maximum known clock resolution (gh-75191, gh-110088): Windows
+# GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding
+# issues.
+CLOCK_RES = 0.050
+
+
+def data_file(*filename):
+    fullname = os.path.join(support.TEST_HOME_DIR, *filename)
     if os.path.isfile(fullname):
         return fullname
-    raise FileNotFoundError(filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(os.path.join(filename))
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
-
+ONLYCERT = data_file('certdata', 'ssl_cert.pem')
+ONLYKEY = data_file('certdata', 'ssl_key.pem')
+SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
+SIGNING_CA = data_file('certdata', 'pycacert.pem')
+with open(data_file('certdata', 'keycert3.pem.reference')) as file:
+    PEERCERT = literal_eval(file.read())
 
 def simple_server_sslcontext():
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -296,12 +286,17 @@ def run_udp_echo_server(*, host='127.0.0.1', port=0):
     family, type, proto, _, sockaddr = addr_info[0]
     sock = socket.socket(family, type, proto)
     sock.bind((host, port))
+    sockname = sock.getsockname()
     thread = threading.Thread(target=lambda: echo_datagrams(sock))
     thread.start()
     try:
-        yield sock.getsockname()
+        yield sockname
     finally:
-        sock.sendto(b'STOP', sock.getsockname())
+        # gh-122187: use a separate socket to send the stop message to avoid
+        # TSan reported race on the same socket.
+        sock2 = socket.socket(family, type, proto)
+        sock2.sendto(b'STOP', sockname)
+        sock2.close()
         thread.join()
 
 
@@ -541,20 +536,6 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
-        policy = support.maybe_get_event_loop_policy()
-        if policy is not None:
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    watcher = policy.get_child_watcher()
-            except NotImplementedError:
-                # watcher is not implemented by EventLoopPolicy, e.g. Windows
-                pass
-            else:
-                if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    threads = list(watcher._threads.values())
-                    for thread in threads:
-                        thread.join()
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
@@ -577,7 +558,7 @@ class TestCase(unittest.TestCase):
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._thread_cleanup)
@@ -607,3 +588,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc

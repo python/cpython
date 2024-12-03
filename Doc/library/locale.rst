@@ -1,5 +1,5 @@
-:mod:`locale` --- Internationalization services
-===============================================
+:mod:`!locale` --- Internationalization services
+================================================
 
 .. module:: locale
    :synopsis: Internationalization services.
@@ -16,9 +16,9 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
-.. index:: module: _locale
+.. index:: pair: module; _locale
 
-The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
+The :mod:`locale` module is implemented on top of the :mod:`!_locale` module,
 which in turn uses an ANSI C locale implementation if available.
 
 The :mod:`locale` module defines the following exception and functions:
@@ -192,7 +192,13 @@ The :mod:`locale` module defines the following exception and functions:
       Get a format string for :func:`time.strftime` to represent time in the am/pm
       format.
 
-   .. data:: DAY_1 ... DAY_7
+   .. data:: DAY_1
+             DAY_2
+             DAY_3
+             DAY_4
+             DAY_5
+             DAY_6
+             DAY_7
 
       Get the name of the n-th day of the week.
 
@@ -202,15 +208,43 @@ The :mod:`locale` module defines the following exception and functions:
          international convention (ISO 8601) that Monday is the first day of the
          week.
 
-   .. data:: ABDAY_1 ... ABDAY_7
+   .. data:: ABDAY_1
+             ABDAY_2
+             ABDAY_3
+             ABDAY_4
+             ABDAY_5
+             ABDAY_6
+             ABDAY_7
 
       Get the abbreviated name of the n-th day of the week.
 
-   .. data:: MON_1 ... MON_12
+   .. data:: MON_1
+             MON_2
+             MON_3
+             MON_4
+             MON_5
+             MON_6
+             MON_7
+             MON_8
+             MON_9
+             MON_10
+             MON_11
+             MON_12
 
       Get the name of the n-th month.
 
-   .. data:: ABMON_1 ... ABMON_12
+   .. data:: ABMON_1
+             ABMON_2
+             ABMON_3
+             ABMON_4
+             ABMON_5
+             ABMON_6
+             ABMON_7
+             ABMON_8
+             ABMON_9
+             ABMON_10
+             ABMON_11
+             ABMON_12
 
       Get the abbreviated name of the n-th month.
 
@@ -229,14 +263,14 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: NOEXPR
 
-      Get a regular expression that can be used with the regex(3) function to
+      Get a regular expression that can be used with the ``regex(3)`` function to
       recognize a negative response to a yes/no question.
 
       .. note::
 
          The regular expressions for :const:`YESEXPR` and
          :const:`NOEXPR` use syntax suitable for the
-         :c:func:`regex` function from the C library, which might
+         ``regex`` function from the C library, which might
          differ from the syntax used in :mod:`re`.
 
    .. data:: CRNCYSTR
@@ -247,7 +281,8 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ERA
 
-      Get a string that represents the era used in the current locale.
+      Get a string which describes how years are counted and displayed for
+      each era in a locale.
 
       Most locales do not define this value.  An example of a locale which does
       define this value is the Japanese one.  In Japan, the traditional
@@ -256,9 +291,10 @@ The :mod:`locale` module defines the following exception and functions:
 
       Normally it should not be necessary to use this value directly. Specifying
       the ``E`` modifier in their format strings causes the :func:`time.strftime`
-      function to use this information.  The format of the returned string is not
-      specified, and therefore you should not assume knowledge of it on different
-      systems.
+      function to use this information.
+      The format of the returned string is specified in *The Open Group Base
+      Specifications Issue 8*, paragraph `7.3.5.2 LC_TIME C-Language Access
+      <https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap07.html#tag_07_03_05_02>`_.
 
    .. data:: ERA_D_T_FMT
 
@@ -277,8 +313,18 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ALT_DIGITS
 
-      Get a representation of up to 100 values used to represent the values
-      0 to 99.
+      Get a string consisting of up to 100 semicolon-separated symbols used
+      to represent the values 0 to 99 in a locale-specific way.
+      In most locales this is an empty string.
+
+   The function temporarily sets the ``LC_CTYPE`` locale to the locale
+   of the category that determines the requested value (``LC_TIME``,
+   ``LC_NUMERIC``, ``LC_MONETARY`` or ``LC_MESSAGES``) if locales are
+   different and the resulting string is non-ASCII.
+   This temporary change affects other threads.
+
+   .. versionchanged:: 3.14
+      The function now temporarily sets the ``LC_CTYPE`` locale in some cases.
 
 
 .. function:: getdefaultlocale([envvars])
@@ -303,13 +349,13 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as sequence containing
-   *language code*, *encoding*. *category* may be one of the :const:`LC_\*` values
+   *language code*, *encoding*. *category* may be one of the :const:`!LC_\*` values
    except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
    Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
@@ -370,16 +416,6 @@ The :mod:`locale` module defines the following exception and functions:
    encoding for the locale code just like :func:`setlocale`.
 
 
-.. function:: resetlocale(category=LC_ALL)
-
-   Sets the locale for *category* to the default setting.
-
-   The default setting is determined by calling :func:`getdefaultlocale`.
-   *category* defaults to :const:`LC_ALL`.
-
-   .. deprecated-removed:: 3.11 3.13
-
-
 .. function:: strcoll(string1, string2)
 
    Compares two strings according to the current :const:`LC_COLLATE` setting. As
@@ -400,7 +436,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
-   The format follows the conventions of the ``%`` operator.  For floating point
+   The format follows the conventions of the ``%`` operator.  For floating-point
    values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
@@ -431,7 +467,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: str(float)
 
-   Formats a floating point number using the same format as the built-in function
+   Formats a floating-point number using the same format as the built-in function
    ``str(float)``, but takes the decimal point into account.
 
 
@@ -464,11 +500,16 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: module: string
+   Locale category for the character type functions.  Most importantly, this
+   category defines the text encoding, i.e. how bytes are interpreted as
+   Unicode codepoints.  See :pep:`538` and :pep:`540` for how this variable
+   might be automatically coerced to ``C.UTF-8`` to avoid issues created by
+   invalid settings in containers or incompatible settings passed over remote
+   SSH connections.
 
-   Locale category for the character type functions.  Depending on the settings of
-   this category, the functions of module :mod:`string` dealing with case change
-   their behaviour.
+   Python doesn't internally use locale-dependent character transformation functions
+   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`!Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE
@@ -586,9 +627,9 @@ the locale is ``C``).
 
 When Python code uses the :mod:`locale` module to change the locale, this also
 affects the embedding application.  If the embedding application doesn't want
-this to happen, it should remove the :mod:`_locale` extension module (which does
+this to happen, it should remove the :mod:`!_locale` extension module (which does
 all the work) from the table of built-in modules in the :file:`config.c` file,
-and make sure that the :mod:`_locale` module is not accessible as a shared
+and make sure that the :mod:`!_locale` module is not accessible as a shared
 library.
 
 
@@ -602,17 +643,18 @@ Access to message catalogs
 .. function:: dcgettext(domain, msg, category)
 .. function:: textdomain(domain)
 .. function:: bindtextdomain(domain, dir)
+.. function:: bind_textdomain_codeset(domain, codeset)
 
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`!gettext`,
-:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
-and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`gettext`,
+:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
+and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
+C functions ``gettext`` or ``dcgettext``.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.

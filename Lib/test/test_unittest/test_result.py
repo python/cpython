@@ -7,6 +7,7 @@ from test.support import warnings_helper, captured_stdout
 import traceback
 import unittest
 from unittest.util import strclass
+from test.test_unittest.support import BufferedWriter
 
 
 class MockTraceback(object):
@@ -31,22 +32,6 @@ def bad_cleanup1():
 def bad_cleanup2():
     print('do cleanup2')
     raise ValueError('bad cleanup2')
-
-
-class BufferedWriter:
-    def __init__(self):
-        self.result = ''
-        self.buffer = ''
-
-    def write(self, arg):
-        self.buffer += arg
-
-    def flush(self):
-        self.result += self.buffer
-        self.buffer = ''
-
-    def getvalue(self):
-        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -201,7 +186,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             test.fail("foo")
-        except:
+        except AssertionError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()
@@ -229,7 +214,7 @@ class Test_TestResult(unittest.TestCase):
         def get_exc_info():
             try:
                 test.fail("foo")
-            except:
+            except AssertionError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -256,9 +241,9 @@ class Test_TestResult(unittest.TestCase):
             try:
                 try:
                     test.fail("foo")
-                except:
+                except AssertionError:
                     raise ValueError(42)
-            except:
+            except ValueError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -286,7 +271,7 @@ class Test_TestResult(unittest.TestCase):
                 loop.__cause__ = loop
                 loop.__context__ = loop
                 raise loop
-            except:
+            except Exception:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -315,7 +300,7 @@ class Test_TestResult(unittest.TestCase):
                     ex1.__cause__ = ex2
                     ex2.__context__ = ex1
                 raise C
-            except:
+            except Exception:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -360,7 +345,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             raise TypeError()
-        except:
+        except TypeError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()
@@ -465,6 +450,7 @@ class Test_TestResult(unittest.TestCase):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
