@@ -661,7 +661,8 @@ class IMAP4:
         responses via iteration, and sends DONE upon exit.
         It represents responses as (type, datum) tuples, rather than the
         (type, [data, ...]) tuples returned by other methods, because only one
-        response is represented at a time.
+        response is represented at a time.  A datum can be bytes or a tuple,
+        as described in the IMAP4 class documentation.
 
         Example:
 

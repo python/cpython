@@ -329,7 +329,8 @@ An :class:`IMAP4` instance has the following methods:
    second member is a single response datum, rather than a list of data.
    Therefore, in a mailbox where calling ``M.response('EXISTS')`` would
    return ``('EXISTS', [b'1'])``, the idle iterator would produce
-   ``('EXISTS', b'1')``.
+   ``('EXISTS', b'1')``.  A datum can be bytes or a tuple, as described in
+   :ref:`IMAP4 Objects <imap4-objects>`.
 
    Example::
 
