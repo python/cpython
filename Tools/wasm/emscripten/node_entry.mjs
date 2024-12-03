@@ -4,17 +4,18 @@ import fs from "node:fs";
 if (process?.versions?.node) {
   const nodeVersion = Number(process.versions.node.split(".", 1)[0]);
   if (nodeVersion < 18) {
-      process.stderr.write(
-          `Node version must be >= 18, got version ${process.version}\n`,
-      );
-      process.exit(1);
+    process.stderr.write(
+      `Node version must be >= 18, got version ${process.version}\n`,
+    );
+    process.exit(1);
   }
 }
 
 function rootDirsToMount(Module) {
   return fs
-      .readdirSync("/")
-      .filter((dir) => !["dev", "lib", "proc"].includes(dir)).map(dir => "/" + dir);
+    .readdirSync("/")
+    .filter((dir) => !["dev", "lib", "proc"].includes(dir))
+    .map((dir) => "/" + dir);
 }
 
 function mountDirectories(Module) {
@@ -25,7 +26,9 @@ function mountDirectories(Module) {
 }
 
 const thisProgram = "--this-program=";
-const thisProgramIndex = process.argv.findIndex(x => x.startsWith(thisProgram));
+const thisProgramIndex = process.argv.findIndex((x) =>
+  x.startsWith(thisProgram),
+);
 
 const settings = {
   preRun(Module) {
