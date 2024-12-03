@@ -4,12 +4,12 @@
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 import collections
-from itertools import islice
 import logging
 import threading
 import time
 import types
 import weakref
+from itertools import islice
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
