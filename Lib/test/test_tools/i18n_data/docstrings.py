@@ -1,3 +1,5 @@
+"""Module docstring"""
+
 # Test docstring extraction
 from gettext import gettext as _
 
@@ -10,10 +12,10 @@ def test(x):
 # Leading empty line
 def test2(x):
 
-    """docstring"""  # XXX This should be extracted but isn't.
+    """docstring"""
 
 
-# XXX Multiline docstrings should be cleaned with `inspect.cleandoc`.
+# Multiline docstrings are cleaned with `inspect.cleandoc`.
 def test3(x):
     """multiline
     docstring
@@ -27,15 +29,15 @@ def test4(x):
 
 
 def test5(x):
-    """Hello, {}!""".format("world!")  # XXX This should not be extracted.
+    """Hello, {}!""".format("world!")  # This should not be extracted.
 
 
 # Nested docstrings
 def test6(x):
     def inner(y):
-        """nested docstring"""  # XXX This should be extracted but isn't.
+        """nested docstring"""
 
 
 class Outer:
     class Inner:
-        "nested class docstring"  # XXX This should be extracted but isn't.
+        "nested class docstring"
