@@ -32,7 +32,6 @@ const thisProgramIndex = process.argv.findIndex((x) =>
 
 const settings = {
   preRun(Module) {
-    Module.FS.mkdirTree("/home/");
     mountDirectories(Module);
     Module.FS.chdir(process.cwd());
     Object.assign(Module.ENV, process.env);
