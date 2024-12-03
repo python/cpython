@@ -107,7 +107,8 @@ class CAPITest(unittest.TestCase):
                    "but the GIL is released "
                    "(the current Python thread state is NULL)").encode()
         else:
-            msg = ("the function must be called with an active thread state, "
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with an active thread state, "
                    "after Python initialization and before Python finalization, "
                    "but it was called without an active thread state. "
                    "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
