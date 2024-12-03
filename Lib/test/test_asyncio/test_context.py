@@ -1,10 +1,12 @@
 import asyncio
 import decimal
 import unittest
+import signal
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 @unittest.skipUnless(decimal.HAVE_CONTEXTVAR, "decimal is built with a thread-local context")

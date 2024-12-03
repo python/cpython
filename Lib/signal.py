@@ -77,7 +77,7 @@ def _log_missing_signal_handler(signo):
             str_name = x.name
     logger.warning('Handler for signal.%s (%d) was not found.', str_name, signo)
 
-def _stop_signal_thread():
+def stop_signal_thread():
     global _signal_thread, _signal_queue
     if _signal_thread is not None:
         _signal_queue.put('STOP_SIGNAL_HANDLER')
@@ -115,7 +115,7 @@ def _wraps(wrapped):
         return wrapper
     return decorator
 
-def signal(signalnum, handler, use_dedicated_thread=False):
+def signal(signalnum, handler, use_dedicated_thread=True):
     if use_dedicated_thread:
         assert threading.current_thread() is threading.main_thread()
     global _signo_to_handler

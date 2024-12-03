@@ -1,6 +1,6 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
-
+import signal
 import sys
 import gc
 import asyncio
@@ -15,7 +15,7 @@ from test.test_asyncio.utils import await_without_task
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
-
+    signal.stop_signal_thread()
 
 class MyExc(Exception):
     pass
