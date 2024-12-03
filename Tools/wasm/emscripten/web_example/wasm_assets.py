@@ -19,7 +19,7 @@ import zipfile
 from typing import Dict
 
 # source directory
-SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
+SRCDIR = pathlib.Path(__file__).parents[4].absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
 
@@ -28,9 +28,7 @@ WASM_LIB = pathlib.PurePath("lib")
 WASM_STDLIB_ZIP = (
     WASM_LIB / f"python{sys.version_info.major}{sys.version_info.minor}.zip"
 )
-WASM_STDLIB = (
-    WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
-)
+WASM_STDLIB = WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
 WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 
 
@@ -114,9 +112,7 @@ def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
     assert isinstance(args.builddir, pathlib.Path)
     data_name: str = sysconfig._get_sysconfigdata_name()  # type: ignore[attr-defined]
     if not data_name.startswith(SYSCONFIG_NAMES):
-        raise ValueError(
-            f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES
-        )
+        raise ValueError(f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES)
     filename = data_name + ".py"
     return args.builddir / filename
 
@@ -131,7 +127,7 @@ def create_stdlib_zip(
         return pathname not in args.omit_files_absolute
 
     with zipfile.PyZipFile(
-        args.wasm_stdlib_zip,
+        args.output,
         mode="w",
         compression=args.compression,
         optimize=optimize,
@@ -195,6 +191,12 @@ parser.add_argument(
     default=pathlib.Path("/usr/local"),
     type=path,
 )
+parser.add_argument(
+    "-o",
+    "--output",
+    help="output file",
+    type=path,
+)
 
 
 def main() -> None:
@@ -204,7 +206,6 @@ def main() -> None:
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
     args.wasm_root = args.buildroot / relative_prefix
-    args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
 
@@ -234,12 +235,10 @@ def main() -> None:
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
     marker = args.wasm_dynload / ".empty"
     marker.touch()
-    # os.py is a marker for finding the correct lib directory.
-    shutil.copy(args.srcdir_lib / "os.py", args.wasm_stdlib)
     # The rest of stdlib that's useful in a WASM context.
     create_stdlib_zip(args)
-    size = round(args.wasm_stdlib_zip.stat().st_size / 1024**2, 2)
-    parser.exit(0, f"Created {args.wasm_stdlib_zip} ({size} MiB)\n")
+    size = round(args.output.stat().st_size / 1024**2, 2)
+    parser.exit(0, f"Created {args.output} ({size} MiB)\n")
 
 
 if __name__ == "__main__":
