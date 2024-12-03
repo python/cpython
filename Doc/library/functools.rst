@@ -99,21 +99,17 @@ The :mod:`functools` module defines the following functions:
    locking inside the decorated getter function or around the cached property
    access.
 
-   Note, this decorator interferes with the operation of :pep:`412`
-   key-sharing dictionaries.  This means that instance dictionaries
-   can take more space than usual.
-
-   Also, this decorator requires that the ``__dict__`` attribute on each instance
-   be a mutable mapping. This means it will not work with some types, such as
+   This decorator requires that the ``__dict__`` attribute on each instance be a
+   mutable mapping. This means it will not work with some types, such as
    metaclasses (since the ``__dict__`` attributes on type instances are
    read-only proxies for the class namespace), and those that specify
-   ``__slots__`` without including ``__dict__`` as one of the defined slots
-   (as such classes don't provide a ``__dict__`` attribute at all).
+   ``__slots__`` without including ``__dict__`` as one of the defined slots (as
+   such classes don't provide a ``__dict__`` attribute at all).
 
-   If a mutable mapping is not available or if space-efficient key sharing is
-   desired, an effect similar to :func:`cached_property` can also be achieved by
-   stacking :func:`property` on top of :func:`lru_cache`. See
-   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
+   If a mutable mapping is not available, an effect similar to
+   :func:`cached_property` can also be achieved by stacking :func:`property` on
+   top of :func:`lru_cache`. See :ref:`faq-cache-method-calls` for more details
+   on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
 
