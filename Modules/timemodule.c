@@ -813,7 +813,9 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
     /* I hate these functions that presume you know how big the output
      * will be ahead of time...
      */
+    int attempts = 0;
     while (1) {
+        attempts ++;
         if (*bufsize > PY_SSIZE_T_MAX/sizeof(time_char)) {
             PyErr_NoMemory();
             return NULL;
@@ -854,7 +856,7 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
                 format string. For instance we end up here with musl if the format
                 string ends with a '%'.
             */
-            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            PyErr_Format(PyExc_ValueError, "Invalid format string attempts: %d *outbuf: '%.8s'", attempts, *outbuf);
             return NULL;
         }
     }
