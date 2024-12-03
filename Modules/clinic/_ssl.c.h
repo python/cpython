@@ -258,9 +258,15 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
-#if defined(_ssl__SSLSocket_context_HAS_DOCSTR)
-#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
+"This changes the context associated with the SSLSocket.\n"
+"\n"
+"This is typically used from within a callback function set by the sni_callback\n"
+"on the SSLContext to change the certificate information associated with the\n"
+"SSLSocket before the cryptographic exchange handshake messages.");
+#define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+
+#if !defined(_ssl__SSLSocket_context_DOCSTR)
 #  define _ssl__SSLSocket_context_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
@@ -285,9 +291,7 @@ _ssl__SSLSocket_context_get(PySSLSocket *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLSOCKET_CONTEXT_HAS_DOCSTR)
-#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
-#else
+#if !defined(_ssl__SSLSocket_context_DOCSTR)
 #  define _ssl__SSLSocket_context_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
@@ -314,11 +318,9 @@ _ssl__SSLSocket_context_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(
 
 PyDoc_STRVAR(_ssl__SSLSocket_server_side__doc__,
 "Whether this is a server-side socket.");
-#define _ssl__SSLSocket_server_side_HAS_DOCSTR
+#define _ssl__SSLSocket_server_side_DOCSTR _ssl__SSLSocket_server_side__doc__
 
-#if defined(_ssl__SSLSocket_server_side_HAS_DOCSTR)
-#  define _ssl__SSLSocket_server_side_DOCSTR _ssl__SSLSocket_server_side__doc__
-#else
+#if !defined(_ssl__SSLSocket_server_side_DOCSTR)
 #  define _ssl__SSLSocket_server_side_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF)
@@ -345,11 +347,9 @@ _ssl__SSLSocket_server_side_get(PySSLSocket *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl__SSLSocket_server_hostname__doc__,
 "The currently set server hostname (for SNI).");
-#define _ssl__SSLSocket_server_hostname_HAS_DOCSTR
+#define _ssl__SSLSocket_server_hostname_DOCSTR _ssl__SSLSocket_server_hostname__doc__
 
-#if defined(_ssl__SSLSocket_server_hostname_HAS_DOCSTR)
-#  define _ssl__SSLSocket_server_hostname_DOCSTR _ssl__SSLSocket_server_hostname__doc__
-#else
+#if !defined(_ssl__SSLSocket_server_hostname_DOCSTR)
 #  define _ssl__SSLSocket_server_hostname_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF)
@@ -374,9 +374,13 @@ _ssl__SSLSocket_server_hostname_get(PySSLSocket *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_ssl__SSLSocket_owner_HAS_DOCSTR)
-#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLSocket_owner__doc__,
+"The Python-level owner of this object.\n"
+"\n"
+"Passed as \"self\" in servername callback.");
+#define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
+
+#if !defined(_ssl__SSLSocket_owner_DOCSTR)
 #  define _ssl__SSLSocket_owner_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
@@ -401,9 +405,7 @@ _ssl__SSLSocket_owner_get(PySSLSocket *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLSOCKET_OWNER_HAS_DOCSTR)
-#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
-#else
+#if !defined(_ssl__SSLSocket_owner_DOCSTR)
 #  define _ssl__SSLSocket_owner_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
@@ -664,9 +666,11 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
     return return_value;
 }
 
-#if defined(_ssl__SSLSocket_session_HAS_DOCSTR)
-#  define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLSocket_session__doc__,
+"The underlying SSLSession object.");
+#define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
+
+#if !defined(_ssl__SSLSocket_session_DOCSTR)
 #  define _ssl__SSLSocket_session_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_SESSION_GETSETDEF)
@@ -691,9 +695,7 @@ _ssl__SSLSocket_session_get(PySSLSocket *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLSOCKET_SESSION_HAS_DOCSTR)
-#  define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
-#else
+#if !defined(_ssl__SSLSocket_session_DOCSTR)
 #  define _ssl__SSLSocket_session_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_SESSION_GETSETDEF)
@@ -720,11 +722,9 @@ _ssl__SSLSocket_session_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(
 
 PyDoc_STRVAR(_ssl__SSLSocket_session_reused__doc__,
 "Was the client session reused during handshake?");
-#define _ssl__SSLSocket_session_reused_HAS_DOCSTR
+#define _ssl__SSLSocket_session_reused_DOCSTR _ssl__SSLSocket_session_reused__doc__
 
-#if defined(_ssl__SSLSocket_session_reused_HAS_DOCSTR)
-#  define _ssl__SSLSocket_session_reused_DOCSTR _ssl__SSLSocket_session_reused__doc__
-#else
+#if !defined(_ssl__SSLSocket_session_reused_DOCSTR)
 #  define _ssl__SSLSocket_session_reused_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF)
@@ -873,9 +873,7 @@ exit:
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_verify_mode_HAS_DOCSTR)
-#  define _ssl__SSLContext_verify_mode_DOCSTR _ssl__SSLContext_verify_mode__doc__
-#else
+#if !defined(_ssl__SSLContext_verify_mode_DOCSTR)
 #  define _ssl__SSLContext_verify_mode_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF)
@@ -900,9 +898,7 @@ _ssl__SSLContext_verify_mode_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_VERIFY_MODE_HAS_DOCSTR)
-#  define _ssl__SSLContext_verify_mode_DOCSTR _ssl__SSLContext_verify_mode__doc__
-#else
+#if !defined(_ssl__SSLContext_verify_mode_DOCSTR)
 #  define _ssl__SSLContext_verify_mode_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF)
@@ -927,9 +923,7 @@ _ssl__SSLContext_verify_mode_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_verify_flags_HAS_DOCSTR)
-#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
-#else
+#if !defined(_ssl__SSLContext_verify_flags_DOCSTR)
 #  define _ssl__SSLContext_verify_flags_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
@@ -954,9 +948,7 @@ _ssl__SSLContext_verify_flags_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_HAS_DOCSTR)
-#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
-#else
+#if !defined(_ssl__SSLContext_verify_flags_DOCSTR)
 #  define _ssl__SSLContext_verify_flags_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
@@ -981,9 +973,7 @@ _ssl__SSLContext_verify_flags_set(PySSLContext *self, PyObject *value, void *Py_
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_minimum_version_HAS_DOCSTR)
-#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
-#else
+#if !defined(_ssl__SSLContext_minimum_version_DOCSTR)
 #  define _ssl__SSLContext_minimum_version_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
@@ -1008,9 +998,7 @@ _ssl__SSLContext_minimum_version_get(PySSLContext *self, void *Py_UNUSED(context
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_HAS_DOCSTR)
-#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
-#else
+#if !defined(_ssl__SSLContext_minimum_version_DOCSTR)
 #  define _ssl__SSLContext_minimum_version_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
@@ -1036,9 +1024,7 @@ _ssl__SSLContext_minimum_version_set(PySSLContext *self, PyObject *value, void *
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_maximum_version_HAS_DOCSTR)
-#  define _ssl__SSLContext_maximum_version_DOCSTR _ssl__SSLContext_maximum_version__doc__
-#else
+#if !defined(_ssl__SSLContext_maximum_version_DOCSTR)
 #  define _ssl__SSLContext_maximum_version_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF)
@@ -1063,9 +1049,7 @@ _ssl__SSLContext_maximum_version_get(PySSLContext *self, void *Py_UNUSED(context
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_HAS_DOCSTR)
-#  define _ssl__SSLContext_maximum_version_DOCSTR _ssl__SSLContext_maximum_version__doc__
-#else
+#if !defined(_ssl__SSLContext_maximum_version_DOCSTR)
 #  define _ssl__SSLContext_maximum_version_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF)
@@ -1091,9 +1075,11 @@ _ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_num_tickets_HAS_DOCSTR)
-#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLContext_num_tickets__doc__,
+"Control the number of TLSv1.3 session tickets.");
+#define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+
+#if !defined(_ssl__SSLContext_num_tickets_DOCSTR)
 #  define _ssl__SSLContext_num_tickets_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
@@ -1118,9 +1104,7 @@ _ssl__SSLContext_num_tickets_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_HAS_DOCSTR)
-#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
-#else
+#if !defined(_ssl__SSLContext_num_tickets_DOCSTR)
 #  define _ssl__SSLContext_num_tickets_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
@@ -1145,9 +1129,11 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_security_level_HAS_DOCSTR)
-#  define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLContext_security_level__doc__,
+"The current security level.");
+#define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
+
+#if !defined(_ssl__SSLContext_security_level_DOCSTR)
 #  define _ssl__SSLContext_security_level_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF)
@@ -1172,9 +1158,7 @@ _ssl__SSLContext_security_level_get(PySSLContext *self, void *Py_UNUSED(context)
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_options_HAS_DOCSTR)
-#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
-#else
+#if !defined(_ssl__SSLContext_options_DOCSTR)
 #  define _ssl__SSLContext_options_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
@@ -1199,9 +1183,7 @@ _ssl__SSLContext_options_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_OPTIONS_HAS_DOCSTR)
-#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
-#else
+#if !defined(_ssl__SSLContext_options_DOCSTR)
 #  define _ssl__SSLContext_options_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
@@ -1226,9 +1208,7 @@ _ssl__SSLContext_options_set(PySSLContext *self, PyObject *value, void *Py_UNUSE
     return return_value;
 }
 
-#if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
-#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
-#else
+#if !defined(_ssl__SSLContext__host_flags_DOCSTR)
 #  define _ssl__SSLContext__host_flags_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
@@ -1253,9 +1233,7 @@ _ssl__SSLContext__host_flags_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_HAS_DOCSTR)
-#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
-#else
+#if !defined(_ssl__SSLContext__host_flags_DOCSTR)
 #  define _ssl__SSLContext__host_flags_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
@@ -1280,9 +1258,7 @@ _ssl__SSLContext__host_flags_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_check_hostname_HAS_DOCSTR)
-#  define _ssl__SSLContext_check_hostname_DOCSTR _ssl__SSLContext_check_hostname__doc__
-#else
+#if !defined(_ssl__SSLContext_check_hostname_DOCSTR)
 #  define _ssl__SSLContext_check_hostname_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF)
@@ -1307,9 +1283,7 @@ _ssl__SSLContext_check_hostname_get(PySSLContext *self, void *Py_UNUSED(context)
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_HAS_DOCSTR)
-#  define _ssl__SSLContext_check_hostname_DOCSTR _ssl__SSLContext_check_hostname__doc__
-#else
+#if !defined(_ssl__SSLContext_check_hostname_DOCSTR)
 #  define _ssl__SSLContext_check_hostname_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF)
@@ -1334,9 +1308,7 @@ _ssl__SSLContext_check_hostname_set(PySSLContext *self, PyObject *value, void *P
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_protocol_HAS_DOCSTR)
-#  define _ssl__SSLContext_protocol_DOCSTR _ssl__SSLContext_protocol__doc__
-#else
+#if !defined(_ssl__SSLContext_protocol_DOCSTR)
 #  define _ssl__SSLContext_protocol_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_PROTOCOL_GETSETDEF)
@@ -1799,9 +1771,16 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
     return return_value;
 }
 
-#if defined(_ssl__SSLContext_sni_callback_HAS_DOCSTR)
-#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
-#else
+PyDoc_STRVAR(_ssl__SSLContext_sni_callback__doc__,
+"Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n"
+"\n"
+"If the argument is None then the callback is disabled. The method is called\n"
+"with the SSLSocket, the server name as a string, and the SSLContext object.\n"
+"\n"
+"See RFC 6066 for details of the SNI extension.");
+#define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+
+#if !defined(_ssl__SSLContext_sni_callback_DOCSTR)
 #  define _ssl__SSLContext_sni_callback_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
@@ -1826,9 +1805,7 @@ _ssl__SSLContext_sni_callback_get(PySSLContext *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_HAS_DOCSTR)
-#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
-#else
+#if !defined(_ssl__SSLContext_sni_callback_DOCSTR)
 #  define _ssl__SSLContext_sni_callback_DOCSTR NULL
 #endif
 #if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
@@ -2121,9 +2098,11 @@ exit:
     return return_value;
 }
 
-#if defined(_ssl_MemoryBIO_pending_HAS_DOCSTR)
-#  define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
-#else
+PyDoc_STRVAR(_ssl_MemoryBIO_pending__doc__,
+"The number of bytes pending in the memory BIO.");
+#define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
+
+#if !defined(_ssl_MemoryBIO_pending_DOCSTR)
 #  define _ssl_MemoryBIO_pending_DOCSTR NULL
 #endif
 #if defined(_SSL_MEMORYBIO_PENDING_GETSETDEF)
@@ -2148,9 +2127,11 @@ _ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_ssl_MemoryBIO_eof_HAS_DOCSTR)
-#  define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
-#else
+PyDoc_STRVAR(_ssl_MemoryBIO_eof__doc__,
+"Whether the memory BIO is at EOF.");
+#define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
+
+#if !defined(_ssl_MemoryBIO_eof_DOCSTR)
 #  define _ssl_MemoryBIO_eof_DOCSTR NULL
 #endif
 #if defined(_SSL_MEMORYBIO_EOF_GETSETDEF)
@@ -2279,9 +2260,11 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_time_HAS_DOCSTR)
-#  define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
-#else
+PyDoc_STRVAR(_ssl_SSLSession_time__doc__,
+"Session creation time (seconds since epoch).");
+#define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
+
+#if !defined(_ssl_SSLSession_time_DOCSTR)
 #  define _ssl_SSLSession_time_DOCSTR NULL
 #endif
 #if defined(_SSL_SSLSESSION_TIME_GETSETDEF)
@@ -2306,9 +2289,11 @@ _ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_timeout_HAS_DOCSTR)
-#  define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
-#else
+PyDoc_STRVAR(_ssl_SSLSession_timeout__doc__,
+"Session timeout (delta in seconds).");
+#define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
+
+#if !defined(_ssl_SSLSession_timeout_DOCSTR)
 #  define _ssl_SSLSession_timeout_DOCSTR NULL
 #endif
 #if defined(_SSL_SSLSESSION_TIMEOUT_GETSETDEF)
@@ -2333,9 +2318,11 @@ _ssl_SSLSession_timeout_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_ticket_lifetime_hint_HAS_DOCSTR)
-#  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
-#else
+PyDoc_STRVAR(_ssl_SSLSession_ticket_lifetime_hint__doc__,
+"Ticket life time hint.");
+#define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
+
+#if !defined(_ssl_SSLSession_ticket_lifetime_hint_DOCSTR)
 #  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR NULL
 #endif
 #if defined(_SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF)
@@ -2360,9 +2347,11 @@ _ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(con
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_id_HAS_DOCSTR)
-#  define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
-#else
+PyDoc_STRVAR(_ssl_SSLSession_id__doc__,
+"Session ID.");
+#define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
+
+#if !defined(_ssl_SSLSession_id_DOCSTR)
 #  define _ssl_SSLSession_id_DOCSTR NULL
 #endif
 #if defined(_SSL_SSLSESSION_ID_GETSETDEF)
@@ -2387,9 +2376,11 @@ _ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_has_ticket_HAS_DOCSTR)
-#  define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
-#else
+PyDoc_STRVAR(_ssl_SSLSession_has_ticket__doc__,
+"Does the session contain a ticket?");
+#define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
+
+#if !defined(_ssl_SSLSession_has_ticket_DOCSTR)
 #  define _ssl_SSLSession_has_ticket_DOCSTR NULL
 #endif
 #if defined(_SSL_SSLSESSION_HAS_TICKET_GETSETDEF)
@@ -2839,4 +2830,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4c2af0c8fab7ec4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=654d6d7af659f6cd input=a9049054013a1b77]*/
