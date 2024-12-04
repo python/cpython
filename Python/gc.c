@@ -1550,13 +1550,16 @@ assess_work_to_do(GCState *gcstate)
     /* The amount of work we want to do depends on two things.
      * 1. The number of new objects created
      * 2. The heap size (up to twice the number of new objects, to avoid quadratic effects)
+     * 3. The amount of garbage.
      *
-     * For a large, steady state heap, the amount of work to do is three times the number
-     * of new objects added to the heap. This ensures that we stay ahead in the
+     * We cannot know how much of the heap is garbage, but we know that no reachable object
+     * is garbage. We make a (fairly pessismistic) assumption that half the heap not
+     * reachable from the roots is garbage, and count collections of increments as half as efficient
+     * as processing the heap as the marking phase.
+     *
+     * For a large, steady state heap, the amount of work to do is at least three times the
+     * number of new objects added to the heap. This ensures that we stay ahead in the
      * worst case of all new objects being garbage.
-     *
-     * This could be improved by tracking survival rates, but it is still a
-     * large improvement on the non-marking approach.
      */
     intptr_t scale_factor = gcstate->old[0].threshold;
     if (scale_factor < 2) {
