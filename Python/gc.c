@@ -1283,7 +1283,7 @@ gc_list_set_space(PyGC_Head *list, int space)
  * K > 2. Higher values of K mean that the old space is
  * scanned more rapidly.
  */
-#define SCAN_RATE_DIVISOR 10
+#define SCAN_RATE_DIVISOR 5
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1566,7 +1566,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*2;
+    intptr_t max_heap_fraction = new_objects*5;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1585,7 +1585,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
-        gcstate->work_to_do -= objects_marked;
+        gcstate->work_to_do -= objects_marked*2;
         validate_spaces(gcstate);
         return;
     }
@@ -1597,7 +1597,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     }
     intptr_t objects_marked = mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
-    gcstate->work_to_do -= objects_marked;
+    gcstate->work_to_do -= objects_marked*2;
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
     PyGC_Head increment;
     gc_list_init(&increment);
@@ -1608,7 +1608,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     Py_ssize_t increment_size = move_all_transitively_reachable(&working, &increment, gcstate->visited_space);
     gc_list_validate_space(&increment, gcstate->visited_space);
     assert(working.top == NULL);
-    while (increment_size < gcstate->work_to_do * 2) {
+    while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
             break;
         }
@@ -1628,7 +1628,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do -= increment_size/2;
+    gcstate->work_to_do -= increment_size;
 
     add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
