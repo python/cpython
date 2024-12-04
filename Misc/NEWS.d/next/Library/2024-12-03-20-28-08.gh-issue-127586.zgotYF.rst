@@ -1,4 +1,4 @@
-:class:`multiprocessing.Pool` now properly restores blocked signal handlers
+:class:`multiprocessing.pool.Pool` now properly restores blocked signal handlers
 of the parent thread when creating processes via either *spawn* or
 *forkserver*. Previously it would unblock **SIGTERM** and **SIGINT** in the
 parent thread on construction, even if either signal handler was
