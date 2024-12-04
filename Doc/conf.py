@@ -20,6 +20,7 @@ sys.path.append(os.path.abspath('includes'))
 # Python specific content from Doc/Tools/extensions/pyspecific.py
 from pyspecific import SOURCE_URI
 
+
 # General configuration
 # ---------------------
 
@@ -29,6 +30,7 @@ extensions = [
     'availability',
     'c_annotations',
     'glossary_search',
+    'grammar_snippet',
     'lexers',
     'pyspecific',
     'sphinx.ext.coverage',

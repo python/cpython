@@ -1,3 +1,11 @@
+import re
+from docutils import nodes
+from docutils.parsers.rst import directives
+
+from sphinx import addnodes
+from sphinx.util.docutils import SphinxDirective
+from sphinx.util.nodes import make_id
+
 
 class GrammarSnippetDirective(SphinxDirective):
     """Transform a grammar-snippet directive to a Sphinx productionlist
@@ -6,35 +14,31 @@ class GrammarSnippetDirective(SphinxDirective):
 
         .. grammar-snippet:: file
            :group: python-grammar
-           :generated-by: Tools/peg_generator/docs_generator.py
 
            file: (NEWLINE | statement)*
 
-    into something like:
+    into something similar to Sphinx productionlist, but better suited
+    for our needs:
+    - Instead of `::=`, use a colon, as in `Grammar/python.gram`
+    - Show the listing almost as is, with no auto-aligment.
+      The only special character is the backtick, which marks tokens.
 
-        .. productionlist:: python-grammar
-           file: (NEWLINE | statement)*
-
-    The custom directive is needed because Sphinx's `productionlist` does
-    not support options.
+    Unlike Sphinx's productionlist, this directive supports options.
+    The "group" must be given as an option.
     """
     has_content = True
     option_spec = {
         'group': directives.unchanged,
-        'generated-by': directives.unchanged,
-        'diagrams': directives.unchanged,
     }
 
-    # Arguments are used by the tool that generates grammar-snippet,
-    # this Directive ignores them.
-    required_arguments = 1
-    optional_arguments = 0
+    # We currently ignore arguments.
+    required_arguments = 0
+    optional_arguments = 1
     final_argument_whitespace = True
 
     def run(self):
         group_name = self.options['group']
 
-        rawsource = '''
         # Docutils elements have a `rawsource` attribute that is supposed to be
         # set to the original ReST source.
         # Sphinx does the following with it:
@@ -42,14 +46,13 @@ class GrammarSnippetDirective(SphinxDirective):
         # - if it matches `self.astext()` when generating the output,
         #   apply syntax highlighting (which is based on the plain-text content
         #   and thus discards internal formatting, like references).
-        # To get around this, we set it to this fake (and very non-empty)
-        # string!
-        '''
+        # To get around this, we set it to this non-empty string:
+        rawsource = 'You should not see this.'
 
         literal = nodes.literal_block(
             rawsource,
             '',
-            # TODO: Use a dedicated CSS class here and for strings,
+            # TODO: Use a dedicated CSS class here and for strings.
             # and add it to the theme too
             classes=['highlight'],
         )
@@ -87,7 +90,9 @@ class GrammarSnippetDirective(SphinxDirective):
                         name_node = addnodes.literal_strong()
 
                         # Cargo-culted magic to make `name_node` a link target
-                        # similar to Sphinx `production`:
+                        # similar to Sphinx `production`.
+                        # This needs to be the same as what Sphinx does
+                        # to avoid breaking existing links.
                         domain = self.env.domains['std']
                         obj_name = f"{group_name}:{name}"
                         prefix = f'grammar-token-{group_name}'
@@ -116,19 +121,13 @@ class GrammarSnippetDirective(SphinxDirective):
                         raise ValueError('unhandled match')
             literal += nodes.Text(line[last_pos:] + '\n')
 
-
         node = nodes.paragraph(
             '', '',
             literal,
         )
 
-        content = StringList()
-        for rule_name in self.options['diagrams'].split():
-            content.append('', source=__file__)
-            content.append(f'``{rule_name}``:', source=__file__)
-            content.append('', source=__file__)
-            content.append(f'.. image:: diagrams/{rule_name}.svg', source=__file__)
-
-        self.state.nested_parse(content, 0, node)
-
         return [node]
+
+def setup(app):
+    app.add_directive('grammar-snippet', GrammarSnippetDirective)
+    return {'version': '1.0', 'parallel_read_safe': True}
