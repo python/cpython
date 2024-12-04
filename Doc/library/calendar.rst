@@ -401,7 +401,7 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: firstweekday
 
-   An :class:int (0-6) representing the current setting for the first weekday.
+   An :class:`int` (0-6) representing the current setting for the first weekday.
    The default is 0, which corresponds to Monday.
 
 .. data:: day_name
