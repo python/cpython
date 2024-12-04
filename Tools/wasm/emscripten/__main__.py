@@ -215,7 +215,7 @@ def configure_emscripten_python(context, working_dir):
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
         dedent(
-            """\
+            f"""\
             #!/bin/sh
 
             # Macs come with FreeBSD coreutils which doesn't have the -s option
