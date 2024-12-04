@@ -68,6 +68,20 @@ free_list_items(PyObject** items, bool use_qsbr)
 #endif
 }
 
+static void
+ensure_shared_on_resize(PyListObject *self)
+{
+#ifdef Py_GIL_DISABLED
+    // Ensure that the list array is freed using QSBR if we are not the
+    // owning thread.
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)self) &&
+        !_PyObject_GC_IS_SHARED(self))
+    {
+        _PyObject_GC_SET_SHARED(self);
+    }
+#endif
+}
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -116,6 +130,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 
     if (newsize == 0)
         new_allocated = 0;
+
+    ensure_shared_on_resize(self);
 
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = list_allocate_array(new_allocated);
@@ -389,6 +405,12 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     return item;
+}
+
+PyObject *
+_PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
+{
+    return list_get_item_ref(list, i);
 }
 
 int
@@ -798,6 +820,9 @@ list_clear_impl(PyListObject *a, bool is_resize)
         Py_XDECREF(items[i]);
     }
 #ifdef Py_GIL_DISABLED
+    if (is_resize) {
+        ensure_shared_on_resize(a);
+    }
     bool use_qsbr = is_resize && _PyObject_GC_IS_SHARED(a);
 #else
     bool use_qsbr = false;
@@ -3063,6 +3088,7 @@ keyfunc_fail:
             Py_XDECREF(final_ob_item[i]);
         }
 #ifdef Py_GIL_DISABLED
+        ensure_shared_on_resize(self);
         bool use_qsbr = _PyObject_GC_IS_SHARED(self);
 #else
         bool use_qsbr = false;
@@ -3774,6 +3800,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_LIST,
 };
 
 /*********************** List Iterator **************************/

@@ -374,6 +374,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a bound method written in Python.
 
 
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
+
+
 .. function:: isfunction(object)
 
    Return ``True`` if the object is a Python function, which includes functions
@@ -1692,6 +1699,14 @@ which is a bitmap of the following flags:
    asynchronous generator object.  See :pep:`525` for more details.
 
    .. versionadded:: 3.6
+
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
 
 .. note::
    The flags are specific to CPython, and may not be defined in other

@@ -38,7 +38,8 @@ exception:
    be parsed, without the leading reference to the running program. Typically, this
    means ``sys.argv[1:]``. *shortopts* is the string of option letters that the
    script wants to recognize, with options that require an argument followed by a
-   colon (``':'``; i.e., the same format that Unix :c:func:`!getopt` uses).
+   colon (``':'``) and options that accept an optional argument followed by
+   two colons (``'::'``); i.e., the same format that Unix :c:func:`!getopt` uses.
 
    .. note::
 
@@ -49,8 +50,10 @@ exception:
    *longopts*, if specified, must be a list of strings with the names of the
    long options which should be supported.  The leading ``'--'`` characters
    should not be included in the option name.  Long options which require an
-   argument should be followed by an equal sign (``'='``).  Optional arguments
-   are not supported.  To accept only long options, *shortopts* should be an
+   argument should be followed by an equal sign (``'='``).
+   Long options which accept an optional argument should be followed by
+   an equal sign and question mark (``'=?'``).
+   To accept only long options, *shortopts* should be an
    empty string.  Long options on the command line can be recognized so long as
    they provide a prefix of the option name that matches exactly one of the
    accepted options.  For example, if *longopts* is ``['foo', 'frob']``, the
@@ -67,6 +70,9 @@ exception:
    options occur in the list in the same order in which they were found, thus
    allowing multiple occurrences.  Long and short options may be mixed.
 
+   .. versionchanged:: 3.14
+      Optional arguments are supported.
+
 
 .. function:: gnu_getopt(args, shortopts, longopts=[])
 
@@ -78,6 +84,16 @@ exception:
    If the first character of the option string is ``'+'``, or if the environment
    variable :envvar:`!POSIXLY_CORRECT` is set, then option processing stops as
    soon as a non-option argument is encountered.
+
+   If the first character of the option string is ``'-'``, non-option arguments
+   that are followed by options are added to the list of option-and-value pairs
+   as a pair that has ``None`` as its first element and the list of non-option
+   arguments as its second element.
+   The second element of the :func:`!gnu_getopt` result is a list of
+   program arguments after the last option.
+
+   .. versionchanged:: 3.14
+      Support for returning intermixed options and non-option arguments in order.
 
 
 .. exception:: GetoptError
@@ -97,6 +113,8 @@ exception:
 
 An example using only Unix style options:
 
+.. doctest::
+
    >>> import getopt
    >>> args = '-a -b -cfoo -d bar a1 a2'.split()
    >>> args
@@ -109,6 +127,8 @@ An example using only Unix style options:
 
 Using long option names is equally easy:
 
+.. doctest::
+
    >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
    >>> args = s.split()
    >>> args
@@ -120,7 +140,37 @@ Using long option names is equally easy:
    >>> args
    ['a1', 'a2']
 
-In a script, typical usage is something like this::
+Optional arguments should be specified explicitly:
+
+.. doctest::
+
+   >>> s = '-Con -C --color=off --color a1 a2'
+   >>> args = s.split()
+   >>> args
+   ['-Con', '-C', '--color=off', '--color', 'a1', 'a2']
+   >>> optlist, args = getopt.getopt(args, 'C::', ['color=?'])
+   >>> optlist
+   [('-C', 'on'), ('-C', ''), ('--color', 'off'), ('--color', '')]
+   >>> args
+   ['a1', 'a2']
+
+The order of options and non-option arguments can be preserved:
+
+.. doctest::
+
+   >>> s = 'a1 -x a2 a3 a4 --long a5 a6'
+   >>> args = s.split()
+   >>> args
+   ['a1', '-x', 'a2', 'a3', 'a4', '--long', 'a5', 'a6']
+   >>> optlist, args = getopt.gnu_getopt(args, '-x:', ['long='])
+   >>> optlist
+   [(None, ['a1']), ('-x', 'a2'), (None, ['a3', 'a4']), ('--long', 'a5')]
+   >>> args
+   ['a6']
+
+In a script, typical usage is something like this:
+
+.. testcode::
 
    import getopt, sys
 
@@ -150,7 +200,9 @@ In a script, typical usage is something like this::
        main()
 
 Note that an equivalent command line interface could be produced with less code
-and more informative help and error messages by using the :mod:`argparse` module::
+and more informative help and error messages by using the :mod:`argparse` module:
+
+.. testcode::
 
    import argparse
 

@@ -1,5 +1,6 @@
 #include "Python.h"
 
+#include "pycore_dict.h"        // _PyDict_UniqueId()
 #include "pycore_lock.h"        // PyMutex_LockFlags()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pycore_object.h"      // _Py_IncRefTotal
@@ -98,8 +99,8 @@ _PyObject_AssignUniqueId(PyObject *obj)
     return unique_id;
 }
 
-static void
-release_unique_id(Py_ssize_t unique_id)
+void
+_PyObject_ReleaseUniqueId(Py_ssize_t unique_id)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unique_id_pool *pool = &interp->unique_ids;
@@ -128,6 +129,11 @@ clear_unique_id(PyObject *obj)
         id = co->_co_unique_id;
         co->_co_unique_id = -1;
     }
+    else if (PyDict_Check(obj)) {
+        PyDictObject *mp = (PyDictObject *)obj;
+        id = _PyDict_UniqueId(mp);
+        mp->_ma_watcher_tag &= ~(UINT64_MAX << DICT_UNIQUE_ID_SHIFT);
+    }
     return id;
 }
 
@@ -136,7 +142,7 @@ _PyObject_DisablePerThreadRefcounting(PyObject *obj)
 {
     Py_ssize_t id = clear_unique_id(obj);
     if (id >= 0) {
-        release_unique_id(id);
+        _PyObject_ReleaseUniqueId(id);
     }
 }
 

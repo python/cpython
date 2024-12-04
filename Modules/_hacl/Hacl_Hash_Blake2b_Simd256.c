@@ -855,7 +855,8 @@ Hacl_Hash_Blake2b_Simd256_reset_with_key_and_params(
   uint8_t *k
 )
 {
-  index_of_state(s);
+  Hacl_Hash_Blake2b_index i1 = index_of_state(s);
+  KRML_MAYBE_UNUSED_VAR(i1);
   reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 

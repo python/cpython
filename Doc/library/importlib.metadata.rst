@@ -133,7 +133,7 @@ Entry points
 
    Details of a collection of installed entry points.
 
-   Also provides a ``.groups`` attribute that reports all identifed entry
+   Also provides a ``.groups`` attribute that reports all identified entry
    point groups, and a ``.names`` attribute that reports all identified entry
    point names.
 
@@ -229,10 +229,10 @@ Distribution metadata
 .. class:: PackageMetadata
 
    A concrete implementation of the
-    `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
+   `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
 
-    In addition to providing the defined protocol methods and attributes, subscripting
-    the instance is equivalent to calling the :meth:`!get` method.
+   In addition to providing the defined protocol methods and attributes, subscripting
+   the instance is equivalent to calling the :meth:`!get` method.
 
 Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 includes some metadata, which you can extract using the :func:`!metadata` function::
@@ -559,7 +559,7 @@ path.
 
 ``DatabaseDistribution``, then, would look something like::
 
-    class DatabaseDistribution(importlib.metadata.Distributon):
+    class DatabaseDistribution(importlib.metadata.Distribution):
         def __init__(self, record):
             self.record = record
 

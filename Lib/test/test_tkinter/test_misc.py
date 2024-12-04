@@ -66,9 +66,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         f.tk_busy_forget()
         self.assertFalse(f.tk_busy_status())
         self.assertFalse(f.tk_busy_current())
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_configure()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_forget()
 
     @requires_tk(8, 6, 6)
@@ -87,7 +88,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(f.tk_busy_configure('cursor')[4], 'heart')
 
         f.tk_busy_forget()
-        with self.assertRaisesRegex(TclError, "can't find busy window"):
+        errmsg = r"can(no|')t find busy window.*"
+        with self.assertRaisesRegex(TclError, errmsg):
             f.tk_busy_cget('cursor')
 
     def test_tk_setPalette(self):
@@ -121,9 +123,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_after(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Without function, sleeps for ms.
         self.assertIsNone(root.after(1))
@@ -159,12 +161,18 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         root.update()  # Process all pending events.
         self.assertEqual(count, 53)
 
+        # Set up with callback with keyword args.
+        count = 0
+        timer1 = root.after(0, callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
+
     def test_after_idle(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Set up with callback with no args.
         count = 0
@@ -190,6 +198,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(count, 53)
         with self.assertRaises(tkinter.TclError):
             root.tk.call(script)
+
+        # Set up with callback with keyword args.
+        count = 0
+        idle1 = root.after_idle(callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
 
     def test_after_cancel(self):
         root = self.root
