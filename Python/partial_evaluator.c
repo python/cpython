@@ -70,7 +70,7 @@ get_code(_PyUOpInstruction *op)
 {
     assert(op->opcode == _PUSH_FRAME || op->opcode == _RETURN_VALUE || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
-    uint64_t operand = op->operand;
+    uint64_t operand = op->operand0;
     if (operand == 0) {
         return NULL;
     }
@@ -90,7 +90,7 @@ static PyCodeObject *
 get_code_with_logging(_PyUOpInstruction *op)
 {
     PyCodeObject *co = NULL;
-    uint64_t push_operand = op->operand;
+    uint64_t push_operand = op->operand0;
     if (push_operand & 1) {
         co = (PyCodeObject *)(push_operand & ~1);
         DPRINTF(3, "code=%p ", co);

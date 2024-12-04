@@ -193,7 +193,7 @@ def write_uop(
                     else:
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
-                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
+                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
             emitter = Tier2PEEmitter(out)
             # No reference management of inputs needed.
