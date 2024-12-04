@@ -28,7 +28,7 @@ concurrency:
 jobs:
   interpreter:
     name: Interpreter (Debug)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -78,10 +78,11 @@ jobs:
             runner: macos-14
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
-            runner: ubuntu-22.04
+            runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            runner: ubuntu-22.04
+            # Forks don't have access to our paid AArch64 runners. These jobs are skipped below:
+            runner: ${{ github.repository_owner == 'python' && 'ubuntu-24.04-aarch64' || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -118,7 +119,8 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux
-        if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
+        # Forks don't have access to our paid AArch64 runners. Skip those:
+        if: runner.os == 'Linux' && (matrix.architecture == 'x86_64' || github.repository_owner == 'python')
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
@@ -126,29 +128,10 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Emulated Linux
-        if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
-        # The --ignorefile on ./python -m test is used to exclude tests known to fail when running on an emulated Linux.
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --prefix="$(pwd)/../build"
-          make install --jobs 4
-          make clean --jobs 4
-          export HOST=${{ matrix.architecture }}-linux-gnu
-          sudo apt install --yes "gcc-$HOST" qemu-user
-          export QEMU_LD_PREFIX="/usr/$HOST"
-          CC="$HOST-gcc" \
-            CPP="$HOST-gcc --preprocess" \
-            HOSTRUNNER=qemu-${{ matrix.architecture }} \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
-          make all --jobs 4
-          ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
   jit-with-disabled-gil:
     name: Free-Threaded (Debug)
     needs: interpreter
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         llvm:

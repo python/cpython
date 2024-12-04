@@ -235,10 +235,19 @@ jobs:
         free-threading:
         - false
         - true
+        os:
+        - ubuntu-24.04
+        - ubuntu-24.04-aarch64
+        is-fork:  # only used for the exclusion trick
+        - ${{ github.repository_owner != 'python' }}
+        exclude:
+        - os: ubuntu-24.04-aarch64
+          is-fork: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: ${{ matrix.free-threading }}
+      os: ${{ matrix.os }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
