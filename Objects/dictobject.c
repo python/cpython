@@ -883,6 +883,7 @@ new_dict(PyInterpreterState *interp,
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
     ASSERT_CONSISTENT(mp);
+    _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
 }
 
@@ -1284,6 +1285,20 @@ ensure_shared_on_resize(PyDictObject *mp)
 #endif
 }
 
+static inline void
+ensure_shared_on_keys_version_assignment(PyDictObject *mp)
+{
+    ASSERT_DICT_LOCKED((PyObject *) mp);
+    #ifdef Py_GIL_DISABLED
+    if (!IS_DICT_SHARED(mp)) {
+        // This ensures that a concurrent resize operation will delay
+        // freeing the old keys or values using QSBR, which is necessary to
+        // safely allow concurrent reads without locking.
+        SET_DICT_SHARED(mp);
+    }
+    #endif
+}
+
 #ifdef Py_GIL_DISABLED
 
 static inline Py_ALWAYS_INLINE int
@@ -1578,64 +1593,6 @@ _PyDict_HasOnlyStringKeys(PyObject *dict)
     return 1;
 }
 
-#define MAINTAIN_TRACKING(mp, key, value) \
-    do { \
-        if (!_PyObject_GC_IS_TRACKED(mp)) { \
-            if (_PyObject_GC_MAY_BE_TRACKED(key) || \
-                _PyObject_GC_MAY_BE_TRACKED(value)) { \
-                _PyObject_GC_TRACK(mp); \
-            } \
-        } \
-    } while(0)
-
-void
-_PyDict_MaybeUntrack(PyObject *op)
-{
-    PyDictObject *mp;
-    PyObject *value;
-    Py_ssize_t i, numentries;
-
-    ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(op);
-
-    if (!PyDict_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
-        return;
-
-    mp = (PyDictObject *) op;
-    ASSERT_CONSISTENT(mp);
-    numentries = mp->ma_keys->dk_nentries;
-    if (_PyDict_HasSplitTable(mp)) {
-        for (i = 0; i < numentries; i++) {
-            if ((value = mp->ma_values->values[i]) == NULL)
-                continue;
-            if (_PyObject_GC_MAY_BE_TRACKED(value)) {
-                return;
-            }
-        }
-    }
-    else {
-        if (DK_IS_UNICODE(mp->ma_keys)) {
-            PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(mp->ma_keys);
-            for (i = 0; i < numentries; i++) {
-                if ((value = ep0[i].me_value) == NULL)
-                    continue;
-                if (_PyObject_GC_MAY_BE_TRACKED(value))
-                    return;
-            }
-        }
-        else {
-            PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
-            for (i = 0; i < numentries; i++) {
-                if ((value = ep0[i].me_value) == NULL)
-                    continue;
-                if (_PyObject_GC_MAY_BE_TRACKED(value) ||
-                    _PyObject_GC_MAY_BE_TRACKED(ep0[i].me_key))
-                    return;
-            }
-        }
-    }
-    _PyObject_GC_UNTRACK(op);
-}
-
 void
 _PyDict_EnablePerThreadRefcounting(PyObject *op)
 {
@@ -1701,7 +1658,7 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     }
 
     _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
-    mp->ma_keys->dk_version = 0;
+    FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
 
     Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
     dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
@@ -1743,7 +1700,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     ix = unicodekeys_lookup_unicode(keys, key, hash);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
-        keys->dk_version = 0;
+        FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
@@ -1761,7 +1718,6 @@ insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, 
 {
     assert(PyUnicode_CheckExact(key));
     ASSERT_DICT_LOCKED(mp);
-    MAINTAIN_TRACKING(mp, key, value);
     PyObject *old_value = mp->ma_values->values[ix];
     if (old_value == NULL) {
         _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
@@ -1817,8 +1773,6 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         goto Fail;
-
-    MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
         assert(!_PyDict_HasSplitTable(mp));
@@ -1877,8 +1831,6 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
 
     /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     assert(mp->ma_values == NULL);
-
-    MAINTAIN_TRACKING(mp, key, value);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
     dictkeys_set_index(newkeys, hashpos, 0);
@@ -2679,7 +2631,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
-        mp->ma_keys->dk_version = 0;
+        FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
@@ -4024,8 +3976,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
-        if (_PyObject_GC_IS_TRACKED(mp))
-            _PyObject_GC_TRACK(split_copy);
+        _PyObject_GC_TRACK(split_copy);
         return (PyObject *)split_copy;
     }
 
@@ -4060,11 +4011,6 @@ copy_lock_held(PyObject *o)
 
         new->ma_used = mp->ma_used;
         ASSERT_CONSISTENT(new);
-        if (_PyObject_GC_IS_TRACKED(mp)) {
-            /* Maintain tracking. */
-            _PyObject_GC_TRACK(new);
-        }
-
         return (PyObject *)new;
     }
 
@@ -4351,7 +4297,6 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             }
         }
 
-        MAINTAIN_TRACKING(mp, key, value);
         STORE_USED(mp, mp->ma_used + 1);
         assert(mp->ma_keys->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
@@ -4498,7 +4443,7 @@ dict_popitem_impl(PyDictObject *self)
             return NULL;
         }
     }
-    self->ma_keys->dk_version = 0;
+    FT_ATOMIC_STORE_UINT32_RELAXED(self->ma_keys->dk_version, 0);
 
     /* Pop last item */
     PyObject *key, *value;
@@ -4800,16 +4745,8 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
-
-    if (type != &PyDict_Type) {
-        // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
-        if (!_PyObject_GC_IS_TRACKED(d)) {
-            _PyObject_GC_TRACK(d);
-        }
-    }
-    else {
-        // _PyType_AllocNoTrack() does not track the created object
-        assert(!_PyObject_GC_IS_TRACKED(d));
+    if (!_PyObject_GC_IS_TRACKED(d)) {
+        _PyObject_GC_TRACK(d);
     }
     return self;
 }
@@ -4912,6 +4849,7 @@ PyTypeObject PyDict_Type = {
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_DICT,
 };
 
 /* For backward compatibility with old dictionary interface */
@@ -6745,19 +6683,14 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 {
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
-    Py_ssize_t track = 0;
     size_t size = shared_keys_usable_size(keys);
     for (size_t i = 0; i < size; i++) {
         PyObject *val = values->values[i];
         if (val != NULL) {
             used += 1;
-            track += _PyObject_GC_MAY_BE_TRACKED(val);
         }
     }
     PyDictObject *res = (PyDictObject *)new_dict(interp, keys, values, used, 0);
-    if (track && res) {
-        _PyObject_GC_TRACK(res);
-    }
     return res;
 }
 
@@ -7168,50 +7101,146 @@ set_dict_inline_values(PyObject *obj, PyDictObject *new_dict)
     }
 }
 
-int
-_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
+#ifdef Py_GIL_DISABLED
+
+// Trys and sets the dictionary for an object in the easy case when our current
+// dictionary is either completely not materialized or is a dictionary which
+// does not point at the inline values.
+static bool
+try_set_dict_inline_only_or_other_dict(PyObject *obj, PyObject *new_dict, PyDictObject **cur_dict)
+{
+    bool replaced = false;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+
+    PyDictObject *dict = *cur_dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        // We only have inline values, we can just completely replace them.
+        set_dict_inline_values(obj, (PyDictObject *)new_dict);
+        replaced = true;
+        goto exit_lock;
+    }
+
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) != _PyObject_InlineValues(obj)) {
+        // We have a materialized dict which doesn't point at the inline values,
+        // We get to simply swap dictionaries and free the old dictionary.
+        FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
+                            (PyDictObject *)Py_XNewRef(new_dict));
+        replaced = true;
+        goto exit_lock;
+    }
+    else {
+        // We have inline values, we need to lock the dict and the object
+        // at the same time to safely dematerialize them. To do that while releasing
+        // the object lock we need a strong reference to the current dictionary.
+        Py_INCREF(dict);
+    }
+exit_lock:
+    Py_END_CRITICAL_SECTION();
+    return replaced;
+}
+
+// Replaces a dictionary that is probably the dictionary which has been
+// materialized and points at the inline values. We could have raced
+// and replaced it with another dictionary though.
+static int
+replace_dict_probably_inline_materialized(PyObject *obj, PyDictObject *inline_dict,
+                                          PyDictObject *cur_dict, PyObject *new_dict)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+
+    if (cur_dict == inline_dict) {
+        assert(FT_ATOMIC_LOAD_PTR_RELAXED(inline_dict->ma_values) == _PyObject_InlineValues(obj));
+
+        int err = _PyDict_DetachFromObject(inline_dict, obj);
+        if (err != 0) {
+            assert(new_dict == NULL);
+            return err;
+        }
+    }
+
+    FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
+                        (PyDictObject *)Py_XNewRef(new_dict));
+    return 0;
+}
+
+#endif
+
+static void
+decref_maybe_delay(PyObject *obj, bool delay)
+{
+    if (delay) {
+        _PyObject_XDecRefDelayed(obj);
+    }
+    else {
+        Py_XDECREF(obj);
+    }
+}
+
+static int
+set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+#ifndef NDEBUG
+    Py_BEGIN_CRITICAL_SECTION(obj);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+    Py_END_CRITICAL_SECTION();
+#endif
     int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+#ifdef Py_GIL_DISABLED
+        PyDictObject *prev_dict;
+        if (!try_set_dict_inline_only_or_other_dict(obj, new_dict, &prev_dict)) {
+            // We had a materialized dictionary which pointed at the inline
+            // values. We need to lock both the object and the dict at the
+            // same time to safely replace it. We can't merely lock the dictionary
+            // while the object is locked because it could suspend the object lock.
+            PyDictObject *cur_dict;
+
+            assert(prev_dict != NULL);
+            Py_BEGIN_CRITICAL_SECTION2(obj, prev_dict);
+
+            // We could have had another thread race in between the call to
+            // try_set_dict_inline_only_or_other_dict where we locked the object
+            // and when we unlocked and re-locked the dictionary.
+            cur_dict = _PyObject_GetManagedDict(obj);
+
+            err = replace_dict_probably_inline_materialized(obj, prev_dict,
+                                                            cur_dict, new_dict);
+
+            Py_END_CRITICAL_SECTION2();
+
+            // Decref for the dictionary we incref'd in try_set_dict_inline_only_or_other_dict
+            // while the object was locked
+            decref_maybe_delay((PyObject *)prev_dict,
+                               !clear && prev_dict != cur_dict);
+            if (err != 0) {
+                return err;
+            }
+
+            prev_dict = cur_dict;
+        }
+
+        if (prev_dict != NULL) {
+            // decref for the dictionary that we replaced
+            decref_maybe_delay((PyObject *)prev_dict, !clear);
+        }
+
+        return 0;
+#else
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
         if (dict == NULL) {
-#ifdef Py_GIL_DISABLED
-            Py_BEGIN_CRITICAL_SECTION(obj);
-
-            dict = _PyObject_ManagedDictPointer(obj)->dict;
-            if (dict == NULL) {
-                set_dict_inline_values(obj, (PyDictObject *)new_dict);
-            }
-
-            Py_END_CRITICAL_SECTION();
-
-            if (dict == NULL) {
-                return 0;
-            }
-#else
             set_dict_inline_values(obj, (PyDictObject *)new_dict);
             return 0;
+        }
+        if (_PyDict_DetachFromObject(dict, obj) == 0) {
+            _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)Py_XNewRef(new_dict);
+            Py_DECREF(dict);
+            return 0;
+        }
+        assert(new_dict == NULL);
+        return -1;
 #endif
-        }
-
-        Py_BEGIN_CRITICAL_SECTION2(dict, obj);
-
-        // We've locked dict, but the actual dict could have changed
-        // since we locked it.
-        dict = _PyObject_ManagedDictPointer(obj)->dict;
-        err = _PyDict_DetachFromObject(dict, obj);
-        if (err == 0) {
-            FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
-                                (PyDictObject *)Py_XNewRef(new_dict));
-        }
-        Py_END_CRITICAL_SECTION2();
-
-        if (err == 0) {
-            Py_XDECREF(dict);
-        }
     }
     else {
         PyDictObject *dict;
@@ -7224,18 +7253,37 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
                             (PyDictObject *)Py_XNewRef(new_dict));
 
         Py_END_CRITICAL_SECTION();
-
-        Py_XDECREF(dict);
+        decref_maybe_delay((PyObject *)dict, !clear);
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     return err;
 }
 
+int
+_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
+{
+    return set_or_clear_managed_dict(obj, new_dict, false);
+}
+
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
-    if (_PyObject_SetManagedDict(obj, NULL) < 0) {
+    if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
+        /* Must be out of memory */
+        assert(PyErr_Occurred() == PyExc_MemoryError);
         PyErr_WriteUnraisable(NULL);
+        /* Clear the dict */
+        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        Py_BEGIN_CRITICAL_SECTION2(dict, obj);
+        dict = _PyObject_ManagedDictPointer(obj)->dict;
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDictKeysObject *oldkeys = dict->ma_keys;
+        set_keys(dict, Py_EMPTY_KEYS);
+        dict->ma_values = NULL;
+        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));
+        STORE_USED(dict, 0);
+        set_dict_inline_values(obj, NULL);
+        Py_END_CRITICAL_SECTION2();
     }
 }
 
@@ -7252,7 +7300,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     // We could be called with an unlocked dict when the caller knows the
     // values are already detached, so we assert after inline values check.
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -7260,12 +7308,6 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     PyDictValues *values = copy_values(mp->ma_values);
 
     if (values == NULL) {
-        /* Out of memory. Clear the dict */
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        PyDictKeysObject *oldkeys = mp->ma_keys;
-        set_keys(mp, Py_EMPTY_KEYS);
-        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
-        STORE_USED(mp, 0);
         PyErr_NoMemory();
         return -1;
     }
@@ -7389,18 +7431,52 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(interp, keys, false);
 }
 
-uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
-                                               PyDictKeysObject *dictkeys)
+static inline uint32_t
+get_next_dict_keys_version(PyInterpreterState *interp)
 {
-    if (dictkeys->dk_version != 0) {
-        return dictkeys->dk_version;
-    }
+#ifdef Py_GIL_DISABLED
+    uint32_t v;
+    do {
+        v = _Py_atomic_load_uint32_relaxed(
+            &interp->dict_state.next_keys_version);
+        if (v == 0) {
+            return 0;
+        }
+    } while (!_Py_atomic_compare_exchange_uint32(
+        &interp->dict_state.next_keys_version, &v, v + 1));
+#else
     if (interp->dict_state.next_keys_version == 0) {
         return 0;
     }
     uint32_t v = interp->dict_state.next_keys_version++;
-    dictkeys->dk_version = v;
+#endif
     return v;
+}
+
+// In free-threaded builds the caller must ensure that the keys object is not
+// being mutated concurrently by another thread.
+uint32_t
+_PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
+                                      PyDictKeysObject *dictkeys)
+{
+    uint32_t dk_version = FT_ATOMIC_LOAD_UINT32_RELAXED(dictkeys->dk_version);
+    if (dk_version != 0) {
+        return dk_version;
+    }
+    dk_version = get_next_dict_keys_version(interp);
+    FT_ATOMIC_STORE_UINT32_RELAXED(dictkeys->dk_version, dk_version);
+    return dk_version;
+}
+
+uint32_t
+_PyDict_GetKeysVersionForCurrentState(PyInterpreterState *interp,
+                                      PyDictObject *dict)
+{
+    ASSERT_DICT_LOCKED((PyObject *) dict);
+    uint32_t dk_version =
+        _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
+    ensure_shared_on_keys_version_assignment(dict);
+    return dk_version;
 }
 
 static inline int

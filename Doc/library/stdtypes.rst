@@ -243,6 +243,9 @@ numeric literal yields an imaginary number (a complex number with a zero real
 part) which you can add to an integer or float to get a complex number with real
 and imaginary parts.
 
+The constructors :func:`int`, :func:`float`, and
+:func:`complex` can be used to produce numbers of a specific type.
+
 .. index::
    single: arithmetic
    pair: built-in function; int
@@ -262,12 +265,15 @@ and imaginary parts.
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex. A comparison between numbers of different types
-behaves as though the exact values of those numbers were being compared. [2]_
+widened to that of the other, where integer is narrower than floating point.
+Arithmetic with complex and real operands is defined by the usual mathematical
+formula, for example::
 
-The constructors :func:`int`, :func:`float`, and
-:func:`complex` can be used to produce numbers of a specific type.
+    x + complex(u, v) = complex(x + u, v)
+    x * complex(u, v) = complex(x * u, x * v)
+
+A comparison between numbers of different types behaves as though the exact
+values of those numbers were being compared. [2]_
 
 All numeric types (except complex) support the following operations (for priorities of
 the operations, see :ref:`operator-summary`):
@@ -3889,7 +3895,7 @@ copying.
    .. versionchanged:: 3.5
       memoryviews can now be indexed with tuple of integers.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       memoryview is now a :term:`generic type`.
 
    :class:`memoryview` has several methods:

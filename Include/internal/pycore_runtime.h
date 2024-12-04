@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
 #include "pycore_audit.h"           // _Py_AuditHookEntry
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
-#include "pycore_crossinterp.h"     // struct _xidregistry
+#include "pycore_crossinterp.h"     // _PyXI_global_state_t
 #include "pycore_debug_offsets.h"   // _Py_DebugOffsets
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -106,7 +106,7 @@ typedef struct pyruntimestate {
      tools. */
 
     /* cross-interpreter data and utils */
-    struct _xi_runtime_state xi;
+    _PyXI_global_state_t xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
@@ -169,6 +169,12 @@ typedef struct pyruntimestate {
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
 
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    // Used in "Python/emscripten_trampoline.c" to choose between type
+    // reflection trampoline and EM_JS trampoline.
+    bool wasm_type_reflection_available;
+#endif
+
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;
     struct _Py_static_objects static_objects;
@@ -189,13 +195,8 @@ typedef struct pyruntimestate {
 
     /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    // Used in "Python/emscripten_trampoline.c" to choose between type
-    // reflection trampoline and EM_JS trampoline.
-    bool wasm_type_reflection_available;
-#endif
-
+    // _main_interpreter should be the last field of _PyRuntimeState.
+    // See https://github.com/python/cpython/issues/127117.
 } _PyRuntimeState;
 
 

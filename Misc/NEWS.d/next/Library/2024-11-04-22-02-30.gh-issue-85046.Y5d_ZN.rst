@@ -1,0 +1,1 @@
+Add :data:`~errno.EHWPOISON` error code to :mod:`errno`.

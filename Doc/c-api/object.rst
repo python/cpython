@@ -85,7 +85,7 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
    This is equivalent to the Python expression ``hasattr(o, attr_name)``.
@@ -575,3 +575,27 @@ Object Protocol
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_Object_EnableDeferredRefcount(PyObject *obj)
+
+   Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*,
+   if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
+   this allows the interpreter to avoid reference count adjustments to *obj*,
+   which may improve multi-threaded performance.  The tradeoff is
+   that *obj* will only be deallocated by the tracing garbage collector.
+
+   This function returns ``1`` if deferred reference counting is enabled on *obj*
+   (including when it was enabled before the call),
+   and ``0`` if deferred reference counting is not supported or if the hint was
+   ignored by the runtime. This function is thread-safe, and cannot fail.
+
+   This function does nothing on builds with the :term:`GIL` enabled, which do
+   not support deferred reference counting. This also does nothing if *obj* is not
+   an object tracked by the garbage collector (see :func:`gc.is_tracked` and
+   :c:func:`PyObject_GC_IsTracked`).
+
+   This function is intended to be used soon after *obj* is created,
+   by the code that creates it.
+
+   .. versionadded:: 3.14
+
