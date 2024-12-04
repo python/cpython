@@ -347,25 +347,9 @@ _PyStaticType_GetBuiltins(void)
 static void
 type_set_flags(PyTypeObject *tp, unsigned long flags)
 {
-#ifdef Py_GIL_DISABLED
-    if (tp->tp_flags & Py_TPFLAGS_READY) {
-        // Since PyType_HasFeature() reads the flags without holding the type
-        // lock, we need an atomic store here.
-        FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
-    }
-    else {
-        // This is a small optimization to avoid the atomic stores in
-        // cases when new types are being initialized.  If type is not
-        // yet ready, a non-atomic store is okay.  When the type is
-        // finally marked ready then an atomic store will be done near
-        // the end of PyType_Read() (the READY flag is set and then the
-        // READYING flag is cleared after that).  That ensures any other
-        // thread reading the type flags will read the correct value.
-        tp->tp_flags = flags;
-    }
-#else
-    tp->tp_flags = flags;
-#endif
+    // Since PyType_HasFeature() reads the flags without holding the type
+    // lock, we need an atomic store here.
+    FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
 }
 
 static void
