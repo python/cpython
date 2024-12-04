@@ -410,7 +410,10 @@ class GNUTranslations(NullTranslations):
                         self._charset = v.split('charset=')[1]
                     elif k == 'plural-forms':
                         v = v.split(';')
-                        plural = v[1].split('plural=')[1]
+                        try:
+                            plural = v[1].split('plural=')[1]
+                        except IndexError as e:
+                            raise ValueError('invalid plural forms syntax') from e
                         self.plural = c2py(plural)
             # Note: we unconditionally convert both msgids and msgstrs to
             # Unicode using the character encoding specified in the charset
