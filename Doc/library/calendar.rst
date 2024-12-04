@@ -42,7 +42,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: getfirstweekday()
 
-      Return an int for the current first weekday (0--6).
+      Return an :class:`int` for the current first weekday (0-6).
 
    .. method:: setfirstweekday(firstweekday)
 
