@@ -82,9 +82,14 @@ class FieldsTestBase:
         max_field_size = sys.maxsize // 8
         class Y(self.cls):
             _fields_ = [('largeField', X * max_field_size)]
+        class Z(self.cls):
+            _fields_ = [('largeField', c_char * max_field_size)]
         with self.assertRaises(ValueError):
             class TooBig(self.cls):
                 _fields_ = [('largeField', X * (max_field_size + 1))]
+        with self.assertRaises(ValueError):
+            class TooBig(self.cls):
+                _fields_ = [('largeField', c_char * (max_field_size + 1))]
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
