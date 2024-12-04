@@ -86,7 +86,7 @@ class ExecutorTest:
         )
 
     def test_map_with_buffersize_and_timeout(self):
-        results = self.executor.map(time.sleep, (0, 1), timeout=0.5)
+        results = self.executor.map(time.sleep, (0.1, 1), timeout=1)
         next(results)
         with self.assertRaises(TimeoutError):
             next(results)
