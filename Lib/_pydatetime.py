@@ -2395,8 +2395,6 @@ def _isoweek1monday(year):
     THURSDAY = 3
     firstday = _ymd2ord(year, 1, 1)
     firstweekday = (firstday + 6) % 7  # See weekday() above
-    # If the first weekday is after Thursday,
-    # ISO week 1 doesn't start until the next Monday
     week1monday = firstday - firstweekday
     if firstweekday > THURSDAY:
         week1monday += 7
