@@ -5581,8 +5581,6 @@
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
                 // Clear mod_keys from stack in case we need to deopt
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(attr_o == NULL, LOAD_ATTR);
                 #ifdef Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);

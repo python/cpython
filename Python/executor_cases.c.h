@@ -2681,8 +2681,6 @@
             // Clear mod_keys from stack in case we need to deopt
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();

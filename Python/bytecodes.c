@@ -2174,8 +2174,7 @@ dummy_func(
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
             DEAD(mod_keys);
             // Clear mod_keys from stack in case we need to deopt
-            SAVE_STACK();
-            RELOAD_STACK();
+            POP_DEAD_INPUTS();
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
