@@ -1117,7 +1117,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_Send(receiver, next_instr);
@@ -1125,7 +1125,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(SEND);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_SEND, (receiver, v -- receiver, retval)) {
@@ -1946,7 +1946,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             int load_method = oparg & 1;
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -1955,7 +1955,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(LOAD_SUPER_ATTR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         tier1 op(_LOAD_SUPER_ATTR, (global_super_st, class_st, self_st -- attr, null if (oparg & 1))) {
@@ -3329,7 +3329,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable[1], self_or_null[1], args[oparg] -- callable[1], self_or_null[1], args[oparg])) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_Call(callable[0], next_instr, oparg + !PyStackRef_IsNull(self_or_null[0]));
@@ -3337,7 +3337,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(CALL);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_MAYBE_EXPAND_METHOD, (callable[1], self_or_null[1], args[oparg] -- func[1], maybe_self[1], args[oparg])) {
@@ -3722,10 +3722,10 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null[0]));
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
-            DEOPT_IF(tp->tp_version_tag != type_version);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
             assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
-            PyFunctionObject *init_func = (PyFunctionObject *)cls->_spec_cache.init;
+            PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize));
             STAT_INC(CALL, hit);
@@ -3743,17 +3743,19 @@ dummy_func(
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
             assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
             DEAD(init);
             DEAD(self);
-            init_frame = _PyEvalFramePushAndInit(
+            _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
             SYNC_SP();
-            if (init_frame == NULL) {
+            if (temp == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
                 ERROR_NO_POP();
             }
+            init_frame = temp;
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
@@ -4000,8 +4002,10 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.list_append);
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o));
+            DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            UNLOCK_OBJECT(self_o);
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
             ERROR_IF(err, error);
