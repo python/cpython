@@ -120,8 +120,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* Include generated data (error codes) */
+/* See make_ssl_data.h for notes on adding a new version. */
 #if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
-#include "_ssl_data_31.h"
+#include "_ssl_data_34.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)
@@ -2161,11 +2162,17 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.context
+
+This changes the context associated with the SSLSocket.
+
+This is typically used from within a callback function set by the sni_callback
+on the SSLContext to change the certificate information associated with the
+SSLSocket before the cryptographic exchange handshake messages.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_context_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=d23e82f72f32e3d7 input=25aa82e4d9fa344a]*/
+/*[clinic end generated code: output=d23e82f72f32e3d7 input=7cbb97407c2ace30]*/
 {
     return Py_NewRef(self->ctx);
 }
@@ -2232,11 +2239,15 @@ _ssl__SSLSocket_server_hostname_get_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.owner
+
+The Python-level owner of this object.
+
+Passed as "self" in servername callback.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_owner_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=1f278cb930382927 input=bc2861ff3cf1402e]*/
+/*[clinic end generated code: output=1f278cb930382927 input=978a8382d9c25c92]*/
 {
     if (self->owner == NULL) {
         Py_RETURN_NONE;
@@ -2850,11 +2861,13 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.session
+
+The underlying SSLSession object.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_session_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=a5cd5755b35da670 input=b9792df9255a9f63]*/
+/*[clinic end generated code: output=a5cd5755b35da670 input=d427318604244bf8]*/
 {
     /* get_session can return sessions from a server-side connection,
      * it does not check for handshake done or client socket. */
@@ -2979,7 +2992,7 @@ static PyType_Spec PySSLSocket_spec = {
     .name = "_ssl._SSLSocket",
     .basicsize = sizeof(PySSLSocket),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = PySSLSocket_slots,
 };
 
@@ -3656,11 +3669,13 @@ _ssl__SSLContext_maximum_version_set_impl(PySSLContext *self,
 @critical_section
 @getter
 _ssl._SSLContext.num_tickets
+
+Control the number of TLSv1.3 session tickets.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_num_tickets_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=3d06d016318846c9 input=1dee26d75163c073]*/
+/*[clinic end generated code: output=3d06d016318846c9 input=1e2599a2e22564ff]*/
 {
     // Clinic seems to be misbehaving when the comment is wrapped with in directive
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
@@ -3704,11 +3719,13 @@ _ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value)
 @critical_section
 @getter
 _ssl._SSLContext.security_level
+
+The current security level.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_security_level_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=56ece09e6a9572d0 input=a0416598e07c3183]*/
+/*[clinic end generated code: output=56ece09e6a9572d0 input=2bdeecb57bb86e3f]*/
 {
     PyObject *res = PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
     return res;
@@ -4665,11 +4682,18 @@ error:
 @critical_section
 @getter
 _ssl._SSLContext.sni_callback
+
+Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.
+
+If the argument is None then the callback is disabled. The method is called
+with the SSLSocket, the server name as a string, and the SSLContext object.
+
+See RFC 6066 for details of the SNI extension.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_sni_callback_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=961e6575cdfaf036 input=22dd28c31fdc4318]*/
+/*[clinic end generated code: output=961e6575cdfaf036 input=9b2473c5e984cfe6]*/
 {
     PyObject *cb = self->set_sni_cb;
     if (cb == NULL) {
@@ -4923,7 +4947,9 @@ static unsigned int psk_client_callback(SSL *s,
         goto error;
     }
 
-    if (identity_len_ + 1 > max_identity_len || psk_len_ > max_psk_len) {
+    if ((size_t)identity_len_ + 1 > max_identity_len
+        || (size_t)psk_len_ > max_psk_len)
+    {
         Py_DECREF(result);
         goto error;
     }
@@ -5036,7 +5062,7 @@ static unsigned int psk_server_callback(SSL *s,
         goto error;
     }
 
-    if (psk_len_ > max_psk_len) {
+    if ((size_t)psk_len_ > max_psk_len) {
         Py_DECREF(result);
         goto error;
     }
@@ -5240,11 +5266,13 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
 @critical_section
 @getter
 _ssl.MemoryBIO.pending
+
+The number of bytes pending in the memory BIO.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self)
-/*[clinic end generated code: output=19236a32a51ac8ff input=c0b6d14eba107f6a]*/
+/*[clinic end generated code: output=19236a32a51ac8ff input=02d9063d8ac31732]*/
 {
     size_t res = BIO_ctrl_pending(self->bio);
     return PyLong_FromSize_t(res);
@@ -5254,11 +5282,13 @@ _ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self)
 @critical_section
 @getter
 _ssl.MemoryBIO.eof
+
+Whether the memory BIO is at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_MemoryBIO_eof_get_impl(PySSLMemoryBIO *self)
-/*[clinic end generated code: output=c255a9ea16e31b92 input=0f5c6be69752e04c]*/
+/*[clinic end generated code: output=c255a9ea16e31b92 input=c6ecc12c4509de1f]*/
 {
     size_t pending = BIO_ctrl_pending(self->bio);
     return PyBool_FromLong((pending == 0) && self->eof_written);
@@ -5499,11 +5529,13 @@ PySSLSession_clear(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.time
+
+Session creation time (seconds since epoch).
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_time_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=4b887b9299de9be4 input=8d1e4afd09103279]*/
+/*[clinic end generated code: output=4b887b9299de9be4 input=67f2325284450ae2]*/
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30300000L
     return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
@@ -5516,11 +5548,13 @@ _ssl_SSLSession_time_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.timeout
+
+Session timeout (delta in seconds).
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_timeout_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=82339c148ab2f7d1 input=ae5e84a9d85df60d]*/
+/*[clinic end generated code: output=82339c148ab2f7d1 input=cd17c2b087c442f2]*/
 {
     long timeout = SSL_SESSION_get_timeout(self->session);
     PyObject *res = PyLong_FromLong(timeout);
@@ -5531,11 +5565,13 @@ _ssl_SSLSession_timeout_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.ticket_lifetime_hint
+
+Ticket life time hint.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=c8b6db498136c275 input=d0e06942ddd8d07f]*/
+/*[clinic end generated code: output=c8b6db498136c275 input=f0e2df50961a7806]*/
 {
     unsigned long hint = SSL_SESSION_get_ticket_lifetime_hint(self->session);
     return PyLong_FromUnsignedLong(hint);
@@ -5545,11 +5581,13 @@ _ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.id
+
+Session ID.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_id_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=c532fb96b10c5adf input=e7322372cf6325dd]*/
+/*[clinic end generated code: output=c532fb96b10c5adf input=0a379e64312b776d]*/
 
 {
     const unsigned char *id;
@@ -5562,11 +5600,13 @@ _ssl_SSLSession_id_get_impl(PySSLSession *self)
 @critical_section
 @getter
 _ssl.SSLSession.has_ticket
+
+Does the session contain a ticket?
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_SSLSession_has_ticket_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=aa3ccfc40b10b96d input=1a48ae8955fa9601]*/
+/*[clinic end generated code: output=aa3ccfc40b10b96d input=fa475555f53a5086]*/
 {
     int res = SSL_SESSION_has_ticket(self->session);
     return res ? Py_True : Py_False;
