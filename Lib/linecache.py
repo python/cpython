@@ -49,6 +49,7 @@ def checkcache(filename=None):
     (This is not checked upon each call!)"""
 
     if filename is None:
+        # get keys atomically
         filenames = cache.copy().keys()
     else:
         filenames = [filename]
