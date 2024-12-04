@@ -1566,7 +1566,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*5;
+    intptr_t max_heap_fraction = new_objects*7;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1574,6 +1574,8 @@ assess_work_to_do(GCState *gcstate)
     gcstate->young.count = 0;
     return new_objects + heap_fraction;
 }
+
+#define MARKING_PROGRESS_MULTIPLIER 3
 
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
@@ -1585,19 +1587,15 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
-        gcstate->work_to_do -= objects_marked*2;
+        gcstate->work_to_do -= objects_marked * MARKING_PROGRESS_MULTIPLIER;
         validate_spaces(gcstate);
         return;
     }
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    int scale_factor = gcstate->old[0].threshold;
-    if (scale_factor < 2) {
-        scale_factor = 2;
-    }
     intptr_t objects_marked = mark_stacks(tstate->interp, visited, gcstate->visited_space, false);
     GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
-    gcstate->work_to_do -= objects_marked*2;
+    gcstate->work_to_do -= objects_marked * MARKING_PROGRESS_MULTIPLIER;
     gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
     PyGC_Head increment;
     gc_list_init(&increment);
