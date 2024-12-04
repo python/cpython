@@ -347,6 +347,12 @@ _PyStaticType_GetBuiltins(void)
 static void
 type_set_flags(PyTypeObject *tp, unsigned long flags)
 {
+    if (tp->tp_flags & Py_TPFLAGS_READY) {
+        // It's possible the type object has been exposed to other threads
+        // if it's been marked ready.  In that case, the type lock should be
+        // held when flags are modified.
+        ASSERT_TYPE_LOCK_HELD();
+    }
     // Since PyType_HasFeature() reads the flags without holding the type
     // lock, we need an atomic store here.
     FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
@@ -1556,11 +1562,14 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
         return -1;
     }
 
-    PyType_Modified(type);
+    BEGIN_TYPE_LOCK();
+    type_modified_unlocked(type);
     if (abstract)
         type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     else
         type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+    END_TYPE_LOCK();
+
     return 0;
 }
 
@@ -3328,7 +3337,7 @@ mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        PyType_Modified(type);
+        type_modified_unlocked(type);
     }
     else {
         /* For static builtin types, this is only called during init
@@ -6076,8 +6085,10 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     clear_static_type_objects(interp, type, isbuiltin, final);
 
     if (final) {
+        BEGIN_TYPE_LOCK();
         type_clear_flags(type, Py_TPFLAGS_READY);
-        _PyType_SetVersion(type, 0);
+        set_version_unlocked(type, 0);
+        END_TYPE_LOCK();
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
@@ -11173,7 +11184,7 @@ update_all_slots(PyTypeObject* type)
     ASSERT_TYPE_LOCK_HELD();
 
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-    PyType_Modified(type);
+    type_modified_unlocked(type);
 
     for (p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail */
@@ -11449,8 +11460,10 @@ PyType_Freeze(PyTypeObject *type)
         return -1;
     }
 
+    BEGIN_TYPE_LOCK();
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
-    PyType_Modified(type);
+    type_modified_unlocked(type);
+    END_TYPE_LOCK();
 
     return 0;
 }
