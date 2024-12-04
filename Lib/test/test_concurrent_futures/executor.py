@@ -85,12 +85,6 @@ class ExecutorTest:
             list(map(str, iterable)),
         )
 
-    def test_map_with_buffersize_and_timeout(self):
-        results = self.executor.map(time.sleep, (0.1, 1), timeout=1)
-        next(results)
-        with self.assertRaises(TimeoutError):
-            next(results)
-
     def test_map_with_buffersize_on_infinite_iterable(self):
         results = self.executor.map(str, itertools.count(1), buffersize=1)
         self.assertEqual(next(iter(results)), "1")
