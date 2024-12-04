@@ -1,4 +1,4 @@
-{
+ {
     "image": "ghcr.io/python/devcontainer:2024.09.25.11038928730",
     "onCreateCommand": [
         // Install common tooling.
