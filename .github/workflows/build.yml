@@ -46,14 +46,14 @@ jobs:
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/python/autoconf:2024.10.16.11360930377
+      image: ghcr.io/python/autoconf:2024.11.11.11786316759
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:
@@ -76,7 +76,7 @@ jobs:
           # Check for changes in regenerated files
           if test -n "$changes"; then
             echo "Generated files not up to date."
-            echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
+            echo "Perhaps you forgot to run make regen-configure ;)"
             echo "configure files must be regenerated with a specific version of autoconf."
             echo "$changes"
             echo ""
@@ -88,7 +88,7 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -120,7 +120,7 @@ jobs:
       - name: Build CPython
         run: |
           make -j4 regen-all
-          make regen-stdlib-module-names regen-sbom
+          make regen-stdlib-module-names regen-sbom regen-unicodedata
       - name: Check for changes
         run: |
           git add -u
@@ -150,16 +150,28 @@ jobs:
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
+      fail-fast: false
       matrix:
+        os:
+          - windows-latest
         arch:
-        - Win32
-        - x64
-        - arm64
+          - x64
         free-threading:
-        - false
-        - true
+          - false
+          - true
+        include:
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: false
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: true
+          - os: windows-latest
+            arch: Win32
+            free-threading: false
     uses: ./.github/workflows/reusable-windows.yml
     with:
+      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -237,8 +249,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
+        os: [ubuntu-24.04]
+        openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2, 3.4.0]
+        # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -297,7 +310,7 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -417,7 +430,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1

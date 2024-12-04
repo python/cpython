@@ -1,9 +1,11 @@
 import contextlib
 import os
+import re
 import sys
 import tempfile
 import unittest
 
+from io import StringIO
 from test import support
 from test import test_tools
 
@@ -29,10 +31,12 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import StackItem
+    from analyzer import analyze_forest, StackItem
+    from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
+    import opcode_metadata_generator
     import optimizer_generator
     import partial_evaluator_generator
 
@@ -42,6 +46,14 @@ def handle_stderr():
         return contextlib.nullcontext()
     else:
         return support.captured_stderr()
+
+
+def parse_src(src):
+    p = parser.Parser(src, "test.c")
+    nodes = []
+    while node := p.definition():
+        nodes.append(node)
+    return nodes
 
 
 class TestEffects(unittest.TestCase):
@@ -64,6 +76,171 @@ class TestEffects(unittest.TestCase):
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
         self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
+
+
+class TestGenerateMaxStackEffect(unittest.TestCase):
+    def check(self, input, output):
+        analysis = analyze_forest(parse_src(input))
+        buf = StringIO()
+        writer = CWriter(buf, 0, False)
+        opcode_metadata_generator.generate_max_stack_effect_function(analysis, writer)
+        buf.seek(0)
+        generated = buf.read()
+        matches = re.search(r"(case OP: {[^}]+})", generated)
+        if matches is None:
+            self.fail(f"Couldn't find case statement for OP in:\n {generated}")
+        self.assertEqual(output.strip(), matches.group(1))
+
+    def test_push_one(self):
+        input = """
+        inst(OP, (a -- b, c)) {
+            SPAM();
+        }
+        """
+        output = """
+        case OP: {
+            *effect = 1;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_cond_push(self):
+        input = """
+        inst(OP, (a -- b, c if (oparg))) {
+            SPAM();
+        }
+        """
+        output = """
+        case OP: {
+            *effect = ((oparg) ? 1 : 0);
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_ops_pass_two(self):
+        input = """
+        op(A, (-- val1)) {
+            val1 = SPAM();
+        }
+        op(B, (-- val2)) {
+            val2 = SPAM();
+        }
+        op(C, (val1, val2 --)) {
+        }
+        macro(OP) = A + B + C;
+        """
+        output = """
+        case OP: {
+            *effect = 2;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_ops_pass_two_cond_push(self):
+        input = """
+        op(A, (-- val1, val2)) {
+            val1 = 0;
+            val2 = 1;
+        }
+        op(B, (val1, val2 -- val1, val2, val3 if (oparg))) {
+            val3 = SPAM();
+        }
+        macro(OP) = A + B;
+        """
+        output = """
+        case OP: {
+            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_pop_push_array(self):
+        input = """
+        inst(OP, (values[oparg] -- values[oparg], above)) {
+            SPAM(values, oparg);
+            above = 0;
+        }
+        """
+        output = """
+        case OP: {
+            *effect = 1;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_family(self):
+        input = """
+        op(A, (-- val1, val2)) {
+            val1 = 0;
+            val2 = 1;
+        }
+        op(B, (val1, val2 -- val3)) {
+            val3 = 2;
+        }
+        macro(OP1) = A + B;
+
+        inst(OP, (-- val)) {
+            val = 0;
+        }
+
+        family(OP, 0) = { OP1 };
+        """
+        output = """
+        case OP: {
+            *effect = 2;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_family_intermediate_array(self):
+        input = """
+        op(A, (-- values[oparg])) {
+            val1 = 0;
+            val2 = 1;
+        }
+        op(B, (values[oparg] -- val3)) {
+            val3 = 2;
+        }
+        macro(OP1) = A + B;
+
+        inst(OP, (-- val)) {
+            val = 0;
+        }
+
+        family(OP, 0) = { OP1 };
+        """
+        output = """
+        case OP: {
+            *effect = Py_MAX(1, oparg);
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_negative_effect(self):
+        input = """
+        op(A, (val1 -- )) {
+        }
+        op(B, (val2 --)) {
+        }
+        op(C, (val3 --)) {
+        }
+
+        macro(OP) = A + B + C;
+        """
+        output = """
+        case OP: {
+            *effect = -1;
+            return 0;
+        }
+        """
+        self.check(input, output)
 
 
 class TestGeneratedCases(unittest.TestCase):

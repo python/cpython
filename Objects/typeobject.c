@@ -19,6 +19,7 @@
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "opcode.h"               // MAKE_CELL
 
 #include <stddef.h>               // ptrdiff_t
@@ -4761,10 +4762,10 @@ PyType_FromMetaclass(
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     weaklistoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__dictoffset__") == 0) {
+                else if (strcmp(memb->name, "__dictoffset__") == 0) {
                     dictoffset_member = memb;
                 }
-                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                else if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
                     vectorcalloffset_member = memb;
                 }
             }
@@ -5527,9 +5528,12 @@ _PyTypes_AfterFork(void)
 }
 
 /* Internal API to look for a name through the MRO.
-   This returns a borrowed reference, and doesn't set an exception! */
+   This returns a strong reference, and doesn't set an exception!
+   If nonzero, version is set to the value of type->tp_version at the time of
+   the lookup.
+*/
 PyObject *
-_PyType_LookupRef(PyTypeObject *type, PyObject *name)
+_PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
 {
     PyObject *res;
     int error;
@@ -5552,6 +5556,9 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
             // If the sequence is still valid then we're done
             if (value == NULL || _Py_TryIncref(value)) {
                 if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
+                    if (version != NULL) {
+                        *version = entry_version;
+                    }
                     return value;
                 }
                 Py_XDECREF(value);
@@ -5573,6 +5580,9 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
         OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
         Py_XINCREF(entry->value);
+        if (version != NULL) {
+            *version = entry->version;
+        }
         return entry->value;
     }
 #endif
@@ -5586,12 +5596,12 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     // anyone else can modify our mro or mutate the type.
 
     int has_version = 0;
-    int version = 0;
+    unsigned int assigned_version = 0;
     BEGIN_TYPE_LOCK();
     res = find_name_in_mro(type, name, &error);
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
-        version = type->tp_version_tag;
+        assigned_version = type->tp_version_tag;
     }
     END_TYPE_LOCK();
 
@@ -5608,26 +5618,65 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         if (error == -1) {
             PyErr_Clear();
         }
+        if (version != NULL) {
+            // 0 is not a valid version
+            *version = 0;
+        }
         return NULL;
     }
 
     if (has_version) {
 #if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, version, res);
+        update_cache_gil_disabled(entry, name, assigned_version, res);
 #else
-        PyObject *old_value = update_cache(entry, name, version, res);
+        PyObject *old_value = update_cache(entry, name, assigned_version, res);
         Py_DECREF(old_value);
 #endif
+    }
+    if (version != NULL) {
+        // 0 is not a valid version
+        *version = has_version ? assigned_version : 0;
     }
     return res;
 }
 
+/* Internal API to look for a name through the MRO.
+   This returns a strong reference, and doesn't set an exception!
+*/
+PyObject *
+_PyType_LookupRef(PyTypeObject *type, PyObject *name)
+{
+    return _PyType_LookupRefAndVersion(type, name, NULL);
+}
+
+/* Internal API to look for a name through the MRO.
+   This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
 _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
-    PyObject *res = _PyType_LookupRef(type, name);
+    PyObject *res = _PyType_LookupRefAndVersion(type, name, NULL);
     Py_XDECREF(res);
     return res;
+}
+
+int
+_PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
+                                   unsigned int tp_version)
+{
+    if (!init || !tp_version) {
+        return 0;
+    }
+    int can_cache;
+    BEGIN_TYPE_LOCK();
+    can_cache = ((PyTypeObject*)type)->tp_version_tag == tp_version;
+    #ifdef Py_GIL_DISABLED
+    can_cache = can_cache && _PyObject_HasDeferredRefcount(init);
+    #endif
+    if (can_cache) {
+        FT_ATOMIC_STORE_PTR_RELEASE(type->_spec_cache.init, init);
+    }
+    END_TYPE_LOCK();
+    return can_cache;
 }
 
 static void
@@ -5643,6 +5692,24 @@ _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
     BEGIN_TYPE_LOCK();
     set_flags(self, mask, flags);
     END_TYPE_LOCK();
+}
+
+int
+_PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version)
+{
+    int err;
+    BEGIN_TYPE_LOCK();
+    err = validate(ty);
+    if (!err) {
+        if(assign_version_tag(_PyInterpreterState_GET(), ty)) {
+            *tp_version = ty->tp_version_tag;
+        }
+        else {
+            err = -1;
+        }
+    }
+    END_TYPE_LOCK();
+    return err;
 }
 
 static void
@@ -7656,6 +7723,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
     return 0;
 }
 
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
+}
+
 
 /* Add the methods from tp_methods to the __dict__ in a type object */
 static int
@@ -8607,7 +8680,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        if (self->tp_version_tag == 0) {
+            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        }
     }
     else {
         assert(!initial);
@@ -9306,13 +9381,13 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (flags > INT_MAX) {
+    if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
-    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+    return _PyMemoryView_FromBufferProc(self, (int)flags,
                                         (getbufferproc)wrapped);
 }
 
@@ -11638,9 +11713,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
-                        PyTypeObject **type_p, PyObject **obj_p)
+super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
+                        PyObject **obj_p)
 {
+    PyCodeObject *co = _PyFrame_GetCode(cframe);
     if (co->co_argcount == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): no arguments");
@@ -11649,23 +11725,28 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
 
     assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
     PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[0]);
+    if (firstarg == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+        return -1;
+    }
     // The first argument might be a cell.
-    if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
-        // "firstarg" is a cell here unless (very unlikely) super()
-        // was called from the C-API before the first MAKE_CELL op.
-        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
-            // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
-            // to use _PyOpcode_Deopt here:
-            assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
-                   _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
-            assert(PyCell_Check(firstarg));
-            firstarg = PyCell_GET(firstarg);
+    // "firstarg" is a cell here unless (very unlikely) super()
+    // was called from the C-API before the first MAKE_CELL op.
+    if ((_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL) &&
+            (_PyInterpreterFrame_LASTI(cframe) >= 0)) {
+        // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
+        // to use _PyOpcode_Deopt here:
+        assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
+                _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
+        assert(PyCell_Check(firstarg));
+        firstarg = PyCell_GetRef((PyCellObject *)firstarg);
+        if (firstarg == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+            return -1;
         }
     }
-    if (firstarg == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "super(): arg[0] deleted");
-        return -1;
+    else {
+        Py_INCREF(firstarg);
     }
 
     // Look for __class__ in the free vars.
@@ -11680,18 +11761,22 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
-            type = (PyTypeObject *) PyCell_GET(cell);
+            type = (PyTypeObject *) PyCell_GetRef((PyCellObject *)cell);
             if (type == NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): empty __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
             if (!PyType_Check(type)) {
                 PyErr_Format(PyExc_RuntimeError,
                   "super(): __class__ is not a type (%s)",
                   Py_TYPE(type)->tp_name);
+                Py_DECREF(type);
+                Py_DECREF(firstarg);
                 return -1;
             }
             break;
@@ -11700,6 +11785,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (type == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): __class__ cell not found");
+        Py_DECREF(firstarg);
         return -1;
     }
 
@@ -11740,22 +11826,30 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(frame, _PyFrame_GetCode(frame), &type, &obj);
+        int res = super_init_without_args(frame, &type, &obj);
 
         if (res < 0) {
             return -1;
         }
     }
+    else {
+        Py_INCREF(type);
+        Py_XINCREF(obj);
+    }
 
-    if (obj == Py_None)
+    if (obj == Py_None) {
+        Py_DECREF(obj);
         obj = NULL;
+    }
     if (obj != NULL) {
         obj_type = supercheck(type, obj);
-        if (obj_type == NULL)
+        if (obj_type == NULL) {
+            Py_DECREF(type);
+            Py_DECREF(obj);
             return -1;
-        Py_INCREF(obj);
+        }
     }
-    Py_XSETREF(su->type, (PyTypeObject*)Py_NewRef(type));
+    Py_XSETREF(su->type, (PyTypeObject*)type);
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;

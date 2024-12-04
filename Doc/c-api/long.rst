@@ -582,6 +582,39 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.14
 
 
+.. c:function:: int PyLong_IsPositive(PyObject *obj)
+
+   Check if the integer object *obj* is positive (``obj > 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's positive and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_IsNegative(PyObject *obj)
+
+   Check if the integer object *obj* is negative (``obj < 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's negative and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_IsZero(PyObject *obj)
+
+   Check if the integer object *obj* is zero.
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's zero and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: PyObject* PyLong_GetInfo(void)
 
    On success, return a read only :term:`named tuple`, that holds

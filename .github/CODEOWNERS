@@ -16,6 +16,9 @@ configure*                    @erlend-aasland @corona10
 Makefile.pre.in               @erlend-aasland
 Modules/Setup*                @erlend-aasland
 
+# argparse
+**/*argparse*                 @savannahostrowski
+
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @kumaraditya303 @willingc
 
@@ -23,7 +26,7 @@ Modules/Setup*                @erlend-aasland
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
-**/*jit*                      @brandtbucher
+**/*jit*                      @brandtbucher @savannahostrowski
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -80,6 +83,17 @@ Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
 Tools/build/generate_global_objects.py  @ericsnowcurrently
 
+# Initialization
+Doc/library/sys_path_init.rst @FFY00
+Doc/c-api/init_config.rst     @FFY00
+
+# getpath
+**/*getpath*                  @FFY00
+
+# site
+**/*site.py                   @FFY00
+Doc/library/site.rst          @FFY00
+
 # Exceptions
 Lib/test/test_except*.py      @iritkatriel
 Objects/exceptions.c          @iritkatriel
@@ -96,7 +110,7 @@ Modules/_hacl/**              @gpshead
 **/*logging*                  @vsajip
 
 # venv
-**/*venv*                     @vsajip
+**/*venv*                     @vsajip @FFY00
 
 # Launcher
 /PC/launcher.c                @vsajip
