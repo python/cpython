@@ -7499,6 +7499,22 @@ AS_VAR_IF([ac_cv_libatomic_needed], [yes],
 _RESTORE_VAR([CPPFLAGS])
 
 
+# gh-59705: Maximum length in bytes of a thread name
+case "$ac_sys_system" in
+  Linux*) PYTHREAD_NAME_MAXLEN=15;;
+  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) PYTHREAD_NAME_MAXLEN=63;;
+  iOS) PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
+  *) PYTHREAD_NAME_MAXLEN=;;
+esac
+if test -n $PYTHREAD_NAME_MAXLEN; then
+    AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
+                       [Maximum length in bytes of a thread name])
+fi
+AC_SUBST([PYTHREAD_NAME_MAXLEN])
+
+
 # stdlib
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [

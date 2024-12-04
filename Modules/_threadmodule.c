@@ -2425,23 +2425,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     }
 
     const char *name = PyBytes_AS_STRING(name_encoded);
-#ifdef __APPLE__
-#  define NAME_LIMIT 63
-#elif defined(__linux__)
-#  define NAME_LIMIT 15
-#elif defined(__FreeBSD__)
-#  define NAME_LIMIT 98
-#elif defined(__sun)
-#  define NAME_LIMIT 31
-#endif
-
-#ifdef NAME_LIMIT
-    // Truncate to NAME_LIMIT bytes + the NUL byte
-    char buffer[NAME_LIMIT + 1];
+#ifdef PYTHREAD_NAME_MAXLEN
+    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte
+    char buffer[PYTHREAD_NAME_MAXLEN + 1];
     size_t len = strlen(name);
-    if (len > NAME_LIMIT) {
-        memcpy(buffer, name, NAME_LIMIT);
-        buffer[NAME_LIMIT] = 0;
+    if (len > PYTHREAD_NAME_MAXLEN) {
+        memcpy(buffer, name, PYTHREAD_NAME_MAXLEN);
+        buffer[PYTHREAD_NAME_MAXLEN] = 0;
         name = buffer;
     }
 #endif
@@ -2458,8 +2448,6 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     Py_RETURN_NONE;
-
-#undef NAME_LIMIT
 }
 #endif  // HAVE_PTHREAD_SETNAME_NP
 
@@ -2595,6 +2583,13 @@ thread_module_exec(PyObject *module)
     }
 
     llist_init(&state->shutdown_handles);
+
+#ifdef PYTHREAD_NAME_MAXLEN
+    if (PyModule_AddIntConstant(module, "_NAME_MAXLEN",
+                                PYTHREAD_NAME_MAXLEN) < 0) {
+        return -1;
+    }
+#endif
 
     return 0;
 }

@@ -2115,16 +2115,7 @@ class MiscTestCase(unittest.TestCase):
             work_name = get_name()
 
         # set_name() limit in bytes
-        if sys.platform == "linux":
-            truncate = 15
-        elif sys.platform in ("darwin", "ios"):
-            truncate = 63
-        elif sys.platform.startswith("freebsd"):
-            truncate = 98
-        elif sys.platform.startswith("solaris"):
-            truncate = 31
-        else:
-            truncate = None
+        truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
 
         def create_test(name):
