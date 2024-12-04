@@ -165,7 +165,7 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
 }
 
 static inline _PyStackRef
-PyStackRef_HeapSafe(_PyStackRef ref)
+PyStackRef_MakeHeapSafe(_PyStackRef ref)
 {
     return ref;
 }
@@ -200,49 +200,64 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 // With GIL
 
 #define Py_TAG_BITS 3
-#define Py_NULL_BIT 2
+#define Py_TAG_IMMORTAL 3
 #define Py_TAG_REFCNT 1
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
 
-#define PyStackRef_NULL_BITS (Py_TAG_REFCNT | Py_NULL_BIT)
+#define PyStackRef_NULL_BITS Py_TAG_IMMORTAL
 static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 
 #define PyStackRef_IsNull(ref) ((ref).bits == PyStackRef_NULL_BITS)
-#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
-#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT })
-#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
+#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL })
 
-// #define PyStackRef_IsTrue(ref) ((ref).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT))
-// #define PyStackRef_IsFalse(ref) ((ref).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT))
-// #define PyStackRef_IsNone(ref) ((ref).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT))
+// #define PyStackRef_IsTrue(ref) ((ref).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL))
+// #define PyStackRef_IsFalse(ref) ((ref).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL))
+// #define
 
 /* We should be able to guarantee that the tag bits are set for immortal objects */
 
 #define PyStackRef_IsTrue(ref) (((ref).bits & (~Py_TAG_BITS)) == ((uintptr_t)&_Py_TrueStruct))
 #define PyStackRef_IsFalse(ref) (((ref).bits & (~Py_TAG_BITS)) == ((uintptr_t)&_Py_FalseStruct))
-// #define PyStackRef_IsNone(ref) (((ref).bits & (~Py_TAG_BITS)) == ((uintptr_t)&_Py_NoneStruct))
 
 
 static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     int tag = ref.bits & Py_TAG_BITS;
-    if (tag == PyStackRef_NULL_BITS) {
-        assert(ref.bits == PyStackRef_NULL_BITS);
-    }
-    else if (tag == 0) {
-        assert(!_Py_IsImmortal(BITS_TO_PTR_MASKED(ref)));
+    PyObject *obj = BITS_TO_PTR_MASKED(ref);
+    switch (tag) {
+        case 0:
+            assert(!_Py_IsImmortal(obj));
+            break;
+        case Py_TAG_REFCNT:
+            /* Can be immortal if object was made immortal after reference came into existence */
+            assert(obj != NULL && obj != Py_True && obj != Py_False && obj != Py_None);
+            break;
+        case Py_TAG_IMMORTAL:
+            assert(obj == NULL || _Py_IsImmortal(obj));
+            break;
+        default:
+            assert(0);
     }
 }
 
+#ifdef Py_DEBUG
 static inline int
 PyStackRef_IsNone(_PyStackRef ref)
 {
     if ((ref.bits & (~Py_TAG_BITS)) == ((uintptr_t)&_Py_NoneStruct)) {
-        assert ((ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT);
+        assert ((ref.bits & Py_TAG_BITS) == Py_TAG_IMMORTAL);
         return 1;
     }
     return 0;
 }
+
+#else
+
+#define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))
+
+#endif
 
 static inline int
 PyStackRef_HasCount(_PyStackRef ref)
@@ -250,8 +265,8 @@ PyStackRef_HasCount(_PyStackRef ref)
     return ref.bits & Py_TAG_REFCNT;
 }
 
-static inline int
-PyStackRef_HasCountAndNotNull(_PyStackRef ref)
+static inline bool
+PyStackRef_HasCountAndMortal(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT;
 }
@@ -280,7 +295,7 @@ static inline _PyStackRef
 PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     assert(obj != NULL);
-    unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_REFCNT : 0;
+    unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_IMMORTAL : 0;
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
     PyStackRef_CheckValid(ref);
     return ref;
@@ -295,8 +310,8 @@ PyStackRef_FromPyObjectSteal(PyObject *obj)
 static inline _PyStackRef
 _PyStackRef_FromPyObjectNew(PyObject *obj)
 {
-    if (_Py_IsDeferrable(obj)) {
-        return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_REFCNT};
+    if (_Py_IsImmortal(obj)) {
+        return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_IMMORTAL};
     }
     Py_INCREF_MORTAL(obj);
     _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
@@ -307,14 +322,11 @@ _PyStackRef_FromPyObjectNew(PyObject *obj)
 
 /* Create a new reference from an object with an embedded reference count */
 static inline _PyStackRef
-_PyStackRef_FromPyObjectWithCount(PyObject *obj)
+PyStackRef_FromPyObjectImmortal(PyObject *obj)
 {
-    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
+    assert(_Py_IsImmortal(obj));
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_IMMORTAL};
 }
-#define PyStackRef_FromPyObjectWithCount(obj) _PyStackRef_FromPyObjectWithCount(_PyObject_CAST(obj))
-
-#define PyStackRef_FromPyObjectImmortal PyStackRef_FromPyObjectWithCount
-
 
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
@@ -326,26 +338,19 @@ PyStackRef_DUP(_PyStackRef ref)
     return ref;
 }
 
-static inline int
+static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
-    return (
-        PyStackRef_IsNull(ref) ||
-        !PyStackRef_HasCount(ref) ||
-        _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(ref))
-    );
+    return !PyStackRef_HasCountAndMortal(ref);
 }
 
 static inline _PyStackRef
-PyStackRef_HeapSafe(_PyStackRef ref)
+PyStackRef_MakeHeapSafe(_PyStackRef ref)
 {
-    if (!PyStackRef_HasCountAndNotNull(ref)) {
+    if (!PyStackRef_HasCountAndMortal(ref)) {
         return ref;
     }
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
-    if (_Py_IsImmortal(obj)) {
-        return ref;
-    }
     Py_INCREF_MORTAL(obj);
     ref.bits = (uintptr_t)obj;
     PyStackRef_CheckValid(ref);

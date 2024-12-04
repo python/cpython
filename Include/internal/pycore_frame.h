@@ -142,11 +142,11 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    dest->f_executable = PyStackRef_HeapSafe(src->f_executable);
+    dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
-    dest->f_funcobj = PyStackRef_HeapSafe(src->f_funcobj);
+    dest->f_funcobj = PyStackRef_MakeHeapSafe(src->f_funcobj);
     dest->f_globals = src->f_globals;
     dest->f_builtins = src->f_builtins;
     dest->f_locals = src->f_locals;
@@ -157,7 +157,7 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
     for (int i = 0; i < stacktop; i++) {
-        dest->localsplus[i] = PyStackRef_HeapSafe(src->localsplus[i]);
+        dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
         PyStackRef_CheckValid(dest->localsplus[i]);
     }
 
