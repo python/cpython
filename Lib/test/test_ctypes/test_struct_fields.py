@@ -76,7 +76,7 @@ class FieldsTestBase:
                                     'ctypes state is not initialized'):
             class Subclass(BrokenStructure): ...
 
-    def test_gh126937(self):
+    def test_max_field_size_gh126937(self):
         class X(self.cls):
             _fields_ = [('char', c_char),]
         max_field_size = sys.maxsize // 8
