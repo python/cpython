@@ -1,5 +1,5 @@
 from test import support
-from test.support import is_apple_mobile, os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -294,7 +294,7 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
-        elif sys.platform == 'wasi' or is_apple_mobile:
+        elif sys.platform == 'wasi' or is_emscripten or is_apple_mobile:
             MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
