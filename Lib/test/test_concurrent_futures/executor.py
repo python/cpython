@@ -1,5 +1,4 @@
 import itertools
-import multiprocessing
 import threading
 import time
 import weakref
@@ -106,14 +105,13 @@ class ExecutorTest:
         self.assertListEqual(list(results), [])
 
     def test_map_with_buffersize_when_buffer_becomes_full(self):
-        iterable = range(8)
+        iterator = iter(range(8))
         buffersize = 4
-        buffered_results = multiprocessing.Manager().list()
-        self.executor.map(buffered_results.append, iterable, buffersize=buffersize)
+        self.executor.map(str, iterator, buffersize=buffersize)
         self.executor.shutdown(wait=True)
-        self.assertSetEqual(
-            set(buffered_results),
-            set(itertools.islice(iterable, buffersize)),
+        self.assertEqual(
+            next(iterator),
+            buffersize,
             msg="only the first `buffersize` elements should be processed",
         )
 
