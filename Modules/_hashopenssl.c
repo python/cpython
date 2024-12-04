@@ -1433,14 +1433,14 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     r = PyLong_AsUnsignedLong(r_obj);
     if (r == (unsigned long) -1 && PyErr_Occurred()) {
         PyErr_SetString(PyExc_TypeError,
-                         "r is required and must be an unsigned int");
+                        "r is required and must be an unsigned int");
         return NULL;
     }
 
     p = PyLong_AsUnsignedLong(p_obj);
     if (p == (unsigned long) -1 && PyErr_Occurred()) {
         PyErr_SetString(PyExc_TypeError,
-                         "p is required and must be an unsigned int");
+                        "p is required and must be an unsigned int");
         return NULL;
     }
 
@@ -1449,14 +1449,14 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
-                      INT_MAX);
+                     INT_MAX);
         return NULL;
     }
 
     if (dklen < 1 || dklen > INT_MAX) {
         PyErr_Format(PyExc_ValueError,
-                    "dklen must be greater than 0 and smaller than %d",
-                    INT_MAX);
+                     "dklen must be greater than 0 and smaller than %d",
+                     INT_MAX);
         return NULL;
     }
 
