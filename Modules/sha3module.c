@@ -71,8 +71,7 @@ typedef struct {
 static SHA3object *
 newSHA3object(PyTypeObject *type)
 {
-    SHA3object *newobj;
-    newobj = (SHA3object *)PyObject_New(SHA3object, type);
+    SHA3object *newobj = PyObject_New(SHA3object, type);
     if (newobj == NULL) {
         return NULL;
     }

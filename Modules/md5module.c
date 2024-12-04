@@ -72,7 +72,7 @@ md5_get_state(PyObject *module)
 static MD5object *
 newMD5object(MD5State * st)
 {
-    MD5object *md5 = (MD5object *)PyObject_GC_New(MD5object, st->md5_type);
+    MD5object *md5 = PyObject_GC_New(MD5object, st->md5_type);
     if (!md5) {
         return NULL;
     }
