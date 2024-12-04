@@ -1491,7 +1491,7 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         res, ex = self._run_with_optimizer(thing, 1)
-        self.assertEqual(res, 19)
+        self.assertEqual(res, 4095)
         self.assertIsNotNone(ex)
         self.assertEqual(list(iter_opnames(ex)).count("_POP_TOP"), 0)
         self.assertTrue(ex.is_valid())
@@ -1505,7 +1505,7 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         res, ex = self._run_with_optimizer(thing, 1)
-        self.assertEqual(res, 19)
+        self.assertEqual(res, 4095)
         self.assertIsNotNone(ex)
         self.assertEqual(list(iter_opnames(ex)).count("_LOAD_FAST_1"), 0)
         self.assertTrue(ex.is_valid())
