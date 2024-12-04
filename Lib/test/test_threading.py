@@ -1171,6 +1171,111 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_start_new_thread_failed(self):
+        # gh-109746: if Python fails to start newly created thread
+        # due to failure of underlying PyThread_start_new_thread() call,
+        # its state should be removed from interpreter' thread states list
+        # to avoid its double cleanup
+        try:
+            from resource import setrlimit, RLIMIT_NPROC
+        except ImportError as err:
+            self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
+        code = """if 1:
+            import resource
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            limits = resource.getrlimit(resource.RLIMIT_NPROC)
+            [_, hard] = limits
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
+
+            try:
+                handle = _thread.start_joinable_thread(f)
+            except RuntimeError:
+                print('ok')
+            else:
+                print('!skip!')
+                handle.join()
+        """
+        _, out, err = assert_python_ok("-u", "-c", code)
+        out = out.strip()
+        if b'!skip!' in out:
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
+        self.assertEqual(out, b'ok')
+        self.assertEqual(err, b'')
+
+    @cpython_only
+    def test_finalize_daemon_thread_hang(self):
+        if support.check_sanitizer(thread=True, memory=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest(
+                    "https://github.com/python/cpython/issues/124878 - Known"
+                    " race condition that TSAN identifies.")
+        # gh-87135: tests that daemon threads hang during finalization
+        script = textwrap.dedent('''
+            import os
+            import sys
+            import threading
+            import time
+            import _testcapi
+
+            lock = threading.Lock()
+            lock.acquire()
+            thread_started_event = threading.Event()
+            def thread_func():
+                try:
+                    thread_started_event.set()
+                    _testcapi.finalize_thread_hang(lock.acquire)
+                finally:
+                    # Control must not reach here.
+                    os._exit(2)
+
+            t = threading.Thread(target=thread_func)
+            t.daemon = True
+            t.start()
+            thread_started_event.wait()
+            # Sleep to ensure daemon thread is blocked on `lock.acquire`
+            #
+            # Note: This test is designed so that in the unlikely case that
+            # `0.1` seconds is not sufficient time for the thread to become
+            # blocked on `lock.acquire`, the test will still pass, it just
+            # won't be properly testing the thread behavior during
+            # finalization.
+            time.sleep(0.1)
+
+            def run_during_finalization():
+                # Wake up daemon thread
+                lock.release()
+                # Sleep to give the daemon thread time to crash if it is going
+                # to.
+                #
+                # Note: If due to an exceptionally slow execution this delay is
+                # insufficient, the test will still pass but will simply be
+                # ineffective as a test.
+                time.sleep(0.1)
+                # If control reaches here, the test succeeded.
+                os._exit(0)
+
+            # Replace sys.stderr.flush as a way to run code during finalization
+            orig_flush = sys.stderr.flush
+            def do_flush(*args, **kwargs):
+                orig_flush(*args, **kwargs)
+                if not sys.is_finalizing:
+                    return
+                sys.stderr.flush = orig_flush
+                run_during_finalization()
+
+            sys.stderr.flush = do_flush
+
+            # If the follow exit code is retained, `run_during_finalization`
+            # did not run.
+            sys.exit(1)
+        ''')
+        assert_python_ok("-c", script)
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):

@@ -46,6 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()
@@ -261,7 +262,6 @@ _PyUnicode_InternedSize_Immortal(void)
 }
 
 static Py_hash_t unicode_hash(PyObject *);
-static int unicode_compare_eq(PyObject *, PyObject *);
 
 static Py_uhash_t
 hashtable_unicode_hash(const void *key)
@@ -275,20 +275,44 @@ hashtable_unicode_compare(const void *key1, const void *key2)
     PyObject *obj1 = (PyObject *)key1;
     PyObject *obj2 = (PyObject *)key2;
     if (obj1 != NULL && obj2 != NULL) {
-        return unicode_compare_eq(obj1, obj2);
+        return unicode_eq(obj1, obj2);
     }
     else {
         return obj1 == obj2;
     }
 }
 
+/* Return true if this interpreter should share the main interpreter's
+   intern_dict.  That's important for interpreters which load basic
+   single-phase init extension modules (m_size == -1).  There could be interned
+   immortal strings that are shared between interpreters, due to the
+   PyDict_Update(mdict, m_copy) call in import_find_extension().
+
+   It's not safe to deallocate those strings until all interpreters that
+   potentially use them are freed.  By storing them in the main interpreter, we
+   ensure they get freed after all other interpreters are freed.
+*/
+static bool
+has_shared_intern_dict(PyInterpreterState *interp)
+{
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    return interp != main_interp  && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC;
+}
+
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
     assert(get_interned_dict(interp) == NULL);
-    PyObject *interned = interned = PyDict_New();
-    if (interned == NULL) {
-        return -1;
+    PyObject *interned;
+    if (has_shared_intern_dict(interp)) {
+        interned = get_interned_dict(_PyInterpreterState_Main());
+        Py_INCREF(interned);
+    }
+    else {
+        interned = PyDict_New();
+        if (interned == NULL) {
+            return -1;
+        }
     }
     _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
     return 0;
@@ -299,7 +323,10 @@ clear_interned_dict(PyInterpreterState *interp)
 {
     PyObject *interned = get_interned_dict(interp);
     if (interned != NULL) {
-        PyDict_Clear(interned);
+        if (!has_shared_intern_dict(interp)) {
+            // only clear if the dict belongs to this interpreter
+            PyDict_Clear(interned);
+        }
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
@@ -1102,6 +1129,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
+    _PyReftracerTrack(unicode, PyRefTracer_DESTROY);
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
@@ -2694,11 +2722,6 @@ unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
 #define F_SIZE 3
 #define F_PTRDIFF 4
 #define F_INTMAX 5
-static const char * const formats[] = {"%d", "%ld", "%lld", "%zd", "%td", "%jd"};
-static const char * const formats_o[] = {"%o", "%lo", "%llo", "%zo", "%to", "%jo"};
-static const char * const formats_u[] = {"%u", "%lu", "%llu", "%zu", "%tu", "%ju"};
-static const char * const formats_x[] = {"%x", "%lx", "%llx", "%zx", "%tx", "%jx"};
-static const char * const formats_X[] = {"%X", "%lX", "%llX", "%zX", "%tX", "%jX"};
 
 static const char*
 unicode_fromformat_arg(_PyUnicodeWriter *writer,
@@ -2840,47 +2863,44 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'd': case 'i':
     case 'o': case 'u': case 'x': case 'X':
     {
-        /* used by sprintf */
         char buffer[MAX_INTMAX_CHARS];
-        const char *fmt = NULL;
-        switch (*f) {
-            case 'o': fmt = formats_o[sizemod]; break;
-            case 'u': fmt = formats_u[sizemod]; break;
-            case 'x': fmt = formats_x[sizemod]; break;
-            case 'X': fmt = formats_X[sizemod]; break;
-            default: fmt = formats[sizemod]; break;
-        }
-        int issigned = (*f == 'd' || *f == 'i');
+
+        // Fill buffer using sprinf, with one of many possible format
+        // strings, like "%llX" for `long long` in hexadecimal.
+        // The type/size is in `sizemod`; the format is in `*f`.
+
+        // Use macros with nested switches to keep the sprintf format strings
+        // as compile-time literals, avoiding warnings and maybe allowing
+        // optimizations.
+
+        // `SPRINT` macro does one sprintf
+        // Example usage: SPRINT("l", "X", unsigned long) expands to
+        // sprintf(buffer, "%" "l" "X", va_arg(*vargs, unsigned long))
+        #define SPRINT(SIZE_SPEC, FMT_CHAR, TYPE) \
+            sprintf(buffer, "%" SIZE_SPEC FMT_CHAR, va_arg(*vargs, TYPE))
+
+        // One inner switch to handle all format variants
+        #define DO_SPRINTS(SIZE_SPEC, SIGNED_TYPE, UNSIGNED_TYPE)             \
+            switch (*f) {                                                     \
+                case 'o': len = SPRINT(SIZE_SPEC, "o", UNSIGNED_TYPE); break; \
+                case 'u': len = SPRINT(SIZE_SPEC, "u", UNSIGNED_TYPE); break; \
+                case 'x': len = SPRINT(SIZE_SPEC, "x", UNSIGNED_TYPE); break; \
+                case 'X': len = SPRINT(SIZE_SPEC, "X", UNSIGNED_TYPE); break; \
+                default:  len = SPRINT(SIZE_SPEC, "d", SIGNED_TYPE); break;   \
+            }
+
+        // Outer switch to handle all the sizes/types
         switch (sizemod) {
-            case F_LONG:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, long)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned long));
-                break;
-            case F_LONGLONG:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, long long)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned long long));
-                break;
-            case F_SIZE:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, Py_ssize_t)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, size_t));
-                break;
-            case F_PTRDIFF:
-                len = sprintf(buffer, fmt, va_arg(*vargs, ptrdiff_t));
-                break;
-            case F_INTMAX:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, intmax_t)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, uintmax_t));
-                break;
-            default:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, int)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned int));
-                break;
+            case F_LONG:     DO_SPRINTS("l", long, unsigned long); break;
+            case F_LONGLONG: DO_SPRINTS("ll", long long, unsigned long long); break;
+            case F_SIZE:     DO_SPRINTS("z", Py_ssize_t, size_t); break;
+            case F_PTRDIFF:  DO_SPRINTS("t", ptrdiff_t, ptrdiff_t); break;
+            case F_INTMAX:   DO_SPRINTS("j", intmax_t, uintmax_t); break;
+            default:         DO_SPRINTS("", int, unsigned int); break;
         }
+        #undef SPRINT
+        #undef DO_SPRINTS
+
         assert(len >= 0);
 
         int sign = (buffer[0] == '-');
@@ -4959,39 +4979,232 @@ PyUnicode_DecodeUTF8(const char *s,
 #include "stringlib/codecs.h"
 #include "stringlib/undef.h"
 
+#if (SIZEOF_SIZE_T == 8)
 /* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_SIZE_T == 8)
 # define ASCII_CHAR_MASK 0x8080808080808080ULL
+// used to count codepoints in UTF-8 string.
+# define VECTOR_0101     0x0101010101010101ULL
+# define VECTOR_00FF     0x00ff00ff00ff00ffULL
 #elif (SIZEOF_SIZE_T == 4)
 # define ASCII_CHAR_MASK 0x80808080U
+# define VECTOR_0101     0x01010101U
+# define VECTOR_00FF     0x00ff00ffU
 #else
 # error C 'size_t' size should be either 4 or 8!
 #endif
 
+#if (defined(__clang__) || defined(__GNUC__))
+#define HAVE_CTZ 1
+static inline unsigned int
+ctz(size_t v)
+{
+    return __builtin_ctzll((unsigned long long)v);
+}
+#elif defined(_MSC_VER)
+#define HAVE_CTZ 1
+static inline unsigned int
+ctz(size_t v)
+{
+    unsigned long pos;
+#if SIZEOF_SIZE_T == 4
+    _BitScanForward(&pos, v);
+#else
+    _BitScanForward64(&pos, v);
+#endif /* SIZEOF_SIZE_T */
+    return pos;
+}
+#else
+#define HAVE_CTZ 0
+#endif
+
+#if HAVE_CTZ && PY_LITTLE_ENDIAN
+// load p[0]..p[size-1] as a size_t without unaligned access nor read ahead.
+static size_t
+load_unaligned(const unsigned char *p, size_t size)
+{
+    union {
+        size_t s;
+        unsigned char b[SIZEOF_SIZE_T];
+    } u;
+    u.s = 0;
+    // This switch statement assumes little endian because:
+    // * union is faster than bitwise or and shift.
+    // * big endian machine is rare and hard to maintain.
+    switch (size) {
+    default:
+#if SIZEOF_SIZE_T == 8
+    case 8:
+        u.b[7] = p[7];
+        _Py_FALLTHROUGH;
+    case 7:
+        u.b[6] = p[6];
+        _Py_FALLTHROUGH;
+    case 6:
+        u.b[5] = p[5];
+        _Py_FALLTHROUGH;
+    case 5:
+        u.b[4] = p[4];
+        _Py_FALLTHROUGH;
+#endif
+    case 4:
+        u.b[3] = p[3];
+        _Py_FALLTHROUGH;
+    case 3:
+        u.b[2] = p[2];
+        _Py_FALLTHROUGH;
+    case 2:
+        u.b[1] = p[1];
+        _Py_FALLTHROUGH;
+    case 1:
+        u.b[0] = p[0];
+        break;
+    case 0:
+        break;
+    }
+    return u.s;
+}
+#endif
+
+/*
+ * Find the first non-ASCII character in a byte sequence.
+ *
+ * This function scans a range of bytes from `start` to `end` and returns the
+ * index of the first byte that is not an ASCII character (i.e., has the most
+ * significant bit set). If all characters in the range are ASCII, it returns
+ * `end - start`.
+ */
+static Py_ssize_t
+find_first_nonascii(const unsigned char *start, const unsigned char *end)
+{
+    const unsigned char *p = start;
+
+    if (end - start >= SIZEOF_SIZE_T) {
+        const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
+        if (p < p2) {
+#if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+            // x86 and amd64 are little endian and can load unaligned memory.
+            size_t u = *(const size_t*)p & ASCII_CHAR_MASK;
+#else
+            size_t u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
+#endif
+            if (u) {
+                return (ctz(u) - 7) / 8;
+            }
+            p = p2;
+        }
+#else /* PY_LITTLE_ENDIAN && HAVE_CTZ */
+        while (p < p2) {
+            if (*p & 0x80) {
+                return p - start;
+            }
+            p++;
+        }
+#endif
+        const unsigned char *e = end - SIZEOF_SIZE_T;
+        while (p <= e) {
+            size_t u = (*(const size_t *)p) & ASCII_CHAR_MASK;
+            if (u) {
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
+                return p - start + (ctz(u) - 7) / 8;
+#else
+                // big endian and minor compilers are difficult to test.
+                // fallback to per byte check.
+                break;
+#endif
+            }
+            p += SIZEOF_SIZE_T;
+        }
+    }
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
+    // we can not use *(const size_t*)p to avoid buffer overrun.
+    size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
+    if (u) {
+        return p - start + (ctz(u) - 7) / 8;
+    }
+    return end - start;
+#else
+    while (p < end) {
+        if (*p & 0x80) {
+            break;
+        }
+        p++;
+    }
+    return p - start;
+#endif
+}
+
+static inline int
+scalar_utf8_start_char(unsigned int ch)
+{
+    // 0xxxxxxx or 11xxxxxx are first byte.
+    return (~ch >> 7 | ch >> 6) & 1;
+}
+
+static inline size_t
+vector_utf8_start_chars(size_t v)
+{
+    return ((~v >> 7) | (v >> 6)) & VECTOR_0101;
+}
+
+
+// Count the number of UTF-8 code points in a given byte sequence.
+static Py_ssize_t
+utf8_count_codepoints(const unsigned char *s, const unsigned char *end)
+{
+    Py_ssize_t len = 0;
+
+    if (end - s >= SIZEOF_SIZE_T) {
+        while (!_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
+            len += scalar_utf8_start_char(*s++);
+        }
+
+        while (s + SIZEOF_SIZE_T <= end) {
+            const unsigned char *e = end;
+            if (e - s > SIZEOF_SIZE_T * 255) {
+                e = s + SIZEOF_SIZE_T * 255;
+            }
+            Py_ssize_t vstart = 0;
+            while (s + SIZEOF_SIZE_T <= e) {
+                size_t v = *(size_t*)s;
+                size_t vs = vector_utf8_start_chars(v);
+                vstart += vs;
+                s += SIZEOF_SIZE_T;
+            }
+            vstart = (vstart & VECTOR_00FF) + ((vstart >> 8) & VECTOR_00FF);
+            vstart += vstart >> 16;
+#if SIZEOF_SIZE_T == 8
+            vstart += vstart >> 32;
+#endif
+            len += vstart & 0x7ff;
+        }
+    }
+    while (s < end) {
+        len += scalar_utf8_start_char(*s++);
+    }
+    return len;
+}
+
 static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
-    const char *p = start;
-
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
+    if (_Py_IS_ALIGNED(start, ALIGNOF_SIZE_T)
         && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
     {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
-        /* Help allocation */
-        const char *_p = p;
-        Py_UCS1 * q = dest;
-        while (_p + SIZEOF_SIZE_T <= end) {
-            size_t value = *(const size_t *) _p;
+        const char *p = start;
+        Py_UCS1 *q = dest;
+        while (p + SIZEOF_SIZE_T <= end) {
+            size_t value = *(const size_t *) p;
             if (value & ASCII_CHAR_MASK)
                 break;
             *((size_t *)q) = value;
-            _p += SIZEOF_SIZE_T;
+            p += SIZEOF_SIZE_T;
             q += SIZEOF_SIZE_T;
         }
-        p = _p;
         while (p < end) {
             if ((unsigned char)*p & 0x80)
                 break;
@@ -5000,30 +5213,11 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         return p - start;
     }
 #endif
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help allocation */
-            const char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
-                size_t value = *(const size_t *) _p;
-                if (value & ASCII_CHAR_MASK)
-                    break;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (_p == end)
-                break;
-        }
-        if ((unsigned char)*p & 0x80)
-            break;
-        ++p;
-    }
-    memcpy(dest, start, p - start);
-    return p - start;
+    Py_ssize_t pos = find_first_nonascii((const unsigned char*)start,
+                                         (const unsigned char*)end);
+    memcpy(dest, start, pos);
+    return pos;
 }
-
 
 static int
 unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
@@ -5168,27 +5362,69 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    // fast path: try ASCII string.
-    const char *starts = s;
-    const char *end = s + size;
-    PyObject *u = PyUnicode_New(size, 127);
-    if (u == NULL) {
+    // I don't know this check is necessary or not. But there is a test
+    // case that requires size=PY_SSIZE_T_MAX cause MemoryError.
+    if (PY_SSIZE_T_MAX - sizeof(PyCompactUnicodeObject) < (size_t)size) {
+        PyErr_NoMemory();
         return NULL;
     }
-    Py_ssize_t decoded = ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
-    if (decoded == size) {
+
+    const char *starts = s;
+    const char *end = s + size;
+
+    Py_ssize_t pos = find_first_nonascii((const unsigned char*)starts, (const unsigned char*)end);
+    if (pos == size) {  // fast path: ASCII string.
+        PyObject *u = PyUnicode_New(size, 127);
+        if (u == NULL) {
+            return NULL;
+        }
+        memcpy(PyUnicode_1BYTE_DATA(u), s, size);
         if (consumed) {
             *consumed = size;
         }
         return u;
     }
-    s += decoded;
-    size -= decoded;
+
+    int maxchr = 127;
+    Py_ssize_t maxsize = size;
+
+    unsigned char ch = (unsigned char)(s[pos]);
+    // error handler other than strict may remove/replace the invalid byte.
+    // consumed != NULL allows 1~3 bytes remainings.
+    // 0x80 <= ch < 0xc2 is invalid start byte that cause UnicodeDecodeError.
+    // otherwise: check the input and decide the maxchr and maxsize to reduce
+    // reallocation and copy.
+    if (error_handler == _Py_ERROR_STRICT && !consumed && ch >= 0xc2) {
+        // we only calculate the number of codepoints and don't determine the exact maxchr.
+        // This is because writing fast and portable SIMD code to find maxchr is difficult.
+        // If reallocation occurs for a larger maxchar, knowing the exact number of codepoints
+        // means that it is no longer necessary to allocate several times the required amount
+        // of memory.
+        maxsize = utf8_count_codepoints((const unsigned char *)s, (const unsigned char *)end);
+        if (ch < 0xc4) { // latin1
+            maxchr = 0xff;
+        }
+        else if (ch < 0xf0) { // ucs2
+            maxchr = 0xffff;
+        }
+        else { // ucs4
+            maxchr = 0x10ffff;
+        }
+    }
+    PyObject *u = PyUnicode_New(maxsize, maxchr);
+    if (!u) {
+        return NULL;
+    }
 
     // Use _PyUnicodeWriter after fast path is failed.
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_InitWithBuffer(&writer, u);
-    writer.pos = decoded;
+    if (maxchr <= 255) {
+        memcpy(PyUnicode_1BYTE_DATA(u), s, pos);
+        s += pos;
+        size -= pos;
+        writer.pos = pos;
+    }
 
     if (unicode_decode_utf8_impl(&writer, starts, s, end,
                                  error_handler, errors,
@@ -5248,7 +5484,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
                              const char *errors,
                              Py_ssize_t *consumed)
 {
-    return unicode_decode_utf8(s, size, _Py_ERROR_UNKNOWN, errors, consumed);
+    return unicode_decode_utf8(s, size,
+                               errors ? _Py_ERROR_UNKNOWN : _Py_ERROR_STRICT,
+                               errors, consumed);
 }
 
 
@@ -10976,26 +11214,6 @@ unicode_compare(PyObject *str1, PyObject *str2)
 #undef COMPARE
 }
 
-static int
-unicode_compare_eq(PyObject *str1, PyObject *str2)
-{
-    int kind;
-    const void *data1, *data2;
-    Py_ssize_t len;
-    int cmp;
-
-    len = PyUnicode_GET_LENGTH(str1);
-    if (PyUnicode_GET_LENGTH(str2) != len)
-        return 0;
-    kind = PyUnicode_KIND(str1);
-    if (PyUnicode_KIND(str2) != kind)
-        return 0;
-    data1 = PyUnicode_DATA(str1);
-    data2 = PyUnicode_DATA(str2);
-
-    cmp = memcmp(data1, data2, len * kind);
-    return (cmp == 0);
-}
 
 int
 _PyUnicode_Equal(PyObject *str1, PyObject *str2)
@@ -11005,7 +11223,25 @@ _PyUnicode_Equal(PyObject *str1, PyObject *str2)
     if (str1 == str2) {
         return 1;
     }
-    return unicode_compare_eq(str1, str2);
+    return unicode_eq(str1, str2);
+}
+
+
+int
+PyUnicode_Equal(PyObject *str1, PyObject *str2)
+{
+    if (!PyUnicode_Check(str1)) {
+        PyErr_Format(PyExc_TypeError,
+                     "first argument must be str, not %T", str1);
+        return -1;
+    }
+    if (!PyUnicode_Check(str2)) {
+        PyErr_Format(PyExc_TypeError,
+                     "second argument must be str, not %T", str2);
+        return -1;
+    }
+
+    return _PyUnicode_Equal(str1, str2);
 }
 
 
@@ -11203,7 +11439,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
         return 0;
     }
 
-    return unicode_compare_eq(left, right_uni);
+    return unicode_eq(left, right_uni);
 }
 
 PyObject *
@@ -11231,7 +11467,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         }
     }
     else if (op == Py_EQ || op == Py_NE) {
-        result = unicode_compare_eq(left, right);
+        result = unicode_eq(left, right);
         result ^= (op == Py_NE);
         return PyBool_FromLong(result);
     }
@@ -11239,12 +11475,6 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         result = unicode_compare(left, right);
         Py_RETURN_RICHCOMPARE(result, 0, op);
     }
-}
-
-int
-_PyUnicode_EQ(PyObject *aa, PyObject *bb)
-{
-    return unicode_eq(aa, bb);
 }
 
 int
@@ -13426,9 +13656,13 @@ PyUnicodeWriter_Create(Py_ssize_t length)
     }
 
     const size_t size = sizeof(_PyUnicodeWriter);
-    PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+    PyUnicodeWriter *pub_writer;
+    pub_writer = _Py_FREELIST_POP_MEM(unicode_writers);
     if (pub_writer == NULL) {
-        return (PyUnicodeWriter *)PyErr_NoMemory();
+        pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+        if (pub_writer == NULL) {
+            return (PyUnicodeWriter *)PyErr_NoMemory();
+        }
     }
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
 
@@ -13445,8 +13679,11 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 
 void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
     _PyUnicodeWriter_Dealloc((_PyUnicodeWriter*)writer);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
 }
 
 
@@ -13622,6 +13859,10 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *str = PyObject_Str(obj);
     if (str == NULL) {
         return -1;
@@ -13636,6 +13877,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *repr = PyObject_Repr(obj);
     if (repr == NULL) {
         return -1;
@@ -13860,7 +14105,7 @@ PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 {
     PyObject *str = _PyUnicodeWriter_Finish((_PyUnicodeWriter*)writer);
     assert(((_PyUnicodeWriter*)writer)->buffer == NULL);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
     return str;
 }
 
@@ -15626,6 +15871,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
+    if (has_shared_intern_dict(interp)) {
+        // the dict doesn't belong to this interpreter, skip the debug
+        // checks on it and just clear the pointer to it
+        clear_interned_dict(interp);
+        return;
+    }
+
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
@@ -15906,7 +16158,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot encode %s", name);
+        PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {
@@ -16134,8 +16386,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-    assert(get_interned_dict(interp) == NULL);
+    if (!has_shared_intern_dict(interp)) {
+        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+        assert(get_interned_dict(interp) == NULL);
+    }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 

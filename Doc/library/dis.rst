@@ -312,7 +312,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
+                          adaptive=False, show_offsets=False, show_positions=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
                     show_offsets=False, show_positions=False)
 
@@ -861,13 +862,6 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
-.. opcode:: RETURN_CONST (consti)
-
-   Returns with ``co_consts[consti]`` to the caller of the function.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -968,7 +962,8 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.append(len(STACK[-1]))``. Used in :keyword:`match` statements where
+   comparison with structure of pattern is needed.
 
    .. versionadded:: 3.10
 
@@ -1082,6 +1077,22 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
+
+
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Pushes the integer ``i`` onto the stack.
+   ``i`` must be in ``range(256)``
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Pushes ``co_consts[consti]`` onto the stack.
+   Can be used when the constant value is known to be immortal.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_NAME (namei)
@@ -1384,6 +1395,13 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
+
+   Pushes references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.13
+
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
@@ -1404,6 +1422,20 @@ iterations of the loop.
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
+.. opcode:: STORE_FAST_STORE_FAST (var_nums)
+
+   Stores ``STACK[-1]`` into ``co_varnames[var_nums >> 4]``
+   and ``STACK[-2]`` into ``co_varnames[var_nums & 15]``.
+
+   .. versionadded:: 3.13
+
+.. opcode:: STORE_FAST_LOAD_FAST (var_nums)
+
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_nums >> 4]``
+   and pushes a reference to the local ``co_varnames[var_nums & 15]``
+   onto the stack.
+
+   .. versionadded:: 3.13
 
 .. opcode:: DELETE_FAST (var_num)
 
@@ -1433,7 +1465,7 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies (which previously used
+   :term:`closure variables <closure variable>` in class bodies (which previously used
    :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
@@ -1462,8 +1494,8 @@ iterations of the loop.
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1551,7 +1583,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1636,7 +1668,7 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 
@@ -1871,6 +1903,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
+.. opcode:: JUMP_IF_TRUE
+.. opcode:: JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
+
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
@@ -1930,10 +1968,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable. 'free' in this
-   context refers to names in the current scope that are referenced by inner
-   scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
 
 
 .. data:: hasname

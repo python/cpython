@@ -68,6 +68,20 @@ free_list_items(PyObject** items, bool use_qsbr)
 #endif
 }
 
+static void
+ensure_shared_on_resize(PyListObject *self)
+{
+#ifdef Py_GIL_DISABLED
+    // Ensure that the list array is freed using QSBR if we are not the
+    // owning thread.
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)self) &&
+        !_PyObject_GC_IS_SHARED(self))
+    {
+        _PyObject_GC_SET_SHARED(self);
+    }
+#endif
+}
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -116,6 +130,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 
     if (newsize == 0)
         new_allocated = 0;
+
+    ensure_shared_on_resize(self);
 
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = list_allocate_array(new_allocated);
@@ -200,12 +216,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                             _Py_FREELIST_SIZE(lists),
                            sizeof(PyListObject));
-#endif
 }
 
 PyObject *
@@ -393,6 +407,12 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
     return item;
 }
 
+PyObject *
+_PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
+{
+    return list_get_item_ref(list, i);
+}
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -524,49 +544,48 @@ list_dealloc(PyObject *self)
 static PyObject *
 list_repr_impl(PyListObject *v)
 {
-    PyObject *s;
-    _PyUnicodeWriter writer;
-    Py_ssize_t i = Py_ReprEnter((PyObject*)v);
-    if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("[...]") : NULL;
+    int res = Py_ReprEnter((PyObject*)v);
+    if (res != 0) {
+        return (res > 0 ? PyUnicode_FromString("[...]") : NULL);
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
     /* "[" + "1" + ", 2" * (len - 1) + "]" */
-    writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
-
-    if (_PyUnicodeWriter_WriteChar(&writer, '[') < 0)
+    Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
         goto error;
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
+        goto error;
+    }
 
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
-    for (i = 0; i < Py_SIZE(v); ++i) {
+    for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+                goto error;
+            }
         }
 
-        s = PyObject_Repr(v->ob_item[i]);
-        if (s == NULL)
-            goto error;
-
-        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
-            Py_DECREF(s);
+        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
             goto error;
         }
-        Py_DECREF(s);
     }
 
-    writer.overallocate = 0;
-    if (_PyUnicodeWriter_WriteChar(&writer, ']') < 0)
+    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         goto error;
+    }
 
     Py_ReprLeave((PyObject *)v);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
@@ -801,6 +820,9 @@ list_clear_impl(PyListObject *a, bool is_resize)
         Py_XDECREF(items[i]);
     }
 #ifdef Py_GIL_DISABLED
+    if (is_resize) {
+        ensure_shared_on_resize(a);
+    }
     bool use_qsbr = is_resize && _PyObject_GC_IS_SHARED(a);
 #else
     bool use_qsbr = false;
@@ -3066,6 +3088,7 @@ keyfunc_fail:
             Py_XDECREF(final_ob_item[i]);
         }
 #ifdef Py_GIL_DISABLED
+        ensure_shared_on_resize(self);
         bool use_qsbr = _PyObject_GC_IS_SHARED(self);
 #else
         bool use_qsbr = false;
@@ -3777,6 +3800,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_LIST,
 };
 
 /*********************** List Iterator **************************/
