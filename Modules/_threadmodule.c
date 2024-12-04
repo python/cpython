@@ -2409,10 +2409,15 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
+#ifdef __sun
+    // Solaris always uses UTF-8
+    char *encoding = "utf-8";
+#else
     // Encode the thread name to the filesystem encoding using the "replace"
     // error handler
     PyInterpreterState *interp = _PyInterpreterState_GET();
     char *encoding = interp->unicode.fs_codec.encoding;
+#endif
     PyObject *name_encoded;
     name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
     if (name_encoded == NULL) {

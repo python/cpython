@@ -2128,7 +2128,10 @@ class MiscTestCase(unittest.TestCase):
         limit = truncate or 100
 
         def create_test(name):
-            encoding = sys.getfilesystemencoding()
+            if sys.platform.startswith("solaris"):
+                encoding = "utf-8"
+            else:
+                encoding = sys.getfilesystemencoding()
             encoded = name.encode(encoding, "replace")
             if truncate is not None:
                 expected = os.fsdecode(encoded[:truncate])
