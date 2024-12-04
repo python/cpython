@@ -1,4 +1,5 @@
 import unittest
+import sys
 from ctypes import Structure, Union, sizeof, c_char, c_int
 from ._support import (CField, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
@@ -78,9 +79,12 @@ class FieldsTestBase:
     def test_gh126937(self):
         class X(self.cls):
             _fields_ = [('char', c_char),]
+        max_field_size = sys.maxsize // 8
         class Y(self.cls):
-            # (2^31 - 1) is the largest size that can fit into a signed 32 bit int
-            _fields_ = [('largeField', X * (2 ** 31 - 1))]
+            _fields_ = [('largeField', X * max_field_size)]
+        with self.assertRaises(ValueError):
+            class TooBig(self.cls):
+                _fields_ = [('largeField', X * (max_field_size + 1))]
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
