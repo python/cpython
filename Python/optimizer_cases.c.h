@@ -17,6 +17,8 @@
 
         /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
 
+        /* _LOAD_BYTECODE is not a viable micro-op for tier 2 */
+
         case _RESUME_CHECK: {
             break;
         }
@@ -61,6 +63,27 @@
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_CONST_IMMORTAL: {
+            _Py_UopsSymbol *value;
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SMALL_INT: {
+            _Py_UopsSymbol *value;
+            PyObject *val = PyLong_FromLong(this_instr->oparg);
             value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -484,6 +507,25 @@
         }
 
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            _Py_UopsSymbol *res;
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+                PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
+            // _STORE_FAST:
+            GETLOCAL(this_instr->operand0) = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -846,7 +888,7 @@
 
         case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
             _Py_UopsSymbol *globals_keys;
-            uint16_t version = (uint16_t)this_instr->operand;
+            uint16_t version = (uint16_t)this_instr->operand0;
             globals_keys = sym_new_unknown(ctx);
             (void)version;
             stack_pointer[0] = globals_keys;
@@ -857,7 +899,7 @@
 
         case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
             _Py_UopsSymbol *builtins_keys;
-            uint16_t version = (uint16_t)this_instr->operand;
+            uint16_t version = (uint16_t)this_instr->operand0;
             builtins_keys = sym_new_unknown(ctx);
             (void)version;
             stack_pointer[0] = builtins_keys;
@@ -1048,7 +1090,7 @@
         case _GUARD_TYPE_VERSION: {
             _Py_UopsSymbol *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)this_instr->operand;
+            uint32_t type_version = (uint32_t)this_instr->operand0;
             assert(type_version);
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -1080,7 +1122,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t offset = (uint16_t)this_instr->operand;
+            uint16_t offset = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)offset;
@@ -1095,7 +1137,7 @@
         case _CHECK_ATTR_MODULE: {
             _Py_UopsSymbol *owner;
             owner = stack_pointer[-1];
-            uint32_t dict_version = (uint32_t)this_instr->operand;
+            uint32_t dict_version = (uint32_t)this_instr->operand0;
             (void)dict_version;
             if (sym_is_const(owner)) {
                 PyObject *cnst = sym_get_const(owner);
@@ -1118,7 +1160,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)this_instr->operand;
+            uint16_t index = (uint16_t)this_instr->operand0;
             (void)index;
             null = sym_new_null(ctx);
             attr = NULL;
@@ -1160,7 +1202,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)this_instr->operand;
+            uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)hint;
@@ -1177,7 +1219,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)this_instr->operand;
+            uint16_t index = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)index;
@@ -1198,7 +1240,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)this_instr->operand;
+            PyObject *descr = (PyObject *)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)descr;
@@ -1214,7 +1256,7 @@
             _Py_UopsSymbol *owner;
             _Py_UOpsAbstractFrame *new_frame;
             owner = stack_pointer[-1];
-            PyObject *fget = (PyObject *)this_instr->operand;
+            PyObject *fget = (PyObject *)this_instr->operand0;
             (void)fget;
             (void)owner;
             new_frame = NULL;
@@ -1597,7 +1639,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)this_instr->operand;
+            PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
@@ -1613,7 +1655,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)this_instr->operand;
+            PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
@@ -1647,7 +1689,7 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)this_instr->operand;
+            PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
@@ -1707,6 +1749,22 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            (void)self_or_null;
+            if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+                assert(PyFunction_Check(sym_get_const(callable)));
+                REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                this_instr->operand1 = (uintptr_t)sym_get_const(callable);
+            }
+            sym_set_type(callable, &PyFunction_Type);
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION_INLINE: {
             break;
         }
 
@@ -1774,7 +1832,16 @@
             _Py_UopsSymbol *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            sym_set_type(callable, &PyFunction_Type);
+            assert(sym_matches_type(callable, &PyFunction_Type));
+            if (sym_is_const(callable)) {
+                if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                    PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
+                    PyCodeObject *co = (PyCodeObject *)func->func_code;
+                    if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                        REPLACE_OP(this_instr, _NOP, 0 ,0);
+                    }
+                }
+            }
             (void)self_or_null;
             break;
         }
@@ -1897,7 +1964,7 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             args = &stack_pointer[-oparg];
-            uint32_t type_version = (uint32_t)this_instr->operand;
+            uint32_t type_version = (uint32_t)this_instr->operand0;
             (void)type_version;
             (void)callable;
             (void)null;
@@ -2357,7 +2424,7 @@
         }
 
         case _CHECK_STACK_SPACE_OPERAND: {
-            uint32_t framesize = (uint32_t)this_instr->operand;
+            uint32_t framesize = (uint32_t)this_instr->operand0;
             (void)framesize;
             /* We should never see _CHECK_STACK_SPACE_OPERANDs.
              * They are only created at the end of this pass. */
@@ -2370,7 +2437,7 @@
         }
 
         case _EXIT_TRACE: {
-            PyObject *exit_p = (PyObject *)this_instr->operand;
+            PyObject *exit_p = (PyObject *)this_instr->operand0;
             (void)exit_p;
             ctx->done = true;
             break;
@@ -2382,7 +2449,7 @@
 
         case _LOAD_CONST_INLINE: {
             _Py_UopsSymbol *value;
-            PyObject *ptr = (PyObject *)this_instr->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2392,7 +2459,7 @@
 
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
-            PyObject *ptr = (PyObject *)this_instr->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2410,7 +2477,7 @@
         case _LOAD_CONST_INLINE_WITH_NULL: {
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;
@@ -2423,7 +2490,7 @@
         case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;

@@ -13,7 +13,7 @@ import random
 import textwrap
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ, suppress_immortalization
+from test.support import script_helper, ALWAYS_EQ
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
@@ -659,7 +659,6 @@ class ReferencesTestCase(TestBase):
         # deallocation of c2.
         del c2
 
-    @suppress_immortalization()
     def test_callback_in_cycle(self):
         import gc
 
@@ -752,7 +751,6 @@ class ReferencesTestCase(TestBase):
         del c1, c2, C, D
         gc.collect()
 
-    @suppress_immortalization()
     def test_callback_in_cycle_resurrection(self):
         import gc
 
@@ -888,7 +886,6 @@ class ReferencesTestCase(TestBase):
         # No exception should be raised here
         gc.collect()
 
-    @suppress_immortalization()
     def test_classes(self):
         # Check that classes are weakrefable.
         class A(object):

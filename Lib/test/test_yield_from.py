@@ -1576,6 +1576,19 @@ class TestInterestingEdgeCases(unittest.TestCase):
             self.assertIsNone(caught.exception.__context__)
             self.assert_stop_iteration(g)
 
+    def test_throws_in_iter(self):
+        # See GH-126366: NULL pointer dereference if __iter__
+        # threw an exception.
+        class Silly:
+            def __iter__(self):
+                raise RuntimeError("nobody expects the spanish inquisition")
+
+        def my_generator():
+            yield from Silly()
+
+        with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
+            next(iter(my_generator()))
+
 
 if __name__ == '__main__':
     unittest.main()
