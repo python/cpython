@@ -223,6 +223,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_IsFalse(ref) (((ref).bits & (~Py_TAG_BITS)) == ((uintptr_t)&_Py_FalseStruct))
 
 
+#ifdef Py_DEBUG
+
 static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     int tag = ref.bits & Py_TAG_BITS;
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
@@ -242,7 +244,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     }
 }
 
-#ifdef Py_DEBUG
 static inline int
 PyStackRef_IsNone(_PyStackRef ref)
 {
@@ -255,6 +256,7 @@ PyStackRef_IsNone(_PyStackRef ref)
 
 #else
 
+#define PyStackRef_CheckValid(REF) ((void)0)
 #define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))
 
 #endif
