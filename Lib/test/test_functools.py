@@ -1005,6 +1005,29 @@ class TestReduce:
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(self.reduce(add, d), "".join(d.keys()))
 
+    # test correctness of keyword usage of `initial` in `reduce`
+    def test_initial_keyword(self):
+        def add(x, y):
+            return x + y
+        self.assertEqual(
+            self.reduce(add, ['a', 'b', 'c'], ''),
+            self.reduce(add, ['a', 'b', 'c'], initial=''),
+        )
+        self.assertEqual(
+            self.reduce(add, [['a', 'c'], [], ['d', 'w']], []),
+            self.reduce(add, [['a', 'c'], [], ['d', 'w']], initial=[]),
+        )
+        self.assertEqual(
+            self.reduce(lambda x, y: x*y, range(2,8), 1),
+            self.reduce(lambda x, y: x*y, range(2,8), initial=1),
+        )
+        self.assertEqual(
+            self.reduce(lambda x, y: x*y, range(2,21), 1),
+            self.reduce(lambda x, y: x*y, range(2,21), initial=1),
+        )
+        self.assertRaises(TypeError, self.reduce, add, [0, 1], initial="")
+        self.assertEqual(self.reduce(42, "", initial="1"), "1") # func is never called with one item
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestReduceC(TestReduce, unittest.TestCase):

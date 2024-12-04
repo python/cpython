@@ -6,6 +6,8 @@
 Python Initialization Configuration
 ***********************************
 
+.. _pyconfig_api:
+
 PyConfig C API
 ==============
 
@@ -1588,9 +1590,24 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.site_import` to ``0``.
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
+If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
+the same directory as :c:member:`~PyConfig.executable`, or its parent,
+:c:member:`~PyConfig.prefix` and :c:member:`~PyConfig.exec_prefix` are set that
+location. When this happens, :c:member:`~PyConfig.base_prefix` and
+:c:member:`~PyConfig.base_exec_prefix` still keep their value, pointing to the
+base installation. See :ref:`sys-path-init-virtual-environments` for more
+information.
+
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 :c:member:`PyConfig.base_executable`.
 
+.. versionchanged:: 3.14
+
+   :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
+   set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
+   therefore affected by :option:`-S`.
+
+.. _pyinitconfig_api:
 
 PyInitConfig C API
 ==================

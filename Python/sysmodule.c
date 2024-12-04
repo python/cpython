@@ -499,56 +499,28 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(audit_doc,
-"audit($module, event, /, *args)\n\
---\n\
-\n\
-Passes the event to any audit hooks that are attached.");
+/*[clinic input]
+sys.audit
+
+    event: str
+    /
+    *args: tuple
+
+Passes the event to any audit hooks that are attached.
+[clinic start generated code]*/
 
 static PyObject *
-sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
+sys_audit_impl(PyObject *module, const char *event, PyObject *args)
+/*[clinic end generated code: output=1d0fc82da768f49d input=ec3b688527945109]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
-
-    if (argc == 0) {
-        _PyErr_SetString(tstate, PyExc_TypeError,
-                         "audit() missing 1 required positional argument: "
-                         "'event'");
-        return NULL;
-    }
-
-    assert(args[0] != NULL);
 
     if (!should_audit(tstate->interp)) {
         Py_RETURN_NONE;
     }
 
-    PyObject *auditEvent = args[0];
-    if (!auditEvent) {
-        _PyErr_SetString(tstate, PyExc_TypeError,
-                         "expected str for argument 'event'");
-        return NULL;
-    }
-    if (!PyUnicode_Check(auditEvent)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "expected str for argument 'event', not %.200s",
-                      Py_TYPE(auditEvent)->tp_name);
-        return NULL;
-    }
-    const char *event = PyUnicode_AsUTF8(auditEvent);
-    if (!event) {
-        return NULL;
-    }
-
-    PyObject *auditArgs = _PyTuple_FromArray(args + 1, argc - 1);
-    if (!auditArgs) {
-        return NULL;
-    }
-
-    int res = _PySys_Audit(tstate, event, "O", auditArgs);
-    Py_DECREF(auditArgs);
-
+    int res = _PySys_Audit(tstate, event, "O", args);
     if (res < 0) {
         return NULL;
     }
@@ -2175,6 +2147,11 @@ sys__clear_internal_caches_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _Py_Executors_InvalidateAll(interp, 0);
 #endif
+#ifdef Py_GIL_DISABLED
+    if (_Py_ClearUnusedTLBC(_PyInterpreterState_GET()) < 0) {
+        return NULL;
+    }
+#endif
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2559,7 +2536,7 @@ close_and_release:
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
-    {"audit", _PyCFunction_CAST(sys_audit), METH_FASTCALL, audit_doc },
+    SYS_AUDIT_METHODDEF
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS__CLEAR_INTERNAL_CACHES_METHODDEF
@@ -4127,7 +4104,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
 {
     if (maxdigits != 0 && maxdigits < _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            PyExc_ValueError, "maxdigits must be >= %d or 0 for unlimited",
             _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
         return -1;
     }
