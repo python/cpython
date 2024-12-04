@@ -317,6 +317,7 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
+
 * The default ``ProcessPoolExecutor`` start method (see
   :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
   platforms other than macOS & Windows. If you require the threading
