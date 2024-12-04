@@ -517,7 +517,8 @@ add_to_trace(
     assert(func == NULL || func->func_code == (PyObject *)code); \
     trace_stack[trace_stack_depth].func = func; \
     trace_stack[trace_stack_depth].code = code; \
-    trace_stack[trace_stack_depth].instr = instr; \
+    trace_stack[trace_stack_depth].instr = instr;\
+    trace_stack[trace_stack_depth].is_dunder_init = false; \
     trace_stack_depth++;
 #define TRACE_STACK_POP() \
     if (trace_stack_depth <= 0) { \
@@ -555,6 +556,7 @@ translate_bytecode_to_trace(
         PyFunctionObject *func;
         PyCodeObject *code;
         _Py_CODEUNIT *instr;
+        bool is_dunder_init;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
     int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
@@ -795,6 +797,12 @@ translate_bytecode_to_trace(
                                 operand = 0;
                             }
                             ADD_TO_TRACE(uop, oparg, operand, target);
+                            if (trace_stack[trace_stack_depth].is_dunder_init) {
+                                RESERVE_RAW(3, "_Py_InitCleanup");
+                                ADD_TO_TRACE(EXIT_INIT_CHECK, 0, 0, target);
+                                ADD_TO_TRACE(RETURN_VALUE, 0, 0, 0);
+                                ADD_TO_TRACE(RESUME_CHECK, 0, 0, 0);
+                            }
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -825,6 +833,39 @@ translate_bytecode_to_trace(
                             PyCodeObject *new_code = NULL;
                             PyFunctionObject *new_func =
                                 _PyFunction_LookupByVersion(func_version, (PyObject **) &new_code);
+                            if (opcode == CALL_ALLOC_AND_ENTER_INIT) {
+                                // In CALL_ALLOC_AND_ENTER_INIT, func_version is actually the type version.
+                                PyTypeObject *typ = _PyType_LookupByVersion(func_version);
+                                if (typ == NULL || !PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE)) {
+                                    DPRINTF(2, "Bailing due to dynamic target\n");
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    goto done;
+                                }
+                                assert(PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE));
+                                PyHeapTypeObject *ht = (PyHeapTypeObject *)typ;
+                                PyObject *init = ht->_spec_cache.init;
+                                if (!PyFunction_Check(init) ||
+                                    ((PyFunctionObject *)init)->func_version
+                                    != ((PyCodeObject *)((PyFunctionObject *)init)->func_code)->co_version) {
+                                    DPRINTF(2, "Bailing due to non-matching __init__\n");
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    goto done;
+                                }
+                                PyFunctionObject *init_func = (PyFunctionObject *)init;
+                                // Insert a guard that the __init__ is what we expect.
+                                // Then trace through the __init__.
+                                assert(trace[trace_length - 3].opcode == _NOP);
+                                trace[trace_length - 3].opcode = _CHECK_INIT_MATCHES_VERSIONS;
+                                trace[trace_length - 3].operand0 = typ->tp_version_tag;
+                                trace[trace_length - 3].oparg = oparg;
+                                trace[trace_length - 3].target = target;
+                                trace[trace_length - 3].operand1 = init_func->func_version;
+                                new_func = init_func;
+                                new_code = (PyCodeObject *)init_func->func_code;
+                                func_version = init_func->func_version;
+                            }
                             DPRINTF(2, "Function: version=%#x; new_func=%p, new_code=%p\n",
                                     (int)func_version, new_func, new_code);
                             if (new_code != NULL) {
@@ -851,6 +892,7 @@ translate_bytecode_to_trace(
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
+                                trace_stack[trace_stack_depth - 1].is_dunder_init = opcode == CALL_ALLOC_AND_ENTER_INIT;
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's function or code object,
                                  * to assist optimization passes.
@@ -892,6 +934,12 @@ translate_bytecode_to_trace(
                             operand = next_instr->op.arg;
                             // Skip the STORE_FAST:
                             instr++;
+                        }
+
+                        if (uop == _CHECK_AND_ALLOCATE_OBJECT) {
+                            // Reserving a _NOP to insert a check later.
+                            RESERVE_RAW(1, "_NOP");
+                            ADD_TO_TRACE(_NOP, 0, 0, 0);
                         }
 
                         // All other instructions

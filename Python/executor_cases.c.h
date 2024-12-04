@@ -4477,6 +4477,36 @@
             break;
         }
 
+        case _CHECK_INIT_MATCHES_VERSIONS: {
+            _PyStackRef *callable;
+            oparg = CURRENT_OPARG();
+            callable = &stack_pointer[-2 - oparg];
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND0();
+            uint32_t init_func_version = (uint32_t)CURRENT_OPERAND1();
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+            if (!PyType_Check(callable_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
+            PyFunctionObject *init_func = (PyFunctionObject *)cls->_spec_cache.init;
+            if (init_func->func_version != init_func_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _CHECK_AND_ALLOCATE_OBJECT: {
             _PyStackRef *args;
             _PyStackRef *null;
