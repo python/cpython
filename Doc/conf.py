@@ -30,12 +30,12 @@ extensions = [
     'availability',
     'c_annotations',
     'glossary_search',
-    'grammar_snippet',
     'lexers',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'grammar_snippet',
 ]
 
 # Skip if downstream redistributors haven't installed them

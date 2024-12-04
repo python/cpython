@@ -41,12 +41,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-# monkey-patch the productionlist directive to allow hyphens in group names
-# https://github.com/sphinx-doc/sphinx/issues/11854
-from sphinx.domains import std
-
-std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
-
 # backport :no-index:
 PyModule.option_spec['no-index'] = directives.flag
 
