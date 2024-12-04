@@ -1,0 +1,2 @@
+Fix clang/ar scripts in `iOS/Resources/bin` directory to allow arguments
+with spaces.
