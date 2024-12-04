@@ -7508,7 +7508,7 @@ case "$ac_sys_system" in
   FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
   *) PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n $PYTHREAD_NAME_MAXLEN; then
+if test -n "$PYTHREAD_NAME_MAXLEN"; then
     AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
                        [Maximum length in bytes of a thread name])
 fi

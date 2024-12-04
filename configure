@@ -29096,7 +29096,7 @@ case "$ac_sys_system" in
   FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
   *) PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n $PYTHREAD_NAME_MAXLEN; then
+if test -n "$PYTHREAD_NAME_MAXLEN"; then
 
 printf "%s\n" "#define PYTHREAD_NAME_MAXLEN $PYTHREAD_NAME_MAXLEN" >>confdefs.h
 
