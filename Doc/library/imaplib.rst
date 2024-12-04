@@ -10,7 +10,7 @@
 .. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
-.. changes for IMAP4 IDLE by Forest <forestix@nom.one> August 2024
+.. changes for IMAP4 IDLE by Forest <forestix@nom.one>, August 2024
 
 **Source code:** :source:`Lib/imaplib.py`
 
