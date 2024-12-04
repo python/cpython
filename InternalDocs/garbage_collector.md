@@ -541,13 +541,13 @@ garbage. Also, note that `T == M + I` where `M` is the number of objects marked
 as reachable and `I` is the number of objects visited in increments.
 Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + G1`.
 
-If we choose the amount of work done such that `3*M + I == 8N` then we can do
+If we choose the amount of work done such that `2*M + I == 6N` then we can do
 do less work in most cases, but are still guaranteed to keep up.
 Since `I ≥ G0 + G1` (not strictly true, but close enough)
-`T == M + I == (8N + 2I)/3` and `(8N + 2I)/3 ≥ 4G`, so we can keep up.
+`T == M + I == (6N + I)/2` and `(6N + I)/2 ≥ 4G`, so we can keep up.
 
 The reason that this improves performance is that `M` is usually much larger
-than `I` Suppose `M == 10I`, then `T < 3N`.
+than `I` Suppose `M == 10I`, then `T ≅ 3N`.
 
 Finally, instead of using a fixed multiple of 8, we gradually increase it as the
 heap grows. This avoids wasting work for small heaps and during startup.

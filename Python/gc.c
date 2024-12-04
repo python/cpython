@@ -1566,7 +1566,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*7;
+    intptr_t max_heap_fraction = new_objects*5;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1575,7 +1575,8 @@ assess_work_to_do(GCState *gcstate)
     return new_objects + heap_fraction;
 }
 
-#define MARKING_PROGRESS_MULTIPLIER 3
+/* See Internal GC docs for explanation */
+#define MARKING_PROGRESS_MULTIPLIER 2
 
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
