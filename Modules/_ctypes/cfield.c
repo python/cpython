@@ -111,21 +111,15 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     }
 
     if (bit_size_obj != Py_None) {
-
-        Py_ssize_t bit_size;
-
-        if (PyLong_Check(bit_size_obj)) {
-            bit_size = PyLong_AsSsize_t(bit_size_obj);
-        } else {
-            PyErr_Format(
-                PyExc_ValueError,
-                "bit size of field %R must be an integer size for bit fields",
-                self->name
-            );
-            goto error;
-        }
+#ifdef Py_DEBUG
+        Py_ssize_t bit_size = NUM_BITS(size);
         assert(bit_size > 0);
         assert(bit_size <= info->size * 8);
+        // Currently, the bit size is specified redundantly
+        // in NUM_BITS(size) and bit_size_obj.
+        // Verify that they match.
+        assert(PyLong_AsSsize_t(bit_size_obj) == bit_size);
+#endif
         switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
