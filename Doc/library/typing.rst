@@ -2820,22 +2820,30 @@ are especially useful for annotating function and method arguments and are
 decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: Reader[T]
+
+   Protocol for reading from a file or other I/O stream.
+
    .. method:: read(size=...)
    .. method:: readline(size=...)
    .. method:: __iter__()
 
+   For example::
+
+     def read_it(reader: Reader[str]):
+         assert reader.read(11) == "--marker--\n"
+         for line in reader:
+             print(line)
+
 .. class:: Writer[T]
+
+   Protocol for writing to a file or other I/O stream.
+
    .. method:: write(o)
 
-For example::
+   For example::
 
-  def read_it(reader: Reader[str]):
-      assert reader.read(11) == "--marker--\n"
-      for line in reader:
-          print(line)
-
-  def write_binary(writer: Writer[bytes]):
-      writer.write(b"Hello world!\n")
+     def write_binary(writer: Writer[bytes]):
+         writer.write(b"Hello world!\n")
 
 Also consider using :class:`collections.abc.Iterable` for iterating over
 a stream::
