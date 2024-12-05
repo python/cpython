@@ -348,11 +348,17 @@ dis
   This feature is also exposed via :option:`dis --show-positions`.
   (Contributed by Bénédikt Tran in :gh:`123165`.)
 
+* Add the :option:`dis --specialized` command-line option to
+  show specialized bytecode.
+  (Contributed by Bénédikt Tran in :gh:`127413`.)
+
+
 errno
 -----
 
 * Add :data:`errno.EHWPOISON` error code.
   (Contributed by James Roy in :gh:`126585`.)
+
 
 fractions
 ---------
