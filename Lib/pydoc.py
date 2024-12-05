@@ -393,12 +393,12 @@ def source_synopsis(file):
         try:
             source = file.read()
         except UnicodeDecodeError:
-            source = file.read().decode('latin-1')
+            return None
     else:
         # Binary file
         try:
             source = tokenize.untokenize(tokenize.tokenize(file.readline))
-        except (SyntaxError, tokenize.TokenError, UnicodeDecodeError, ValueError):
+        except (tokenize.TokenError, UnicodeDecodeError):
             return None
 
     try:
