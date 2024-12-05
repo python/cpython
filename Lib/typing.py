@@ -2937,13 +2937,14 @@ class Reader[T](Iterable[T], Protocol):
     __slots__ = ()
 
     def read(self, size: int = ..., /) -> T:
-        """Read data from the I/O stream and return it.
+        """Read data from the input stream and return it.
 
         If "size" is specified, at most "size" items (bytes/characters) will be
         read.
         """
+
     def readline(self, size: int = ..., /) -> T:
-        """Read a line of data from the I/O stream and return it.
+        """Read a line of data from the input stream and return it.
 
         If "size" is specified, at most "size" items (bytes/characters) will be
         read.
@@ -2959,8 +2960,8 @@ class Writer[T](Protocol):
 
     __slots__ = ()
 
-    def write(self, o: T, /) -> int:
-        """Write data to the I/O stream and return number of items written."""
+    def write(self, data: T, /) -> int:
+        """Write data to the output stream and return number of items written."""
 
 
 def _make_nmtuple(name, fields, annotate_func, module, defaults = ()):

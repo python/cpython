@@ -2821,8 +2821,21 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: Reader[T]
 
-   Protocol for reading from a file or other input stream. Implementations
-   must support the ``read``, ``readline``, and ``__iter__`` methods.
+   Protocol for reading from a file or other input stream.
+
+   .. method:: read(size=...)
+
+        Read data from the input stream and return it. If ``size`` is
+        specified, at most ``size`` items (bytes/characters) will be read.
+
+   .. method:: readline(size=...)
+
+        Read a line of data from the input stream and return it. If ``size`` is
+        specified, at most ``size`` items (bytes/characters) will be read.
+
+   .. method:: __iter__()
+
+        Read a line of data from the input stream and return it.
 
    For example::
 
@@ -2833,8 +2846,12 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: Writer[T]
 
-   Protocol for writing to a file or other output stream. Implementations
-   must support the ``write`` method.
+   Protocol for writing to a file or other output stream.
+
+   .. method:: write(data)
+
+      Write data to the output stream and return number of items
+      (bytes/characters) written.
 
    For example::
 
