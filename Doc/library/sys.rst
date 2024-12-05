@@ -1972,7 +1972,8 @@ always available.
    to ``None`` resets the limit to the default value.
 
    .. versionchanged:: 3.6.4
-      Can now be set to ``0`` or ``None``.
+      Setting to ``0`` or less now suppresses printing tracebacks.
+      Setting to ``None`` now causes using the default limit.
 
 .. function:: unraisablehook(unraisable, /)
 
