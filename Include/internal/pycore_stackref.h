@@ -261,6 +261,7 @@ PyStackRef_IsNone(_PyStackRef ref)
 
 #endif
 
+/* Does this ref have an embedded refcount */
 static inline int
 PyStackRef_HasCount(_PyStackRef ref)
 {
@@ -298,15 +299,22 @@ PyStackRef_AsPyObjectSteal(_PyStackRef ref)
     }
 }
 
-/* We will want to extend this to a larger set of objects in the future */
-#define _Py_IsDeferrable _Py_IsImmortal
-
 static inline _PyStackRef
 PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     assert(obj != NULL);
     unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_IMMORTAL : 0;
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+    PyStackRef_CheckValid(ref);
+    return ref;
+}
+
+static inline _PyStackRef
+PyStackRef_FromPyObjectStealMortal(PyObject *obj)
+{
+    assert(obj != NULL);
+    assert(!_Py_IsImmortal(obj));
+    _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) });
     PyStackRef_CheckValid(ref);
     return ref;
 }
@@ -320,6 +328,7 @@ PyStackRef_FromPyObjectSteal(PyObject *obj)
 static inline _PyStackRef
 _PyStackRef_FromPyObjectNew(PyObject *obj)
 {
+    assert(obj != NULL);
     if (_Py_IsImmortal(obj)) {
         return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_IMMORTAL};
     }

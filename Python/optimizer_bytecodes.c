@@ -17,7 +17,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_unknown _Py_uop_sym_new_unknown
 #define sym_new_not_null _Py_uop_sym_new_not_null
 #define sym_new_type _Py_uop_sym_new_type
-#define sym_is_null _Py_uop_sym_is_null
+#define sym_is_null _Py_uop_sym_is_nullGUARD_BUILTINS_VERSION
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
