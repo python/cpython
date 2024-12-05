@@ -1,0 +1,1 @@
+Fixed valid ssl certificates being rejected.
