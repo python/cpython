@@ -78,12 +78,23 @@ class ExecutorTest:
             self.executor.map(bool, iterable, buffersize=0)
         self.assertEqual(
             list(self.executor.map(str, iterable, buffersize=1)),
-            list(map(str, iterable)),
+            ["0", "1", "2", "3"],
         )
         self.assertEqual(
             list(self.executor.map(str, iterable, buffersize=2)),
-            list(map(str, iterable)),
+            ["0", "1", "2", "3"],
         )
+
+        # test with multiple input iterables
+        self.assertEqual(
+            list(self.executor.map(int.__add__, iterable, iterable, buffersize=2)),
+            [0, 2, 4, 6],
+        )
+
+        # test without input iterable
+        no_result = self.executor.map(bool, buffersize=2)
+        with self.assertRaises(StopIteration):
+            next(no_result)
 
     def test_map_with_buffersize_on_infinite_iterable(self):
         results = self.executor.map(str, itertools.count(1), buffersize=1)
@@ -92,7 +103,7 @@ class ExecutorTest:
     def test_map_with_buffersize_on_iterable_smaller_than_buffer(self):
         iterable = range(2)
         results = self.executor.map(str, iterable, buffersize=8)
-        self.assertListEqual(list(results), list(map(str, iterable)))
+        self.assertListEqual(list(results), ["0", "1"])
 
     def test_map_with_buffersize_on_empty_iterable(self):
         results = self.executor.map(str, [], buffersize=8)
