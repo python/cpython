@@ -798,10 +798,9 @@ translate_bytecode_to_trace(
                             }
                             ADD_TO_TRACE(uop, oparg, operand, target);
                             if (trace_stack[trace_stack_depth].is_dunder_init) {
-                                RESERVE_RAW(3, "_Py_InitCleanup");
+                                RESERVE_RAW(2, "_Py_InitCleanup");
                                 ADD_TO_TRACE(EXIT_INIT_CHECK, 0, 0, target);
                                 ADD_TO_TRACE(RETURN_VALUE, 0, 0, 0);
-                                ADD_TO_TRACE(RESUME_CHECK, 0, 0, 0);
                             }
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
@@ -856,12 +855,13 @@ translate_bytecode_to_trace(
                                 PyFunctionObject *init_func = (PyFunctionObject *)init;
                                 // Insert a guard that the __init__ is what we expect.
                                 // Then trace through the __init__.
-                                assert(trace[trace_length - 3].opcode == _NOP);
-                                trace[trace_length - 3].opcode = _CHECK_INIT_MATCHES_VERSIONS;
-                                trace[trace_length - 3].operand0 = typ->tp_version_tag;
-                                trace[trace_length - 3].oparg = oparg;
-                                trace[trace_length - 3].target = target;
-                                trace[trace_length - 3].operand1 = init_func->func_version;
+                                _PyUOpInstruction *nop = &trace[trace_length - 3];
+                                assert(nop->opcode == _NOP);
+                                nop->opcode = _CHECK_INIT_MATCHES_VERSIONS;
+                                nop->operand0 = typ->tp_version_tag;
+                                nop->oparg = oparg;
+                                nop->target = target;
+                                nop->operand1 = init_func->func_version;
                                 new_func = init_func;
                                 new_code = (PyCodeObject *)init_func->func_code;
                                 func_version = init_func->func_version;
