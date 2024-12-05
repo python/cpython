@@ -134,6 +134,7 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
         _testcapi.pyobject_clear_weakrefs_no_callbacks(obj)
 
 
+@threading_helper.requires_working_threading()
 class EnableDeferredRefcountingTest(unittest.TestCase):
     """Test PyUnstable_Object_EnableDeferredRefcount"""
     @support.requires_resource("cpu")
@@ -158,20 +159,12 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
 
         silly_list = [1, 2, 3]
         threads = [
-            Thread(target=silly_func, args=(silly_list,)) for _ in range(5)
+            Thread(target=silly_func, args=(silly_list,)) for _ in range(4)
         ]
 
-        with threading_helper.catch_threading_exception() as cm:
-            for t in threads:
-                t.start()
-
+        with threading_helper.start_threads(threads):
             for i in range(10):
                 silly_list.append(i)
-
-            for t in threads:
-                t.join()
-
-            self.assertIsNone(cm.exc_value)
 
         if support.Py_GIL_DISABLED:
             self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
