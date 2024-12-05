@@ -2821,7 +2821,7 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: Reader[T]
 
-   Protocol for reading from a file or other I/O stream.
+   Protocol for reading from a file or other input stream.
 
    .. method:: read(size=...)
    .. method:: readline(size=...)
@@ -2836,7 +2836,7 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: Writer[T]
 
-   Protocol for writing to a file or other I/O stream.
+   Protocol for writing to a file or other output stream.
 
    .. method:: write(o)
 
@@ -2846,7 +2846,7 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
          writer.write(b"Hello world!\n")
 
 Also consider using :class:`collections.abc.Iterable` for iterating over
-a stream::
+the lines of an input stream::
 
   def read_config(stream: Iterable[str]):
       for line in stream:
