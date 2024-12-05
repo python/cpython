@@ -2943,6 +2943,8 @@ class Signature:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
                 seen_default = False
+                var_positional_count = 0
+                var_keyword_count = 0
 
                 for param in parameters:
                     kind = param.kind
@@ -2970,6 +2972,18 @@ class Signature:
                         else:
                             # There is a default for this parameter.
                             seen_default = True
+
+                    if kind == _VAR_POSITIONAL:
+                        var_positional_count += 1
+                        if var_positional_count > 1:
+                            msg = 'more than one var positional parameter'
+                            raise ValueError(msg)
+
+                    if kind == _VAR_KEYWORD:
+                        var_keyword_count += 1
+                        if var_keyword_count > 1:
+                            msg = 'more than one var keyword parameter'
+                            raise ValueError(msg)
 
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)
