@@ -153,7 +153,7 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added UUID version 8.
 
 
@@ -251,7 +251,7 @@ The :mod:`uuid` module defines the following functions:
    non-specified arguments are substituted for a pseudo-random integer of
    appropriate size.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. index:: single: uuid8
 

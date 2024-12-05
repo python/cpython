@@ -908,23 +908,25 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
        once by __init__. So we do not take any chance and replace object's
        buffer completely. */
     {
-        PyObject *item;
-        Py_UCS4 *buf;
-        Py_ssize_t bufsize;
+        PyObject *item = PyTuple_GET_ITEM(state, 0);
+        if (PyUnicode_Check(item)) {
+            Py_UCS4 *buf = PyUnicode_AsUCS4Copy(item);
+            if (buf == NULL)
+                return NULL;
+            Py_ssize_t bufsize = PyUnicode_GET_LENGTH(item);
 
-        item = PyTuple_GET_ITEM(state, 0);
-        buf = PyUnicode_AsUCS4Copy(item);
-        if (buf == NULL)
-            return NULL;
-        bufsize = PyUnicode_GET_LENGTH(item);
-
-        if (resize_buffer(self, bufsize) < 0) {
+            if (resize_buffer(self, bufsize) < 0) {
+                PyMem_Free(buf);
+                return NULL;
+            }
+            memcpy(self->buf, buf, bufsize * sizeof(Py_UCS4));
             PyMem_Free(buf);
-            return NULL;
+            self->string_size = bufsize;
         }
-        memcpy(self->buf, buf, bufsize * sizeof(Py_UCS4));
-        PyMem_Free(buf);
-        self->string_size = bufsize;
+        else {
+            assert(item == Py_None);
+            self->string_size = 0;
+        }
     }
 
     /* Set carefully the position value. Alternatively, we could use the seek
