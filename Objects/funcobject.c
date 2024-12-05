@@ -1092,14 +1092,11 @@ static void
 func_dealloc(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    assert(Py_REFCNT(op) == 0);
-    Py_SET_REFCNT(op, 1);
+    _PyObject_ResurrectStart(self);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
-    if (Py_REFCNT(op) > 1) {
-        Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
-    Py_SET_REFCNT(op, 0);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
