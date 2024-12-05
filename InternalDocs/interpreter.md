@@ -127,11 +127,13 @@ the same.  Cache entries are reserved by the compiler and initialized with zeros
 Although they are represented by code units, cache entries do not conform to the
 `opcode` / `oparg` format.
 
-If an instruction has an inline cache, the layout of its cache is described by
-a `struct` definition in [`pycore_code.h`](../Include/internal/pycore_code.h).
-This allows us to access the cache by casting `next_instr` to a pointer to this `struct`.
-The size of such a `struct` must be independent of the machine architecture, word size
-and alignment requirements.  For a 32-bit field, the `struct` should use `_Py_CODEUNIT field[2]`.
+If an instruction has an inline cache, the layout of its cache is described in
+the instruction's definition in [`Python/bytecodes.c`](../Python/bytecodes.c).
+The structs defined in [`pycore_code.h`](../Include/internal/pycore_code.h)
+allow us to access the cache by casting `next_instr` to a pointer to the relevant
+`struct`.  The size of such a `struct` must be independent of the machine
+architecture, word size and alignment requirements.  For a 32-bit field, the
+`struct` should use `_Py_CODEUNIT field[2]`.
 
 The instruction implementation is responsible for advancing `next_instr` past the inline cache.
 For example, if an instruction's inline cache is four bytes (that is, two code units) in size,
