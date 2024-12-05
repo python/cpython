@@ -35,6 +35,7 @@ const settings = {
     mountDirectories(Module);
     Module.FS.chdir(process.cwd());
     Object.assign(Module.ENV, process.env);
+    delete Module.ENV.PATH;
   },
   // Ensure that sys.executable, sys._base_executable, etc point to python.sh
   // not to this file. To properly handle symlinks, python.sh needs to compute
