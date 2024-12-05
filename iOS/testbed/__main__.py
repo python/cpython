@@ -60,8 +60,10 @@ async def async_check_output(*args, **kwargs):
             return stdout.decode(*DECODE_ARGS)
         else:
             raise subprocess.CalledProcessError(
-                process.returncode, args,
-                stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
+                process.returncode,
+                args,
+                stdout.decode(*DECODE_ARGS),
+                stderr.decode(*DECODE_ARGS),
             )
 
 
@@ -76,10 +78,9 @@ async def list_devices():
     # Filter out the booted iOS simulators
     return [
         simulator["udid"]
-        for runtime, simulators in json_data['devices'].items()
+        for runtime, simulators in json_data["devices"].items()
         for simulator in simulators
-        if runtime.split(".")[-1].startswith("iOS")
-        and simulator['state'] == "Booted"
+        if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
     ]
 
 
@@ -99,7 +100,7 @@ async def find_device(initial_devices):
 
 async def log_stream_task(initial_devices):
     # Wait up to 5 minutes for the build to complete and the simulator to boot.
-    udid = await asyncio.wait_for(find_device(initial_devices), 5*60)
+    udid = await asyncio.wait_for(find_device(initial_devices), 5 * 60)
 
     # Stream the iOS device's logs, filtering out messages that come from the
     # XCTest test suite (catching NSLog messages from the test method), or
@@ -120,11 +121,13 @@ async def log_stream_task(initial_devices):
         (
             'senderImagePath ENDSWITH "/iOSTestbedTests.xctest/iOSTestbedTests"'
             ' OR senderImagePath ENDSWITH "/Python.framework/Python"'
-        )
+        ),
     ]
 
     async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     ) as process:
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
             sys.stdout.write(line)
@@ -144,10 +147,12 @@ async def xcode_test(location, simulator):
         "-resultBundlePath",
         str(location / f"{datetime.now():%Y%m%d-%H%M%S}.xcresult"),
         "-derivedDataPath",
-        str(location / "DerivedData",)
+        str(location / "DerivedData"),
     ]
     async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     ) as process:
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
             sys.stdout.write(line)
@@ -156,34 +161,64 @@ async def xcode_test(location, simulator):
         exit(status)
 
 
-def create_testbed(location: Path, framework: Path, apps: list[Path]) -> None:
-    if location.exists():
-        print(f"{location} already exists; aborting without creating project.")
+def clone_testbed(
+    source: Path,
+    target: Path,
+    framework: Path,
+    apps: list[Path],
+) -> None:
+    if target.exists():
+        print(f"{target} already exists; aborting without creating project.")
         sys.exit(10)
 
-    print("Copying template testbed project...")
-    shutil.copytree(Path(__file__).parent, location)
-
-    if framework.suffix == ".xcframework":
-        print("Installing XCFramework...")
-        xc_framework_path = location / "Python.xcframework"
-        shutil.rmtree(xc_framework_path)
-        shutil.copytree(framework, xc_framework_path)
+    if framework is None:
+        if not (source / "Python.xcframework/ios-arm64_x86_64-simulator/bin").is_dir():
+            print(
+                f"The testbed being cloned ({source}) does not contain "
+                f"a simulator framework. Re-run with --framework"
+            )
+            sys.exit(11)
     else:
-        print("Installing simulator Framework...")
-        sim_framework_path = (
-            location
-            / "Python.xcframework"
-            / "ios-arm64_x86_64-simulator"
-        )
-        shutil.rmtree(sim_framework_path)
-        shutil.copytree(framework, sim_framework_path)
+        if not framework.is_dir():
+            print(f"{framework} does not exist.")
+            sys.exit(12)
+        elif not (
+            framework.suffix == ".xcframework"
+            or (framework / "Python.framework").is_dir()
+        ):
+            print(
+                f"{framework} is not an XCframework, "
+                f"or a simulator slice of a framework build."
+            )
+            sys.exit(13)
 
-    for app in apps:
-        print(f"Installing app {app!r}...")
-        shutil.copytree(app, location / "iOSTestbed/app/{app.name}")
+    print("Cloning testbed project...")
+    shutil.copytree(source, target)
 
-    print(f"Testbed project created in {location}")
+    if framework is not None:
+        if framework.suffix == ".xcframework":
+            print("Installing XCFramework...")
+            xc_framework_path = target / "Python.xcframework"
+            shutil.rmtree(xc_framework_path)
+            shutil.copytree(framework, xc_framework_path)
+        else:
+            print("Installing simulator Framework...")
+            sim_framework_path = (
+                target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
+            )
+            shutil.rmtree(sim_framework_path)
+            shutil.copytree(framework, sim_framework_path)
+    else:
+        print("Using pre-existing iOS framework.")
+
+    for app_src in apps:
+        print(f"Installing app {app_src.name!r}...")
+        app_target = target / f"iOSTestbed/app/{app_src.name}"
+        if app_target.is_dir():
+            shutil.rmtree(app_target)
+        shutil.copytree(app_src, app_target)
+
+    print(f"Testbed project created in {target}")
 
 
 def update_plist(testbed_path, args):
@@ -221,48 +256,47 @@ async def run_testbed(simulator: str, args: list[str]):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="testbed",
         description=(
-            "Manages the process of testing a Python project in the iOS simulator"
-        )
+            "Manages the process of testing a Python project in the iOS simulator."
+        ),
     )
 
     subcommands = parser.add_subparsers(dest="subcommand")
 
-    create = subcommands.add_parser(
-        "create",
+    clone = subcommands.add_parser(
+        "clone",
         description=(
             "Clone the testbed project, copying in an iOS Python framework and"
             "any specified application code."
         ),
-        help="Create a new testbed project"
+        help="Clone a testbed project to a new location.",
     )
-    create.add_argument(
+    clone.add_argument(
         "--framework",
-        required=True,
         help=(
-            "The location of the XCFramework (or simulator-only slice of an XCFramework) "
-            "to use when running the testbed"
-        )
+            "The location of the XCFramework (or simulator-only slice of an "
+            "XCFramework) to use when running the testbed"
+        ),
     )
-    create.add_argument(
+    clone.add_argument(
         "--app",
         dest="apps",
         action="append",
         default=[],
         help="The location of any code to include in the testbed project",
     )
-    create.add_argument(
+    clone.add_argument(
         "location",
-        help="The path where the testbed will be created."
+        help="The path where the testbed will be cloned.",
     )
 
     run = subcommands.add_parser(
         "run",
-        usage='%(prog)s [-h] [--simulator SIMULATOR] -- <test arg> [<test arg> ...]',
+        usage="%(prog)s [-h] [--simulator SIMULATOR] -- <test arg> [<test arg> ...]",
         description=(
-            "Run a testbed project. The arguments provided after `--` will be passed to "
-            "the running iOS process as if they were arguments to `python -m`."
+            "Run a testbed project. The arguments provided after `--` will be "
+            "passed to the running iOS process as if they were arguments to "
+            "`python -m`."
         ),
         help="Run a testbed project",
     )
@@ -275,32 +309,43 @@ def main():
     try:
         pos = sys.argv.index("--")
         testbed_args = sys.argv[1:pos]
-        test_args = sys.argv[pos+1:]
+        test_args = sys.argv[pos + 1 :]
     except ValueError:
         testbed_args = sys.argv[1:]
         test_args = []
 
     context = parser.parse_args(testbed_args)
 
-    if context.subcommand == "create":
-        create_testbed(
-            location=Path(context.location),
-            framework=Path(context.framework),
+    if context.subcommand == "clone":
+        clone_testbed(
+            source=Path(__file__).parent,
+            target=Path(context.location),
+            framework=Path(context.framework) if context.framework else None,
             apps=[Path(app) for app in context.apps],
         )
     elif context.subcommand == "run":
         if test_args:
+            if not (
+                Path(__file__).parent / "Python.xcframework/ios-arm64_x86_64-simulator/bin"
+            ).is_dir():
+                print(
+                    f"Testbed does not contain a compiled iOS framework. Use "
+                    f"`python {sys.argv[0]} clone ...` to create a runnable "
+                    f"clone of this testbed."
+                )
+                sys.exit(20)
+
             asyncio.run(
                 run_testbed(
                     simulator=context.simulator,
-                    args=test_args
+                    args=test_args,
                 )
             )
         else:
             print(f"Must specify test arguments (e.g., {sys.argv[0]} run -- test)")
             print()
             parser.print_help(sys.stderr)
-            sys.exit(2)
+            sys.exit(21)
     else:
         parser.print_help(sys.stderr)
         sys.exit(1)

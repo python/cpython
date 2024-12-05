@@ -2165,8 +2165,8 @@ testios:
 		exit 1;\
 	fi
 
-	# Create the testbed project in the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed create --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	# Clone the testbed project into the XCFOLDER
+	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run -- test -uall --single-process --rerun -W
