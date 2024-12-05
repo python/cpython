@@ -1588,6 +1588,11 @@ object.
 
    Create a Unicode writer instance.
 
+   *length* must be greater than or equal to ``0``.
+
+   If *length* is greater than ``0``, preallocate an internal buffer of
+   *length* characters.
+
    Set an exception and return ``NULL`` on error.
 
 .. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
@@ -1596,11 +1601,15 @@ object.
 
    Set an exception and return ``NULL`` on error.
 
+   The writer instance is invalid after this call.
+
 .. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 
    Discard the internal Unicode buffer and destroy the writer instance.
 
    If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
