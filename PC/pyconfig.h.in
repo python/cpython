@@ -104,20 +104,21 @@ WIN32 is still required for the locale module.
 
 /* Defined in debug builds */
 #ifdef _DEBUG
-#       define Py_DEBUG
+#  define Py_DEBUG
 #endif
 
 #ifdef Py_GIL_DISABLED
-#       define _ABIFLAGS_FREETHREADED "t"
+#  define _ABIFLAGS_FREETHREADED "t"
 #else
-#       define _ABIFLAGS_FREETHREADED ""
+#  define _ABIFLAGS_FREETHREADED ""
 #endif
 #ifdef Py_DEBUG
-#       define _ABIFLAGS_DEBUG "d"
+#  define _ABIFLAGS_DEBUG "d"
 #else
-#       define _ABIFLAGS_DEBUG ""
+#  define _ABIFLAGS_DEBUG ""
 #endif
-#define ABIFLAGS ("" _Py_STRINGIZE(_ABIFLAGS_FREETHREADED) _Py_STRINGIZE(_ABIFLAGS_DEBUG))
+/* Set value for `sys.abiflags` */
+#define ABIFLAGS ("" _ABIFLAGS_FREETHREADED _ABIFLAGS_DEBUG)
 
 /* Compiler specific defines */
 
