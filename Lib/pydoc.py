@@ -392,9 +392,7 @@ def source_synopsis(file):
     if isinstance(file, io.TextIOBase):
         try:
             source = file.read()
-            if isinstance(source, bytes):
-                source = source.decode('utf-8')
-        except UnicodeEncodeError:
+        except UnicodeDecodeError:
             source = file.read().decode('latin-1')
     else:
         # Binary file
