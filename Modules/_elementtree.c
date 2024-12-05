@@ -709,12 +709,17 @@ _elementtree.Element.append
     subelement: object(subclass_of='clinic_state()->Element_Type')
     /
 
+Add *subelement* to the end of this element.
+
+The new element will appear in document order after the last existing
+subelement (or directly after the text, if it's the first subelement),
+but before the end tag for this element.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *subelement)
-/*[clinic end generated code: output=d00923711ea317fc input=8baf92679f9717b8]*/
+/*[clinic end generated code: output=d00923711ea317fc input=6f7560639b95fe1a]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
     if (element_add_subelement(st, self, subelement) < 0)
@@ -726,11 +731,15 @@ _elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic input]
 _elementtree.Element.clear
 
+Reset element.
+
+This function removes all subelements, clears all attributes, and sets
+the text and tail attributes to None.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self)
-/*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
+/*[clinic end generated code: output=8bcd7a51f94cfff6 input=41b032d20869b1d6]*/
 {
     clear_extra(self);
 
@@ -1203,12 +1212,15 @@ _elementtree.Element.extend
     elements: object
     /
 
+Append subelements from a sequence.
+
+*elements* is a sequence with zero or more elements.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *elements)
-/*[clinic end generated code: output=3e86d37fac542216 input=6479b1b5379d09ae]*/
+/*[clinic end generated code: output=3e86d37fac542216 input=401ac1d07e13282b]*/
 {
     PyObject* seq;
     Py_ssize_t i;
@@ -1242,12 +1254,18 @@ _elementtree.Element.find
     path: object
     namespaces: object = None
 
+Find first matching element by tag name or path.
+
+*path* is a string having either an element tag or an XPath,
+*namespaces* is an optional mapping from namespace prefix to full name.
+
+Return the first matching element, or None if no element was found.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *path, PyObject *namespaces)
-/*[clinic end generated code: output=18f77d393c9fef1b input=94df8a83f956acc6]*/
+/*[clinic end generated code: output=18f77d393c9fef1b input=a67ae4f778d3b44b]*/
 {
     Py_ssize_t i;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
@@ -1286,13 +1304,22 @@ _elementtree.Element.findtext
     default: object = None
     namespaces: object = None
 
+Find text for first matching element by tag name or path.
+
+*path* is a string having either an element tag or an XPath,
+*default* is the value to return if the element was not found,
+*namespaces* is an optional mapping from namespace prefix to full name.
+
+Return text content of first matching element, or default value if
+none was found.  Note that if an element is found having no text
+content, the empty string is returned.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *path, PyObject *default_value,
                                    PyObject *namespaces)
-/*[clinic end generated code: output=6af7a2d96aac32cb input=32f252099f62a3d2]*/
+/*[clinic end generated code: output=6af7a2d96aac32cb input=e9c4bee136bd2cd9]*/
 {
     Py_ssize_t i;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
@@ -1339,12 +1366,18 @@ _elementtree.Element.findall
     path: object
     namespaces: object = None
 
+Find all matching subelements by tag name or path.
+
+*path* is a string having either an element tag or an XPath,
+*namespaces* is an optional mapping from namespace prefix to full name.
+
+Returns list containing all matching elements in document order.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
                                   PyObject *path, PyObject *namespaces)
-/*[clinic end generated code: output=65e39a1208f3b59e input=7aa0db45673fc9a5]*/
+/*[clinic end generated code: output=65e39a1208f3b59e input=9e412b23984dd19a]*/
 {
     Py_ssize_t i;
     PyObject* out;
@@ -1388,12 +1421,18 @@ _elementtree.Element.iterfind
     path: object
     namespaces: object = None
 
+Find all matching subelements by tag name or path.
+
+*path* is a string having either an element tag or an XPath,
+*namespaces* is an optional mapping from namespace prefix to full name.
+
+Return an iterable yielding all matching elements in document order.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_iterfind_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *path, PyObject *namespaces)
-/*[clinic end generated code: output=be5c3f697a14e676 input=88766875a5c9a88b]*/
+/*[clinic end generated code: output=be5c3f697a14e676 input=4a105ad9f64c97b4]*/
 {
     PyObject* tag = path;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
@@ -1408,12 +1447,20 @@ _elementtree.Element.get
     key: object
     default: object = None
 
+Get element attribute.
+
+Equivalent to attrib.get, but some implementations may handle this a
+bit more efficiently.  *key* is what attribute to look for, and
+*default* is what to return if the attribute was not found.
+
+Returns a string containing the attribute value, or the default if
+attribute was not found.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
+/*[clinic end generated code: output=523c614142595d75 input=773326625f9a3365]*/
 {
     if (self->extra && self->extra->attrib) {
         PyObject *attrib = Py_NewRef(self->extra->attrib);
@@ -1439,12 +1486,24 @@ _elementtree.Element.iter
     /
     tag: object = None
 
+Create tree iterator.
+
+The iterator loops over the element and all subelements in document
+order, returning all elements with a matching tag.
+
+If the tree structure is modified during iteration, new or removed
+elements may or may not be included.  To get a stable set, use the
+list() function on the iterator, and loop over the resulting list.
+
+*tag* is what tags to look for (default is to return all elements)
+
+Return an iterator containing all the matching elements.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *tag)
-/*[clinic end generated code: output=bff29dc5d4566c68 input=f6944c48d3f84c58]*/
+/*[clinic end generated code: output=bff29dc5d4566c68 input=9b00ba7844661953]*/
 {
     if (PyUnicode_Check(tag)) {
         if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
@@ -1466,11 +1525,15 @@ _elementtree.Element.itertext
     cls: defining_class
     /
 
+Create text iterator.
+
+The iterator loops over the element and all subelements in document
+order, returning all inner text.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=fdeb2a3bca0ae063 input=a1ef1f0fc872a586]*/
+/*[clinic end generated code: output=fdeb2a3bca0ae063 input=eaffe70224da7f02]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
     return create_elementiter(st, self, Py_None, 1);
@@ -1517,12 +1580,13 @@ _elementtree.Element.insert
     subelement: object(subclass_of='clinic_state()->Element_Type')
     /
 
+Insert *subelement* at position *index*.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement)
-/*[clinic end generated code: output=990adfef4d424c0b input=9530f4905aa401ca]*/
+/*[clinic end generated code: output=990adfef4d424c0b input=2886a2266de15ed7]*/
 {
     Py_ssize_t i;
 
@@ -1555,11 +1619,17 @@ _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
 /*[clinic input]
 _elementtree.Element.items
 
+Get element attributes as a sequence.
+
+The attributes are returned in arbitrary order.  Equivalent to
+attrib.items().
+
+Return a list of (name, value) tuples.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_items_impl(ElementObject *self)
-/*[clinic end generated code: output=6db2c778ce3f5a4d input=adbe09aaea474447]*/
+/*[clinic end generated code: output=6db2c778ce3f5a4d input=0b6e20d84bfddf7b]*/
 {
     if (!self->extra || !self->extra->attrib)
         return PyList_New(0);
@@ -1570,11 +1640,15 @@ _elementtree_Element_items_impl(ElementObject *self)
 /*[clinic input]
 _elementtree.Element.keys
 
+Get list of attribute names.
+
+Names are returned in an arbitrary order, just like an ordinary
+Python dict.  Equivalent to attrib.keys()
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_keys_impl(ElementObject *self)
-/*[clinic end generated code: output=bc5bfabbf20eeb3c input=f02caf5b496b5b0b]*/
+/*[clinic end generated code: output=bc5bfabbf20eeb3c input=cb6ca1d9d0d4ca75]*/
 {
     if (!self->extra || !self->extra->attrib)
         return PyList_New(0);
@@ -1599,12 +1673,18 @@ _elementtree.Element.makeelement
     attrib: object(subclass_of='&PyDict_Type')
     /
 
+Create a new element with the same type.
+
+*tag* is a string containing the element name.
+*attrib* is a dictionary containing the element attributes.
+
+Do not call this method, use the SubElement factory function instead.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
                                       PyObject *tag, PyObject *attrib)
-/*[clinic end generated code: output=d50bb17a47077d47 input=589829dab92f26e8]*/
+/*[clinic end generated code: output=d50bb17a47077d47 input=04cafc31637e7b41]*/
 {
     PyObject* elem;
 
@@ -1626,11 +1706,20 @@ _elementtree.Element.remove
     subelement: object(subclass_of='clinic_state()->Element_Type')
     /
 
+Remove matching subelement.
+
+Unlike the find methods, this method compares elements based on
+identity, NOT ON tag value or contents.  To remove subelements by
+other means, the easiest way is to use a list comprehension to
+select what elements to keep, and then use slice assignment to update
+the parent element.
+
+ValueError is raised if a matching element could not be found.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=38fe6c07d6d87d1f input=6133e1d05597d5ee]*/
+/*[clinic end generated code: output=38fe6c07d6d87d1f input=7fcaa8131ee6bd89]*/
 {
     Py_ssize_t i;
     int rc;
@@ -1703,12 +1792,17 @@ _elementtree.Element.set
     value: object
     /
 
+Set element attribute.
+
+Equivalent to attrib[key] = value, but some implementations may handle
+this a bit more efficiently.  *key* is what attribute to set, and
+*value* is the attribute value to set it to.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
                               PyObject *value)
-/*[clinic end generated code: output=fb938806be3c5656 input=1efe90f7d82b3fe9]*/
+/*[clinic end generated code: output=fb938806be3c5656 input=e2905872c19e2276]*/
 {
     PyObject* attrib;
 
@@ -2400,6 +2494,24 @@ _elementtree.TreeBuilder.__init__
     insert_comments: bool = False
     insert_pis: bool = False
 
+Generic element structure builder.
+
+This builder converts a sequence of start, data, and end method
+calls to a well-formed element structure.
+
+You can use this class to build an element structure using a custom XML
+parser, or a parser for some other XML-like format.
+
+*element_factory* is an optional element factory which is called
+to create new Element instances, as necessary.
+
+*comment_factory* is a factory to create comments to be used instead of
+the standard factory.  If *insert_comments* is false (the default),
+comments will not be inserted into the tree.
+
+*pi_factory* is a factory to create processing instructions to be used
+instead of the standard factory.  If *insert_pis* is false (the default),
+processing instructions will not be inserted into the tree.
 [clinic start generated code]*/
 
 static int
@@ -2408,7 +2520,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *comment_factory,
                                        PyObject *pi_factory,
                                        int insert_comments, int insert_pis)
-/*[clinic end generated code: output=8571d4dcadfdf952 input=ae98a94df20b5cc3]*/
+/*[clinic end generated code: output=8571d4dcadfdf952 input=6f5480172be74fae]*/
 {
     if (element_factory != Py_None) {
         Py_XSETREF(self->element_factory, Py_NewRef(element_factory));
@@ -2927,11 +3039,12 @@ _elementtree.TreeBuilder.data
     data: object
     /
 
+Add text to current element.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_data(TreeBuilderObject *self, PyObject *data)
-/*[clinic end generated code: output=69144c7100795bb2 input=a0540c532b284d29]*/
+/*[clinic end generated code: output=69144c7100795bb2 input=679b26864cecbde8]*/
 {
     return treebuilder_handle_data(self, data);
 }
@@ -2942,11 +3055,14 @@ _elementtree.TreeBuilder.end
     tag: object
     /
 
+Close and return current Element.
+
+*tag* is the element name.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_end(TreeBuilderObject *self, PyObject *tag)
-/*[clinic end generated code: output=9a98727cc691cd9d input=22dc3674236f5745]*/
+/*[clinic end generated code: output=9a98727cc691cd9d input=9d161338282e5fac]*/
 {
     return treebuilder_handle_end(self, tag);
 }
@@ -2957,11 +3073,14 @@ _elementtree.TreeBuilder.comment
     text: object
     /
 
+Create a comment using the comment_factory.
+
+*text* is the text of the comment.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_comment(TreeBuilderObject *self, PyObject *text)
-/*[clinic end generated code: output=22835be41deeaa27 input=47e7ebc48ed01dfa]*/
+/*[clinic end generated code: output=22835be41deeaa27 input=b1579b62bb9277e4]*/
 {
     return treebuilder_handle_comment(self, text);
 }
@@ -2973,12 +3092,16 @@ _elementtree.TreeBuilder.pi
     text: object = None
     /
 
+Create a processing instruction using the pi_factory.
+
+*target* is the target name of the processing instruction.
+*text* is the data of the processing instruction, or ''.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_pi_impl(TreeBuilderObject *self, PyObject *target,
                                  PyObject *text)
-/*[clinic end generated code: output=21eb95ec9d04d1d9 input=349342bd79c35570]*/
+/*[clinic end generated code: output=21eb95ec9d04d1d9 input=d43881a05c1ee59c]*/
 {
     return treebuilder_handle_pi(self, target, text);
 }
@@ -3001,11 +3124,12 @@ treebuilder_done(TreeBuilderObject* self)
 /*[clinic input]
 _elementtree.TreeBuilder.close
 
+Flush builder buffers and return toplevel document Element.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self)
-/*[clinic end generated code: output=b441fee3202f61ee input=f7c9c65dc718de14]*/
+/*[clinic end generated code: output=b441fee3202f61ee input=461e8391c6b73c5f]*/
 {
     return treebuilder_done(self);
 }
@@ -3017,12 +3141,16 @@ _elementtree.TreeBuilder.start
     attrs: object(subclass_of='&PyDict_Type')
     /
 
+Open new element and return it.
+
+*tag* is the element name, *attrs* is a dict containing element
+attributes.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
                                     PyObject *attrs)
-/*[clinic end generated code: output=e7e9dc2861349411 input=7288e9e38e63b2b6]*/
+/*[clinic end generated code: output=e7e9dc2861349411 input=26cccb49c3b8b12f]*/
 {
     return treebuilder_handle_start(self, tag, attrs);
 }
@@ -3628,12 +3756,18 @@ _elementtree.XMLParser.__init__
     target: object = None
     encoding: str(accept={str, NoneType}) = None
 
+Element structure builder for XML source data based on the expat parser.
+
+*target* is an optional target object which defaults to an instance of the
+standard TreeBuilder class, *encoding* is an optional encoding string
+which if given, overrides the encoding specified in the XML file:
+http://www.iana.org/assignments/character-sets
 [clinic start generated code]*/
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=7e716dd6e4f3e439]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=90bef6f84e8c4490]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -3849,11 +3983,12 @@ expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
 /*[clinic input]
 _elementtree.XMLParser.close
 
+Finish feeding data to parser and return element structure.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_XMLParser_close_impl(XMLParserObject *self)
-/*[clinic end generated code: output=d68d375dd23bc7fb input=ca7909ca78c3abfe]*/
+/*[clinic end generated code: output=d68d375dd23bc7fb input=177603f3353e644f]*/
 {
     /* end feeding data to parser */
 
@@ -3920,11 +4055,12 @@ _elementtree.XMLParser.feed
     data: object
     /
 
+Feed encoded data to parser.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
-/*[clinic end generated code: output=e42b6a78eec7446d input=fe231b6b8de3ce1f]*/
+/*[clinic end generated code: output=e42b6a78eec7446d input=9432a189100bc488]*/
 {
     /* feed data to parser */
 
