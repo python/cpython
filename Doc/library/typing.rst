@@ -2803,8 +2803,8 @@ with :func:`@runtime_checkable <runtime_checkable>`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
-ABCs for working with IO
-------------------------
+ABCs and Protocols for working with I/O
+---------------------------------------
 
 .. class:: IO
            TextIO
@@ -2814,6 +2814,28 @@ ABCs for working with IO
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
    :func:`open`.
+
+The following protocols offer a simpler alternative for common use cases. They
+are especially useful for annotating function and method arguments and are
+decorated with :func:`@runtime_checkable <runtime_checkable>`.
+
+.. class:: Reader[T]
+   .. method:: read(size=...)
+   .. method:: readline(size=...)
+   .. method:: __iter__()
+
+.. class:: Writer[T]
+   .. method:: write(o)
+
+For example::
+
+  def read_it(reader: Reader[str]):
+      assert reader.read(11) == "--marker--\n"
+      for line in reader:
+          print(line)
+
+  def write_binary(writer: Writer[bytes]):
+      writer.write(b"Hello world!\n")
 
 Functions and decorators
 ------------------------
