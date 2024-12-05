@@ -34,9 +34,7 @@ Runtime Objects
 Program Execution
 ---
 
-- [The Basic Interpreter](interpreter.md)
-
-- [The Specializing Interpreter](adaptive.md)
+- [The Bytecode Interpreter](interpreter.md)
 
 - [The Tier 2 Interpreter and JIT](tier2.md)
 
