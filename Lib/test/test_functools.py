@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(capture)
@@ -2054,6 +2055,7 @@ class TestLRU:
 
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
         @self.module.lru_cache

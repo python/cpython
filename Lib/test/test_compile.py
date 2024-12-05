@@ -121,6 +121,7 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
         repeat = int(get_c_recursion_limit() * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
@@ -709,6 +710,7 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Expected limit is Py_C_RECURSION_LIMIT
         limit = get_c_recursion_limit()
