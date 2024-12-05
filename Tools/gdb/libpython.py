@@ -77,10 +77,14 @@ def _managed_dict_offset():
     else:
         return -3 * _sizeof_void_p()
 
-def _interp_frame_has_tlbc_index():
-    interp_frame = gdb.lookup_type("_PyInterpreterFrame")
-    return any(field.name == "tlbc_index" for field in interp_frame.fields())
-
+_INTERP_FRAME_HAS_TLBC_INDEX = None
+def interp_frame_has_tlbc_index():
+    global _INTERP_FRAME_HAS_TLBC_INDEX
+    if _INTERP_FRAME_HAS_TLBC_INDEX is None:
+        interp_frame = gdb.lookup_type("_PyInterpreterFrame")
+        _INTERP_FRAME_HAS_TLBC_INDEX = any(field.name == "tlbc_index"
+                                           for field in interp_frame.fields())
+    return _INTERP_FRAME_HAS_TLBC_INDEX
 
 Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
@@ -109,7 +113,6 @@ FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
 
-INTERP_FRAME_HAS_TLBC_INDEX = _interp_frame_has_tlbc_index()
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -1101,7 +1104,7 @@ class PyFramePtr:
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
         instr_ptr = self._gdbval["instr_ptr"]
-        if INTERP_FRAME_HAS_TLBC_INDEX:
+        if interp_frame_has_tlbc_index():
             tlbc_index = self._gdbval["tlbc_index"]
             code_arr = PyCodeArrayPtr(self._f_code().field("co_tlbc"))
             first_instr = code_arr.get_entry(tlbc_index).cast(codeunit_p)

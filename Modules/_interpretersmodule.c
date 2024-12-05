@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
@@ -84,18 +84,18 @@ typedef struct {
 } XIBufferViewObject;
 
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
-    assert(_PyCrossInterpreterData_DATA(data) != NULL);
-    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
-    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
-    self->interpid = _PyCrossInterpreterData_INTERPID(data);
+    self->view = (Py_buffer *)_PyXIData_DATA(data);
+    self->interpid = _PyXIData_INTERPID(data);
     return (PyObject *)self;
 }
 
@@ -154,7 +154,7 @@ static PyType_Spec XIBufferViewType_spec = {
 static PyTypeObject * _get_current_xibufferview_type(void);
 
 static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
+_memoryview_from_xid(_PyXIData_t *data)
 {
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
@@ -168,8 +168,7 @@ _memoryview_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
+_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
     if (view == NULL) {
@@ -179,8 +178,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj,
         PyMem_RawFree(view);
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
+    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
     return 0;
 }
 
@@ -938,6 +936,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;
@@ -1183,7 +1186,13 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
+    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1482,6 +1491,11 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1503,9 +1517,7 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    PyObject *PyExc_NotShareableError = \
-                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
-    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
+    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
         goto error;
     }
 

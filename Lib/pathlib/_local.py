@@ -101,10 +101,6 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
-
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -333,24 +329,13 @@ class PurePath(PurePathBase):
         return parts
 
     @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.parser.join(*paths)
-        return path
-
-    @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._drv
 
     @property
@@ -359,7 +344,8 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._root
 
     @property
@@ -367,7 +353,8 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._tail_cached
 
     @property
@@ -593,6 +580,13 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def lstat(self):
+        """
+        Like stat(), except if the path points to a symlink, the symlink's
+        status information is returned, rather than its target's.
+        """
+        return os.lstat(self)
+
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -763,6 +757,14 @@ class Path(PathBase, PurePath):
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
 
+    @classmethod
+    def cwd(cls):
+        """Return a new path pointing to the current working directory."""
+        cwd = os.getcwd()
+        path = cls(cwd)
+        path._str = cwd  # getcwd() returns a normalized path
+        return path
+
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -917,6 +919,15 @@ class Path(PathBase, PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to expanduser('~').
+        """
+        homedir = os.path.expanduser("~")
+        if homedir == "~":
+            raise RuntimeError("Could not determine home directory.")
+        return cls(homedir)
 
     @classmethod
     def from_uri(cls, uri):
