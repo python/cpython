@@ -279,7 +279,8 @@ extern size_t _Py_find_basename(const wchar_t *filename);
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(wchar_t*) _Py_normpath(wchar_t *path, Py_ssize_t size);
 
-extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *length);
+extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *length,
+                                      int explicit_curdir);
 
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added

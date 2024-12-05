@@ -413,6 +413,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(exception)
         STRUCT_FOR_ID(existing_file_name)
         STRUCT_FOR_ID(exp)
+        STRUCT_FOR_ID(explicit_curdir)
         STRUCT_FOR_ID(extend)
         STRUCT_FOR_ID(extra_tokens)
         STRUCT_FOR_ID(facility)

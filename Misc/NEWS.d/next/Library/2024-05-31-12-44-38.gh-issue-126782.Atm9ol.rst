@@ -1,0 +1,1 @@
+Support qualified referencing for :func:`os.path.abspath` on Windows.
