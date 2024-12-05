@@ -1376,8 +1376,6 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.hardlink_to, 'foo')
         self.assertRaises(e, p.mkdir)
         self.assertRaises(e, p.touch)
-        self.assertRaises(e, p.rename, 'foo')
-        self.assertRaises(e, p.replace, 'foo')
         self.assertRaises(e, p.chmod, 0o755)
         self.assertRaises(e, p.lchmod, 0o755)
         self.assertRaises(e, p.unlink)
