@@ -348,6 +348,12 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 }
 
 static inline _PyStackRef
+PyStackRef_WithCount(_PyStackRef ref)
+{
+    return (_PyStackRef){ .bits = ref.bits | Py_TAG_REFCNT };
+}
+
+static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));

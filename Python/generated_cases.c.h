@@ -5993,6 +5993,22 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_WITH_COUNT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_FAST_WITH_COUNT);
+            _PyStackRef value;
+            _PyStackRef local = GETLOCAL(oparg);
+            assert(!PyStackRef_IsNull(local));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            value = PyStackRef_WithCount(local);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(LOAD_FROM_DICT_OR_DEREF) {
             frame->instr_ptr = next_instr;
             next_instr += 1;

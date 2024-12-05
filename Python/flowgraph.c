@@ -1871,6 +1871,13 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     continue;
                 }
                 break;
+            case LOAD_FAST:
+                /* If the local is consumed immediately, we can use an empheral
+                 * reference count */
+                if (nextop == LOAD_ATTR) {
+                    INSTR_SET_OP1(inst, LOAD_FAST_WITH_COUNT, oparg);
+                }
+                break;
         }
     }
 
