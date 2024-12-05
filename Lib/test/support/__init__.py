@@ -535,6 +535,9 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
+def skip_emscripten_stack_overflow():
+    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
 
