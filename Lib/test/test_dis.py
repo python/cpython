@@ -1262,27 +1262,6 @@ class DisTests(DisTestBase):
 
     @cpython_only
     @requires_specialization
-    def test_binary_subscr_specialize(self):
-        binary_subscr_quicken = """\
-  0           RESUME_CHECK             0
-
-  1           LOAD_NAME                0 (a)
-              LOAD_SMALL_INT           0
-              %s
-              RETURN_VALUE
-"""
-        co_list = compile('a[0]', "<list>", "eval")
-        self.code_quicken(lambda: exec(co_list, {}, {'a': [0]}))
-        got = self.get_disassembly(co_list, adaptive=True)
-        self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_LIST_INT")
-
-        co_dict = compile('a[0]', "<dict>", "eval")
-        self.code_quicken(lambda: exec(co_dict, {}, {'a': {0: '1'}}))
-        got = self.get_disassembly(co_dict, adaptive=True)
-        self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_DICT")
-
-    @cpython_only
-    @requires_specialization
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
   0           RESUME_CHECK             0

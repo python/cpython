@@ -1,0 +1,3 @@
+Fixed bug where, on cross-builds, the :mod:`sysconfig` POSIX data was being
+generated with the host Python's ``Makefile``. The data is now generated from
+current build's ``Makefile``.

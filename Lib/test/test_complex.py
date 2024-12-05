@@ -126,6 +126,12 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             z = complex(0, 0) / complex(denom_real, denom_imag)
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
+            z = float(0) / complex(denom_real, denom_imag)
+            self.assertTrue(isnan(z.real))
+            self.assertTrue(isnan(z.imag))
+
+        self.assertComplexesAreIdentical(complex(INF, NAN) / 2,
+                                         complex(INF, NAN))
 
         self.assertComplexesAreIdentical(complex(INF, 1)/(0.0+1j),
                                          complex(NAN, -INF))
@@ -152,6 +158,39 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertComplexesAreIdentical(complex(1, INF)/complex(INF, INF),
                                          complex(NAN, NAN))
         self.assertComplexesAreIdentical(complex(INF, 1)/complex(1, INF),
+                                         complex(NAN, NAN))
+
+        # mixed types
+        self.assertEqual((1+1j)/float(2), 0.5+0.5j)
+        self.assertEqual(float(1)/(1+2j), 0.2-0.4j)
+        self.assertEqual(float(1)/(-1+2j), -0.2-0.4j)
+        self.assertEqual(float(1)/(1-2j), 0.2+0.4j)
+        self.assertEqual(float(1)/(2+1j), 0.4-0.2j)
+        self.assertEqual(float(1)/(-2+1j), -0.4-0.2j)
+        self.assertEqual(float(1)/(2-1j), 0.4+0.2j)
+
+        self.assertComplexesAreIdentical(INF/(1+0j),
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(INF/(0.0+1j),
+                                         complex(NAN, -INF))
+        self.assertComplexesAreIdentical(INF/complex(2**1000, 2**-1000),
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(INF/complex(NAN, NAN),
+                                         complex(NAN, NAN))
+
+        self.assertComplexesAreIdentical(float(1)/complex(INF, INF), (0.0-0j))
+        self.assertComplexesAreIdentical(float(1)/complex(INF, -INF), (0.0+0j))
+        self.assertComplexesAreIdentical(float(1)/complex(-INF, INF),
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical(float(1)/complex(-INF, -INF),
+                                         complex(-0.0, 0))
+        self.assertComplexesAreIdentical(float(1)/complex(INF, NAN),
+                                         complex(0.0, -0.0))
+        self.assertComplexesAreIdentical(float(1)/complex(-INF, NAN),
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical(float(1)/complex(NAN, INF),
+                                         complex(0.0, -0.0))
+        self.assertComplexesAreIdentical(float(INF)/complex(NAN, INF),
                                          complex(NAN, NAN))
 
     def test_truediv_zero_division(self):
@@ -224,6 +263,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_add(self):
         self.assertEqual(1j + int(+1), complex(+1, 1))
         self.assertEqual(1j + int(-1), complex(-1, 1))
+        self.assertComplexesAreIdentical(complex(-0.0, -0.0) + (-0.0),
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical((-0.0) + complex(-0.0, -0.0),
+                                         complex(-0.0, -0.0))
         self.assertRaises(OverflowError, operator.add, 1j, 10**1000)
         self.assertRaises(TypeError, operator.add, 1j, None)
         self.assertRaises(TypeError, operator.add, None, 1j)
@@ -231,6 +274,14 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_sub(self):
         self.assertEqual(1j - int(+1), complex(-1, 1))
         self.assertEqual(1j - int(-1), complex(1, 1))
+        self.assertComplexesAreIdentical(complex(-0.0, -0.0) - 0.0,
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical(-0.0 - complex(0.0, 0.0),
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical(complex(1, 2) - complex(2, 1),
+                                         complex(-1, 1))
+        self.assertComplexesAreIdentical(complex(2, 1) - complex(1, 2),
+                                         complex(1, -1))
         self.assertRaises(OverflowError, operator.sub, 1j, 10**1000)
         self.assertRaises(TypeError, operator.sub, 1j, None)
         self.assertRaises(TypeError, operator.sub, None, 1j)
@@ -238,6 +289,12 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_mul(self):
         self.assertEqual(1j * int(20), complex(0, 20))
         self.assertEqual(1j * int(-1), complex(0, -1))
+        for c, r in [(2, complex(INF, 2)), (INF, complex(INF, INF)),
+                     (0, complex(NAN, 0)), (-0.0, complex(NAN, -0.0)),
+                     (NAN, complex(NAN, NAN))]:
+            with self.subTest(c=c, r=r):
+                self.assertComplexesAreIdentical(complex(INF, 1) * c, r)
+                self.assertComplexesAreIdentical(c * complex(INF, 1), r)
         self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
@@ -337,6 +394,11 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                         c ** c
                     except OverflowError:
                         pass
+
+        # gh-113841: possible undefined division by 0 in _Py_c_pow()
+        x, y = 9j, 33j**3
+        with self.assertRaises(OverflowError):
+            x**y
 
     def test_pow_with_small_integer_exponents(self):
         # Check that small integer exponents are handled identically
