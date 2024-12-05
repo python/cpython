@@ -204,8 +204,6 @@ The :mod:`gc` module provides the following functions:
       >>> gc.is_tracked({})
       False
       >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
       True
 
    .. versionadded:: 3.1

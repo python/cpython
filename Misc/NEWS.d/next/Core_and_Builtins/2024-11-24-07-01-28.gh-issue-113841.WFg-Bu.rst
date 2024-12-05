@@ -1,0 +1,2 @@
+Fix possible undefined behavior division by zero in :class:`complex`'s
+:c:func:`_Py_c_pow`.

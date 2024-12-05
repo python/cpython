@@ -1,4 +1,3 @@
-
 # CPython Internals Documentation
 
 The documentation in this folder is intended for CPython maintainers.
@@ -19,16 +18,18 @@ Compiling Python Source Code
 
 - [Compiler Design](compiler.md)
 
+- [Changing Python's Grammar](changing_grammar.md)
+
 Runtime Objects
 ---
 
-- [Code Objects (coming soon)](code_objects.md)
-
-- [The Source Code Locations Table](locations.md)
+- [Code Objects](code_objects.md)
 
 - [Generators (coming soon)](generators.md)
 
 - [Frames](frames.md)
+
+- [String Interning](string_interning.md)
 
 Program Execution
 ---

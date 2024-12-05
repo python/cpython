@@ -283,7 +283,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
+    return last && last->i_opcode == RETURN_VALUE;
 }
 
 static void
@@ -515,22 +515,6 @@ no_redundant_jumps(cfg_builder *g) {
     }
     return true;
 }
-
-static bool
-all_exits_have_lineno(basicblock *entryblock) {
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (instr->i_opcode == RETURN_VALUE) {
-                if (instr->i_loc.lineno < 0) {
-                    assert(0);
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
 #endif
 
 /***** CFG preprocessing (jump targets and exceptions) *****/
@@ -749,7 +733,7 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
-/* Return the stack effect of opcode with argument oparg.
+/* Compute the stack effects of opcode with argument oparg.
 
    Some opcodes have different stack effect when jump to the target and
    when not jump. The 'jump' parameter specifies the case:
@@ -758,25 +742,42 @@ make_cfg_traversal_stack(basicblock *entryblock) {
    * 1 -- when jump
    * -1 -- maximal
  */
+typedef struct {
+    /* The stack effect of the instruction. */
+    int net;
+
+    /* The maximum stack usage of the instruction. Some instructions may
+     * temporarily push extra values to the stack while they are executing.
+     */
+    int max;
+} stack_effects;
+
 Py_LOCAL(int)
-stack_effect(int opcode, int oparg, int jump)
+get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
 {
     if (opcode < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
         // Specialized instructions are not supported.
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     int popped = _PyOpcode_num_popped(opcode, oparg);
     int pushed = _PyOpcode_num_pushed(opcode, oparg);
     if (popped < 0 || pushed < 0) {
-        return PY_INVALID_STACK_EFFECT;
+        return -1;
     }
     if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        effects->net = 0;
+        effects->max = 0;
         return 0;
     }
-    return pushed - popped;
+    if (_PyOpcode_max_stack_effect(opcode, oparg, &effects->max) < 0) {
+        return -1;
+    }
+    effects->net = pushed - popped;
+    assert(effects->max >= effects->net);
+    return 0;
 }
 
 Py_LOCAL_INLINE(int)
@@ -823,35 +824,30 @@ calculate_stackdepth(cfg_builder *g)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
-            if (effect == PY_INVALID_STACK_EFFECT) {
+            stack_effects effects;
+            if (get_stack_effects(instr->i_opcode, instr->i_oparg, 0, &effects) < 0) {
                 PyErr_Format(PyExc_SystemError,
                              "Invalid stack effect for opcode=%d, arg=%i",
                              instr->i_opcode, instr->i_oparg);
                 goto error;
             }
-            int new_depth = depth + effect;
+            int new_depth = depth + effects.net;
             if (new_depth < 0) {
-               PyErr_Format(PyExc_ValueError,
-                            "Invalid CFG, stack underflow");
-               goto error;
+                PyErr_Format(PyExc_ValueError,
+                             "Invalid CFG, stack underflow");
+                goto error;
             }
-            if (new_depth > maxdepth) {
-                maxdepth = new_depth;
-            }
+            maxdepth = Py_MAX(maxdepth, depth + effects.max);
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
-                if (effect == PY_INVALID_STACK_EFFECT) {
+                if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
                                  instr->i_opcode, instr->i_oparg);
                     goto error;
                 }
-                int target_depth = depth + effect;
+                int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                if (target_depth > maxdepth) {
-                    maxdepth = target_depth;
-                }
+                maxdepth = Py_MAX(maxdepth, depth + effects.max);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
                 }
@@ -1131,7 +1127,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 int opcode = instr->i_opcode;
                 bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (prev_opcode == LOAD_CONST) {
+                   if (prev_opcode == LOAD_CONST || prev_opcode == LOAD_SMALL_INT) {
                        is_redundant_pair = true;
                    }
                    else if (prev_opcode == COPY && prev_oparg == 1) {
@@ -1280,13 +1276,22 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
     return false;
 }
 
+static int
+loads_const(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
+}
+
 static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
-    assert(OPCODE_HAS_CONST(opcode));
+    assert(loads_const(opcode));
     if (opcode == LOAD_CONST) {
         constant = PyList_GET_ITEM(co_consts, oparg);
+    }
+    if (opcode == LOAD_SMALL_INT) {
+        return PyLong_FromLong(oparg);
     }
 
     if (constant == NULL) {
@@ -1345,7 +1350,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (!OPCODE_HAS_CONST(inst[i].i_opcode)) {
+        if (!loads_const(inst[i].i_opcode)) {
             return SUCCESS;
         }
     }
@@ -1583,7 +1588,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
             oparg = inst->i_oparg;
         }
         assert(!IS_ASSEMBLER_OPCODE(opcode));
-        if (opcode != LOAD_CONST) {
+        if (opcode != LOAD_CONST && opcode != LOAD_SMALL_INT) {
             continue;
         }
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
@@ -1660,12 +1665,6 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
                 INSTR_SET_OP0(is_instr, NOP);
                 jump_instr->i_opcode = invert ? POP_JUMP_IF_NOT_NONE
                                               : POP_JUMP_IF_NONE;
-                break;
-            }
-            case RETURN_VALUE:
-            {
-                INSTR_SET_OP0(inst, NOP);
-                INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
                 break;
             }
             case TO_BOOL:
@@ -2120,7 +2119,8 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
+            int opcode = b->b_instr[i].i_opcode;
+            if (OPCODE_HAS_CONST(opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -2173,7 +2173,8 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
+            int opcode = b->b_instr[i].i_opcode;
+            if (OPCODE_HAS_CONST(opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
@@ -2594,8 +2595,9 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
-    assert(all_exits_have_lineno(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
+    // temporarily remove assert. See https://github.com/python/cpython/issues/125845
+    // assert(all_exits_have_lineno(g->g_entryblock));
     return SUCCESS;
 }
 
@@ -2946,13 +2948,21 @@ _PyCfg_JumpLabelsToTargets(cfg_builder *g)
 int
 PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
 {
-    return stack_effect(opcode, oparg, jump);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, jump, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
-    return stack_effect(opcode, oparg, -1);
+    stack_effects effs;
+    if (get_stack_effects(opcode, oparg, -1, &effs) < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    return effs.net;
 }
 
 /* Access to compiler optimizations for unit tests.

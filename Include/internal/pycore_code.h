@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_tstate.h"      // _PyThreadStateImpl
 
 
 /* Each instruction in a code object is a fixed-width value,
@@ -313,11 +314,17 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+
 #ifdef Py_GIL_DISABLED
 // gh-115999 tracks progress on addressing this.
 #define ENABLE_SPECIALIZATION 0
+// Use this to enable specialization families once they are thread-safe. All
+// uses will be replaced with ENABLE_SPECIALIZATION once all families are
+// thread-safe.
+#define ENABLE_SPECIALIZATION_FT 1
 #else
 #define ENABLE_SPECIALIZATION 1
+#define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
 #endif
 
 /* Specialization functions */
@@ -599,6 +606,47 @@ extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 struct _PyCode8 _PyCode_DEF(8);
 
 PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
+#ifdef Py_GIL_DISABLED
+
+static inline _PyCodeArray *
+_PyCode_GetTLBCArray(PyCodeObject *co)
+{
+    return _Py_STATIC_CAST(_PyCodeArray *,
+                           _Py_atomic_load_ptr_acquire(&co->co_tlbc));
+}
+
+// Return a pointer to the thread-local bytecode for the current thread, if it
+// exists.
+static inline _Py_CODEUNIT *
+_PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
+{
+    _PyCodeArray *code = _PyCode_GetTLBCArray(co);
+    int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
+    if (idx < code->size && code->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) code->entries[idx];
+    }
+    return NULL;
+}
+
+// Return a pointer to the thread-local bytecode for the current thread,
+// creating it if necessary.
+extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+
+// Reserve an index for the current thread into thread-local bytecode
+// arrays
+//
+// Returns the reserved index or -1 on error.
+extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release the current thread's index into thread-local bytecode arrays
+extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
+
+// Free all TLBC copies not associated with live threads.
+//
+// Returns 0 on success or -1 on error.
+extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }

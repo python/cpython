@@ -562,8 +562,6 @@ Objects/unicodeobject.c:static_strings                           static _Py_Iden
 
 # PyTypeObject (311)
 Modules/_abc.c:_abc_data_type                                    static PyTypeObject _abc_data_type
-Modules/_blake2/blake2b_impl.c:PyBlake2_BLAKE2bType              PyTypeObject PyBlake2_BLAKE2bType
-Modules/_blake2/blake2s_impl.c:PyBlake2_BLAKE2sType              PyTypeObject PyBlake2_BLAKE2sType
 Modules/_collectionsmodule.c:defdict_type                        static PyTypeObject defdict_type
 Modules/_collectionsmodule.c:deque_type                          static PyTypeObject deque_type
 Modules/_collectionsmodule.c:dequeiter_type                      static PyTypeObject dequeiter_type

@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(capture)
@@ -1004,6 +1005,29 @@ class TestReduce:
 
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(self.reduce(add, d), "".join(d.keys()))
+
+    # test correctness of keyword usage of `initial` in `reduce`
+    def test_initial_keyword(self):
+        def add(x, y):
+            return x + y
+        self.assertEqual(
+            self.reduce(add, ['a', 'b', 'c'], ''),
+            self.reduce(add, ['a', 'b', 'c'], initial=''),
+        )
+        self.assertEqual(
+            self.reduce(add, [['a', 'c'], [], ['d', 'w']], []),
+            self.reduce(add, [['a', 'c'], [], ['d', 'w']], initial=[]),
+        )
+        self.assertEqual(
+            self.reduce(lambda x, y: x*y, range(2,8), 1),
+            self.reduce(lambda x, y: x*y, range(2,8), initial=1),
+        )
+        self.assertEqual(
+            self.reduce(lambda x, y: x*y, range(2,21), 1),
+            self.reduce(lambda x, y: x*y, range(2,21), initial=1),
+        )
+        self.assertRaises(TypeError, self.reduce, add, [0, 1], initial="")
+        self.assertEqual(self.reduce(42, "", initial="1"), "1") # func is never called with one item
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1992,7 +2016,6 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
-    @support.suppress_immortalization()
     def test_lru_cache_weakrefable(self):
         @self.module.lru_cache
         def test_function(x):
@@ -2032,6 +2055,7 @@ class TestLRU:
 
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
         @self.module.lru_cache

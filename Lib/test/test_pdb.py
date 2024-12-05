@@ -363,6 +363,42 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoint_on_annotated_function_def():
+    """Test breakpoints on function definitions with annotation.
+
+    >>> def foo[T]():
+    ...     return 0
+
+    >>> def bar() -> int:
+    ...     return 0
+
+    >>> def foobar[T]() -> int:
+    ...     return 0
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break foo',
+    ...     'break bar',
+    ...     'break foobar',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break foo
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:2
+    (Pdb) break bar
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[1]>:2
+    (Pdb) break foobar
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[2]>:2
+    (Pdb) continue
+    """
+
 def test_pdb_commands():
     """Test the commands command of pdb.
 
@@ -2892,6 +2928,22 @@ def test_pdb_issue_gh_108976():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(4)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_127321():
+    """See GH-127321
+    breakpoint() should stop at a opcode that has a line number
+    >>> def test_function():
+    ...     import pdb; pdb_instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     [1, 2] and pdb_instance.set_trace()
+    ...     a = 1
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(4)test_function()
+    -> a = 1
     (Pdb) continue
     """
 
