@@ -3002,19 +3002,16 @@ _get_cert_bytes(const X509 *cert, int *length)
 {
     unsigned char *cert_bytes;
     int cert_bytes_length = i2d_X509(cert, NULL);
-    if (cert_bytes_length <= 0)
-    {
+    if (cert_bytes_length <= 0) {
         return NULL;
     }
 
     cert_bytes = PyMem_RawMalloc(cert_bytes_length);
-    if (cert_bytes == NULL)
-    {
+    if (cert_bytes == NULL) {
         return NULL;
     }
 
-    if (i2d_X509(cert, &cert_bytes) <= 0)
-    {
+    if (i2d_X509(cert, &cert_bytes) <= 0) {
         return NULL;
     }
 
@@ -3056,32 +3053,38 @@ _verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
     int ret = 0;
     /* windows api calls below do not check for hostname mismatch */
-    if (preverify_ok || X509_STORE_CTX_get_error(ctx) == X509_V_ERR_HOSTNAME_MISMATCH)
+    if (preverify_ok
+        || X509_STORE_CTX_get_error(ctx) == X509_V_ERR_HOSTNAME_MISMATCH)
     {
         return preverify_ok;
     }
 
-    HCERTSTORE store = CertOpenStore(CERT_STORE_PROV_MEMORY, 0, 0, CERT_STORE_DEFER_CLOSE_UNTIL_LAST_FREE_FLAG, NULL);
-    if (store == NULL)
-    {
+    HCERTSTORE store = CertOpenStore(CERT_STORE_PROV_MEMORY, 0, 0,
+                                     CERT_STORE_DEFER_CLOSE_UNTIL_LAST_FREE_FLAG,
+                                     NULL);
+    if (store == NULL) {
         return ret;
     }
 
     int cert_bytes_length;
-    const unsigned char *cert_bytes = _get_cert_bytes(X509_STORE_CTX_get_current_cert(ctx), &cert_bytes_length);
-    if (cert_bytes == NULL)
-    {
+    const X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    const BYTE *cert_bytes = _get_cert_bytes(cert, &cert_bytes_length);
+    if (cert_bytes == NULL) {
         goto error_1;
     }
 
     PCCERT_CONTEXT primary_context = NULL;
-    if (!CertAddEncodedCertificateToStore(store, X509_ASN_ENCODING, cert_bytes, cert_bytes_length, CERT_STORE_ADD_REPLACE_EXISTING, &primary_context))
+    if (!CertAddEncodedCertificateToStore(store, X509_ASN_ENCODING,
+                                          cert_bytes, cert_bytes_length,
+                                          CERT_STORE_ADD_REPLACE_EXISTING,
+                                          &primary_context))
     {
         goto error_2;
     }
     PCCERT_CHAIN_CONTEXT chain_context = NULL;
     CERT_CHAIN_PARA parameters = {0};
-    if (!CertGetCertificateChain(NULL, primary_context, NULL, store, &parameters, 0, NULL, &chain_context))
+    if (!CertGetCertificateChain(NULL, primary_context, NULL, store,
+                                 &parameters, 0, NULL, &chain_context))
     {
         goto error_3;
     }
