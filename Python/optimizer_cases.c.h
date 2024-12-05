@@ -1175,7 +1175,7 @@
             null = sym_new_null(ctx);
             attr = NULL;
             if (this_instr[-1].opcode == _NOP) {
-                // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+                // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
                 assert(sym_is_const(owner));
                 PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
                 assert(PyModule_CheckExact(mod));
