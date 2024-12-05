@@ -1067,14 +1067,7 @@ Scheduling From Other Threads
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::
 
-     # Create a contextvar in your module
-     ctx_loop: contextvars.ContextVar[asyncio.AbstractEventLoop]('ctx_loop')
-
-
-     def in_thread() -> None:
-         # Get the loop from the context
-         loop = ctx_loop.get()
-
+     def in_thread(loop: asyncio.AbstractEventLoop) -> None:
          # Run some blocking IO
          pathlib.Path("example").read_text(encoding="utf8")
 
@@ -1088,14 +1081,11 @@ Scheduling From Other Threads
          assert future.result(timeout=2) == 3
 
      async def amain() -> None:
-         # Set the loop in the ContextVar
-         token = ctx_loop.set(asyncio.get_running_loop())
-         try:
-             # Run something in a thread
-             await asyncio.to_thread(in_thread)
-         finally:
-             # Reset the ContextVar
-             ctx_loop.reset(token)
+         # Get the running loop
+         loop = asyncio.get_running_loop()
+
+         # Run something in a thread
+         await asyncio.to_thread(in_thread, loop)
 
    It's also possible to run the other way around.  Example::
 
