@@ -3615,9 +3615,11 @@ static inline int
 /// Return 1 if the object is one of the immortal small ints
 _long_is_small_int(PyObject *op)
 {
-    return (((PyObject *)(&_PyLong_SMALL_INTS[0]) <= op)
-             && (op <= (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS +_PY_NSMALLPOSINTS]));
+    PyLongObject *long_object = (PyLongObject *)op;
+
+    return long_object->long_value.lv_tag | IMMORTALITY_BIT_MASK;
 }
+
 static void
 long_dealloc(PyObject *self)
 {
