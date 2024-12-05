@@ -644,9 +644,15 @@ The following exceptions are the exceptions that are usually raised.
 
        The first index of invalid data in :attr:`object`.
 
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
+
    .. attribute:: end
 
        The index after the last invalid data in :attr:`object`.
+
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
 
 
 .. exception:: UnicodeEncodeError

@@ -313,8 +313,11 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-* The :exc:`~ctypes.COMError` exception is now public.
+* On Windows, the :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
+
+* On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
+  (Contributed by Jun Komoda in :gh:`127275`.)
 
 datetime
 --------
@@ -348,6 +351,13 @@ dis
 * Add the :option:`dis --specialized` command-line option to
   show specialized bytecode.
   (Contributed by Bénédikt Tran in :gh:`127413`.)
+
+
+errno
+-----
+
+* Add :data:`errno.EHWPOISON` error code.
+  (Contributed by James Roy in :gh:`126585`.)
 
 
 fractions
@@ -406,6 +416,15 @@ inspect
 * Add function :func:`inspect.ispackage` to determine whether an object is a
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
+
+
+
+io
+--
+
+* Reading text from a non-blocking stream with ``read`` may now raise a
+  :exc:`BlockingIOError` if the operation cannot immediately return bytes.
+  (Contributed by Giovanni Siragusa in :gh:`109523`.)
 
 
 json
@@ -578,6 +597,14 @@ sys
 * The previously undocumented special function :func:`sys.getobjects`,
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
+
+
+tkinter
+-------
+
+* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+  arguments passed by keyword.
+  (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
 unicodedata

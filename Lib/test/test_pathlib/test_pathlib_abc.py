@@ -9,7 +9,7 @@ import unittest
 from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
-from test.support import is_wasi
+from test.support import is_wasi, is_emscripten
 from test.support.os_helper import TESTFN
 
 
@@ -1351,7 +1351,6 @@ class PathBaseTest(PurePathBaseTest):
         p = self.cls('')
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
-        self.assertRaises(e, p.lstat)
         self.assertRaises(e, p.exists)
         self.assertRaises(e, p.samefile, 'foo')
         self.assertRaises(e, p.is_dir)
@@ -1372,9 +1371,7 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.rglob, '*')
         self.assertRaises(e, lambda: list(p.walk()))
         self.assertRaises(e, p.absolute)
-        self.assertRaises(e, P.cwd)
         self.assertRaises(e, p.expanduser)
-        self.assertRaises(e, p.home)
         self.assertRaises(e, p.readlink)
         self.assertRaises(e, p.symlink_to, 'foo')
         self.assertRaises(e, p.hardlink_to, 'foo')
@@ -2301,6 +2298,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_glob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, recurse_symlinks=True)
@@ -2396,6 +2394,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_rglob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, recurse_symlinks=True)
@@ -2671,17 +2670,6 @@ class DummyPathTest(DummyPurePathTest):
         st = p.stat()
         self.assertEqual(st, p.stat(follow_symlinks=False))
 
-    @needs_symlinks
-    def test_lstat(self):
-        p = self.cls(self.base)/ 'linkA'
-        st = p.stat()
-        self.assertNotEqual(st, p.lstat())
-
-    def test_lstat_nosymlink(self):
-        p = self.cls(self.base) / 'fileA'
-        st = p.stat()
-        self.assertEqual(st, p.lstat())
-
     def test_is_dir(self):
         P = self.cls(self.base)
         self.assertTrue((P / 'dirA').is_dir())
@@ -2868,11 +2856,13 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         base.joinpath('dirA')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').stat,
+                          follow_symlinks=False)
         base.joinpath('dirB')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').stat,
+                          follow_symlinks=False)
         base.joinpath('dirC')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)

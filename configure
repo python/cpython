@@ -944,8 +944,8 @@ AR
 LINK_PYTHON_OBJS
 LINK_PYTHON_DEPS
 LIBRARY_DEPS
-NODE
 HOSTRUNNER
+NODE
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1147,7 +1147,6 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
-HOSTRUNNER
 PROFILE_TASK
 BOLT_INSTRUMENT_FLAGS
 BOLT_APPLY_FLAGS
@@ -1968,7 +1967,6 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
-  HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_INSTRUMENT_FLAGS
@@ -7622,9 +7620,9 @@ if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+# HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
 printf %s "checking HOSTRUNNER... " >&6; }
-
 if test -z "$HOSTRUNNER"
 then
   case $ac_sys_system in #(
@@ -8335,8 +8333,12 @@ fi
 
 
 fi
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-      DEF_MAKE_ALL_RULE="build_wasm"
+elif test "$ac_sys_system" = "Emscripten"; then
+    DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+    DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
@@ -9427,12 +9429,14 @@ else $as_nop
   wasm_debug=no
 fi
 
-        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"
+        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS"
+    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LDFLAGS_NODIST " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
+    as_fn_append LDFLAGS_NODIST " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -9449,7 +9453,6 @@ then :
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
-    as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH"
         as_fn_append LDFLAGS_NODIST " -sEXIT_RUNTIME"
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
@@ -11174,6 +11177,12 @@ ac_fn_c_check_header_compile "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" 
 if test "x$ac_cv_header_sys_param_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SYS_PARAM_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "sys/pidfd.h" "ac_cv_header_sys_pidfd_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_pidfd_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_PIDFD_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/poll.h" "ac_cv_header_sys_poll_h" "$ac_includes_default"

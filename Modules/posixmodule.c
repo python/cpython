@@ -73,6 +73,9 @@
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>           // futimes()
 #endif
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // PIDFD_NONBLOCK
+#endif
 
 
 // SGI apparently needs this forward declaration
