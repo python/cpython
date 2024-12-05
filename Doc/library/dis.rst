@@ -60,6 +60,8 @@ interpreter.
       The :option:`-P <dis --show-positions>` command-line option
       and the ``show_positions`` argument were added.
 
+      The :option:`-S <dis --specialized>` command-line option is added.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -89,7 +91,7 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [-P] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
 
 The following options are accepted:
 
@@ -110,6 +112,10 @@ The following options are accepted:
 .. cmdoption:: -P, --show-positions
 
    Show positions of instructions in the source code.
+
+.. cmdoption:: -S, --specialized
+
+   Show specialized bytecode.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
