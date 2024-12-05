@@ -3029,7 +3029,7 @@ _translate_policy_status_error(int error)
     case TRUST_E_CERT_SIGNATURE:
         return X509_V_ERR_CERT_SIGNATURE_FAILURE;
     case CERT_E_UNTRUSTEDROOT:
-        return X509_V_ERR_CERT_UNTRUSTED;
+        return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
     case CERT_E_CHAINING:
         return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT;
     case CERT_E_EXPIRED:
