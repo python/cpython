@@ -614,7 +614,7 @@ class Executor(object):
         else:
             fs = [self.submit(fn, *args) for args in args_iter]
 
-        # use a weak reference to ensure that the executor can be garbage
+        # Use a weak reference to ensure that the executor can be garbage
         # collected independently of the result_iterator closure.
         executor_weakref = weakref.ref(self)
 
