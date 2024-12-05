@@ -267,10 +267,18 @@ PyStackRef_HasCount(_PyStackRef ref)
     return ref.bits & Py_TAG_REFCNT;
 }
 
+/* Does this ref have an embedded refcount and refer to a mortal object (NULL is not mortal) */
 static inline bool
 PyStackRef_HasCountAndMortal(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT;
+}
+
+/* Does this ref refer to a mortal object (NULL is not mortal) */
+static inline bool
+PyStackRef_IsMortal(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_BITS) != Py_TAG_IMMORTAL;
 }
 
 static inline PyObject *
