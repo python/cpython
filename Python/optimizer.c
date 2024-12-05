@@ -1,6 +1,7 @@
+#include "Python.h"
+
 #ifdef _Py_TIER2
 
-#include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
@@ -1799,7 +1800,7 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
     }
 }
 
-void
+int
 _PyDumpExecutors(FILE *out)
 {
     fprintf(out, "digraph ideal {\n\n");
@@ -1810,6 +1811,16 @@ _PyDumpExecutors(FILE *out)
         exec = exec->vm_data.links.next;
     }
     fprintf(out, "}\n\n");
+    return 0;
+}
+
+#else
+
+int
+_PyDumpExecutors(FILE *out)
+{
+    PyErr_SetString(PyExc_NotImplementedError, "No JIT available");
+    return -1;
 }
 
 #endif /* _Py_TIER2 */

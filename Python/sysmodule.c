@@ -2360,8 +2360,11 @@ sys__dump_tracelets_impl(PyObject *module, PyObject *outpath)
     if (out == NULL) {
         return NULL;
     }
-    _PyDumpExecutors(out);
+    int err = _PyDumpExecutors(out);
     fclose(out);
+    if (err) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
