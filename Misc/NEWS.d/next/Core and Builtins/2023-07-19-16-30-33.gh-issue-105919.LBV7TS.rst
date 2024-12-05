@@ -1,0 +1,1 @@
+fixed shutil.copytree(), now it overrides existing symbolic links correctly
