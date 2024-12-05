@@ -252,15 +252,6 @@ Improved error messages
   the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment variables.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
-.. Apparently this how you hack together a formatted link:
-   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
-
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
   display a more helpful error message:

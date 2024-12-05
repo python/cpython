@@ -189,7 +189,9 @@ class TestResult(object):
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)
-        msgLines = list(tb_e.format())
+        from _colorize import can_colorize
+
+        msgLines = list(tb_e.format(colorize=can_colorize()))
 
         if self.buffer:
             output = sys.stdout.getvalue()

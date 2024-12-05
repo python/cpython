@@ -2,6 +2,7 @@ import asyncio
 import contextvars
 import unittest
 from test import support
+from test.support import force_not_colorized
 
 support.requires_working_socket(module=True)
 
@@ -252,6 +253,7 @@ class TestAsyncCase(unittest.TestCase):
         test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
+    @force_not_colorized
     def test_exception_in_tear_clean_up(self):
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
