@@ -2332,7 +2332,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version"])
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sSTACK_SIZE=5MB"])
 
