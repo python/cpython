@@ -606,13 +606,13 @@ class Executor(object):
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
-        args_iter = iter(zip(*iterables))
+        zipped_iterables = iter(zip(*iterables))
         if buffersize:
             fs = collections.deque(
-                self.submit(fn, *args) for args in islice(args_iter, buffersize)
+                self.submit(fn, *args) for args in islice(zipped_iterables, buffersize)
             )
         else:
-            fs = [self.submit(fn, *args) for args in args_iter]
+            fs = [self.submit(fn, *args) for args in zipped_iterables]
 
         # Use a weak reference to ensure that the executor can be garbage
         # collected independently of the result_iterator closure.
@@ -628,7 +628,7 @@ class Executor(object):
                     if (
                         buffersize
                         and (executor := executor_weakref())
-                        and (args := next(args_iter, None))
+                        and (args := next(zipped_iterables, None))
                     ):
                         fs.appendleft(executor.submit(fn, *args))
                     # Careful not to keep a reference to the popped future
