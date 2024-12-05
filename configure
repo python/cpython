@@ -9434,7 +9434,7 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS,callMain"
+    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
     as_fn_append LDFLAGS_NODIST " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
     as_fn_append LDFLAGS_NODIST " -sSTACK_SIZE=5MB"
 
