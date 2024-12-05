@@ -406,8 +406,8 @@ def source_synopsis(file):
     try:
         tree = ast.parse(source)
         if (tree.body and isinstance(tree.body[0], ast.Expr) and
-            isinstance(tree.body[0].value, ast.Constant) and
-            isinstance(tree.body[0].value.value, str)):
+                isinstance(tree.body[0].value, ast.Constant) and
+                isinstance(tree.body[0].value.value, str)):
             docstring = tree.body[0].value.value
             return docstring.strip().split('\n')[0].strip()
         return None
