@@ -1544,39 +1544,31 @@ mark_at_start(PyThreadState *tstate)
     return objects_marked;
 }
 
+
+/* See InternalDocs/garbage_collector.md for more details. */
+#define MAX_HEAP_PORTION_MULTIPLIER 5
+#define MARKING_PROGRESS_MULTIPLIER 2
+
 static intptr_t
 assess_work_to_do(GCState *gcstate)
 {
     /* The amount of work we want to do depends on two things.
      * 1. The number of new objects created
-     * 2. The heap size (up to twice the number of new objects, to avoid quadratic effects)
-     * 3. The amount of garbage.
-     *
-     * We cannot know how much of the heap is garbage, but we know that no reachable object
-     * is garbage. We make a (fairly pessismistic) assumption that half the heap not
-     * reachable from the roots is garbage, and count collections of increments as half as efficient
-     * as processing the heap as the marking phase.
-     *
-     * For a large, steady state heap, the amount of work to do is at least three times the
-     * number of new objects added to the heap. This ensures that we stay ahead in the
-     * worst case of all new objects being garbage.
+     * 2. The heap size (up to a multiple of the number of new objects, to avoid quadratic effects)
      */
     intptr_t scale_factor = gcstate->old[0].threshold;
     if (scale_factor < 2) {
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*5;
-    intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
-    if (heap_fraction > max_heap_fraction) {
-        heap_fraction = max_heap_fraction;
+    intptr_t max_heap_portion = new_objects * MAX_HEAP_PORTION_MULTIPLIER;
+    intptr_t heap_portion = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    if (heap_portion > max_heap_portion) {
+        heap_portion = max_heap_portion;
     }
     gcstate->young.count = 0;
-    return new_objects + heap_fraction;
+    return new_objects + heap_portion;
 }
-
-/* See Internal GC docs for explanation */
-#define MARKING_PROGRESS_MULTIPLIER 2
 
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)

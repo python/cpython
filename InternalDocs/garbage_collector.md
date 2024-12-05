@@ -523,7 +523,7 @@ but doing too much work slows down execution.
 
 To work out how much work we need to do, consider a heap with `L` live objects
 and `G0` garbage objects at the start of a full scavenge and `G1` garbage objects
-at the end of the scavenge. We don't want amount of garbage to grow, `G1 ≤ G0`, and
+at the end of the scavenge. We don't want the amount of garbage to grow, `G1 ≤ G0`, and
 we don't want too much garbage (say 1/3 of the heap maximum), `G0 ≤ L/2`.
 For each full scavenge we must visit all objects, `T == L + G0 + G1`, during which
 `G1` garbage objects are created.
@@ -531,7 +531,7 @@ For each full scavenge we must visit all objects, `T == L + G0 + G1`, during whi
 The number of new objects created `N` must be at least the new garbage created, `N ≥ G1`,
 assuming that the number of live objects remains roughly constant.
 If we set `T == 4*N` we get `T > 4*G1` and `T = L + G0 + G1` => `L + G0 > 3G1`
-For a steady state heap `G0 == G1` we get `L > 2G` and the desired garbage ratio.
+For a steady state heap (`G0 == G1`) we get `L > 2G0` and the desired garbage ratio.
 
 In other words, to keep the garbage fraction to 1/3 or less we need to visit
 4 times as many objects as are newly created.
@@ -544,11 +544,11 @@ Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + 
 
 If we choose the amount of work done such that `2*M + I == 6N` then we can do
 less work in most cases, but are still guaranteed to keep up.
-Since `I ≥ G0 + G1` (not strictly true, but close enough)
-`T == M + I == (6N + I)/2` and `(6N + I)/2 ≥ 4G`, so we can keep up.
+Since `I ≳ G0 + G1` (not strictly true, but close enough)
+`T == M + I == (6N + I)/2` and `(6N + I)/2 ≳ 4G`, so we can keep up.
 
 The reason that this improves performance is that `M` is usually much larger
-than `I` Suppose `M == 10I`, then `T ≅ 3N`.
+than `I`. If `M == 10I`, then `T ≅ 3N`.
 
 Finally, instead of using a fixed multiple of 8, we gradually increase it as the
 heap grows. This avoids wasting work for small heaps and during startup.
