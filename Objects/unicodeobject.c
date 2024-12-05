@@ -5084,13 +5084,8 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
         if (p < p2) {
             size_t u;
-#if defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-            // x86 and amd64 are little endian and can load unaligned memory.
             memcpy(&u, p, sizeof(size_t));
             u &= ASCII_CHAR_MASK;
-#else
-            u = load_unaligned(p, p2 - p) & ASCII_CHAR_MASK;
-#endif
             if (u) {
                 return (ctz(u) - 7) / 8;
             }
