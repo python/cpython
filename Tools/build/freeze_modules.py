@@ -31,6 +31,8 @@ PCBUILD_PYTHONCORE = os.path.join(ROOT_DIR, 'PCbuild', 'pythoncore.vcxproj')
 
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 
+EXTRA_FROZEN_MODULES = os.environ.get("EXTRA_FROZEN_MODULES", "")
+
 # These are modules that get frozen.
 # If you're debugging new bytecode instructions,
 # you can delete all sections except 'import system'.
@@ -198,8 +200,8 @@ FROZEN = [
         'zipapp',
         '<zipfile.**.*>',
         '<zoneinfo.**.*>',
-        '<gdb.**.*>',
-        ]),
+        ] + [module_str for module_str in EXTRA_FROZEN_MODULES.split(";") if len(module_str) > 0]
+        ),
     ('stdlib - startup, with site', [
         '_sitebuiltins',
         'site',

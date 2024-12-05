@@ -394,55 +394,6 @@
 #include "frozen_modules/zoneinfo._common.h"
 #include "frozen_modules/zoneinfo._tzpath.h"
 #include "frozen_modules/zoneinfo._zoneinfo.h"
-#include "frozen_modules/gdb.h"
-#include "frozen_modules/gdb.FrameDecorator.h"
-#include "frozen_modules/gdb.FrameIterator.h"
-#include "frozen_modules/gdb.command.h"
-#include "frozen_modules/gdb.command.explore.h"
-#include "frozen_modules/gdb.command.frame_filters.h"
-#include "frozen_modules/gdb.command.missing_debug.h"
-#include "frozen_modules/gdb.command.pretty_printers.h"
-#include "frozen_modules/gdb.command.prompt.h"
-#include "frozen_modules/gdb.command.type_printers.h"
-#include "frozen_modules/gdb.command.unwinders.h"
-#include "frozen_modules/gdb.command.xmethods.h"
-#include "frozen_modules/gdb.dap.h"
-#include "frozen_modules/gdb.dap.breakpoint.h"
-#include "frozen_modules/gdb.dap.bt.h"
-#include "frozen_modules/gdb.dap.disassemble.h"
-#include "frozen_modules/gdb.dap.evaluate.h"
-#include "frozen_modules/gdb.dap.events.h"
-#include "frozen_modules/gdb.dap.frames.h"
-#include "frozen_modules/gdb.dap.io.h"
-#include "frozen_modules/gdb.dap.launch.h"
-#include "frozen_modules/gdb.dap.locations.h"
-#include "frozen_modules/gdb.dap.memory.h"
-#include "frozen_modules/gdb.dap.modules.h"
-#include "frozen_modules/gdb.dap.next.h"
-#include "frozen_modules/gdb.dap.pause.h"
-#include "frozen_modules/gdb.dap.scopes.h"
-#include "frozen_modules/gdb.dap.server.h"
-#include "frozen_modules/gdb.dap.sources.h"
-#include "frozen_modules/gdb.dap.startup.h"
-#include "frozen_modules/gdb.dap.state.h"
-#include "frozen_modules/gdb.dap.threads.h"
-#include "frozen_modules/gdb.dap.typecheck.h"
-#include "frozen_modules/gdb.dap.varref.h"
-#include "frozen_modules/gdb.disassembler.h"
-#include "frozen_modules/gdb.frames.h"
-#include "frozen_modules/gdb.function.h"
-#include "frozen_modules/gdb.function.as_string.h"
-#include "frozen_modules/gdb.function.caller_is.h"
-#include "frozen_modules/gdb.function.strfns.h"
-#include "frozen_modules/gdb.missing_debug.h"
-#include "frozen_modules/gdb.printer.h"
-#include "frozen_modules/gdb.printer.bound_registers.h"
-#include "frozen_modules/gdb.printing.h"
-#include "frozen_modules/gdb.prompt.h"
-#include "frozen_modules/gdb.styling.h"
-#include "frozen_modules/gdb.types.h"
-#include "frozen_modules/gdb.unwinder.h"
-#include "frozen_modules/gdb.xmethod.h"
 #include "frozen_modules/_sitebuiltins.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/runpy.h"
@@ -806,55 +757,6 @@ extern PyObject *_Py_get_zoneinfo_toplevel(void);
 extern PyObject *_Py_get_zoneinfo__common_toplevel(void);
 extern PyObject *_Py_get_zoneinfo__tzpath_toplevel(void);
 extern PyObject *_Py_get_zoneinfo__zoneinfo_toplevel(void);
-extern PyObject *_Py_get_gdb_toplevel(void);
-extern PyObject *_Py_get_gdb_FrameDecorator_toplevel(void);
-extern PyObject *_Py_get_gdb_FrameIterator_toplevel(void);
-extern PyObject *_Py_get_gdb_command_toplevel(void);
-extern PyObject *_Py_get_gdb_command_explore_toplevel(void);
-extern PyObject *_Py_get_gdb_command_frame_filters_toplevel(void);
-extern PyObject *_Py_get_gdb_command_missing_debug_toplevel(void);
-extern PyObject *_Py_get_gdb_command_pretty_printers_toplevel(void);
-extern PyObject *_Py_get_gdb_command_prompt_toplevel(void);
-extern PyObject *_Py_get_gdb_command_type_printers_toplevel(void);
-extern PyObject *_Py_get_gdb_command_unwinders_toplevel(void);
-extern PyObject *_Py_get_gdb_command_xmethods_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_breakpoint_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_bt_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_disassemble_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_evaluate_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_events_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_frames_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_io_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_launch_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_locations_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_memory_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_modules_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_next_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_pause_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_scopes_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_server_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_sources_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_startup_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_state_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_threads_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_typecheck_toplevel(void);
-extern PyObject *_Py_get_gdb_dap_varref_toplevel(void);
-extern PyObject *_Py_get_gdb_disassembler_toplevel(void);
-extern PyObject *_Py_get_gdb_frames_toplevel(void);
-extern PyObject *_Py_get_gdb_function_toplevel(void);
-extern PyObject *_Py_get_gdb_function_as_string_toplevel(void);
-extern PyObject *_Py_get_gdb_function_caller_is_toplevel(void);
-extern PyObject *_Py_get_gdb_function_strfns_toplevel(void);
-extern PyObject *_Py_get_gdb_missing_debug_toplevel(void);
-extern PyObject *_Py_get_gdb_printer_toplevel(void);
-extern PyObject *_Py_get_gdb_printer_bound_registers_toplevel(void);
-extern PyObject *_Py_get_gdb_printing_toplevel(void);
-extern PyObject *_Py_get_gdb_prompt_toplevel(void);
-extern PyObject *_Py_get_gdb_styling_toplevel(void);
-extern PyObject *_Py_get_gdb_types_toplevel(void);
-extern PyObject *_Py_get_gdb_unwinder_toplevel(void);
-extern PyObject *_Py_get_gdb_xmethod_toplevel(void);
 extern PyObject *_Py_get__sitebuiltins_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_runpy_toplevel(void);
@@ -1243,60 +1145,6 @@ static const struct _frozen stdlib_modules[] = {
     {"zoneinfo._common", _Py_M__zoneinfo__common, (int)sizeof(_Py_M__zoneinfo__common), false, GET_CODE(zoneinfo__common)},
     {"zoneinfo._tzpath", _Py_M__zoneinfo__tzpath, (int)sizeof(_Py_M__zoneinfo__tzpath), false, GET_CODE(zoneinfo__tzpath)},
     {"zoneinfo._zoneinfo", _Py_M__zoneinfo__zoneinfo, (int)sizeof(_Py_M__zoneinfo__zoneinfo), false, GET_CODE(zoneinfo__zoneinfo)},
-    {"gdb", _Py_M__gdb, (int)sizeof(_Py_M__gdb), true, GET_CODE(gdb)},
-    {"gdb.FrameDecorator", _Py_M__gdb_FrameDecorator, (int)sizeof(_Py_M__gdb_FrameDecorator), false, GET_CODE(gdb_FrameDecorator)},
-    {"gdb.FrameIterator", _Py_M__gdb_FrameIterator, (int)sizeof(_Py_M__gdb_FrameIterator), false, GET_CODE(gdb_FrameIterator)},
-    {"gdb.__init__", _Py_M__gdb, (int)sizeof(_Py_M__gdb), false, GET_CODE(gdb)},
-    {"gdb.command", _Py_M__gdb_command, (int)sizeof(_Py_M__gdb_command), true, GET_CODE(gdb_command)},
-    {"gdb.command.__init__", _Py_M__gdb_command, (int)sizeof(_Py_M__gdb_command), false, GET_CODE(gdb_command)},
-    {"gdb.command.explore", _Py_M__gdb_command_explore, (int)sizeof(_Py_M__gdb_command_explore), false, GET_CODE(gdb_command_explore)},
-    {"gdb.command.frame_filters", _Py_M__gdb_command_frame_filters, (int)sizeof(_Py_M__gdb_command_frame_filters), false, GET_CODE(gdb_command_frame_filters)},
-    {"gdb.command.missing_debug", _Py_M__gdb_command_missing_debug, (int)sizeof(_Py_M__gdb_command_missing_debug), false, GET_CODE(gdb_command_missing_debug)},
-    {"gdb.command.pretty_printers", _Py_M__gdb_command_pretty_printers, (int)sizeof(_Py_M__gdb_command_pretty_printers), false, GET_CODE(gdb_command_pretty_printers)},
-    {"gdb.command.prompt", _Py_M__gdb_command_prompt, (int)sizeof(_Py_M__gdb_command_prompt), false, GET_CODE(gdb_command_prompt)},
-    {"gdb.command.type_printers", _Py_M__gdb_command_type_printers, (int)sizeof(_Py_M__gdb_command_type_printers), false, GET_CODE(gdb_command_type_printers)},
-    {"gdb.command.unwinders", _Py_M__gdb_command_unwinders, (int)sizeof(_Py_M__gdb_command_unwinders), false, GET_CODE(gdb_command_unwinders)},
-    {"gdb.command.xmethods", _Py_M__gdb_command_xmethods, (int)sizeof(_Py_M__gdb_command_xmethods), false, GET_CODE(gdb_command_xmethods)},
-    {"gdb.dap", _Py_M__gdb_dap, (int)sizeof(_Py_M__gdb_dap), true, GET_CODE(gdb_dap)},
-    {"gdb.dap.__init__", _Py_M__gdb_dap, (int)sizeof(_Py_M__gdb_dap), false, GET_CODE(gdb_dap)},
-    {"gdb.dap.breakpoint", _Py_M__gdb_dap_breakpoint, (int)sizeof(_Py_M__gdb_dap_breakpoint), false, GET_CODE(gdb_dap_breakpoint)},
-    {"gdb.dap.bt", _Py_M__gdb_dap_bt, (int)sizeof(_Py_M__gdb_dap_bt), false, GET_CODE(gdb_dap_bt)},
-    {"gdb.dap.disassemble", _Py_M__gdb_dap_disassemble, (int)sizeof(_Py_M__gdb_dap_disassemble), false, GET_CODE(gdb_dap_disassemble)},
-    {"gdb.dap.evaluate", _Py_M__gdb_dap_evaluate, (int)sizeof(_Py_M__gdb_dap_evaluate), false, GET_CODE(gdb_dap_evaluate)},
-    {"gdb.dap.events", _Py_M__gdb_dap_events, (int)sizeof(_Py_M__gdb_dap_events), false, GET_CODE(gdb_dap_events)},
-    {"gdb.dap.frames", _Py_M__gdb_dap_frames, (int)sizeof(_Py_M__gdb_dap_frames), false, GET_CODE(gdb_dap_frames)},
-    {"gdb.dap.io", _Py_M__gdb_dap_io, (int)sizeof(_Py_M__gdb_dap_io), false, GET_CODE(gdb_dap_io)},
-    {"gdb.dap.launch", _Py_M__gdb_dap_launch, (int)sizeof(_Py_M__gdb_dap_launch), false, GET_CODE(gdb_dap_launch)},
-    {"gdb.dap.locations", _Py_M__gdb_dap_locations, (int)sizeof(_Py_M__gdb_dap_locations), false, GET_CODE(gdb_dap_locations)},
-    {"gdb.dap.memory", _Py_M__gdb_dap_memory, (int)sizeof(_Py_M__gdb_dap_memory), false, GET_CODE(gdb_dap_memory)},
-    {"gdb.dap.modules", _Py_M__gdb_dap_modules, (int)sizeof(_Py_M__gdb_dap_modules), false, GET_CODE(gdb_dap_modules)},
-    {"gdb.dap.next", _Py_M__gdb_dap_next, (int)sizeof(_Py_M__gdb_dap_next), false, GET_CODE(gdb_dap_next)},
-    {"gdb.dap.pause", _Py_M__gdb_dap_pause, (int)sizeof(_Py_M__gdb_dap_pause), false, GET_CODE(gdb_dap_pause)},
-    {"gdb.dap.scopes", _Py_M__gdb_dap_scopes, (int)sizeof(_Py_M__gdb_dap_scopes), false, GET_CODE(gdb_dap_scopes)},
-    {"gdb.dap.server", _Py_M__gdb_dap_server, (int)sizeof(_Py_M__gdb_dap_server), false, GET_CODE(gdb_dap_server)},
-    {"gdb.dap.sources", _Py_M__gdb_dap_sources, (int)sizeof(_Py_M__gdb_dap_sources), false, GET_CODE(gdb_dap_sources)},
-    {"gdb.dap.startup", _Py_M__gdb_dap_startup, (int)sizeof(_Py_M__gdb_dap_startup), false, GET_CODE(gdb_dap_startup)},
-    {"gdb.dap.state", _Py_M__gdb_dap_state, (int)sizeof(_Py_M__gdb_dap_state), false, GET_CODE(gdb_dap_state)},
-    {"gdb.dap.threads", _Py_M__gdb_dap_threads, (int)sizeof(_Py_M__gdb_dap_threads), false, GET_CODE(gdb_dap_threads)},
-    {"gdb.dap.typecheck", _Py_M__gdb_dap_typecheck, (int)sizeof(_Py_M__gdb_dap_typecheck), false, GET_CODE(gdb_dap_typecheck)},
-    {"gdb.dap.varref", _Py_M__gdb_dap_varref, (int)sizeof(_Py_M__gdb_dap_varref), false, GET_CODE(gdb_dap_varref)},
-    {"gdb.disassembler", _Py_M__gdb_disassembler, (int)sizeof(_Py_M__gdb_disassembler), false, GET_CODE(gdb_disassembler)},
-    {"gdb.frames", _Py_M__gdb_frames, (int)sizeof(_Py_M__gdb_frames), false, GET_CODE(gdb_frames)},
-    {"gdb.function", _Py_M__gdb_function, (int)sizeof(_Py_M__gdb_function), true, GET_CODE(gdb_function)},
-    {"gdb.function.__init__", _Py_M__gdb_function, (int)sizeof(_Py_M__gdb_function), false, GET_CODE(gdb_function)},
-    {"gdb.function.as_string", _Py_M__gdb_function_as_string, (int)sizeof(_Py_M__gdb_function_as_string), false, GET_CODE(gdb_function_as_string)},
-    {"gdb.function.caller_is", _Py_M__gdb_function_caller_is, (int)sizeof(_Py_M__gdb_function_caller_is), false, GET_CODE(gdb_function_caller_is)},
-    {"gdb.function.strfns", _Py_M__gdb_function_strfns, (int)sizeof(_Py_M__gdb_function_strfns), false, GET_CODE(gdb_function_strfns)},
-    {"gdb.missing_debug", _Py_M__gdb_missing_debug, (int)sizeof(_Py_M__gdb_missing_debug), false, GET_CODE(gdb_missing_debug)},
-    {"gdb.printer", _Py_M__gdb_printer, (int)sizeof(_Py_M__gdb_printer), true, GET_CODE(gdb_printer)},
-    {"gdb.printer.__init__", _Py_M__gdb_printer, (int)sizeof(_Py_M__gdb_printer), false, GET_CODE(gdb_printer)},
-    {"gdb.printer.bound_registers", _Py_M__gdb_printer_bound_registers, (int)sizeof(_Py_M__gdb_printer_bound_registers), false, GET_CODE(gdb_printer_bound_registers)},
-    {"gdb.printing", _Py_M__gdb_printing, (int)sizeof(_Py_M__gdb_printing), false, GET_CODE(gdb_printing)},
-    {"gdb.prompt", _Py_M__gdb_prompt, (int)sizeof(_Py_M__gdb_prompt), false, GET_CODE(gdb_prompt)},
-    {"gdb.styling", _Py_M__gdb_styling, (int)sizeof(_Py_M__gdb_styling), false, GET_CODE(gdb_styling)},
-    {"gdb.types", _Py_M__gdb_types, (int)sizeof(_Py_M__gdb_types), false, GET_CODE(gdb_types)},
-    {"gdb.unwinder", _Py_M__gdb_unwinder, (int)sizeof(_Py_M__gdb_unwinder), false, GET_CODE(gdb_unwinder)},
-    {"gdb.xmethod", _Py_M__gdb_xmethod, (int)sizeof(_Py_M__gdb_xmethod), false, GET_CODE(gdb_xmethod)},
 
     /* stdlib - startup, with site */
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), false, GET_CODE(_sitebuiltins)},
@@ -1348,11 +1196,6 @@ static const struct _module_alias aliases[] = {
     {"zipfile.__init__", "<zipfile"},
     {"zipfile._path.__init__", "<zipfile._path"},
     {"zoneinfo.__init__", "<zoneinfo"},
-    {"gdb.__init__", "<gdb"},
-    {"gdb.command.__init__", "<gdb.command"},
-    {"gdb.dap.__init__", "<gdb.dap"},
-    {"gdb.function.__init__", "<gdb.function"},
-    {"gdb.printer.__init__", "<gdb.printer"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},
