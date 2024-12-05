@@ -1,1 +1,1 @@
-Fixed valid ssl certificates being rejected.
+Fixed valid :mod:`ssl` certificates being rejected.
