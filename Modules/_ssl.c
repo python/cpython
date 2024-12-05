@@ -2997,8 +2997,8 @@ static PyType_Spec PySSLSocket_spec = {
 };
 
 #ifdef _MSC_VER
-static unsigned char *
-_get_cert_bytes(X509 *cert, int *length)
+static const unsigned char *
+_get_cert_bytes(const X509 *cert, int *length)
 {
     unsigned char *cert_bytes;
     int cert_bytes_length = i2d_X509(cert, NULL);
@@ -3042,7 +3042,7 @@ _verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     }
 
     int cert_bytes_length;
-    unsigned char *cert_bytes = _get_cert_bytes(X509_STORE_CTX_get_current_cert(ctx), &cert_bytes_length);
+    const unsigned char *cert_bytes = _get_cert_bytes(X509_STORE_CTX_get_current_cert(ctx), &cert_bytes_length);
     if (cert_bytes == NULL)
     {
         goto error_1;
@@ -3100,7 +3100,7 @@ error_4:
 error_3:
     CertFreeCertificateContext(primary_context);
 error_2:
-    PyMem_RawFree(cert_bytes);
+    PyMem_RawFree((void *)cert_bytes);
 error_1:
     CertCloseStore(store, 0);
     return ret;
