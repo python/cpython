@@ -401,6 +401,15 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
+   .. method:: clear_memo()
+
+      Clears the pickler's "memo".
+
+      The memo is the data structure that remembers which objects the
+      pickler has already seen, so that shared or recursive objects
+      are pickled by reference and not by value.  This method is
+      useful when re-using picklers.
+
 
 .. class:: Unpickler(file, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
