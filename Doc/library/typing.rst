@@ -2837,6 +2837,13 @@ For example::
   def write_binary(writer: Writer[bytes]):
       writer.write(b"Hello world!\n")
 
+Also consider using :class:`collections.abc.Iterable` for iterating over
+a stream::
+
+  def read_config(stream: Iterable[str]):
+      for line in stream:
+          ...
+
 Functions and decorators
 ------------------------
 
