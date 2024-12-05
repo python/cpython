@@ -1,4 +1,0 @@
-Restore ability to set :attr:`~pickle.Pickler.persistent_id` and
-:attr:`~pickle.Unpickler.persistent_load` attributes of instances of the
-:class:`!Pickler` and :class:`!Unpickler` classes in the :mod:`pickle`
-module.

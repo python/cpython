@@ -1,6 +1,6 @@
 // TypeVar, TypeVarTuple, and ParamSpec
 #include "Python.h"
-#include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or
 
@@ -168,7 +168,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *value = ((constevaluatorobject *)self)->value;
-    if (format == 3) { // STRING
+    if (format == _Py_ANNOTATE_FORMAT_STRING) {
         PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
         if (writer == NULL) {
             return NULL;

@@ -1,2 +1,0 @@
-Improve traceback if :func:`importlib.reload` is called with an object that
-is not a module. Patch by Alex Waygood.
