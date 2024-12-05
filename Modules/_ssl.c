@@ -3026,6 +3026,32 @@ _get_cert_bytes(const X509 *cert, int *length)
 
 
 static int
+_translate_policy_status_error(int error)
+{
+    switch (error) {
+    case TRUST_E_CERT_SIGNATURE:
+        return X509_V_ERR_CERT_SIGNATURE_FAILURE;
+    case CERT_E_UNTRUSTEDROOT:
+        return X509_V_ERR_CERT_UNTRUSTED;
+    case CERT_E_CHAINING:
+        return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT;
+    case CERT_E_EXPIRED:
+        return X509_V_ERR_CERT_HAS_EXPIRED;
+    case CERT_E_INVALID_POLICY:
+        return X509_V_ERR_INVALID_POLICY_EXTENSION;
+    case CERT_E_WRONG_USAGE:
+    case CERT_E_CRITICAL:
+    case CERT_E_PURPOSE:
+    case CERT_E_ROLE:
+        return X509_V_ERR_INVALID_PURPOSE;
+    case CERT_E_VALIDITYPERIODNESTING:
+    default:
+        return X509_V_ERR_APPLICATION_VERIFICATION;
+    }
+}
+
+
+static int
 _verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
     int ret = 0;
@@ -3061,41 +3087,18 @@ _verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     }
     CERT_CHAIN_POLICY_PARA policy_parameters = {0};
     CERT_CHAIN_POLICY_STATUS policy_status = {0};
-    if (!CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, chain_context, &policy_parameters, &policy_status))
+    if (CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, chain_context,
+                                         &policy_parameters, &policy_status))
     {
-        goto error_4;
+        if (policy_status.dwError == CERT_TRUST_NO_ERROR) {
+            ret = 1;
+        }
+        else {
+            int err = _translate_policy_status_error(policy_status.dwError);
+            X509_STORE_CTX_set_error(ctx, err);
+        }
     }
 
-    switch(policy_status.dwError) {
-    case CERT_TRUST_NO_ERROR:
-        ret = 1;
-        break;
-    case TRUST_E_CERT_SIGNATURE:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_SIGNATURE_FAILURE);
-        break;
-    case CERT_E_UNTRUSTEDROOT:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_UNTRUSTED);
-        break;
-    case CERT_E_CHAINING:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT);
-        break;
-    case CERT_E_EXPIRED:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_HAS_EXPIRED);
-        break;
-    case CERT_E_INVALID_POLICY:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_INVALID_POLICY_EXTENSION);
-        break;
-    case CERT_E_WRONG_USAGE:
-    case CERT_E_CRITICAL:
-    case CERT_E_PURPOSE:
-    case CERT_E_ROLE:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_INVALID_PURPOSE);
-        break;
-    case CERT_E_VALIDITYPERIODNESTING:
-    default:
-        X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
-    }
-error_4:
     CertFreeCertificateChain(chain_context);
 error_3:
     CertFreeCertificateContext(primary_context);
