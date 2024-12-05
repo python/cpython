@@ -195,7 +195,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 static inline int
 _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
+    return ((op->long_value.lv_tag & ~IMMORTALITY_BIT_MASK) <= (1 << NON_SIZE_BITS));
 }
 
 
