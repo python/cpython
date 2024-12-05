@@ -353,7 +353,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
 {
     if (nelements < 0)
     {
-        PyErr_SetString(PyExc_ValueError, "nelements cannot be negative");
+        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
         return NULL;
     }
 

@@ -117,7 +117,7 @@ class TestHistoryManipulation (unittest.TestCase):
         with self.assertRaises(ValueError):
             readline.append_history_file(-42, hfilename)
 
-        # See gh-122431, using the minumum signed integer value caused a segfault
+        # See gh-122431, using the minimum signed integer value caused a segfault
         with self.assertRaises(ValueError):
             readline.append_history_file(-2147483648, hfilename)
 
