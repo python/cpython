@@ -222,7 +222,7 @@ class Printer:
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
                             self.write(".statically_allocated = 1,")
-                    utf8 = s.encode('utf-8')
+                    utf8 = s.encode('utf-8', 'surrogatepass')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
                 with self.block(f"._data =", ","):

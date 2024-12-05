@@ -321,11 +321,10 @@ def _parse_spec(spec, knownids=None, section=None):
         else:
             pyfile = _resolve_module(frozenid, ispkg=False)
         ispkg = True
-    elif pyfile:
+    elif pyfile and not os.path.isdir(pyfile):
         assert check_modname(frozenid), spec
         assert not knownids or frozenid not in knownids, spec
         assert check_modname(modname), spec
-        assert not os.path.isdir(pyfile), spec
         ispkg = False
     elif knownids and frozenid in knownids:
         assert check_modname(frozenid), spec
@@ -333,7 +332,7 @@ def _parse_spec(spec, knownids=None, section=None):
         ispkg = False
     else:
         assert not modname or check_modname(modname), spec
-        resolved = iter(resolve_modules(frozenid))
+        resolved = iter(resolve_modules(frozenid, pyfile if os.path.isdir(pyfile) else None))
         frozenid, pyfile, ispkg = next(resolved)
         if not modname:
             modname = frozenid
