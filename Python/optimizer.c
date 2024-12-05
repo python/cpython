@@ -1716,7 +1716,8 @@ error:
     _Py_Executors_InvalidateAll(interp, 0);
 }
 
-static void write_str(PyObject *str, FILE *out)
+static void
+write_str(PyObject *str, FILE *out)
 {
     // Encode the Unicode object to the specified encoding
     PyObject *encoded_obj = PyUnicode_AsEncodedString(str, "utf8", "strict");
@@ -1730,7 +1731,8 @@ static void write_str(PyObject *str, FILE *out)
     Py_DECREF(encoded_obj);
 }
 
-static int find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
+static int
+find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
 {
     int code_len = (int)Py_SIZE(code);
     for (int i = 0; i < code_len; i++) {
