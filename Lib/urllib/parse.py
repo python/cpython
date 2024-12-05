@@ -146,9 +146,14 @@ class _ResultMixinStr(object):
     __slots__ = ()
 
     def encode(self, encoding='ascii', errors='strict'):
-        return self._encoded_counterpart(*(x.encode(encoding, errors)
+        result = self._encoded_counterpart(*(x.encode(encoding, errors)
                                            if x is not None else None
                                            for x in self))
+        try:
+            result._keep_empty = self._keep_empty
+        except AttributeError:
+            pass
+        return result
 
 
 class _ResultMixinBytes(object):
@@ -156,9 +161,14 @@ class _ResultMixinBytes(object):
     __slots__ = ()
 
     def decode(self, encoding='ascii', errors='strict'):
-        return self._decoded_counterpart(*(x.decode(encoding, errors)
+        result = self._decoded_counterpart(*(x.decode(encoding, errors)
                                            if x is not None else None
                                            for x in self))
+        try:
+            result._keep_empty = self._keep_empty
+        except AttributeError:
+            pass
+        return result
 
 
 class _NetlocResultMixinBase(object):
@@ -270,7 +280,31 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
 _UNSPECIFIED = ['not specified']
 _ALLOW_NONE_DEFAULT = False
 
-class _DefragResultBase(namedtuple('_DefragResultBase', 'url fragment')):
+class _ResultBase:
+    def __replace__(self, /, **kwargs):
+        result = super().__replace__(**kwargs)
+        try:
+            result._keep_empty = self._keep_empty
+        except AttributeError:
+            pass
+        return result
+
+    def _replace(self, /, **kwargs):
+        result = super()._replace(**kwargs)
+        try:
+            result._keep_empty = self._keep_empty
+        except AttributeError:
+            pass
+        return result
+
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragment')):
     def geturl(self):
         if self.fragment or (self.fragment is not None and
                              getattr(self, '_keep_empty', _ALLOW_NONE_DEFAULT)):
@@ -278,12 +312,12 @@ class _DefragResultBase(namedtuple('_DefragResultBase', 'url fragment')):
         else:
             return self.url
 
-class _SplitResultBase(namedtuple(
+class _SplitResultBase(_ResultBase, namedtuple(
     '_SplitResultBase', 'scheme netloc path query fragment')):
     def geturl(self):
         return urlunsplit(self)
 
-class _ParseResultBase(namedtuple(
+class _ParseResultBase(_ResultBase, namedtuple(
     '_ParseResultBase', 'scheme netloc path params query fragment')):
     def geturl(self):
         return urlunparse(self)
