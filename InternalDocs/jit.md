@@ -86,7 +86,7 @@ have changed.
 When the full jit is enabled (python was configured with
 [`--enable-experimental-jit`](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit),
 the uop executor's `jit_code` field is populated with a pointer to a compiled
-C function that implement the executor logic. This function's signature is
+C function that implements the executor logic. This function's signature is
 defined by `jit_func` in [`pycore_jit.h`](Include/internal/pycore_jit.h).
 When the executor is invoked by `ENTER_EXECUTOR`, instead of jumping to
 the uop interpreter at `tier2_dispatch`, the executor runs the function
@@ -101,8 +101,8 @@ of the micro ops, which are completed with runtime information while
 the jitted code is constructed for an executor by
 [`_PyJIT_Compile`](../Python/jit.c).
 
-The stencils are generated under the build target `regen-jit` by the scripts
-in [`/Tools/jit`](/Tools/jit). This script reads
+The stencils are generated at build time under the Makefile target `regen-jit`
+by the scripts in [`/Tools/jit`](/Tools/jit). This script reads
 [`Python/executor_cases.c.h`](../Python/executor_cases.c.h) (which is
 generated from [`Python/bytecodes.c`](../Python/bytecodes.c)). For
 each opcode, it constructs a `.c` file that contains a function for
@@ -110,7 +110,7 @@ implementing this opcode, with some runtime information injected.
 This is done by replacing `CASE` by the bytecode definition in the
 template file [`Tools/jit/template.c`](../Tools/jit/template.c).
 
-Each of the `.c` file is compiled by LLVM, to produce an object file
+Each of the `.c` files is compiled by LLVM, to produce an object file
 that contains a function that executes the opcode. These compiled
 functions are used to generate the file
 [`jit_stencils.h`](../jit_stencils.h), which contains the functions

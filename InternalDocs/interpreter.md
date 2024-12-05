@@ -366,7 +366,7 @@ assumptions still apply, and de-optimizing back to the generic version if not.
 ## Families of instructions
 
 A *family* of instructions consists of an adaptive instruction along with the
-specialized instruction that it can be replaced by.
+specialized instructions that it can be replaced by.
 It has the following fundamental properties:
 
 * It corresponds to a single instruction in the code
