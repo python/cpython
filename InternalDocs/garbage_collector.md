@@ -528,7 +528,8 @@ we don't want too much garbage (say 1/3 of the heap maximum), `G0 ≤ L/2`.
 For each full scavenge we must visit all objects, `T == L + G0 + G1`, during which
 `G1` garbage objects are created.
 
-The number of new objects created `N` must be at least the new garbage created, `N ≥ G`.
+The number of new objects created `N` must be at least the new garbage created, `N ≥ G1`,
+assuming that the number of live objects remains roughly constant.
 If we set `T == 4*N` we get `T > 4*G1` and `T = L + G0 + G1` => `L + G0 > 3G1`
 For a steady state heap `G0 == G1` we get `L > 2G` and the desired garbage ratio.
 
@@ -542,7 +543,7 @@ as reachable and `I` is the number of objects visited in increments.
 Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + G1`.
 
 If we choose the amount of work done such that `2*M + I == 6N` then we can do
-do less work in most cases, but are still guaranteed to keep up.
+less work in most cases, but are still guaranteed to keep up.
 Since `I ≥ G0 + G1` (not strictly true, but close enough)
 `T == M + I == (6N + I)/2` and `(6N + I)/2 ≥ 4G`, so we can keep up.
 
