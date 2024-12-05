@@ -340,7 +340,7 @@ _Py_uop_frame_new(
     int curr_stackentries,
     _Py_UopsSymbol **args,
     int arg_len,
-    PyObject *f_funcobj)
+    _Py_UopsSymbol *f_funcobj)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];

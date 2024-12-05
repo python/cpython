@@ -1528,7 +1528,7 @@ class TestUopsOptimization(unittest.TestCase):
         opnames = list(iter_opnames(ex))
         self.assertIn("_PUSH_FRAME", uops)
         # Strength reduced version
-        self.assertIn("_CHECK_FUNCTION_INLINE", uops)
+        self.assertIn("_CHECK_FUNCTION_UNMODIFIED", uops)
         # Only 1 outer guard
         self.assertLessEqual(opnames.count("_CHECK_FUNCTION"), 1)
 

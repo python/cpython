@@ -5881,7 +5881,7 @@
             break;
         }
 
-        case _CHECK_FUNCTION_INLINE: {
+        case _CHECK_FUNCTION_UNMODIFIED: {
             uint32_t func_version = (uint32_t)CURRENT_OPERAND0();
             PyObject *callable_p = (PyObject *)CURRENT_OPERAND1();
             assert(PyFunction_Check(callable_p));

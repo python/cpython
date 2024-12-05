@@ -4941,7 +4941,7 @@ dummy_func(
             DEOPT_IF(func->func_version != func_version);
         }
 
-        tier2 op(_CHECK_FUNCTION_INLINE, (func_version/2, callable_p/4 --)) {
+        tier2 op(_CHECK_FUNCTION_UNMODIFIED, (func_version/2, callable_p/4 --)) {
             assert(PyFunction_Check(callable_p));
             PyFunctionObject *func = (PyFunctionObject *)callable_p;
             DEOPT_IF(func->func_version != func_version);

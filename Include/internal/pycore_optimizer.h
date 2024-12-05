@@ -209,8 +209,8 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsSymbol **stack;
     _Py_UopsSymbol **locals;
 
-    // Borrowed. Should be safe because a strong reference is kept by the symbol.
-    PyObject *f_funcobj;
+    // Might be NULL if unable to statically determine.
+    _Py_UopsSymbol *f_funcobj;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
@@ -272,7 +272,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     int curr_stackentries,
     _Py_UopsSymbol **args,
     int arg_len,
-    PyObject *f_funcobj);
+    _Py_UopsSymbol *f_funcobj);
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
