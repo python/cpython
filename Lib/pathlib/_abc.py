@@ -94,7 +94,7 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('scandir')
+    scandir = operator.methodcaller('_scandir')
 
     @staticmethod
     def concat_path(path, text):
@@ -632,13 +632,14 @@ class PathBase(PurePathBase):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('scandir()'))
+        import contextlib
+        return contextlib.nullcontext(self.iterdir())
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -646,9 +647,7 @@ class PathBase(PurePathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        with self.scandir() as entries:
-            names = [entry.name for entry in entries]
-        return map(self.joinpath, names)
+        raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
@@ -698,7 +697,7 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path.scandir() as entries:
+                with path._scandir() as entries:
                     for entry in entries:
                         name = entry.name
                         try:
