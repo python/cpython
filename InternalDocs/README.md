@@ -36,7 +36,7 @@ Program Execution
 
 - [The Bytecode Interpreter](interpreter.md)
 
-- [The Tier 2 Interpreter and JIT](tier2.md)
+- [The JIT](jit.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 
