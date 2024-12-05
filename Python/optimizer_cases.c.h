@@ -2510,7 +2510,6 @@
 
         case _CHECK_FUNCTION: {
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            (void)func_version;
             if (ctx->frame->f_funcobj != NULL) {
                 assert(PyFunction_Check(sym_get_const(ctx->frame->f_funcobj)));
                 REPLACE_OP(this_instr, _CHECK_FUNCTION_UNMODIFIED, 0, func_version);

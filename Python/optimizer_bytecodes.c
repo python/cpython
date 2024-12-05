@@ -590,7 +590,6 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION, (func_version/2 -- )) {
-        (void)func_version;
         if (ctx->frame->f_funcobj != NULL) {
             assert(PyFunction_Check(sym_get_const(ctx->frame->f_funcobj)));
             REPLACE_OP(this_instr, _CHECK_FUNCTION_UNMODIFIED, 0, func_version);
