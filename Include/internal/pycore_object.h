@@ -719,8 +719,8 @@ _PyObject_Resurrect(PyObject *op)
 }
 
 // Undoes an object resurrection by decrementing the refcount without calling
-// _Py_Dealloc(). Returns 1 if the object is dead, and deallocation
-// should continue. Returns 0 if the object is still alive.
+// _Py_Dealloc(). Returns 0 if the object is dead (the normal case), and
+// deallocation should continue. Returns 1 if the object is still alive.
 static inline int
 _PyObject_ResurrectEnd(PyObject *op)
 {
@@ -729,14 +729,14 @@ _PyObject_ResurrectEnd(PyObject *op)
 #endif
 #ifndef Py_GIL_DISABLED
     Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
-    return Py_REFCNT(op) == 0;
+    return Py_REFCNT(op) != 0;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
-        return 1;
+        return 0;
     }
     // Slow-path: object has a shared refcount or is not owned by this thread
     return _PyObject_ResurrectEndSlow(op);

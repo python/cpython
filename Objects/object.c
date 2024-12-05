@@ -489,15 +489,17 @@ int
 _PyObject_ResurrectEndSlow(PyObject *op)
 {
     if (_Py_IsImmortal(op)) {
-        return 0;
+        return 1;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
         // If the object is owned by the current thread, give up ownership and
         // merge the refcount. This isn't necessary in all cases, but it
         // simplifies the implementation.
-        return _Py_ExplicitMergeRefcount(op, -1) == 0;
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
+        return refcount != 0;
     }
-    return _Py_DecRefSharedIsDead(op, NULL, 0);
+    int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
+    return !is_dead;
 }
 
 
@@ -589,7 +591,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    if (_PyObject_ResurrectEnd(self)) {
+    if (!_PyObject_ResurrectEnd(self)) {
         return 0;         /* this is the normal path out */
     }
 

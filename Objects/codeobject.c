@@ -1869,7 +1869,7 @@ code_dealloc(PyCodeObject *co)
 {
     _PyObject_Resurrect((PyObject *)co);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
-    if (!_PyObject_ResurrectEnd((PyObject *)co)) {
+    if (_PyObject_ResurrectEnd((PyObject *)co)) {
         return;
     }
 

@@ -3164,7 +3164,7 @@ dict_dealloc(PyObject *self)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyObject_Resurrect(self);
     _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
-    if (!_PyObject_ResurrectEnd(self)) {
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
     PyDictValues *values = mp->ma_values;

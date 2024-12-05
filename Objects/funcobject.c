@@ -1094,7 +1094,7 @@ func_dealloc(PyObject *self)
     PyFunctionObject *op = _PyFunction_CAST(self);
     _PyObject_Resurrect(self);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
-    if (!_PyObject_ResurrectEnd(self)) {
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
     _PyObject_GC_UNTRACK(op);
