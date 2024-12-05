@@ -1867,7 +1867,7 @@ free_monitoring_data(_PyCoMonitoringData *data)
 static void
 code_dealloc(PyCodeObject *co)
 {
-    _PyObject_Resurrect((PyObject *)co);
+    _PyObject_ResurrectStart((PyObject *)co);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
     if (_PyObject_ResurrectEnd((PyObject *)co)) {
         return;

@@ -703,7 +703,7 @@ extern int _PyObject_ResurrectEndSlow(PyObject *op);
 // Temporarily resurrects an object during deallocation. The refcount is set
 // to one.
 static inline void
-_PyObject_Resurrect(PyObject *op)
+_PyObject_ResurrectStart(PyObject *op)
 {
     assert(Py_REFCNT(op) == 0);
 #ifdef Py_REF_DEBUG

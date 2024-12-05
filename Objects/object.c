@@ -581,7 +581,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    _PyObject_Resurrect(self);
+    _PyObject_ResurrectStart(self);
 
     PyObject_CallFinalizer(self);
 
