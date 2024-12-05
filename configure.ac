@@ -7501,7 +7501,7 @@ _RESTORE_VAR([CPPFLAGS])
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;
+  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) PYTHREAD_NAME_MAXLEN=31;;
   Darwin) PYTHREAD_NAME_MAXLEN=63;;
   iOS) PYTHREAD_NAME_MAXLEN=63;;

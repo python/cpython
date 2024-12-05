@@ -2377,15 +2377,13 @@ _thread__get_name_impl(PyObject *module)
 {
     // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
-    size_t size = Py_ARRAY_LENGTH(name) - 1;
     pthread_t thread = pthread_self();
-    int rc = pthread_getname_np(thread, name, size);
+    int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
-    name[size] = 0;
     return PyUnicode_DecodeFSDefault(name);
 }
 #endif  // HAVE_PTHREAD_GETNAME_NP
@@ -2395,28 +2393,23 @@ _thread__get_name_impl(PyObject *module)
 /*[clinic input]
 _thread.set_name
 
-    name as name_obj: object
+    name as name_obj: unicode
 
 Set the name of the current thread.
 [clinic start generated code]*/
 
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
-/*[clinic end generated code: output=402b0c68e0c0daed input=b55d3d4279e2e831]*/
+/*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
 {
-    if (!PyUnicode_Check(name_obj)) {
-        PyErr_Format(PyExc_TypeError, "expected str, got %T", name_obj);
-        return NULL;
-    }
-
 #ifdef __sun
     // Solaris always uses UTF-8
-    char *encoding = "utf-8";
+    const char *encoding = "utf-8";
 #else
     // Encode the thread name to the filesystem encoding using the "replace"
     // error handler
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    char *encoding = interp->unicode.fs_codec.encoding;
+    const char *encoding = interp->unicode.fs_codec.encoding;
 #endif
     PyObject *name_encoded;
     name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
@@ -2426,13 +2419,16 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 
     const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef PYTHREAD_NAME_MAXLEN
-    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte
-    char buffer[PYTHREAD_NAME_MAXLEN + 1];
+    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
     size_t len = strlen(name);
     if (len > PYTHREAD_NAME_MAXLEN) {
-        memcpy(buffer, name, PYTHREAD_NAME_MAXLEN);
-        buffer[PYTHREAD_NAME_MAXLEN] = 0;
-        name = buffer;
+        PyObject *truncated = PyBytes_FromStringAndSize(name, PYTHREAD_NAME_MAXLEN);
+        if (truncated == NULL) {
+            Py_DECREF(name_encoded);
+            return NULL;
+        }
+        Py_SETREF(name_encoded, truncated);
+        name = PyBytes_AS_STRING(name_encoded);
     }
 #endif
 
