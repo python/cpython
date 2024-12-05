@@ -1520,7 +1520,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
