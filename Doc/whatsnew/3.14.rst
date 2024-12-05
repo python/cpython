@@ -771,6 +771,92 @@ asyncio
 * Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
   It now raises a :exc:`RuntimeError` if there is no current event loop.
   (Contributed by Kumar Aditya in :gh:`126353`.)
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`,
+  before::
+
+    async def amain():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+       loop.run_until_complete(amain())
+    finally:
+       loop.close()
+
+  after::
+
+    async def amain():
+        ...
+
+    asyncio.run(amain())
+
+  If you need to start something, eg, a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`, before::
+
+    def start_server(loop):
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        start_server(loop)
+        loop.run_forever()
+    finally:
+        loop.close()
+
+  after::
+
+    def start_server(loop):
+        ...
+
+    async def amain():
+        start_server(asyncio.get_running_loop())
+        await asyncio.Event().wait()
+
+    asyncio.run(amain())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`, before::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+       loop.run_until_complete(operation_one())
+       blocking_code()
+       loop.run_until_complete(operation_two())
+    finally:
+       loop.close()
+
+  after::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    with asyncio.Runner() as runner:
+       runner.run(operation_one())
+       blocking_code()
+       runner.run(operation_two())
+
+  If you need an 'ambient' event loop, shared between multiple otherwise
+  unrelated modules, this is the sort of use-case that's no longer supported
+  in asyncio.
 
 
 collections.abc
