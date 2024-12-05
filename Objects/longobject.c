@@ -3623,7 +3623,7 @@ _long_is_small_int(PyObject *op)
 static void
 long_dealloc(PyObject *self)
 {
-    #ifndef Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
     if (_long_is_small_int(self)) {
         /* This should never get called, but we also don't want to SEGV if
          * we accidentally decref small Ints out of existence. Instead,
@@ -3634,7 +3634,7 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    #endif
+#endif
     Py_TYPE(self)->tp_free(self);
 }
 
