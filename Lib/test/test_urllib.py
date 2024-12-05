@@ -472,7 +472,7 @@ Connection: close
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
         tmp_file_canon_url = 'file:' + urllib.request.pathname2url(tmp_file)
-        parsed = urllib.parse.urlparse(tmp_file_canon_url)
+        parsed = urllib.parse.urlsplit(tmp_file_canon_url)
         tmp_fileurl = parsed._replace(netloc='localhost').geturl()
         try:
             self.assertTrue(os.path.exists(tmp_file))

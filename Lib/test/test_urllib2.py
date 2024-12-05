@@ -23,7 +23,7 @@ from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 import urllib.error
 import http.client
 
@@ -812,7 +812,9 @@ class HandlerTests(unittest.TestCase):
         TESTFN = os_helper.TESTFN
         towrite = b"hello, world\n"
         canonurl = 'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN))
-        parsed = urlparse(canonurl)
+        parsed = urlsplit(canonurl)
+        if parsed.netloc:
+            raise unittest.SkipTest("non-local working directory")
         urls = [
             canonurl,
             parsed._replace(netloc='localhost').geturl(),
@@ -1149,13 +1151,13 @@ class HandlerTests(unittest.TestCase):
         r = Request('http://example.com')
         for url in urls:
             r.full_url = url
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
 
             self.assertEqual(r.get_full_url(), url)
             # full_url setter uses splittag to split into components.
             # splittag sets the fragment as None while urlparse sets it to ''
             self.assertEqual(r.fragment or '', parsed.fragment)
-            self.assertEqual(urlparse(r.get_full_url()).query, parsed.query)
+            self.assertEqual(urlsplit(r.get_full_url()).query, parsed.query)
 
     def test_full_url_deleter(self):
         r = Request('http://www.example.com')
