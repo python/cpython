@@ -862,22 +862,20 @@ class PathBase(PurePathBase):
         Delete this file or directory (including all sub-directories).
         """
         if self.is_dir(follow_symlinks=False):
-            self._rmtree()
+            def on_error(err):
+                raise err
+
+            results = self.walk(
+                on_error=on_error,
+                top_down=False,  # So we rmdir() empty directories.
+                follow_symlinks=False)
+            for dirpath, _, filenames in results:
+                for filename in filenames:
+                    filepath = dirpath / filename
+                    filepath.unlink()
+                dirpath.rmdir()
         else:
             self.unlink()
-
-    def _rmtree(self):
-        def on_error(err):
-            raise err
-        results = self.walk(
-            on_error=on_error,
-            top_down=False,  # So we rmdir() empty directories.
-            follow_symlinks=False)
-        for dirpath, _, filenames in results:
-            for filename in filenames:
-                filepath = dirpath / filename
-                filepath.unlink()
-            dirpath.rmdir()
 
     def owner(self, *, follow_symlinks=True):
         """

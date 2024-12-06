@@ -2854,7 +2854,7 @@ class DummyPathWalkTest(unittest.TestCase):
 
     def tearDown(self):
         base = self.cls(self.base)
-        base._rmtree()
+        base._delete()
 
     def test_walk_topdown(self):
         walker = self.walk_path.walk()
