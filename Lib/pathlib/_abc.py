@@ -16,7 +16,7 @@ import operator
 import posixpath
 from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
-from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
 
 
@@ -472,26 +472,6 @@ class PathBase(PurePathBase):
         except (OSError, ValueError):
             return False
 
-    def is_mount(self):
-        """
-        Check if this path is a mount point
-        """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
-
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
@@ -500,77 +480,6 @@ class PathBase(PurePathBase):
             return S_ISLNK(self.stat(follow_symlinks=False).st_mode)
         except (OSError, ValueError):
             return False
-
-    def is_junction(self):
-        """
-        Whether this path is a junction.
-        """
-        # Junctions are a Windows-only feature, not present in POSIX nor the
-        # majority of virtual filesystems. There is no cross-platform idiom
-        # to check for junctions (using stat().st_mode).
-        return False
-
-    def is_block_device(self):
-        """
-        Whether this path is a block device.
-        """
-        try:
-            return S_ISBLK(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_char_device(self):
-        """
-        Whether this path is a character device.
-        """
-        try:
-            return S_ISCHR(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_fifo(self):
-        """
-        Whether this path is a FIFO.
-        """
-        try:
-            return S_ISFIFO(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_socket(self):
-        """
-        Whether this path is a socket.
-        """
-        try:
-            return S_ISSOCK(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def samefile(self, other_path):
-        """Return whether other_path is the same or not as this file
-        (as returned by os.path.samefile()).
-        """
-        st = self.stat()
-        try:
-            other_st = other_path.stat()
-        except AttributeError:
-            other_st = self.with_segments(other_path).stat()
-        return (st.st_ino == other_st.st_ino and
-                st.st_dev == other_st.st_dev)
-
-    def _ensure_different_file(self, other_path):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
-        try:
-            if not self.samefile(other_path):
-                return
-        except (OSError, ValueError):
-            return
-        err = OSError(EINVAL, "Source and target are the same file")
-        err.filename = str(self)
-        err.filename2 = str(other_path)
-        raise err
 
     def _ensure_distinct_path(self, other_path):
         """
@@ -845,7 +754,6 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
-        self._ensure_different_file(target)
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -953,9 +861,7 @@ class PathBase(PurePathBase):
         """
         Delete this file or directory (including all sub-directories).
         """
-        if self.is_symlink() or self.is_junction():
-            self.unlink()
-        elif self.is_dir():
+        if self.is_dir(follow_symlinks=False):
             self._rmtree()
         else:
             self.unlink()
