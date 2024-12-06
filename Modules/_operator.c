@@ -1624,12 +1624,6 @@ methodcaller_vectorcall(methodcallerobject *mc, PyObject *const *args,
     }
     assert(mc->vectorcall_args != NULL);
 
-<<<<<<< HEAD
-    Py_ssize_t number_of_arguments = PyTuple_GET_SIZE(mc->args) +
-        (mc->vectorcall_kwnames ? PyTuple_GET_SIZE(mc->vectorcall_kwnames) : 0);
-
-=======
->>>>>>> a0f342840ea (use strong refs)
     PyObject *tmp_args[_METHODCALLER_MAX_ARGS];
     tmp_args[0] = args[0];
     assert(1 + PyTuple_GET_SIZE(mc->vectorcall_args) <= _METHODCALLER_MAX_ARGS);
@@ -1646,21 +1640,6 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     PyObject* args = mc->args;
     PyObject* kwds = mc->kwds;
 
-<<<<<<< HEAD
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    mc->vectorcall_args = PyMem_Calloc(
-        nargs + (kwds ? PyDict_Size(kwds) : 0),
-        sizeof(PyObject*));
-    if (!mc->vectorcall_args) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    // the objects in mc->vectorcall_args have references borrowed
-    // from mc->args and the keys from mc->kwds
-    memcpy(mc->vectorcall_args, _PyTuple_ITEMS(args),
-           nargs * sizeof(PyObject *)); // borrowed references
-=======
->>>>>>> a0f342840ea (use strong refs)
     if (kwds && PyDict_Size(kwds)) {
         PyObject *values = PyDict_Values(kwds);
         if (!values) {
@@ -1752,7 +1731,6 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 methodcaller_clear(methodcallerobject *mc)
 {
-   // printf("methodcaller_clear: mc->vectorcall_kwnames %ld\n", mc->vectorcall_kwnames);
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
@@ -1766,8 +1744,6 @@ methodcaller_clear(methodcallerobject *mc)
 static void
 methodcaller_dealloc(methodcallerobject *mc)
 {
-    //printf("methodcaller_dealloc: \n");
-
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
     methodcaller_clear(mc);
@@ -1778,18 +1754,9 @@ methodcaller_dealloc(methodcallerobject *mc)
 static int
 methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 {
-    //printf("methodcaller_traverse\n");
     Py_VISIT(mc->name);
-    //printf("methodcaller_traverse: args %ld (refcount %ld)\n", mc->args, Py_REFCNT(mc->args ));
     Py_VISIT(mc->args);
-    //printf("methodcaller_traverse: kwds\n");
     Py_VISIT(mc->kwds);
-   // printf("methodcaller_traverse: vectorcall_args mc->vectorcall_args %ld\n", mc->vectorcall_args);
-    if (mc->vectorcall_kwnames != NULL && 0) {
-        printf("methodcaller_traverse: mv->vectorcall_args ");
-        print_str(mc->vectorcall_args);
-        printf("\n");
-    }
     Py_VISIT(mc->vectorcall_args);
     if (mc->vectorcall_kwnames != NULL) {
         Py_VISIT(mc->vectorcall_kwnames);
