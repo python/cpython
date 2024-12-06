@@ -199,22 +199,22 @@ unreachable:
 
 ```pycon
 >>> import gc
->>> 
+>>>
 >>> class Link:
 ...    def __init__(self, next_link=None):
 ...        self.next_link = next_link
-...  
+...
 >>> link_3 = Link()
 >>> link_2 = Link(link_3)
 >>> link_1 = Link(link_2)
 >>> link_3.next_link = link_1
 >>> A = link_1
 >>> del link_1, link_2, link_3
->>> 
+>>>
 >>> link_4 = Link()
 >>> link_4.next_link = link_4
 >>> del link_4
->>> 
+>>>
 >>> # Collect the unreachable Link object (and its .__dict__ dict).
 >>> gc.collect()
 2
@@ -459,11 +459,11 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 >>> # Create a reference cycle.
 >>> x = MyObj()
 >>> x.self = x
->>> 
+>>>
 >>> # Initially the object is in the young generation.
 >>> gc.get_objects(generation=0)
 [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
->>> 
+>>>
 >>> # After a collection of the youngest generation the object
 >>> # moves to the old generation.
 >>> gc.collect(generation=0)
@@ -514,6 +514,44 @@ to check for any new stack frames that have been created since the last
 increment. All objects directly referred to from those stack frames are
 added to the working set.
 Then the above algorithm is repeated, starting from step 2.
+
+Determining how much work to do
+-------------------------------
+
+We need to do a certain amount of work to enusre that garbage is collected,
+but doing too much work slows down execution.
+
+To work out how much work we need to do, consider a heap with `L` live objects
+and `G0` garbage objects at the start of a full scavenge and `G1` garbage objects
+at the end of the scavenge. We don't want the amount of garbage to grow, `G1 ≤ G0`, and
+we don't want too much garbage (say 1/3 of the heap maximum), `G0 ≤ L/2`.
+For each full scavenge we must visit all objects, `T == L + G0 + G1`, during which
+`G1` garbage objects are created.
+
+The number of new objects created `N` must be at least the new garbage created, `N ≥ G1`,
+assuming that the number of live objects remains roughly constant.
+If we set `T == 4*N` we get `T > 4*G1` and `T = L + G0 + G1` => `L + G0 > 3G1`
+For a steady state heap (`G0 == G1`) we get `L > 2G0` and the desired garbage ratio.
+
+In other words, to keep the garbage fraction to 1/3 or less we need to visit
+4 times as many objects as are newly created.
+
+We can do better than this though. Not all new objects will be garbage.
+Consider the heap at the end of the scavenge with `L1` live objects and `G1`
+garbage. Also, note that `T == M + I` where `M` is the number of objects marked
+as reachable and `I` is the number of objects visited in increments.
+Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + G1`.
+
+If we choose the amount of work done such that `2*M + I == 6N` then we can do
+less work in most cases, but are still guaranteed to keep up.
+Since `I ≳ G0 + G1` (not strictly true, but close enough)
+`T == M + I == (6N + I)/2` and `(6N + I)/2 ≳ 4G`, so we can keep up.
+
+The reason that this improves performance is that `M` is usually much larger
+than `I`. If `M == 10I`, then `T ≅ 3N`.
+
+Finally, instead of using a fixed multiple of 8, we gradually increase it as the
+heap grows. This avoids wasting work for small heaps and during startup.
 
 
 Optimization: reusing fields to save memory

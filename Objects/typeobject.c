@@ -2355,6 +2355,16 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+
+static int
+plain_object_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    Py_VISIT(type);
+    return PyObject_VisitManagedDict(self, visit, arg);
+}
+
 static void
 clear_slots(PyTypeObject *type, PyObject *self)
 {
@@ -4147,6 +4157,9 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
         type->tp_dictoffset = -1;
+        if (type->tp_basicsize == sizeof(PyObject)) {
+            type->tp_traverse = plain_object_traverse;
+        }
     }
 
     type->tp_basicsize = slotoffset;
