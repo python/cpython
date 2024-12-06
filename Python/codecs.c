@@ -853,8 +853,8 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
+    Py_ssize_t start, end;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        Py_ssize_t start, end;
         if (PyUnicodeDecodeError_GetStart(exc, &start)) {
             return NULL;
         }
@@ -888,7 +888,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
 
     PyObject *obj = NULL;
-    Py_ssize_t start, end;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         if (PyUnicodeEncodeError_GetStart(exc, &start)) {
             return NULL;
