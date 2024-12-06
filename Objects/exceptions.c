@@ -2711,8 +2711,8 @@ set_unicodefromstring(PyObject **attr, const char *value)
 /*
  * Adjust the (inclusive) 'start' value of a UnicodeError object.
  *
- * The START can be negative or not, but when adjusting the value,
- * we clip it in [0, MAX(0, OBJLEN - 1)] but do not intepret it as
+ * The 'start' can be negative or not, but when adjusting the value,
+ * we clip it in [0, max(0, objlen - 1)] but do not interpret it as
  * a relative offset.
  */
 static inline Py_ssize_t
@@ -2729,11 +2729,11 @@ unicode_error_adjust_start(Py_ssize_t start, Py_ssize_t objlen)
 }
 
 /*
- * Adjust the (eclusive) 'end' value of a UnicodeError object.
+ * Adjust the (exclusive) 'end' value of a UnicodeError object.
  *
- * The END can be negative or not, but when adjusting the value,
- * we clip it in [MIN(1, OBJLEN), MAX(MIN(1, OBJLEN), OBJLEN)] but
- * do not intepret it as a relative offset.
+ * The 'end' can be negative or not, but when adjusting the value,
+ * we clip it in [min(1, objlen), max(min(1, objlen), objlen)] but
+ * do not interpret it as a relative offset.
  */
 static inline Py_ssize_t
 unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)

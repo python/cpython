@@ -119,7 +119,7 @@ get_reftotal(PyInterpreterState *interp)
        since we can't determine which interpreter updated it. */
     Py_ssize_t total = REFTOTAL(interp);
 #ifdef Py_GIL_DISABLED
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         /* This may race with other threads modifications to their reftotal */
         _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
         total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
@@ -362,8 +362,10 @@ is_dead(PyObject *o)
 }
 # endif
 
-void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+// Decrement the shared reference count of an object. Return 1 if the object
+// is dead and should be deallocated, 0 otherwise.
+static int
+_Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 {
     // Should we queue the object for the owning thread to merge?
     int should_queue;
@@ -404,6 +406,15 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
+        return 1;
+    }
+    return 0;
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
         _Py_Dealloc(o);
     }
 }
@@ -472,6 +483,26 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
     return refcnt;
 }
+
+// The more complicated "slow" path for undoing the resurrection of an object.
+int
+_PyObject_ResurrectEndSlow(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        // If the object is owned by the current thread, give up ownership and
+        // merge the refcount. This isn't necessary in all cases, but it
+        // simplifies the implementation.
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
+        return refcount != 0;
+    }
+    int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
+    return !is_dead;
+}
+
+
 #endif  /* Py_GIL_DISABLED */
 
 
@@ -550,7 +581,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    Py_SET_REFCNT(self, 1);
+    _PyObject_ResurrectStart(self);
 
     PyObject_CallFinalizer(self);
 
@@ -560,8 +591,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
-    if (Py_REFCNT(self) == 0) {
+    if (!_PyObject_ResurrectEnd(self)) {
         return 0;         /* this is the normal path out */
     }
 
@@ -2457,11 +2487,7 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_CREATE, data);
-    }
+    _PyReftracerTrack(op, PyRefTracer_CREATE);
 }
 
 void
@@ -2554,10 +2580,6 @@ _Py_ResurrectReference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
-        void* data = _PyRuntime.ref_tracer.tracer_data;
-        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
-    }
 }
 
 
@@ -2947,15 +2969,10 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-    }
-
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
     (*dealloc)(op);
 
 #ifdef Py_DEBUG

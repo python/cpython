@@ -85,7 +85,7 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
    This is equivalent to the Python expression ``hasattr(o, attr_name)``.
@@ -597,5 +597,5 @@ Object Protocol
    This function is intended to be used soon after *obj* is created,
    by the code that creates it.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 

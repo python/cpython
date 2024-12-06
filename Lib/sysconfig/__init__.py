@@ -318,14 +318,22 @@ def get_default_scheme():
 
 def get_makefile_filename():
     """Return the path of the Makefile."""
+
+    # GH-127429: When cross-compiling, use the Makefile from the target, instead of the host Python.
+    if cross_base := os.environ.get('_PYTHON_PROJECT_BASE'):
+        return os.path.join(cross_base, 'Makefile')
+
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
+
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
+
     if hasattr(sys.implementation, '_multiarch'):
         config_dir_name += f'-{sys.implementation._multiarch}'
+
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
@@ -355,7 +363,8 @@ def _init_posix(vars):
     else:
         _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
     build_time_vars = _temp.build_time_vars
-    vars.update(build_time_vars)
+    # GH-126920: Make sure we don't overwrite any of the keys already set
+    vars.update(build_time_vars | vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -463,27 +472,44 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
+
+    prefix = _PREFIX
+    exec_prefix = _EXEC_PREFIX
+    base_prefix = _BASE_PREFIX
+    base_exec_prefix = _BASE_EXEC_PREFIX
+
+    try:
+        abiflags = sys.abiflags
+    except AttributeError:
+        abiflags = ''
+
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+        # If we are cross-compiling, load the prefixes from the Makefile instead.
+        if '_PYTHON_PROJECT_BASE' in os.environ:
+            prefix = _CONFIG_VARS['prefix']
+            exec_prefix = _CONFIG_VARS['exec_prefix']
+            base_prefix = _CONFIG_VARS['prefix']
+            base_exec_prefix = _CONFIG_VARS['exec_prefix']
+            abiflags = _CONFIG_VARS['ABIFLAGS']
+
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
     # Distutils.
-    _CONFIG_VARS['prefix'] = _PREFIX
-    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['prefix'] = prefix
+    _CONFIG_VARS['exec_prefix'] = exec_prefix
     _CONFIG_VARS['py_version'] = _PY_VERSION
     _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
     _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-    _CONFIG_VARS['base'] = _PREFIX
-    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['installed_base'] = base_prefix
+    _CONFIG_VARS['base'] = prefix
+    _CONFIG_VARS['installed_platbase'] = base_exec_prefix
+    _CONFIG_VARS['platbase'] = exec_prefix
     _CONFIG_VARS['projectbase'] = _PROJECT_BASE
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
     _CONFIG_VARS['implementation'] = _get_implementation()
     _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
-    try:
-        _CONFIG_VARS['abiflags'] = sys.abiflags
-    except AttributeError:
-        # sys.abiflags may not be defined on all platforms.
-        _CONFIG_VARS['abiflags'] = ''
+    _CONFIG_VARS['abiflags'] = abiflags
     try:
         _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
     except AttributeError:
@@ -492,8 +518,6 @@ def _init_config_vars():
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
         _CONFIG_VARS['VPATH'] = sys._vpath
-    if os.name == 'posix':
-        _init_posix(_CONFIG_VARS)
     if _HAS_USER_BASE:
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in

@@ -1,5 +1,4 @@
 import collections
-import contextlib
 import io
 import os
 import errno
@@ -9,7 +8,7 @@ import unittest
 from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
-from test.support import is_wasi
+from test.support import is_wasi, is_emscripten
 from test.support.os_helper import TESTFN
 
 
@@ -1351,7 +1350,6 @@ class PathBaseTest(PurePathBaseTest):
         p = self.cls('')
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
-        self.assertRaises(e, p.lstat)
         self.assertRaises(e, p.exists)
         self.assertRaises(e, p.samefile, 'foo')
         self.assertRaises(e, p.is_dir)
@@ -1372,9 +1370,7 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.rglob, '*')
         self.assertRaises(e, lambda: list(p.walk()))
         self.assertRaises(e, p.absolute)
-        self.assertRaises(e, P.cwd)
         self.assertRaises(e, p.expanduser)
-        self.assertRaises(e, p.home)
         self.assertRaises(e, p.readlink)
         self.assertRaises(e, p.symlink_to, 'foo')
         self.assertRaises(e, p.hardlink_to, 'foo')
@@ -1419,24 +1415,6 @@ class DummyPathIO(io.BytesIO):
 DummyPathStatResult = collections.namedtuple(
     'DummyPathStatResult',
     'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
-
-
-class DummyDirEntry:
-    """
-    Minimal os.DirEntry-like object. Returned from DummyPath.scandir().
-    """
-    __slots__ = ('name', '_is_symlink', '_is_dir')
-
-    def __init__(self, name, is_symlink, is_dir):
-        self.name = name
-        self._is_symlink = is_symlink
-        self._is_dir = is_dir
-
-    def is_symlink(self):
-        return self._is_symlink
-
-    def is_dir(self, *, follow_symlinks=True):
-        return self._is_dir and (follow_symlinks or not self._is_symlink)
 
 
 class DummyPath(PathBase):
@@ -1506,25 +1484,14 @@ class DummyPath(PathBase):
             stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors, newline=newline)
         return stream
 
-    @contextlib.contextmanager
-    def scandir(self):
-        path = self.resolve()
-        path_str = str(path)
-        if path_str in self._files:
-            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path_str)
-        elif path_str in self._directories:
-            yield iter([path.joinpath(name)._dir_entry for name in self._directories[path_str]])
+    def iterdir(self):
+        path = str(self.resolve())
+        if path in self._files:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
+        elif path in self._directories:
+            return iter([self / name for name in self._directories[path]])
         else:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path_str)
-
-    @property
-    def _dir_entry(self):
-        path_str = str(self)
-        is_symlink = path_str in self._symlinks
-        is_directory = (path_str in self._directories
-                        if not is_symlink
-                        else self._symlinks[path_str][1])
-        return DummyDirEntry(self.name, is_symlink, is_directory)
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         path = str(self.parent.resolve() / self.name)
@@ -2217,9 +2184,9 @@ class DummyPathTest(DummyPurePathTest):
 
     def test_scandir(self):
         p = self.cls(self.base)
-        with p.scandir() as entries:
+        with p._scandir() as entries:
             self.assertTrue(list(entries))
-        with p.scandir() as entries:
+        with p._scandir() as entries:
             for entry in entries:
                 child = p / entry.name
                 self.assertIsNotNone(entry)
@@ -2301,6 +2268,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_glob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, recurse_symlinks=True)
@@ -2396,6 +2364,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
+    @unittest.skipIf(is_emscripten, "Hangs")
     def test_rglob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, recurse_symlinks=True)
@@ -2671,17 +2640,6 @@ class DummyPathTest(DummyPurePathTest):
         st = p.stat()
         self.assertEqual(st, p.stat(follow_symlinks=False))
 
-    @needs_symlinks
-    def test_lstat(self):
-        p = self.cls(self.base)/ 'linkA'
-        st = p.stat()
-        self.assertNotEqual(st, p.lstat())
-
-    def test_lstat_nosymlink(self):
-        p = self.cls(self.base) / 'fileA'
-        st = p.stat()
-        self.assertEqual(st, p.lstat())
-
     def test_is_dir(self):
         P = self.cls(self.base)
         self.assertTrue((P / 'dirA').is_dir())
@@ -2868,11 +2826,13 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         base.joinpath('dirA')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').stat,
+                          follow_symlinks=False)
         base.joinpath('dirB')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').stat,
+                          follow_symlinks=False)
         base.joinpath('dirC')._delete()
         self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
         self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
@@ -2922,7 +2882,16 @@ class DummyPathTest(DummyPurePathTest):
         filename = tmp / 'foo'
         self.assertRaises(FileNotFoundError, filename._delete)
 
-    def setUpWalk(self):
+
+class DummyPathWalkTest(unittest.TestCase):
+    cls = DummyPath
+    base = DummyPathTest.base
+    can_symlink = False
+
+    def setUp(self):
+        name = self.id().split('.')[-1]
+        if name in _tests_needing_symlinks and not self.can_symlink:
+            self.skipTest('requires symlinks')
         # Build:
         #     TESTFN/
         #       TEST1/              a file kid and two directory kids
@@ -2966,8 +2935,11 @@ class DummyPathTest(DummyPurePathTest):
         else:
             self.sub2_tree = (self.sub2_path, [], ["tmp3"])
 
+    def tearDown(self):
+        base = self.cls(self.base)
+        base._rmtree()
+
     def test_walk_topdown(self):
-        self.setUpWalk()
         walker = self.walk_path.walk()
         entry = next(walker)
         entry[1].sort()  # Ensure we visit SUB1 before SUB2
@@ -2984,7 +2956,6 @@ class DummyPathTest(DummyPurePathTest):
             next(walker)
 
     def test_walk_prune(self):
-        self.setUpWalk()
         # Prune the search.
         all = []
         for root, dirs, files in self.walk_path.walk():
@@ -3001,7 +2972,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_walk_bottom_up(self):
-        self.setUpWalk()
         seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
         for path, dirnames, filenames in self.walk_path.walk(top_down=False):
             if path == self.walk_path:
@@ -3036,7 +3006,6 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_symlinks
     def test_walk_follow_symlinks(self):
-        self.setUpWalk()
         walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.link_path:
@@ -3048,7 +3017,6 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_symlinks
     def test_walk_symlink_location(self):
-        self.setUpWalk()
         # Tests whether symlinks end up in filenames or dirnames depending
         # on the `follow_symlinks` argument.
         walk_it = self.walk_path.walk(follow_symlinks=False)
@@ -3093,6 +3061,11 @@ class DummyPathWithSymlinks(DummyPath):
 
 
 class DummyPathWithSymlinksTest(DummyPathTest):
+    cls = DummyPathWithSymlinks
+    can_symlink = True
+
+
+class DummyPathWithSymlinksWalkTest(DummyPathWalkTest):
     cls = DummyPathWithSymlinks
     can_symlink = True
 
