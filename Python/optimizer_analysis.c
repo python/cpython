@@ -353,6 +353,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_not_null _Py_uop_sym_new_not_null
 #define sym_new_type _Py_uop_sym_new_type
 #define sym_is_null _Py_uop_sym_is_null
+#define sym_is_a_class _Py_uop_sym_is_a_class
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_has_type _Py_uop_sym_has_type
@@ -361,6 +362,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
+#define sym_set_is_a_class(SYM, VERSION) _Py_uop_sym_set_is_a_class(ctx, SYM, VERSION)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
