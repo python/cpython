@@ -1647,7 +1647,7 @@ static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     // the objects in mc->vectorcall_args have references borrowed
     // from mc->args and the keys from mc->kwds
     memcpy(mc->vectorcall_args, _PyTuple_ITEMS(args),
-            nargs * sizeof(PyObject*)); // borrowed references
+           nargs * sizeof(PyObject *)); // borrowed references
     if (kwds && PyDict_Size(kwds)) {
         const Py_ssize_t nkwds = PyDict_Size(kwds);
         mc->vectorcall_kwnames = PyTuple_New(nkwds);
