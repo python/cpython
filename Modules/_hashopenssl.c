@@ -700,7 +700,11 @@ static PyObject *
 EVP_get_name(EVPobject *self, void *closure)
 {
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
-    return md == NULL ? set_simple_openssl_exception() : py_digest_name(md);
+    if (md == NULL) {
+        set_simple_openssl_exception();
+        return NULL;
+    }
+    return py_digest_name(md);
 }
 
 static PyGetSetDef EVP_getseters[] = {
