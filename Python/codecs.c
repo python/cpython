@@ -855,10 +855,10 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
     Py_ssize_t start, end;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetStart(exc, &start)) {
+        if (PyUnicodeDecodeError_GetStart(exc, &start) < 0) {
             return NULL;
         }
-        if (PyUnicodeDecodeError_GetEnd(exc, &end)) {
+        if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
             return NULL;
         }
         if (end <= start) {
@@ -889,19 +889,19 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 
     PyObject *obj = NULL;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (PyUnicodeEncodeError_GetStart(exc, &start)) {
+        if (PyUnicodeEncodeError_GetStart(exc, &start) < 0) {
             return NULL;
         }
-        if (PyUnicodeEncodeError_GetEnd(exc, &end)) {
+        if (PyUnicodeEncodeError_GetEnd(exc, &end) < 0) {
             return NULL;
         }
         obj = PyUnicodeEncodeError_GetObject(exc);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (PyUnicodeTranslateError_GetStart(exc, &start)) {
+        if (PyUnicodeTranslateError_GetStart(exc, &start) < 0) {
             return NULL;
         }
-        if (PyUnicodeTranslateError_GetEnd(exc, &end)) {
+        if (PyUnicodeTranslateError_GetEnd(exc, &end) < 0) {
             return NULL;
         }
         obj = PyUnicodeTranslateError_GetObject(exc);
