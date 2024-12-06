@@ -1,0 +1,1 @@
+Add an example on how to write a tarfile to stdout.
