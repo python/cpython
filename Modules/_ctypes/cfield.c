@@ -380,9 +380,10 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
         assert(NUM_BITS(size_arg) || (size_arg == (NBITS) / 8));              \
         CTYPE val;                                                            \
         if (PyLong_Check(value)                                               \
-                && PyUnstable_Long_IsCompact((PyLongObject *)value)) {        \
+            && PyUnstable_Long_IsCompact((PyLongObject *)value))              \
+        {                                                                     \
             val = (CTYPE)PyUnstable_Long_CompactValue(                        \
-                (PyLongObject *)value);                                       \
+                      (PyLongObject *)value);                                 \
         }                                                                     \
         else {                                                                \
             Py_ssize_t res = PyLong_AsNativeBytes(                            \
@@ -884,7 +885,7 @@ u_get(void *ptr, Py_ssize_t size)
     return PyUnicode_FromWideChar((wchar_t *)ptr, 1);
 }
 
-/* U - a wchar_t* unicode string */
+/* U: a wchar_t* unicode string */
 static PyObject *
 U_get(void *ptr, Py_ssize_t size)
 {
