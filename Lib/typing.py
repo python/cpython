@@ -2927,7 +2927,6 @@ class SupportsRound[T](Protocol):
         pass
 
 
-@runtime_checkable
 class Reader[T](Iterable[T], Protocol):
     """Protocol for simple I/O reader instances.
 
@@ -2953,7 +2952,6 @@ class Reader[T](Iterable[T], Protocol):
         """
 
 
-@runtime_checkable
 class Writer[T](Protocol):
     """Protocol for simple I/O writer instances.
 
