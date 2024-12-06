@@ -2421,21 +2421,22 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-    const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef PYTHREAD_NAME_MAXLEN
     // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    size_t len = strlen(name);
+    size_t len = PyBytes_GET_SIZE(name_encoded);
     if (len > PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated = PyBytes_FromStringAndSize(name, PYTHREAD_NAME_MAXLEN);
+        PyObject *truncated;
+        truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
+                                              PYTHREAD_NAME_MAXLEN);
         if (truncated == NULL) {
             Py_DECREF(name_encoded);
             return NULL;
         }
         Py_SETREF(name_encoded, truncated);
-        name = PyBytes_AS_STRING(name_encoded);
     }
 #endif
 
+    const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef __APPLE__
     int rc = pthread_setname_np(name);
 #else
