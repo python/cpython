@@ -181,45 +181,55 @@ PyTypeObject _PyManagedBuffer_Type = {
     (((PyMemoryViewObject *)mv)->flags&_Py_MEMORYVIEW_RELEASED || \
      ((PyMemoryViewObject *)mv)->mbuf->flags&_Py_MANAGED_BUFFER_RELEASED)
 
-#define CHECK_RELEASED(mv) \
-    if (BASE_INACCESSIBLE(mv)) {                                  \
-        PyErr_SetString(PyExc_ValueError,                         \
-            "operation forbidden on released memoryview object"); \
-        return NULL;                                              \
-    }
+#define CHECK_RELEASED(MV)                                              \
+    do {                                                                \
+        if (BASE_INACCESSIBLE(MV)) {                                    \
+            PyErr_SetString(PyExc_ValueError,                           \
+                "operation forbidden on released memoryview object");   \
+            return NULL;                                                \
+        }                                                               \
+    } while (0)
 
-#define CHECK_RELEASED_INT(mv) \
-    if (BASE_INACCESSIBLE(mv)) {                                  \
-        PyErr_SetString(PyExc_ValueError,                         \
-            "operation forbidden on released memoryview object"); \
-        return -1;                                                \
-    }
+#define CHECK_RELEASED_INT(MV) \
+    do {                                                                \
+        if (BASE_INACCESSIBLE(MV)) {                                    \
+            PyErr_SetString(PyExc_ValueError,                           \
+                "operation forbidden on released memoryview object");   \
+            return -1;                                                  \
+        }                                                               \
+    } while (0)
 
-#define CHECK_RESTRICTED(mv) \
-    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
-        PyErr_SetString(PyExc_ValueError,                                  \
-            "cannot create new view on restricted memoryview");            \
-        return NULL;                                                       \
-    }
+#define CHECK_RESTRICTED(MV) \
+    do {                                                                        \
+        if (((PyMemoryViewObject *)(MV))->flags & _Py_MEMORYVIEW_RESTRICTED) {  \
+            PyErr_SetString(PyExc_ValueError,                                   \
+                "cannot create new view on restricted memoryview");             \
+            return NULL;                                                        \
+        }                                                                       \
+    } while (0)
 
-#define CHECK_RESTRICTED_INT(mv) \
-    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
-        PyErr_SetString(PyExc_ValueError,                                  \
-            "cannot create new view on restricted memoryview");            \
-        return -1;                                                       \
-    }
+#define CHECK_RESTRICTED_INT(MV) \
+    do {                                                                        \
+        if (((PyMemoryViewObject *)(MV))->flags & _Py_MEMORYVIEW_RESTRICTED) {  \
+            PyErr_SetString(PyExc_ValueError,                                   \
+                "cannot create new view on restricted memoryview");             \
+            return -1;                                                          \
+        }                                                                       \
+    } while (0)
 
 /* See gh-92888. These macros signal that we need to check the memoryview
    again due to possible read after frees. */
 #define CHECK_RELEASED_AGAIN(mv) CHECK_RELEASED(mv)
 #define CHECK_RELEASED_INT_AGAIN(mv) CHECK_RELEASED_INT(mv)
 
-#define CHECK_LIST_OR_TUPLE(v) \
-    if (!PyList_Check(v) && !PyTuple_Check(v)) { \
-        PyErr_SetString(PyExc_TypeError,         \
-            #v " must be a list or a tuple");    \
-        return NULL;                             \
-    }
+#define CHECK_LIST_OR_TUPLE(OBJ)                            \
+    do {                                                    \
+        if (!PyList_Check(OBJ) && !PyTuple_Check(OBJ)) {    \
+            PyErr_SetString(PyExc_TypeError,                \
+                #OBJ " must be a list or a tuple");         \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
 
 #define VIEW_ADDR(mv) (&((PyMemoryViewObject *)mv)->view)
 
@@ -1455,7 +1465,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
         return NULL;
     }
     if (shape) {
-        CHECK_LIST_OR_TUPLE(shape)
+        CHECK_LIST_OR_TUPLE(shape);
         ndim = PySequence_Fast_GET_SIZE(shape);
         if (ndim > PyBUF_MAX_NDIM) {
             PyErr_SetString(PyExc_ValueError,

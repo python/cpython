@@ -107,41 +107,64 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
 
 #include "condvar.h"
 
-#define MUTEX_INIT(mut) \
-    if (PyMUTEX_INIT(&(mut))) { \
-        Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };
-#define MUTEX_FINI(mut) \
-    if (PyMUTEX_FINI(&(mut))) { \
-        Py_FatalError("PyMUTEX_FINI(" #mut ") failed"); };
-#define MUTEX_LOCK(mut) \
-    if (PyMUTEX_LOCK(&(mut))) { \
-        Py_FatalError("PyMUTEX_LOCK(" #mut ") failed"); };
-#define MUTEX_UNLOCK(mut) \
-    if (PyMUTEX_UNLOCK(&(mut))) { \
-        Py_FatalError("PyMUTEX_UNLOCK(" #mut ") failed"); };
+#define MUTEX_INIT(MUT)                                     \
+    do {                                                    \
+        if (PyMUTEX_INIT(&(MUT))) {                         \
+            Py_FatalError("PyMUTEX_INIT(" #MUT ") failed"); \
+        }                                                   \
+    } while (0)
+#define MUTEX_FINI(MUT)                                     \
+    do {                                                    \
+        if (PyMUTEX_FINI(&(MUT))) {                         \
+            Py_FatalError("PyMUTEX_FINI(" #MUT ") failed"); \
+        }                                                   \
+    } while (0)
+#define MUTEX_LOCK(MUT)                                     \
+    do {                                                    \
+        if (PyMUTEX_LOCK(&(MUT))) {                         \
+            Py_FatalError("PyMUTEX_LOCK(" #MUT ") failed"); \
+        }                                                   \
+    } while (0)
+#define MUTEX_UNLOCK(MUT)                                       \
+    do {                                                        \
+        if (PyMUTEX_UNLOCK(&(MUT))) {                           \
+            Py_FatalError("PyMUTEX_UNLOCK(" #MUT ") failed");   \
+        }                                                       \
+    } while (0)
 
-#define COND_INIT(cond) \
-    if (PyCOND_INIT(&(cond))) { \
-        Py_FatalError("PyCOND_INIT(" #cond ") failed"); };
-#define COND_FINI(cond) \
-    if (PyCOND_FINI(&(cond))) { \
-        Py_FatalError("PyCOND_FINI(" #cond ") failed"); };
-#define COND_SIGNAL(cond) \
-    if (PyCOND_SIGNAL(&(cond))) { \
-        Py_FatalError("PyCOND_SIGNAL(" #cond ") failed"); };
-#define COND_WAIT(cond, mut) \
-    if (PyCOND_WAIT(&(cond), &(mut))) { \
-        Py_FatalError("PyCOND_WAIT(" #cond ") failed"); };
-#define COND_TIMED_WAIT(cond, mut, microseconds, timeout_result) \
-    { \
-        int r = PyCOND_TIMEDWAIT(&(cond), &(mut), (microseconds)); \
-        if (r < 0) \
-            Py_FatalError("PyCOND_WAIT(" #cond ") failed"); \
-        if (r) /* 1 == timeout, 2 == impl. can't say, so assume timeout */ \
-            timeout_result = 1; \
-        else \
-            timeout_result = 0; \
-    } \
+#define COND_INIT(COND)                                     \
+    do {                                                    \
+        if (PyCOND_INIT(&(COND))) {                         \
+            Py_FatalError("PyCOND_INIT(" #COND ") failed"); \
+        }                                                   \
+    } while (0)
+#define COND_FINI(COND)                                     \
+    do {                                                    \
+        if (PyCOND_FINI(&(COND))) {                         \
+            Py_FatalError("PyCOND_FINI(" #COND ") failed"); \
+        }                                                   \
+    } while (0)
+#define COND_SIGNAL(COND) \
+    do {                                                        \
+        if (PyCOND_SIGNAL(&(COND))) {                           \
+            Py_FatalError("PyCOND_SIGNAL(" #COND ") failed");   \
+        }                                                       \
+    } while (0)
+#define COND_WAIT(COND, MUT)                                \
+    do {                                                    \
+        if (PyCOND_WAIT(&(COND), &(MUT))) {                 \
+            Py_FatalError("PyCOND_WAIT(" #COND ") failed"); \
+        }                                                   \
+    } while (0)
+#define COND_TIMED_WAIT(COND, MUT, MICROSECONDS, TIMEOUT_RESULT)    \
+    do {                                                            \
+        int r = PyCOND_TIMEDWAIT(&(COND), &(MUT), (MICROSECONDS));  \
+        if (r < 0) {                                                \
+            Py_FatalError("PyCOND_WAIT(" #COND ") failed");         \
+        }                                                           \
+        /* 1 == timeout, 2 == impl. can't say, so assume timeout */ \
+        TIMEOUT_RESULT = r ? 1 : 0;                                 \
+    } while (0)
 
 
 #define DEFAULT_INTERVAL 5000

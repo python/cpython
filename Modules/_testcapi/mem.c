@@ -214,12 +214,14 @@ test_setallocators(PyMemAllocatorDomain domain)
             break;
     }
 
-#define CHECK_CTX(FUNC)                     \
-    if (hook.ctx != &hook) {                \
-        error_msg = FUNC " wrong context";  \
-        goto fail;                          \
-    }                                       \
-    hook.ctx = NULL;  /* reset for next check */
+#define CHECK_CTX(FUNC)                                 \
+    do {                                                \
+        if (hook.ctx != &hook) {                        \
+            error_msg = FUNC " wrong context";          \
+            goto fail;                                  \
+        }                                               \
+        hook.ctx = NULL;  /* reset for next check */    \
+    } while (0)
 
     if (ptr == NULL) {
         error_msg = "malloc failed";

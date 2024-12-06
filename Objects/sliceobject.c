@@ -636,15 +636,17 @@ static Py_hash_t
 slicehash(PySliceObject *v)
 {
     Py_uhash_t acc = _PyHASH_XXPRIME_5;
-#define _PyHASH_SLICE_PART(com) { \
-    Py_uhash_t lane = PyObject_Hash(v->com); \
-    if(lane == (Py_uhash_t)-1) { \
-        return -1; \
-    } \
-    acc += lane * _PyHASH_XXPRIME_2; \
-    acc = _PyHASH_XXROTATE(acc); \
-    acc *= _PyHASH_XXPRIME_1; \
-}
+#define _PyHASH_SLICE_PART(COM)                     \
+    do {                                            \
+        Py_uhash_t lane = PyObject_Hash(v->COM);    \
+        if(lane == (Py_uhash_t)-1) {                \
+            return -1;                              \
+        }                                           \
+        acc += lane * _PyHASH_XXPRIME_2;            \
+        acc = _PyHASH_XXROTATE(acc);                \
+        acc *= _PyHASH_XXPRIME_1;                   \
+    } while (0)
+
     _PyHASH_SLICE_PART(start);
     _PyHASH_SLICE_PART(stop);
     _PyHASH_SLICE_PART(step);

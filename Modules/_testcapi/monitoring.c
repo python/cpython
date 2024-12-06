@@ -105,10 +105,15 @@ static PyTypeObject PyCodeLike_Type = {
     .tp_str = (reprfunc) CodeLike_str,
 };
 
-#define RAISE_UNLESS_CODELIKE(v)  if (!Py_IS_TYPE((v), &PyCodeLike_Type)) { \
-        PyErr_Format(PyExc_TypeError, "expected a code-like, got %s", Py_TYPE(v)->tp_name); \
-        return NULL; \
-    }
+#define RAISE_UNLESS_CODELIKE(v)                            \
+    do {                                                    \
+        if (!Py_IS_TYPE((v), &PyCodeLike_Type)) {           \
+            PyErr_Format(PyExc_TypeError,                   \
+                         "expected a code-like, got %s",    \
+                         Py_TYPE(v)->tp_name);              \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
 
 /*******************************************************************/
 

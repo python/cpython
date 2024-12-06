@@ -655,23 +655,31 @@ static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimize
 static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
-#define CALL(FUNC, TYPE, ARG) \
-    if (!FUNC((ARG), ctx_, state)) \
-        return 0;
+#define CALL(FUNC, TYPE, ARG)               \
+    do {                                    \
+        if (!FUNC((ARG), ctx_, state)) {    \
+            return 0;                       \
+        }                                   \
+    } while (0)
 
-#define CALL_OPT(FUNC, TYPE, ARG) \
-    if ((ARG) != NULL && !FUNC((ARG), ctx_, state)) \
-        return 0;
+#define CALL_OPT(FUNC, TYPE, ARG)                           \
+    do {                                                    \
+        if ((ARG) != NULL && !FUNC((ARG), ctx_, state)) {   \
+            return 0;                                       \
+        }                                                   \
+    } while (0)
 
-#define CALL_SEQ(FUNC, TYPE, ARG) { \
-    Py_ssize_t i; \
-    asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (elt != NULL && !FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
+#define CALL_SEQ(FUNC, TYPE, ARG)                                           \
+    do {                                                                    \
+        Py_ssize_t i;                                                       \
+        asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */    \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) {                           \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i);            \
+            if (elt != NULL && !FUNC(elt, ctx_, state)) {                   \
+                return 0;                                                   \
+            }                                                               \
+        }                                                                   \
+    } while (0)
 
 
 static int
