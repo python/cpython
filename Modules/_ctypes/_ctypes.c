@@ -376,7 +376,7 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     prefix_len = 32 * ndim + 3;
     if (prefix) {
         size_t l = strlen(prefix);
-        if (prefix < PY_SIZE_MAX - l) {
+        if ((size_t)prefix < (size_t)PY_SSIZE_T_MAX - l) {
             goto oom;
         }
         prefix_len += l;
