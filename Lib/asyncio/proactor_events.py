@@ -858,6 +858,10 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)
+            except exceptions.CancelledError:
+                # Effectively ignore connections that throw a cancelled error
+                # during setup, loop back around and continue serving.
+                sock.close()
             except OSError as exc:
                 if sock.fileno() != -1:
                     self.call_exception_handler({
