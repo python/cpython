@@ -2750,7 +2750,7 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 
 #define _PyUnicodeError_CAST(PTR)   _Py_CAST(PyUnicodeErrorObject *, PTR)
 #define PyUnicodeError_Check(PTR)   \
-    PyObject_TypeCheck((PTR), (PyTypeObject *)&PyExc_UnicodeError)
+    PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
 #define PyUnicodeError_CAST(PTR)    \
     (assert(PyUnicodeError_Check(PTR)), _PyUnicodeError_CAST(PTR))
 
