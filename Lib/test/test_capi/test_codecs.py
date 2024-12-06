@@ -835,7 +835,8 @@ class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_ignore_errors_handler(self):
         handler = _testcapi.codec_ignore_errors
-        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors,
+                                          safe=True)
 
     def test_codec_replace_errors_handler(self):
         handler = _testcapi.codec_replace_errors
@@ -851,20 +852,29 @@ class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_namereplace_errors_handler(self):
         handler = _testlimitedcapi.codec_namereplace_errors
-        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors,
+                                          safe=True)
 
-    def do_test_codec_errors_handler(self, handler, exceptions):
+    def do_test_codec_errors_handler(self, handler, exceptions, *, safe=False):
         at_least_one = False
         for exc in exceptions:
             # See https://github.com/python/cpython/issues/123378 and related
             # discussion and issues for details.
-            if self._exception_may_crash(exc):
+            if not safe and self._exception_may_crash(exc):
                 continue
 
             at_least_one = True
             with self.subTest(handler=handler, exc=exc):
                 # test that the handler does not crash
-                self.assertIsInstance(handler(exc), tuple)
+                res = handler(exc)
+                self.assertIsInstance(res, tuple)
+                self.assertEqual(len(res), 2)
+                self.assertIsInstance(res[0], str)
+                # We only check the type of res[1] but not its range since
+                # it depends on *_GetStart() and *_GetEnd() functions which
+                # automatically clip the 'start' and 'end' values (possibly
+                # negative or inconsistent).
+                self.assertIsInstance(res[1], int)
 
         if exceptions:
             self.assertTrue(at_least_one, "all exceptions are crashing")
