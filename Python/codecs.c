@@ -721,7 +721,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         }
         assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
         Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
-        memset(outp, (int)'?', len);
+        memset(outp, (int)'?', sizeof(Py_UCS1) * len);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
