@@ -2837,7 +2837,8 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
    .. method:: __iter__()
 
-      Read a line of data from the input stream and return it.
+      Return an :class:`collections.abc.Iterator` over the lines of data
+      in the input stream.
 
    For example::
 
