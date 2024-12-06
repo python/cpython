@@ -750,7 +750,9 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         }
         assert(PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
         Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
-        memset(outp, (int)Py_UNICODE_REPLACEMENT_CHARACTER, len);
+        for (Py_ssize_t i = 0; i < len; ++i) {
+            outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
+        }
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
