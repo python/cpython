@@ -442,7 +442,6 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
  */
 static PY_EVP_MD*
 py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type py_ht) {
-    PY_EVP_MD* evp;
     PyObject *name_obj = NULL;
     const char *name;
 
