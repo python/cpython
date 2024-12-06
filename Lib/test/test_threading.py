@@ -2118,40 +2118,39 @@ class MiscTestCase(unittest.TestCase):
         truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
 
-        def create_test(name):
-            if sys.platform.startswith("solaris"):
-                encoding = "utf-8"
-            else:
-                encoding = sys.getfilesystemencoding()
+        tests = [
+            # test short ASCII name
+            "CustomName",
+
+            # test short non-ASCII name
+            "namé€",
+
+            # Test long ASCII names (not truncated)
+            "x" * limit,
+
+            # Test long ASCII names (truncated)
+            "x" * (limit + 10),
+
+            # Test long non-ASCII name (truncated)
+            "x" * (limit - 1) + "é€",
+        ]
+        if os_helper.FS_NONASCII:
+            tests.append(f"nonascii:{os_helper.FS_NONASCII}")
+        if os_helper.TESTFN_UNENCODABLE:
+            tests.append(os_helper.TESTFN_UNENCODABLE)
+
+        if sys.platform.startswith("solaris"):
+            encoding = "utf-8"
+        else:
+            encoding = sys.getfilesystemencoding()
+
+        for name in tests:
             encoded = name.encode(encoding, "replace")
             if truncate is not None:
                 expected = os.fsdecode(encoded[:truncate])
             else:
                 expected = os.fsdecode(encoded)
-            return (name, expected)
 
-        tests = [
-            # test short ASCII name
-            create_test("CustomName"),
-
-            # test short non-ASCII name
-            create_test("namé€"),
-
-            # Test long ASCII names (not truncated)
-            create_test("x" * limit),
-
-            # Test long ASCII names (truncated)
-            create_test("x" * (limit + 10)),
-
-            # Test long non-ASCII name (truncated)
-            create_test("x" * (limit - 1) + "é€"),
-        ]
-        if os_helper.FS_NONASCII:
-            tests.append(create_test(f"nonascii:{os_helper.FS_NONASCII}"))
-        if os_helper.TESTFN_UNENCODABLE:
-            tests.append(create_test(os_helper.TESTFN_UNENCODABLE))
-
-        for name, expected in tests:
             with self.subTest(name=name, expected=expected):
                 work_name = None
                 thread = threading.Thread(target=work, name=name)
