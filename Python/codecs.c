@@ -768,7 +768,6 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         return NULL;
     }
     if (end <= start) {
-        // gh-12337 will handle negative end or start (for now we crash)
         return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
     }
 
@@ -777,8 +776,13 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    if (end - start > PY_SSIZE_T_MAX / 10) {
-        end = start + PY_SSIZE_T_MAX / 10;
+    // The number of characters that each character 'ch' contributes
+    // in the result is 2 + k + 1, where k = min{t >= 1 | 10^t > ch}
+    // and will be formatted as "&#" + DIGITS + ";". Since the Unicode
+    // range is below 10^7, each "block" requires at most 2 + 7 + 1
+    // characters.
+    if (end - start > PY_SSIZE_T_MAX / (2 + 7 + 1)) {
+        end = start + PY_SSIZE_T_MAX / (2 + 7 + 1);
     }
 
     end = Py_MIN(end, PyUnicode_GET_LENGTH(obj));
@@ -787,29 +791,27 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     for (Py_ssize_t i = start; i < end; ++i) {
         /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        // The number of characters that each character 'ch' contributes
-        // in the result is 2 + k + 1, where k = min{t >= 1 | 10^t > ch}.
         if (ch < 10) {
-            ressize += 4;
+            ressize += 2 + 1 + 1;
         }
         else if (ch < 100) {
-            ressize += 5;
+            ressize += 2 + 2 + 1;
         }
         else if (ch < 1000) {
-            ressize += 6;
+            ressize += 2 + 3 + 1;
         }
         else if (ch < 10000) {
-            ressize += 7;
+            ressize += 2 + 4 + 1;
         }
         else if (ch < 100000) {
-            ressize += 8;
+            ressize += 2 + 5 + 1;
         }
         else if (ch < 1000000) {
-            ressize += 9;
+            ressize += 2 + 6 + 1;
         }
         else {
             assert(ch < 10000000);
-            ressize += 10;
+            ressize += 2 + 7 + 1;
         }
     }
 
