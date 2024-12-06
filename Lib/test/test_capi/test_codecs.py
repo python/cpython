@@ -869,12 +869,11 @@ class CAPICodecErrors(unittest.TestCase):
                 res = handler(exc)
                 self.assertIsInstance(res, tuple)
                 self.assertEqual(len(res), 2)
-                self.assertIsInstance(res[0], str)
-                # We only check the type of res[1] but not its range since
-                # it depends on *_GetStart() and *_GetEnd() functions which
-                # automatically clip the 'start' and 'end' values (possibly
-                # negative or inconsistent).
-                self.assertIsInstance(res[1], int)
+                replacement, continue_from = res
+                self.assertIsInstance(replacement, str)
+                self.assertIsInstance(continue_from, int)
+                self.assertGreaterEqual(continue_from, 0)
+                self.assertLessEqual(continue_from, len(exc.object))
 
         if exceptions:
             self.assertTrue(at_least_one, "all exceptions are crashing")
