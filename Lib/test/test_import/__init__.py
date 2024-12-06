@@ -807,6 +807,14 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
+    def test_frozen_module_from_import_error(self):
+        with self.assertRaises(ImportError) as cm:
+            from os import this_will_never_exist
+        self.assertRegex(
+            str(cm.exception),
+            r"cannot import name 'this_will_never_exist' from 'os' \(.*Lib[\\/]os\.py\)"
+        )
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
