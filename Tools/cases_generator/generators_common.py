@@ -356,11 +356,12 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
         storage.pop_dead_inputs(self.out)
+        return True
 
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
