@@ -1,0 +1,1 @@
+Add the ``SCHED_DEADLINE`` and ``SCHED_NORMAL`` constants to the :mod:`os` module.
