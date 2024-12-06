@@ -876,7 +876,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
     bufsize = BUFSIZ;
     // BUFSIZ is small enough not to overflow, so no need for checks
-    buf = (wchar_t*)PyMem_New((bufsize + 1) * sizeof(wchar_t));
+    buf = (wchar_t*)PyMem_Malloc((bufsize + 1) * sizeof(wchar_t));
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;
