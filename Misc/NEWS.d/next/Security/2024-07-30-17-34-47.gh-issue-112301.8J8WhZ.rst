@@ -1,0 +1,1 @@
+Add ``-Wformat=2`` to ``NODIST`` build flags to warn about potential vulnerabilities related to format strings.
