@@ -705,8 +705,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 
     /* Otherwise a more elaborate copy scheme is needed */
 
-    /* XXX(nnorwitz): need to check for overflow! */
-    indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
+    indices = PyMem_New(Py_ssize_t, view_src.ndim);
     if (indices == NULL) {
         PyErr_NoMemory();
         PyBuffer_Release(&view_dest);

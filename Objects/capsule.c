@@ -230,6 +230,7 @@ PyCapsule_Import(const char *name, int no_block)
     PyObject *object = NULL;
     void *return_value = NULL;
     char *trace;
+    // Note: strlen(name) is likely smaller than the max alloc. size.
     size_t name_length = (strlen(name) + 1) * sizeof(char);
     char *name_dup = (char *)PyMem_Malloc(name_length);
 

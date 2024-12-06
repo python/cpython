@@ -4041,7 +4041,9 @@ type_new_set_doc(PyTypeObject *type)
         return -1;
     }
 
-    // Silently truncate the docstring if it contains a null byte
+    // Silently truncate the docstring if it contains a null byte.
+    // Note: the docstring length is likely smaller than the max
+    //       alloc. size.
     Py_ssize_t size = strlen(doc_str) + 1;
     char *tp_doc = (char *)PyMem_Malloc(size);
     if (tp_doc == NULL) {
@@ -4825,6 +4827,8 @@ PyType_FromMetaclass(
     * of any such flag.
     * So, we use a separate buffer, _ht_tpname, that's always
     * deallocated with the type (if it's non-NULL).
+    *
+    * Note: the type name length is way smaller than the max alloc. size.
     */
     Py_ssize_t name_buf_len = strlen(spec->name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);

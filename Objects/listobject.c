@@ -3637,8 +3637,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                 step = -step;
             }
 
-            garbage = (PyObject**)
-                PyMem_Malloc(slicelength*sizeof(PyObject*));
+            garbage = PyMem_New(PyObject, slicelength);
             if (!garbage) {
                 PyErr_NoMemory();
                 return -1;

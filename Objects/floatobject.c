@@ -968,6 +968,8 @@ double_round(double x, int ndigits) {
     buflen = buf_end - buf;
     if (buflen + 8 > mybuflen) {
         mybuflen = buflen+8;
+        // Note: the number of digits to round is likely
+        //       way smaller than the max alloc. size.
         mybuf = (char *)PyMem_Malloc(mybuflen);
         if (mybuf == NULL) {
             PyErr_NoMemory();

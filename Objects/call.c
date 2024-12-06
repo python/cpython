@@ -484,10 +484,13 @@ _PyObject_Call_Prepend(PyThreadState *tstate, PyObject *callable,
     PyObject **stack;
 
     Py_ssize_t argcount = PyTuple_GET_SIZE(args);
-    if (argcount + 1 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+    if (argcount <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack) - 1) {
         stack = small_stack;
     }
     else {
+        // Note: argcount + 1 is likely small enough not to overflow
+        //       and we don't want to hurt performances by adding an
+        //       additional check.
         stack = PyMem_Malloc((argcount + 1) * sizeof(PyObject *));
         if (stack == NULL) {
             PyErr_NoMemory();
@@ -794,6 +797,9 @@ object_vacall(PyThreadState *tstate, PyObject *base,
         stack = small_stack;
     }
     else {
+        // Note: nargs is likely small enough not to overflow and
+        //       we don't want to hurt performances by adding an
+        //       additional check.
         stack = PyMem_Malloc(nargs * sizeof(stack[0]));
         if (stack == NULL) {
             PyErr_NoMemory();

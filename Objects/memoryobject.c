@@ -413,6 +413,7 @@ copy_single(PyMemoryViewObject *self, const Py_buffer *dest, const Py_buffer *sr
         return -1;
 
     if (!last_dim_is_contiguous(dest, src)) {
+        // TODO: should we check for an overflow?
         mem = PyMem_Malloc(dest->shape[0] * dest->itemsize);
         if (mem == NULL) {
             PyErr_NoMemory();
@@ -445,6 +446,7 @@ copy_buffer(const Py_buffer *dest, const Py_buffer *src)
         return -1;
 
     if (!last_dim_is_contiguous(dest, src)) {
+        // TODO: should we check for an overflow?
         mem = PyMem_Malloc(dest->shape[dest->ndim-1] * dest->itemsize);
         if (mem == NULL) {
             PyErr_NoMemory();
@@ -503,6 +505,7 @@ buffer_to_contiguous(char *mem, const Py_buffer *src, char order)
     assert(src->shape != NULL);
     assert(src->strides != NULL);
 
+    // TODO: should we check for an overflow?
     strides = PyMem_Malloc(src->ndim * (sizeof *src->strides));
     if (strides == NULL) {
         PyErr_NoMemory();
@@ -861,6 +864,7 @@ static int
 mbuf_copy_format(_PyManagedBufferObject *mbuf, const char *fmt)
 {
     if (fmt != NULL) {
+        // TODO: should we check for an overflow?
         char *cp = PyMem_Malloc(strlen(fmt)+1);
         if (cp == NULL) {
             PyErr_NoMemory();
@@ -1065,6 +1069,7 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     }
 
     /* buffer_to_contiguous() assumes PyBUF_FULL */
+    // TODO: should we check for an overflow?
     fb = PyMem_Malloc(sizeof *fb + 3 * src->ndim * (sizeof *fb->array));
     if (fb == NULL) {
         PyErr_NoMemory();

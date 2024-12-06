@@ -776,6 +776,7 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         dk = _Py_FREELIST_POP_MEM(dictkeys);
     }
     if (dk == NULL) {
+        // TODO: should we check for an overflow?
         dk = PyMem_Malloc(sizeof(PyDictKeysObject)
                           + ((size_t)1 << log2_bytes)
                           + entry_size * usable);
@@ -826,6 +827,7 @@ values_size_from_count(size_t count)
     size_t suffix_size = _Py_SIZE_ROUND_UP(count, sizeof(PyObject *));
     assert(suffix_size < 128);
     assert(suffix_size % sizeof(PyObject *) == 0);
+    // TODO: should we check for an overflow?
     return (count + 1) * sizeof(PyObject *) + suffix_size;
 }
 
