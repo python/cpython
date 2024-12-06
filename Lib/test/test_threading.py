@@ -2103,17 +2103,9 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
 
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
     def test_set_name(self):
-        try:
-            get_name = _thread._get_name
-            _thread.set_name
-        except AttributeError:
-            self.skipTest("need thread._get_name() and thread.set_name()")
-
-        def work():
-            nonlocal work_name
-            work_name = get_name()
-
         # set_name() limit in bytes
         truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
@@ -2143,6 +2135,10 @@ class MiscTestCase(unittest.TestCase):
             encoding = "utf-8"
         else:
             encoding = sys.getfilesystemencoding()
+
+        def work():
+            nonlocal work_name
+            work_name = _thread._get_name()
 
         for name in tests:
             encoded = name.encode(encoding, "replace")
