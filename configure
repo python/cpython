@@ -821,6 +821,7 @@ MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
+PYTHREAD_NAME_MAXLEN
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -18842,6 +18843,18 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_getname_np" "ac_cv_func_pthread_getname_np"
+if test "x$ac_cv_func_pthread_getname_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GETNAME_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pthread_setname_np" "ac_cv_func_pthread_setname_np"
+if test "x$ac_cv_func_pthread_setname_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_SETNAME_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
 if test "x$ac_cv_func_ptsname" = xyes
 then :
@@ -29079,6 +29092,23 @@ then :
            LIBATOMIC=${LIBATOMIC-"-latomic"}
 fi
 CPPFLAGS=$save_CPPFLAGS
+
+
+# gh-59705: Maximum length in bytes of a thread name
+case "$ac_sys_system" in
+  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) PYTHREAD_NAME_MAXLEN=63;;
+  iOS) PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
+  *) PYTHREAD_NAME_MAXLEN=;;
+esac
+if test -n "$PYTHREAD_NAME_MAXLEN"; then
+
+printf "%s\n" "#define PYTHREAD_NAME_MAXLEN $PYTHREAD_NAME_MAXLEN" >>confdefs.h
+
+fi
+
 
 
 # stdlib

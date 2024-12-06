@@ -5110,8 +5110,10 @@ AC_CHECK_FUNCS([ \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
-  pread preadv preadv2 process_vm_readv pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  pread preadv preadv2 process_vm_readv \
+  pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
+  pthread_kill pthread_getname_np pthread_setname_np \
+  ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
@@ -7496,6 +7498,22 @@ AS_VAR_IF([ac_cv_libatomic_needed], [yes],
           [LIBS="${LIBS} -latomic"
            LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
+
+
+# gh-59705: Maximum length in bytes of a thread name
+case "$ac_sys_system" in
+  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) PYTHREAD_NAME_MAXLEN=63;;
+  iOS) PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
+  *) PYTHREAD_NAME_MAXLEN=;;
+esac
+if test -n "$PYTHREAD_NAME_MAXLEN"; then
+    AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
+                       [Maximum length in bytes of a thread name])
+fi
+AC_SUBST([PYTHREAD_NAME_MAXLEN])
 
 
 # stdlib
