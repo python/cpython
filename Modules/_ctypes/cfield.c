@@ -344,7 +344,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
 #define SET(type, x, v, size)                                                 \
     (NUM_BITS(size) ?                                                   \
      ( ( (type)(x) & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)(v) & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
-     : (type)v)
+     : (type)(v))
 
 /*****************************************************************
  * The setter methods return an object which must be kept alive, to keep the
