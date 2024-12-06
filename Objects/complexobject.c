@@ -92,7 +92,7 @@ _Py_c_prod(Py_complex z, Py_complex w)
     Py_complex r = {ac - bd, ad + bc};
 
     /* Recover infinities that computed as nan+nanj.  See e.g. the C11,
-       Annex G.5.2, routine _Cmultd(). */
+       Annex G.5.1, routine _Cmultd(). */
     if (isnan(r.real) && isnan(r.imag)) {
         int recalc = 0;
 
