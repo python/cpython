@@ -1192,15 +1192,16 @@ class ThreadTests(BaseTestCase):
             resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
 
             try:
-                _thread.start_new_thread(f, ())
+                handle = _thread.start_joinable_thread(f)
             except RuntimeError:
                 print('ok')
             else:
-                print('skip')
+                print('!skip!')
+                handle.join()
         """
         _, out, err = assert_python_ok("-u", "-c", code)
         out = out.strip()
-        if out == b'skip':
+        if b'!skip!' in out:
             self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
         self.assertEqual(out, b'ok')
         self.assertEqual(err, b'')

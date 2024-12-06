@@ -542,6 +542,13 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def lstat(self):
+        """
+        Like stat(), except if the path points to a symlink, the symlink's
+        status information is returned, rather than its target's.
+        """
+        return os.lstat(self)
+
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -627,8 +634,8 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
@@ -718,6 +725,14 @@ class Path(PathBase, PurePath):
         tail = rel.split(self.parser.sep)
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
+
+    @classmethod
+    def cwd(cls):
+        """Return a new path pointing to the current working directory."""
+        cwd = os.getcwd()
+        path = cls(cwd)
+        path._str = cwd  # getcwd() returns a normalized path
+        return path
 
     def resolve(self, strict=False):
         """
@@ -899,6 +914,15 @@ class Path(PathBase, PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to expanduser('~').
+        """
+        homedir = os.path.expanduser("~")
+        if homedir == "~":
+            raise RuntimeError("Could not determine home directory.")
+        return cls(homedir)
 
     @classmethod
     def from_uri(cls, uri):

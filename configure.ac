@@ -1609,8 +1609,8 @@ if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+# HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
-AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
 if test -z "$HOSTRUNNER"
 then
   AS_CASE([$ac_sys_system],
@@ -1854,9 +1854,13 @@ if test "$Py_OPT" = 'true' ; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
       ], [], [-Werror])
   ])
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-  dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Build "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+  dnl Build "python.wasm", "pybuilddir.txt", and "platform" files.
   DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
@@ -2321,14 +2325,16 @@ AS_CASE([$ac_sys_system],
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
 
     dnl Start with 20 MB and allow to grow
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
     dnl map int64_t and uint64_t to JS bigint
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sSTACK_SIZE=5MB"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2339,7 +2345,6 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH"])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXIT_RUNTIME"])
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
@@ -2927,7 +2932,7 @@ AC_CHECK_HEADERS([ \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
-  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \

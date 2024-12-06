@@ -218,9 +218,26 @@ def configure_emscripten_python(context, working_dir):
             f"""\
             #!/bin/sh
 
+            # Macs come with FreeBSD coreutils which doesn't have the -s option
+            # so feature detect and work around it.
+            if which grealpath > /dev/null; then
+                # It has brew installed gnu core utils, use that
+                REALPATH="grealpath -s"
+            elif which realpath > /dev/null && realpath --version 2&>1 | grep GNU > /dev/null; then
+                # realpath points to GNU realpath so use it.
+                REALPATH="realpath -s"
+            else
+                # Shim for macs without GNU coreutils
+                abs_path () {{
+                    echo "$(cd "$(dirname "$1")" || exit; pwd)/$(basename "$1")"
+                }}
+                REALPATH=abs_path
+            fi
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
-            exec {host_runner} {node_entry} "$(realpath -s $0)" "$@"
+            # Intentionally allow word splitting on NODEFLAGS.
+            exec {host_runner} $NODEFLAGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
             """
         )
     )
@@ -233,7 +250,7 @@ def configure_emscripten_python(context, working_dir):
 def make_emscripten_python(context, working_dir):
     """Run `make` for the emscripten/host build."""
     call(
-        ["make", "--jobs", str(cpu_count()), "commoninstall"],
+        ["make", "--jobs", str(cpu_count()), "all"],
         env=updated_env(),
         quiet=context.quiet,
     )
