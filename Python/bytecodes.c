@@ -542,12 +542,11 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+            res = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, (destructor)PyObject_Free);
             PyStackRef_CLOSE_SPECIALIZED(left, (destructor)PyObject_Free);
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL, error);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
         pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
@@ -595,10 +594,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL, error);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
         pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
@@ -609,10 +607,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL, error);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
         pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
@@ -623,10 +620,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL, error);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
         macro(BINARY_OP_MULTIPLY_FLOAT) =
@@ -807,17 +803,18 @@ dummy_func(
             PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
             DEOPT_IF(res_o == NULL);
             STAT_INC(BINARY_SUBSCR, hit);
+            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
+            DEAD(sub_st);
+            PyStackRef_CLOSE(list_st);
+            res = PyStackRef_FromPyObjectSteal(res_o);
 #else
             DEOPT_IF(index >= PyList_GET_SIZE(list));
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
-            Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectNew(res_o);
+            DECREF_INPUTS();
 #endif
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(list_st);
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         inst(BINARY_SUBSCR_STR_INT, (unused/1, str_st, sub_st -- res)) {
@@ -854,11 +851,8 @@ dummy_func(
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
-            Py_INCREF(res_o);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(tuple_st);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            res = PyStackRef_FromPyObjectNew(res_o);
+            DECREF_INPUTS();
         }
 
         inst(BINARY_SUBSCR_DICT, (unused/1, dict_st, sub_st -- res)) {
