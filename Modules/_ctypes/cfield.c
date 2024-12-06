@@ -420,6 +420,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
         if (res == NULL) {                                                    \
             return NULL;                                                      \
         }                                                                     \
+        Py_DECREF(res);                                                       \
         CTYPE field;                                                          \
         memcpy(&field, ptr, sizeof(field));                                   \
         field = PY_SWAPFUNC(field);                                           \
