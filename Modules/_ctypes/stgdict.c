@@ -42,7 +42,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 
     if (src_info->format) {
         size_t s = strlen(src_info->format);
-        if (s > (size_t)PY_SSIZE_T_MAX - 1) {
+        if (s >= (size_t)PY_SSIZE_T_MAX) {
             goto oom;
         }
         dst_info->format = PyMem_Malloc(s + 1);
