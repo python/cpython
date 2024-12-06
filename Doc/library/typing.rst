@@ -2827,17 +2827,17 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
    .. method:: read(size=..., /)
 
-        Read data from the input stream and return it. If ``size`` is
-        specified, at most ``size`` items (bytes/characters) will be read.
+      Read data from the input stream and return it. If ``size`` is
+      specified, at most ``size`` items (bytes/characters) will be read.
 
    .. method:: readline(size=..., /)
 
-        Read a line of data from the input stream and return it. If ``size`` is
-        specified, at most ``size`` items (bytes/characters) will be read.
+      Read a line of data from the input stream and return it. If ``size`` is
+      specified, at most ``size`` items (bytes/characters) will be read.
 
    .. method:: __iter__()
 
-        Read a line of data from the input stream and return it.
+      Read a line of data from the input stream and return it.
 
    For example::
 
