@@ -1,0 +1,2 @@
+IDLE now support for REPL-specific commands, like :kbd:`help`, :kbd:`exit`,
+:kbd:`license` and :kbd:`quit`, without the need to call them as functions.
