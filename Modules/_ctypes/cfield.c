@@ -844,7 +844,7 @@ c_get(void *ptr, Py_ssize_t size)
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
-/* u - a single wchar_t character */
+/* u: a single wchar_t character */
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
