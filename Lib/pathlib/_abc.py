@@ -14,7 +14,7 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 import operator
 import posixpath
-from errno import EINVAL, EXDEV
+from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -902,45 +902,10 @@ class PathBase(PurePathBase):
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
-    def rename(self, target):
-        """
-        Rename this path to the target path.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('rename()'))
-
-    def replace(self, target):
-        """
-        Rename this path to the target path, overwriting if that path exists.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('replace()'))
-
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        self._ensure_different_file(target)
-        try:
-            return self.replace(target)
-        except UnsupportedOperation:
-            pass
-        except TypeError:
-            if not isinstance(target, PathBase):
-                raise
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
         return target
