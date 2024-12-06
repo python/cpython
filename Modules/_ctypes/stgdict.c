@@ -23,8 +23,6 @@
 int
 PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
-    Py_ssize_t size;
-
     ctype_clear_stginfo(dst_info);
     PyMem_Free(dst_info->ffi_type_pointer.elements);
     PyMem_Free(dst_info->format);
@@ -43,18 +41,20 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     Py_XINCREF(dst_info->module);
 
     if (src_info->format) {
-        dst_info->format = PyMem_Malloc(strlen(src_info->format) + 1);
+        size_t s = strlen(src_info->format);
+        if (s > (size_t)PY_SSIZE_T_MAX - 1) {
+            goto oom;
+        }
+        dst_info->format = PyMem_Malloc(s + 1);
         if (dst_info->format == NULL) {
-            PyErr_NoMemory();
-            return -1;
+            goto oom;
         }
         strcpy(dst_info->format, src_info->format);
     }
     if (src_info->shape) {
-        dst_info->shape = PyMem_Malloc(sizeof(Py_ssize_t) * src_info->ndim);
+        dst_info->shape = PyMem_New(Py_ssize_t, src_info->ndim);
         if (dst_info->shape == NULL) {
-            PyErr_NoMemory();
-            return -1;
+            goto oom;
         }
         memcpy(dst_info->shape, src_info->shape,
                sizeof(Py_ssize_t) * src_info->ndim);
@@ -62,16 +62,28 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 
     if (src_info->ffi_type_pointer.elements == NULL)
         return 0;
-    size = sizeof(ffi_type *) * (src_info->length + 1);
+    if (src_info->length > PY_SSIZE_T_MAX / sizeof(ffi_type *) - 1) {
+        goto oom;
+    }
+    Py_ssize_t size = sizeof(ffi_type *) * (src_info->length + 1);
     dst_info->ffi_type_pointer.elements = PyMem_Malloc(size);
     if (dst_info->ffi_type_pointer.elements == NULL) {
-        PyErr_NoMemory();
-        return -1;
+        goto oom;
     }
     memcpy(dst_info->ffi_type_pointer.elements,
            src_info->ffi_type_pointer.elements,
            size);
     return 0;
+
+oom:
+    if (src_info->format) {
+        PyMem_Free(dst_info->format);
+    }
+    if (src_info->shape) {
+        PyMem_Free(dst_info->shape);
+    }
+    PyErr_NoMemory();
+    return -1;
 }
 
 /* descr is the descriptor for a field marked as anonymous.  Get all the
@@ -331,6 +343,10 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyMem_Free(stginfo->format);
         stginfo->format = NULL;
     }
+    if (format_spec_size >= PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        goto error;
+    }
     stginfo->format = PyMem_Malloc(format_spec_size + 1);
     if (!stginfo->format) {
         PyErr_NoMemory();
@@ -564,8 +580,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
          * dummy fields standing in for array elements, and the
          * ffi_types representing the dummy structures.
          */
-        alloc_size = (ffi_ofs + 1 + len + num_ffi_type_pointers) * sizeof(ffi_type *) +
-                        num_ffi_types * sizeof(ffi_type);
+        // TODO: check if this can overflow
+        alloc_size = (ffi_ofs + 1 + len + num_ffi_type_pointers) * sizeof(ffi_type *)
+                      + num_ffi_types * sizeof(ffi_type);
         type_block = PyMem_Malloc(alloc_size);
 
         if (type_block == NULL) {

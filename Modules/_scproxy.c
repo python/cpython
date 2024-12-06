@@ -36,6 +36,7 @@ cfstring_to_pystring(CFStringRef ref)
         PyObject* result;
         char* buf;
 
+        // TODO: can this overflow?
         buf = PyMem_Malloc(len*4);
         if (buf == NULL) {
             PyErr_NoMemory();

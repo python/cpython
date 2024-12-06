@@ -524,10 +524,10 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
         return PyLong_FromUnsignedLong(genrand_uint32(self) >> (32 - k));
 
     words = (k - 1) / 32 + 1;
+    // words * 4 always fits on int if k fits on ints (and thus fits on size_t)
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        goto oom;
     }
 
     /* Fill-out bits of long integer, by 32-bit words, from least significant
@@ -548,6 +548,10 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
                                    PY_LITTLE_ENDIAN, 0 /* unsigned */);
     PyMem_Free(wordarray);
     return result;
+
+oom:
+    PyErr_NoMemory();
+    return NULL;
 }
 
 static int

@@ -610,7 +610,7 @@ static wchar_t *
 read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
     int err = 0, sig = 0;
 
-    wchar_t *buf = (wchar_t*)PyMem_Malloc(maxlen * sizeof(wchar_t));
+    wchar_t *buf = PyMem_New(wchar_t, maxlen);
     if (!buf) {
         PyErr_NoMemory();
         goto error;
@@ -875,8 +875,8 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
         return NULL;
 
     bufsize = BUFSIZ;
-
-    buf = (wchar_t*)PyMem_Malloc((bufsize + 1) * sizeof(wchar_t));
+    // BUFSIZ is small enough not to overflow, so no need for checks
+    buf = (wchar_t*)PyMem_New((bufsize + 1) * sizeof(wchar_t));
     if (buf == NULL) {
         PyErr_NoMemory();
         return NULL;

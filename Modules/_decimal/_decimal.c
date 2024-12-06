@@ -2116,10 +2116,10 @@ numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
     data = PyUnicode_DATA(u);
     len =  PyUnicode_GET_LENGTH(u);
 
+    // Note: this should not overflow since the number of digits is << 2^32.
     cp = res = PyMem_Malloc(len+1);
     if (res == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        goto oom;
     }
 
     j = 0;
@@ -2155,6 +2155,10 @@ numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
     }
     *cp = '\0';
     return res;
+
+oom:
+    PyErr_NoMemory();
+    return NULL;
 }
 
 /* Return a new PyDecObject or a subtype from a C string. Use the context
@@ -2689,6 +2693,7 @@ dectuple_as_str(PyObject *dectuple)
 
     tsize = PyTuple_Size(digits);
     /* [sign][coeffdigits+1][E][-][expdigits+1]['\0'] */
+    // TODO: this should not overflow since we would be below the digits limit
     mem = 1 + tsize + 3 + MPD_EXPDIGITS + 2;
     cp = decstring = PyMem_Malloc(mem);
     if (decstring == NULL) {
@@ -3377,6 +3382,7 @@ dec_repr(PyObject *dec)
 static char *
 dec_strdup(const char *src, Py_ssize_t size)
 {
+    // Note: this should not overflow since the number of digits is << 2^32.
     char *dest = PyMem_Malloc(size+1);
     if (dest == NULL) {
         PyErr_NoMemory();

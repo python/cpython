@@ -2661,6 +2661,7 @@ math_hypot_impl(PyObject *module, PyObject * const *args,
     double *coordinates = coord_on_stack;
 
     if (args_length > NUM_STACK_ELEMS) {
+        // Number of coordinates should be way smaller than the max alloc. size.
         coordinates = (double *) PyMem_Malloc(args_length * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();

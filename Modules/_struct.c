@@ -1725,7 +1725,7 @@ prepare_s(PyStructObject *self)
     }
 
     /* check for overflow */
-    if ((ncodes + 1) > ((size_t)PY_SSIZE_T_MAX / sizeof(formatcode))) {
+    if (ncodes > ((size_t)PY_SSIZE_T_MAX / sizeof(formatcode)) - 1) {
         PyErr_NoMemory();
         return -1;
     }

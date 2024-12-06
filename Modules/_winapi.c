@@ -1653,6 +1653,7 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
     cchBuffer = GetShortPathNameW(path, NULL, 0);
     Py_END_ALLOW_THREADS
     if (cchBuffer) {
+        // Note: the path length is way smaller than the max alloc. size.
         WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
         if (buffer) {
             Py_BEGIN_ALLOW_THREADS

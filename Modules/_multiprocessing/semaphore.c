@@ -502,6 +502,7 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     }
 
     if (!unlink) {
+        // We may assume that the name has a small enough length.
         name_copy = PyMem_Malloc(strlen(name) + 1);
         if (name_copy == NULL) {
             return PyErr_NoMemory();
@@ -555,6 +556,7 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
     char *name_copy = NULL;
 
     if (name != NULL) {
+        // We may assume that the name has a small enough length.
         name_copy = PyMem_Malloc(strlen(name) + 1);
         if (name_copy == NULL)
             return PyErr_NoMemory();

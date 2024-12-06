@@ -1021,12 +1021,14 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->num_transitions = (size_t)num_transitions;
     self->num_ttinfos = (size_t)num_ttinfos;
 
+    // TODO: can this overflow?
     // Load the transition indices and list
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
     if (self->trans_list_utc == NULL) {
         goto error;
     }
+    // TODO: can this overflow?
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
     if (trans_idx == NULL) {
         goto error;
@@ -1064,6 +1066,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     // Load UTC offsets and isdst (size num_ttinfos)
+    // TODO: can this overflow?
     utcoff = PyMem_Malloc(self->num_ttinfos * sizeof(long));
     isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
 
@@ -1111,6 +1114,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     // Build _ttinfo objects from utcoff, dstoff and abbr
+    // TODO: can this overflow?
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
     if (self->_ttinfos == NULL) {
         goto error;
@@ -2115,6 +2119,7 @@ ts_to_local(size_t *trans_idx, int64_t *trans_utc, long *utcoff,
 
     // Copy the UTC transitions into each array to be modified in place later
     for (size_t i = 0; i < 2; ++i) {
+        // TODO: can this overflow?
         trans_local[i] = PyMem_Malloc(num_transitions * sizeof(int64_t));
         if (trans_local[i] == NULL) {
             return -1;

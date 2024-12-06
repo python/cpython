@@ -331,12 +331,19 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
         return NULL;
     }
     len = strlen(suffix);
-    if (prefix)
-        len += strlen(prefix);
+    if (prefix) {
+        size_t prefix_len = strlen(prefix);
+        if (len > PY_SIZE_MAX - prefix_len) {
+            goto oom;
+        }
+        len += prefix_len;
+    }
+    if (len == PY_SIZE_MAX) {
+        goto oom;
+    }
     result = PyMem_Malloc(len + 1);
     if (result == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        goto oom;
     }
     if (prefix)
         strcpy(result, prefix);
@@ -344,6 +351,10 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
         result[0] = '\0';
     strcat(result, suffix);
     return result;
+
+oom:
+    PyErr_NoMemory();
+    return NULL;
 }
 
 /*
@@ -363,12 +374,16 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     int k;
 
     prefix_len = 32 * ndim + 3;
-    if (prefix)
-        prefix_len += strlen(prefix);
+    if (prefix) {
+        size_t l = strlen(prefix);
+        if (prefix < PY_SIZE_MAX - l) {
+            goto oom;
+        }
+        prefix_len += l;
+    }
     new_prefix = PyMem_Malloc(prefix_len);
     if (new_prefix == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        goto oom;
     }
     new_prefix[0] = '\0';
     if (prefix)
@@ -388,6 +403,10 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     result = _ctypes_alloc_format_string(new_prefix, suffix);
     PyMem_Free(new_prefix);
     return result;
+
+oom:
+    PyErr_NoMemory();
+    return NULL;
 }
 
 /* StructParamObject and StructParam_Type are used in _ctypes_callproc()
@@ -1666,7 +1685,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (stginfo->format == NULL)
         goto error;
     stginfo->ndim = iteminfo->ndim + 1;
-    stginfo->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
+    stginfo->shape = PyMem_New(Py_ssize_t, stginfo->ndim);
     if (stginfo->shape == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -3094,7 +3113,7 @@ PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
         /* In python 2.4, and ctypes 0.9.6, the malloc call took about
            33% of the creation time for c_int().
         */
-        obj->b_ptr = (char *)PyMem_Malloc(info->size);
+        obj->b_ptr = PyMem_New(char, info->size);
         if (obj->b_ptr == NULL) {
             PyErr_NoMemory();
             return -1;
@@ -4775,7 +4794,7 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
             }
-            dest = (char *)PyMem_Malloc(slicelen);
+            dest = PyMem_New(char, slicelen);
 
             if (dest == NULL)
                 return PyErr_NoMemory();
@@ -5461,7 +5480,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
             }
-            dest = (char *)PyMem_Malloc(len);
+            dest = PyMem_New(char, len);
             if (dest == NULL)
                 return PyErr_NoMemory();
             for (cur = start, i = 0; i < len; cur += step, i++) {

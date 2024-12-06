@@ -642,7 +642,11 @@ static PyObject *
 decode_strings(const char *result, size_t max_count)
 {
     /* Convert a sequence of NUL-separated C strings to a Python string
-     * containing semicolon separated items. */
+     * containing semicolon separated items.
+     *
+     * For efficiency purposes, we assume that messages to be translated
+     * are not absurdly large so that 'i' never overflows.
+     */
     size_t i = 0;
     size_t count = 0;
     for (; count < max_count && result[i]; count++) {

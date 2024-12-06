@@ -5186,6 +5186,7 @@ cursesmodule_exec(PyObject *module)
             continue;
         }
         if (strncmp(key_name, "KEY_F(", 6) == 0) {
+            // We may assume that the name has a small enough length.
             char *fn_key_name = PyMem_Malloc(strlen(key_name) + 1);
             if (!fn_key_name) {
                 PyErr_NoMemory();

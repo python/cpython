@@ -261,6 +261,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     /* Convert all parts to wchar and accumulate max final length */
+    // TODO: can this overflow?
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
     if (parts == NULL) {
         PyErr_NoMemory();
@@ -292,6 +293,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
         cchFinal += cch + 1;
     }
 
+    // TODO: can this overflow?
     wchar_t *final = cchFinal > 0 ? (wchar_t *)PyMem_Malloc(cchFinal * sizeof(wchar_t)) : NULL;
     if (!final) {
         for (Py_ssize_t i = 0; i < n; ++i) {

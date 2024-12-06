@@ -1125,13 +1125,16 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         if (extra_group_size < 0)
             goto cleanup;
 
-        if (extra_group_size > MAX_GROUPS) {
+        if (extra_group_size > MAX_GROUPS
+            || extra_group_size > PY_SSIZE_T_MAX / sizeof(gid_t))
+        {
             PyErr_SetString(PyExc_ValueError, "too many extra_groups");
             goto cleanup;
         }
 
         /* Deliberately keep extra_groups == NULL for extra_group_size == 0 */
         if (extra_group_size > 0) {
+            /* extra_group_size < MAX_GROUPS */
             extra_groups = PyMem_RawMalloc(extra_group_size * sizeof(gid_t));
             if (extra_groups == NULL) {
                 PyErr_SetString(PyExc_MemoryError,
@@ -1192,7 +1195,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
-    c_fds_to_keep = PyMem_Malloc(fds_to_keep_len * sizeof(int));
+    c_fds_to_keep = PyMem_New(int, fds_to_keep_len);
     if (c_fds_to_keep == NULL) {
         PyErr_SetString(PyExc_MemoryError, "failed to malloc c_fds_to_keep");
         goto cleanup;

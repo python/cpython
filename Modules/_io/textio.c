@@ -465,6 +465,10 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
                when there is something to translate. On the other hand,
                we already know there is a \r byte, so chances are high
                that something needs to be done. */
+            if (len > PY_SSIZE_T_MAX / kind) {
+                PyErr_NoMemory();
+                goto error;
+            }
             translated = PyMem_Malloc(kind * len);
             if (translated == NULL) {
                 PyErr_NoMemory();
