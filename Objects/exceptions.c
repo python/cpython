@@ -2796,21 +2796,21 @@ PyObject *
 PyUnicodeEncodeError_GetObject(PyObject *self)
 {
     PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeEncodeError");
-    return exc == NULL ? NULL : get_unicode(exc->encoding, "object");
+    return exc == NULL ? NULL : get_unicode(exc->object, "object");
 }
 
 PyObject *
 PyUnicodeDecodeError_GetObject(PyObject *self)
 {
     PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeDecodeError");
-    return exc == NULL ? NULL : get_bytes(exc->encoding, "object");
+    return exc == NULL ? NULL : get_bytes(exc->object, "object");
 }
 
 PyObject *
 PyUnicodeTranslateError_GetObject(PyObject *self)
 {
     PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeTranslateError");
-    return exc == NULL ? NULL : get_unicode(exc->encoding, "object");
+    return exc == NULL ? NULL : get_unicode(exc->object, "object");
 }
 
 int
