@@ -97,7 +97,7 @@ class DecimalException(ArithmeticError):
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
-    Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
+    Underflow (Inexact, Rounded, Subnormal)) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
 
@@ -145,7 +145,7 @@ class InvalidOperation(DecimalException):
     x ** (+-)INF
     An operand is invalid
 
-    The result of the operation after these is a quiet positive NaN,
+    The result of the operation after this is a quiet positive NaN,
     except when the cause is a signaling NaN, in which case the result is
     also a quiet NaN, but with the original sign, and an optional
     diagnostic information.
@@ -4093,6 +4093,7 @@ class Context(object):
     def add(self, a, b):
         """Return the sum of the two operands.
 
+
         >>> ExtendedContext.add(Decimal('12'), Decimal('7.00'))
         Decimal('19.00')
         >>> ExtendedContext.add(Decimal('1E+2'), Decimal('1.01E+4'))
@@ -5931,7 +5932,7 @@ def _dpower(xc, xe, yc, ye, p):
     if pc == 0:
         # we prefer a result that isn't exactly 1; this makes it
         # easier to compute a correctly rounded result in __pow__
-        if ((len(str(xc)) + xe >= 1) == (yc > 0)): # if x**y > 1:
+        if (len(str(xc)) + xe >= 1) == (yc > 0): # if x**y > 1:
             coeff, exp = 10**(p-1)+1, 1-p
         else:
             coeff, exp = 10**p-1, -p
