@@ -3554,6 +3554,32 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
+    def test_clear_existing_handlers_preserves_active_handlers(self):
+        """Test that active handlers are preserved and unused handlers are closed."""
+
+        with self.check_no_resource_warning():
+            fn = make_temp_file(".log", "test_logging-clear-")
+            config = {
+                "version": 1,
+                "handlers": {
+                    "file": {
+                        "class": "logging.FileHandler",
+                        "filename": fn,
+                        "encoding": "utf-8",
+                    }
+                },
+                "root": {
+                    "handlers": ["file"]
+                }
+            }
+
+            self.apply_config(config)
+            self.apply_config(config)
+
+            handler = logging.root.handlers[0]
+            self.assertFalse(handler._closed, "Handler should not be closed")
+            self.addCleanup(closeFileHandler, handler, fn)
+
     def test_config16_ok(self):
         self.apply_config(self.config16)
         h = logging._handlers['hand1']

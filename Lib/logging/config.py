@@ -285,9 +285,20 @@ def _install_loggers(cp, handlers, disable_existing):
 
 
 def _clearExistingHandlers():
-    """Clear and close existing handlers"""
+    """Clear and close handlers that are no longer in use."""
+    active_handlers = {
+        handler
+        for logger in logging.Logger.manager.loggerDict.values()
+        if isinstance(logger, logging.Logger)
+        for handler in logger.handlers
+    }
+
+    for handler_ref in list(logging._handlers.values()):
+        handler = handler_ref() if callable(handler_ref) else handler_ref
+        if handler and handler not in active_handlers:
+            handler.close()
+
     logging._handlers.clear()
-    logging.shutdown(logging._handlerList[:])
     del logging._handlerList[:]
 
 
