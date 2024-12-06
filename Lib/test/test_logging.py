@@ -3554,31 +3554,26 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
-    def test_clear_existing_handlers_preserves_active_handlers(self):
-        """Test that active handlers are preserved and unused handlers are closed."""
+    def test_disable_existing_loggers(self):
+        fn = make_temp_file(".log", "test_logging-disable-existing-loggers-")
+        file_handler = logging.FileHandler(fn, mode="w")
+        file_handler.setFormatter(logging.Formatter("%(message)s"))
+        root_logger = logging.getLogger()
+        root_logger.addHandler(file_handler)
 
-        with self.check_no_resource_warning():
-            fn = make_temp_file(".log", "test_logging-clear-")
-            config = {
-                "version": 1,
-                "handlers": {
-                    "file": {
-                        "class": "logging.FileHandler",
-                        "filename": fn,
-                        "encoding": "utf-8",
-                    }
-                },
-                "root": {
-                    "handlers": ["file"]
-                }
-            }
+        config = {"version": 1, "disable_existing_loggers": False}
 
-            self.apply_config(config)
-            self.apply_config(config)
+        # we have disable_existing_loggers=False,
+        # so, all handlers should continue working
+        self.apply_config(config)
 
-            handler = logging.root.handlers[0]
-            self.assertFalse(handler._closed, "Handler should not be closed")
-            self.addCleanup(closeFileHandler, handler, fn)
+        msg = "test message"
+        logging.warning(msg)
+        file_handler.close()
+        with open(fn, encoding='utf-8') as f:
+            data = f.read().strip()
+        os.remove(fn)
+        self.assertEqual(data, msg)
 
     def test_config16_ok(self):
         self.apply_config(self.config16)
