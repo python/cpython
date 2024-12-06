@@ -1175,6 +1175,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
             self._loop._add_writer(self._sock_fd, self._write_ready)
+            self._maybe_pause_protocol()
 
     def can_write_eof(self):
         return True
