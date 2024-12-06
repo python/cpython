@@ -2143,7 +2143,9 @@ class MiscTestCase(unittest.TestCase):
         for name in tests:
             encoded = name.encode(encoding, "replace")
             if truncate is not None:
-                expected = os.fsdecode(encoded[:truncate])
+                encoded = encoded[:truncate]
+            if sys.platform.startswith("solaris"):
+                expected = encoded.decode("utf-8")
             else:
                 expected = os.fsdecode(encoded)
 
