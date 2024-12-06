@@ -1589,6 +1589,15 @@ static PyType_Spec attrgetter_type_spec = {
     .slots = attrgetter_type_slots,
 };
 
+static void print_str(PyObject *o)
+{
+    PyObject_Print(o, stdout, Py_PRINT_RAW);
+}
+
+static void print_repr(PyObject *o)
+{
+    PyObject_Print(o, stdout, 0);
+}
 
 /* methodcaller object **********************************************************/
 
@@ -1597,7 +1606,7 @@ typedef struct {
     PyObject *name;
     PyObject *args;
     PyObject *kwds;
-    PyObject **vectorcall_args;  /* Borrowed references */
+    PyObject *vectorcall_args;
     PyObject *vectorcall_kwnames;
     vectorcallfunc vectorcall;
 } methodcallerobject;
@@ -1615,13 +1624,16 @@ methodcaller_vectorcall(methodcallerobject *mc, PyObject *const *args,
     }
     assert(mc->vectorcall_args != NULL);
 
+<<<<<<< HEAD
     Py_ssize_t number_of_arguments = PyTuple_GET_SIZE(mc->args) +
         (mc->vectorcall_kwnames ? PyTuple_GET_SIZE(mc->vectorcall_kwnames) : 0);
 
+=======
+>>>>>>> a0f342840ea (use strong refs)
     PyObject *tmp_args[_METHODCALLER_MAX_ARGS];
     tmp_args[0] = args[0];
-    assert(1 + number_of_arguments <= _METHODCALLER_MAX_ARGS);
-    memcpy(tmp_args + 1, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments);
+    assert(1 + PyTuple_GET_SIZE(mc->vectorcall_args) <= _METHODCALLER_MAX_ARGS);
+    memcpy(tmp_args + 1, _PyTuple_ITEMS(mc->vectorcall_args), sizeof(PyObject *) * PyTuple_GET_SIZE(mc->vectorcall_args));
 
     return PyObject_VectorcallMethod(mc->name, tmp_args,
             (1 + PyTuple_GET_SIZE(mc->args)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
@@ -1634,6 +1646,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     PyObject* args = mc->args;
     PyObject* kwds = mc->kwds;
 
+<<<<<<< HEAD
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     mc->vectorcall_args = PyMem_Calloc(
         nargs + (kwds ? PyDict_Size(kwds) : 0),
@@ -1646,25 +1659,38 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     // from mc->args and the keys from mc->kwds
     memcpy(mc->vectorcall_args, _PyTuple_ITEMS(args),
            nargs * sizeof(PyObject *)); // borrowed references
+=======
+>>>>>>> a0f342840ea (use strong refs)
     if (kwds && PyDict_Size(kwds)) {
-        const Py_ssize_t nkwds = PyDict_Size(kwds);
-        mc->vectorcall_kwnames = PyTuple_New(nkwds);
-        if (!mc->vectorcall_kwnames) {
+        PyObject *values = PyDict_Values(kwds);
+        if (!values) {
+            PyErr_NoMemory();
             return -1;
         }
-        Py_ssize_t i = 0, ppos = 0;
-        PyObject* key, * value;
-        while (PyDict_Next(kwds, &ppos, &key, &value)) {
-            PyTuple_SET_ITEM(mc->vectorcall_kwnames, i, Py_NewRef(key));
-            mc->vectorcall_args[nargs + i] = value; // borrowed reference
-            ++i;
+        PyObject *values_tuple = PySequence_Tuple(values);
+        Py_DECREF(values);
+        if (!values_tuple) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        mc->vectorcall_args = PySequence_Concat(args, values_tuple);
+        Py_DECREF(values);
+        if (mc->vectorcall_args == 0) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        mc->vectorcall_kwnames = PySequence_Tuple(kwds);
+        if (!mc->vectorcall_kwnames) {
+                PyErr_NoMemory();
+                return -1;
         }
     }
     else {
+        mc->vectorcall_args = Py_NewRef(args);
         mc->vectorcall_kwnames = NULL;
     }
-    mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
 
+    mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
     return 1;
 }
 
@@ -1726,19 +1752,22 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 methodcaller_clear(methodcallerobject *mc)
 {
+   // printf("methodcaller_clear: mc->vectorcall_kwnames %ld\n", mc->vectorcall_kwnames);
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
-    if (mc->vectorcall_args != NULL) {
-        PyMem_Free(mc->vectorcall_args);
-        mc->vectorcall_args = NULL;
+    Py_CLEAR(mc->vectorcall_args);
+    if (mc->vectorcall_kwnames) {
         Py_CLEAR(mc->vectorcall_kwnames);
+        mc->vectorcall_kwnames = NULL;
     }
 }
 
 static void
 methodcaller_dealloc(methodcallerobject *mc)
 {
+    //printf("methodcaller_dealloc: \n");
+
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
     methodcaller_clear(mc);
@@ -1749,9 +1778,22 @@ methodcaller_dealloc(methodcallerobject *mc)
 static int
 methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 {
+    //printf("methodcaller_traverse\n");
     Py_VISIT(mc->name);
+    //printf("methodcaller_traverse: args %ld (refcount %ld)\n", mc->args, Py_REFCNT(mc->args ));
     Py_VISIT(mc->args);
+    //printf("methodcaller_traverse: kwds\n");
     Py_VISIT(mc->kwds);
+   // printf("methodcaller_traverse: vectorcall_args mc->vectorcall_args %ld\n", mc->vectorcall_args);
+    if (mc->vectorcall_kwnames != NULL && 0) {
+        printf("methodcaller_traverse: mv->vectorcall_args ");
+        print_str(mc->vectorcall_args);
+        printf("\n");
+    }
+    Py_VISIT(mc->vectorcall_args);
+    if (mc->vectorcall_kwnames != NULL) {
+        Py_VISIT(mc->vectorcall_kwnames);
+    }
     Py_VISIT(Py_TYPE(mc));
     return 0;
 }
