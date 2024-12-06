@@ -172,7 +172,7 @@ class HTMLParser(_markupbase.ParserBase):
                 elif startswith("</", i):
                     k = self.parse_endtag(i)
                 elif startswith("<!--", i):
-                    k = self.parse_comment(i)
+                    k = self.parse_comment(i, end=end)
                 elif startswith("<?", i):
                     k = self.parse_pi(i)
                 elif startswith("<!", i):
