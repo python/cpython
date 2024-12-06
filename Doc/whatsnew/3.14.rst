@@ -348,11 +348,17 @@ dis
   This feature is also exposed via :option:`dis --show-positions`.
   (Contributed by Bénédikt Tran in :gh:`123165`.)
 
+* Add the :option:`dis --specialized` command-line option to
+  show specialized bytecode.
+  (Contributed by Bénédikt Tran in :gh:`127413`.)
+
+
 errno
 -----
 
 * Add :data:`errno.EHWPOISON` error code.
   (Contributed by James Roy in :gh:`126585`.)
+
 
 fractions
 ---------
@@ -526,12 +532,6 @@ pathlib
 
   (Contributed by Barney Gale in :gh:`73991`.)
 
-* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
-  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
-  :func:`os.scandir` on a path object.
-
-  (Contributed by Barney Gale in :gh:`125413`.)
-
 
 pdb
 ---
@@ -609,6 +609,13 @@ unicodedata
 
 unittest
 --------
+
+* :mod:`unittest` output is now colored by default.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`127221`.)
 
 * unittest discovery supports :term:`namespace package` as start
   directory again. It was removed in Python 3.11.
