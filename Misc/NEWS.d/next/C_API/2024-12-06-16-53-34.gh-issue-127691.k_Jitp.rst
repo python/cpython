@@ -1,3 +1,4 @@
-The :ref:`Unicode Exception Objects <unicode-exception-objects>` C API now
-type-checks its exception argument, raising a :exc:`TypeError` if the latter
-is not an instance of :exc:`UnicodeError`. Patch by Bénédikt Tran.
+The :ref:`Unicode Exception Objects <unicodeexceptions>` C API now
+type-checks its exception argument, raising a :exc:`TypeError` if
+the latter is not an instance of :exc:`UnicodeError`.
+Patch by Bénédikt Tran.
