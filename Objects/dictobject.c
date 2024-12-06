@@ -2015,7 +2015,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
             if (unicode) { // combined unicode -> combined unicode
                 PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(newkeys);
                 if (oldkeys->dk_nentries == numentries && mp->ma_keys->dk_kind == DICT_KEYS_UNICODE) {
-                    memcpy(newentries, (const void *)oldentries, numentries * sizeof(PyDictUnicodeEntry));
+                    memcpy(newentries, oldentries, numentries * sizeof(PyDictUnicodeEntry));
                 }
                 else {
                     PyDictUnicodeEntry *ep = oldentries;
