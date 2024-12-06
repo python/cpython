@@ -2754,6 +2754,19 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 #define PyUnicodeError_CAST(PTR)    \
     (assert(PyUnicodeError_Check(PTR)), _PyUnicodeError_CAST(PTR))
 
+
+static inline int
+check_unicode_error_type(PyObject *self, const char *expect_type)
+{
+    if (!PyUnicodeError_Check(self)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expecting a %s object, got %T", expect_type, self);
+        return -1;
+    }
+    return 0;
+}
+
+
 static inline PyUnicodeErrorObject *
 as_unicode_error(PyObject *self, const char *expect_type)
 {
@@ -2866,24 +2879,24 @@ unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 int
 PyUnicodeEncodeError_SetStart(PyObject *self, Py_ssize_t start)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeEncodeError");
-    return exc == NULL ? -1 : unicode_error_set_start_impl(self, start);
+    int rc = check_unicode_error_type(self, "UnicodeEncodeError");
+    return rc < 0 ? -1 : unicode_error_set_start_impl(self, start);
 }
 
 
 int
 PyUnicodeDecodeError_SetStart(PyObject *self, Py_ssize_t start)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeDecodeError");
-    return exc == NULL ? -1 : unicode_error_set_start_impl(self, start);
+    int rc = check_unicode_error_type(self, "UnicodeDecodeError");
+    return rc < 0 ? -1 : unicode_error_set_start_impl(self, start);
 }
 
 
 int
 PyUnicodeTranslateError_SetStart(PyObject *self, Py_ssize_t start)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeTranslateError");
-    return exc == NULL ? -1 : unicode_error_set_start_impl(self, start);
+    int rc = check_unicode_error_type(self, "UnicodeTranslateError");
+    return rc < 0 ? -1 : unicode_error_set_start_impl(self, start);
 }
 
 
@@ -2953,24 +2966,24 @@ unicode_error_set_end_impl(PyObject *self, Py_ssize_t end)
 int
 PyUnicodeEncodeError_SetEnd(PyObject *self, Py_ssize_t end)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeEncodeError");
-    return exc == NULL ? -1 : unicode_error_set_end_impl(self, end);
+    int rc = check_unicode_error_type(self, "UnicodeEncodeError");
+    return rc < 0 ? -1 : unicode_error_set_end_impl(self, end);
 }
 
 
 int
 PyUnicodeDecodeError_SetEnd(PyObject *self, Py_ssize_t end)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeDecodeError");
-    return exc == NULL ? -1 : unicode_error_set_end_impl(self, end);
+    int rc = check_unicode_error_type(self, "UnicodeDecodeError");
+    return rc < 0 ? -1 : unicode_error_set_end_impl(self, end);
 }
 
 
 int
 PyUnicodeTranslateError_SetEnd(PyObject *self, Py_ssize_t end)
 {
-    PyUnicodeErrorObject *exc = as_unicode_error(self, "UnicodeTranslateError");
-    return exc == NULL ? -1 : unicode_error_set_end_impl(self, end);
+    int rc = check_unicode_error_type(self, "UnicodeTranslateError");
+    return rc < 0 ? -1 : unicode_error_set_end_impl(self, end);
 }
 
 
