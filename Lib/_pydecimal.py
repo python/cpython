@@ -5931,7 +5931,7 @@ def _dpower(xc, xe, yc, ye, p):
     if pc == 0:
         # we prefer a result that isn't exactly 1; this makes it
         # easier to compute a correctly rounded result in __pow__
-        if (len(str(xc)) + xe >= 1) == (yc > 0): # if x**y > 1:
+        if ((len(str(xc)) + xe >= 1) == (yc > 0)): # if x**y > 1:
             coeff, exp = 10**(p-1)+1, 1-p
         else:
             coeff, exp = 10**p-1, -p
