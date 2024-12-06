@@ -854,9 +854,6 @@ asyncio
        blocking_code()
        runner.run(operation_two())
 
-  If you need an 'ambient' event loop, shared between multiple otherwise
-  unrelated modules, this is the sort of use-case that's no longer supported
-  in asyncio.
 
 
 collections.abc
