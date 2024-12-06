@@ -726,7 +726,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetEnd(exc, &end)) {
+        if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
             return NULL;
         }
         return Py_BuildValue("(Cn)",
