@@ -2784,19 +2784,28 @@ Determining the appropriate metaclass
 .. index::
     single: metaclass hint
 
-The appropriate metaclass for a class definition is determined as follows:
+The appropriate metaclass for a class definition is determined in two steps:
 
-* if no bases and no explicit metaclass are given, then :func:`type` is used;
-* if an explicit metaclass is given and it is *not* an instance of
-  :func:`type`, then it is used directly as the metaclass;
-* if an instance of :func:`type` is given as the explicit metaclass, or
-  bases are defined, then the most derived metaclass is used.
+1) a candidate metaclass is determined as follows:
 
-The most derived metaclass is selected from the explicitly specified
-metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
-base classes. The most derived metaclass is one which is a subtype of *all*
-of these candidate metaclasses. If none of the candidate metaclasses meets
-that criterion, then the class definition will fail with ``TypeError``.
+   * if no bases and no explicit metaclass are given, then :func:`type` is used
+     as candidate;
+   * if an explicit metaclass is given and it is an instance of :func:`type`,
+     then it is used as candidate;
+   * if bases are defined but no explicit metaclass, the metaclass of the first
+     base is used as candidate;
+   * if an explicit metaclass is given and it is *not* an instance of
+     :func:`type`, then it is used directly as the metaclass and step 2 is skipped.
+
+2) bases, if present, are traversed left-to-right, and the most derived
+   metaclass is determined as follows:
+
+   * if the metaclass of the current candidate is a subtype of the metaclass of
+     the current base, updated the candidate to the metaclass of the base and
+     continue to the next base;
+   * if the current candidate is a subtype of the metaclass of the current base,
+     continue to the next base;
+   * else raise a :exc:`TypeError`.
 
 
 .. _prepare:
