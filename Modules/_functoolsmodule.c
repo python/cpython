@@ -187,14 +187,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (state == NULL) {
         return NULL;
     }
-    phold = state->placeholder;
-
-    /* Placeholder restrictions */
-    if (new_nargs && PyTuple_GET_ITEM(args, new_nargs) == phold) {
-        PyErr_SetString(PyExc_TypeError,
-                        "trailing Placeholders are not allowed");
-        return NULL;
-    }
 
     /* check wrapped function / object */
     pto_args = pto_kw = NULL;
@@ -220,66 +212,86 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (pto == NULL)
         return NULL;
 
+    phold = state->placeholder;
     pto->fn = Py_NewRef(func);
     pto->placeholder = phold;
 
-    new_args = PyTuple_GetSlice(args, 1, new_nargs + 1);
-    if (new_args == NULL) {
-        Py_DECREF(pto);
-        return NULL;
-    }
-
-    /* Count placeholders */
-    Py_ssize_t phcount = 0;
-    for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
-        if (PyTuple_GET_ITEM(new_args, i) == phold) {
-            phcount++;
+    /* process args */
+    if (new_nargs == 0) {
+        if (pto_args == NULL) {
+            pto->args = PyTuple_New(0);
+            pto->phcount = 0;
+        }
+        else {
+            pto->args = pto_args;
+            pto->phcount = pto_phcount;
+            Py_INCREF(pto_args);
+            assert(PyTuple_Check(pto->args));
         }
     }
-    /* merge args with args of `func` which is `partial` */
-    if (pto_phcount > 0 && new_nargs > 0) {
-        Py_ssize_t npargs = PyTuple_GET_SIZE(pto_args);
-        Py_ssize_t tot_nargs = npargs;
-        if (new_nargs > pto_phcount) {
-            tot_nargs += new_nargs - pto_phcount;
+    else {
+        /* Count placeholders */
+        Py_ssize_t phcount = 0;
+        for (Py_ssize_t i = 0; i < new_nargs; i++) {
+            if (PyTuple_GET_ITEM(args, i + 1) == phold) {
+                phcount++;
+            }
         }
-        PyObject *item;
-        PyObject *tot_args = PyTuple_New(tot_nargs);
-        for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
-            if (i < npargs) {
-                item = PyTuple_GET_ITEM(pto_args, i);
-                if (j < new_nargs && item == phold) {
-                    item = PyTuple_GET_ITEM(new_args, j);
-                    j++;
-                    pto_phcount--;
+        if (pto_args == NULL) {
+            new_args = PyTuple_GetSlice(args, 1, new_nargs + 1);
+            if (new_args == NULL) {
+                Py_DECREF(pto);
+                return NULL;
+            }
+            pto->args = new_args;
+            pto->phcount = phcount;
+        }
+        else {
+            /* merge args with args of `func` which is `partial` */
+            Py_ssize_t npargs = PyTuple_GET_SIZE(pto_args);
+            Py_ssize_t tot_nargs = npargs;
+            if (new_nargs > pto_phcount) {
+                tot_nargs += new_nargs - pto_phcount;
+            }
+            PyObject *tot_args = PyTuple_New(tot_nargs);
+            PyObject *item;
+            if (pto_phcount > 0) {
+                for (Py_ssize_t i = 0, j = 0; i < tot_nargs; ++i) {
+                    if (i < npargs) {
+                        item = PyTuple_GET_ITEM(pto_args, i);
+                        if (j < new_nargs && item == phold) {
+                            item = PyTuple_GET_ITEM(args, j + 1);
+                            j++;
+                            pto_phcount--;
+                        }
+                    }
+                    else {
+                        item = PyTuple_GET_ITEM(args, j + 1);
+                        j++;
+                    }
+                    Py_INCREF(item);
+                    PyTuple_SET_ITEM(tot_args, i, item);
                 }
             }
             else {
-                item = PyTuple_GET_ITEM(new_args, j);
-                j++;
+                for (Py_ssize_t i = 0; i < npargs; ++i) {
+                    item = PyTuple_GET_ITEM(pto_args, i);
+                    Py_INCREF(item);
+                    PyTuple_SET_ITEM(tot_args, i, item);
+                }
+                for (Py_ssize_t i = 0; i < new_nargs; ++i) {
+                    item = PyTuple_GET_ITEM(args, i + 1);
+                    Py_INCREF(item);
+                    PyTuple_SET_ITEM(tot_args, npargs + i, item);
+                }
             }
-            Py_INCREF(item);
-            PyTuple_SET_ITEM(tot_args, i, item);
+            pto->args = tot_args;
+            pto->phcount = pto_phcount + phcount;
+            assert(PyTuple_Check(pto->args));
         }
-        pto->args = tot_args;
-        pto->phcount = pto_phcount + phcount;
-        Py_DECREF(new_args);
-    }
-    else if (pto_args == NULL) {
-        pto->args = new_args;
-        pto->phcount = phcount;
-    }
-    else {
-        pto->args = PySequence_Concat(pto_args, new_args);
-        pto->phcount = pto_phcount + phcount;
-        Py_DECREF(new_args);
-        if (pto->args == NULL) {
-            Py_DECREF(pto);
-            return NULL;
-        }
-        assert(PyTuple_Check(pto->args));
     }
 
+    /* process keywords */
     if (pto_kw == NULL || PyDict_GET_SIZE(pto_kw) == 0) {
         if (kw == NULL) {
             pto->kw = PyDict_New();
@@ -400,6 +412,12 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (nargskw == 0) {
         return _PyObject_VectorcallTstate(tstate, pto->fn,
                                           pto_args, pto_nargs, NULL);
+    }
+
+    /* Fast path if all Placeholders */
+    if (pto_nargs == pto_phcount) {
+        return _PyObject_VectorcallTstate(tstate, pto->fn,
+                                          args, nargs, kwnames);
     }
 
     /* Fast path using PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -693,13 +711,8 @@ partial_setstate(PyObject *self, PyObject *state)
         return NULL;
     }
 
-    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
-    if (nargs && PyTuple_GET_ITEM(fnargs, nargs - 1) == pto->placeholder) {
-        PyErr_SetString(PyExc_TypeError,
-                        "trailing Placeholders are not allowed");
-        return NULL;
-    }
     /* Count placeholders */
+    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {
         if (PyTuple_GET_ITEM(fnargs, i) == pto->placeholder) {
