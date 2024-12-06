@@ -2117,6 +2117,10 @@ class MiscTestCase(unittest.TestCase):
             # test short non-ASCII name
             "namé€",
 
+            # embedded null character: name is truncated
+            # at the first null character
+            "embed\0null",
+
             # Test long ASCII names (not truncated)
             "x" * limit,
 
@@ -2142,6 +2146,8 @@ class MiscTestCase(unittest.TestCase):
 
         for name in tests:
             encoded = name.encode(encoding, "replace")
+            if b'\0' in encoded:
+                encoded = encoded.split(b'\0', 1)[0]
             if truncate is not None:
                 encoded = encoded[:truncate]
             if sys.platform.startswith("solaris"):
