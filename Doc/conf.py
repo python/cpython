@@ -430,8 +430,6 @@ latex_elements = {
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
 }
-\let\Verbatim=\OriginalVerbatim
-\let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
     # The paper size ('letterpaper' or 'a4paper').
