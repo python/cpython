@@ -761,10 +761,10 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     }
 
     Py_ssize_t start, end;
-    if (PyUnicodeEncodeError_GetStart(exc, &start)) {
+    if (PyUnicodeEncodeError_GetStart(exc, &start) < 0) {
         return NULL;
     }
-    if (PyUnicodeEncodeError_GetEnd(exc, &end)) {
+    if (PyUnicodeEncodeError_GetEnd(exc, &end) < 0) {
         return NULL;
     }
     if (end <= start) {
