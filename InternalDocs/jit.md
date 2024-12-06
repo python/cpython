@@ -42,7 +42,7 @@ The optimizer that `_PyOptimizer_Optimize()` runs is configurable via the
 `_Py_SetTier2Optimizer()` function (this is used in test via
 `_testinternalcapi.set_optimizer()`.)
 
-The micro-op optimizer (abbreviated `uop` to approximate `μop`) is defined in
+The micro-op (abbreviated `uop` to approximate `μop`) optimizer is defined in
 [`Python/optimizer.c`](../Python/optimizer.c) as the type `_PyUOpOptimizer_Type`.
 It translates an instruction trace into a sequence of micro-ops by replacing
 each bytecode by an equivalent sequence of micro-ops (see
@@ -52,9 +52,9 @@ which is generated from [`Python/bytecodes.c`](../Python/bytecodes.c)).
 The micro-op sequence is then optimized by
 `_Py_uop_analyze_and_optimize` in
 [`Python/optimizer_analysis.c`](../Python/optimizer_analysis.c)
-and a `_PyUOpExecutor_Type` is created to contain it.
+and an instance of `_PyUOpExecutor_Type` is created to contain it.
 
-## Debugging a uop executor in the JIT interpreter
+## The JIT interpreter
 
 After a `JUMP_BACKWARD` instruction invokes the uop optimizer to create a uop
 executor, it transfers control to this executor via the `GOTO_TIER_TWO` macro.
