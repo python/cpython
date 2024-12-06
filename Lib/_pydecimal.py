@@ -4093,7 +4093,6 @@ class Context(object):
     def add(self, a, b):
         """Return the sum of the two operands.
 
-
         >>> ExtendedContext.add(Decimal('12'), Decimal('7.00'))
         Decimal('19.00')
         >>> ExtendedContext.add(Decimal('1E+2'), Decimal('1.01E+4'))
