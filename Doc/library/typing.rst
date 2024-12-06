@@ -2823,6 +2823,8 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 
    Protocol for reading from a file or other input stream.
 
+   .. versionadded:: next
+
    .. method:: read(size=...)
 
         Read data from the input stream and return it. If ``size`` is
@@ -2847,6 +2849,8 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
 .. class:: Writer[T]
 
    Protocol for writing to a file or other output stream.
+
+   .. versionadded:: next
 
    .. method:: write(data)
 
