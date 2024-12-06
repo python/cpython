@@ -167,6 +167,38 @@ def heappushpop(heap, item):
         _siftup(heap, 0)
     return item
 
+def heapremove(heap, index, item=None):
+    """Remove the element at the given index maintaining the heap invariant.
+
+    An optional item can be provided to replace the removed item. The removed
+    item is returned.
+    This can be used to efficiently remove an item from the heap or
+    to readjust the heap when the comparative "value" of
+    an item changes by removing and re-inserting the same item, e.g:
+
+        item.value=new_value
+        idx = heap.index(item)
+        heapq.heapremove(heap, idx, item)
+    """
+    result = heap[index]
+    if index < 0:
+        index += len(heap)
+    if index < len(heap) - 1:
+        # common case
+        if item is None:
+            item = heap.pop()
+        heap[index] = item
+        index = _siftdown(heap, 0, index)
+        _siftup(heap, index)
+    else:
+        # last item
+        if item is None:
+            heap.pop()
+        else:
+            heap[index] = item
+            _siftdown(heap, 0, index)
+    return result
+
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""
     n = len(x)
@@ -217,6 +249,7 @@ def _siftdown(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
+    return pos
 
 # The child indices of heap index pos are already heaps, and we want to make
 # a heap at index pos too.  We do this by bubbling the smaller child of
