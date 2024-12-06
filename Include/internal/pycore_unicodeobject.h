@@ -248,6 +248,12 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     PyObject *thousands_sep,
     Py_UCS4 *maxchar);
 
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+PyAPI_FUNC(PyObject*) _PyUnicode_Dedent(PyObject *unicode);
+
 /* --- Misc functions ----------------------------------------------------- */
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
