@@ -266,12 +266,6 @@ dummy_func(
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
-        replicate(8) pure inst(LOAD_FAST_WITH_COUNT, (-- value)) {
-            _PyStackRef local = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(local));
-            value = PyStackRef_WithCount(local);
-        }
-
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
