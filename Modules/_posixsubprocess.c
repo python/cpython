@@ -1126,7 +1126,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
 
         if (extra_group_size > MAX_GROUPS
-            || extra_group_size > PY_SSIZE_T_MAX / sizeof(gid_t))
+            || (size_t)extra_group_size > (size_t)PY_SSIZE_T_MAX / sizeof(gid_t))
         {
             PyErr_SetString(PyExc_ValueError, "too many extra_groups");
             goto cleanup;

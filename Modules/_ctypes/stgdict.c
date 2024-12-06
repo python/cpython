@@ -62,7 +62,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 
     if (src_info->ffi_type_pointer.elements == NULL)
         return 0;
-    if (src_info->length > PY_SSIZE_T_MAX / sizeof(ffi_type *) - 1) {
+    if ((size_t)src_info->length > (size_t)PY_SSIZE_T_MAX / sizeof(ffi_type *) - 1) {
         goto oom;
     }
     Py_ssize_t size = sizeof(ffi_type *) * (src_info->length + 1);
