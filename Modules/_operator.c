@@ -1616,7 +1616,7 @@ methodcaller_vectorcall(methodcallerobject *mc, PyObject *const *args,
     assert(mc->vectorcall_args != NULL);
 
     Py_ssize_t number_of_arguments = PyTuple_GET_SIZE(mc->args) +
-        (mc->vectorcall_kwnames? PyTuple_GET_SIZE(mc->vectorcall_kwnames):0);
+        (mc->vectorcall_kwnames ? PyTuple_GET_SIZE(mc->vectorcall_kwnames) : 0);
 
     PyObject *tmp_args[_METHODCALLER_MAX_ARGS];
     tmp_args[0] = args[0];
@@ -1645,7 +1645,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     // the objects in mc->vectorcall_args have references borrowed
     // from mc->args and the keys from mc->kwds
     memcpy(mc->vectorcall_args, _PyTuple_ITEMS(args),
-            nargs * sizeof(PyObject*)); // borrowed references
+           nargs * sizeof(PyObject *)); // borrowed references
     if (kwds && PyDict_Size(kwds)) {
         const Py_ssize_t nkwds = PyDict_Size(kwds);
         mc->vectorcall_kwnames = PyTuple_New(nkwds);
