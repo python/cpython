@@ -3165,14 +3165,11 @@ dict_dealloc(PyObject *self)
 {
     PyDictObject *mp = (PyDictObject *)self;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(Py_REFCNT(mp) == 0);
-    Py_SET_REFCNT(mp, 1);
+    _PyObject_ResurrectStart(self);
     _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
-    if (Py_REFCNT(mp) > 1) {
-        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
-    Py_SET_REFCNT(mp, 0);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
@@ -7070,9 +7067,7 @@ int
 PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        return 0;
-    }
+    assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {

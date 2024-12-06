@@ -11,7 +11,7 @@ import types
 import unittest
 
 import test.support
-from test.support import requires_specialization, script_helper
+from test.support import requires_specialization_ft, script_helper
 from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
@@ -850,6 +850,13 @@ class ReturnRecorder:
     def __call__(self, code, offset, val):
         self.events.append(("return", code.co_name, val))
 
+# gh-127274: CALL_ALLOC_AND_ENTER_INIT will only cache __init__ methods that
+# are deferred. We only defer functions defined at the top-level.
+class ValueErrorRaiser:
+    def __init__(self):
+        raise ValueError()
+
+
 class ExceptionMonitoringTest(CheckEvents):
 
     exception_recorders = (
@@ -1045,16 +1052,12 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_no_unwind_for_shim_frame(self):
-
-        class B:
-            def __init__(self):
-                raise ValueError()
 
         def f():
             try:
-                return B()
+                return ValueErrorRaiser()
             except ValueError:
                 pass
 
