@@ -1644,7 +1644,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
             return -1;
         }
         mc->vectorcall_args = PySequence_Concat(args, values_tuple);
-        Py_DECREF(values);
+        Py_DECREF(values_tuple);
         if (mc->vectorcall_args == 0) {
             PyErr_NoMemory();
             return -1;
