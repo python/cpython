@@ -2384,7 +2384,11 @@ _thread__get_name_impl(PyObject *module)
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
+#ifdef __sun
+    return PyUnicode_DecodeUTF8(name, strlen(name), "surrogateescape");
+#else
     return PyUnicode_DecodeFSDefault(name);
+#endif
 }
 #endif  // HAVE_PTHREAD_GETNAME_NP
 
