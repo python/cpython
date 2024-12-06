@@ -1589,15 +1589,6 @@ static PyType_Spec attrgetter_type_spec = {
     .slots = attrgetter_type_slots,
 };
 
-static void print_str(PyObject *o)
-{
-    PyObject_Print(o, stdout, Py_PRINT_RAW);
-}
-
-static void print_repr(PyObject *o)
-{
-    PyObject_Print(o, stdout, 0);
-}
 
 /* methodcaller object **********************************************************/
 
@@ -1890,7 +1881,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         constructor = PyObject_VectorcallDict(partial, newargs, 2, mc->kwds);
 
         Py_DECREF(partial);
-        return Py_BuildValue("NO", constructor, mc->args);
+        return Py_BuildValue("NO", constructor, Py_NewRef(mc->args));
     }
 }
 
