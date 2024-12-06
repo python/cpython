@@ -5422,7 +5422,7 @@ operating system.
 
 .. data:: SCHED_DEADLINE
 
-   Scheduling strategies for tasks with real-time constraints.
+   Scheduling policy for tasks with deadline constraints.
 
    .. versionadded:: next
 
