@@ -650,20 +650,63 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
 
 static int
 Compressor_init_xz(_lzma_state *state, lzma_stream *lzs,
-                   int check, uint32_t preset, PyObject *filterspecs)
+                   int check, uint32_t preset, PyObject *filterspecs,
+                   int threads)
 {
     lzma_ret lzret;
 
-    if (filterspecs == Py_None) {
-        lzret = lzma_easy_encoder(lzs, preset, check);
-    } else {
-        lzma_filter filters[LZMA_FILTERS_MAX + 1];
+    if (threads == 1) {
+        if (filterspecs == Py_None) {
+            lzret = lzma_easy_encoder(lzs, preset, check);
+        } else {
+            lzma_filter filters[LZMA_FILTERS_MAX + 1];
 
-        if (parse_filter_chain_spec(state, filters, filterspecs) == -1)
+            if (parse_filter_chain_spec(state, filters, filterspecs) == -1) {
+                return -1;
+            }
+
+            lzret = lzma_stream_encoder(lzs, filters, check);
+            free_filter_chain(filters);
+        }
+    } else {
+        if (threads < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "threads must be a non-negative integer");
             return -1;
-        lzret = lzma_stream_encoder(lzs, filters, check);
-        free_filter_chain(filters);
+        }
+
+        if (threads == 0) {
+            threads = lzma_cputhreads();
+        }
+        if (threads == 0) {
+            threads = 1;
+        }
+
+        lzma_mt mt = {
+            .flags = 0,
+            .block_size = 0,
+            .timeout = 0,
+            .preset = preset,
+            .check = check,
+            .filters = NULL,
+            .threads = threads,
+        };
+
+        if (filterspecs == Py_None) {
+            lzret = lzma_stream_encoder_mt(lzs, &mt);
+        } else {
+            lzma_filter filters[LZMA_FILTERS_MAX + 1];
+
+            if (parse_filter_chain_spec(state, filters, filterspecs) == -1) {
+                return -1;
+            }
+
+            mt.filters = filters;
+            lzret = lzma_stream_encoder_mt(lzs, &mt);
+            free_filter_chain(filters);
+        }
     }
+
     if (catch_lzma_error(state, lzret)) {
         return -1;
     }
@@ -755,6 +798,9 @@ _lzma.LZMACompressor.__new__
         have an entry for "id" indicating the ID of the filter, plus
         additional entries for options to the filter.
 
+    threads: int(c_default="1") = 1
+        Number of threads to use for compression (only relevant with FORMAT_XZ).
+
 Create a compressor object for compressing data incrementally.
 
 The settings used by the compressor can be specified either as a
@@ -769,9 +815,11 @@ For one-shot compression, use the compress() function instead.
 static PyObject *
 Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    static char *arg_names[] = {"format", "check", "preset", "filters", NULL};
+    static char *arg_names[] = {"format", "check", "preset", "filters",
+                                "threads", NULL};
     int format = FORMAT_XZ;
     int check = -1;
+    int threads = 1;
     uint32_t preset = LZMA_PRESET_DEFAULT;
     PyObject *preset_obj = Py_None;
     PyObject *filterspecs = Py_None;
@@ -780,9 +828,9 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     _lzma_state *state = PyType_GetModuleState(type);
     assert(state != NULL);
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|iiOO:LZMACompressor", arg_names,
+                                     "|iiOOi:LZMACompressor", arg_names,
                                      &format, &check, &preset_obj,
-                                     &filterspecs)) {
+                                     &filterspecs, &threads)) {
         return NULL;
     }
 
@@ -826,7 +874,8 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             if (check == -1) {
                 check = LZMA_CHECK_CRC64;
             }
-            if (Compressor_init_xz(state, &self->lzs, check, preset, filterspecs) != 0) {
+            if (Compressor_init_xz(state, &self->lzs, check, preset,
+                                   filterspecs, threads) != 0) {
                 goto error;
             }
             break;
