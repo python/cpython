@@ -1606,8 +1606,8 @@ typedef struct {
 #define _METHODCALLER_MAX_ARGS 8
 
 static PyObject *
-methodcaller_vectorcall(
-        methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
+methodcaller_vectorcall(methodcallerobject *mc, PyObject *const *args,
+        size_t nargsf, PyObject* kwnames)
 {
     if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
@@ -1623,15 +1623,13 @@ methodcaller_vectorcall(
     assert(1 + number_of_arguments <= _METHODCALLER_MAX_ARGS);
     memcpy(tmp_args + 1, mc->vectorcall_args, sizeof(PyObject *) * number_of_arguments);
 
-    PyObject *result = PyObject_VectorcallMethod(
-            mc->name, tmp_args,
+    return PyObject_VectorcallMethod(mc->name, tmp_args,
             (1 + PyTuple_GET_SIZE(mc->args)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
             mc->vectorcall_kwnames);
-
-    return result;
 }
 
-static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+static int
+_methodcaller_initialize_vectorcall(methodcallerobject* mc)
 {
     PyObject* args = mc->args;
     PyObject* kwds = mc->kwds;
