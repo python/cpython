@@ -1,4 +1,3 @@
-
 Garbage collector design
 ========================
 
@@ -117,7 +116,7 @@ general, the collection of all objects tracked by GC is partitioned into disjoin
 doubly linked list.  Between collections, objects are partitioned into "generations", reflecting how
 often they've survived collection attempts.  During collections, the generation(s) being collected
 are further partitioned into, for example, sets of reachable and unreachable objects.  Doubly linked lists
-support moving an object from one partition to another, adding a new object,  removing an object
+support moving an object from one partition to another, adding a new object, removing an object
 entirely (objects tracked by GC are most often reclaimed by the refcounting system when GC
 isn't running at all!), and merging partitions, all with a small constant number of pointer updates.
 With care, they also support iterating over a partition while objects are being added to - and
@@ -200,22 +199,22 @@ unreachable:
 
 ```pycon
 >>> import gc
->>> 
+>>>
 >>> class Link:
 ...    def __init__(self, next_link=None):
 ...        self.next_link = next_link
-...  
+...
 >>> link_3 = Link()
 >>> link_2 = Link(link_3)
 >>> link_1 = Link(link_2)
 >>> link_3.next_link = link_1
 >>> A = link_1
 >>> del link_1, link_2, link_3
->>> 
+>>>
 >>> link_4 = Link()
 >>> link_4.next_link = link_4
 >>> del link_4
->>> 
+>>>
 >>> # Collect the unreachable Link object (and its .__dict__ dict).
 >>> gc.collect()
 2
@@ -460,11 +459,11 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 >>> # Create a reference cycle.
 >>> x = MyObj()
 >>> x.self = x
->>> 
+>>>
 >>> # Initially the object is in the young generation.
 >>> gc.get_objects(generation=0)
 [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
->>> 
+>>>
 >>> # After a collection of the youngest generation the object
 >>> # moves to the old generation.
 >>> gc.collect(generation=0)
@@ -476,6 +475,83 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 >>> gc.get_objects(generation=2)
 [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 ```
+
+
+Optimization: visiting reachable objects
+========================================
+
+An object cannot be garbage if it can be reached.
+
+To avoid having to identify reference cycles across the whole heap, we can
+reduce the amount of work done considerably by first moving most reachable objects
+to the `visited` space. Empirically, most reachable objects can be reached from a
+small set of global objects and local variables.
+This step does much less work per object, so reduces the time spent
+performing garbage collection by at least half.
+
+> [!NOTE]
+> Objects that are not determined to be reachable by this pass are not necessarily
+> unreachable. We still need to perform the main algorithm to determine which objects
+> are actually unreachable.
+We use the same technique of forming a transitive closure as the incremental
+collector does to find reachable objects, seeding the list with some global
+objects and the currently executing frames.
+
+This phase moves objects to the `visited` space, as follows:
+
+1. All objects directly referred to by any builtin class, the `sys` module, the `builtins`
+module and all objects directly referred to from stack frames are added to a working
+set of reachable objects.
+2. Until this working set is empty:
+   1. Pop an object from the set and move it to the `visited` space
+   2. For each object directly reachable from that object:
+      * If it is not already in `visited` space and it is a GC object,
+        add it to the working set
+
+
+Before each increment of collection is performed, the stacks are scanned
+to check for any new stack frames that have been created since the last
+increment. All objects directly referred to from those stack frames are
+added to the working set.
+Then the above algorithm is repeated, starting from step 2.
+
+Determining how much work to do
+-------------------------------
+
+We need to do a certain amount of work to enusre that garbage is collected,
+but doing too much work slows down execution.
+
+To work out how much work we need to do, consider a heap with `L` live objects
+and `G0` garbage objects at the start of a full scavenge and `G1` garbage objects
+at the end of the scavenge. We don't want the amount of garbage to grow, `G1 ≤ G0`, and
+we don't want too much garbage (say 1/3 of the heap maximum), `G0 ≤ L/2`.
+For each full scavenge we must visit all objects, `T == L + G0 + G1`, during which
+`G1` garbage objects are created.
+
+The number of new objects created `N` must be at least the new garbage created, `N ≥ G1`,
+assuming that the number of live objects remains roughly constant.
+If we set `T == 4*N` we get `T > 4*G1` and `T = L + G0 + G1` => `L + G0 > 3G1`
+For a steady state heap (`G0 == G1`) we get `L > 2G0` and the desired garbage ratio.
+
+In other words, to keep the garbage fraction to 1/3 or less we need to visit
+4 times as many objects as are newly created.
+
+We can do better than this though. Not all new objects will be garbage.
+Consider the heap at the end of the scavenge with `L1` live objects and `G1`
+garbage. Also, note that `T == M + I` where `M` is the number of objects marked
+as reachable and `I` is the number of objects visited in increments.
+Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + G1`.
+
+If we choose the amount of work done such that `2*M + I == 6N` then we can do
+less work in most cases, but are still guaranteed to keep up.
+Since `I ≳ G0 + G1` (not strictly true, but close enough)
+`T == M + I == (6N + I)/2` and `(6N + I)/2 ≳ 4G`, so we can keep up.
+
+The reason that this improves performance is that `M` is usually much larger
+than `I`. If `M == 10I`, then `T ≅ 3N`.
+
+Finally, instead of using a fixed multiple of 8, we gradually increase it as the
+heap grows. This avoids wasting work for small heaps and during startup.
 
 
 Optimization: reusing fields to save memory
