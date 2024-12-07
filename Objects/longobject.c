@@ -3616,7 +3616,7 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static inline int
-_PyLong_IsSmallInt(PyObject *self)
+compact_int_is_small(PyObject *self)
 {
     PyLongObject *pylong = (PyLongObject *)self;
     assert(_PyLong_IsCompact(pylong));
@@ -3636,7 +3636,7 @@ _PyLong_ExactDealloc(PyObject *self)
     assert(PyLong_CheckExact(self));
     if (_PyLong_IsCompact((PyLongObject *)self)) {
         #ifndef Py_GIL_DISABLED
-        if (_PyLong_IsSmallInt(self)) {
+        if (compact_int_is_small(self)) {
             // See PEP 683, section Accidental De-Immortalizing for details
             _Py_SetImmortal(self);
             return;
@@ -3653,7 +3653,7 @@ long_dealloc(PyObject *self)
 {
     assert(self);
     if (_PyLong_IsCompact((PyLongObject *)self)) {
-        if (_PyLong_IsSmallInt(self)) {
+        if (compact_int_is_small(self)) {
             /* This should never get called, but we also don't want to SEGV if
              * we accidentally decref small Ints out of existence. Instead,
              * since small Ints are immortal, re-set the reference count.
