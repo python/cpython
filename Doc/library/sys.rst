@@ -1243,6 +1243,16 @@ always available.
    .. versionadded:: 3.13
 
 
+.. function:: _jit_enabled()
+
+   Return :const:`True` if the :ref:`JIT compiler <whatsnew313-jit-compiler>` is active,
+   and :const:`False` otherwise.
+
+   Available only in JIT builds; tier 2 interpreter does not count here.
+
+   .. versionadded:: next
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the main Python interpreter is
