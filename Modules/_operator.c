@@ -1643,11 +1643,16 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
             PyErr_NoMemory();
             return -1;
         }
-        mc->vectorcall_args = PySequence_Concat(args, values_tuple);
-        Py_DECREF(values_tuple);
-        if (mc->vectorcall_args == 0) {
-            PyErr_NoMemory();
-            return -1;
+        if (PyTuple_GET_SIZE(args)) {
+            mc->vectorcall_args = PySequence_Concat(args, values_tuple);
+            Py_DECREF(values_tuple);
+            if (mc->vectorcall_args == 0) {
+                PyErr_NoMemory();
+                return -1;
+            }
+        }
+        else {
+            mc->vectorcall_args = values_tuple;
         }
         mc->vectorcall_kwnames = PySequence_Tuple(kwds);
         if (!mc->vectorcall_kwnames) {
@@ -1726,10 +1731,7 @@ methodcaller_clear(methodcallerobject *mc)
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
     Py_CLEAR(mc->vectorcall_args);
-    if (mc->vectorcall_kwnames) {
-        Py_CLEAR(mc->vectorcall_kwnames);
-        mc->vectorcall_kwnames = NULL;
-    }
+    Py_CLEAR(mc->vectorcall_kwnames);
 }
 
 static void
@@ -1749,9 +1751,7 @@ methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
     Py_VISIT(mc->args);
     Py_VISIT(mc->kwds);
     Py_VISIT(mc->vectorcall_args);
-    if (mc->vectorcall_kwnames != NULL) {
-        Py_VISIT(mc->vectorcall_kwnames);
-    }
+    Py_VISIT(mc->vectorcall_kwnames);
     Py_VISIT(Py_TYPE(mc));
     return 0;
 }
@@ -1881,7 +1881,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         constructor = PyObject_VectorcallDict(partial, newargs, 2, mc->kwds);
 
         Py_DECREF(partial);
-        return Py_BuildValue("NO", constructor, Py_NewRef(mc->args));
+        return Py_BuildValue("NO", constructor, mc->args);
     }
 }
 
