@@ -1,1 +1,2 @@
-Added validation for more than one var positional and var keyword parameters in ``inspect.Signature.__init__``
+Added validation for more than one var positional and var
+keyword parameters in :class:`inspect.Signature`.
