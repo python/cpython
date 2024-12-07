@@ -1,6 +1,6 @@
 import sys
 import trace
-from _colorize import get_colors
+from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import TYPE_CHECKING
 
 from .runtests import RunTests

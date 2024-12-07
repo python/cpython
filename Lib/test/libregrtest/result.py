@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from _colorize import get_colors
+from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
 from .utils import (

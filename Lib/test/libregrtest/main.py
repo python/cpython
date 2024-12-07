@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 import trace
-from _colorize import get_colors
+from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import NoReturn
 
 from test.support import os_helper, MS_WINDOWS, flush_std_streams

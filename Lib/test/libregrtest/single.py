@@ -7,7 +7,7 @@ import time
 import traceback
 import unittest
 
-from _colorize import get_colors
+from _colorize import get_colors  # type: ignore[import-not-found]
 from test import support
 from test.support import threading_helper
 
