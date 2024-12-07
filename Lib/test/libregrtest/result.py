@@ -169,7 +169,7 @@ class TestResult:
                 return f"{self.test_name} timed out ({format_duration(self.duration)})"
             case _:
                 raise ValueError(
-                    f"{red}unknown result state: {state!r}{reset}"
+                    f"{red}unknown result state: {{state!r}}{reset}"
                 )
 
     def has_meaningful_duration(self):
