@@ -11,7 +11,6 @@ Two base classes are defined here -- PurePathBase and PathBase -- that
 resemble pathlib's PurePath and Path respectively.
 """
 
-import functools
 import operator
 from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
@@ -28,12 +27,6 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
-@functools.cache
-def _is_case_sensitive(parser):
-    return parser.normcase('Aa') == 'Aa'
-
-
-
 class ParserBase:
     """Base class for path parsers, which do low-level path manipulation.
 
@@ -47,11 +40,6 @@ class ParserBase:
     @classmethod
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported"
-
-    @property
-    def sep(self):
-        """The character used to separate path components."""
-        raise UnsupportedOperation(self._unsupported_msg('sep'))
 
     def join(self, path, *paths):
         """Join path segments."""
@@ -116,7 +104,15 @@ class PurePathBase:
         '_raw_paths',
     )
     parser = ParserBase()
+    _sep = '/'
+    _case_sensitive = True
     _globber = PathGlobber
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        if 'parser' in cls.__dict__:
+            cls._sep = cls.parser.join('a', 'a').strip('a')
+            cls._case_sensitive = cls.parser.normcase('Aa') == 'Aa'
 
     def __init__(self, *args):
         for arg in args:
@@ -152,7 +148,7 @@ class PurePathBase:
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        return str(self).replace(self.parser.sep, '/')
+        return str(self).replace(self._sep, '/')
 
     @property
     def drive(self):
@@ -368,8 +364,8 @@ class PurePathBase:
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-        sep = path_pattern.parser.sep
+            case_sensitive = self._case_sensitive
+        sep = path_pattern._sep
         path_parts = self.parts[::-1]
         pattern_parts = path_pattern.parts[::-1]
         if not pattern_parts:
@@ -393,8 +389,8 @@ class PurePathBase:
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
+            case_sensitive = self._case_sensitive
+        globber = self._globber(pattern._sep, case_sensitive, recursive=True)
         match = globber.compile(pattern._pattern_str)
         return match(self._pattern_str) is not None
 
@@ -639,7 +635,7 @@ class PathBase(PurePathBase):
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
+            case_sensitive = self._case_sensitive
             case_pedantic = False
         else:
             # The user has expressed a case sensitivity choice, but we don't
@@ -647,7 +643,7 @@ class PathBase(PurePathBase):
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = self._globber(self._sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):

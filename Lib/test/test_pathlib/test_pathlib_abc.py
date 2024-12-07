@@ -38,8 +38,6 @@ class ParserBaseTest(unittest.TestCase):
     def test_unsupported_operation(self):
         m = self.cls()
         e = UnsupportedOperation
-        with self.assertRaises(e):
-            m.sep
         self.assertRaises(e, m.join, 'foo')
         self.assertRaises(e, m.split, 'foo')
         self.assertRaises(e, m.splitdrive, 'foo')
