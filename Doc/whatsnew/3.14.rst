@@ -775,7 +775,7 @@ asyncio
   of them can be replaced with :func:`asyncio.run`.
 
   If you're running an async function, simply use :func:`asyncio.run`.
-  
+
   before::
 
     async def main():
@@ -797,7 +797,7 @@ asyncio
   If you need to start something, e.g. a server listening on a socket
   and then run forever, use :func:`asyncio.run` and an
   :class:`asyncio.Event`.
-  
+
   before::
 
     def start_server(loop):
@@ -815,14 +815,16 @@ asyncio
     def start_server(loop):
         ...
 
-    async def amain():
+    async def main():
         start_server(asyncio.get_running_loop())
         await asyncio.Event().wait()
 
-    asyncio.run(amain())
+    asyncio.run(main())
 
   If you need to run something in an event loop, then run some blocking
-  code around it, use :class:`asyncio.Runner`, before::
+  code around it, use :class:`asyncio.Runner`.
+
+   before::
 
     async def operation_one():
         ...
