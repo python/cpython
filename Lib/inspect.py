@@ -2951,8 +2951,7 @@ class Signature:
 
                     if kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
                         if kind in seen_var_parameters:
-                            msg = 'more than one {} parameter'
-                            msg = msg.format(kind.description)
+                            msg = f'more than one {kind.description} parameter'
                             raise ValueError(msg)
 
                         seen_var_parameters.add(kind)
