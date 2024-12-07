@@ -3075,8 +3075,8 @@
             Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right_o);
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
             int sign_ish = COMPARISON_BIT(ileft, iright);
-            PyStackRef_CLOSE_SPECIALIZED(left, (destructor)PyObject_Free);
-            PyStackRef_CLOSE_SPECIALIZED(right, (destructor)PyObject_Free);
+            PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+            PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
             res =  (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
             // It's always a bool, so we don't care about oparg & 16.
             stack_pointer[-2] = res;
