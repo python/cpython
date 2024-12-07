@@ -651,9 +651,9 @@ class IMAP4:
         """Return an Idler: an iterable context manager for the IDLE command
 
         :param duration:  Maximum duration (in seconds) to keep idling,
-                          or None for no time limit.
-                          To avoid inactivity timeouts on servers that impose
-                          them, callers are advised to keep this <= 29 minutes.
+                          or None for no time limit.  To avoid inactivity
+                          timeouts on servers that impose them, callers are
+                          advised to keep this at most 29 minutes.
                           See the note below regarding IMAP4_stream on Windows.
         :type duration:   int|float|None
 
@@ -673,7 +673,7 @@ class IMAP4:
         Responses produced by the iterator are not added to the internal
         cache for retrieval by response().
 
-        Note: Windows IMAP4_stream connections have no way to accurately
+        Warning:  Windows IMAP4_stream connections have no way to accurately
         respect 'duration', since Windows select() only works on sockets.
         However, if the server regularly sends status messages during IDLE,
         they will wake our selector and keep iteration from blocking for long.
@@ -682,7 +682,7 @@ class IMAP4:
         minutes needed to avoid server inactivity timeouts would make 27
         minutes a sensible value for 'duration' in this situation.
 
-        Note: The Idler class name and structure are internal interfaces,
+        Note:  The Idler class name and structure are internal interfaces,
         subject to change.  Calling code can rely on its context management,
         iteration, and public method to remain stable, but should not
         subclass, instantiate, or otherwise directly reference the class.
@@ -1402,7 +1402,7 @@ class Idler:
     tuple is a single datum, rather than a list of them, because only one
     untagged response is produced at a time.
 
-    Note: The name and structure of this class are internal interfaces,
+    Note:  The name and structure of this class are internal interfaces,
     subject to change.  Calling code can rely on its context management,
     iteration, and public method to remain stable, but should not
     subclass, instantiate, or otherwise directly reference the class.
@@ -1553,15 +1553,17 @@ class Idler:
             batch = list(idler.burst())
             print(f'processing {len(batch)} responses...')
 
-        Produces no responses and returns immediately if the IDLE
-        context's maximum duration (the 'duration' argument) has elapsed.
-        Callers should plan accordingly if using this method in a loop.
+        The IDLE context's maximum duration, as passed to IMAP4.idle(),
+        is respected when waiting for the first response in a burst.
+        Therefore, an expired IDLE context will cause this generator
+        to return immediately without producing anything.  Callers should
+        consider this if using it in a loop.
 
-        Note: Windows IMAP4_stream connections will ignore the interval
-        argument, yielding endless responses and blocking indefinitely
-        for each one, because Windows select() only works on sockets.
-        It is therefore advised not to use this method with an IMAP4_stream
-        connection on Windows.
+        Warning:  Windows IMAP4_stream connections have no way to accurately
+        respect the 'interval' argument, since Windows select() only works
+        on sockets.  This will cause the generator to yield endless responses
+        and block indefinitely for each one.  It is therefore advised not to
+        use burst() with an IMAP4_stream connection on Windows.
         """
         try:
             yield next(self)
