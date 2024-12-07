@@ -774,7 +774,8 @@ asyncio
   There's a few patterns that use :func:`asyncio.get_event_loop`, most
   of them can be replaced with :func:`asyncio.run`.
 
-  If you're running an async function, simply use :func:`asyncio.run`,
+  If you're running an async function, simply use :func:`asyncio.run`.
+  
   before::
 
     async def main():
