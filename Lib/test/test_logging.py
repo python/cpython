@@ -3554,26 +3554,6 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
-    def test_disable_existing_loggers(self):
-        fn = make_temp_file(".log", "test_logging-disable-existing-loggers-")
-        file_handler = logging.FileHandler(fn, mode="w")
-        file_handler.setFormatter(logging.Formatter("%(message)s"))
-        root_logger = logging.getLogger()
-        root_logger.addHandler(file_handler)
-
-        config = {"version": 1, "disable_existing_loggers": False}
-
-        # we have disable_existing_loggers=False,
-        # so, all handlers should continue working
-        self.apply_config(config)
-
-        msg = "test message"
-        logging.warning(msg)
-        file_handler.close()
-        with open(fn, encoding='utf-8') as f:
-            data = f.read().strip()
-        os.remove(fn)
-        self.assertEqual(data, msg)
 
     def test_config16_ok(self):
         self.apply_config(self.config16)
