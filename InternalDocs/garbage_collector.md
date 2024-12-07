@@ -518,7 +518,7 @@ Then the above algorithm is repeated, starting from step 2.
 Determining how much work to do
 -------------------------------
 
-We need to do a certain amount of work to enusre that garbage is collected,
+We need to do a certain amount of work to ensure that garbage is collected,
 but doing too much work slows down execution.
 
 To work out how much work we need to do, consider a heap with `L` live objects
