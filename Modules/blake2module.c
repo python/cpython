@@ -897,40 +897,40 @@ static PyGetSetDef py_blake2b_getsetters[] = {
 };
 
 static int
-py_blake2_clear(PyObject *self)
+py_blake2_clear(PyObject *op)
 {
-    Blake2Object *obj = (Blake2Object *)self;
+    Blake2Object *self = (Blake2Object *)op;
     // The initialization function uses PyObject_New() but explicitly
     // initializes the HACL* internal state to NULL before allocating
     // it. If an error occurs in the constructor, we should only free
     // states that were allocated (i.e. that are not NULL).
-    switch (obj->impl) {
+    switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
-            if (obj->blake2b_256_state != NULL) {
-                Hacl_Hash_Blake2b_Simd256_free(obj->blake2b_256_state);
-                obj->blake2b_256_state = NULL;
+            if (self->blake2b_256_state != NULL) {
+                Hacl_Hash_Blake2b_Simd256_free(self->blake2b_256_state);
+                self->blake2b_256_state = NULL;
             }
             break;
 #endif
 #if HACL_CAN_COMPILE_SIMD128
         case Blake2s_128:
-            if (obj->blake2s_128_state != NULL) {
-                Hacl_Hash_Blake2s_Simd128_free(obj->blake2s_128_state);
-                obj->blake2s_128_state = NULL;
+            if (self->blake2s_128_state != NULL) {
+                Hacl_Hash_Blake2s_Simd128_free(self->blake2s_128_state);
+                self->blake2s_128_state = NULL;
             }
             break;
 #endif
         case Blake2b:
-            if (obj->blake2b_state != NULL) {
-                Hacl_Hash_Blake2b_free(obj->blake2b_state);
-                obj->blake2b_state = NULL;
+            if (self->blake2b_state != NULL) {
+                Hacl_Hash_Blake2b_free(self->blake2b_state);
+                self->blake2b_state = NULL;
             }
             break;
         case Blake2s:
-            if (obj->blake2s_state != NULL) {
-                Hacl_Hash_Blake2s_free(obj->blake2s_state);
-                obj->blake2s_state = NULL;
+            if (self->blake2s_state != NULL) {
+                Hacl_Hash_Blake2s_free(self->blake2s_state);
+                self->blake2s_state = NULL;
             }
             break;
         default:
