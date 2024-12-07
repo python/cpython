@@ -2748,7 +2748,7 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     return end;
 }
 
-#define _PyUnicodeError_CAST(PTR)   _Py_CAST(PyUnicodeErrorObject *, PTR)
+#define _PyUnicodeError_CAST(PTR)   ((PyUnicodeErrorObject *)(PTR))
 #define PyUnicodeError_Check(PTR)   \
     PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
 #define PyUnicodeError_CAST(PTR)    \
@@ -2770,12 +2770,8 @@ check_unicode_error_type(PyObject *self, const char *expect_type)
 static inline PyUnicodeErrorObject *
 as_unicode_error(PyObject *self, const char *expect_type)
 {
-    if (!PyUnicodeError_Check(self)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expecting a %s object, got %T", expect_type, self);
-        return NULL;
-    }
-    return _PyUnicodeError_CAST(self);
+    int rc = check_unicode_error_type(self, except_type);
+    return rc < 0 : NULL : _PyUnicodeError_CAST(self);
 }
 
 PyObject *
@@ -3052,7 +3048,6 @@ UnicodeError_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
     (void)UnicodeError_clear(self);
     type->tp_free(self);
-    // TODO: should we decref type here?
 }
 
 static int
