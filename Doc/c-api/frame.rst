@@ -132,7 +132,7 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.13
-      As part of :pep:`667`, return a proxy object for optimized scopes.
+      As part of :pep:`667`, return an instance of :c:var:`PyFrameLocalsProxy_Type`.
 
 
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
@@ -140,6 +140,31 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
+Frame Locals Proxies
+^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.13
+
+In older versions of :term:`CPython`, the exposed local variables dictionary
+(via :attr:`~frame.f_locals`, :c:func:`PyFrame_GetLocals`, or :func:`locals`)
+wouldn't be consistent with the actual local variables, leading to all sorts of
+weird issues. In 3.13, instead of using a dictionary to expose local variables,
+a special proxy type is used instead, which retains consistency when manipulating
+scopes.
+
+See :pep:`667` for more information.
+
+.. c:var:: PyTypeObject PyFrameLocalsProxy_Type
+
+   The type of frame :func:`locals` proxy objects.
+
+   .. versionadded:: 3.13
+
+.. c:function:: int PyFrameLocalsProxy_Check(PyObject *obj)
+
+   Return non-zero if *obj* is a frame :func:`locals` proxy.
+
+   .. versionadded:: 3.13
 
 Internal Frames
 ^^^^^^^^^^^^^^^
