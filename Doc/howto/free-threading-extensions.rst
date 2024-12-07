@@ -167,6 +167,8 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyCell_GET`              | :c:func:`PyCell_Get`              |
++-----------------------------------+-----------------------------------+
 
 Not all APIs that return borrowed references are problematic.  For
 example, :c:func:`PyTuple_GetItem` is safe because tuples are immutable.

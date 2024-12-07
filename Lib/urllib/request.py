@@ -1488,10 +1488,7 @@ class FileHandler(BaseHandler):
                 host, port = _splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
+                origurl = 'file:' + pathname2url(localfile)
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
