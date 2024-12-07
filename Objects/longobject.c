@@ -3614,7 +3614,6 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 static void
 long_dealloc(PyObject *self)
 {
-#if SIZEOF_VOID_P <= 4 /* same condition as in refcount.h */
 #ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref small Ints out of existence. Instead,
@@ -3633,7 +3632,6 @@ long_dealloc(PyObject *self)
             }
         }
     }
-#endif
 #endif
     Py_TYPE(self)->tp_free(self);
 }
