@@ -364,9 +364,9 @@ An :class:`IMAP4` instance has the following methods:
          processing 3 responses...
          [('EXPUNGE', b'2'), ('EXPUNGE', b'1'), ('RECENT', b'0')]
 
-      The ``IDLE`` context's maximum duration (the argument to
-      :meth:`IMAP4.idle`) is respected when waiting for the first response in a
-      burst.  Therefore, an expired ``IDLE`` context will cause this generator
+      The ``IDLE`` context's maximum duration, as passed to :meth:`IMAP4.idle`,
+      is respected when waiting for the first response in a burst.
+      Therefore, an expired :class:`!Idler` will cause this generator
       to return immediately without producing anything.  Callers should
       consider this if using it in a loop.
 
@@ -397,8 +397,8 @@ An :class:`IMAP4` instance has the following methods:
 
       The :class:`!Idler` class name and structure are internal interfaces,
       subject to change.  Calling code can rely on its context management,
-      iteration, and public method to remain stable, but should not
-      subclass, instantiate, or otherwise directly reference the class.
+      iteration, and public method to remain stable, but should not subclass,
+      instantiate, compare, or otherwise directly reference the class.
 
 
 .. method:: IMAP4.list([directory[, pattern]])
