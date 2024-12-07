@@ -900,7 +900,7 @@ static int
 py_blake2_clear(PyObject *op)
 {
     Blake2Object *self = (Blake2Object *)op;
-    // The initialization function uses PyObject_New() but explicitly
+    // The initialization function uses PyObject_GC_New() but explicitly
     // initializes the HACL* internal state to NULL before allocating
     // it. If an error occurs in the constructor, we should only free
     // states that were allocated (i.e. that are not NULL).
