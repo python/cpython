@@ -2993,11 +2993,14 @@ class TestSignatureObject(unittest.TestCase):
             S((pkd, pk))
 
         second_args = args.replace(name="second_args")
-        with self.assertRaisesRegex(ValueError, 'more than one var-positional parameter'):
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
             S((args, second_args))
 
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
+            S((args, ko, second_args))
+
         second_kwargs = kwargs.replace(name="second_kwargs")
-        with self.assertRaisesRegex(ValueError, 'more than one var-keyword parameter'):
+        with self.assertRaisesRegex(ValueError, 'more than one variadic keyword parameter'):
             S((kwargs, second_kwargs))
 
     def test_signature_object_pickle(self):
