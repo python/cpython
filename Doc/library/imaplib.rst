@@ -317,6 +317,9 @@ An :class:`IMAP4` instance has the following methods:
    :keyword:`with` statement, produces IMAP untagged responses via the
    :term:`iterator` protocol, and sends ``DONE`` upon context exit.
 
+   Responses are represented as ``(type, [data, ...])`` tuples, as described
+   in :ref:`IMAP4 Objects <imap4-objects>`.
+
    The *duration* argument sets a maximum duration (in seconds) to keep idling,
    after which any ongoing iteration will stop.  It defaults to ``None``,
    meaning no time limit.  Callers wishing to avoid inactivity timeouts on
@@ -324,22 +327,14 @@ An :class:`IMAP4` instance has the following methods:
    See the :ref:`warning below <windows-pipe-timeout-warning>` if using
    :class:`IMAP4_stream` on Windows.
 
-   Response tuples produced by the iterator almost exactly match those
-   returned by other methods in this module.  The difference is that the tuple's
-   second member is a single response datum, rather than a list of data.
-   Therefore, in a mailbox where calling ``M.response('EXISTS')`` would
-   return ``('EXISTS', [b'1'])``, the idle iterator would produce
-   ``('EXISTS', b'1')``.  A datum can be bytes or a tuple, as described in
-   :ref:`IMAP4 Objects <imap4-objects>`.
-
    Example::
 
-      with M.idle(duration=29 * 60) as idler:
-          for typ, datum in idler:
-              print(typ, datum)
-
-      ('EXISTS', b'1')
-      ('RECENT', b'1')
+      >>> with M.idle(duration=29 * 60) as idler:
+      ...     for typ, data in idler:
+      ...         print(typ, data)
+      ...
+      EXISTS [b'1']
+      RECENT [b'1']
 
    Instead of iterating one response at a time, it is also possible to retrieve
    the next response along with any immediately available subsequent responses
@@ -353,16 +348,14 @@ An :class:`IMAP4` instance has the following methods:
 
       Example::
 
-         with M.idle() as idler:
-
-             # get the next response and any others following by < 0.1 seconds
-             batch = list(idler.burst())
-
-             print(f'processing {len(batch)} responses...')
-             print(batch)
-
+         >>> with M.idle() as idler:
+         ...     # get next response and any others following by < 0.1 seconds
+         ...     batch = list(idler.burst())
+         ...     print(f'processing {len(batch)} responses...')
+         ...     print(batch)
+         ...
          processing 3 responses...
-         [('EXPUNGE', b'2'), ('EXPUNGE', b'1'), ('RECENT', b'0')]
+         [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
 
       The ``IDLE`` context's maximum duration, as passed to :meth:`IMAP4.idle`,
       is respected when waiting for the first response in a burst.

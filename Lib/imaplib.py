@@ -657,21 +657,21 @@ class IMAP4:
                           See the note below regarding IMAP4_stream on Windows.
         :type duration:   int|float|None
 
-        The context manager sends the IDLE command upon entry, produces
-        responses via iteration, and sends DONE upon exit.
-        It represents responses as (type, datum) tuples, rather than the
-        (type, [data, ...]) tuples returned by other methods, because only one
-        response is represented at a time.  A datum can be bytes or a tuple,
-        as described in the IMAP4 class documentation.
+        The returned object sends the IDLE command when activated by the
+        'with' statement, produces IMAP untagged responses via the iterator
+        protocol, and sends DONE upon context exit.
+
+        Responses are represented as (type, [data, ...]) tuples, as described
+        in the IMAP4 class documentation.
 
         Example:
 
-        with imap.idle(duration=29 * 60) as idler:
-            for typ, datum in idler:
-                print(typ, datum)
-
-        Responses produced by the iterator are not added to the internal
-        cache for retrieval by response().
+        >>> with M.idle(duration=29 * 60) as idler:
+        ...     for typ, data in idler:
+        ...         print(typ, data)
+        ...
+        EXISTS [b'1']
+        RECENT [b'1']
 
         Warning:  Windows IMAP4_stream connections have no way to accurately
         respect 'duration', since Windows select() only works on sockets.
@@ -684,8 +684,8 @@ class IMAP4:
 
         Note:  The Idler class name and structure are internal interfaces,
         subject to change.  Calling code can rely on its context management,
-        iteration, and public method to remain stable, but should not
-        subclass, instantiate, or otherwise directly reference the class.
+        iteration, and public method to remain stable, but should not subclass,
+        instantiate, compare, or otherwise directly reference the class.
         """
         return Idler(self, duration)
 
@@ -1049,7 +1049,17 @@ class IMAP4:
 
         # During idle, queue untagged responses for delivery via iteration
         if self._idle_capture:
-            self._idle_responses.append((typ, dat))
+            # Responses containing literal strings are passed to us one data
+            # fragment at a time, while others arrive in a single call.
+            if (not self._idle_responses or
+                isinstance(self._idle_responses[-1][1][-1], bytes)):
+                # We are not continuing a fragmented response; start a new one
+                self._idle_responses.append((typ, [dat]))
+            else:
+                # We are continuing a fragmented response; append the fragment
+                response = self._idle_responses[-1]
+                assert response[0] == typ
+                response[1].append(dat)
             if __debug__ and self.debug >= 5:
                 self._mesg(f'idle: queue untagged {typ} {dat!r}')
             return
@@ -1397,10 +1407,8 @@ class Idler:
     IMAP untagged responses via the iterator protocol, and sends DONE upon
     context exit.
 
-    Iteration produces (type, datum) tuples.  They slightly differ
-    from the tuples returned by IMAP4.response():  The second item in the
-    tuple is a single datum, rather than a list of them, because only one
-    untagged response is produced at a time.
+    Iteration produces (type, [data, ...]) tuples, as described in the IMAP4
+    class documentation.
 
     Note:  The name and structure of this class are internal interfaces,
     subject to change.  Calling code can rely on its context management,
@@ -1544,20 +1552,25 @@ class Idler:
         EXPUNGE responses after a bulk delete) so they can be efficiently
         processed as a batch instead of one at a time.
 
-        Represents responses as (type, datum) tuples, just as when
-        iterating directly on the context manager.
+        Responses are represented as (type, [data, ...]) tuples, as described
+        in the IMAP4 class documentation.
 
         Example:
 
-        with imap.idle() as idler:
-            batch = list(idler.burst())
-            print(f'processing {len(batch)} responses...')
+        >>> with M.idle() as idler:
+        ...     # get next response and any others following by < 0.1 seconds
+        ...     batch = list(idler.burst())
+        ...     print(f'processing {len(batch)} responses...')
+        ...     print(batch)
+        ...
+        processing 3 responses...
+        [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
 
         The IDLE context's maximum duration, as passed to IMAP4.idle(),
         is respected when waiting for the first response in a burst.
-        Therefore, an expired IDLE context will cause this generator
-        to return immediately without producing anything.  Callers should
-        consider this if using it in a loop.
+        Therefore, an expired Idler will cause this generator to return
+        immediately without producing anything.  Callers should consider
+        this if using it in a loop.
 
         Warning:  Windows IMAP4_stream connections have no way to accurately
         respect the 'interval' argument, since Windows select() only works
@@ -1582,7 +1595,7 @@ class Idler:
         imap = self._imap
         start = time.monotonic()
 
-        typ, datum = self._pop(self._duration)
+        typ, data = self._pop(self._duration)
 
         if self._duration is not None:
             elapsed = time.monotonic() - start
@@ -1593,7 +1606,7 @@ class Idler:
                 imap._mesg('idle iterator exhausted')
             raise StopIteration
 
-        return typ, datum
+        return typ, data
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         imap = self._imap
@@ -1621,8 +1634,10 @@ class Idler:
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle quit with {leftovers} leftover responses')
             while imap._idle_responses:
-                typ, datum = imap._idle_responses.pop(0)
-                imap._append_untagged(typ, datum)
+                typ, data = imap._idle_responses.pop(0)
+                # Append one fragment at a time, just as _get_response() does
+                for datum in data:
+                    imap._append_untagged(typ, datum)
 
         try:
             imap.send(b'DONE' + CRLF)

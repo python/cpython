@@ -508,8 +508,15 @@ class NewIMAPTestsMixin():
         capabilities = 'IDLE'
         def cmd_IDLE(self, tag, args):
             self._send_textline('+ idling')
+            # simple response
             self._send_line(b'* 2 EXISTS')
-            self._send_line(b'* 0 RECENT')
+            # complex response: fragmented data due to literal string
+            self._send_line(b'* 1 FETCH (BODY[HEADER.FIELDS (DATE)] {41}')
+            self._send(b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n')
+            self._send_line(b')')
+            # simple response following a fragmented one
+            self._send_line(b'* 3 EXISTS')
+            # response arriving later
             time.sleep(1)
             self._send_line(b'* 1 RECENT')
             r = yield
@@ -523,12 +530,19 @@ class NewIMAPTestsMixin():
         client.login('user', 'pass')
         with client.idle() as idler:
             # iteration should produce responses
-            typ, datum = next(idler)
-            self.assertEqual(typ, 'EXISTS')
-            self.assertEqual(datum, b'2')
-            typ, datum = next(idler)
-            self.assertEqual(typ, 'RECENT')
-            self.assertEqual(datum, b'0')
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'2']))
+            # fragmented response (with literal string) should arrive whole
+            expected_fetch_data = [
+                (b'1 (BODY[HEADER.FIELDS (DATE)] {41}',
+                    b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n'),
+                b')']
+            typ, data = next(idler)
+            self.assertEqual(typ, 'FETCH')
+            self.assertEqual(data, expected_fetch_data)
+            # response after a fragmented one should arrive separately
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'3']))
         # iteration should have consumed untagged responses
         _, data = client.response('EXISTS')
         self.assertEqual(data, [None])
@@ -542,7 +556,7 @@ class NewIMAPTestsMixin():
         # burst() should yield immediately available responses
         with client.idle() as idler:
             batch = list(idler.burst())
-            self.assertEqual(len(batch), 2)
+            self.assertEqual(len(batch), 3)
         # burst() should not have consumed later responses
         _, data = client.response('RECENT')
         self.assertEqual(data, [b'1'])
