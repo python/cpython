@@ -1,7 +1,10 @@
+import copy
+import functools
 import sys
 import unicodedata
 import unittest
 import urllib.parse
+from urllib.parse import urldefrag, urlparse, urlsplit, urlunparse, urlunsplit
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -101,24 +104,66 @@ parse_qs_test_cases = [
     (b"%81=%A9", {b'\x81': [b'\xa9']}),
 ]
 
+def parametrise_allow_none(test):
+    @functools.wraps(test)
+    def wrapper(self):
+        for allow_none in False, True:
+            with self.subTest(allow_none=allow_none):
+                test(self, allow_none=allow_none)
+    return wrapper
+
 class UrlParseTestCase(unittest.TestCase):
+
+    def _encode(self, s):
+        if isinstance(s, str):
+            return s.encode('ascii')
+        if isinstance(s, tuple):
+            return tuple(self._encode(x) for x in s)
+        return s
 
     def checkRoundtrips(self, url, parsed, split, url2=None):
         if url2 is None:
             url2 = url
-        result = urllib.parse.urlparse(url)
+        self.checkRoundtrips1(url, parsed, split, allow_none=True)
+        empty = url[:0]
+        parsed = tuple(x or empty for x in parsed)
+        split = tuple(x or empty for x in split)
+        self.checkRoundtrips1(url, parsed, split, url2, allow_none=False)
+
+        result = urlparse(url, allow_none=True)
+        self.assertEqual(urlunparse(result, keep_empty=False), url2)
+        self.assertEqual(urlunparse(tuple(result), keep_empty=False), url2)
+        result = urlparse(url, allow_none=False)
+        with self.assertRaises(ValueError):
+            urlunparse(result, keep_empty=True)
+        urlunparse(tuple(result), keep_empty=True)
+
+        result = urlsplit(url, allow_none=True)
+        self.assertEqual(urlunsplit(result, keep_empty=False), url2)
+        self.assertEqual(urlunsplit(tuple(result), keep_empty=False), url2)
+        result = urlsplit(url, allow_none=False)
+        with self.assertRaises(ValueError):
+            urlunsplit(result, keep_empty=True)
+        urlunsplit(tuple(result), keep_empty=True)
+
+    def checkRoundtrips1(self, url, parsed, split, url2=None, *, allow_none):
+        if url2 is None:
+            url2 = url
+        result = urlparse(url, allow_none=allow_none)
         self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
-             result.params, result.query, result.fragment)
+            result.params, result.query, result.fragment)
         self.assertSequenceEqual(t, parsed)
         # put it back together and it should be the same
-        result2 = urllib.parse.urlunparse(result)
-        self.assertSequenceEqual(result2, url2)
-        self.assertSequenceEqual(result2, result.geturl())
+        result2 = urlunparse(result)
+        self.assertEqual(result2, url2)
+        self.assertEqual(result2, result.geturl())
+        self.assertEqual(urlunparse(result, keep_empty=allow_none), url2)
+        self.assertEqual(urlunparse(tuple(result), keep_empty=allow_none), result2)
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
-        result3 = urllib.parse.urlparse(result.geturl())
+        result3 = urlparse(result.geturl(), allow_none=allow_none)
         self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
@@ -133,17 +178,18 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result3.port,     result.port)
 
         # check the roundtrip using urlsplit() as well
-        result = urllib.parse.urlsplit(url)
+        result = urlsplit(url, allow_none=allow_none)
         self.assertSequenceEqual(result, split)
         t = (result.scheme, result.netloc, result.path,
-             result.query, result.fragment)
+            result.query, result.fragment)
         self.assertSequenceEqual(t, split)
-        result2 = urllib.parse.urlunsplit(result)
-        self.assertSequenceEqual(result2, url2)
-        self.assertSequenceEqual(result2, result.geturl())
+        result2 = urlunsplit(result)
+        self.assertEqual(result2, url2)
+        self.assertEqual(result2, result.geturl())
+        self.assertEqual(urlunsplit(tuple(result), keep_empty=allow_none), result2)
 
         # check the fixpoint property of re-parsing the result of geturl()
-        result3 = urllib.parse.urlsplit(result.geturl())
+        result3 = urlsplit(result.geturl(), allow_none=allow_none)
         self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
@@ -178,101 +224,97 @@ class UrlParseTestCase(unittest.TestCase):
     def test_roundtrips(self):
         str_cases = [
             ('path/to/file',
-             ('', '', 'path/to/file', '', '', ''),
-             ('', '', 'path/to/file', '', '')),
+             (None, None, 'path/to/file', None, None, None),
+             (None, None, 'path/to/file', None, None)),
             ('/path/to/file',
-             ('', '', '/path/to/file', '', '', ''),
-             ('', '', '/path/to/file', '', '')),
+             (None, None, '/path/to/file', None, None, None),
+             (None, None, '/path/to/file', None, None)),
             ('//path/to/file',
-             ('', 'path', '/to/file', '', '', ''),
-             ('', 'path', '/to/file', '', '')),
+             (None, 'path', '/to/file', None, None, None),
+             (None, 'path', '/to/file', None, None)),
             ('////path/to/file',
-             ('', '', '//path/to/file', '', '', ''),
-             ('', '', '//path/to/file', '', '')),
+             (None, '', '//path/to/file', None, None, None),
+             (None, '', '//path/to/file', None, None)),
             ('/////path/to/file',
-             ('', '', '///path/to/file', '', '', ''),
-             ('', '', '///path/to/file', '', '')),
+             (None, '', '///path/to/file', None, None, None),
+             (None, '', '///path/to/file', None, None)),
             ('scheme:path/to/file',
-             ('scheme', '', 'path/to/file', '', '', ''),
-             ('scheme', '', 'path/to/file', '', '')),
+             ('scheme', None, 'path/to/file', None, None, None),
+             ('scheme', None, 'path/to/file', None, None)),
             ('scheme:/path/to/file',
-             ('scheme', '', '/path/to/file', '', '', ''),
-             ('scheme', '', '/path/to/file', '', '')),
+             ('scheme', None, '/path/to/file', None, None, None),
+             ('scheme', None, '/path/to/file', None, None)),
             ('scheme://path/to/file',
-             ('scheme', 'path', '/to/file', '', '', ''),
-             ('scheme', 'path', '/to/file', '', '')),
+             ('scheme', 'path', '/to/file', None, None, None),
+             ('scheme', 'path', '/to/file', None, None)),
             ('scheme:////path/to/file',
-             ('scheme', '', '//path/to/file', '', '', ''),
-             ('scheme', '', '//path/to/file', '', '')),
+             ('scheme', '', '//path/to/file', None, None, None),
+             ('scheme', '', '//path/to/file', None, None)),
             ('scheme://///path/to/file',
-             ('scheme', '', '///path/to/file', '', '', ''),
-             ('scheme', '', '///path/to/file', '', '')),
+             ('scheme', '', '///path/to/file', None, None, None),
+             ('scheme', '', '///path/to/file', None, None)),
             ('file:tmp/junk.txt',
-             ('file', '', 'tmp/junk.txt', '', '', ''),
-             ('file', '', 'tmp/junk.txt', '', '')),
+             ('file', None, 'tmp/junk.txt', None, None, None),
+             ('file', None, 'tmp/junk.txt', None, None)),
             ('file:///tmp/junk.txt',
-             ('file', '', '/tmp/junk.txt', '', '', ''),
-             ('file', '', '/tmp/junk.txt', '', '')),
+             ('file', '', '/tmp/junk.txt', None, None, None),
+             ('file', '', '/tmp/junk.txt', None, None)),
             ('file:////tmp/junk.txt',
-             ('file', '', '//tmp/junk.txt', '', '', ''),
-             ('file', '', '//tmp/junk.txt', '', '')),
+             ('file', '', '//tmp/junk.txt', None, None, None),
+             ('file', '', '//tmp/junk.txt', None, None)),
             ('file://///tmp/junk.txt',
-             ('file', '', '///tmp/junk.txt', '', '', ''),
-             ('file', '', '///tmp/junk.txt', '', '')),
+             ('file', '', '///tmp/junk.txt', None, None, None),
+             ('file', '', '///tmp/junk.txt', None, None)),
             ('http:tmp/junk.txt',
-             ('http', '', 'tmp/junk.txt', '', '', ''),
-             ('http', '', 'tmp/junk.txt', '', '')),
+             ('http', None, 'tmp/junk.txt', None, None, None),
+             ('http', None, 'tmp/junk.txt', None, None)),
             ('http://example.com/tmp/junk.txt',
-             ('http', 'example.com', '/tmp/junk.txt', '', '', ''),
-             ('http', 'example.com', '/tmp/junk.txt', '', '')),
+             ('http', 'example.com', '/tmp/junk.txt', None, None, None),
+             ('http', 'example.com', '/tmp/junk.txt', None, None)),
             ('http:///example.com/tmp/junk.txt',
-             ('http', '', '/example.com/tmp/junk.txt', '', '', ''),
-             ('http', '', '/example.com/tmp/junk.txt', '', '')),
+             ('http', '', '/example.com/tmp/junk.txt', None, None, None),
+             ('http', '', '/example.com/tmp/junk.txt', None, None)),
             ('http:////example.com/tmp/junk.txt',
-             ('http', '', '//example.com/tmp/junk.txt', '', '', ''),
-             ('http', '', '//example.com/tmp/junk.txt', '', '')),
+             ('http', '', '//example.com/tmp/junk.txt', None, None, None),
+             ('http', '', '//example.com/tmp/junk.txt', None, None)),
             ('imap://mail.python.org/mbox1',
-             ('imap', 'mail.python.org', '/mbox1', '', '', ''),
-             ('imap', 'mail.python.org', '/mbox1', '', '')),
+             ('imap', 'mail.python.org', '/mbox1', None, None, None),
+             ('imap', 'mail.python.org', '/mbox1', None, None)),
             ('mms://wms.sys.hinet.net/cts/Drama/09006251100.asf',
              ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
-              '', '', ''),
+              None, None, None),
              ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
-              '', '')),
+              None, None)),
             ('nfs://server/path/to/file.txt',
-             ('nfs', 'server', '/path/to/file.txt', '', '', ''),
-             ('nfs', 'server', '/path/to/file.txt', '', '')),
+             ('nfs', 'server', '/path/to/file.txt', None, None, None),
+             ('nfs', 'server', '/path/to/file.txt', None, None)),
             ('svn+ssh://svn.zope.org/repos/main/ZConfig/trunk/',
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
-              '', '', ''),
+              None, None, None),
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
-              '', '')),
+              None, None)),
             ('git+ssh://git@github.com/user/project.git',
              ('git+ssh', 'git@github.com','/user/project.git',
-              '','',''),
+              None,None,None),
              ('git+ssh', 'git@github.com','/user/project.git',
-              '', '')),
+              None, None)),
             ('itms-services://?action=download-manifest&url=https://example.com/app',
-             ('itms-services', '', '', '',
-              'action=download-manifest&url=https://example.com/app', ''),
+             ('itms-services', '', '', None,
+              'action=download-manifest&url=https://example.com/app', None),
              ('itms-services', '', '',
-              'action=download-manifest&url=https://example.com/app', '')),
+              'action=download-manifest&url=https://example.com/app', None)),
             ('+scheme:path/to/file',
-             ('', '', '+scheme:path/to/file', '', '', ''),
-             ('', '', '+scheme:path/to/file', '', '')),
+             (None, None, '+scheme:path/to/file', None, None, None),
+             (None, None, '+scheme:path/to/file', None, None)),
             ('sch_me:path/to/file',
-             ('', '', 'sch_me:path/to/file', '', '', ''),
-             ('', '', 'sch_me:path/to/file', '', '')),
+             (None, None, 'sch_me:path/to/file', None, None, None),
+             (None, None, 'sch_me:path/to/file', None, None)),
             ]
-        def _encode(t):
-            return (t[0].encode('ascii'),
-                    tuple(x.encode('ascii') for x in t[1]),
-                    tuple(x.encode('ascii') for x in t[2]))
-        bytes_cases = [_encode(x) for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         str_cases += [
             ('schème:path/to/file',
-             ('', '', 'schème:path/to/file', '', '', ''),
-             ('', '', 'schème:path/to/file', '', '')),
+             (None, None, 'schème:path/to/file', None, None, None),
+             (None, None, 'schème:path/to/file', None, None)),
             ]
         for url, parsed, split in str_cases + bytes_cases:
             with self.subTest(url):
@@ -282,31 +324,26 @@ class UrlParseTestCase(unittest.TestCase):
         str_cases = [
             ('///path/to/file',
              '/path/to/file',
-             ('', '', '/path/to/file', '', '', ''),
-             ('', '', '/path/to/file', '', '')),
+             (None, '', '/path/to/file', None, None, None),
+             (None, '', '/path/to/file', None, None)),
             ('scheme:///path/to/file',
              'scheme:/path/to/file',
-             ('scheme', '', '/path/to/file', '', '', ''),
-             ('scheme', '', '/path/to/file', '', '')),
+             ('scheme', '', '/path/to/file', None, None, None),
+             ('scheme', '', '/path/to/file', None, None)),
             ('file:/tmp/junk.txt',
              'file:///tmp/junk.txt',
-             ('file', '', '/tmp/junk.txt', '', '', ''),
-             ('file', '', '/tmp/junk.txt', '', '')),
+             ('file', None, '/tmp/junk.txt', None, None, None),
+             ('file', None, '/tmp/junk.txt', None, None)),
             ('http:/tmp/junk.txt',
              'http:///tmp/junk.txt',
-             ('http', '', '/tmp/junk.txt', '', '', ''),
-             ('http', '', '/tmp/junk.txt', '', '')),
+             ('http', None, '/tmp/junk.txt', None, None, None),
+             ('http', None, '/tmp/junk.txt', None, None)),
             ('https:/tmp/junk.txt',
              'https:///tmp/junk.txt',
-             ('https', '', '/tmp/junk.txt', '', '', ''),
-             ('https', '', '/tmp/junk.txt', '', '')),
+             ('https', None, '/tmp/junk.txt', None, None, None),
+             ('https', None, '/tmp/junk.txt', None, None)),
         ]
-        def _encode(t):
-            return (t[0].encode('ascii'),
-                    t[1].encode('ascii'),
-                    tuple(x.encode('ascii') for x in t[2]),
-                    tuple(x.encode('ascii') for x in t[3]))
-        bytes_cases = [_encode(x) for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         for url, url2, parsed, split in str_cases + bytes_cases:
             with self.subTest(url):
                 self.checkRoundtrips(url, parsed, split, url2)
@@ -317,26 +354,22 @@ class UrlParseTestCase(unittest.TestCase):
         # Three cheers for white box knowledge!
         str_cases = [
             ('://www.python.org',
-             ('www.python.org', '', '', '', ''),
-             ('www.python.org', '', '', '')),
+             ('www.python.org', '', None, None, None),
+             ('www.python.org', '', None, None)),
             ('://www.python.org#abc',
-             ('www.python.org', '', '', '', 'abc'),
-             ('www.python.org', '', '', 'abc')),
+             ('www.python.org', '', None, None, 'abc'),
+             ('www.python.org', '', None, 'abc')),
             ('://www.python.org?q=abc',
-             ('www.python.org', '', '', 'q=abc', ''),
-             ('www.python.org', '', 'q=abc', '')),
+             ('www.python.org', '', None, 'q=abc', None),
+             ('www.python.org', '', 'q=abc', None)),
             ('://www.python.org/#abc',
-             ('www.python.org', '/', '', '', 'abc'),
-             ('www.python.org', '/', '', 'abc')),
+             ('www.python.org', '/', None, None, 'abc'),
+             ('www.python.org', '/', None, 'abc')),
             ('://a/b/c/d;p?q#f',
              ('a', '/b/c/d', 'p', 'q', 'f'),
              ('a', '/b/c/d;p', 'q', 'f')),
             ]
-        def _encode(t):
-            return (t[0].encode('ascii'),
-                    tuple(x.encode('ascii') for x in t[1]),
-                    tuple(x.encode('ascii') for x in t[2]))
-        bytes_cases = [_encode(x) for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         str_schemes = ('http', 'https')
         bytes_schemes = (b'http', b'https')
         str_tests = str_schemes, str_cases
@@ -347,25 +380,31 @@ class UrlParseTestCase(unittest.TestCase):
                     url = scheme + url
                     parsed = (scheme,) + parsed
                     split = (scheme,) + split
-                    self.checkRoundtrips(url, parsed, split)
+                    with self.subTest(url):
+                        self.checkRoundtrips(url, parsed, split)
 
     def checkJoin(self, base, relurl, expected, *, relroundtrip=True):
         with self.subTest(base=base, relurl=relurl):
             self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
-            baseb = base.encode('ascii')
-            relurlb = relurl.encode('ascii')
-            expectedb = expected.encode('ascii')
+            baseb = self._encode(base)
+            relurlb = self._encode(relurl)
+            expectedb = self._encode(expected)
             self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
 
             if relroundtrip:
-                relurl = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl))
-                self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
-                relurlb = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb))
-                self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
+                relurl2 = urlunsplit(urlsplit(relurl))
+                self.assertEqual(urllib.parse.urljoin(base, relurl2), expected)
+                relurlb2 = urlunsplit(urlsplit(relurlb))
+                self.assertEqual(urllib.parse.urljoin(baseb, relurlb2), expectedb)
+
+            relurl3 = urlunsplit(urlsplit(relurl, allow_none=True))
+            self.assertEqual(urllib.parse.urljoin(base, relurl3), expected)
+            relurlb3 = urlunsplit(urlsplit(relurlb, allow_none=True))
+            self.assertEqual(urllib.parse.urljoin(baseb, relurlb3), expectedb)
 
     def test_unparse_parse(self):
         str_cases = ['Python', './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',]
-        bytes_cases = [x.encode('ascii') for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         for u in str_cases + bytes_cases:
             self.assertEqual(urllib.parse.urlunsplit(urllib.parse.urlsplit(u)), u)
             self.assertEqual(urllib.parse.urlunparse(urllib.parse.urlparse(u)), u)
@@ -396,7 +435,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, '../../g', 'http://a/g')
 
         # "abnormal" cases from RFC 1808:
-        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, None, 'http://a/b/c/d;p?q#f')
         self.checkJoin(RFC1808_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC1808_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC1808_BASE, 'g..', 'http://a/b/c/g..')
@@ -420,8 +459,10 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_RFC2368(self):
         # Issue 11467: path that starts with a number is not parsed correctly
-        self.assertEqual(urllib.parse.urlparse('mailto:1337@example.org'),
+        self.assertEqual(urlparse('mailto:1337@example.org'),
                 ('mailto', '', '1337@example.org', '', '', ''))
+        self.assertEqual(urlparse('mailto:1337@example.org', allow_none=True),
+                ('mailto', None, '1337@example.org', None, None, None))
 
     def test_RFC2396(self):
         # cases from RFC 2396
@@ -728,9 +769,7 @@ class UrlParseTestCase(unittest.TestCase):
             ('http://[::ffff:12.34.56.78]:/foo/',
              '::ffff:12.34.56.78', None),
             ]
-        def _encode(t):
-            return t[0].encode('ascii'), t[1].encode('ascii'), t[2]
-        bytes_cases = [_encode(x) for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         for url, hostname, port in str_cases + bytes_cases:
             urlparsed = urllib.parse.urlparse(url)
             self.assertEqual((urlparsed.hostname, urlparsed.port) , (hostname, port))
@@ -741,25 +780,25 @@ class UrlParseTestCase(unittest.TestCase):
                 'ftp://[::1/foo/bad]/bad',
                 'http://[::1/foo/bad]/bad',
                 'http://[::ffff:12.34.56.78']
-        bytes_cases = [x.encode('ascii') for x in str_cases]
+        bytes_cases = [self._encode(x) for x in str_cases]
         for invalid_url in str_cases + bytes_cases:
             self.assertRaises(ValueError, urllib.parse.urlparse, invalid_url)
 
     def test_urldefrag(self):
         str_cases = [
             ('http://python.org#frag', 'http://python.org', 'frag'),
-            ('http://python.org', 'http://python.org', ''),
+            ('http://python.org', 'http://python.org', None),
             ('http://python.org/#frag', 'http://python.org/', 'frag'),
-            ('http://python.org/', 'http://python.org/', ''),
+            ('http://python.org/', 'http://python.org/', None),
             ('http://python.org/?q#frag', 'http://python.org/?q', 'frag'),
-            ('http://python.org/?q', 'http://python.org/?q', ''),
+            ('http://python.org/?q', 'http://python.org/?q', None),
             ('http://python.org/p#frag', 'http://python.org/p', 'frag'),
-            ('http://python.org/p?q', 'http://python.org/p?q', ''),
+            ('http://python.org/p?q', 'http://python.org/p?q', None),
             (RFC1808_BASE, 'http://a/b/c/d;p?q', 'f'),
-            (RFC2396_BASE, 'http://a/b/c/d;p?q', ''),
+            (RFC2396_BASE, 'http://a/b/c/d;p?q', None),
             ('http://a/b/c;p?q#f', 'http://a/b/c;p?q', 'f'),
             ('http://a/b/c;p?q#', 'http://a/b/c;p?q', ''),
-            ('http://a/b/c;p?q', 'http://a/b/c;p?q', ''),
+            ('http://a/b/c;p?q', 'http://a/b/c;p?q', None),
             ('http://a/b/c;p?#f', 'http://a/b/c;p?', 'f'),
             ('http://a/b/c;p#f', 'http://a/b/c;p', 'f'),
             ('http://a/b/c;?q#f', 'http://a/b/c;?q', 'f'),
@@ -772,16 +811,21 @@ class UrlParseTestCase(unittest.TestCase):
             ('://a/b/c;p?q#f', '://a/b/c;p?q', 'f'),
         ]
         def _encode(t):
-            return type(t)(x.encode('ascii') for x in t)
+            return type(t)(self._encode(t))
         bytes_cases = [_encode(x) for x in str_cases]
-        for url, defrag, frag in str_cases + bytes_cases:
-            with self.subTest(url):
-                result = urllib.parse.urldefrag(url)
-                hash = '#' if isinstance(url, str) else b'#'
-                self.assertEqual(result.geturl(), url.rstrip(hash))
-                self.assertEqual(result, (defrag, frag))
-                self.assertEqual(result.url, defrag)
-                self.assertEqual(result.fragment, frag)
+        for allow_none in True, False:
+            for url, defrag, frag in str_cases + bytes_cases:
+                with self.subTest(url=url, allow_none=allow_none):
+                    result = urllib.parse.urldefrag(url, allow_none=allow_none)
+                    if not allow_none:
+                        hash = '#' if isinstance(url, str) else b'#'
+                        url = url.rstrip(hash)
+                        if frag is None:
+                            frag = url[:0]
+                    self.assertEqual(result.geturl(), url)
+                    self.assertEqual(result, (defrag, frag))
+                    self.assertEqual(result.url, defrag)
+                    self.assertEqual(result.fragment, frag)
 
     def test_urlsplit_scoped_IPv6(self):
         p = urllib.parse.urlsplit('http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
@@ -1017,24 +1061,27 @@ class UrlParseTestCase(unittest.TestCase):
                             self.assertEqual(p.scheme, b"")
                         else:
                             self.assertEqual(p.scheme, "")
+                        p = parse(url, allow_none=True)
+                        self.assertIsNone(p.scheme)
 
-    def test_attributes_without_netloc(self):
+    @parametrise_allow_none
+    def test_attributes_without_netloc(self, allow_none):
         # This example is straight from RFC 3261.  It looks like it
         # should allow the username, hostname, and port to be filled
         # in, but doesn't.  Since it's a URI and doesn't use the
         # scheme://netloc syntax, the netloc and related attributes
         # should be left empty.
         uri = "sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
-        p = urllib.parse.urlsplit(uri)
-        self.assertEqual(p.netloc, "")
+        p = urllib.parse.urlsplit(uri, allow_none=allow_none)
+        self.assertEqual(p.netloc, None if allow_none else "")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), uri)
 
-        p = urllib.parse.urlparse(uri)
-        self.assertEqual(p.netloc, "")
+        p = urllib.parse.urlparse(uri, allow_none=allow_none)
+        self.assertEqual(p.netloc, None if allow_none else "")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
@@ -1043,16 +1090,16 @@ class UrlParseTestCase(unittest.TestCase):
 
         # You guessed it, repeating the test with bytes input
         uri = b"sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
-        p = urllib.parse.urlsplit(uri)
-        self.assertEqual(p.netloc, b"")
+        p = urllib.parse.urlsplit(uri, allow_none=allow_none)
+        self.assertEqual(p.netloc, None if allow_none else b"")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), uri)
 
-        p = urllib.parse.urlparse(uri)
-        self.assertEqual(p.netloc, b"")
+        p = urllib.parse.urlparse(uri, allow_none=allow_none)
+        self.assertEqual(p.netloc, None if allow_none else b"")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
@@ -1066,67 +1113,86 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urllib.parse.urlparse(b"http://example.com?blahblah=/foo"),
                          (b'http', b'example.com', b'', b'', b'blahblah=/foo', b''))
 
-    def test_withoutscheme(self):
+    @parametrise_allow_none
+    def test_withoutscheme(self, allow_none):
         # Test urlparse without scheme
         # Issue 754016: urlparse goes wrong with IP:port without scheme
         # RFC 1808 specifies that netloc should start with //, urlparse expects
         # the same, otherwise it classifies the portion of url as path.
-        self.assertEqual(urllib.parse.urlparse("path"),
-                ('','','path','','',''))
-        self.assertEqual(urllib.parse.urlparse("//www.python.org:80"),
-                ('','www.python.org:80','','','',''))
-        self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
-                ('http','www.python.org:80','','','',''))
+        none = None if allow_none else ''
+        self.assertEqual(urlparse("path", allow_none=allow_none),
+                (none, none, 'path', none, none, none))
+        self.assertEqual(urlparse("//www.python.org:80", allow_none=allow_none),
+                (none, 'www.python.org:80', '', none, none, none))
+        self.assertEqual(urlparse("http://www.python.org:80", allow_none=allow_none),
+                ('http', 'www.python.org:80', '', none, none, none))
         # Repeat for bytes input
-        self.assertEqual(urllib.parse.urlparse(b"path"),
-                (b'',b'',b'path',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"//www.python.org:80"),
-                (b'',b'www.python.org:80',b'',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
-                (b'http',b'www.python.org:80',b'',b'',b'',b''))
+        none = None if allow_none else b''
+        self.assertEqual(urlparse(b"path", allow_none=allow_none),
+                (none, none, b'path', none, none, none))
+        self.assertEqual(urlparse(b"//www.python.org:80", allow_none=allow_none),
+                (none, b'www.python.org:80', b'', none, none, none))
+        self.assertEqual(urlparse(b"http://www.python.org:80", allow_none=allow_none),
+                (b'http', b'www.python.org:80', b'', none, none, none))
 
-    def test_portseparator(self):
+    @parametrise_allow_none
+    def test_portseparator(self, allow_none):
         # Issue 754016 makes changes for port separator ':' from scheme separator
-        self.assertEqual(urllib.parse.urlparse("http:80"), ('http','','80','','',''))
-        self.assertEqual(urllib.parse.urlparse("https:80"), ('https','','80','','',''))
-        self.assertEqual(urllib.parse.urlparse("path:80"), ('path','','80','','',''))
-        self.assertEqual(urllib.parse.urlparse("http:"),('http','','','','',''))
-        self.assertEqual(urllib.parse.urlparse("https:"),('https','','','','',''))
-        self.assertEqual(urllib.parse.urlparse("http://www.python.org:80"),
-                ('http','www.python.org:80','','','',''))
+        none = None if allow_none else ''
+        self.assertEqual(urlparse("http:80", allow_none=allow_none),
+                ('http', none, '80', none, none, none))
+        self.assertEqual(urlparse("https:80", allow_none=allow_none),
+                ('https', none, '80', none, none, none))
+        self.assertEqual(urlparse("path:80", allow_none=allow_none),
+                ('path', none, '80', none, none, none))
+        self.assertEqual(urlparse("http:", allow_none=allow_none),
+                ('http', none, '', none, none, none))
+        self.assertEqual(urlparse("https:", allow_none=allow_none),
+                ('https', none, '', none, none, none))
+        self.assertEqual(urlparse("http://www.python.org:80", allow_none=allow_none),
+                ('http', 'www.python.org:80', '', none, none, none))
         # As usual, need to check bytes input as well
-        self.assertEqual(urllib.parse.urlparse(b"http:80"), (b'http',b'',b'80',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"https:80"), (b'https',b'',b'80',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"path:80"), (b'path',b'',b'80',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"http:"),(b'http',b'',b'',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"https:"),(b'https',b'',b'',b'',b'',b''))
-        self.assertEqual(urllib.parse.urlparse(b"http://www.python.org:80"),
-                (b'http',b'www.python.org:80',b'',b'',b'',b''))
+        none = None if allow_none else b''
+        self.assertEqual(urlparse(b"http:80", allow_none=allow_none),
+                (b'http', none, b'80', none, none, none))
+        self.assertEqual(urlparse(b"https:80", allow_none=allow_none),
+                (b'https', none, b'80', none, none, none))
+        self.assertEqual(urlparse(b"path:80", allow_none=allow_none),
+                (b'path', none, b'80', none, none, none))
+        self.assertEqual(urlparse(b"http:", allow_none=allow_none),
+                (b'http', none, b'', none, none, none))
+        self.assertEqual(urlparse(b"https:", allow_none=allow_none),
+                (b'https', none, b'', none, none, none))
+        self.assertEqual(urlparse(b"http://www.python.org:80", allow_none=allow_none),
+                (b'http', b'www.python.org:80', b'', none, none, none))
 
     def test_usingsys(self):
         # Issue 3314: sys module is used in the error
         self.assertRaises(TypeError, urllib.parse.urlencode, "foo")
 
-    def test_anyscheme(self):
+    @parametrise_allow_none
+    def test_anyscheme(self, allow_none):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
-        self.assertEqual(urllib.parse.urlparse("s3://foo.com/stuff"),
-                         ('s3', 'foo.com', '/stuff', '', '', ''))
-        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff"),
-                         ('x-newscheme', 'foo.com', '/stuff', '', '', ''))
-        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query#fragment"),
-                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', 'fragment'))
-        self.assertEqual(urllib.parse.urlparse("x-newscheme://foo.com/stuff?query"),
-                         ('x-newscheme', 'foo.com', '/stuff', '', 'query', ''))
+        none = None if allow_none else ''
+        self.assertEqual(urlparse("s3://foo.com/stuff", allow_none=allow_none),
+                         ('s3', 'foo.com', '/stuff', none, none, none))
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff", allow_none=allow_none),
+                         ('x-newscheme', 'foo.com', '/stuff', none, none, none))
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query#fragment", allow_none=allow_none),
+                         ('x-newscheme', 'foo.com', '/stuff', none, 'query', 'fragment'))
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query", allow_none=allow_none),
+                         ('x-newscheme', 'foo.com', '/stuff', none, 'query', none))
 
         # And for bytes...
-        self.assertEqual(urllib.parse.urlparse(b"s3://foo.com/stuff"),
-                         (b's3', b'foo.com', b'/stuff', b'', b'', b''))
-        self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff"),
-                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'', b''))
-        self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query#fragment"),
-                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b'fragment'))
-        self.assertEqual(urllib.parse.urlparse(b"x-newscheme://foo.com/stuff?query"),
-                         (b'x-newscheme', b'foo.com', b'/stuff', b'', b'query', b''))
+        none = None if allow_none else b''
+        self.assertEqual(urlparse(b"s3://foo.com/stuff", allow_none=allow_none),
+                         (b's3', b'foo.com', b'/stuff', none, none, none))
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff", allow_none=allow_none),
+                         (b'x-newscheme', b'foo.com', b'/stuff', none, none, none))
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query#fragment", allow_none=allow_none),
+                         (b'x-newscheme', b'foo.com', b'/stuff', none, b'query', b'fragment'))
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query", allow_none=allow_none),
+                         (b'x-newscheme', b'foo.com', b'/stuff', none, b'query', none))
 
     def test_default_scheme(self):
         # Exercise the scheme parameter of urlparse() and urlsplit()
@@ -1140,8 +1206,11 @@ class UrlParseTestCase(unittest.TestCase):
                 self.assertEqual(func("path", scheme="ftp").scheme, "ftp")
                 self.assertEqual(func(b"path", scheme=b"ftp").scheme, b"ftp")
                 self.assertEqual(func("path").scheme, "")
+                self.assertEqual(func("path", allow_none=True).scheme, None)
                 self.assertEqual(func(b"path").scheme, b"")
+                self.assertEqual(func(b"path", allow_none=True).scheme, None)
                 self.assertEqual(func(b"path", "").scheme, b"")
+                self.assertEqual(func(b"path", "", allow_none=True).scheme, b"")
 
     def test_parse_fragments(self):
         # Exercise the allow_fragments parameter of urlparse() and urlsplit()
@@ -1167,6 +1236,12 @@ class UrlParseTestCase(unittest.TestCase):
                     self.assertTrue(
                             getattr(result, attr).endswith("#" + expected_frag))
                     self.assertEqual(func(url, "", False).fragment, "")
+
+                    result = func(url, allow_fragments=False, allow_none=True)
+                    self.assertIsNone(result.fragment)
+                    self.assertTrue(
+                            getattr(result, attr).endswith("#" + expected_frag))
+                    self.assertIsNone(func(url, "", False, allow_none=True).fragment)
 
                     result = func(url, allow_fragments=True)
                     self.assertEqual(result.fragment, expected_frag)
@@ -1200,12 +1275,10 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin(b"http://python.org", "http://python.org")
 
-    def _check_result_type(self, str_type):
-        num_args = len(str_type._fields)
+    def _check_result_type(self, str_type, str_args):
         bytes_type = str_type._encoded_counterpart
         self.assertIs(bytes_type._decoded_counterpart, str_type)
-        str_args = ('',) * num_args
-        bytes_args = (b'',) * num_args
+        bytes_args = tuple(self._encode(s) for s in str_args)
         str_result = str_type(*str_args)
         bytes_result = bytes_type(*bytes_args)
         encoding = 'ascii'
@@ -1224,16 +1297,52 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(str_result.encode(encoding), bytes_result)
         self.assertEqual(str_result.encode(encoding, errors), bytes_args)
         self.assertEqual(str_result.encode(encoding, errors), bytes_result)
+        for result in str_result, bytes_result:
+            self.assertEqual(copy.copy(result), result)
+            self.assertEqual(copy.deepcopy(result), result)
+            self.assertEqual(copy.replace(result), result)
+            self.assertEqual(result._replace(), result)
 
     def test_result_pairs(self):
         # Check encoding and decoding between result pairs
-        result_types = [
-          urllib.parse.DefragResult,
-          urllib.parse.SplitResult,
-          urllib.parse.ParseResult,
-        ]
-        for result_type in result_types:
-            self._check_result_type(result_type)
+        self._check_result_type(urllib.parse.DefragResult, ('', ''))
+        self._check_result_type(urllib.parse.DefragResult, ('', None))
+        self._check_result_type(urllib.parse.SplitResult, ('', '', '', '', ''))
+        self._check_result_type(urllib.parse.SplitResult, (None, None, '', None, None))
+        self._check_result_type(urllib.parse.ParseResult, ('', '', '', '', '', ''))
+        self._check_result_type(urllib.parse.ParseResult, (None, None, '', None, None, None))
+
+    def test_result_encoding_decoding(self):
+        def check(str_result, bytes_result):
+            self.assertEqual(str_result.encode(), bytes_result)
+            self.assertEqual(str_result.encode().geturl(), bytes_result.geturl())
+            self.assertEqual(bytes_result.decode(), str_result)
+            self.assertEqual(bytes_result.decode().geturl(), str_result.geturl())
+
+        url = 'http://example.com/?#'
+        burl = url.encode()
+        for func in urldefrag, urlsplit, urlparse:
+            check(func(url, allow_none=True), func(burl, allow_none=True))
+            check(func(url), func(burl))
+
+    def test_result_copying(self):
+        def check(result):
+            self.assertEqual(copy.copy(result), result)
+            self.assertEqual(copy.copy(result).geturl(), result.geturl())
+            self.assertEqual(copy.deepcopy(result), result)
+            self.assertEqual(copy.deepcopy(result).geturl(), result.geturl())
+            self.assertEqual(copy.replace(result), result)
+            self.assertEqual(copy.replace(result).geturl(), result.geturl())
+            self.assertEqual(result._replace(), result)
+            self.assertEqual(result._replace().geturl(), result.geturl())
+
+        url = 'http://example.com/?#'
+        burl = url.encode()
+        for func in urldefrag, urlsplit, urlparse:
+            check(func(url))
+            check(func(url, allow_none=True))
+            check(func(burl))
+            check(func(burl, allow_none=True))
 
     def test_parse_qs_encoding(self):
         result = urllib.parse.parse_qs("key=\u0141%E9", encoding="latin-1")
@@ -1447,6 +1556,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.scheme, 'tel')
         self.assertEqual(p1.path, '+1-201-555-0123')
         self.assertEqual(p1.params, '')
+
+        p1 = urllib.parse.urlparse('tel:+1-201-555-0123', allow_none=True)
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '+1-201-555-0123')
+        self.assertEqual(p1.params, None)
 
         p1 = urllib.parse.urlparse('tel:7042;phone-context=example.com')
         self.assertEqual(p1.scheme, 'tel')
