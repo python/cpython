@@ -2770,7 +2770,7 @@ check_unicode_error_type(PyObject *self, const char *expect_type)
 static inline PyUnicodeErrorObject *
 as_unicode_error(PyObject *self, const char *expect_type)
 {
-    int rc = check_unicode_error_type(self, except_type);
+    int rc = check_unicode_error_type(self, expect_type);
     return rc < 0 : NULL : _PyUnicodeError_CAST(self);
 }
 
