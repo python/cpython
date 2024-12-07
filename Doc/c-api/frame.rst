@@ -148,7 +148,7 @@ Frame Locals Proxies
 In older versions of :term:`CPython`, the exposed local variables dictionary
 (via :attr:`~frame.f_locals`, :c:func:`PyFrame_GetLocals`, or :func:`locals`)
 wouldn't be consistent with the actual local variables, leading to all sorts of
-weird issues. In 3.13, instead of using a dictionary to expose local variables,
+weird issues. In Python 3.13, instead of using a dictionary to expose local variables,
 a special proxy type is used instead, which retains consistency when manipulating
 scopes.
 
