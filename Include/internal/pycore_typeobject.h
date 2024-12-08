@@ -277,9 +277,9 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // It will verify the ``ty`` through user-defined validation function ``validate``,
 // and if the validation is passed, it will set the ``tp_version`` as valid
 // tp_version_tag from the ``ty``.
+extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 extern PyObject *_PyType_GetItemFromCache(PyTypeObject *type);
-PyAPI_FUNC(int) _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
-PyAPI_FUNC(PyObject *) _PyType_GetItemFromCacheWithVersion(PyTypeObject *type, uint32_t *version);
+extern PyObject *_PyType_GetItemFromCacheWithVersion(PyTypeObject *type, uint32_t *version);
 extern int _PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor);
 
 #ifdef __cplusplus
