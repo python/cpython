@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#define _PyGC_PREV_SHIFT           2
+#define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
+
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Tagged pointer to next object in the list.
@@ -16,8 +19,9 @@ typedef struct {
 
     // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
+    // Those two bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
-} PyGC_Head;
+} PyGC_Head Py_ALIGNED(1 << _PyGC_PREV_SHIFT);
 
 #define _PyGC_Head_UNUSED PyGC_Head
 
@@ -140,9 +144,6 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
  * into the increment, the old space bit is flipped.
 */
 #define _PyGC_NEXT_MASK_OLD_SPACE_1    1
-
-#define _PyGC_PREV_SHIFT           2
-#define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
 #define _PyGC_DEBUG_STATS             (1<<0) /* print collection statistics */
