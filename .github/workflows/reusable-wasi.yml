@@ -20,6 +20,8 @@ jobs:
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
     - name: "Install wasmtime"
       uses: bytecodealliance/actions/wasmtime/setup@v1

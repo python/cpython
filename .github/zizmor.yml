@@ -1,0 +1,4 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      - documentation-links.yml
