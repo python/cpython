@@ -1882,7 +1882,7 @@ NOTE: Behavior may vary by implementation, and changes to the dictionary in opti
 
 static PyObject *
 builtin_locals_impl(PyObject *module)
-/*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
+/*[clinic end generated code: output=b46c94015ce11448 input=c673cc693bc4ed02]*/
 {
     return _PyEval_GetFrameLocals();
 }
