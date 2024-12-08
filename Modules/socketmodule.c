@@ -5582,7 +5582,7 @@ socket_getattr(PyObject *self, PyObject *name)
         PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and "
                                              "will be removed in Python 3.16. "
                                              "Use socket.socket instead");
-        return state != NULL ? state->sock_type : NULL;
+        return state != NULL ? (PyObject *)state->sock_type : NULL;
     }
 
     PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%U'", name);
