@@ -1867,14 +1867,11 @@ free_monitoring_data(_PyCoMonitoringData *data)
 static void
 code_dealloc(PyCodeObject *co)
 {
-    assert(Py_REFCNT(co) == 0);
-    Py_SET_REFCNT(co, 1);
+    _PyObject_ResurrectStart((PyObject *)co);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
-    if (Py_REFCNT(co) > 1) {
-        Py_SET_REFCNT(co, Py_REFCNT(co) - 1);
+    if (_PyObject_ResurrectEnd((PyObject *)co)) {
         return;
     }
-    Py_SET_REFCNT(co, 0);
 
 #ifdef Py_GIL_DISABLED
     PyObject_GC_UnTrack(co);

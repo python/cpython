@@ -48,6 +48,10 @@ try:
     __all__.append('get_native_id')
 except AttributeError:
     _HAVE_THREAD_NATIVE_ID = False
+try:
+    _set_name = _thread.set_name
+except AttributeError:
+    _set_name = None
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -1027,6 +1031,11 @@ class Thread:
             self._set_ident()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
+            if _set_name is not None and self._name:
+                try:
+                    _set_name(self._name)
+                except OSError:
+                    pass
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self

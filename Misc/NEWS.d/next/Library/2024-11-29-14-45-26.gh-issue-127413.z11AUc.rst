@@ -1,0 +1,2 @@
+Add the :option:`dis --specialized` command-line option to show specialized
+bytecode. Patch by Bénédikt Tran.
