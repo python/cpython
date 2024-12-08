@@ -1589,11 +1589,8 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (!handle) {
         const char *errmsg = dlerror();
         if (errmsg) {
-            if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
-                return NULL;
-            }
-            // Ignore decoding errors and fall back to the generic error.
-            PyErr_Clear();
+            _PyErr_SetLocaleString(PyExc_OSError, errmsg);
+            return NULL;
         }
         PyErr_SetString(PyExc_OSError, "dlopen() error");
         return NULL;
@@ -1610,11 +1607,8 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
     if (dlclose(handle)) {
         const char *errmsg = dlerror();
         if (errmsg) {
-            if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
-                return NULL;
-            }
-            // Ignore decoding errors and fall back to the generic error.
-            PyErr_Clear();
+            _PyErr_SetLocaleString(PyExc_OSError, errmsg);
+            return NULL;
         }
         PyErr_SetString(PyExc_OSError, "dlclose() error");
         return NULL;
@@ -1653,11 +1647,8 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     #ifdef USE_DLERROR
     const char *errmsg = dlerror();
     if (errmsg) {
-        if (_PyErr_SetLocaleString(PyExc_OSError, errmsg) == 0) {
-            return NULL;
-        }
-        // Ignore decoding errors and fall back to the generic error below.
-        PyErr_Clear();
+        _PyErr_SetLocaleString(PyExc_OSError, errmsg);
+        return NULL;
     }
     #endif
     #undef USE_DLERROR

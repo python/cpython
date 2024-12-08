@@ -135,12 +135,12 @@ PyAPI_FUNC(void) _PyErr_SetString(
  * encoding (LC_CTYPE).
  *
  * Exceptions occurring in decoding take priority over the desired exception.
- * In those cases, this function returns -1. Otherwise this returns 0 if the
- * localized exception has been successfully set.
  *
  * Exported for '_ctypes' shared extensions.
  */
-PyAPI_FUNC(int) _PyErr_SetLocaleString(PyObject *exception, const char *string);
+PyAPI_FUNC(void) _PyErr_SetLocaleString(
+    PyObject *exception,
+    const char *string);
 
 PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,

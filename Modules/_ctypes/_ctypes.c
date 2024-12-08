@@ -984,11 +984,8 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
     #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
-        if (_PyErr_SetLocaleString(PyExc_ValueError, dlerr) == 0) {
-            return NULL;
-        }
-        // Ignore decoding errors and fall back to the generic error.
-        PyErr_Clear();
+        _PyErr_SetLocaleString(PyExc_ValueError, dlerr);
+        return NULL;
     }
     #endif
 #undef USE_DLERROR
@@ -3801,17 +3798,14 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     address = (PPROC)dlsym(handle, name);
 
     if (!address) {
-	#ifdef USE_DLERROR
+    #ifdef USE_DLERROR
         const char *dlerr = dlerror();
         if (dlerr) {
-            if (_PyErr_SetLocaleString(PyExc_AttributeError, dlerr) == 0) {
-                Py_DECREF(ftuple);
-                return NULL;
-            }
-            // Ignore decoding errors and fall back to the generic error.
-            PyErr_Clear();
+            _PyErr_SetLocaleString(PyExc_AttributeError, dlerr);
+            Py_DECREF(ftuple);
+            return NULL;
         }
-	#endif
+    #endif
         PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;

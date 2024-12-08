@@ -37,22 +37,19 @@ get_gdbm_state(PyObject *module)
 /*
  * Set the gdbm error obtained by gdbm_strerror(gdbm_errno).
  *
- * If the error message cannot be decoded from the current locale
- * or if none exists, a generic (UTF-8) error message is used.
+ * If no error message exists, a generic (UTF-8) error message
+ * is used instead.
  */
 static void
 set_gdbm_error(_gdbm_state *state, const char *generic_error)
 {
     const char *gdbm_errmsg = gdbm_strerror(gdbm_errno);
     if (gdbm_errmsg) {
-        if (_PyErr_SetLocaleString(state->gdbm_error, gdbm_errmsg) == 0) {
-            return;
-        }
-        // Ignore decoding errors and fall back to the generic error.
-        PyErr_Clear();
+        _PyErr_SetLocaleString(state->gdbm_error, gdbm_errmsg);
     }
-    assert(!PyErr_Occurred());
-    PyErr_SetString(state->gdbm_error, generic_error);
+    else {
+        PyErr_SetString(state->gdbm_error, generic_error);
+    }
 }
 
 /*[clinic input]

@@ -301,16 +301,14 @@ PyErr_SetString(PyObject *exception, const char *string)
     _PyErr_SetString(tstate, exception, string);
 }
 
-int
+void
 _PyErr_SetLocaleString(PyObject *exception, const char *string)
 {
     PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
     if (value != NULL) {
         PyErr_SetObject(exception, value);
         Py_DECREF(value);
-        return 0;
     }
-    return -1;
 }
 
 PyObject* _Py_HOT_FUNCTION
