@@ -2016,6 +2016,36 @@ class ImportErrorTests(unittest.TestCase):
             exc = ImportError(arg)
             self.assertEqual(str(arg), str(exc))
 
+    def test_repr(self):
+        exc = ImportError()
+        self.assertEqual(repr(exc), "ImportError()")
+
+        exc = ImportError('test')
+        self.assertEqual(repr(exc), "ImportError('test')")
+
+        exc = ImportError('test', 'case')
+        self.assertEqual(repr(exc), "ImportError('test', 'case')")
+
+        exc = ImportError(name='somemodule')
+        self.assertEqual(repr(exc), "ImportError(name='somemodule')")
+
+        exc = ImportError('test', name='somemodule')
+        self.assertEqual(repr(exc), "ImportError('test', name='somemodule')")
+
+        exc = ImportError(path='somepath')
+        self.assertEqual(repr(exc), "ImportError(path='somepath')")
+
+        exc = ImportError('test', path='somepath')
+        self.assertEqual(repr(exc), "ImportError('test', path='somepath')")
+
+        exc = ImportError(name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError(name='somename', path='somepath')")
+
+        exc = ImportError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError('test', name='somename', path='somepath')")
+
     def test_copy_pickle(self):
         for kwargs in (dict(),
                        dict(name='somename'),
