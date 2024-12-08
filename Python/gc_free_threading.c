@@ -304,7 +304,8 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     Py_ssize_t offset_pre = offset_base + 2 * sizeof(PyObject*);
 
     // visit each thread's heaps for GC objects
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+    int failed = 0;
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
         if (!_Py_atomic_load_int(&m->initialized)) {
             // The thread may not have called tstate_mimalloc_bind() yet.
@@ -314,13 +315,19 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
         arg->offset = offset_base;
         if (!mi_heap_visit_blocks(&m->heaps[_Py_MIMALLOC_HEAP_GC], true,
                                   visitor, arg)) {
-            return -1;
+            failed = 1;
+            break;
         }
         arg->offset = offset_pre;
         if (!mi_heap_visit_blocks(&m->heaps[_Py_MIMALLOC_HEAP_GC_PRE], true,
                                   visitor, arg)) {
-            return -1;
+            failed = 1;
+            break;
         }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    if (failed) {
+        return -1;
     }
 
     // visit blocks in the per-interpreter abandoned pool (from dead threads)
