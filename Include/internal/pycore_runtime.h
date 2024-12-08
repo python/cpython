@@ -164,6 +164,15 @@ typedef struct pyruntimestate {
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
+#ifdef HAVE_FORK
+    struct {
+        PyMutex mutex;
+        struct _os_fork_parent {
+            PyThread_ident_t tid;
+        } parent;
+    } os_fork;
+#endif
+
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
@@ -211,7 +220,9 @@ extern PyStatus _PyRuntimeState_Init(_PyRuntimeState *runtime);
 extern void _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
-extern PyStatus _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
+extern PyStatus _PyRuntimeState_ReInitThreads(
+    _PyRuntimeState *runtime,
+    PyThread_ident_t parent);
 #endif
 
 /* Initialize _PyRuntimeState.
