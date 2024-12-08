@@ -1,0 +1,1 @@
+Add an optional ``buffersize`` parameter to :meth:`concurrent.futures.Executor.map`.
