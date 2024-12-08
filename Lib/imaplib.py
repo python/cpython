@@ -26,7 +26,6 @@ __version__ = "2.59"
 import binascii
 import calendar
 import errno
-import functools
 import platform
 import random
 import re
@@ -1585,7 +1584,8 @@ class Idler:
 
         start = time.monotonic()
 
-        yield from iter(functools.partial(self._pop, interval, None), None)
+        while response := self._pop(interval, None):
+            yield response
 
         if self._duration is not None:
             elapsed = time.monotonic() - start
