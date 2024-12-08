@@ -1,0 +1,1 @@
+Add colour to :mod:`test.regrtest` output. Patch by Hugo van Kemenade.
