@@ -13,17 +13,15 @@
 
 .. note::
 
-   While :mod:`argparse` is the recommended standard library module for
-   *implementing* basic command line applications, authors of third party
-   command line argument processing libraries may find that the
-   lower level :mod:`optparse` module serves as a better foundation for
-   that use case. ``optparse`` (or one of the third party libraries
-   based on it) may also be worth considering for applications where
-   ``argparse`` doesn't support behaviors that the application requires
-   (such as entirely disabling support for interspersed options and
-   positional arguments, or stricter adherence to common Unix and Linux
-   command line interface conventions related to the handling of option
-   parameter values that start with ``-``).
+   While :mod:`argparse` is the default recommended standard library module
+   for implementing basic command line applications, authors with more
+   exacting requirements for exactly how their command line applications
+   behave may find it doesn't provide the necessary level of control.
+   Refer to :ref:`choosing-an-argument-parser` for alternatives to
+   consider when ``argparse`` doesn't support behaviors that the application
+   requires (such as entirely disabling support for interspersed options and
+   positional arguments, or accepting option parameter values that start
+   with ``-`` even when they correspond to another defined option).
 
 --------------
 

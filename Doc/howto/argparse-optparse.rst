@@ -1,10 +1,11 @@
 .. currentmodule:: argparse
 
 .. _upgrading-optparse-code:
+.. _migrating-optparse-code:
 
-==========================
-Upgrading optparse code
-==========================
+============================================
+Migrating ``optparse`` code to ``argparse``
+============================================
 
 The :mod:`argparse` module offers several higher level features not natively
 provided by the :mod:`optparse` module, including:
@@ -17,13 +18,22 @@ provided by the :mod:`optparse` module, including:
 * Providing a much simpler interface for custom ``type`` and ``action``.
 
 Originally, the :mod:`argparse` module attempted to maintain compatibility
-with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
-transparently, particularly with the changes required to support
-``nargs=`` specifiers and better usage messages.  When most everything in
-:mod:`optparse` had either been copy-pasted over or monkey-patched, it no
-longer seemed practical to try to maintain the backwards compatibility.
+with :mod:`optparse`.  However, the fundamental design differences between
+supporting declarative command line option processing (while leaving positional
+argument processing to application code), and supporting both named options
+and positional arguments in the declarative interface mean that the
+API has diverged from that of ``optparse`` over time.
 
-A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
+As described in :ref:`choosing-an-argument-parser`, applications that are
+currently using :mod:`optparse` and are happy with the way it works can
+just continue to use ``optparse``.
+
+Application developers that are considering migrating should also review
+the list of intrinsic behavioural differences described in that section
+before deciding whether or not migration is desirable.
+
+For applications that do choose to migrate from :mod:`optparse` to :mod:`argparse`,
+the following suggestions should be helpful:
 
 * Replace all :meth:`optparse.OptionParser.add_option` calls with
   :meth:`ArgumentParser.add_argument` calls.
