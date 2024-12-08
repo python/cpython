@@ -1,0 +1,2 @@
+Fix handling of the ``secure`` argument of
+:class:`logging.handlers.SMTPHandler`
