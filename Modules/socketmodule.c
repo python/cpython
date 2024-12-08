@@ -5575,15 +5575,14 @@ static PyType_Spec sock_spec = {
 };
 
 static PyObject*
-socket_getattr(PyObject *mod, PyObject *name)
+socket_getattr(PyObject *self, PyObject *name)
 {
-    socket_state *state = get_module_state(mod);
-
-    if (PyUnicode_EqualToUTF8(name, "SocketType") && state != NULL) {
+    if (PyUnicode_EqualToUTF8(name, "SocketType")) {
+        socket_state *state = get_module_state(self);
         PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and "
                                              "will be removed in Python 3.16. "
                                              "Use socket.socket instead");
-        return state->sock_type;
+        return state != NULL ? state->sock_type : NULL;
     }
 
     PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%U'", name);
