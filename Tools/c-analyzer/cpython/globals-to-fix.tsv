@@ -118,6 +118,7 @@ Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
 # Not in a .h file:
 Objects/memoryobject.c	-	_PyMemoryIter_Type	-
+Objects/memoryobject.c	-	_PyMemoryRevIter_Type	-
 Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
 Objects/unionobject.c	-	_PyUnion_Type	-
 Python/context.c	-	_PyContextTokenMissing_Type	-
