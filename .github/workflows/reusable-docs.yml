@@ -28,6 +28,7 @@ jobs:
     - name: 'Check out latest PR branch commit'
       uses: actions/checkout@v4
       with:
+        persist-credentials: false
         ref: >-
           ${{
             github.event_name == 'pull_request'
@@ -81,6 +82,8 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
@@ -99,6 +102,8 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pip

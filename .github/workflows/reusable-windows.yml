@@ -28,6 +28,8 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register MSVC problem matcher
       if: inputs.arch != 'Win32'
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"

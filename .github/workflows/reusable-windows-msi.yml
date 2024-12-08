@@ -20,5 +20,7 @@ jobs:
       IncludeFreethreaded: true
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Build CPython installer
       run: .\Tools\msi\build.bat --doc -${{ inputs.arch }}
