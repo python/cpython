@@ -473,6 +473,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
+    PyUnicodeWriter *writer = NULL;
 
     if (errcode != 0) {
         int lib, reason;
@@ -495,11 +496,10 @@ fill_and_set_sslerror(_sslmodulestate *state,
         if (lib_obj == NULL && PyErr_Occurred()) {
             goto fail;
         }
-        if (errstr == NULL)
+        if (errstr == NULL) {
             errstr = ERR_reason_error_string(errcode);
+        }
     }
-    if (errstr == NULL)
-        errstr = "unknown error";
 
     /* verify code for cert validation error */
     if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
@@ -539,20 +539,50 @@ fill_and_set_sslerror(_sslmodulestate *state,
         }
     }
 
-    if (verify_obj && reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s: %S (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, verify_obj,
-                                   lineno);
-    else if (reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, lineno);
-    else if (lib_obj)
-        msg = PyUnicode_FromFormat("[%S] %s (_ssl.c:%d)",
-                                   lib_obj, errstr, lineno);
-    else
-        msg = PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
-    if (msg == NULL)
+    // Format message roughly as:
+    // [lib_obj: reason_obj] errstr: verify_obj (_ssl.c:lineno)
+    // with parts missing/replaced if unavailable
+    writer = PyUnicodeWriter_Create(64);
+    if (!writer) {
         goto fail;
+    }
+    if (lib_obj) {
+        if (PyUnicodeWriter_Format(writer, "[%S", lib_obj) < 0) {
+            goto fail;
+        }
+        if (reason_obj) {
+            if (PyUnicodeWriter_Format(writer, ": %S", reason_obj) < 0) {
+                goto fail;
+            }
+        }
+        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+            goto fail;
+        }
+    }
+    if (errstr) {
+        if (PyUnicodeWriter_Format(writer, "%s", errstr) < 0) {
+            goto fail;
+        }
+    }
+    else {
+        if (PyUnicodeWriter_Format(
+                writer, "unknown error (0x%x)", errcode) < 0) {
+            goto fail;
+        }
+    }
+    if (verify_obj) {
+        if (PyUnicodeWriter_Format(writer, ": %S", verify_obj) < 0) {
+            goto fail;
+        }
+    }
+    if (PyUnicodeWriter_Format(writer, " (_ssl.c:%d)", lineno) < 0) {
+        goto fail;
+    }
+    msg = PyUnicodeWriter_Finish(writer);
+    writer = NULL;
+    if (!msg) {
+        goto fail;
+    }
 
     init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
     if (init_value == NULL)
@@ -587,6 +617,7 @@ fail:
     Py_XDECREF(err_value);
     Py_XDECREF(verify_code_obj);
     Py_XDECREF(verify_obj);
+    PyUnicodeWriter_Discard(writer);
 }
 
 static int
