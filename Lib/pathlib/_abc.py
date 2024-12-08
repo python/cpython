@@ -13,8 +13,7 @@ resemble pathlib's PurePath and Path respectively.
 
 import functools
 import operator
-import posixpath
-from errno import EINVAL, EXDEV
+from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -94,7 +93,7 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('scandir')
+    scandir = operator.methodcaller('_scandir')
 
     @staticmethod
     def concat_path(path, text):
@@ -115,11 +114,6 @@ class PurePathBase:
         # The `_raw_paths` slot stores unjoined string paths. This is set in
         # the `__init__()` method.
         '_raw_paths',
-
-        # The '_resolving' slot stores a boolean indicating whether the path
-        # is being processed by `PathBase.resolve()`. This prevents duplicate
-        # work from occurring when `resolve()` calls `stat()` or `readlink()`.
-        '_resolving',
     )
     parser = ParserBase()
     _globber = PathGlobber
@@ -130,7 +124,6 @@ class PurePathBase:
                 raise TypeError(
                     f"argument should be a str, not {type(arg).__name__!r}")
         self._raw_paths = list(args)
-        self._resolving = False
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -339,9 +332,7 @@ class PurePathBase:
         path = str(self)
         parent = self.parser.split(path)[0]
         if path != parent:
-            parent = self.with_segments(parent)
-            parent._resolving = self._resolving
-            return parent
+            return self.with_segments(parent)
         return self
 
     @property
@@ -423,9 +414,6 @@ class PathBase(PurePathBase):
     such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
-
-    # Maximum number of symlinks to follow in resolve()
-    _max_symlinks = 40
 
     @classmethod
     def _unsupported_msg(cls, attribute):
@@ -632,13 +620,14 @@ class PathBase(PurePathBase):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('scandir()'))
+        import contextlib
+        return contextlib.nullcontext(self.iterdir())
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -646,9 +635,7 @@ class PathBase(PurePathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        with self.scandir() as entries:
-            names = [entry.name for entry in entries]
-        return map(self.joinpath, names)
+        raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
@@ -698,7 +685,7 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path.scandir() as entries:
+                with path._scandir() as entries:
                     for entry in entries:
                         name = entry.name
                         try:
@@ -721,20 +708,6 @@ class PathBase(PurePathBase):
                 yield path, dirnames, filenames
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
-    def absolute(self):
-        """Return an absolute version of this path
-        No normalization or symlink resolution is performed.
-
-        Use resolve() to resolve symlinks and remove '..' segments.
-        """
-        if self.is_absolute():
-            return self
-        elif self.parser is not posixpath:
-            raise UnsupportedOperation(self._unsupported_msg('absolute()'))
-        else:
-            # Treat the root directory as the current working directory.
-            return self.with_segments('/', *self._raw_paths)
-
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
         (as returned by os.path.expanduser)
@@ -746,42 +719,6 @@ class PathBase(PurePathBase):
         Return the path to which the symbolic link points.
         """
         raise UnsupportedOperation(self._unsupported_msg('readlink()'))
-    readlink._supported = False
-
-    def resolve(self, strict=False):
-        """
-        Make the path absolute, resolving all symlinks on the way and also
-        normalizing it.
-        """
-        if self._resolving:
-            return self
-        elif self.parser is not posixpath:
-            raise UnsupportedOperation(self._unsupported_msg('resolve()'))
-
-        def raise_error(*args):
-            raise OSError("Unsupported operation.")
-
-        getcwd = raise_error
-        if strict or getattr(self.readlink, '_supported', True):
-            def lstat(path_str):
-                path = self.with_segments(path_str)
-                path._resolving = True
-                return path.stat(follow_symlinks=False)
-
-            def readlink(path_str):
-                path = self.with_segments(path_str)
-                path._resolving = True
-                return str(path.readlink())
-        else:
-            # If the user has *not* overridden the `readlink()` method, then
-            # symlinks are unsupported and (in non-strict mode) we can improve
-            # performance by not calling `path.lstat()`.
-            lstat = readlink = raise_error
-
-        return self.with_segments(posixpath._realpath(
-            str(self.absolute()), strict, self.parser.sep,
-            getcwd=getcwd, lstat=lstat, readlink=readlink,
-            maxlinks=self._max_symlinks))
 
     def symlink_to(self, target, target_is_directory=False):
         """
@@ -903,45 +840,10 @@ class PathBase(PurePathBase):
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
-    def rename(self, target):
-        """
-        Rename this path to the target path.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('rename()'))
-
-    def replace(self, target):
-        """
-        Rename this path to the target path, overwriting if that path exists.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('replace()'))
-
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        self._ensure_different_file(target)
-        try:
-            return self.replace(target)
-        except UnsupportedOperation:
-            pass
-        except TypeError:
-            if not isinstance(target, PathBase):
-                raise
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
         return target

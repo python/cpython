@@ -4,6 +4,7 @@ import operator
 import os
 import posixpath
 import sys
+from errno import EXDEV
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -634,8 +635,8 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
@@ -875,6 +876,22 @@ class Path(PathBase, PurePath):
         """
         os.replace(self, target)
         return self.with_segments(target)
+
+    def move(self, target):
+        """
+        Recursively move this file or directory tree to the given destination.
+        """
+        self._ensure_different_file(target)
+        try:
+            return self.replace(target)
+        except TypeError:
+            if not isinstance(target, PathBase):
+                raise
+        except OSError as err:
+            if err.errno != EXDEV:
+                raise
+        # Fall back to copy+delete.
+        return PathBase.move(self, target)
 
     if hasattr(os, "symlink"):
         def symlink_to(self, target, target_is_directory=False):
