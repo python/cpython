@@ -1105,11 +1105,7 @@ class RawConfigParser(MutableMapping):
     def _handle_rest(self, st, line, fpname):
         # a section header or option header?
         if self._allow_unnamed_section and st.cursect is None:
-            st.sectname = UNNAMED_SECTION
-            st.cursect = self._dict()
-            self._sections[st.sectname] = st.cursect
-            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
-            st.elements_added.add(st.sectname)
+            self._handle_header(st, UNNAMED_SECTION, fpname)
 
         st.indent_level = st.cur_indent_level
         # is it a section header?
@@ -1118,10 +1114,10 @@ class RawConfigParser(MutableMapping):
         if not mo and st.cursect is None:
             raise MissingSectionHeaderError(fpname, st.lineno, line)
 
-        self._handle_header(st, mo, fpname) if mo else self._handle_option(st, line, fpname)
+        self._handle_header(st, mo.group('header'), fpname) if mo else self._handle_option(st, line, fpname)
 
-    def _handle_header(self, st, mo, fpname):
-        st.sectname = mo.group('header')
+    def _handle_header(self, st, sectname, fpname):
+        st.sectname = sectname
         if st.sectname in self._sections:
             if self._strict and st.sectname in st.elements_added:
                 raise DuplicateSectionError(st.sectname, fpname,
