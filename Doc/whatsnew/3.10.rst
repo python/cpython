@@ -722,10 +722,10 @@ PEP 604: New Type Union Operator
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`, especially in type hints.
+using :class:`typing.Union`, especially in type hints.
 
 In previous versions of Python, to apply a type hint for functions accepting
-arguments of multiple types, :data:`typing.Union` was used::
+arguments of multiple types, :class:`typing.Union` was used::
 
    def square(number: Union[int, float]) -> Union[int, float]:
        return number ** 2
