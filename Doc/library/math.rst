@@ -257,7 +257,7 @@ Floating point arithmetic
    exactly computable for float arguments. For example, ``fmod(-1e-100, 1e100)``
    is ``-1e-100``, but the result of Python's ``-1e-100 % 1e100`` is ``1e100-1e-100``,
    which cannot be represented exactly as a float, and rounds to the surprising ``1e100``.
-   For this reason, the function :func:`fmod` is generally preferred when working with
+   For this reason, :func:`fmod` is generally preferred when working with
    floats, while Python's ``x % y`` is preferred when working with integers.
 
 
