@@ -118,13 +118,18 @@ class TestBisect:
             self.assertEqual(func(data, elem), expected)
             self.assertEqual(func(UserList(data), elem), expected)
 
-    def test_negative_lo(self):
+    def test_negative_hi_lo(self):
         # Issue 3301
         mod = self.module
         self.assertRaises(ValueError, mod.bisect_left, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.bisect_right, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.insort_left, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.insort_right, [1, 2, 3], 5, -1, 3)
+        # Test c implementation
+        self.assertRaises(ValueError, c_bisect.bisect_left, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.bisect_right, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.insort_left, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.insort_right, [1, 2, 3], 5, 3, -2)
 
     def test_large_range(self):
         # Issue 13496

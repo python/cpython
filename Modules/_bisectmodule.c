@@ -66,6 +66,10 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         if (hi < 0)
             return -1;
     }
+    if (hi < 0) {
+        PyErr_SetString(PyExc_ValueError, "hi must be non-negative");
+        return -1;
+    }
     ssizeargfunc sq_item = get_sq_item(list);
     if (sq_item == NULL) {
         return -1;
@@ -249,6 +253,10 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         hi = PySequence_Size(list);
         if (hi < 0)
             return -1;
+    }
+    if (hi < 0) {
+        PyErr_SetString(PyExc_ValueError, "hi must be non-negative");
+        return -1;
     }
     ssizeargfunc sq_item = get_sq_item(list);
     if (sq_item == NULL) {

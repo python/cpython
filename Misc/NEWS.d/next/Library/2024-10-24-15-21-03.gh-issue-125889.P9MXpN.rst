@@ -1,0 +1,1 @@
+Allow negative values ​​for ``hi`` argument of ``bisect_left/right`` and ``insort_left/right``.
