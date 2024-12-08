@@ -59,9 +59,8 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
-   .. deprecated:: 3.12
-      Deprecation warning is emitted if there is no current event loop.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      Raises a :exc:`RuntimeError` if there is no current event loop.
 
 .. function:: set_event_loop(loop)
 
@@ -1798,7 +1797,7 @@ By default asyncio is configured to use :class:`EventLoop`.
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
+      <https://learn.microsoft.com/windows/win32/fileio/i-o-completion-ports>`_.
 
 .. class:: EventLoop
 

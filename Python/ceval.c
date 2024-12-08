@@ -28,7 +28,6 @@
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
 
@@ -99,11 +98,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
-            if (tracer->tracer_func != NULL) { \
-                void* data = tracer->tracer_data; \
-                tracer->tracer_func(op, PyRefTracer_DESTROY, data); \
-            } \
+            _PyReftracerTrack(op, PyRefTracer_DESTROY); \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
@@ -189,7 +184,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     dump_stack(frame, stack_pointer);
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
+    int offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     if (OPCODE_HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -300,11 +295,12 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         int depth = p->py_recursion_limit - p->py_recursion_remaining;
         p->py_recursion_limit = new_limit;
         p->py_recursion_remaining = new_limit - depth;
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
@@ -821,6 +817,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.visited = 0;
     entry_frame.return_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
@@ -841,6 +838,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
+#ifdef Py_GIL_DISABLED
+        /* Load thread-local bytecode */
+        if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
+            _Py_CODEUNIT *bytecode =
+                _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+            if (bytecode == NULL) {
+                goto error;
+            }
+            ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+            frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+            frame->instr_ptr = bytecode + off;
+        }
+#endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
@@ -983,7 +993,7 @@ exception_unwind:
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
@@ -1045,6 +1055,8 @@ enter_tier_two:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
+#undef ENABLE_SPECIALIZATION_FT
+#define ENABLE_SPECIALIZATION_FT 0
 
 #ifdef Py_DEBUG
     #define DPRINTF(level, ...) \
@@ -1139,7 +1151,7 @@ exit_to_tier1_dynamic:
     goto goto_to_tier1;
 exit_to_tier1:
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -1764,7 +1776,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_Initialize(frame, func, locals, code, 0, previous);
+    _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
@@ -1786,33 +1798,6 @@ fail:
     }
     PyErr_NoMemory();
     return NULL;
-}
-
-static _PyInterpreterFrame *
-_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, _PyStackRef func,
-                        PyObject *locals, PyObject *const* args,
-                        size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
-{
-#if defined(Py_GIL_DISABLED)
-    size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
-    size_t total_argcount = argcount + kw_count;
-    _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
-    if (tagged_args_buffer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (size_t i = 0; i < argcount; i++) {
-        tagged_args_buffer[i] = PyStackRef_FromPyObjectSteal(args[i]);
-    }
-    for (size_t i = 0; i < kw_count; i++) {
-        tagged_args_buffer[argcount + i] = PyStackRef_FromPyObjectSteal(args[argcount + i]);
-    }
-    _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames, previous);
-    PyMem_Free(tagged_args_buffer);
-    return res;
-#else
-    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames, previous);
-#endif
 }
 
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
@@ -1839,9 +1824,9 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
             Py_INCREF(PyTuple_GET_ITEM(callargs, i));
         }
     }
-    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_UnTagged(
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, func, locals,
-        newargs, nargs, kwnames, previous
+        (_PyStackRef const *)newargs, nargs, kwnames, previous
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1876,9 +1861,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(args[i+argcount]);
         }
     }
-    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit_UnTagged(
+    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,
-        args, argcount, kwnames, NULL);
+        (_PyStackRef const *)args, argcount, kwnames, NULL);
     if (frame == NULL) {
         return NULL;
     }

@@ -534,18 +534,15 @@ is semantically equivalent to::
     enter = type(manager).__enter__
     exit = type(manager).__exit__
     value = enter(manager)
-    hit_except = False
 
     try:
         TARGET = value
         SUITE
     except:
-        hit_except = True
         if not exit(manager, *sys.exc_info()):
             raise
-    finally:
-        if not hit_except:
-            exit(manager, None, None, None)
+    else:
+        exit(manager, None, None, None)
 
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::

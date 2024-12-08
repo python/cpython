@@ -644,6 +644,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['run_presite'] = None
     if support.Py_GIL_DISABLED:
         CONFIG_COMPAT['enable_gil'] = -1
+        CONFIG_COMPAT['tlbc_enabled'] = GET_DEFAULT_CONFIG
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': False,
@@ -1648,14 +1649,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             config = {
                 'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_exec_prefix': exec_prefix,
-                'exec_prefix': exec_prefix,
+                'exec_prefix': tmpdir,
+                'prefix': tmpdir,
                 'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
             }
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
-                config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
                 config['use_frozen_modules'] = bool(not support.Py_DEBUG)
             else:
