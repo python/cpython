@@ -385,41 +385,43 @@ are always available.  They are listed here in alphabetical order.
 
    .. doctest::
 
-      >>> complex('+1.23')
-      (1.23+0j)
-      >>> complex('-4.5j')
-      -4.5j
-      >>> complex('-1.23+4.5j')
-      (-1.23+4.5j)
-      >>> complex('\t( -1.23+4.5J )\n')
-      (-1.23+4.5j)
-      >>> complex('-Infinity+NaNj')
-      (-inf+nanj)
-      >>> complex(1.23)
-      (1.23+0j)
-      >>> complex(imag=-4.5)
-      -4.5j
-      >>> complex(-1.23, 4.5)
-      (-1.23+4.5j)
+    >>> complex('+1.23')
+    (1.23+0j)
+    >>> complex('-4.5j')
+    -4.5j
+    >>> complex('-1.23+4.5j')
+    (-1.23+4.5j)
+    >>> complex('\t( -1.23+4.5J )\n')
+    (-1.23+4.5j)
+    >>> complex('-Infinity+NaNj')
+    (-inf+nanj)
+    >>> complex(1.23)
+    (1.23+0j)
+    >>> complex(imag=-4.5)
+    -4.5j
+    >>> complex(-1.23, 4.5)
+    (-1.23+4.5j)
 
-   If the argument is a string, it must contain either a real part (in the
-   same format as for :func:`float`) or an imaginary part (in the same
-   format but with a ``'j'`` or ``'J'`` suffix), or both real and imaginary
-   parts (the sign of the imaginary part is mandatory in this case).
-   The string can optionally be surrounded by whitespaces and the round
-   parentheses ``'('`` and ``')'``, which are ignored.
-   The string must not contain whitespace between ``'+'``, ``'-'``, the
-   ``'j'`` or ``'J'`` suffix, and the decimal number.
-   For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-   :exc:`ValueError`.
-   More precisely, the input must conform to the :token:`~float:complexvalue`
-   production rule in the following grammar, after parentheses and leading and
-   trailing whitespace characters are removed:
+If the argument is a string, it must contain either a real part (in the
+same format as for :func:`float`) or an imaginary part (in the same
+format but with a ``'j'`` or ``'J'`` suffix), or both real and imaginary
+parts (the sign of the imaginary part is mandatory in this case).
+The string can optionally be surrounded by whitespace and parentheses 
+(``'('`` and ``')'``), which are ignored.
+The string must not contain whitespace between the ``'+'``, ``'-'``,
+the ``'j'`` or ``'J'`` suffix, and the decimal number.
+For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
+:exc:`ValueError`.
 
-   .. productionlist:: float
-      complexvalue: `floatvalue` |
-                  : `floatvalue` ("j" | "J") |
-                  : `floatvalue` `sign` `absfloatvalue` ("j" | "J")
+More precisely, the input must conform to the :token:`~float:complexvalue`
+production rule in the following grammar, after parentheses and leading
+and trailing whitespace characters are removed:
+
+.. productionlist:: float
+   complexvalue: `floatvalue` |
+                : `floatvalue` ("j" | "J") |
+                : `floatvalue` `sign` `absfloatvalue` ("j" | "J")
+
 
    If the argument is a number, the constructor serves as a numeric
    conversion like :class:`int` and :class:`float`.
