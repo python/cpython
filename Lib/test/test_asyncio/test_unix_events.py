@@ -34,6 +34,7 @@ from test.test_asyncio import utils as test_utils
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 MOCK_ANY = mock.ANY

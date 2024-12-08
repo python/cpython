@@ -1,6 +1,7 @@
 """Tests for asyncio/threads.py"""
 
 import asyncio
+import signal
 import unittest
 
 from contextvars import ContextVar
@@ -9,7 +10,7 @@ from unittest import mock
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
-
+    signal.stop_signal_thread()
 
 class ToThreadTests(unittest.IsolatedAsyncioTestCase):
     async def test_to_thread(self):

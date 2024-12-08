@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import unittest
 from asyncio.staggered import staggered_race
 
@@ -9,6 +10,7 @@ support.requires_working_socket(module=True)
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 class StaggeredTests(unittest.IsolatedAsyncioTestCase):
