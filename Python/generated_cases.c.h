@@ -7088,8 +7088,12 @@
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
                 {
+                    _PyInterpreterFrame *gen_frame;
                     PyGenObject *gen = (PyGenObject *)receiver_o;
-                    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_BEGIN_CRITICAL_SECTION(gen);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    gen_frame = &gen->gi_iframe;
                     STACK_SHRINK(1);
                     _PyFrame_StackPush(gen_frame, v);
                     gen->gi_frame_state = FRAME_EXECUTING;
@@ -7099,6 +7103,9 @@
                     frame->return_offset = (uint16_t)( 2 + oparg);
                     assert(gen_frame->previous == NULL);
                     gen_frame->previous = frame;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_END_CRITICAL_SECTION();
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
