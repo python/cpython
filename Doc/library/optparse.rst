@@ -193,7 +193,7 @@ Background
 
 :mod:`optparse` was explicitly designed to encourage the creation of programs
 with straightforward command-line interfaces that follow the conventions
-established by the :c:func`!getopt` family of functions available to C developers.
+established by the :c:func:`!getopt` family of functions available to C developers.
 To that end, it supports only the most common command-line syntax and semantics
 conventionally used under Unix.  If you are unfamiliar with these conventions,
 reading this section will allow you to acquaint yourself with them.
