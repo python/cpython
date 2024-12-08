@@ -91,6 +91,9 @@ def read_refcount_data(refcount_filename: Path) -> dict[str, RefCountEntry]:
             entry = refcount_data[function] = RefCountEntry(function)
         if not refcount or refcount == "null":
             refcount = None
+        elif refcount == '$':
+            # steals a reference (hence, the reference count does not change)
+            refcount = 0
         else:
             refcount = int(refcount)
         # Update the entry with the new parameter
