@@ -18,6 +18,7 @@ jobs:
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
+      SCCACHE_GHA_ENABLED: "true"
     steps:
     - uses: actions/checkout@v4
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -37,13 +38,8 @@ jobs:
         mkdir ${{ env.WASI_SDK_PATH }} && \
         curl -s -S --location https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${{ env.WASI_SDK_VERSION }}/wasi-sdk-${{ env.WASI_SDK_VERSION }}.0-x86_64-linux.tar.gz | \
         tar --strip-components 1 --directory ${{ env.WASI_SDK_PATH }} --extract --gunzip
-    - name: "Configure ccache action"
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
-    - name: "Add ccache to PATH"
-      run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
     - name: "Install Python"
       uses: actions/setup-python@v5
       with:

@@ -32,6 +32,13 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
+    - name: Configure CC and CXX env vars
+      run: |
+        echo "CC=sccache gcc" >> "$GITHUB_ENV"
+        echo "CXX=sccache gcc" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
@@ -46,14 +53,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"

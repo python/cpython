@@ -45,19 +45,14 @@ jobs:
         sudo update-alternatives --set clang++ /usr/bin/clang++-17
         # Reduce ASLR to avoid TSAN crashing
         sudo sysctl -w vm.mmap_rnd_bits=28
+    - name: Start sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
     - name: TSAN Option Setup
       run: |
         echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }} handle_segv=0" >> "$GITHUB_ENV"
-        echo "CC=clang" >> "$GITHUB_ENV"
-        echo "CXX=clang++" >> "$GITHUB_ENV"
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
+        echo "CC=sccache clang" >> "$GITHUB_ENV"
+        echo "CXX=sccache clang++" >> "$GITHUB_ENV"
+        echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ${{ inputs.options }}
     - name: Build CPython
