@@ -1,1 +1,1 @@
-Add Windows Server 2025 to `platform.py` detection
+Add Windows Server 2025 to ``platform.py`` detection
