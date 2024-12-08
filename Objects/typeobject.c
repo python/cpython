@@ -5695,7 +5695,7 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
 int
 _PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor)
 {
-    int can_cache = 0;
+    int ret = 0;
     if (!type) {
         return -1;
     }
@@ -5706,19 +5706,14 @@ _PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor)
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
     if (!_PyFunction_IsVersionValid(version)) {
-        can_cache = -1;
+        ret = -1;
         goto end;
     }
-    #ifdef Py_GIL_DISABLED
-    can_cache = _PyObject_HasDeferredRefcount(descriptor);
-    #else
-    can_cache = 0;
-    #endif
     FT_ATOMIC_STORE_PTR_RELEASE(ht->_spec_cache.getitem, descriptor);
     FT_ATOMIC_STORE_UINT32_RELAXED(ht->_spec_cache.getitem_version, version);
 end:
     END_TYPE_LOCK();
-    return can_cache;
+    return ret;
 }
 
 PyObject *
