@@ -29,15 +29,6 @@ def get_error_types(eg):
     return {type(exc) for exc in eg.exceptions}
 
 
-def no_other_refs():
-    # due to gh-124392 coroutines now refer to their locals
-    coro = asyncio.current_task().get_coro()
-    frame = sys._getframe(1)
-    while coro.cr_frame != frame:
-        coro = coro.cr_await
-    return [coro]
-
-
 class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
     async def test_taskgroup_01(self):
@@ -923,7 +914,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             exc = e
 
         self.assertIsNotNone(exc)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
 
     async def test_exception_refcycles_errors(self):
@@ -941,7 +932,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             exc = excs.exceptions[0]
 
         self.assertIsInstance(exc, _Done)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
 
     async def test_exception_refcycles_parent_task(self):
@@ -963,7 +954,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             exc = excs.exceptions[0].exceptions[0]
 
         self.assertIsInstance(exc, _Done)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
     async def test_exception_refcycles_propagate_cancellation_error(self):
         """Test that TaskGroup deletes propagate_cancellation_error"""
@@ -978,7 +969,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             exc = e.__cause__
 
         self.assertIsInstance(exc, asyncio.CancelledError)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
     async def test_exception_refcycles_base_error(self):
         """Test that TaskGroup deletes self._base_error"""
@@ -995,7 +986,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             exc = e
 
         self.assertIsNotNone(exc)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
 
 if __name__ == "__main__":
