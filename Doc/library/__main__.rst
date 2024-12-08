@@ -155,7 +155,7 @@ error-prone as other functions within the module could be unintentionally using
 the global variable instead of a local name.  A ``main`` function solves this
 problem.
 
-Using a ``main`` function has the added benefit of the ``echo`` function itself
+Using a ``main`` function has the added benefit of the ``main`` function itself
 being isolated and importable elsewhere. When ``echo.py`` is imported, the
 ``echo`` and ``main`` functions will be defined, but neither of them will be
 called, because ``__name__ != '__main__'``.
