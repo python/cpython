@@ -1370,8 +1370,6 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.touch)
         self.assertRaises(e, p.chmod, 0o755)
         self.assertRaises(e, p.lchmod, 0o755)
-        self.assertRaises(e, p.unlink)
-        self.assertRaises(e, p.rmdir)
         self.assertRaises(e, p.owner)
         self.assertRaises(e, p.group)
         self.assertRaises(e, p.as_uri)
@@ -1493,31 +1491,18 @@ class DummyPath(PathBase):
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
-    def unlink(self, missing_ok=False):
-        path = str(self)
-        name = self.name
-        parent = str(self.parent)
-        if path in self._directories:
-            raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
-        elif path in self._files:
-            self._directories[parent].remove(name)
-            del self._files[path]
-        elif not missing_ok:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
-
-    def rmdir(self):
+    def _delete(self):
         path = str(self)
         if path in self._files:
-            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
-        elif path not in self._directories:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
-        elif self._directories[path]:
-            raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
-        else:
-            name = self.name
-            parent = str(self.parent)
-            self._directories[parent].remove(name)
+            del self._files[path]
+        elif path in self._directories:
+            for name in list(self._directories[path]):
+                self.joinpath(name)._delete()
             del self._directories[path]
+        else:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+        parent = str(self.parent)
+        self._directories[parent].remove(self.name)
 
 
 class DummyPathTest(DummyPurePathTest):
@@ -2245,30 +2230,11 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
-    def test_unlink(self):
-        p = self.cls(self.base) / 'fileA'
-        p.unlink()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
-
-    def test_unlink_missing_ok(self):
-        p = self.cls(self.base) / 'fileAAA'
-        self.assertFileNotFound(p.unlink)
-        p.unlink(missing_ok=True)
-
-    def test_rmdir(self):
-        p = self.cls(self.base) / 'dirA'
-        for q in p.iterdir():
-            q.unlink()
-        p.rmdir()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
-
     def test_delete_file(self):
         p = self.cls(self.base) / 'fileA'
         p._delete()
         self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
+        self.assertFileNotFound(p._delete)
 
     def test_delete_dir(self):
         base = self.cls(self.base)
@@ -2347,7 +2313,7 @@ class DummyPathWalkTest(unittest.TestCase):
 
     def tearDown(self):
         base = self.cls(self.base)
-        base._rmtree()
+        base._delete()
 
     def test_walk_topdown(self):
         walker = self.walk_path.walk()

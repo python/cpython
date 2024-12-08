@@ -1352,6 +1352,25 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
 
+    def test_unlink(self):
+        p = self.cls(self.base) / 'fileA'
+        p.unlink()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_unlink_missing_ok(self):
+        p = self.cls(self.base) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
+    def test_rmdir(self):
+        p = self.cls(self.base) / 'dirA'
+        for q in p.iterdir():
+            q.unlink()
+        p.rmdir()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
     @needs_symlinks
     def test_delete_symlink(self):
         tmp = self.cls(self.base, 'delete')

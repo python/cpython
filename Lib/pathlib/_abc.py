@@ -840,6 +840,12 @@ class PathBase(PurePathBase):
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
+    def _delete(self):
+        """
+        Delete this file or directory (including all sub-directories).
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_delete()'))
+
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
@@ -873,43 +879,6 @@ class PathBase(PurePathBase):
         permissions are changed, rather than its target's.
         """
         self.chmod(mode, follow_symlinks=False)
-
-    def unlink(self, missing_ok=False):
-        """
-        Remove this file or link.
-        If the path is a directory, use rmdir() instead.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('unlink()'))
-
-    def rmdir(self):
-        """
-        Remove this directory.  The directory must be empty.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
-
-    def _delete(self):
-        """
-        Delete this file or directory (including all sub-directories).
-        """
-        if self.is_symlink() or self.is_junction():
-            self.unlink()
-        elif self.is_dir():
-            self._rmtree()
-        else:
-            self.unlink()
-
-    def _rmtree(self):
-        def on_error(err):
-            raise err
-        results = self.walk(
-            on_error=on_error,
-            top_down=False,  # So we rmdir() empty directories.
-            follow_symlinks=False)
-        for dirpath, _, filenames in results:
-            for filename in filenames:
-                filepath = dirpath / filename
-                filepath.unlink()
-            dirpath.rmdir()
 
     def owner(self, *, follow_symlinks=True):
         """
