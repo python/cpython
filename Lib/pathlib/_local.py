@@ -4,6 +4,7 @@ import operator
 import os
 import posixpath
 import sys
+from errno import EXDEV
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -17,7 +18,9 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
+                         write_file_metadata)
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
@@ -66,10 +69,6 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
-
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -117,9 +116,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -270,20 +269,32 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
-    @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.parser.join(*paths)
-        return path
+    @classmethod
+    def _parse_pattern(cls, pattern):
+        """Parse a glob pattern to a list of parts. This is much like
+        _parse_path, except:
+
+        - Rather than normalizing and returning the drive and root, we raise
+          NotImplementedError if either are present.
+        - If the path has no real parts, we raise ValueError.
+        - If the path ends in a slash, then a final empty part is added.
+        """
+        drv, root, rel = cls.parser.splitroot(pattern)
+        if root or drv:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        sep = cls.parser.sep
+        altsep = cls.parser.altsep
+        if altsep:
+            rel = rel.replace(altsep, sep)
+        parts = [x for x in rel.split(sep) if x and x != '.']
+        if not parts:
+            raise ValueError(f"Unacceptable pattern: {str(pattern)!r}")
+        elif rel.endswith(sep):
+            # GH-65238: preserve trailing slash in glob patterns.
+            parts.append('')
+        return parts
 
     @property
     def drive(self):
@@ -291,7 +302,8 @@ class PurePath(PurePathBase):
         try:
             return self._drv
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._drv
 
     @property
@@ -300,7 +312,8 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._root
 
     @property
@@ -308,7 +321,8 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            raw_path = PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
             return self._tail_cached
 
     @property
@@ -360,6 +374,40 @@ class PurePath(PurePathBase):
             raise ValueError(f"{self!r} has an empty name")
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
+
+    @property
+    def stem(self):
+        """The final path component, minus its last suffix."""
+        name = self.name
+        i = name.rfind('.')
+        if i != -1:
+            stem = name[:i]
+            # Stem must contain at least one non-dot character.
+            if stem.lstrip('.'):
+                return stem
+        return name
+
+    @property
+    def suffix(self):
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
+        name = self.name.lstrip('.')
+        i = name.rfind('.')
+        if i != -1:
+            return name[i:]
+        return ''
+
+    @property
+    def suffixes(self):
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
+        return ['.' + ext for ext in self.name.lstrip('.').split('.')[1:]]
 
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -495,6 +543,13 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def lstat(self):
+        """
+        Like stat(), except if the path points to a symlink, the symlink's
+        status information is returned, rather than its target's.
+        """
+        return os.lstat(self)
+
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -580,6 +635,14 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        return os.scandir(self)
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -598,17 +661,7 @@ class Path(PathBase, PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if not isinstance(pattern, PurePath):
-            pattern = self.with_segments(pattern)
-        if pattern.anchor:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        parts = pattern._tail.copy()
-        if not parts:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        raw = pattern._raw_path
-        if raw[-1] in (self.parser.sep, self.parser.altsep):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            parts.append('')
+        parts = self._parse_pattern(pattern)
         select = self._glob_selector(parts[::-1], case_sensitive, recurse_symlinks)
         root = str(self)
         paths = select(root)
@@ -629,16 +682,16 @@ class Path(PathBase, PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        if not isinstance(pattern, PurePath):
-            pattern = self.with_segments(pattern)
-        pattern = '**' / pattern
+        pattern = self.parser.join('**', pattern)
         return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         root_dir = str(self)
-        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        if not follow_symlinks:
+            follow_symlinks = os._walk_symlinks_as_files
+        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
         for path_str, dirnames, filenames in results:
             if root_dir == '.':
                 path_str = path_str[2:]
@@ -673,6 +726,14 @@ class Path(PathBase, PurePath):
         tail = rel.split(self.parser.sep)
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
+
+    @classmethod
+    def cwd(cls):
+        """Return a new path pointing to the current working directory."""
+        cwd = os.getcwd()
+        path = cls(cwd)
+        path._str = cwd  # getcwd() returns a normalized path
+        return path
 
     def resolve(self, strict=False):
         """
@@ -744,6 +805,24 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _readable_metadata = _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
+
+    if copyfile:
+        def _copy_file(self, target):
+            """
+            Copy the contents of this file to the given target.
+            """
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if not isinstance(target, PathBase):
+                    raise
+                PathBase._copy_file(self, target)
+            else:
+                copyfile(os.fspath(self), target)
+
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
@@ -766,6 +845,11 @@ class Path(PathBase, PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+
+    def _rmtree(self):
+        # Lazy import to improve module import time
+        import shutil
+        shutil.rmtree(self)
 
     def rename(self, target):
         """
@@ -793,6 +877,22 @@ class Path(PathBase, PurePath):
         os.replace(self, target)
         return self.with_segments(target)
 
+    def move(self, target):
+        """
+        Recursively move this file or directory tree to the given destination.
+        """
+        self._ensure_different_file(target)
+        try:
+            return self.replace(target)
+        except TypeError:
+            if not isinstance(target, PathBase):
+                raise
+        except OSError as err:
+            if err.errno != EXDEV:
+                raise
+        # Fall back to copy+delete.
+        return PathBase.move(self, target)
+
     if hasattr(os, "symlink"):
         def symlink_to(self, target, target_is_directory=False):
             """
@@ -800,6 +900,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
+
+    if os.name == 'nt':
+        def _symlink_to_target_of(self, link):
+            """
+            Make this path a symlink with the same target as the given link.
+            This is used by copy().
+            """
+            self.symlink_to(link.readlink(), link.is_dir())
 
     if hasattr(os, "link"):
         def hardlink_to(self, target):
@@ -823,6 +931,15 @@ class Path(PathBase, PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to expanduser('~').
+        """
+        homedir = os.path.expanduser("~")
+        if homedir == "~":
+            raise RuntimeError("Could not determine home directory.")
+        return cls(homedir)
 
     @classmethod
     def from_uri(cls, uri):

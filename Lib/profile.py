@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 #
 # Class for profiling python code. rev 1.0  6/2/94
 #

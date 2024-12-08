@@ -1,10 +1,8 @@
-import os
 import sys
 import copy
 import json
 import shutil
 import pathlib
-import tempfile
 import textwrap
 import functools
 import contextlib
@@ -27,29 +25,12 @@ except (ImportError, AttributeError):
 
 
 @contextlib.contextmanager
-def tempdir():
-    tmpdir = tempfile.mkdtemp()
-    try:
-        yield pathlib.Path(tmpdir)
-    finally:
-        shutil.rmtree(tmpdir)
-
-
-@contextlib.contextmanager
-def save_cwd():
-    orig = os.getcwd()
-    try:
-        yield
-    finally:
-        os.chdir(orig)
-
-
-@contextlib.contextmanager
-def tempdir_as_cwd():
-    with tempdir() as tmp:
-        with save_cwd():
-            os.chdir(str(tmp))
-            yield tmp
+def tmp_path():
+    """
+    Like os_helper.temp_dir, but yields a pathlib.Path.
+    """
+    with os_helper.temp_dir() as path:
+        yield pathlib.Path(path)
 
 
 @contextlib.contextmanager
@@ -70,7 +51,7 @@ class Fixtures:
 class SiteDir(Fixtures):
     def setUp(self):
         super().setUp()
-        self.site_dir = self.fixtures.enter_context(tempdir())
+        self.site_dir = self.fixtures.enter_context(tmp_path())
 
 
 class OnSysPath(Fixtures):
@@ -239,6 +220,40 @@ class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteBuilder):
             # accurate source than SOURCES.txt as to the installed contents of
             # the package.
             "installed-files.txt": """
+                ../egg_with_module.py
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # missing top_level.txt (to trigger fallback to installed-files.txt)
+        },
+        "egg_with_module.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+
+class EggInfoPkgPipInstalledExternalDataFiles(OnSysPath, SiteBuilder):
+    files: FilesSpec = {
+        "egg_with_module_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_module-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                egg_with_module.py
+                setup.py
+                egg_with_module.json
+                egg_with_module_pkg.egg-info/PKG-INFO
+                egg_with_module_pkg.egg-info/SOURCES.txt
+                egg_with_module_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                ../../../etc/jupyter/jupyter_notebook_config.d/relative.json
+                /etc/jupyter/jupyter_notebook_config.d/absolute.json
                 ../egg_with_module.py
                 PKG-INFO
                 SOURCES.txt

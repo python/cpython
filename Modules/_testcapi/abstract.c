@@ -129,6 +129,33 @@ mapping_getoptionalitem(PyObject *self, PyObject *args)
     }
 }
 
+static PyObject *
+pyiter_next(PyObject *self, PyObject *iter)
+{
+    PyObject *item = PyIter_Next(iter);
+    if (item == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+static PyObject *
+pyiter_nextitem(PyObject *self, PyObject *iter)
+{
+    PyObject *item;
+    int rc = PyIter_NextItem(iter, &item);
+    if (rc < 0) {
+        assert(PyErr_Occurred());
+        assert(item == NULL);
+        return NULL;
+    }
+    assert(!PyErr_Occurred());
+    if (item == NULL) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
 
 static PyMethodDef test_methods[] = {
     {"object_getoptionalattr", object_getoptionalattr, METH_VARARGS},
@@ -138,6 +165,8 @@ static PyMethodDef test_methods[] = {
     {"mapping_getoptionalitem", mapping_getoptionalitem, METH_VARARGS},
     {"mapping_getoptionalitemstring", mapping_getoptionalitemstring, METH_VARARGS},
 
+    {"PyIter_Next", pyiter_next, METH_O},
+    {"PyIter_NextItem", pyiter_nextitem, METH_O},
     {NULL},
 };
 

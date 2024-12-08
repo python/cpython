@@ -48,6 +48,10 @@ try:
     __all__.append('get_native_id')
 except AttributeError:
     _HAVE_THREAD_NATIVE_ID = False
+try:
+    _set_name = _thread.set_name
+except AttributeError:
+    _set_name = None
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -336,7 +340,7 @@ class Condition:
         awakened or timed out, it re-acquires the lock and returns.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof).
 
         When the underlying lock is an RLock, it is not released using its
@@ -646,7 +650,7 @@ class Event:
         the optional timeout occurs.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof).
 
         This method returns the internal flag on exit, so it will always return
@@ -689,6 +693,8 @@ class Barrier:
         default for all subsequent 'wait()' calls.
 
         """
+        if parties < 1:
+            raise ValueError("parties must be > 0")
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout
@@ -1025,6 +1031,11 @@ class Thread:
             self._set_ident()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
+            if _set_name is not None and self._name:
+                try:
+                    _set_name(self._name)
+                except OSError:
+                    pass
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1059,7 +1070,7 @@ class Thread:
         or until the optional timeout occurs.
 
         When the timeout argument is present and not None, it should be a
-        floating point number specifying a timeout for the operation in seconds
+        floating-point number specifying a timeout for the operation in seconds
         (or fractions thereof). As join() always returns None, you must call
         is_alive() after join() to decide whether a timeout happened -- if the
         thread is still alive, the join() call timed out.

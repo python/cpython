@@ -1446,7 +1446,7 @@ Adapt the :mod:`winsound` extension module to :pep:`687`.
 .. nonce: jurMzv
 .. section: Library
 
-Remove deprecation of enum ``memmber.member`` access.
+Remove deprecation of enum ``member.member`` access.
 
 ..
 
@@ -1750,7 +1750,7 @@ Remove the long-deprecated ``imp`` module.
 .. nonce: N46coo
 .. section: Library
 
-Deprecate :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader` in
+Deprecate :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader` in
 favor of :func:`importlib.util.find_spec`.
 
 ..
@@ -1828,7 +1828,7 @@ is relative.
 .. nonce: 511Tbh
 .. section: Library
 
-Convert private :meth:`_posixsubprocess.fork_exec` to use Argument Clinic.
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
 
 ..
 

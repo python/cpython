@@ -258,7 +258,7 @@ instruction which performs the same operation, but without the loop.
 .. nonce: ADVaPT
 .. section: Core and Builtins
 
-The code called from :c:func:`_PyErr_Display` was refactored to improve
+The code called from :c:func:`!_PyErr_Display` was refactored to improve
 error handling. It now exits immediately upon an unrecoverable error.
 
 ..

@@ -389,11 +389,11 @@ class _OutputRedirectingPdb(pdb.Pdb):
         # still use input() to get user input
         self.use_rawinput = 1
 
-    def set_trace(self, frame=None):
+    def set_trace(self, frame=None, *, commands=None):
         self.__debugger_used = True
         if frame is None:
             frame = sys._getframe().f_back
-        pdb.Pdb.set_trace(self, frame)
+        pdb.Pdb.set_trace(self, frame, commands=commands)
 
     def set_continue(self):
         # Calling set_continue unconditionally would break unit test
@@ -1227,7 +1227,7 @@ class DocTestRunner:
     `OutputChecker` to the constructor.
 
     The test runner's display output can be controlled in two ways.
-    First, an output function (`out) can be passed to
+    First, an output function (`out`) can be passed to
     `TestRunner.run`; this function will be called with strings that
     should be displayed.  It defaults to `sys.stdout.write`.  If
     capturing the output is not sufficient, then the display output
@@ -2734,7 +2734,7 @@ def testsource(module, name):
     return testsrc
 
 def debug_src(src, pm=False, globs=None):
-    """Debug a single doctest docstring, in argument `src`'"""
+    """Debug a single doctest docstring, in argument `src`"""
     testsrc = script_from_examples(src)
     debug_script(testsrc, pm, globs)
 

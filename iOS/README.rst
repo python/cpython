@@ -188,7 +188,7 @@ especially important, as many parts of the standard library (including the
 ``ctypes`` module at runtime.
 
 By default, Python will be compiled with an iOS deployment target (i.e., the
-minimum supported iOS version) of 12.0. To specify a different deployment
+minimum supported iOS version) of 13.0. To specify a different deployment
 target, provide the version number as part of the ``--host`` argument - for
 example, ``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64
 simulator build with a deployment target of 15.4.
@@ -351,13 +351,13 @@ Running specific tests
 ^^^^^^^^^^^^^^^^^^^^^^
 
 As the test suite is being executed on an iOS simulator, it is not possible to
-pass in command line arguments to configure test suite operation. To work around
-this limitation, the arguments that would normally be passed as command line
-arguments are configured as a static string at the start of the XCTest method
-``- (void)testPython`` in ``iOSTestbedTests.m``. To pass an argument to the test
-suite, add a a string to the ``argv`` definition. These arguments will be passed
-to the test suite as if they had been passed to ``python -m test`` at the
-command line.
+pass in command line arguments to configure test suite operation. To work
+around this limitation, the arguments that would normally be passed as command
+line arguments are configured as part of the ``iOSTestbed-Info.plist`` file
+that is used to configure the iOS testbed app. In this file, the ``TestArgs``
+key is an array containing the arguments that would be passed to ``python -m``
+on the command line (including ``test`` in position 0, the name of the test
+module to be executed).
 
 Disabling automated breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

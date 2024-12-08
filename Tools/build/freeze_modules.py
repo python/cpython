@@ -5,10 +5,10 @@ See the notes at the top of Python/frozen.c for more info.
 
 from collections import namedtuple
 import hashlib
-import os
 import ntpath
+import os
 import posixpath
-import argparse
+
 from update_file import updating_file_with_tmpfile
 
 
@@ -63,9 +63,6 @@ FROZEN = [
         'genericpath',
         'ntpath',
         'posixpath',
-        # We must explicitly mark os.path as a frozen module
-        # even though it will never be imported.
-        f'{OS_PATH} : os.path',
         'os',
         'site',
         'stat',

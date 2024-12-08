@@ -2209,24 +2209,8 @@ if sys.platform == 'win32':
 else:
     import selectors
 
-    class UnixEventLoopTestsMixin(EventLoopTestsMixin):
-        def setUp(self):
-            super().setUp()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = asyncio.SafeChildWatcher()
-                watcher.attach_loop(self.loop)
-                asyncio.set_child_watcher(watcher)
-
-        def tearDown(self):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
-            super().tearDown()
-
-
     if hasattr(selectors, 'KqueueSelector'):
-        class KqueueEventLoopTests(UnixEventLoopTestsMixin,
+        class KqueueEventLoopTests(EventLoopTestsMixin,
                                    SubprocessTestsMixin,
                                    test_utils.TestCase):
 
@@ -2251,7 +2235,7 @@ else:
                 super().test_write_pty()
 
     if hasattr(selectors, 'EpollSelector'):
-        class EPollEventLoopTests(UnixEventLoopTestsMixin,
+        class EPollEventLoopTests(EventLoopTestsMixin,
                                   SubprocessTestsMixin,
                                   test_utils.TestCase):
 
@@ -2259,7 +2243,7 @@ else:
                 return asyncio.SelectorEventLoop(selectors.EpollSelector())
 
     if hasattr(selectors, 'PollSelector'):
-        class PollEventLoopTests(UnixEventLoopTestsMixin,
+        class PollEventLoopTests(EventLoopTestsMixin,
                                  SubprocessTestsMixin,
                                  test_utils.TestCase):
 
@@ -2267,7 +2251,7 @@ else:
                 return asyncio.SelectorEventLoop(selectors.PollSelector())
 
     # Should always exist.
-    class SelectEventLoopTests(UnixEventLoopTestsMixin,
+    class SelectEventLoopTests(EventLoopTestsMixin,
                                SubprocessTestsMixin,
                                test_utils.TestCase):
 
@@ -2364,7 +2348,7 @@ class HandleTests(test_utils.TestCase):
         h = asyncio.Handle(cb, (), self.loop)
 
         cb_regex = r'<function HandleTests.test_handle_repr .*>'
-        cb_regex = fr'functools.partialmethod\({cb_regex}, , \)\(\)'
+        cb_regex = fr'functools.partialmethod\({cb_regex}\)\(\)'
         regex = fr'^<Handle {cb_regex} at {re.escape(filename)}:{lineno}>$'
         self.assertRegex(repr(h), regex)
 
@@ -2716,40 +2700,26 @@ class PolicyTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, policy.get_event_loop)
         self.assertRaises(NotImplementedError, policy.set_event_loop, object())
         self.assertRaises(NotImplementedError, policy.new_event_loop)
-        self.assertRaises(NotImplementedError, policy.get_child_watcher)
-        self.assertRaises(NotImplementedError, policy.set_child_watcher,
-                          object())
 
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
         self.assertIsNone(policy._local._loop)
-        with self.assertWarns(DeprecationWarning) as cm:
+
+        with self.assertRaises(RuntimeError):
             loop = policy.get_event_loop()
-        self.assertEqual(cm.filename, __file__)
-        self.assertIsInstance(loop, asyncio.AbstractEventLoop)
+        self.assertIsNone(policy._local._loop)
 
-        self.assertIs(policy._local._loop, loop)
-        self.assertIs(loop, policy.get_event_loop())
-        loop.close()
-
-    def test_get_event_loop_calls_set_event_loop(self):
+    def test_get_event_loop_does_not_call_set_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
 
         with mock.patch.object(
                 policy, "set_event_loop",
                 wraps=policy.set_event_loop) as m_set_event_loop:
 
-            with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaises(RuntimeError):
                 loop = policy.get_event_loop()
-            self.addCleanup(loop.close)
-            self.assertEqual(cm.filename, __file__)
 
-            # policy._local._loop must be set through .set_event_loop()
-            # (the unix DefaultEventLoopPolicy needs this call to attach
-            # the child watcher correctly)
-            m_set_event_loop.assert_called_with(loop)
-
-        loop.close()
+            m_set_event_loop.assert_not_called()
 
     def test_get_event_loop_after_set_none(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2833,20 +2803,8 @@ class GetEventLoopTestsMixin:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        if sys.platform != 'win32':
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = asyncio.SafeChildWatcher()
-                watcher.attach_loop(self.loop)
-                asyncio.set_child_watcher(watcher)
-
     def tearDown(self):
         try:
-            if sys.platform != 'win32':
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    asyncio.set_child_watcher(None)
-
             super().tearDown()
         finally:
             self.loop.close()
@@ -2943,17 +2901,12 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertWarns(DeprecationWarning) as cm:
-                loop2 = asyncio.get_event_loop()
-            self.addCleanup(loop2.close)
-            self.assertEqual(cm.filename, __file__)
-            asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
-            with self.assertRaisesRegex(RuntimeError, 'no running'):
-                asyncio.get_running_loop()
-            self.assertIs(asyncio._get_running_loop(), None)
+            asyncio.set_event_loop(None)
+            with self.assertRaisesRegex(RuntimeError, 'no current'):
+                asyncio.get_event_loop()
 
             async def func():
                 self.assertIs(asyncio.get_event_loop(), loop)
