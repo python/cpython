@@ -10,6 +10,7 @@
 .. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
+.. changes for IMAP4 IDLE by Forest <forestix@nom.one>, August 2024
 
 **Source code:** :source:`Lib/imaplib.py`
 
@@ -187,7 +188,7 @@ However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
 
-Each command returns a tuple: ``(type, [data, ...])`` where *type* is usually
+Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
 or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
@@ -305,6 +306,92 @@ An :class:`IMAP4` instance has the following methods:
 
    Get the list of ``quota`` ``roots`` for the named *mailbox*. This method is part
    of the IMAP4 QUOTA extension defined in rfc2087.
+
+
+.. method:: IMAP4.idle(duration=None)
+
+   Return an :class:`!Idler`: an iterable context manager implementing the IMAP4 ``IDLE``
+   command as defined in :rfc:`2177`.
+
+   The returned object sends the ``IDLE`` command when activated by the
+   :keyword:`with` statement, produces IMAP untagged responses via the
+   :term:`iterator` protocol, and sends ``DONE`` upon context exit.
+
+   Responses are represented as ``(type, [data, ...])`` tuples, as described
+   in :ref:`IMAP4 Objects <imap4-objects>`.
+
+   The *duration* argument sets a maximum duration (in seconds) to keep idling,
+   after which any ongoing iteration will stop.  It defaults to ``None``,
+   meaning no time limit.  Callers wishing to avoid inactivity timeouts on
+   servers that impose them should keep this at most 29 minutes.
+   See the :ref:`warning below <windows-pipe-timeout-warning>` if using
+   :class:`IMAP4_stream` on Windows.
+
+   Example::
+
+      >>> with M.idle(duration=29 * 60) as idler:
+      ...     for typ, data in idler:
+      ...         print(typ, data)
+      ...
+      EXISTS [b'1']
+      RECENT [b'1']
+
+   Instead of iterating one response at a time, it is also possible to retrieve
+   the next response along with any immediately available subsequent responses
+   (e.g. a rapid series of ``EXPUNGE`` events from a bulk delete).  This
+   batch processing aid is provided by the
+   :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>` :term:`generator`.
+
+   .. method:: Idler.burst(interval=0.1)
+
+      Yield a burst of responses no more than *interval* seconds apart.
+
+      Example::
+
+         >>> with M.idle() as idler:
+         ...     # get next response and any others following by < 0.1 seconds
+         ...     batch = list(idler.burst())
+         ...     print(f'processing {len(batch)} responses...')
+         ...     print(batch)
+         ...
+         processing 3 responses...
+         [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
+
+      The ``IDLE`` context's maximum duration, as passed to :meth:`IMAP4.idle`,
+      is respected when waiting for the first response in a burst.
+      Therefore, an expired :class:`!Idler` will cause this generator
+      to return immediately without producing anything.  Callers should
+      consider this if using it in a loop.
+
+
+   .. _windows-pipe-timeout-warning:
+
+   .. warning::
+
+      Windows' :class:`IMAP4_stream` connections have no way to accurately
+      respect the *duration* or *interval* arguments, since Windows'
+      ``select()`` only works on sockets.
+
+      If the server regularly sends status messages during ``IDLE``, they will
+      wake our iterator anyway, allowing *duration* to behave roughly as
+      intended, although usually late.  Dovecot's ``imap_idle_notify_interval``
+      default setting does this every 2 minutes.  Assuming that's typical of
+      IMAP servers, subtracting it from the 29 minutes needed to avoid server
+      inactivity timeouts would make 27 minutes a sensible value for *duration*
+      in this situation.
+
+      There is no such fallback for
+      :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`, which will yield endless
+      responses and block indefinitely for each one.  It is therefore advised
+      not to use :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>` with an
+      :class:`IMAP4_stream` connection on Windows.
+
+   .. note::
+
+      The :class:`!Idler` class name and structure are internal interfaces,
+      subject to change.  Calling code can rely on its context management,
+      iteration, and public method to remain stable, but should not subclass,
+      instantiate, compare, or otherwise directly reference the class.
 
 
 .. method:: IMAP4.list([directory[, pattern]])
