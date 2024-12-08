@@ -469,6 +469,12 @@ class PathBase(PurePathBase):
         except (OSError, ValueError):
             return False
 
+    def _ensure_different_file(self, other_path):
+        """
+        Raise OSError(EINVAL) if both paths refer to the same file.
+        """
+        pass
+
     def _ensure_distinct_path(self, other_path):
         """
         Raise OSError(EINVAL) if the other path is within this path.
@@ -692,6 +698,7 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
+        self._ensure_different_file(target)
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:

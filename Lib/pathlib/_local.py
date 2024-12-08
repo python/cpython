@@ -633,7 +633,6 @@ class Path(PathBase, PurePath):
         except (OSError, ValueError):
             return False
 
-
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
         (as returned by os.path.samefile()).
@@ -873,21 +872,19 @@ class Path(PathBase, PurePath):
     _read_metadata = read_file_metadata
     _write_metadata = write_file_metadata
 
-    def _copy_file(self, target):
-        """
-        Copy the contents of this file to the given target.
-        """
-        if copyfile:
+    if copyfile:
+        def _copy_file(self, target):
+            """
+            Copy the contents of this file to the given target.
+            """
             try:
                 target = os.fspath(target)
             except TypeError:
                 if not isinstance(target, PathBase):
                     raise
+                PathBase._copy_file(self, target)
             else:
                 copyfile(os.fspath(self), target)
-                return
-        self._ensure_different_file(target)
-        PathBase._copy_file(self, target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
