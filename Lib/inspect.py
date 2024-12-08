@@ -2943,10 +2943,18 @@ class Signature:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
                 seen_default = False
+                seen_var_parameters = set()
 
                 for param in parameters:
                     kind = param.kind
                     name = param.name
+
+                    if kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
+                        if kind in seen_var_parameters:
+                            msg = f'more than one {kind.description} parameter'
+                            raise ValueError(msg)
+
+                        seen_var_parameters.add(kind)
 
                     if kind < top_kind:
                         msg = (
