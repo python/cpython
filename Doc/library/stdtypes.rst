@@ -4149,6 +4149,12 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
+   .. method:: count(value, /)
+
+      Count the number of occurrences of *value*.
+
+      .. versionadded:: next
+
    There are also several readonly attributes available:
 
    .. attribute:: obj

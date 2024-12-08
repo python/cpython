@@ -418,4 +418,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a93f08110630633 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(memoryview_count__doc__,
+"count($self, value, /)\n"
+"--\n"
+"\n"
+"Count the number of occurrences of a value.");
+
+#define MEMORYVIEW_COUNT_METHODDEF    \
+    {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
+/*[clinic end generated code: output=16b2646e88b1b300 input=a9049054013a1b77]*/
