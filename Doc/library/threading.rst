@@ -363,6 +363,14 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   .. note::
+
+      Threads are non-daemon by default, meaning they block the program from
+      exiting until they complete. By setting *daemon* to ``True``, threads become
+      daemon and will be forcibly terminated when the main program exits. Use
+      an explicit call to ``.join()`` on a daemon thread to block
+      the main program until the thread completes.
+
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
 
