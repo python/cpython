@@ -34,11 +34,7 @@ static inline int maybe_freelist_push(PyTupleObject *);
 static PyTupleObject *
 tuple_alloc(Py_ssize_t size)
 {
-    if (size < 0) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    assert(size != 0);    // The empty tuple is statically allocated.
+    assert(size > 0);
     Py_ssize_t index = size - 1;
     if (index < PyTuple_MAXSAVESIZE) {
         PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
@@ -68,7 +64,11 @@ PyObject *
 PyTuple_New(Py_ssize_t size)
 {
     PyTupleObject *op;
-    if (size == 0) {
+    if (size <= 0) {
+        if (size < 0) {
+            PyErr_BadInternalCall();
+            return NULL;
+        }
         return tuple_get_empty();
     }
     op = tuple_alloc(size);
@@ -76,7 +76,7 @@ PyTuple_New(Py_ssize_t size)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
-        op->ob_item[i] = NULL;
+        op->ob_item[i] = Py_None;
     }
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
@@ -110,6 +110,7 @@ PyTuple_GetItem(PyObject *op, Py_ssize_t i)
 int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
+    assert(newitem != NULL);
     PyObject **p;
     if (!PyTuple_Check(op) || Py_REFCNT(op) != 1) {
         Py_XDECREF(newitem);
@@ -157,10 +158,15 @@ PyTuple_Pack(Py_ssize_t n, ...)
     PyObject **items;
     va_list vargs;
 
-    if (n == 0) {
-        return tuple_get_empty();
+    if (n <= 0) {
+        if (n == 0) {
+            return tuple_get_empty();
+        }
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "negative size");
+            return NULL;
+        }
     }
-
     va_start(vargs, n);
     PyTupleObject *result = tuple_alloc(n);
     if (result == NULL) {
@@ -204,7 +210,8 @@ tuple_dealloc(PyObject *self)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
-        Py_XDECREF(op->ob_item[i]);
+        assert(op->ob_item[i] != NULL);
+        Py_DECREF(op->ob_item[i]);
     }
     // This will abort on the empty singleton (if there is one).
     if (!maybe_freelist_push(op)) {
@@ -924,12 +931,12 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 {
     PyTupleObject *v;
     PyTupleObject *sv;
-    Py_ssize_t i;
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
+        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1) ||
+        newsize < 0) {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
@@ -963,7 +970,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_ForgetReference((PyObject *) v);
 #endif
     /* DECREF items deleted by shrinkage */
-    for (i = newsize; i < oldsize; i++) {
+    for (Py_ssize_t i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
     _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
@@ -977,10 +984,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
-    /* Zero out items added by growing */
-    if (newsize > oldsize)
-        memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
+    /* Set items added by growing to None */
+    for (Py_ssize_t i = oldsize; i < newsize; i++) {
+        sv->ob_item[i] = Py_None;
+    }
     *pv = (PyObject *) sv;
     _PyObject_GC_TRACK(sv);
     return 0;

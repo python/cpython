@@ -416,6 +416,29 @@ class TupleTest(seq_tests.CommonTest):
         self.assertLess(a, b)
         self.assertLess(b, c)
 
+    def test_bug_59313(self):
+        # Until 3.13, the C-API function PySequence_Tuple
+        # would create incomplete tuples which were visible
+        # to the cycle GC
+        TAG = object()
+        tuples = []
+
+        def referrer_tuples():
+            return [x for x in gc.get_referrers(TAG)
+                if isinstance(x, tuple)]
+
+        def my_iter():
+            nonlocal tuples
+            yield TAG    # 'tag' gets stored in the result tuple
+            tuples += referrer_tuples()
+            for x in range(10):
+                tuples += referrer_tuples()
+                # Prior to 3.13 would raise a SystemError when the tuple needs to be resized
+                yield x
+
+        self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
+        self.assertEqual(tuples, [])
+
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
 # very regular when possible, so that the low-order bits are as evenly

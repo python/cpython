@@ -64,6 +64,9 @@ union _PyStackRef;
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
 
 
+/* Creates tuple from the list, leaving the list empty */
+PyObject *_PyList_AsTupleTakeItems(PyObject *);
+
 #ifdef __cplusplus
 }
 #endif
