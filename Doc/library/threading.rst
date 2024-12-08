@@ -434,6 +434,14 @@ since it is impossible to detect the termination of alien threads.
       Multiple threads may be given the same name.  The initial name is set by
       the constructor.
 
+      It's possible to change the name of a running thread, but the operating
+      system thread name is only updated if the name of the current thread is
+      set. Setting the name of a different thread does not update the operating
+      system thread name.
+
+      .. versionchanged:: 3.14
+         Set the operating system thread name.
+
    .. method:: getName()
                setName()
 
