@@ -22,6 +22,7 @@ jobs:
     env:
       branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
       branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
+      commits: ${{ github.event.pull_request.commits }}
       refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
@@ -40,7 +41,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         # Fetch enough history to find a common ancestor commit (aka merge-base):
-        git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
+        git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ env.commits }} + 1 )) \
           --no-tags --prune --no-recurse-submodules
 
         # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):

@@ -26,6 +26,8 @@ jobs:
     name: 'build and test (${{ inputs.arch }})'
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
+    env:
+      ARCH: ${{ inputs.arch }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -37,7 +39,7 @@ jobs:
       run: >-
         .\\PCbuild\\build.bat
         -e -d -v
-        -p ${{ inputs.arch }}
+        -p ${{ env.ARCH }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Display build info  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
@@ -46,6 +48,6 @@ jobs:
       if: inputs.arch != 'arm64'
       run: >-
         .\\PCbuild\\rt.bat
-        -p ${{ inputs.arch }}
+        -p ${{ env.ARCH }}
         -d -q --fast-ci
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
