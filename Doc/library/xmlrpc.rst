@@ -1,3 +1,5 @@
+.. module:: xmlrpc
+
 :mod:`!xmlrpc` --- XMLRPC server and client modules
 ===================================================
 
