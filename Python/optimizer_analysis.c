@@ -469,7 +469,7 @@ optimize_uops(
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
     _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0, NULL);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0, sym_new_unknown(ctx));
     if (frame == NULL) {
         return -1;
     }

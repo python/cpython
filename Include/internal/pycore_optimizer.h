@@ -209,7 +209,7 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsSymbol **stack;
     _Py_UopsSymbol **locals;
 
-    // Might be NULL if unable to statically determine.
+    // Cannot be NULL.
     _Py_UopsSymbol *f_funcobj;
 };
 

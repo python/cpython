@@ -5886,6 +5886,7 @@
             PyObject *callable_p = (PyObject *)CURRENT_OPERAND1();
             assert(PyFunction_Check(callable_p));
             PyFunctionObject *func = (PyFunctionObject *)callable_p;
+            assert(func == PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
             if (func->func_version != func_version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
