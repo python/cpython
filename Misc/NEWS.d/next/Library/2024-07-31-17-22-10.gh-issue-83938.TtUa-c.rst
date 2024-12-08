@@ -1,0 +1,3 @@
+Stop incorrectly using RFC 2047 "encoded words" for email addresses with
+non-ASCII characters when email.generator is called using a policy with
+``utf8=False``.

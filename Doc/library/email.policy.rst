@@ -406,11 +406,17 @@ added matters.  To illustrate::
    .. attribute:: utf8
 
       If ``False``, follow :rfc:`5322`, supporting non-ASCII characters in
-      headers by encoding them as "encoded words".  If ``True``, follow
-      :rfc:`6532` and use ``utf-8`` encoding for headers.  Messages
+      headers by encoding them as :rfc:`2047` "encoded words".  If ``True``,
+      follow :rfc:`6532` and use ``utf-8`` encoding for headers.  Messages
       formatted in this way may be passed to SMTP servers that support
       the ``SMTPUTF8`` extension (:rfc:`6531`).
 
+      .. versionchanged:: 3.13
+         If ``False``, the generator will raise a ``ValueError`` if any email
+         address contains non-ASCII characters. To send to a non-ASCII domain
+         with ``utf8=False``, encode the domain using the third-party
+         :pypi:`idna` module or :mod:`encodings.idna`. No RFC allows a non-ASCII
+         username ("localpart") in an email address with ``utf8=False``.
 
    .. attribute:: refold_source
 
