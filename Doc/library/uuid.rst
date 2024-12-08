@@ -12,8 +12,8 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
-and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, and 8 UUIDs as
-specified in :rfc:`9562` (which supersedes :rfc:`4122`).
+:func:`uuid7`, and :func:`uuid8` for generating version 1, 3, 4, 5, 7, and 8
+UUIDs as specified in :rfc:`9562` (which supersedes :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -153,8 +153,8 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: 3.14
-      Added UUID version 8.
+   .. versionchanged:: next
+      Added UUID versions 7 and 8.
 
 
 .. attribute:: UUID.is_safe
@@ -220,6 +220,13 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 .. index:: single: uuid5
+
+
+.. function:: uuid7()
+
+   .. versionadded:: next
+
+.. index:: single: uuid7
 
 
 .. function:: uuid8(a=None, b=None, c=None)
@@ -307,7 +314,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid8}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid7,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
@@ -323,8 +330,8 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-   .. versionadded:: 3.14
-      Allow generating UUID version 8.
+   .. versionchanged:: next
+      Allow generating UUID versions 7 and 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>
