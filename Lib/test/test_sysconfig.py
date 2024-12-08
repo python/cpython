@@ -53,6 +53,8 @@ class TestSysConfig(unittest.TestCase):
         os.uname = self._get_uname
         # saving the environment
         self.name = os.name
+        self.prefix = sys.prefix
+        self.exec_prefix = sys.exec_prefix
         self.platform = sys.platform
         self.version = sys.version
         self._framework = sys._framework
@@ -77,6 +79,8 @@ class TestSysConfig(unittest.TestCase):
         else:
             del os.uname
         os.name = self.name
+        sys.prefix = self.prefix
+        sys.exec_prefix = self.exec_prefix
         sys.platform = self.platform
         sys.version = self.version
         sys._framework = self._framework
@@ -652,6 +656,27 @@ class TestSysConfig(unittest.TestCase):
             system_config_vars.pop(key)
 
         self.assertEqual(system_config_vars, json_config_vars)
+
+    def test_sysconfig_config_vars_no_prefix_cache(self):
+        sys.prefix = 'prefix-AAA'
+        sys.exec_prefix = 'exec-prefix-AAA'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+        sys.prefix = 'prefix-BBB'
+        sys.exec_prefix = 'exec-prefix-BBB'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
 
 
 class MakefileTests(unittest.TestCase):
