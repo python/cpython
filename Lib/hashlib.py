@@ -231,6 +231,8 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     view = memoryview(buf)
     while True:
         size = fileobj.readinto(buf)
+        if size is None:
+            raise BlockingIOError("I/O operation would block.")
         if size == 0:
             break  # EOF
         digestobj.update(view[:size])
