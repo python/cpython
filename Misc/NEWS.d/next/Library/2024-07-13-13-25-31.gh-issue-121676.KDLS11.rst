@@ -1,0 +1,3 @@
+Now calling the Python implementation of the :meth:`functools.reduce` with a
+:term:`keyword argument` is raises a :exc:`DeprecationWarning`.
+This will be forbidden in Python 3.16 in order to match the C implementation.
