@@ -609,7 +609,7 @@ class TestRacesDoNotCrash(TestBase):
             for writer in writers:
                 writer.join()
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_binary_subscr_getitem(self):
         def get_items():
             class C:
@@ -1069,7 +1069,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_unpack_sequence_list(self):
         def get_items():
             items = []
@@ -1519,6 +1519,20 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
+        def binary_subscr_getitems():
+            class C:
+                def __init__(self, val):
+                    self.val = val
+                def __getitem__(self, item):
+                    return self.val
+            items = [C(i) for i in range(100)]
+            for i in range(100):
+                self.assertEqual(items[i][i], i)
+
+        binary_subscr_getitems()
+        self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
 
 if __name__ == "__main__":

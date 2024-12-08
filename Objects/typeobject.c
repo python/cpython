@@ -5692,6 +5692,62 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
     return can_cache;
 }
 
+int
+_PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor)
+{
+    int can_cache = 0;
+    if (!type) {
+        return -1;
+    }
+    BEGIN_TYPE_LOCK();
+    // This pointer is invalidated by PyType_Modified (see the comment on
+    // struct _specialization_cache):
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+    PyFunctionObject *func = (PyFunctionObject *)descriptor;
+    uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+    if (!_PyFunction_IsVersionValid(version)) {
+        can_cache = -1;
+        goto end;
+    }
+    #ifdef Py_GIL_DISABLED
+    can_cache = _PyObject_HasDeferredRefcount(descriptor);
+    #else
+    can_cache = 0;
+    #endif
+    FT_ATOMIC_STORE_PTR_RELEASE(ht->_spec_cache.getitem, descriptor);
+    FT_ATOMIC_STORE_UINT32_RELAXED(ht->_spec_cache.getitem_version, version);
+end:
+    END_TYPE_LOCK();
+    return can_cache;
+}
+
+PyObject *
+_PyType_GetItemFromCache(PyTypeObject *type)
+{
+    PyObject *res = NULL;
+    BEGIN_TYPE_LOCK();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+    res = ht->_spec_cache.getitem;
+    END_TYPE_LOCK();
+    return res;
+}
+
+PyObject *
+_PyType_GetItemFromCacheWithVersion(PyTypeObject *type, uint32_t *version)
+{
+    PyObject *res = NULL;
+    BEGIN_TYPE_LOCK();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+    res = ht->_spec_cache.getitem;
+    if (res == NULL) {
+        goto end;
+    }
+    *version = ht->_spec_cache.getitem_version;
+end:
+    END_TYPE_LOCK();
+    return res;
+}
+
 static void
 set_flags(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
