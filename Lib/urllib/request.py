@@ -903,9 +903,9 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.authenticated = {}
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
