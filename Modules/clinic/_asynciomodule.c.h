@@ -1566,4 +1566,66 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5d95a0ec229ffcd input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio_future_add_to_awaited_by__doc__,
+"future_add_to_awaited_by($module, fut, waiter, /)\n"
+"--\n"
+"\n"
+"Record that `fut` is awaited on by `waiter`.");
+
+#define _ASYNCIO_FUTURE_ADD_TO_AWAITED_BY_METHODDEF    \
+    {"future_add_to_awaited_by", _PyCFunction_CAST(_asyncio_future_add_to_awaited_by), METH_FASTCALL, _asyncio_future_add_to_awaited_by__doc__},
+
+static PyObject *
+_asyncio_future_add_to_awaited_by_impl(PyObject *module, PyObject *fut,
+                                       PyObject *waiter);
+
+static PyObject *
+_asyncio_future_add_to_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *fut;
+    PyObject *waiter;
+
+    if (!_PyArg_CheckPositional("future_add_to_awaited_by", nargs, 2, 2)) {
+        goto exit;
+    }
+    fut = args[0];
+    waiter = args[1];
+    return_value = _asyncio_future_add_to_awaited_by_impl(module, fut, waiter);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_asyncio_future_discard_from_awaited_by__doc__,
+"future_discard_from_awaited_by($module, fut, waiter, /)\n"
+"--\n"
+"\n"
+"Record that `fut` is no longer awaited on by `waiter`.");
+
+#define _ASYNCIO_FUTURE_DISCARD_FROM_AWAITED_BY_METHODDEF    \
+    {"future_discard_from_awaited_by", _PyCFunction_CAST(_asyncio_future_discard_from_awaited_by), METH_FASTCALL, _asyncio_future_discard_from_awaited_by__doc__},
+
+static PyObject *
+_asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
+                                             PyObject *waiter);
+
+static PyObject *
+_asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *fut;
+    PyObject *waiter;
+
+    if (!_PyArg_CheckPositional("future_discard_from_awaited_by", nargs, 2, 2)) {
+        goto exit;
+    }
+    fut = args[0];
+    waiter = args[1];
+    return_value = _asyncio_future_discard_from_awaited_by_impl(module, fut, waiter);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=66e3bc55c47360f0 input=a9049054013a1b77]*/

@@ -53,6 +53,9 @@ Python/pyhash.c	-	_Py_HashSecret	-
 ## thread-safe hashtable (internal locks)
 Python/parking_lot.c	-	buckets	-
 
+## data needed for introspecting asyncio state from debuggers and profilers
+Modules/_asynciomodule.c	-	AsyncioDebug	-
+
 
 ##################################
 ## state tied to Py_Main()
