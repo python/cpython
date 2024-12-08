@@ -110,6 +110,10 @@ class CAPITests(unittest.TestCase):
             options.extend((
                 ("_pystats", bool, None),
             ))
+        if support.is_apple:
+            options.extend((
+                ("use_system_logger", bool, None),
+            ))
 
         for name, option_type, sys_attr in options:
             with self.subTest(name=name, option_type=option_type,
