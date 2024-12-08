@@ -309,7 +309,7 @@ This might become (if it was an instruction):
 
 ### More examples
 
-For explanations see "Generating the interpreter" below.)
+For explanations see "Generating the interpreter" below.
 ```C
     op ( CHECK_HAS_INSTANCE_VALUES, (owner -- owner) ) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -371,7 +371,7 @@ For explanations see "Generating the interpreter" below.)
 
 A _family_ maps a specializable instruction to its specializations.
 
-Example: These opcodes all share the same instruction format):
+Example: These opcodes all share the same instruction format:
 ```C
     family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
@@ -393,7 +393,7 @@ which can be easily inserted. What is more complex is ensuring the correct stack
 and not generating excess pops and pushes.
 
 For example, in `CHECK_HAS_INSTANCE_VALUES`, `owner` occurs in the input, so it cannot be
-redefined. Thus it doesn't need to written and can be read without adjusting the stack pointer.
+redefined. Thus it doesn't need to be written and can be read without adjusting the stack pointer.
 The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
 
 ```C
