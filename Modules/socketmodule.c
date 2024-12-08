@@ -5574,27 +5574,19 @@ static PyType_Spec sock_spec = {
     .slots = sock_slots,
 };
 
-static PyObject *
-socket_getattr(PyObject *self, PyObject *name)
+static PyObject*
+socket_getattr(PyObject *mod, PyObject *name)
 {
-    PyObject *sock_type = PyType_FromSpec(&sock_spec);
-    if (sock_type == NULL) {
-        return NULL;
-    }
-    const char *attrname = PyUnicode_AsUTF8(name);
-    if (attrname == NULL) {
-        Py_DECREF(sock_type);
-        return NULL;
-    }
+    socket_state *state = get_module_state(mod);
 
-    if (!PyUnicode_EqualToUTF8(name, "SocketType")) {
-        PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and will be removed in Python 3.16. "
+    if (PyUnicode_EqualToUTF8(name, "SocketType") && state != NULL) {
+        PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and "
+                                             "will be removed in Python 3.16. "
                                              "Use socket.socket instead");
-        return sock_type;
+        return state->sock_type;
     }
 
-    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%s'", attrname);
-    Py_DECREF(sock_type);
+    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%U'", name);
     return NULL;
 }
 
