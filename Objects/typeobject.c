@@ -5723,6 +5723,9 @@ _PyType_GetItemFromCache(PyTypeObject *type)
     BEGIN_TYPE_LOCK();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
     res = ht->_spec_cache.getitem;
+    if (res == NULL || !PyFunction_Check(res)) {
+        res = NULL;
+    }
     END_TYPE_LOCK();
     return res;
 }
@@ -5735,6 +5738,10 @@ _PyType_GetItemFromCacheWithVersion(PyTypeObject *type, uint32_t *version)
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
     res = ht->_spec_cache.getitem;
     if (res == NULL) {
+        goto end;
+    }
+    if (!PyFunction_Check(res)) {
+        res = NULL;
         goto end;
     }
     *version = ht->_spec_cache.getitem_version;
