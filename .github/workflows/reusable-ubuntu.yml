@@ -11,16 +11,16 @@ on:
         required: false
         type: boolean
         default: false
+      os:
+         description: OS to run the job
+         required: true
+         type: string
 
 jobs:
   build_ubuntu_reusable:
-    name: 'build and test'
+    name: build and test (${{ inputs.os }})
     timeout-minutes: 60
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-aarch64]
+    runs-on: ${{ inputs.os }}
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
@@ -42,7 +42,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ inputs.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
@@ -84,7 +84,7 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
-      if: ${{ !inputs.free-threading}}
+      if: ${{ !inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: set -o pipefail; make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
     - name: Display build info
