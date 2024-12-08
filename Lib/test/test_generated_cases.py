@@ -1639,6 +1639,80 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_pop_dead_inputs_all_live(self):
+        input = """
+        inst(OP, (a, b --)) {
+            POP_DEAD_INPUTS();
+            HAM(a, b);
+            INPUTS_DEAD();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            _PyStackRef b;
+            b = stack_pointer[-1];
+            a = stack_pointer[-2];
+            HAM(a, b);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_pop_dead_inputs_some_live(self):
+        input = """
+        inst(OP, (a, b, c --)) {
+            POP_DEAD_INPUTS();
+            HAM(a);
+            INPUTS_DEAD();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            a = stack_pointer[-3];
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            HAM(a);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_pop_dead_inputs_with_output(self):
+        input = """
+        inst(OP, (a, b -- c)) {
+            POP_DEAD_INPUTS();
+            c = SPAM();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef c;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            c = SPAM();
+            stack_pointer[0] = c;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

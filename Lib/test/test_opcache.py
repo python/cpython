@@ -892,7 +892,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_module(self):
         def get_items():
             items = []
