@@ -159,11 +159,15 @@ static PyNumberMethods bool_as_number = {
 static void
 bool_dealloc(PyObject *boolean)
 {
+#ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref Booleans out of existence. Instead,
      * since bools are immortal, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
      */
     _Py_SetImmortal(boolean);
+#endif
 }
 
 /* The type object for bool.  Note that this cannot be subclassed! */
