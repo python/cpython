@@ -1954,6 +1954,10 @@
             break;
         }
 
+        case _CHECK_INIT_MATCHES_VERSIONS: {
+            break;
+        }
+
         case _CHECK_AND_ALLOCATE_OBJECT: {
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *null;
