@@ -46,6 +46,8 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
+     # Normalize path separators to backslashes first
+    p = p.replace('/', '\\')
     import ntpath
     import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
