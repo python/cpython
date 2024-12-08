@@ -2483,6 +2483,37 @@ memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
     return unpack_single(self, ptr, fmt);
 }
 
+/* Test the membership of an item. */
+static int
+memory_contains(PyObject *self, PyObject *value)
+{
+    PyObject *iter = PyObject_GetIter(self);
+    if (iter == NULL) {
+        return -1;
+    }
+
+    PyObject *item = NULL;
+    while (PyIter_NextItem(iter, &item)) {
+        if (item == NULL) {
+            Py_DECREF(iter);
+            return -1;
+        }
+        if (item == value) {
+            Py_DECREF(item);
+            Py_DECREF(iter);
+            return 1;
+        }
+        int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (contained != 0) {
+            Py_DECREF(iter);
+            return contained;
+        }
+    }
+    Py_DECREF(iter);
+    return 0;
+}
+
 static inline int
 init_slice(Py_buffer *base, PyObject *key, int dim)
 {
@@ -2741,10 +2772,9 @@ static PyMappingMethods memory_as_mapping = {
 
 /* As sequence */
 static PySequenceMethods memory_as_sequence = {
-        memory_length,                    /* sq_length */
-        0,                                /* sq_concat */
-        0,                                /* sq_repeat */
-        memory_item,                      /* sq_item */
+    .sq_length = memory_length,
+    .sq_item = memory_item,
+    .sq_contains = memory_contains
 };
 
 
