@@ -831,15 +831,12 @@ from os import this_will_never_exist
 """
         ]
         for script in scripts:
-            with self.subTest(script=script), os_helper.temp_dir() as tmp:
-                with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
-                    f.write(script)
-
+            with self.subTest(script=script):
                 expected_error = (
                     b"cannot import name 'this_will_never_exist' "
                     b"from 'os' \\(unknown location\\)"
                 )
-                popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
+                popen = script_helper.spawn_python("-c", script)
                 stdout, stderr = popen.communicate()
                 self.assertRegex(stdout, expected_error)
 
