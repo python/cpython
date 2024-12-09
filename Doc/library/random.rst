@@ -741,7 +741,7 @@ The following options are accepted:
 .. option:: -f <N>
             --float <N>
 
-   Print a random floating-point number between 1 and N inclusive,
+   Print a random floating-point number between 0 and N inclusive,
    using :meth:`uniform`.
 
 If no options are given, the output depends on the input:

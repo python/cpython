@@ -1,4 +1,0 @@
-Previously, incorrect usage of :keyword:`await` or asynchronous
-comprehensions in code removed by the :option:`-O` option was not flagged by
-the Python compiler. Now, such code raises :exc:`SyntaxError`. Patch by
-Jelle Zijlstra.

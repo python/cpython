@@ -15,6 +15,7 @@ import threading
 import unittest
 import weakref
 import warnings
+from ast import literal_eval
 from unittest import mock
 
 from http.server import HTTPServer
@@ -56,24 +57,8 @@ ONLYCERT = data_file('certdata', 'ssl_cert.pem')
 ONLYKEY = data_file('certdata', 'ssl_key.pem')
 SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
 SIGNING_CA = data_file('certdata', 'pycacert.pem')
-PEERCERT = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
-
+with open(data_file('certdata', 'keycert3.pem.reference')) as file:
+    PEERCERT = literal_eval(file.read())
 
 def simple_server_sslcontext():
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

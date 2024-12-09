@@ -179,10 +179,14 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+#ifdef __APPLE__
+    int use_system_logger;
+#endif
 
     int cpu_count;
 #ifdef Py_GIL_DISABLED
     int enable_gil;
+    int tlbc_enabled;
 #endif
 
     /* --- Path configuration inputs ------------ */
@@ -312,6 +316,10 @@ PyAPI_FUNC(int) PyInitConfig_SetStrList(PyInitConfig *config,
     const char *name,
     size_t length,
     char * const *items);
+
+PyAPI_FUNC(int) PyInitConfig_AddModule(PyInitConfig *config,
+    const char *name,
+    PyObject* (*initfunc)(void));
 
 PyAPI_FUNC(int) Py_InitializeFromInitConfig(PyInitConfig *config);
 
