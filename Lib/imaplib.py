@@ -1419,6 +1419,7 @@ class Idler:
         if 'IDLE' not in imap.capabilities:
             raise imap.error("Server does not support IMAP4 IDLE")
         self._duration = duration
+        self._deadline = None
         self._imap = imap
         self._tag = None
         self._sock_timeout = None
@@ -1458,6 +1459,9 @@ class Idler:
         self._sock_timeout = imap.sock.gettimeout() if imap.sock else None
         if self._sock_timeout is not None:
             imap.sock.settimeout(None)  # Socket timeout would break IDLE
+
+        if self._duration is not None:
+            self._deadline = time.monotonic() + self._duration
 
         self._old_state = imap.state
         imap.state = 'IDLING'
@@ -1582,24 +1586,17 @@ class Idler:
         except StopIteration:
             return
 
-        start = time.monotonic()
-
         while response := self._pop(interval, None):
             yield response
 
-        if self._duration is not None:
-            elapsed = time.monotonic() - start
-            self._duration = max(self._duration - elapsed, 0)
-
     def __next__(self):
         imap = self._imap
-        start = time.monotonic()
 
-        typ, data = self._pop(self._duration)
-
-        if self._duration is not None:
-            elapsed = time.monotonic() - start
-            self._duration = max(self._duration - elapsed, 0)
+        if self._duration is None:
+            timeout = None
+        else:
+            timeout = self._deadline - time.monotonic()
+        typ, data = self._pop(timeout)
 
         if not typ:
             if __debug__ and imap.debug >= 4:
