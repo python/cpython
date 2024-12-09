@@ -151,12 +151,12 @@ atexit_callfuncs(struct atexit_state *state)
         }
 
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
-        PyObject *the_func = Py_NewRef(cb->func);
-        PyObject *the_args = cb->args;
-        PyObject *the_kwargs = cb->kwargs;
+        PyObject *func = Py_NewRef(cb->func);
+        PyObject *args = cb->args;
+        PyObject *kwargs = cb->kwargs;
         // Unlock for re-entrancy problems
         _PyAtExit_UNLOCK(state);
-        PyObject *res = PyObject_Call(the_func, the_args, the_kwargs);
+        PyObject *res = PyObject_Call(func, args, kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
                 "Exception ignored in atexit callback %R", the_func);
@@ -164,7 +164,7 @@ atexit_callfuncs(struct atexit_state *state)
         else {
             Py_DECREF(res);
         }
-        Py_DECREF(the_func);
+        Py_DECREF(func);
         _PyAtExit_LOCK(state);
     }
 
