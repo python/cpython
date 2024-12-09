@@ -981,6 +981,9 @@
 /* Define to 1 if you have the `pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
+/* Define to 1 if you have the `pthread_getname_np' function. */
+#undef HAVE_PTHREAD_GETNAME_NP
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
@@ -989,6 +992,9 @@
 
 /* Define to 1 if you have the `pthread_kill' function. */
 #undef HAVE_PTHREAD_KILL
+
+/* Define to 1 if you have the `pthread_setname_np' function. */
+#undef HAVE_PTHREAD_SETNAME_NP
 
 /* Define to 1 if you have the `pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
@@ -1649,6 +1655,9 @@
 
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
+
+/* Maximum length in bytes of a thread name */
+#undef PYTHREAD_NAME_MAXLEN
 
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
