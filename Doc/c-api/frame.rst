@@ -145,12 +145,11 @@ Frame Locals Proxies
 
 .. versionadded:: 3.13
 
-In older versions of :term:`CPython`, the exposed local variables dictionary
-(via :attr:`~frame.f_locals`, :c:func:`PyFrame_GetLocals`, or :func:`locals`)
-wasn't consistent with the actual local variables, which lead to all sorts of
-weird issues. In Python 3.13, instead of using a dictionary to expose locals,
-a special proxy type that retains consistency when manipulating
-scopes is used.
+The :attr:`~frame.f_locals` attribute on a :ref:`frame object <frame-objects>`
+is an instance of a "frame-locals proxy". The proxy object exposes a
+write-through view of the underlying locals dictionary for the frame. This
+ensures that the variables exposed by ``f_locals`` are always up to date with
+the live local variables in the frame itself.
 
 See :pep:`667` for more information.
 
