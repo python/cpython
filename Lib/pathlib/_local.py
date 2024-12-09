@@ -66,7 +66,7 @@ class _PathStatus:
 
     def __init__(self, path):
         self._path = str(path)
-        self._repr = f"<{type(path).__name__}.info>"
+        self._repr = f"<{type(path).__name__}.status>"
 
     def __repr__(self):
         return self._repr
@@ -77,7 +77,7 @@ class _PathStatus:
         except AttributeError:
             try:
                 self._link_mode = os.lstat(self._path).st_mode
-            except (OSError, ValueError):
+            except FileNotFoundError:
                 self._link_mode = 0
             if not self.is_symlink():
                 # Not a symlink, so stat() will give the same result.
@@ -90,7 +90,7 @@ class _PathStatus:
         except AttributeError:
             try:
                 self._file_mode = os.stat(self._path).st_mode
-            except (OSError, ValueError):
+            except FileNotFoundError:
                 self._file_mode = 0
             return self._file_mode
 
