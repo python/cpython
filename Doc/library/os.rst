@@ -3665,7 +3665,7 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   CVS subdirectory::
+   \_\_pycache\_\_ subdirectory::
 
       import os
       from os.path import join, getsize
@@ -3673,8 +3673,8 @@ features:
           print(root, "consumes", end=" ")
           print(sum(getsize(join(root, name)) for name in files), end=" ")
           print("bytes in", len(files), "non-directory files")
-          if 'CVS' in dirs:
-              dirs.remove('CVS')  # don't visit CVS directories
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example (simple implementation of :func:`shutil.rmtree`),
    walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
