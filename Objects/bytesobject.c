@@ -2543,7 +2543,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         /* Check if we have a second digit */
         if (str >= end) {
-            invalid_char = -2;
+            invalid_char = -1;
             goto error;
         }
 
@@ -2560,7 +2560,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
-    if (invalid_char == -2) {
+    if (invalid_char == -1) {
         PyErr_SetString(PyExc_ValueError,
                         "fromhex() arg must be of even length");
     } else {
