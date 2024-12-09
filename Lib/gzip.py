@@ -5,6 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
+from datetime import datetime
 import struct, sys, time, os
 import zlib
 import builtins
@@ -224,6 +225,8 @@ class GzipFile(_compression.BaseStream):
                                              -zlib.MAX_WBITS,
                                              zlib.DEF_MEM_LEVEL,
                                              0)
+            if isinstance(mtime, datetime):
+                mtime = mtime.timestamp()
             self._write_mtime = mtime
             self._buffer_size = _WRITE_BUFFER_SIZE
             self._buffer = io.BufferedWriter(_WriteBufferStream(self),
@@ -278,6 +281,8 @@ class GzipFile(_compression.BaseStream):
         mtime = self._write_mtime
         if mtime is None:
             mtime = time.time()
+        elif isinstance(mtime, datetime):
+            mtime = mtime.timestamp()
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
             xfl = b'\002'
@@ -591,6 +596,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     gzip_data = zlib.compress(data, level=compresslevel, wbits=31)
     if mtime is None:
         mtime = time.time()
+    elif isinstance(mtime, datetime):
+        mtime = mtime.timestamp()
     # Reuse gzip header created by zlib, replace mtime and OS byte for
     # consistency.
     header = struct.pack("<4sLBB", gzip_data, int(mtime), gzip_data[8], 255)
