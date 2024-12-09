@@ -668,7 +668,7 @@ Export API
    :class:`int` objects, used internally for integers with "big enough"
    absolute value.
 
-   See also :data:`sys.int_info` which exposes similar information to Python.
+   See also :data:`sys.int_info` which exposes similar information in Python.
 
    .. c:member:: uint8_t bits_per_digit
 
