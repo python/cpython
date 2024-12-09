@@ -310,8 +310,8 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.idle(duration=None)
 
-   Return an :class:`!Idler`: an iterable context manager implementing the IMAP4 ``IDLE``
-   command as defined in :rfc:`2177`.
+   Return an :class:`!Idler`: an iterable context manager implementing the
+   IMAP4 ``IDLE`` command as defined in :rfc:`2177`.
 
    The returned object sends the ``IDLE`` command when activated by the
    :keyword:`with` statement, produces IMAP untagged responses via the
@@ -384,10 +384,10 @@ An :class:`IMAP4` instance has the following methods:
       in this situation.
 
       There is no such fallback for
-      :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`, which will yield endless
-      responses and block indefinitely for each one.  It is therefore advised
-      not to use :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>` with an
-      :class:`IMAP4_stream` connection on Windows.
+      :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`, which will yield
+      endless responses and block indefinitely for each one.  It is therefore
+      advised not to use :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`
+      with an :class:`IMAP4_stream` connection on Windows.
 
    .. note::
 
