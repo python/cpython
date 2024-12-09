@@ -84,12 +84,10 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
 
     # critical section
     with logging._lock:
-        # Handle removing specific handlers if specified
-        remove_handlers = cp.defaults().get("remove_handlers", "")
-        remove_handlers = [h.strip() for h in remove_handlers.split(",") if h.strip()]
-
-        # Clear only specified handlers
         if disable_existing_loggers:
+            remove_handlers = cp.defaults().get("remove_handlers", "")
+            remove_handlers = [h.strip() for h in remove_handlers.split(",") if h.strip()]
+
             _clearExistingHandlers(remove_handlers)
 
         # Handlers add themselves to logging._handlers
@@ -297,14 +295,25 @@ def _clearExistingHandlers(handlers_to_clear=None):
         return
     handlers_to_remove = []
 
-    # Handle root logger handlers
+def _clearExistingHandlers(handlers_to_clear=None):
+    """
+    Remove and shutdown only the specified handlers.
+    """
+    if not handlers_to_clear:
+        return
+
+    handlers_to_remove = []
+
     root = logging.root
+
+    # Remove from root logger
     for handler in root.handlers[:]:
         if handler.name in handlers_to_clear:
             root.removeHandler(handler)
             handlers_to_remove.append(handler)
+            handler.clear()
 
-    # Handle handlers from other loggers
+    # Remove from other loggers
     for logger_name, logger in root.manager.loggerDict.items():
         if isinstance(logger, logging.Logger):
             for handler in logger.handlers[:]:
@@ -312,8 +321,10 @@ def _clearExistingHandlers(handlers_to_clear=None):
                     logger.removeHandler(handler)
                     handlers_to_remove.append(handler)
 
-    # Shutdown the removed handlers
     logging.shutdown(handlers_to_remove)
+
+    del handlers_to_clear
+
 
 
 IDENTIFIER = re.compile('^[a-z_][a-z0-9_]*$', re.I)
@@ -602,7 +613,8 @@ class DictConfigurator(BaseConfigurator):
                 disable_existing = config.pop('disable_existing_loggers', True)
 
                 if disable_existing:
-                    _clearExistingHandlers(remove_handlers)
+                    handlers_to_close = config.pop('remove_handlers',[])
+                    _clearExistingHandlers(handlers_to_close)
 
                 # Do formatters first - they don't refer to anything else
                 formatters = config.get('formatters', EMPTY_DICT)
@@ -683,7 +695,7 @@ class DictConfigurator(BaseConfigurator):
                             i += 1
                         existing.remove(name)
                     try:
-                        self.configure_logger(name, loggers[name])
+                        self.configure_logger(name, loggers[name], disable_existing_handler=disable_existing)
                     except Exception as e:
                         raise ValueError('Unable to configure logger '
                                          '%r' % name) from e
@@ -924,7 +936,7 @@ class DictConfigurator(BaseConfigurator):
             except Exception as e:
                 raise ValueError('Unable to add handler %r' % h) from e
 
-    def common_logger_config(self, logger, config, incremental=False):
+    def common_logger_config(self, logger, config, incremental=False, disable_existing_handler=True):
         """
         Perform configuration which is common to root and non-root loggers.
         """
@@ -932,9 +944,10 @@ class DictConfigurator(BaseConfigurator):
         if level is not None:
             logger.setLevel(logging._checkLevel(level))
         if not incremental:
-            #Remove any existing handlers
-            for h in logger.handlers[:]:
-                logger.removeHandler(h)
+            if disable_existing_handler:
+                #Remove any existing handlers if disable_existing_handler is True
+                for h in logger.handlers[:]:
+                    logger.removeHandler(h)
             handlers = config.get('handlers', None)
             if handlers:
                 self.add_handlers(logger, handlers)
@@ -942,10 +955,10 @@ class DictConfigurator(BaseConfigurator):
             if filters:
                 self.add_filters(logger, filters)
 
-    def configure_logger(self, name, config, incremental=False):
+    def configure_logger(self, name, config, incremental=False, disable_existing_handler=True):
         """Configure a non-root logger from a dictionary."""
         logger = logging.getLogger(name)
-        self.common_logger_config(logger, config, incremental)
+        self.common_logger_config(logger, config, incremental, disable_existing_handler)
         logger.disabled = False
         propagate = config.get('propagate', None)
         if propagate is not None:

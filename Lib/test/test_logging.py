@@ -3554,7 +3554,6 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
-
     def test_config16_ok(self):
         self.apply_config(self.config16)
         h = logging._handlers['hand1']
