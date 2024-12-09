@@ -1509,6 +1509,9 @@ class Pathname_Tests(unittest.TestCase):
         # Percent-encoded forward slashes are preserved for backwards compatibility
         self.assertEqual(fn('C:/foo%2fbar'), 'C:\\foo/bar')
         self.assertEqual(fn('//server/share/foo%2fbar'), '\\\\server\\share\\foo/bar')
+        # Colon in filenames, both with drive specifier and without
+        self.assertEqual(fn('//host/path/spam.foo:bar'), '\\\\host\\path\\spam.foo:bar')
+        self.assertEqual(fn('///c:/path/spam.foo:bar'), 'c:\\path\\spam.foo:bar')
         # Round-tripping
         paths = ['C:',
                  r'\C\test\\',
