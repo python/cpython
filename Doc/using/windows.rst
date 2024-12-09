@@ -852,7 +852,7 @@ Virtual environments
 
 If the launcher is run with no explicit Python version specification, and a
 virtual environment (created with the standard library :mod:`venv` module or
-the external ``virtualenv`` tool) active, the launcher will run the virtual
+the external ``virtualenv`` tool) is active, the launcher will run the virtual
 environment's interpreter rather than the global one.  To run the global
 interpreter, either deactivate the virtual environment, or explicitly specify
 the global Python version.
