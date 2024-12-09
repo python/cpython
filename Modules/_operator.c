@@ -1634,20 +1634,17 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     if (kwds && PyDict_Size(kwds)) {
         PyObject *values = PyDict_Values(kwds);
         if (!values) {
-            PyErr_NoMemory();
             return -1;
         }
         PyObject *values_tuple = PySequence_Tuple(values);
         Py_DECREF(values);
         if (!values_tuple) {
-            PyErr_NoMemory();
             return -1;
         }
         if (PyTuple_GET_SIZE(args)) {
             mc->vectorcall_args = PySequence_Concat(args, values_tuple);
             Py_DECREF(values_tuple);
-            if (mc->vectorcall_args == 0) {
-                PyErr_NoMemory();
+            if (mc->vectorcall_args == NULL) {
                 return -1;
             }
         }
@@ -1656,8 +1653,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
         }
         mc->vectorcall_kwnames = PySequence_Tuple(kwds);
         if (!mc->vectorcall_kwnames) {
-                PyErr_NoMemory();
-                return -1;
+            return -1;
         }
     }
     else {
@@ -1666,7 +1662,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     }
 
     mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
-    return 1;
+    return 0;
 }
 
 /* AC 3.5: variable number of arguments, not currently support by AC */
