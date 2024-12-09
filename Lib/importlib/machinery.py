@@ -1,5 +1,6 @@
 """The machinery of importlib: finders, loaders, hooks, etc."""
 
+import warnings
 from ._bootstrap import ModuleSpec
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter
@@ -27,3 +28,15 @@ __all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
            'NamespaceLoader', 'OPTIMIZED_BYTECODE_SUFFIXES', 'PathFinder',
            'SOURCE_SUFFIXES', 'SourceFileLoader', 'SourcelessFileLoader',
            'WindowsRegistryFinder', 'all_suffixes']
+
+
+def __getattr__(name):
+    if name in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES', 'WindowsRegistryFinder'):
+        if name in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES'):
+            warnings.warn(f"The '{name}' module is deprecated.",
+                          DeprecationWarning, stacklevel=2)
+            return name
+        else:
+            warnings.warn(f"The '{name}' class is deprecated.",
+                          DeprecationWarning, stacklevel=2)
+            return name
