@@ -91,7 +91,7 @@ async def find_device(initial_devices):
             await asyncio.sleep(1)
         elif len(new_devices) == 1:
             udid = new_devices.pop()
-            print(f"{datetime.now():%Y%m%d %H%M%S}: New test simulator detected")
+            print(f"{datetime.now():%Y-%m-%d %H:%M:%S}: New test simulator detected")
             print(f"UDID: {udid}")
             return udid
         else:
