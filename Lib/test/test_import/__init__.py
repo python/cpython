@@ -815,6 +815,14 @@ class ImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+        expected_error = (
+            b"cannot import name 'this_will_never_exist' "
+            b"from 'sys' (unknown location)"
+        )
+        popen = script_helper.spawn_python("-c", "from sys import this_will_never_exist")
+        stdout, stderr = popen.communicate()
+        self.assertIn(expected_error, stdout)
+
 
         scripts = [
             """
@@ -834,11 +842,11 @@ from os import this_will_never_exist
             with self.subTest(script=script):
                 expected_error = (
                     b"cannot import name 'this_will_never_exist' "
-                    b"from 'os' \\(unknown location\\)"
+                    b"from 'os' (unknown location)"
                 )
                 popen = script_helper.spawn_python("-c", script)
                 stdout, stderr = popen.communicate()
-                self.assertRegex(stdout, expected_error)
+                self.assertIn(expected_error, stdout)
 
     def test_script_shadowing_stdlib(self):
         script_errors = [
