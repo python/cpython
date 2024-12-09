@@ -66,21 +66,6 @@ PyDoc_STRVAR(dict___contains____doc__,
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
 
-static PyObject *
-dict___contains___impl(PyDictObject *self, PyObject *key);
-
-static PyObject *
-dict___contains__(PyDictObject *self, PyObject *key)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = dict___contains___impl(self, key);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(dict_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -327,4 +312,4 @@ dict_values(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl(self);
 }
-/*[clinic end generated code: output=c8fda06bac5b05f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3dd5f3fb8122aef input=a9049054013a1b77]*/

@@ -1,5 +1,5 @@
-:mod:`errno` --- Standard errno system symbols
-==============================================
+:mod:`!errno` --- Standard errno system symbols
+===============================================
 
 .. module:: errno
    :synopsis: Standard errno system symbols.
@@ -611,6 +611,13 @@ defined by the module.  The specific list of defined symbols is available as
 .. data:: EHOSTUNREACH
 
    No route to host
+
+
+.. data:: EHWPOISON
+
+   Memory page has hardware error.
+
+   .. versionadded:: next
 
 
 .. data:: EALREADY

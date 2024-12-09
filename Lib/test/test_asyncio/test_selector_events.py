@@ -805,6 +805,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 
+    def test_writelines_pauses_protocol(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+        transport.writelines([data])
+        self.assertTrue(self.protocol.pause_writing.called)
+        self.assertTrue(self.sock.send.called)
+        self.assertTrue(self.loop.writers)
+
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')
@@ -1280,11 +1292,10 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
-        transport._buffer.append((b'data', ('0.0.0.0', 12345)))
-        transport.sendto(b'', ())
-        self.assertFalse(self.sock.sendto.called)
+        transport.sendto(b'', ('0.0.0.0', 1234))
+        self.assertTrue(self.sock.sendto.called)
         self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
+            self.sock.sendto.call_args[0], (b'', ('0.0.0.0', 1234)))
 
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
@@ -1317,6 +1328,18 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
+            list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1][0], bytes)
+
+    def test_sendto_buffer_nodata(self):
+        data2 = b''
+        transport = self.datagram_transport()
+        transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport.sendto(data2, ('0.0.0.0', 12345))
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual(
+            [(b'data1', ('0.0.0.0', 12345)),
+             (b'', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
 

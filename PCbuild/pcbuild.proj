@@ -77,7 +77,7 @@
     <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->
-    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testclinic;_testclinic_limited" />
+    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testlimitedcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testclinic;_testclinic_limited" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
     <TestModules Include="xxlimited_35" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">

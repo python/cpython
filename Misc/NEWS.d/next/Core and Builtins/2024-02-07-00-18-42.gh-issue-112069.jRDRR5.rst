@@ -1,1 +1,0 @@
-Adapt :class:`set` and :class:`frozenset` methods to Argument Clinic.

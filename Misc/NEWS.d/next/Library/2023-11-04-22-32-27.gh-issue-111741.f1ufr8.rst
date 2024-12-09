@@ -1,1 +1,0 @@
-Recognise ``image/webp`` as a standard format in the :mod:`mimetypes` module.

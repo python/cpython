@@ -63,7 +63,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._called_connection_lost = False
         self._eof_written = False
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -167,7 +167,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
             self._called_connection_lost = True
 
@@ -487,9 +487,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
 
-        if not data:
-            return
-
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
@@ -502,7 +499,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data)
+        self._buffer_size += len(data) + 8  # include header bytes
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -724,6 +721,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return await self._proactor.connect(sock, address)
 
     async def sock_accept(self, sock):

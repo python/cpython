@@ -26,6 +26,15 @@ terms of the MIT license. A copy of the license can be found in the file
 // Allocation
 // ------------------------------------------------------
 
+#if (MI_DEBUG>0)
+static inline void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
+  size_t offset = (size_t)page->debug_offset;
+  if (offset < size) {
+    memset((char*)block + offset, c, size - offset);
+  }
+}
+#endif
+
 // Fast allocation in a page: just pop from the free list.
 // Fall back to generic allocation only if the list is empty.
 extern inline void* _mi_page_malloc(mi_heap_t* heap, mi_page_t* page, size_t size, bool zero) mi_attr_noexcept {
@@ -65,7 +74,7 @@ extern inline void* _mi_page_malloc(mi_heap_t* heap, mi_page_t* page, size_t siz
 
 #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !MI_TSAN
   if (!zero && !mi_page_is_huge(page)) {
-    memset(block, MI_DEBUG_UNINIT, mi_page_usable_block_size(page));
+    mi_debug_fill(page, block, MI_DEBUG_UNINIT, mi_page_usable_block_size(page));
   }
 #elif (MI_SECURE!=0)
   if (!zero) { block->next = 0; } // don't leak internal data
@@ -228,7 +237,7 @@ static inline bool mi_check_is_double_free(const mi_page_t* page, const mi_block
   if (((uintptr_t)n & (MI_INTPTR_SIZE-1))==0 &&  // quick check: aligned pointer?
       (n==NULL || mi_is_in_same_page(block, n))) // quick check: in same page or NULL?
   {
-    // Suspicous: decoded value a in block is in the same page (or NULL) -- maybe a double free?
+    // Suspicious: decoded value a in block is in the same page (or NULL) -- maybe a double free?
     // (continue in separate function to improve code generation)
     is_double_free = mi_check_is_double_freex(page, block);
   }
@@ -426,7 +435,7 @@ static mi_decl_noinline void _mi_free_block_mt(mi_page_t* page, mi_block_t* bloc
 
   #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !MI_TSAN        // note: when tracking, cannot use mi_usable_size with multi-threading
   if (segment->kind != MI_SEGMENT_HUGE) {                  // not for huge segments as we just reset the content
-    memset(block, MI_DEBUG_FREED, mi_usable_size(block));
+    mi_debug_fill(page, block, MI_DEBUG_FREED, mi_usable_size(block));
   }
   #endif
 
@@ -480,7 +489,7 @@ static inline void _mi_free_block(mi_page_t* page, bool local, mi_block_t* block
     mi_check_padding(page, block);
     #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !MI_TSAN
     if (!mi_page_is_huge(page)) {   // huge page content may be already decommitted
-      memset(block, MI_DEBUG_FREED, mi_page_block_size(page));
+      mi_debug_fill(page, block, MI_DEBUG_FREED, mi_page_block_size(page));
     }
     #endif
     mi_block_set_next(page, block, page->local_free);
@@ -575,7 +584,7 @@ void mi_free(void* p) mi_attr_noexcept
       mi_check_padding(page, block);
       mi_stat_free(page, block);
       #if (MI_DEBUG>0) && !MI_TRACK_ENABLED  && !MI_TSAN
-      memset(block, MI_DEBUG_FREED, mi_page_block_size(page));
+      mi_debug_fill(page, block, MI_DEBUG_FREED, mi_page_block_size(page));
       #endif
       mi_track_free_size(p, mi_page_usable_size_of(page,block)); // faster then mi_usable_size as we already know the page and that p is unaligned
       mi_block_set_next(page, block, page->local_free);
@@ -600,7 +609,10 @@ bool _mi_free_delayed_block(mi_block_t* block) {
   // get segment and page
   const mi_segment_t* const segment = _mi_ptr_segment(block);
   mi_assert_internal(_mi_ptr_cookie(segment) == segment->cookie);
+#ifndef Py_GIL_DISABLED
+  // The GC traverses heaps of other threads, which can trigger this assert.
   mi_assert_internal(_mi_thread_id() == segment->thread_id);
+#endif
   mi_page_t* const page = _mi_segment_page_of(segment, block);
 
   // Clear the no-delayed flag so delayed freeing is used again for this page.

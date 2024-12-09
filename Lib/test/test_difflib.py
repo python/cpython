@@ -272,10 +272,30 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('content="text/html; charset=us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
+class TestDiffer(unittest.TestCase):
+    def test_close_matches_aligned(self):
+        # Of the 4 closely matching pairs, we want 1 to match with 3,
+        # and 2 with 4, to align with a "top to bottom" mental model.
+        a = ["cat\n", "dog\n", "close match 1\n", "close match 2\n"]
+        b = ["close match 3\n", "close match 4\n", "kitten\n", "puppy\n"]
+        m = difflib.Differ().compare(a, b)
+        self.assertEqual(list(m),
+                           ['- cat\n',
+                            '- dog\n',
+                            '- close match 1\n',
+                            '?             ^\n',
+                            '+ close match 3\n',
+                            '?             ^\n',
+                            '- close match 2\n',
+                            '?             ^\n',
+                            '+ close match 4\n',
+                            '?             ^\n',
+                            '+ kitten\n',
+                            '+ puppy\n'])
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
-        args = ['one', 'two', 'Original', 'Current',
+        args = [['one'], ['two'], 'Original', 'Current',
             '2005-01-26 23:30:50', '2010-04-02 10:20:52']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], [
@@ -287,7 +307,7 @@ class TestOutputFormat(unittest.TestCase):
                            "--- Current\t2010-04-02 10:20:52"])
 
     def test_no_trailing_tab_on_empty_filedate(self):
-        args = ['one', 'two', 'Original', 'Current']
+        args = [['one'], ['two'], 'Original', 'Current']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], ["--- Original", "+++ Current"])
 
@@ -427,6 +447,28 @@ class TestBytes(unittest.TestCase):
                                     lineterm=b'')
         assertDiff(expect, actual)
 
+
+class TestInputTypes(unittest.TestCase):
+    def _assert_type_error(self, msg, generator, *args):
+        with self.assertRaises(TypeError) as ctx:
+            list(generator(*args))
+        self.assertEqual(msg, str(ctx.exception))
+
+    def test_input_type_checks(self):
+        unified = difflib.unified_diff
+        context = difflib.context_diff
+
+        expect = "input must be a sequence of strings, not str"
+        self._assert_type_error(expect, unified, 'a', ['b'])
+        self._assert_type_error(expect, context, 'a', ['b'])
+
+        self._assert_type_error(expect, unified, ['a'], 'b')
+        self._assert_type_error(expect, context, ['a'], 'b')
+
+        expect = "lines to compare must be str, not NoneType (None)"
+        self._assert_type_error(expect, unified, ['a'], [None])
+        self._assert_type_error(expect, context, ['a'], [None])
+
     def test_mixed_types_content(self):
         # type of input content must be consistent: all str or all bytes
         a = [b'hello']
@@ -475,10 +517,6 @@ class TestBytes(unittest.TestCase):
         b = ['bar\n']
         list(difflib.unified_diff(a, b, 'a', 'b', datea, dateb))
 
-    def _assert_type_error(self, msg, generator, *args):
-        with self.assertRaises(TypeError) as ctx:
-            list(generator(*args))
-        self.assertEqual(msg, str(ctx.exception))
 
 class TestJunkAPIs(unittest.TestCase):
     def test_is_line_junk_true(self):

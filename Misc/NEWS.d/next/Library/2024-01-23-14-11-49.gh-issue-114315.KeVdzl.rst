@@ -1,2 +1,0 @@
-Make :class:`threading.Lock` a real class, not a factory function. Add
-``__new__`` to ``_thread.lock`` type.

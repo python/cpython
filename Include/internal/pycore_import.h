@@ -11,7 +11,6 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
@@ -21,15 +20,16 @@ PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
-extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
+extern void _PyImport_ReInitLock(PyInterpreterState *interp);
 
+// This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
-extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
-                                          PyObject *, PyObject *);
 
 // Export for many shared extensions, like '_json'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
@@ -51,9 +51,9 @@ struct _import_runtime_state {
         PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
-           and only if they support multiple initialization (m_size >- 0)
+           and only if they support multiple initialization (m_size >= 0)
            or are imported in the main interpreter.
-           This is initialized lazily in _PyImport_FixupExtensionObject().
+           This is initialized lazily in fix_up_extension() in import.c.
            Modules are added there and looked up in _imp.find_extension(). */
         _Py_hashtable_t *hashtable;
     } extensions;
@@ -95,15 +95,11 @@ struct _import_state {
 #endif
     PyObject *import_func;
     /* The global import lock. */
-    struct {
-        PyThread_type_lock mutex;
-        unsigned long thread;
-        int level;
-    } lock;
+    _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
-        _PyTime_t accumulated;
+        PyTime_t accumulated;
         int header;
     } find_and_load;
 };
@@ -124,11 +120,6 @@ struct _import_state {
 #define IMPORTS_INIT \
     { \
         DLOPENFLAGS_INIT \
-        .lock = { \
-            .mutex = NULL, \
-            .thread = PYTHREAD_INVALID_THREAD_ID, \
-            .level = 0, \
-        }, \
         .find_and_load = { \
             .header = 1, \
         }, \
@@ -181,11 +172,6 @@ extern void _PyImport_FiniCore(PyInterpreterState *interp);
 extern void _PyImport_FiniExternal(PyInterpreterState *interp);
 
 
-#ifdef HAVE_FORK
-extern PyStatus _PyImport_ReInitLock(PyInterpreterState *interp);
-#endif
-
-
 extern PyObject* _PyImport_GetBuiltinModuleNames(void);
 
 struct _module_alias {
@@ -206,6 +192,19 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
+#ifdef Py_GIL_DISABLED
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), resolve the transient request depending on the
+// state of the module argument:
+// - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
+//   call _PyEval_DisableGIL().
+// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
+//   enabled permanently, issue a warning referencing the module's name.
+//
+// This function may raise an exception.
+extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+#endif
 
 #ifdef __cplusplus
 }

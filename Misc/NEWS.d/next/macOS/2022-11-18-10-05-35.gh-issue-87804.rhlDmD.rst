@@ -1,1 +1,0 @@
-On macOS the result of ``os.statvfs`` and ``os.fstatvfs`` now correctly report the size of very large disks, in previous versions the reported number of blocks was wrong for disks with at least 2**32 blocks.

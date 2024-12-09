@@ -1,3 +1,0 @@
-Add *filter* keyword-only parameter to
-:meth:`sqlite3.Connection.iterdump` for filtering database objects to dump.
-Patch by Mariusz Felisiak.

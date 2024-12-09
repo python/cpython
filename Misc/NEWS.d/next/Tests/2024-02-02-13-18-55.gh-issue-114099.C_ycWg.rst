@@ -1,1 +1,0 @@
-Added test exclusions required to run the test suite on iOS.
