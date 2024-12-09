@@ -2517,17 +2517,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
     str = PyUnicode_1BYTE_DATA(string);
-    for (Py_ssize_t i = 0; i < hexlen; i++) {
-        if (!Py_ISSPACE(str[i])) {
-            real_len++;
-        }
-    }
-    if (real_len % 2 != 0) {
-        PyErr_SetString(PyExc_ValueError,
-                       "fromhex() arg must be of even length");
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
-    }
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
@@ -2537,14 +2526,13 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
-        if (Py_ISSPACE(*str)) {
-            do {
-                str++;
-            } while (Py_ISSPACE(*str));
-            if (str >= end)
-                break;
+        while (str < end && Py_ISSPACE(*str)) {
+            str++;
         }
+        if (str >= end)
+            break;
 
+        /* Check first hex digit */
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
             invalid_char = str - PyUnicode_1BYTE_DATA(string);
@@ -2552,6 +2540,15 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         }
         str++;
 
+        /* Check if we have a second digit*/
+        if (str >= end || Py_ISSPACE(*str)) {
+            PyErr_SetString(PyExc_ValueError,
+                           "fromhex() arg must be of even length");
+            _PyBytesWriter_Dealloc(&writer);
+            return NULL;
+        }
+
+        /* Check second hex digit */
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
             invalid_char = str - PyUnicode_1BYTE_DATA(string);
