@@ -161,7 +161,7 @@ atexit_callfuncs(struct atexit_state *state)
         PyObject *res = PyObject_Call(func, args, kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
-                "Exception ignored in atexit callback %R", the_func);
+                "Exception ignored in atexit callback %R", func);
         }
         else {
             Py_DECREF(res);
