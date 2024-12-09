@@ -326,7 +326,7 @@ atexit_unregister(PyObject *module, PyObject *func)
         }
         PyObject *to_compare = cb->func;
 
-        // Unlock for fear of a custom __eq__ causing re-entrancy
+        // Unlock for custom __eq__ causing re-entrancy
         _PyAtExit_UNLOCK(state);
         int eq = PyObject_RichCompareBool(to_compare, func, Py_EQ);
         if (eq < 0) {
