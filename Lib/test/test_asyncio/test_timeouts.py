@@ -1,5 +1,5 @@
 """Tests for asyncio/timeouts.py"""
-
+import signal
 import unittest
 import time
 
@@ -10,6 +10,7 @@ from test.test_asyncio.utils import await_without_task
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 

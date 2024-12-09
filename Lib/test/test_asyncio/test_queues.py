@@ -1,13 +1,14 @@
 """Tests for queues.py"""
 
 import asyncio
+import signal
 import unittest
 from types import GenericAlias
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
-
+    signal.stop_signal_thread()
 
 class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
 

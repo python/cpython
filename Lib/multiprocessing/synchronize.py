@@ -9,7 +9,7 @@
 
 __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
-    ]
+]
 
 import threading
 import sys
@@ -156,7 +156,7 @@ class BoundedSemaphore(Semaphore):
         except Exception:
             value = 'unknown'
         return '<%s(value=%s, maxvalue=%s)>' % \
-               (self.__class__.__name__, value, self._semlock.maxvalue)
+            (self.__class__.__name__, value, self._semlock.maxvalue)
 
 #
 # Non-recursive lock
@@ -252,7 +252,7 @@ class Condition(object):
 
     def wait(self, timeout=None):
         assert self._lock._semlock._is_mine(), \
-               'must acquire() condition before using wait()'
+            'must acquire() condition before using wait()'
 
         # indicate that this thread is going to sleep
         self._sleeping_count.release()

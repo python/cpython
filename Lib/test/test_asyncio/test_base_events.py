@@ -4,6 +4,7 @@ import concurrent.futures
 import errno
 import math
 import platform
+import signal
 import socket
 import sys
 import threading
@@ -26,6 +27,7 @@ MOCK_ANY = mock.ANY
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 def mock_socket_module():
