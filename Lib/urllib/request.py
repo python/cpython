@@ -2091,24 +2091,22 @@ elif os.name == 'nt':
         return proxyOverride
 
     def proxy_bypass_registry(host, proxyOverride=None):
-        if proxyOverride is None:
-            proxyOverride = getproxy_bypass_registry()
-
-        if proxyOverride:
+        if proxyOverride:= proxyOverride or getproxy_bypass_registry():
             return _proxy_bypass_winreg_override(host, proxyOverride)
+        return False
 
-    def proxy_bypass(host):
+    def proxy_bypass(host, env_proxies=None, proxyOverride=None):
         """Return True, if host should be bypassed.
 
         Checks proxy settings gathered from the environment, if specified,
         or the registry.
 
         """
-        proxies = getproxies_environment()
-        if proxies:
+        if proxies:= env_proxies or getproxies_environment():
             return proxy_bypass_environment(host, proxies)
         else:
-            return proxy_bypass_registry(host)
+            proxyOverride = proxyOverride or getproxy_bypass_registry()
+            return proxy_bypass_registry(host, proxyOverride)
 
 else:
     # By default use environment variables
