@@ -2436,21 +2436,30 @@ class TestDisCLI(unittest.TestCase):
         self.filename = tempfile.mktemp()
         self.addCleanup(os_helper.unlink, self.filename)
 
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return textwrap.dedent(string).strip()
+
     def set_source(self, content):
         with open(self.filename, 'w') as fp:
-            fp.write(textwrap.dedent(content).strip())
+            fp.write(self.text_normalize(content))
 
     def invoke_dis(self, *flags):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             dis.main(args=[*flags, self.filename])
-        return output.getvalue()
+        return self.text_normalize(output.getvalue())
 
     def check_output(self, source, expect, *flags):
-        with self.subTest(flags):
+        with self.subTest(source=source, flags=flags):
             self.set_source(source)
             res = self.invoke_dis(*flags)
-            res = textwrap.dedent(res)
+            expect = self.text_normalize(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
     def test_invokation(self):
@@ -2477,7 +2486,7 @@ class TestDisCLI(unittest.TestCase):
     def test_show_cache(self):
         # test 'python -m dis -C/--show-caches'
         source = 'print()'
-        expect = textwrap.dedent('''
+        expect = '''
             0           RESUME                   0
 
             1           LOAD_NAME                0 (print)
@@ -2489,43 +2498,43 @@ class TestDisCLI(unittest.TestCase):
                         POP_TOP
                         LOAD_CONST               0 (None)
                         RETURN_VALUE
-        ''').strip()
+        '''
         for flag in ['-C', '--show-caches']:
             self.check_output(source, expect, flag)
 
     def test_show_offsets(self):
         # test 'python -m dis -O/--show-offsets'
         source = 'pass'
-        expect = textwrap.dedent('''
+        expect = '''
             0          0       RESUME                   0
 
             1          2       LOAD_CONST               0 (None)
                        4       RETURN_VALUE
-        ''').strip()
+        '''
         for flag in ['-O', '--show-offsets']:
             self.check_output(source, expect, flag)
 
     def test_show_positions(self):
         # test 'python -m dis -P/--show-positions'
         source = 'pass'
-        expect = textwrap.dedent('''
+        expect = '''
             0:0-1:0            RESUME                   0
 
             1:0-1:4            LOAD_CONST               0 (None)
             1:0-1:4            RETURN_VALUE
-        ''').strip()
+        '''
         for flag in ['-P', '--show-positions']:
             self.check_output(source, expect, flag)
 
     def test_specialized_code(self):
         # test 'python -m dis -S/--specialized'
         source = 'pass'
-        expect = textwrap.dedent('''
+        expect = '''
             0           RESUME                   0
 
             1           LOAD_CONST_IMMORTAL      0 (None)
                         RETURN_VALUE
-        ''').strip()
+        '''
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
