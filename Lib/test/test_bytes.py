@@ -460,7 +460,7 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
         # For odd number of character(s)
-        for value in ("a", "a ", " a"," a ", "aaa", "aaa   ", "   aaa", "   aaa   "):
+        for value in ("a", "a ", " a"," a ", "a a a", "a a a   ", "   a a a", "   a a a   "):
             with self.assertRaises(ValueError) as cm:
                 self.type2test.fromhex(value)
             self.assertIn("fromhex() arg must be of even length", str(cm.exception))
