@@ -152,8 +152,10 @@ atexit_callfuncs(struct atexit_state *state)
 
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
         PyObject *func = Py_NewRef(cb->func);
+        // No need to hold a strong reference to the arguments though
         PyObject *args = cb->args;
         PyObject *kwargs = cb->kwargs;
+
         // Unlock for re-entrancy problems
         _PyAtExit_UNLOCK(state);
         PyObject *res = PyObject_Call(func, args, kwargs);
