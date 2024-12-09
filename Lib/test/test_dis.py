@@ -2432,25 +2432,25 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
 
 class TestDisCLI(unittest.TestCase):
 
-    def infile(self, content):
-        filename = tempfile.mktemp()
-        self.addCleanup(os_helper.unlink, filename)
-        with open(filename, 'w') as fp:
-            fp.write(content)
-        return filename
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def invoke_dis(self, infile, *flags):
+    def set_source(self, content):
+        with open(self.filename, 'w') as fp:
+            fp.write(textwrap.dedent(content).strip())
+
+    def invoke_dis(self, *flags):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            dis.main(args=[*flags, infile])
+            dis.main(args=[*flags, self.filename])
         return output.getvalue()
 
     def check_output(self, source, expect, *flags):
         with self.subTest(flags):
-            infile = self.infile(source)
-            res = self.invoke_dis(infile, *flags)
+            self.set_source(source)
+            res = self.invoke_dis(*flags)
             res = textwrap.dedent(res)
-            expect = textwrap.dedent(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
     def test_invokation(self):
@@ -2462,66 +2462,70 @@ class TestDisCLI(unittest.TestCase):
             ('-S', '--specialized'),
         ]
 
-        infile = self.infile('def f():\n\tprint(x)\n\treturn None')
+        self.set_source('''
+            def f():
+                print(x)
+                return None
+        ''')
 
         for r in range(1, len(base_flags) + 1):
             for choices in itertools.combinations(base_flags, r=r):
                 for args in itertools.product(*choices):
                     with self.subTest(args=args[1:]):
-                        _ = self.invoke_dis(infile, *args)
+                        _ = self.invoke_dis(*args)
 
     def test_show_cache(self):
         # test 'python -m dis -C/--show-caches'
         source = 'print()'
-        expect = '''\
-0           RESUME                   0
+        expect = textwrap.dedent('''
+            0           RESUME                   0
 
-1           LOAD_NAME                0 (print)
-            PUSH_NULL
-            CALL                     0
-            CACHE                    0 (counter: 0)
-            CACHE                    0 (func_version: 0)
-            CACHE                    0
-            POP_TOP
-            LOAD_CONST               0 (None)
-            RETURN_VALUE
-'''
+            1           LOAD_NAME                0 (print)
+                        PUSH_NULL
+                        CALL                     0
+                        CACHE                    0 (counter: 0)
+                        CACHE                    0 (func_version: 0)
+                        CACHE                    0
+                        POP_TOP
+                        LOAD_CONST               0 (None)
+                        RETURN_VALUE
+        ''').strip()
         for flag in ['-C', '--show-caches']:
             self.check_output(source, expect, flag)
 
     def test_show_offsets(self):
         # test 'python -m dis -O/--show-offsets'
         source = 'pass'
-        expect = '''\
-0          0       RESUME                   0
+        expect = textwrap.dedent('''
+            0          0       RESUME                   0
 
-1          2       LOAD_CONST               0 (None)
-           4       RETURN_VALUE
- '''
+            1          2       LOAD_CONST               0 (None)
+                       4       RETURN_VALUE
+        ''').strip()
         for flag in ['-O', '--show-offsets']:
             self.check_output(source, expect, flag)
 
     def test_show_positions(self):
         # test 'python -m dis -P/--show-positions'
         source = 'pass'
-        expect = '''\
-0:0-1:0            RESUME                   0
+        expect = textwrap.dedent('''
+            0:0-1:0            RESUME                   0
 
-1:0-1:4            LOAD_CONST               0 (None)
-1:0-1:4            RETURN_VALUE
-'''
+            1:0-1:4            LOAD_CONST               0 (None)
+            1:0-1:4            RETURN_VALUE
+        ''').strip()
         for flag in ['-P', '--show-positions']:
             self.check_output(source, expect, flag)
 
     def test_specialized_code(self):
         # test 'python -m dis -S/--specialized'
         source = 'pass'
-        expect = '''\
-0           RESUME                   0
+        expect = textwrap.dedent('''
+            0           RESUME                   0
 
-1           LOAD_CONST_IMMORTAL      0 (None)
-            RETURN_VALUE
-'''
+            1           LOAD_CONST_IMMORTAL      0 (None)
+                        RETURN_VALUE
+        ''').strip()
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
