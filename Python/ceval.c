@@ -2934,7 +2934,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 
 done_with_errmsg:
     if (errmsg != NULL) {
-        /* NULL checks for errmsg, mod_name, origin done by _PyErr_SetImportErrorWithNameFrom */
+        /* NULL checks for mod_name and origin done by _PyErr_SetImportErrorWithNameFrom */
         _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
         Py_DECREF(errmsg);
     }
