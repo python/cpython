@@ -39,7 +39,7 @@ jobs:
       run: >-
         .\\PCbuild\\build.bat
         -e -d -v
-        -p ${{ env.ARCH }}
+        -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Display build info  # FIXME(diegorusso): remove the `if`
       if: inputs.arch != 'arm64'
@@ -48,6 +48,6 @@ jobs:
       if: inputs.arch != 'arm64'
       run: >-
         .\\PCbuild\\rt.bat
-        -p ${{ env.ARCH }}
+        -p "${ARCH}"
         -d -q --fast-ci
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}

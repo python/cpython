@@ -24,4 +24,4 @@ jobs:
       with:
         persist-credentials: false
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat --doc -${{ env.ARCH }}
+      run: .\Tools\msi\build.bat --doc -"${ARCH}"
