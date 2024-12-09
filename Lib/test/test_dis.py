@@ -5,10 +5,12 @@ import dis
 import io
 import re
 import sys
+import tempfile
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only)
+                          requires_specialization, cpython_only,
+                          os_helper)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -2067,6 +2069,19 @@ class TestDisTracebackWithFile(TestDisTraceback):
         with contextlib.redirect_stdout(output):
             dis.distb(tb, file=output)
         return output.getvalue()
+
+
+class TestDisCLI(unittest.TestCase):
+
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    def test_invocation(self):
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(io.StringIO()):
+                dis.main(args=['--unknown', self.filename])
 
 
 if __name__ == "__main__":
