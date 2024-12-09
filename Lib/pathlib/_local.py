@@ -524,7 +524,7 @@ class Path(PathBase, PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = ('_info',)
+    __slots__ = ('_status',)
     as_uri = PurePath.as_uri
 
     @classmethod
@@ -638,7 +638,7 @@ class Path(PathBase, PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._info = dir_entry
+        path._status = dir_entry
         return path
 
     def iterdir(self):

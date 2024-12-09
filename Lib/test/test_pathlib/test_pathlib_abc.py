@@ -1898,10 +1898,10 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
                                            errno.ENOENT, errno.EINVAL))
 
-    def test_iterdir_info(self):
+    def test_iterdir_status(self):
         p = self.cls(self.base)
         for child in p.iterdir():
-            entry = child._info
+            entry = child._status
             self.assertIsNotNone(entry)
             self.assertEqual(entry.is_dir(follow_symlinks=False),
                              child.is_dir(follow_symlinks=False))
