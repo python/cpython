@@ -816,6 +816,23 @@ class ImportTests(unittest.TestCase):
             f"cannot import name 'this_will_never_exist' from 'os' \\({re.escape(os.__file__)}\\)"
         )
 
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import os
+os.__file__ = 123
+os.__spec__.has_location = False
+from os import this_will_never_exist
+""")
+
+            expected_error = (
+                b"cannot import name 'this_will_never_exist' "
+                b"from 'os' \\(unknown location\\)"
+            )
+            popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
