@@ -1115,7 +1115,7 @@ class Bytecode:
             return output.getvalue()
 
 
-def main():
+def main(args=None):
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -1128,7 +1128,7 @@ def main():
     parser.add_argument('-S', '--specialized', action='store_true',
                         help='show specialized bytecode')
     parser.add_argument('infile', nargs='?', default='-')
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
     if args.infile == '-':
         name = '<stdin>'
         source = sys.stdin.buffer.read()
