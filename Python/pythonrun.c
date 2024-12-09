@@ -538,42 +538,36 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *offset = hold;
     }
 
-    if (Py_TYPE(err) == (PyTypeObject*)PyExc_SyntaxError) {
-        v = PyObject_GetAttr(err, &_Py_ID(end_lineno));
-        if (!v) {
-            PyErr_Clear();
-            *end_lineno = *lineno;
-        }
-        else if (v == Py_None) {
-            *end_lineno = *lineno;
-            Py_DECREF(v);
-        } else {
-            hold = PyLong_AsSsize_t(v);
-            Py_DECREF(v);
-            if (hold < 0 && PyErr_Occurred())
-                goto finally;
-            *end_lineno = hold;
-        }
-
-        v = PyObject_GetAttr(err, &_Py_ID(end_offset));
-        if (!v) {
-            PyErr_Clear();
-            *end_offset = -1;
-        }
-        else if (v == Py_None) {
-            *end_offset = -1;
-            Py_DECREF(v);
-        } else {
-            hold = PyLong_AsSsize_t(v);
-            Py_DECREF(v);
-            if (hold < 0 && PyErr_Occurred())
-                goto finally;
-            *end_offset = hold;
-        }
-    } else {
-        // SyntaxError subclasses
+    v = PyObject_GetAttr(err, &_Py_ID(end_lineno));
+    if (!v) {
+        PyErr_Clear();
         *end_lineno = *lineno;
+    }
+    else if (v == Py_None) {
+        *end_lineno = *lineno;
+        Py_DECREF(v);
+    } else {
+        hold = PyLong_AsSsize_t(v);
+        Py_DECREF(v);
+        if (hold < 0 && PyErr_Occurred())
+            goto finally;
+        *end_lineno = hold;
+    }
+
+    v = PyObject_GetAttr(err, &_Py_ID(end_offset));
+    if (!v) {
+        PyErr_Clear();
         *end_offset = -1;
+    }
+    else if (v == Py_None) {
+        *end_offset = -1;
+        Py_DECREF(v);
+    } else {
+        hold = PyLong_AsSsize_t(v);
+        Py_DECREF(v);
+        if (hold < 0 && PyErr_Occurred())
+            goto finally;
+        *end_offset = hold;
     }
 
     v = PyObject_GetAttr(err, &_Py_ID(text));
