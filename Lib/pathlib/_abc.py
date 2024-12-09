@@ -12,10 +12,9 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import operator
 import posixpath
 from errno import EINVAL
-from glob import _GlobberBase, _no_recurse_symlinks
+from glob import _PathGlobber, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
 
@@ -34,25 +33,6 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
-class PathGlobber(_GlobberBase):
-    """
-    Class providing shell-style globbing for path objects.
-    """
-
-    lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        """Like os.scandir(), but generates (entry, name, path) tuples."""
-        return ((child.status, child.name, child) for child in path.iterdir())
-
-    @staticmethod
-    def concat_path(path, text):
-        """Appends text to the given path."""
-        return path.with_segments(str(path) + text)
-
-
 class PurePathBase:
     """Base class for pure path objects.
 
@@ -68,7 +48,7 @@ class PurePathBase:
         '_raw_paths',
     )
     parser = posixpath
-    _globber = PathGlobber
+    _globber = _PathGlobber
 
     def __init__(self, *args):
         for arg in args:

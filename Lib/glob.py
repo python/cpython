@@ -541,3 +541,19 @@ class _StringGlobber(_GlobberBase):
             if not pathname or pathname[-1] == '/':
                 return pathname
             return f'{pathname}/'
+
+
+class _PathGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for pathlib paths.
+    """
+
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        return ((child.status, child.name, child) for child in path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        return path.with_segments(str(path) + text)
