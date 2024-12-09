@@ -27,6 +27,9 @@ jobs:
     name: Unresolved review
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     timeout-minutes: 10
 
     steps:
