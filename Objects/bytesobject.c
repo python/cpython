@@ -2516,10 +2516,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     }
 
     assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
-
-    const Py_UCS1 *s = PyUnicode_1BYTE_DATA(string);
+    str = PyUnicode_1BYTE_DATA(string);
     for (Py_ssize_t i = 0; i < hexlen; i++) {
-        if (!Py_ISSPACE(s[i])) {
+        if (!Py_ISSPACE(str[i])) {
             real_len++;
         }
     }
@@ -2529,7 +2528,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
-    str = PyUnicode_1BYTE_DATA(string);
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
