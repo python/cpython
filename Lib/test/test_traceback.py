@@ -2097,6 +2097,7 @@ class TracebackFormatMixin:
         return e
 
     @cpython_only
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_capi(self):
         from _testcapi import exception_print
         LIMIT = 75
@@ -2108,6 +2109,7 @@ class TracebackFormatMixin:
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()
