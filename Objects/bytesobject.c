@@ -2526,11 +2526,13 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
-        while (str < end && Py_ISSPACE(*str)) {
-            str++;
+        if (Py_ISSPACE(*str)) {
+            do {
+                str++;
+            } while (Py_ISSPACE(*str));
+            if (str >= end)
+                break;
         }
-        if (str >= end)
-            break;
 
         /* Check first hex digit */
         top = _PyLong_DigitValue[*str];
