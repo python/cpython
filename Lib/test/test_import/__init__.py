@@ -814,15 +814,12 @@ class ImportTests(unittest.TestCase):
             f"cannot import name 'this_will_never_exist' from 'os' ({os.__file__})",
             str(cm.exception),
         )
-
-        expected_error = (
-            b"cannot import name 'this_will_never_exist' "
-            b"from 'sys' (unknown location)"
+        with self.assertRaises(ImportError) as cm:
+            from sys import this_will_never_exist
+        self.assertIn(
+            "cannot import name 'this_will_never_exist' from 'sys' (unknown location)",
+            str(cm.exception),
         )
-        popen = script_helper.spawn_python("-c", "from sys import this_will_never_exist")
-        stdout, stderr = popen.communicate()
-        self.assertIn(expected_error, stdout)
-
 
         scripts = [
             """
