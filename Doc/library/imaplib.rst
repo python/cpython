@@ -375,7 +375,7 @@ An :class:`IMAP4` instance has the following methods:
       ``select()`` only works on sockets.
 
       If the server regularly sends status messages during ``IDLE``, they will
-      wake our iterator anyway, allowing *duration* to behave roughly as
+      wake our iterator anyway and allow *duration* to behave roughly as
       intended, although usually late.  Dovecot's ``imap_idle_notify_interval``
       default setting does this every 2 minutes.  Assuming that's typical of
       IMAP servers, subtracting it from the 29 minutes needed to avoid server
