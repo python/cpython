@@ -69,7 +69,7 @@ __all__.extend(os._get_exports_list(_socket))
 
 def __getattr__(name):
     if name == "SocketType":
-        return _socket.socket
+        return _socket.SocketType
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
