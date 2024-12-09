@@ -175,7 +175,7 @@ gen_dealloc(PyObject *self)
 }
 
 static PySendResult
-gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+gen_send_ex2_lock_held(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -271,6 +271,17 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     assert(gen->gi_frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
+}
+
+static inline PySendResult
+gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+             int exc, int closing)
+{
+    PySendResult result;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    result = gen_send_ex2_lock_held(gen, arg, presult, exc, closing);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PySendResult
