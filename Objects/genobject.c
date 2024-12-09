@@ -471,14 +471,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                 return gen_send_ex(gen, Py_None, 1, 0);
             goto throw_here;
         }
+        PyThreadState *tstate = _PyThreadState_GET();
+        assert(tstate != NULL);
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
-            PyThreadState *tstate = _PyThreadState_GET();
-            /* Since we are fast-tracking things by skipping the eval loop,
-               we need to update the current frame so the stack trace
-               will be reported correctly to the user. */
-            /* XXX We should probably be updating the current frame
-               somewhere in ceval.c. */
+
+            /* Link frame into the stack to enable complete backtraces. */
+            /* XXX We should probably be updating the current frame somewhere in
+               ceval.c. */
             _PyInterpreterFrame *prev = tstate->current_frame;
             frame->previous = prev;
             tstate->current_frame = frame;
@@ -502,10 +502,16 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                 Py_DECREF(yf);
                 goto throw_here;
             }
+
+            _PyInterpreterFrame *prev = tstate->current_frame;
+            frame->previous = prev;
+            tstate->current_frame = frame;
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
             gen->gi_frame_state = state;
+            tstate->current_frame = prev;
+            frame->previous = NULL;
             Py_DECREF(meth);
         }
         Py_DECREF(yf);
@@ -876,25 +882,7 @@ PyTypeObject PyGen_Type = {
     gen_methods,                                /* tp_methods */
     gen_memberlist,                             /* tp_members */
     gen_getsetlist,                             /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
 };
 
 static PyObject *
@@ -1236,24 +1224,7 @@ PyTypeObject PyCoro_Type = {
     coro_methods,                               /* tp_methods */
     coro_memberlist,                            /* tp_members */
     coro_getsetlist,                            /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
 };
 
 static void
@@ -1457,7 +1428,6 @@ typedef struct _PyAsyncGenWrappedValue {
 #define _PyAsyncGenWrappedValue_CAST(op) \
     (assert(_PyAsyncGenWrappedValue_CheckExact(op)), \
      _Py_CAST(_PyAsyncGenWrappedValue*, (op)))
-
 
 static int
 async_gen_traverse(PyObject *self, visitproc visit, void *arg)
@@ -1667,24 +1637,7 @@ PyTypeObject PyAsyncGen_Type = {
     async_gen_methods,                          /* tp_methods */
     async_gen_memberlist,                       /* tp_members */
     async_gen_getsetlist,                       /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    .tp_finalize = _PyGen_Finalize,
 };
 
 
@@ -1929,16 +1882,6 @@ PyTypeObject _PyAsyncGenASend_Type = {
     PyObject_SelfIter,                          /* tp_iter */
     async_gen_asend_iternext,                   /* tp_iternext */
     async_gen_asend_methods,                    /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
     .tp_finalize = async_gen_asend_finalize,
 };
 

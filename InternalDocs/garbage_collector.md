@@ -1,4 +1,3 @@
-
 Garbage collector design
 ========================
 
@@ -17,26 +16,26 @@ value returned by this function is always 1 more as the function also has a refe
 to the object when called):
 
 ```pycon
-    >>> x = object()
-    >>> sys.getrefcount(x)
-    2
-    >>> y = x
-    >>> sys.getrefcount(x)
-    3
-    >>> del y
-    >>> sys.getrefcount(x)
-    2
+>>> x = object()
+>>> sys.getrefcount(x)
+2
+>>> y = x
+>>> sys.getrefcount(x)
+3
+>>> del y
+>>> sys.getrefcount(x)
+2
 ```
 
 The main problem with the reference counting scheme is that it does not handle reference
 cycles. For instance, consider this code:
 
 ```pycon
-    >>> container = []
-    >>> container.append(container)
-    >>> sys.getrefcount(container)
-    3
-    >>> del container
+>>> container = []
+>>> container.append(container)
+>>> sys.getrefcount(container)
+3
+>>> del container
 ```
 
 In this example, `container` holds a reference to itself, so even when we remove
@@ -117,7 +116,7 @@ general, the collection of all objects tracked by GC is partitioned into disjoin
 doubly linked list.  Between collections, objects are partitioned into "generations", reflecting how
 often they've survived collection attempts.  During collections, the generation(s) being collected
 are further partitioned into, for example, sets of reachable and unreachable objects.  Doubly linked lists
-support moving an object from one partition to another, adding a new object,  removing an object
+support moving an object from one partition to another, adding a new object, removing an object
 entirely (objects tracked by GC are most often reclaimed by the refcounting system when GC
 isn't running at all!), and merging partitions, all with a small constant number of pointer updates.
 With care, they also support iterating over a partition while objects are being added to - and
@@ -199,26 +198,26 @@ variable `A`, and one self-referencing object which is completely
 unreachable:
 
 ```pycon
-    >>> import gc
-
-    >>> class Link:
-    ...    def __init__(self, next_link=None):
-    ...        self.next_link = next_link
-
-    >>> link_3 = Link()
-    >>> link_2 = Link(link_3)
-    >>> link_1 = Link(link_2)
-    >>> link_3.next_link = link_1
-    >>> A = link_1
-    >>> del link_1, link_2, link_3
-
-    >>> link_4 = Link()
-    >>> link_4.next_link = link_4
-    >>> del link_4
-
-    # Collect the unreachable Link object (and its .__dict__ dict).
-    >>> gc.collect()
-    2
+>>> import gc
+>>>
+>>> class Link:
+...    def __init__(self, next_link=None):
+...        self.next_link = next_link
+...
+>>> link_3 = Link()
+>>> link_2 = Link(link_3)
+>>> link_1 = Link(link_2)
+>>> link_3.next_link = link_1
+>>> A = link_1
+>>> del link_1, link_2, link_3
+>>>
+>>> link_4 = Link()
+>>> link_4.next_link = link_4
+>>> del link_4
+>>>
+>>> # Collect the unreachable Link object (and its .__dict__ dict).
+>>> gc.collect()
+2
 ```
 
 The GC starts with a set of candidate objects it wants to scan.  In the
@@ -439,9 +438,9 @@ These thresholds can be examined using the
 function:
 
 ```pycon
-    >>> import gc
-    >>> gc.get_threshold()
-    (700, 10, 10)
+>>> import gc
+>>> gc.get_threshold()
+(700, 10, 10)
 ```
 
 The content of these generations can be examined using the
@@ -449,39 +448,110 @@ The content of these generations can be examined using the
 specifically in a generation by calling `gc.collect(generation=NUM)`.
 
 ```pycon
-    >>> import gc
-    >>> class MyObj:
-    ...     pass
-    ...
-
-    # Move everything to the old generation so it's easier to inspect
-    # the young generation.
-
-    >>> gc.collect()
-    0
-
-    # Create a reference cycle.
-
-    >>> x = MyObj()
-    >>> x.self = x
-
-    # Initially the object is in the young generation.
-
-    >>> gc.get_objects(generation=0)
-    [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
-
-    # After a collection of the youngest generation the object
-    # moves to the old generation.
-
-    >>> gc.collect(generation=0)
-    0
-    >>> gc.get_objects(generation=0)
-    []
-    >>> gc.get_objects(generation=1)
-    []
-    >>> gc.get_objects(generation=2)
-    [..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
+>>> import gc
+>>> class MyObj:
+...     pass
+...
+>>> # Move everything to the old generation so it's easier to inspect
+>>> # the young generation.
+>>> gc.collect()
+0
+>>> # Create a reference cycle.
+>>> x = MyObj()
+>>> x.self = x
+>>>
+>>> # Initially the object is in the young generation.
+>>> gc.get_objects(generation=0)
+[..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
+>>>
+>>> # After a collection of the youngest generation the object
+>>> # moves to the old generation.
+>>> gc.collect(generation=0)
+0
+>>> gc.get_objects(generation=0)
+[]
+>>> gc.get_objects(generation=1)
+[]
+>>> gc.get_objects(generation=2)
+[..., <__main__.MyObj object at 0x7fbcc12a3400>, ...]
 ```
+
+
+Optimization: visiting reachable objects
+========================================
+
+An object cannot be garbage if it can be reached.
+
+To avoid having to identify reference cycles across the whole heap, we can
+reduce the amount of work done considerably by first moving most reachable objects
+to the `visited` space. Empirically, most reachable objects can be reached from a
+small set of global objects and local variables.
+This step does much less work per object, so reduces the time spent
+performing garbage collection by at least half.
+
+> [!NOTE]
+> Objects that are not determined to be reachable by this pass are not necessarily
+> unreachable. We still need to perform the main algorithm to determine which objects
+> are actually unreachable.
+We use the same technique of forming a transitive closure as the incremental
+collector does to find reachable objects, seeding the list with some global
+objects and the currently executing frames.
+
+This phase moves objects to the `visited` space, as follows:
+
+1. All objects directly referred to by any builtin class, the `sys` module, the `builtins`
+module and all objects directly referred to from stack frames are added to a working
+set of reachable objects.
+2. Until this working set is empty:
+   1. Pop an object from the set and move it to the `visited` space
+   2. For each object directly reachable from that object:
+      * If it is not already in `visited` space and it is a GC object,
+        add it to the working set
+
+
+Before each increment of collection is performed, the stacks are scanned
+to check for any new stack frames that have been created since the last
+increment. All objects directly referred to from those stack frames are
+added to the working set.
+Then the above algorithm is repeated, starting from step 2.
+
+Determining how much work to do
+-------------------------------
+
+We need to do a certain amount of work to ensure that garbage is collected,
+but doing too much work slows down execution.
+
+To work out how much work we need to do, consider a heap with `L` live objects
+and `G0` garbage objects at the start of a full scavenge and `G1` garbage objects
+at the end of the scavenge. We don't want the amount of garbage to grow, `G1 ≤ G0`, and
+we don't want too much garbage (say 1/3 of the heap maximum), `G0 ≤ L/2`.
+For each full scavenge we must visit all objects, `T == L + G0 + G1`, during which
+`G1` garbage objects are created.
+
+The number of new objects created `N` must be at least the new garbage created, `N ≥ G1`,
+assuming that the number of live objects remains roughly constant.
+If we set `T == 4*N` we get `T > 4*G1` and `T = L + G0 + G1` => `L + G0 > 3G1`
+For a steady state heap (`G0 == G1`) we get `L > 2G0` and the desired garbage ratio.
+
+In other words, to keep the garbage fraction to 1/3 or less we need to visit
+4 times as many objects as are newly created.
+
+We can do better than this though. Not all new objects will be garbage.
+Consider the heap at the end of the scavenge with `L1` live objects and `G1`
+garbage. Also, note that `T == M + I` where `M` is the number of objects marked
+as reachable and `I` is the number of objects visited in increments.
+Everything in `M` is live, so `I ≥ G0` and in practice `I` is closer to `G0 + G1`.
+
+If we choose the amount of work done such that `2*M + I == 6N` then we can do
+less work in most cases, but are still guaranteed to keep up.
+Since `I ≳ G0 + G1` (not strictly true, but close enough)
+`T == M + I == (6N + I)/2` and `(6N + I)/2 ≳ 4G`, so we can keep up.
+
+The reason that this improves performance is that `M` is usually much larger
+than `I`. If `M == 10I`, then `T ≅ 3N`.
+
+Finally, instead of using a fixed multiple of 8, we gradually increase it as the
+heap grows. This avoids wasting work for small heaps and during startup.
 
 
 Optimization: reusing fields to save memory
@@ -532,8 +602,8 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
   currently in.  Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
 
-Optimization: delay tracking containers
-=======================================
+Optimization: delayed untracking containers
+===========================================
 
 Certain types of containers cannot participate in a reference cycle, and so do
 not need to be tracked by the garbage collector. Untracking these objects
@@ -546,44 +616,35 @@ a container:
 2. When the container is examined by the garbage collector.
 
 As a general rule, instances of atomic types aren't tracked and instances of
-non-atomic types (containers, user-defined objects...) are.  However, some
-type-specific optimizations can be present in order to suppress the garbage
-collector footprint of simple instances. Some examples of native types that
-benefit from delayed tracking:
+non-atomic types (containers, user-defined objects...) are.
 
-- Tuples containing only immutable objects (integers, strings etc,
-  and recursively, tuples of immutable objects) do not need to be tracked. The
-  interpreter creates a large number of tuples, many of which will not survive
-  until garbage collection. It is therefore not worthwhile to untrack eligible
-  tuples at creation time. Instead, all tuples except the empty tuple are tracked
-  when created. During garbage collection it is determined whether any surviving
-  tuples can be untracked. A tuple can be untracked if all of its contents are
-  already not tracked. Tuples are examined for untracking in all garbage collection
-  cycles. It may take more than one cycle to untrack a tuple.
-
-- Dictionaries containing only immutable objects also do not need to be tracked.
-  Dictionaries are untracked when created. If a tracked item is inserted into a
-  dictionary (either as a key or value), the dictionary becomes tracked. During a
-  full garbage collection (all generations), the collector will untrack any dictionaries
-  whose contents are not tracked.
+Tuples containing only immutable objects (integers, strings etc,
+and recursively, tuples of immutable objects) do not need to be tracked. The
+interpreter creates a large number of tuples, many of which will not survive
+until garbage collection. It is therefore not worthwhile to untrack eligible
+tuples at creation time. Instead, all tuples except the empty tuple are tracked
+when created. During garbage collection it is determined whether any surviving
+tuples can be untracked. A tuple can be untracked if all of its contents are
+already not tracked. Tuples are examined for untracking in all garbage collection
+cycles.
 
 The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
 
 ```pycon
-      >>> gc.is_tracked(0)
-      False
-      >>> gc.is_tracked("a")
-      False
-      >>> gc.is_tracked([])
-      True
-      >>> gc.is_tracked({})
-      False
-      >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
-      True
+>>> gc.is_tracked(0)
+False
+>>> gc.is_tracked("a")
+False
+>>> gc.is_tracked([])
+True
+>>> gc.is_tracked(())
+False
+>>> gc.is_tracked({})
+True
+>>> gc.is_tracked({"a": 1})
+True
 ```
 
 Differences between GC implementations
