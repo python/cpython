@@ -222,10 +222,6 @@ def test_pdb_basic_commands():
     BAZ
     """
 
-def reset_Breakpoint():
-    import bdb
-    bdb.Breakpoint.clearBreakpoints()
-
 def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
 
@@ -235,11 +231,6 @@ def test_pdb_breakpoint_commands():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-
-    First, need to clear bdb state that might be left over from previous tests.
-    Otherwise, the new breakpoints might get assigned different numbers.
-
-    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -375,8 +366,6 @@ def test_pdb_breakpoint_on_annotated_function_def():
     >>> def foobar[T]() -> int:
     ...     return 0
 
-    >>> reset_Breakpoint()
-
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pass
@@ -388,7 +377,7 @@ def test_pdb_breakpoint_on_annotated_function_def():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[3]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break foo
     Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:2
@@ -407,8 +396,6 @@ def test_pdb_commands():
     ...     print(1)
     ...     print(2)
     ...     print(3)
-
-    >>> reset_Breakpoint()
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'b 3',
@@ -457,12 +444,6 @@ def test_pdb_breakpoint_with_filename():
     ...     mod2.func88()
     ...     mod2.func114()
     ...     # Be a good citizen and clean up the mess
-    ...     reset_Breakpoint()
-
-    First, need to clear bdb state that might be left over from previous tests.
-    Otherwise, the new breakpoints might get assigned different numbers.
-
-    >>> reset_Breakpoint()
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
     ...     'break test.test_inspect.inspect_fodder2:90',
@@ -490,7 +471,7 @@ def test_pdb_breakpoint_with_filename():
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
-    >>> reset_Breakpoint()
+    >>> pdb_instance = pdb.Pdb()
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...    'import test.test_pdb',
     ...    'break test.test_pdb.do_something',
@@ -498,7 +479,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'break',
     ...    'continue',
     ... ]):
-    ...    pdb.run('print()')
+    ...    pdb_instance.run('print()')
     > <string>(1)<module>()...
     (Pdb) import test.test_pdb
     (Pdb) break test.test_pdb.do_something
@@ -518,7 +499,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'clear 1',
     ...    'continue',
     ... ]):
-    ...    pdb.run('print()')
+    ...    pdb_instance.run('print()')
     > <string>(1)<module>()...
     (Pdb) break
     Num Type         Disp Enb   Where
@@ -541,7 +522,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'clear 3',
     ...    'continue',
     ... ]):
-    ...    pdb.run('print()')
+    ...    pdb_instance.run('print()')
     > <string>(1)<module>()...
     (Pdb) break
     Num Type         Disp Enb   Where
@@ -575,7 +556,6 @@ def test_pdb_break_anywhere():
     >>> def test_function():
     ...     caller()
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'b 3',
     ...     'c',
@@ -1689,7 +1669,6 @@ def test_pdb_return_to_different_file():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pprint.pprint(A())
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'b A.__repr__',
     ...     'continue',
@@ -1936,7 +1915,6 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -2394,7 +2372,6 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -2665,7 +2642,6 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
     ...     test_function()
@@ -2688,7 +2664,6 @@ def test_pdb_issue_43318():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
     ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
@@ -2725,7 +2700,6 @@ def test_pdb_issue_gh_91742():
     ...    about()
 
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'step',
     ...     'step',
@@ -2772,7 +2746,6 @@ def test_pdb_issue_gh_94215():
     ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...    func()
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'step',
     ...     'step',
@@ -3003,8 +2976,6 @@ def test_pdb_f_trace_lines():
 
     pdb should work even if f_trace_lines is set to False on some frames.
 
-    >>> reset_Breakpoint()
-
     >>> def test_function():
     ...     import sys
     ...     frame = sys._getframe()
@@ -3017,7 +2988,7 @@ def test_pdb_f_trace_lines():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(5)test_function()
+    > <doctest test.test_pdb.test_pdb_f_trace_lines[0]>(5)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
     """
