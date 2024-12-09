@@ -391,6 +391,12 @@ An :class:`IMAP4` instance has the following methods:
 
    .. note::
 
+      The :class:`!Idler` object returned by :meth:`IMAP4.idle` is usable only
+      within a :keyword:`with` statement.  To retrieve unsolicited IMAP
+      responses outside that context, see :meth:`IMAP4.response`.
+
+   .. note::
+
       The :class:`!Idler` class name and structure are internal interfaces,
       subject to change.  Calling code can rely on its context management,
       iteration, and public method to remain stable, but should not subclass,
