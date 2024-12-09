@@ -129,8 +129,18 @@ async def log_stream_task(initial_devices):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     ) as process:
+        suppress_dupes = False
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-            sys.stdout.write(line)
+            # The iOS log streamer can sometimes lag; when it does, it outputs
+            # a warning about messages being dropped... often multiple times.
+            # Only print the first of these duplicated warnings.
+            if line.startswith("=== Messages dropped "):
+                if not suppress_dupes:
+                    suppress_dupes = True
+                    sys.stdout.write(line)
+            else:
+                suppress_dupes = False
+                sys.stdout.write(line)
 
 
 async def xcode_test(location, simulator):
