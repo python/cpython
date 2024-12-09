@@ -2490,7 +2490,7 @@ PyObject*
 _PyBytes_FromHex(PyObject *string, int use_bytearray)
 {
     char *buf;
-    Py_ssize_t hexlen, invalid_char;
+    Py_ssize_t hexlen, invalid_char,real_len=0;
     unsigned int top, bot;
     const Py_UCS1 *str, *end;
     _PyBytesWriter writer;
@@ -2516,6 +2516,19 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     }
 
     assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
+
+    const Py_UCS1 *s = PyUnicode_1BYTE_DATA(string);
+    for (Py_ssize_t i = 0; i < hexlen; i++) {
+        if (!Py_ISSPACE(s[i])) {
+            real_len++;
+        }
+    }
+    if (real_len % 2 != 0) {
+        PyErr_SetString(PyExc_ValueError,
+                       "fromhex() arg must be of even length");
+        _PyBytesWriter_Dealloc(&writer);
+        return NULL;
+    }
     str = PyUnicode_1BYTE_DATA(string);
 
     /* This overestimates if there are spaces */
