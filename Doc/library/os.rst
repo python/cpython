@@ -3665,7 +3665,7 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   \_\_pycache\_\_ subdirectory::
+   ``__pycache__`` subdirectory::
 
       import os
       from os.path import join, getsize
