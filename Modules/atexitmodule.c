@@ -15,11 +15,11 @@
 #ifdef Py_GIL_DISABLED
 /* Note: anything declared as static in this file assumes the lock is held
  * (except for the Python-level functions) */
-#define _PyAtExit_LOCK(state) PyMutex_Lock(&state->lock);
-#define _PyAtExit_UNLOCK(state) PyMutex_Unlock(&state->lock);
+#  define _PyAtExit_LOCK(state) PyMutex_Lock(&state->lock);
+#  define _PyAtExit_UNLOCK(state) PyMutex_Unlock(&state->lock);
 #else
-#define _PyAtExit_LOCK(state)
-#define _PyAtExit_UNLOCK(state)
+#  define _PyAtExit_LOCK(state)
+#  define _PyAtExit_UNLOCK(state)
 #endif
 
 /* ===================================================================== */
