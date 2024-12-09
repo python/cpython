@@ -2490,7 +2490,7 @@ PyObject*
 _PyBytes_FromHex(PyObject *string, int use_bytearray)
 {
     char *buf;
-    Py_ssize_t hexlen, invalid_char, real_len=0;
+    Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
     const Py_UCS1 *str, *end;
     _PyBytesWriter writer;
