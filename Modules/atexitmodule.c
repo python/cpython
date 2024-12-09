@@ -67,12 +67,12 @@ atexit_delete_cb(struct atexit_state *state, int i)
     atexit_py_callback *cb = state->callbacks[i];
     state->callbacks[i] = NULL;
 
-    // This can execute code via finalizers
+    // We don't need to hold the lock; the entry isn't in the array anymore
     _PyAtExit_UNLOCK(state);
+
     Py_DECREF(cb->func);
     Py_DECREF(cb->args);
     Py_XDECREF(cb->kwargs);
-    _PyAtExit_LOCK(state);
     PyMem_Free(cb);
 }
 
