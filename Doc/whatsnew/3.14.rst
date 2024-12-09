@@ -1018,7 +1018,7 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
-* Add a new import and export API for Python :class:`int` objects:
+* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
 
   * :c:func:`PyLong_GetNativeLayout`;
   * :c:func:`PyLong_Export`;

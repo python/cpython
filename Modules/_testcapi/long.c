@@ -145,50 +145,28 @@ static PyObject *
 layout_to_dict(const PyLongLayout *layout)
 {
     PyObject *dict = PyDict_New();
-
     if (dict == NULL) {
         goto error;
     }
 
-    PyObject *value = PyLong_FromUnsignedLong(layout->bits_per_digit);
-    if (value == NULL) {
-        goto error;
-    }
-    int res = PyDict_SetItemString(dict, "bits_per_digit", value);
-    Py_DECREF(value);
-    if (res < 0) {
-        goto error;
-    }
+#define SET_DICT(KEY, EXPR) \
+    do { \
+        PyObject *value = (EXPR); \
+        if (value == NULL) { \
+            goto error; \
+        } \
+        int res = PyDict_SetItemString(dict, KEY, value); \
+        Py_DECREF(value); \
+        if (res < 0) { \
+            goto error; \
+        } \
+    } while (0)
 
-    value = PyLong_FromUnsignedLong(layout->digit_size);
-    if (value == NULL) {
-        goto error;
-    }
-    res = PyDict_SetItemString(dict, "digit_size", value);
-    Py_DECREF(value);
-    if (res < 0) {
-        goto error;
-    }
-
-    value = PyLong_FromLong(layout->digits_order);
-    if (value == NULL) {
-        goto error;
-    }
-    res = PyDict_SetItemString(dict, "digits_order", value);
-    Py_DECREF(value);
-    if (res < 0) {
-        goto error;
-    }
-
-    value = PyLong_FromLong(layout->digit_endianness);
-    if (value == NULL) {
-        goto error;
-    }
-    res = PyDict_SetItemString(dict, "digit_endianness", value);
-    Py_DECREF(value);
-    if (res < 0) {
-        goto error;
-    }
+    SET_DICT("bits_per_digit", PyLong_FromUnsignedLong(layout->bits_per_digit));
+    SET_DICT("digit_size", PyLong_FromUnsignedLong(layout->digit_size));
+    SET_DICT("digits_order", PyLong_FromLong(layout->digits_order));
+    SET_DICT("digit_endianness", PyLong_FromLong(layout->digit_endianness));
+#undef SET_DICT
 
     return dict;
 

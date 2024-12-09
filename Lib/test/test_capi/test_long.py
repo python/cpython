@@ -751,7 +751,7 @@ class LongTests(unittest.TestCase):
                     pylong_export(value)
 
     def test_longwriter_create(self):
-        # Test PyLong_Import()
+        # Test PyLongWriter_Create()
         layout = _testcapi.get_pylong_layout()
         base = 2 ** layout['bits_per_digit']
 
