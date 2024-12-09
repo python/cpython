@@ -2462,7 +2462,7 @@ class TestDisCLI(unittest.TestCase):
             expect = self.text_normalize(expect)
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
-    def test_invokation(self):
+    def test_invocation(self):
         # test various combinations of parameters
         base_flags = [
             ('-C', '--show-caches'),
@@ -2482,6 +2482,11 @@ class TestDisCLI(unittest.TestCase):
                 for args in itertools.product(*choices):
                     with self.subTest(args=args[1:]):
                         _ = self.invoke_dis(*args)
+
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(io.StringIO()):
+                _ = self.invoke_dis('--unknown')
 
     def test_show_cache(self):
         # test 'python -m dis -C/--show-caches'
