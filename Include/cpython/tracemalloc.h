@@ -2,6 +2,10 @@
 #ifndef Py_TRACEMALLOC_H
 #define Py_TRACEMALLOC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Track an allocated memory block in the tracemalloc module.
    Return 0 on success, return -1 on error (failed to allocate memory to store
    the trace).
@@ -21,6 +25,10 @@ PyAPI_FUNC(int) PyTraceMalloc_Track(
 PyAPI_FUNC(int) PyTraceMalloc_Untrack(
     unsigned int domain,
     uintptr_t ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // !Py_TRACEMALLOC_H
 #endif  // !Py_LIMITED_API
