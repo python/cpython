@@ -7,8 +7,10 @@ import unittest
 from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
                     _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
+import _ctypes
 from test import support
 from test.support import import_helper
+from test.support import warnings_helper
 from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
 
 
@@ -147,6 +149,28 @@ class Structures(unittest.TestCase):
 
         # to not leak references, we must clean _pointer_type_cache
         del _pointer_type_cache[RECT]
+
+@unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
+class InprocessCallbacks(unittest.TestCase):
+    def test_deprecated_py_functions(self):
+        with import_helper.isolated_modules():
+            sys.modules['comtypes'] = None
+            with warnings_helper.check_warnings((".*3.19", DeprecationWarning)):
+                self.assertEqual(ctypes.DllCanUnloadNow(), 0)
+            with warnings_helper.check_warnings((".*3.19", DeprecationWarning)):
+                self.assertLess(ctypes.DllGetClassObject(0, 0, 0), 0)
+
+    def test_deprecated_dll_functions(self):
+        """C wrappers should warn, even with replaced hooks"""
+        support.patch(self, ctypes, 'DllCanUnloadNow', lambda: 1234)
+        support.patch(self, ctypes, 'DllGetClassObject', lambda *args: 1234)
+        with import_helper.isolated_modules():
+            sys.modules['comtypes'] = None
+            ctypes_dll = ctypes.WinDLL(_ctypes.__file__)
+            with warnings_helper.check_warnings((".*3.19", DeprecationWarning)):
+                self.assertEqual(ctypes_dll.DllCanUnloadNow(), 1234)
+            with warnings_helper.check_warnings((".*3.19", DeprecationWarning)):
+                self.assertEqual(ctypes_dll.DllGetClassObject(0, 0, 0), 1234)
 
 
 if __name__ == '__main__':
