@@ -322,8 +322,9 @@ An :class:`IMAP4` instance has the following methods:
 
    The *duration* argument sets a maximum duration (in seconds) to keep idling,
    after which any ongoing iteration will stop.  It defaults to ``None``,
-   meaning no time limit.  Callers wishing to avoid inactivity timeouts on
-   servers that impose them should keep this at most 29 minutes.
+   meaning no time limit, but can also be an :class:`int` or :class:`float`.
+   Callers wishing to avoid inactivity timeouts on servers that impose them
+   should keep this at most 29 minutes.
    See the :ref:`warning below <windows-pipe-timeout-warning>` if using
    :class:`IMAP4_stream` on Windows.
 
@@ -344,7 +345,8 @@ An :class:`IMAP4` instance has the following methods:
 
    .. method:: Idler.burst(interval=0.1)
 
-      Yield a burst of responses no more than *interval* seconds apart.
+      Yield a burst of responses no more than *interval* seconds apart
+      (expressed as an :class:`int` or :class:`float`).
 
       Example::
 
