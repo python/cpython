@@ -1,0 +1,14 @@
+first_number == int(input("enter first number: ")
+operation == input("enter opration: ")
+second_number == ("enter second number: ")
+if operation = "+":
+print(first_number + second_number)
+elif operation = "-":
+print(first_number - second_number)
+elif operation = "*": 
+print(first_number * second_number)
+elif operation = "/":
+print(first_number / second_number)
+els
+print("error")
+
