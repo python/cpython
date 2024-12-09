@@ -1297,6 +1297,32 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, call_quicken)
 
     @cpython_only
+    @requires_specialization_ft
+    def test_compare_specialize(self):
+        compare_op_quicken = """\
+  0           RESUME_CHECK             0
+
+  1           LOAD_NAME                0 (a)
+              LOAD_NAME                1 (b)
+              %s
+              RETURN_VALUE
+"""
+        co_int = compile('a == b', "<int>", "eval")
+        self.code_quicken(lambda: exec(co_int, {}, {'a': 1, 'b': 2}))
+        got = self.get_disassembly(co_int, adaptive=True)
+        self.do_disassembly_compare(got, compare_op_quicken % "COMPARE_OP_INT          72 (==)")
+
+        co_float = compile('a == b', "<int>", "eval")
+        self.code_quicken(lambda: exec(co_float, {}, {'a': 1.0, 'b': 2.0}))
+        got = self.get_disassembly(co_float, adaptive=True)
+        self.do_disassembly_compare(got, compare_op_quicken % "COMPARE_OP_FLOAT        72 (==)")
+
+        co_unicode = compile('a == b', "<unicode>", "eval")
+        self.code_quicken(lambda: exec(co_unicode, {}, {'a': 'a', 'b': 'b'}))
+        got = self.get_disassembly(co_unicode, adaptive=True)
+        self.do_disassembly_compare(got, compare_op_quicken % "COMPARE_OP_STR          72 (==)")
+
+    @cpython_only
     @requires_specialization
     def test_loop_quicken(self):
         # Loop can trigger a quicken where the loop is located
