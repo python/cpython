@@ -10,6 +10,7 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include <stdbool.h>              // bool
 
 #include <ffi.h>
 #include "ctypes.h"
@@ -522,7 +523,7 @@ v_get(void *ptr, Py_ssize_t size)
     return PyBool_FromLong((long)*(short int *)ptr);
 }
 
-/* bool ('?'): _Bool */
+/* bool ('?'): bool (i.e. _Bool) */
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -531,10 +532,10 @@ bool_set(void *ptr, PyObject *value, Py_ssize_t size)
     case -1:
         return NULL;
     case 0:
-        *(_Bool *)ptr = 0;
+        *(bool *)ptr = 0;
         _RET(value);
     default:
-        *(_Bool *)ptr = 1;
+        *(bool *)ptr = 1;
         _RET(value);
     }
 }
@@ -543,7 +544,7 @@ static PyObject *
 bool_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(bool)));
-    return PyBool_FromLong((long)*(_Bool *)ptr);
+    return PyBool_FromLong((long)*(bool *)ptr);
 }
 
 /* g: long double */
