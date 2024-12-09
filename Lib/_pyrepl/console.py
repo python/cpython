@@ -45,6 +45,7 @@ class Event:
 
 @dataclass
 class Console(ABC):
+    posxy: tuple[int, int]
     screen: list[str] = field(default_factory=list)
     height: int = 25
     width: int = 80

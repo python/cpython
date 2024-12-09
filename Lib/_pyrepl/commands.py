@@ -459,9 +459,15 @@ class show_history(Command):
         from site import gethistoryfile  # type: ignore[attr-defined]
 
         history = os.linesep.join(self.reader.history[:])
-        with self.reader.suspend():
-            pager = get_pager()
-            pager(history, gethistoryfile())
+        self.reader.console.restore()
+        pager = get_pager()
+        pager(history, gethistoryfile())
+        self.reader.console.prepare()
+
+        # We need to copy over the state so that it's consistent between
+        # console and reader, and console does not overwrite/append stuff
+        self.reader.console.screen = self.reader.screen.copy()
+        self.reader.console.posxy = self.reader.cxy
 
 
 class paste_mode(Command):
