@@ -7,7 +7,7 @@ if not is_apple:
     raise unittest.SkipTest("Apple-specific")
 
 
-# Test redirection of stdout and stderr to the Android log.
+# Test redirection of stdout and stderr to the Apple system log.
 class TestAppleSystemLogOutput(unittest.TestCase):
     maxDiff = None
 
