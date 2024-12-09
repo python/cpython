@@ -1,0 +1,1 @@
+:data:`functools.Placeholder` is restricted for :func:`functools.partial` keyword vaules.
