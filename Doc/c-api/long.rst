@@ -672,11 +672,13 @@ Export API
 
    .. c:member:: uint8_t bits_per_digit
 
-      Bits per digit.
+      Bits per digit. For example, a 15 bit digit means that bits 0-14 contain
+      meaningful information.
 
    .. c:member:: uint8_t digit_size
 
-      Digit size in bytes.
+      Digit size in bytes. For example, a 15 bit digit will require at least 2
+      bytes.
 
    .. c:member:: int8_t digits_order
 
@@ -779,6 +781,8 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    *ndigits* is the number of digits in the *digits* array. It must be
    greater than 0.
+
+   *digits* must not be NULL.
 
    The caller can either initialize the array of digits *digits* and then
    either call :c:func:`PyLongWriter_Finish` to get a Python :class:`int` or
