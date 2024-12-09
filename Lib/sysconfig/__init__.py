@@ -173,9 +173,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
-_PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
-_EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
 _CONFIG_VARS_LOCK = threading.RLock()
@@ -473,8 +471,8 @@ def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
-    prefix = _PREFIX
-    exec_prefix = _EXEC_PREFIX
+    prefix = os.path.normpath(sys.prefix)
+    exec_prefix = os.path.normpath(sys.exec_prefix)
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
@@ -564,9 +562,19 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
+    global _CONFIG_VARS_INITIALIZED
 
     # Avoid claiming the lock once initialization is complete.
-    if not _CONFIG_VARS_INITIALIZED:
+    if _CONFIG_VARS_INITIALIZED:
+        # GH-126789: If sys.prefix or sys.exec_prefix were updated, invalidate the cache.
+        prefix = os.path.normpath(sys.prefix)
+        exec_prefix = os.path.normpath(sys.exec_prefix)
+        if _CONFIG_VARS['prefix'] != prefix or _CONFIG_VARS['exec_prefix'] != exec_prefix:
+            with _CONFIG_VARS_LOCK:
+                _CONFIG_VARS_INITIALIZED = False
+                _init_config_vars()
+    else:
+        # Initialize the config_vars cache.
         with _CONFIG_VARS_LOCK:
             # Test again with the lock held to avoid races. Note that
             # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
