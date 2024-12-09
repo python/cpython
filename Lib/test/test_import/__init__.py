@@ -15,7 +15,6 @@ import marshal
 import os
 import py_compile
 import random
-import re
 import shutil
 import stat
 import subprocess
@@ -811,9 +810,9 @@ class ImportTests(unittest.TestCase):
     def test_frozen_module_from_import_error(self):
         with self.assertRaises(ImportError) as cm:
             from os import this_will_never_exist
-        self.assertRegex(
+        self.assertIn(
+            f"cannot import name 'this_will_never_exist' from 'os' ({os.__file__})",
             str(cm.exception),
-            f"cannot import name 'this_will_never_exist' from 'os' \\({re.escape(os.__file__)}\\)"
         )
 
 
