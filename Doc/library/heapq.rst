@@ -82,6 +82,21 @@ The following functions are provided:
    on the heap.
 
 
+.. function:: heapremove(heap, index, item=None):
+
+   Remove the item at ``heap[index]``, optionally replacing it with *item*,
+   while maintaining the heap invariant.
+
+   This is more efficient than performing ``del heap[index]`` followed
+   by :func:`heapify`.
+
+   In case an items *value* has changed and its index is known, this
+   function can be used to restore the heap invariant:
+   ``heapremove(heap, item_index, item)``
+
+   .. versionadded:: 3.13
+
+
 The module also offers three general purpose functions based on heaps.
 
 
