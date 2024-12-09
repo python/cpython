@@ -337,16 +337,17 @@ An :class:`IMAP4` instance has the following methods:
       EXISTS [b'1']
       RECENT [b'1']
 
-   Instead of iterating one response at a time, it is also possible to retrieve
-   the next response along with any immediately available subsequent responses
-   (e.g. a rapid series of ``EXPUNGE`` events from a bulk delete).  This
-   batch processing aid is provided by the
-   :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>` :term:`generator`.
 
    .. method:: Idler.burst(interval=0.1)
 
       Yield a burst of responses no more than *interval* seconds apart
       (expressed as an :class:`int` or :class:`float`).
+
+      This :term:`generator` is an alternative to iterating one response at a
+      time, intended to aid in efficient batch processing.  It retrieves the
+      next response along with any immediately available subsequent responses.
+      (For example, a rapid series of ``EXPUNGE`` responses after a bulk
+      delete.)
 
       Example::
 

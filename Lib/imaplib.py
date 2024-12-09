@@ -1550,10 +1550,11 @@ class Idler:
                             respected when waiting for the first response.)
         :type interval:     int|float
 
-        This generator retrieves the next response along with any
-        immediately available subsequent responses (e.g. a rapid series of
-        EXPUNGE responses after a bulk delete) so they can be efficiently
-        processed as a batch instead of one at a time.
+        This generator is an alternative to iterating one response at a
+        time, intended to aid in efficient batch processing.  It retrieves
+        the next response along with any immediately available subsequent
+        responses.  (For example, a rapid series of EXPUNGE responses after
+        a bulk delete.)
 
         Responses are represented as (type, [data, ...]) tuples, as described
         in the IMAP4 class documentation.
