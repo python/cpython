@@ -1179,11 +1179,10 @@ Querying file type and status
 
 .. attribute:: Path.status
 
-   A :class:`Status` object that supports querying file type information. The
-   object exposes methods like :meth:`~Status.is_dir` that cache their
-   results, which can help reduce the number of system calls needed when
-   switching on file type. Care must be taken to avoid incorrectly using
-   cached results::
+   A :class:`~pathlib.types.Status` object that supports querying file type
+   information. The object exposes methods that cache their results, which can
+   help reduce the number of system calls needed when switching on file type.
+   Care must be taken to avoid incorrectly using cached results::
 
       >>> p = Path('setup.py')
       >>> p.status.is_file()
@@ -1947,8 +1946,9 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
 .. class:: Status()
 
-   A :class:`typing.Protocol` describing the :attr:`Path.status` attribute.
-   Implementations may return cached results from their methods.
+   A :class:`typing.Protocol` describing the
+   :attr:`Path.status <pathlib.Path.status>` attribute. Implementations may
+   return cached results from their methods.
 
    .. method:: is_dir(*, follow_symlinks=True)
 
