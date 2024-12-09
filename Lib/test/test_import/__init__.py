@@ -833,6 +833,12 @@ import os
 os.__spec__.has_location = False
 del os.__file__
 from os import this_will_never_exist
+""",
+              """
+import os
+os.__spec__.origin = []
+os.__file__ = []
+from os import this_will_never_exist
 """
         ]
         for script in scripts:
