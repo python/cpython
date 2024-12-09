@@ -2540,8 +2540,13 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         }
         str++;
 
+        /* Skip spaces after first digit */
+        while (str < end && Py_ISSPACE(*str)) {
+            str++;
+        }
+
         /* Check if we have a second digit*/
-        if (str >= end || Py_ISSPACE(*str)) {
+        if (str >= end) {
             PyErr_SetString(PyExc_ValueError,
                            "fromhex() arg must be of even length");
             _PyBytesWriter_Dealloc(&writer);
