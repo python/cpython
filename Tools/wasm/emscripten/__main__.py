@@ -9,6 +9,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+from urllib.request import urlopen
 from pathlib import Path
 from textwrap import dedent
 
@@ -161,20 +162,17 @@ def make_build_python(context, working_dir):
 
 @subdir(HOST_DIR, clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
-    shutil.rmtree(HOST_DIR/"libffi", ignore_errors=True)
-
-    call([
-        "git",
-        "clone",
-        "https://github.com/libffi/libffi",
-        "--depth=1"
-    ],
-    quiet=context.quiet,
-    )
+    shutil.rmtree(HOST_DIR, ignore_errors=True)
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp_file:
+        with urlopen(
+            "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
+        ) as response:
+            shutil.copyfileobj(response, tmp_file)
+        shutil.unpack_archive(tmp_file.name, HOST_DIR)
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
         env=updated_env({"PREFIX": HOST_DIR}),
-        cwd=HOST_DIR/"libffi",
+        cwd=HOST_DIR / "libffi-3.4.6",
         quiet=context.quiet,
     )
 
@@ -204,13 +202,17 @@ def configure_emscripten_python(context, working_dir):
 
     host_runner = context.host_runner
     pkg_config_path_dir = (working_dir / "lib/pkgconfig/").resolve()
-    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner, "EM_PKG_CONFIG_PATH": str(pkg_config_path_dir)}
+    env_additions = {
+        "CONFIG_SITE": config_site,
+        "HOSTRUNNER": host_runner,
+        "EM_PKG_CONFIG_PATH": str(pkg_config_path_dir),
+    }
     build_python = os.fsdecode(build_python_path())
     configure = [
         "emconfigure",
         os.path.relpath(CHECKOUT / "configure", working_dir),
         "CFLAGS=-DPY_CALL_TRAMPOLINE -sUSE_BZIP2",
-        'PKG_CONFIG=pkg-config',
+        "PKG_CONFIG=pkg-config",
         f"--host={HOST_TRIPLE}",
         f"--build={build_platform()}",
         f"--with-build-python={build_python}",
@@ -325,11 +327,20 @@ def main():
         "configure-host",
         help="Run `configure` for the host/emscripten (pydebug builds are inferred from the build Python)",
     )
-    make_host = subcommands.add_parser("make-host", help="Run `make` for the host/emscripten")
+    make_host = subcommands.add_parser(
+        "make-host", help="Run `make` for the host/emscripten"
+    )
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
-    for subcommand in build, configure_build, make_libffi_cmd, make_build, configure_host, make_host:
+    for subcommand in (
+        build,
+        configure_build,
+        make_libffi_cmd,
+        make_build,
+        configure_host,
+        make_host,
+    ):
         subcommand.add_argument(
             "--quiet",
             action="store_true",
