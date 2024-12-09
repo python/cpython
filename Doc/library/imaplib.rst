@@ -324,7 +324,7 @@ An :class:`IMAP4` instance has the following methods:
    after which any ongoing iteration will stop.  It defaults to ``None``,
    meaning no time limit, but can also be an :class:`int` or :class:`float`.
    Callers wishing to avoid inactivity timeouts on servers that impose them
-   should keep this at most 29 minutes.
+   should keep this at most 29 minutes (1740 seconds).
    See the :ref:`warning below <windows-pipe-timeout-warning>` if using
    :class:`IMAP4_stream` on Windows.
 
