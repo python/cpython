@@ -1281,6 +1281,15 @@ PyConfig
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
+   .. c:member:: int use_system_logger
+
+      If non-zero, ``stdout`` and ``stderr`` will be redirected to the system
+      log.
+
+      Only available on macOS 10.12 and later, and on iOS.
+
+      Default: ``0`` (don't use system log).
+
    .. c:member:: int user_site_directory
 
       If non-zero, add the user site directory to :data:`sys.path`.
