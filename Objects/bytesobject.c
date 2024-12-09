@@ -2541,6 +2541,14 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         }
         str++;
 
+        /* Check if we have a second digit*/
+        if (str >= end) {
+            PyErr_SetString(PyExc_ValueError,
+                           "fromhex() arg must be of even length");
+            _PyBytesWriter_Dealloc(&writer);
+            return NULL;
+        }
+
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
             invalid_char = str - PyUnicode_1BYTE_DATA(string);
@@ -2554,15 +2562,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
-    if (str >= end) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fromhex() arg must be of even length");
-    }
-    else {
-        PyErr_Format(PyExc_ValueError,
-                     "non-hexadecimal number found in "
-                     "fromhex() arg at position %zd", invalid_char);
-    }
+    PyErr_Format(PyExc_ValueError,
+                 "non-hexadecimal number found in "
+                 "fromhex() arg at position %zd", invalid_char);
     _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
