@@ -223,7 +223,7 @@ def configure_emscripten_python(context, working_dir):
             if which grealpath > /dev/null; then
                 # It has brew installed gnu core utils, use that
                 REALPATH="grealpath -s"
-            elif which realpath > /dev/null && realpath --version 2&>1 | grep GNU > /dev/null; then
+            elif which realpath > /dev/null && realpath --version > /dev/null 2> /dev/null && realpath --version | grep GNU > /dev/null; then
                 # realpath points to GNU realpath so use it.
                 REALPATH="realpath -s"
             else

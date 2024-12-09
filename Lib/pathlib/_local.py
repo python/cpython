@@ -846,10 +846,18 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def _rmtree(self):
-        # Lazy import to improve module import time
-        import shutil
-        shutil.rmtree(self)
+    def _delete(self):
+        """
+        Delete this file or directory (including all sub-directories).
+        """
+        if self.is_symlink() or self.is_junction():
+            self.unlink()
+        elif self.is_dir():
+            # Lazy import to improve module import time
+            import shutil
+            shutil.rmtree(self)
+        else:
+            self.unlink()
 
     def rename(self, target):
         """
