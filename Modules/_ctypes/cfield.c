@@ -1194,7 +1194,7 @@ P_get(void *ptr, Py_ssize_t size)
 
 /* Table with info about all formats.
  * Must be accessed via _ctypes_get_fielddesc, which initializes it on
- * first use.
+ * first use. After initialization it's treated as constant & read-only.
  */
 
 struct formattable {
@@ -1464,12 +1464,14 @@ _Py_COMP_DIAG_POP
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    static int initialized = 0;
+    static bool initialized = 0;
+    static PyMutex mutex = {0};
+    PyMutex_Lock(&mutex);
     if (!initialized) {
         _ctypes_init_fielddesc();
-
         initialized = 1;
     }
+    PyMutex_Unlock(&mutex);
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
