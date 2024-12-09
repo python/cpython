@@ -235,6 +235,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         size_t size = sizeof(atexit_py_callback*) * (size_t)state->callback_len;
         r = (atexit_py_callback**)PyMem_Realloc(state->callbacks, size);
         if (r == NULL) {
+            state->callback_len -= 16;
             _PyAtExit_UNLOCK(state);
             return PyErr_NoMemory();
         }
