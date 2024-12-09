@@ -5,15 +5,19 @@ import contextlib
 import dis
 import functools
 import io
+import itertools
+import opcode
 import re
 import sys
+import tempfile
+import textwrap
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only)
+                          requires_specialization, cpython_only,
+                          os_helper)
 from test.support.bytecode_helper import BytecodeTestCase
 
-import opcode
 
 CACHE = dis.opmap["CACHE"]
 
@@ -2424,6 +2428,102 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
 
                 yield Instruction("CACHE", CACHE, 0, None, argrepr, offset, offset,
                                   False, None, None, instr.positions)
+
+
+class TestDisCLI(unittest.TestCase):
+
+    def infile(self, content):
+        filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as fp:
+            fp.write(content)
+        return filename
+
+    def invoke_dis(self, infile, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            dis.main(args=[*flags, infile])
+        return output.getvalue()
+
+    def check_output(self, source, expect, *flags):
+        with self.subTest(flags):
+            infile = self.infile(source)
+            res = self.invoke_dis(infile, *flags)
+            res = textwrap.dedent(res)
+            expect = textwrap.dedent(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    def test_invokation(self):
+        # test various combinations of parameters
+        base_flags = [
+            ('-C', '--show-caches'),
+            ('-O', '--show-offsets'),
+            ('-P', '--show-positions'),
+            ('-S', '--specialized'),
+        ]
+
+        infile = self.infile('def f():\n\tprint(x)\n\treturn None')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(args=args[1:]):
+                        _ = self.invoke_dis(infile, *args)
+
+    def test_show_cache(self):
+        # test 'python -m dis -C/--show-caches'
+        source = 'print()'
+        expect = '''\
+0           RESUME                   0
+
+1           LOAD_NAME                0 (print)
+            PUSH_NULL
+            CALL                     0
+            CACHE                    0 (counter: 0)
+            CACHE                    0 (func_version: 0)
+            CACHE                    0
+            POP_TOP
+            LOAD_CONST               0 (None)
+            RETURN_VALUE
+'''
+        for flag in ['-C', '--show-caches']:
+            self.check_output(source, expect, flag)
+
+    def test_show_offsets(self):
+        # test 'python -m dis -O/--show-offsets'
+        source = 'pass'
+        expect = '''\
+0          0       RESUME                   0
+
+1          2       LOAD_CONST               0 (None)
+           4       RETURN_VALUE
+ '''
+        for flag in ['-O', '--show-offsets']:
+            self.check_output(source, expect, flag)
+
+    def test_show_positions(self):
+        # test 'python -m dis -P/--show-positions'
+        source = 'pass'
+        expect = '''\
+0:0-1:0            RESUME                   0
+
+1:0-1:4            LOAD_CONST               0 (None)
+1:0-1:4            RETURN_VALUE
+'''
+        for flag in ['-P', '--show-positions']:
+            self.check_output(source, expect, flag)
+
+    def test_specialized_code(self):
+        # test 'python -m dis -S/--specialized'
+        source = 'pass'
+        expect = '''\
+0           RESUME                   0
+
+1           LOAD_CONST_IMMORTAL      0 (None)
+            RETURN_VALUE
+'''
+        for flag in ['-S', '--specialized']:
+            self.check_output(source, expect, flag)
 
 
 if __name__ == "__main__":
