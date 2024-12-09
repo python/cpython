@@ -2534,7 +2534,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
                 break;
         }
 
-        /* Check first hex digit */
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
             invalid_char = str - PyUnicode_1BYTE_DATA(string);
@@ -2542,7 +2541,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         }
         str++;
 
-        /* Check second hex digit */
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
             invalid_char = str - PyUnicode_1BYTE_DATA(string);
