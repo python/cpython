@@ -9430,14 +9430,14 @@ else $as_nop
   wasm_debug=no
 fi
 
-        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
+        as_fn_append LINKFORSHARED " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
-        as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
-    as_fn_append LDFLAGS_NODIST " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
-    as_fn_append LDFLAGS_NODIST " -sSTACK_SIZE=5MB"
+        as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
+    as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
