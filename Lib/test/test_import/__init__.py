@@ -15,6 +15,7 @@ import marshal
 import os
 import py_compile
 import random
+import re
 import shutil
 import stat
 import subprocess
@@ -812,7 +813,7 @@ class ImportTests(unittest.TestCase):
             from os import this_will_never_exist
         self.assertRegex(
             str(cm.exception),
-            r"cannot import name 'this_will_never_exist' from 'os' \(.*Lib[\\/]os\.py\)"
+            f"cannot import name 'this_will_never_exist' from 'os' \\({re.escape(os.__file__)}\\)"
         )
 
     def test_script_shadowing_stdlib(self):
