@@ -821,7 +821,7 @@ class ImportTests(unittest.TestCase):
             """
 import os
 os.__spec__.has_location = False
-os.__file__ = 123
+os.__file__ = []
 from os import this_will_never_exist
 """,
             """
@@ -1105,7 +1105,7 @@ try:
 except AttributeError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     fractions.Fraction
 except AttributeError as e:
@@ -1129,7 +1129,7 @@ try:
 except ImportError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     from fractions import Fraction
 except ImportError as e:
