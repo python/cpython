@@ -287,13 +287,6 @@ def _install_loggers(cp, handlers, disable_existing):
     #        logger.disabled = 1
     _handle_existing_loggers(existing, child_loggers, disable_existing)
 
-def _clearExistingHandlers(handlers_to_clear=None):
-    """
-    Remove and shutdown only the specified handlers.
-    """
-    if not handlers_to_clear:
-        return
-    handlers_to_remove = []
 
 def _clearExistingHandlers(handlers_to_clear=None):
     """
