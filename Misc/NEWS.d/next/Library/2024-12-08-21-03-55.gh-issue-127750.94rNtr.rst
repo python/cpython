@@ -1,0 +1,2 @@
+Improve caching of :class:`functools.singledispatchmethod` to fix issues
+where sometimes different object instances could collide with each other.
