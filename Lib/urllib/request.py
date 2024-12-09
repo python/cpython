@@ -2069,7 +2069,7 @@ elif os.name == 'nt':
         """
         return getproxies_environment() or getproxies_registry()
 
-    def proxy_bypass_registry(host):
+    def getproxy_bypass_registry():
         try:
             import winreg
         except ImportError:
@@ -2087,7 +2087,15 @@ elif os.name == 'nt':
             return False
         if not proxyEnable or not proxyOverride:
             return False
-        return _proxy_bypass_winreg_override(host, proxyOverride)
+
+        return proxyOverride
+
+    def proxy_bypass_registry(host, proxyOverride=None):
+        if proxyOverride is None:
+            proxyOverride = getproxy_bypass_registry()
+
+        if proxyOverride:
+            return _proxy_bypass_winreg_override(host, proxyOverride)
 
     def proxy_bypass(host):
         """Return True, if host should be bypassed.
