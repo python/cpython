@@ -7,6 +7,7 @@ import sys
 from errno import EXDEV
 from glob import _StringGlobber
 from itertools import chain
+from stat import S_ISDIR, S_ISREG, S_ISLNK
 from _collections_abc import Sequence
 
 try:
@@ -56,6 +57,67 @@ class _PathParents(Sequence):
 
     def __repr__(self):
         return "<{}.parents>".format(type(self._path).__name__)
+
+
+class _PathStatus:
+    """This object provides os.DirEntry-like access to the file type and file
+    attributes.  Don't try to construct it yourself."""
+    __slots__ = ('_path', '_repr', '_link_mode', '_file_mode')
+
+    def __init__(self, path):
+        self._path = str(path)
+        self._repr = f"<{type(path).__name__}.info>"
+
+    def __repr__(self):
+        return self._repr
+
+    def _get_link_mode(self):
+        try:
+            return self._link_mode
+        except AttributeError:
+            try:
+                self._link_mode = os.lstat(self._path).st_mode
+            except (OSError, ValueError):
+                self._link_mode = 0
+            if not self.is_symlink():
+                # Not a symlink, so stat() will give the same result.
+                self._file_mode = self._link_mode
+            return self._link_mode
+
+    def _get_file_mode(self):
+        try:
+            return self._file_mode
+        except AttributeError:
+            try:
+                self._file_mode = os.stat(self._path).st_mode
+            except (OSError, ValueError):
+                self._file_mode = 0
+            return self._file_mode
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+
+        if follow_symlinks:
+            return S_ISDIR(self._get_file_mode())
+        else:
+            return S_ISDIR(self._get_link_mode())
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file.
+        """
+        if follow_symlinks:
+            return S_ISREG(self._get_file_mode())
+        else:
+            return S_ISREG(self._get_link_mode())
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return S_ISLNK(self._get_link_mode())
 
 
 class PurePath(PurePathBase):
@@ -535,6 +597,18 @@ class Path(PathBase, PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
+
+    @property
+    def status(self):
+        """
+        A Status object that exposes the file type and other file attributes
+        of this path.
+        """
+        try:
+            return self._status
+        except AttributeError:
+            self._status = _PathStatus(self)
+            return self._status
 
     def stat(self, *, follow_symlinks=True):
         """

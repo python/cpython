@@ -6,7 +6,7 @@ import stat
 import unittest
 
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
-from pathlib._types import Parser, Status
+from pathlib.types import Parser, Status
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -1901,7 +1901,7 @@ class DummyPathTest(DummyPurePathTest):
     def test_iterdir_status(self):
         p = self.cls(self.base)
         for child in p.iterdir():
-            entry = child._status
+            entry = child.status
             self.assertIsInstance(entry, Status)
             self.assertEqual(entry.is_dir(follow_symlinks=False),
                              child.is_dir(follow_symlinks=False))
