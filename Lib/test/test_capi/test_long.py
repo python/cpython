@@ -723,7 +723,7 @@ class LongTests(unittest.TestCase):
             'bits_per_digit': int_info.bits_per_digit,
             'digit_size': int_info.sizeof_digit,
             'digits_order': -1,
-            'endianness': -1 if sys.byteorder == 'little' else 1,
+            'digit_endianness': -1 if sys.byteorder == 'little' else 1,
         }
         self.assertEqual(layout, expected)
 
@@ -756,7 +756,8 @@ class LongTests(unittest.TestCase):
         base = 2 ** layout['bits_per_digit']
 
         pylongwriter_create = _testcapi.pylongwriter_create
-        self.assertEqual(pylongwriter_create(0, []), 0)
+        self.assertRaises(ValueError, pylongwriter_create, 0, [])
+        self.assertRaises(ValueError, pylongwriter_create, -123, [])
         self.assertEqual(pylongwriter_create(0, [0]), 0)
         self.assertEqual(pylongwriter_create(0, [123]), 123)
         self.assertEqual(pylongwriter_create(1, [123]), -123)

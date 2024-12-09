@@ -180,11 +180,11 @@ layout_to_dict(const PyLongLayout *layout)
         goto error;
     }
 
-    value = PyLong_FromLong(layout->endianness);
+    value = PyLong_FromLong(layout->digit_endianness);
     if (value == NULL) {
         goto error;
     }
-    res = PyDict_SetItemString(dict, "endianness", value);
+    res = PyDict_SetItemString(dict, "digit_endianness", value);
     Py_DECREF(value);
     if (res < 0) {
         goto error;
@@ -215,7 +215,7 @@ pylong_export(PyObject *module, PyObject *obj)
     const digit *export_long_digits = export_long.digits;
 
     PyObject *digits = PyList_New(0);
-    for (Py_ssize_t i=0; i < export_long.ndigits; i++) {
+    for (Py_ssize_t i = 0; i < export_long.ndigits; i++) {
         PyObject *item = PyLong_FromUnsignedLong(export_long_digits[i]);
         if (item == NULL) {
             goto error;
@@ -258,7 +258,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    for (Py_ssize_t i=0; i < ndigits; i++) {
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
         PyObject *item = PyList_GET_ITEM(list, i);
 
         long num = PyLong_AsLong(item);

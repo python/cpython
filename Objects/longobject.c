@@ -6781,7 +6781,7 @@ int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 static const PyLongLayout PyLong_LAYOUT = {
     .bits_per_digit = PyLong_SHIFT,
     .digits_order = -1,  // least significant first
-    .endianness = PY_LITTLE_ENDIAN ? -1 : 1,
+    .digit_endianness = PY_LITTLE_ENDIAN ? -1 : 1,
     .digit_size = sizeof(digit),
 };
 
@@ -6851,7 +6851,7 @@ PyLong_FreeExport(PyLongExport *export_long)
 PyLongWriter*
 PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
 {
-    if (ndigits < 0) {
+    if (ndigits <= 0) {
         PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
         return NULL;
     }
@@ -6860,9 +6860,6 @@ PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
     PyLongObject *obj = _PyLong_New(ndigits);
     if (obj == NULL) {
         return NULL;
-    }
-    if (ndigits == 0) {
-        assert(obj->long_value.ob_digit[0] == 0);
     }
     if (negative) {
         _PyLong_FlipSign(obj);

@@ -685,7 +685,7 @@ Export API
       - ``1`` for most significant digit first
       - ``-1`` for least significant digit first
 
-   .. c:member:: int8_t endian
+   .. c:member:: int8_t digit_endianness
 
       Digit endianness:
 
@@ -772,19 +772,20 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    Create a :c:type:`PyLongWriter`.
 
-   On success, set *\*digits* and return a writer.
+   On success, allocate *\*digits* and return a writer.
    On error, set an exception and return ``NULL``.
 
    *negative* is ``1`` if the number is negative, or ``0`` otherwise.
 
    *ndigits* is the number of digits in the *digits* array. It must be
-   greater than or equal to 0.
+   greater than 0.
 
-   The caller can either initialize the array of digits *digits* and then call
-   :c:func:`PyLongWriter_Finish` to get a Python :class:`int`, or call
+   The caller can either initialize the array of digits *digits* and then
+   either call :c:func:`PyLongWriter_Finish` to get a Python :class:`int` or
    :c:func:`PyLongWriter_Discard` to destroy the writer instance.  Digits must
-   be in the range [``0``; ``(1 << sys.int_info.bits_per_digit) - 1``].  Unused
-   digits must be set to ``0``.
+   be in the range [``0``; ``(1 << bits_per_digit) - 1``]  (where the
+   :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits per digit).
+   The unused most-significant digits must be set to ``0``.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
@@ -797,7 +798,11 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The function takes care of normalizing the digits and converts the object
    to a compact integer if needed.
 
+   The writer instance is invalid after the call.
+
 
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
 
    Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   The writer instance is invalid after the call.
