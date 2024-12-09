@@ -2859,6 +2859,20 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
     }
 
+    if (origin == NULL) {
+        // Fall back to __file__ for diagnostics if we don't have
+        // an origin that is a location
+        origin = PyModule_GetFilenameObject(v);
+        if (origin == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                goto done;
+            }
+            // PyModule_GetFilenameObject raised "module filename missing"
+            _PyErr_Clear(tstate);
+        }
+        assert(origin == NULL || PyUnicode_Check(origin));
+    }
+
     if (is_possibly_shadowing_stdlib) {
         assert(origin);
         errmsg = PyUnicode_FromFormat(
@@ -2903,19 +2917,6 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
         else {
             assert(rc == 0);
-            if (origin == NULL) {
-                // Fall back to __file__ for diagnostics if we don't have
-                // an origin that is a location
-                origin = PyModule_GetFilenameObject(v);
-                if (origin == NULL) {
-                    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                        goto done;
-                    }
-                    // PyModule_GetFilenameObject raised "module filename missing"
-                    _PyErr_Clear(tstate);
-                }
-                assert(origin == NULL || PyUnicode_Check(origin));
-            }
             if (origin) {
                 errmsg = PyUnicode_FromFormat(
                     "cannot import name %R from %R (%S)",
