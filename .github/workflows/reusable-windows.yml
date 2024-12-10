@@ -35,10 +35,11 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: >-
-        .\PCbuild\build.bat
+        .\\PCbuild\\build.bat
         -e -d
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+      shell: bash
     - name: Display build info
       if: inputs.arch != 'arm64'
       run: .\python.bat -m test.pythoninfo
