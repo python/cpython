@@ -672,11 +672,11 @@ class IMAP4:
         EXISTS [b'1']
         RECENT [b'1']
 
-        Warning:  Windows IMAP4_stream connections have no way to accurately
-        respect 'duration', since Windows select() only works on sockets.
-        However, if the server regularly sends status messages during IDLE,
-        they will wake our selector and keep iteration from blocking for long.
-        Dovecot's imap_idle_notify_interval is two minutes by default.
+        Warning:  On Windows, IMAP4_stream connections have no way to
+        accurately respect 'duration', since Windows select() only works on
+        sockets. However, if the server regularly sends status messages during
+        IDLE, they will wake our selector and keep iteration from blocking for
+        long.  Dovecot's imap_idle_notify_interval is two minutes by default.
         Assuming that's typical of IMAP servers, subtracting it from the 29
         minutes needed to avoid server inactivity timeouts would make 27
         minutes a sensible value for 'duration' in this situation.
@@ -1576,11 +1576,12 @@ class Idler:
         immediately without producing anything.  Callers should consider
         this if using it in a loop.
 
-        Warning:  Windows IMAP4_stream connections have no way to accurately
-        respect the 'interval' argument, since Windows select() only works
-        on sockets.  This will cause the generator to yield endless responses
-        and block indefinitely for each one.  It is therefore advised not to
-        use burst() with an IMAP4_stream connection on Windows.
+        Warning:  On Windows, IMAP4_stream connections have no way to
+        accurately respect the 'interval' argument, since Windows select()
+        only works on sockets.  This will cause the generator to yield
+        endless responses and block indefinitely for each one.  It is
+        therefore advised not to use burst() with an IMAP4_stream
+        connection on Windows.
         """
         try:
             yield next(self)

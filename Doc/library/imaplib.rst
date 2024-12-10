@@ -373,7 +373,7 @@ An :class:`IMAP4` instance has the following methods:
 
    .. warning::
 
-      Windows' :class:`IMAP4_stream` connections have no way to accurately
+      On Windows, :class:`IMAP4_stream` connections have no way to accurately
       respect the *duration* or *interval* arguments, since Windows'
       ``select()`` only works on sockets.
 
