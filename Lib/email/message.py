@@ -14,6 +14,7 @@ from io import BytesIO, StringIO
 # Intrapackage imports
 from email import utils
 from email import errors
+from email import headerregistry
 from email._policybase import compat32
 from email import charset as _charset
 from email._encoded_words import decode_b
@@ -286,8 +287,11 @@ class Message:
         if i is not None and not isinstance(self._payload, list):
             raise TypeError('Expected list, got %s' % type(self._payload))
         payload = self._payload
+        cte = self.get('content-transfer-encoding', '')
+        if isinstance(cte, headerregistry.ContentTransferEncodingHeader):
+            cte = cte.cte
         # cte might be a Header, so for now stringify it.
-        cte = str(self.get('content-transfer-encoding', '')).lower()
+        cte = str(cte).strip().lower()
         # payload may be bytes here.
         if not decode:
             if isinstance(payload, str) and utils._has_surrogates(payload):
