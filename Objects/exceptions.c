@@ -2850,18 +2850,15 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
  *     objlen       The 'object' length.
  *     start        The clipped 'start' attribute.
  *     end          The clipped 'end' attribute.
- *     consistent   Indicate whetehr 'start' and 'end' are consistent.
  *     as_bytes     Indicate whether the underlying 'object' is a bytes object.
  *
- * The 'obj', 'objlen', 'start', 'end' and 'consistent' parameters may
- * be NULL to indicate that the parameter does not need to be stored.
- *
- * The 'consistent' value is only set if 'start', and 'end' are retrieved.
+ * The 'obj', 'objlen', 'start' and 'end' parameters may be NULL
+ * to indicate that the parameter does not need to be stored.
  */
 int
 _PyUnicodeError_GetParams(PyObject *self,
                           PyObject **obj, Py_ssize_t *objlen,
-                          Py_ssize_t *start, Py_ssize_t *end, int *consistent,
+                          Py_ssize_t *start, Py_ssize_t *end,
                           int as_bytes)
 {
     assert(as_bytes == 0 || as_bytes == 1);
@@ -2877,7 +2874,6 @@ _PyUnicodeError_GetParams(PyObject *self,
     if (objlen != NULL) {
         *objlen = n;
     }
-
     if (start != NULL) {
         *start = unicode_error_adjust_start(exc->start, n);
         assert(*start >= 0);
@@ -2888,11 +2884,6 @@ _PyUnicodeError_GetParams(PyObject *self,
         assert(*end >= 0);
         assert(*end <= n);
     }
-
-    if (start != NULL && end != NULL && consistent != NULL) {
-        *consistent = *start < *end ? 1 : 0;
-    }
-
     if (obj != NULL) {
         *obj = r;
     }
@@ -2944,21 +2935,21 @@ PyUnicodeTranslateError_GetObject(PyObject *self)
 int
 PyUnicodeEncodeError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, NULL, false);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, false);
 }
 
 
 int
 PyUnicodeDecodeError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, NULL, true);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, true);
 }
 
 
 int
 PyUnicodeTranslateError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, NULL, false);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, false);
 }
 
 // --- PyUnicodeEncodeObject: 'start' setters ---------------------------------
@@ -2988,21 +2979,21 @@ PyUnicodeTranslateError_SetStart(PyObject *self, Py_ssize_t start)
 int
 PyUnicodeEncodeError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, NULL, false);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, false);
 }
 
 
 int
 PyUnicodeDecodeError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, NULL, true);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, true);
 }
 
 
 int
 PyUnicodeTranslateError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, NULL, false);
+    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, false);
 }
 
 // --- PyUnicodeEncodeObject: 'end' setters -----------------------------------
