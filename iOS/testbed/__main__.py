@@ -202,33 +202,44 @@ def clone_testbed(
             )
             sys.exit(13)
 
-    print("Cloning testbed project...")
-    shutil.copytree(source, target)
+    print("Cloning testbed project:")
+    print(f"  Cloning {source}...", end="", flush=True)
+    shutil.copytree(source, target, symlinks=True)
+    print(" done")
 
     if framework is not None:
         if framework.suffix == ".xcframework":
-            print("Installing XCFramework...")
+            print("  Installing XCFramework...", end="", flush=True)
             xc_framework_path = target / "Python.xcframework"
-            shutil.rmtree(xc_framework_path)
-            shutil.copytree(framework, xc_framework_path)
+            if xc_framework_path.is_dir():
+                shutil.rmtree(xc_framework_path)
+            else:
+                xc_framework_path.unlink()
+            xc_framework_path.symlink_to(framework)
+            print(" done")
         else:
-            print("Installing simulator Framework...")
+            print("  Installing simulator framework...", end="", flush=True)
             sim_framework_path = (
                 target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
             )
-            shutil.rmtree(sim_framework_path)
-            shutil.copytree(framework, sim_framework_path)
+            if sim_framework_path.is_dir():
+                shutil.rmtree(sim_framework_path)
+            else:
+                sim_framework_path.unlink()
+            sim_framework_path.symlink_to(framework)
+            print(" done")
     else:
-        print("Using pre-existing iOS framework.")
+        print("  Using pre-existing iOS framework.")
 
     for app_src in apps:
-        print(f"Installing app {app_src.name!r}...")
+        print(f"  Installing app {app_src.name!r}...", end="", flush=True)
         app_target = target / f"iOSTestbed/app/{app_src.name}"
         if app_target.is_dir():
             shutil.rmtree(app_target)
         shutil.copytree(app_src, app_target)
+        print(" done")
 
-    print(f"Testbed project created in {target}")
+    print(f"Successfully cloned testbed: {target.resolve()}")
 
 
 def update_plist(testbed_path, args):
