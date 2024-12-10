@@ -2543,8 +2543,8 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            /* NULL at the end of the string */
-            if (bot == 37){
+            /* Check if we had a second digit */
+            if (str >= end){
                 invalid_char = -1;
             } else {
                 invalid_char = str - PyUnicode_1BYTE_DATA(string);
