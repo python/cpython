@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 import contextvars
 
@@ -589,46 +590,27 @@ class TestFuncWatchers(unittest.TestCase):
 
 class TestContextObjectWatchers(unittest.TestCase):
     @contextmanager
-    def context_watcher(self, which_watcher):
-        wid = _testcapi.add_context_watcher(which_watcher)
+    def context_watcher(self, cfg=None):
+        if cfg is None:
+            cfg = {}
+        cfg.setdefault('log', [])
+        wid = _testcapi.add_context_watcher(cfg)
         try:
-            switches = _testcapi.get_context_switches(which_watcher)
-        except ValueError:
-            switches = None
-        try:
-            yield switches
+            yield cfg.get('log', None)
         finally:
             _testcapi.clear_context_watcher(wid)
 
-    def assert_event_counts(self, want_0, want_1):
-        self.assertEqual(len(_testcapi.get_context_switches(0)), want_0)
-        self.assertEqual(len(_testcapi.get_context_switches(1)), want_1)
-
     def test_context_object_events_dispatched(self):
-        # verify that all counts are zero before any watchers are registered
-        self.assert_event_counts(0, 0)
-
-        # verify that all counts remain zero when a context object is
-        # entered and exited with no watchers registered
         ctx = contextvars.copy_context()
-        ctx.run(self.assert_event_counts, 0, 0)
-        self.assert_event_counts(0, 0)
-
-        # verify counts are as expected when first watcher is registered
-        with self.context_watcher(0):
-            self.assert_event_counts(0, 0)
-            ctx.run(self.assert_event_counts, 1, 0)
-            self.assert_event_counts(2, 0)
-
-            # again with second watcher registered
-            with self.context_watcher(1):
-                self.assert_event_counts(2, 0)
-                ctx.run(self.assert_event_counts, 3, 1)
-                self.assert_event_counts(4, 2)
-
-        # verify counts are reset and don't change after both watchers are cleared
-        ctx.run(self.assert_event_counts, 0, 0)
-        self.assert_event_counts(0, 0)
+        with self.context_watcher() as switches_0:
+            self.assertEqual(len(switches_0), 0)
+            ctx.run(lambda: self.assertEqual(len(switches_0), 1))
+            self.assertEqual(len(switches_0), 2)
+            with self.context_watcher() as switches_1:
+                self.assertEqual((len(switches_0), len(switches_1)), (2, 0))
+                ctx.run(lambda: self.assertEqual(
+                    (len(switches_0), len(switches_1)), (3, 1)))
+                self.assertEqual((len(switches_0), len(switches_1)), (4, 2))
 
     def test_callback_error(self):
         ctx_outer = contextvars.copy_context()
@@ -636,13 +618,15 @@ class TestContextObjectWatchers(unittest.TestCase):
         unraisables = []
 
         def _in_outer():
-            with self.context_watcher(2):
+            with self.context_watcher(cfg={'err': RuntimeError('boom!')}):
                 with catch_unraisable_exception() as cm:
                     ctx_inner.run(lambda: unraisables.append(cm.unraisable))
                     unraisables.append(cm.unraisable)
 
         try:
             ctx_outer.run(_in_outer)
+            self.assertEqual([x is not None for x in unraisables],
+                             [True, True])
             self.assertEqual([x.err_msg for x in unraisables],
                              ["Exception ignored in Py_CONTEXT_SWITCHED "
                               f"watcher callback for {ctx!r}"
@@ -656,21 +640,24 @@ class TestContextObjectWatchers(unittest.TestCase):
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):
             _testcapi.clear_context_watcher(-1)
-        with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID 8"):
-            _testcapi.clear_context_watcher(8)  # CONTEXT_MAX_WATCHERS = 8
+        with self.assertRaisesRegex(ValueError, f"Invalid context watcher ID {_testcapi.CONTEXT_MAX_WATCHERS}"):
+            _testcapi.clear_context_watcher(_testcapi.CONTEXT_MAX_WATCHERS)
 
     def test_clear_unassigned_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"No context watcher set for ID 1"):
             _testcapi.clear_context_watcher(1)
 
     def test_allocate_too_many_watchers(self):
-        with self.assertRaisesRegex(RuntimeError, r"no more context watcher IDs available"):
-            _testcapi.allocate_too_many_context_watchers()
+        with contextlib.ExitStack() as stack:
+            for i in range(_testcapi.CONTEXT_MAX_WATCHERS):
+                stack.enter_context(self.context_watcher())
+            with self.assertRaisesRegex(RuntimeError, r"no more context watcher IDs available"):
+                stack.enter_context(self.context_watcher())
 
     def test_exit_base_context(self):
         ctx = contextvars.Context()
         _testcapi.clear_context_stack()
-        with self.context_watcher(0) as switches:
+        with self.context_watcher() as switches:
             ctx.run(lambda: None)
         self.assertEqual(switches, [ctx, None])
 
