@@ -1,0 +1,1 @@
+Optimize pattern matching of mappings when the mapping is a builtin dictionary.
