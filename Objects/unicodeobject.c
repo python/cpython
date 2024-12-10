@@ -5018,53 +5018,6 @@ ctz(size_t v)
 #define HAVE_CTZ 0
 #endif
 
-#if HAVE_CTZ && PY_LITTLE_ENDIAN
-// load p[0]..p[size-1] as a size_t without unaligned access nor read ahead.
-static size_t
-load_unaligned(const unsigned char *p, size_t size)
-{
-    union {
-        size_t s;
-        unsigned char b[SIZEOF_SIZE_T];
-    } u;
-    u.s = 0;
-    // This switch statement assumes little endian because:
-    // * union is faster than bitwise or and shift.
-    // * big endian machine is rare and hard to maintain.
-    switch (size) {
-    default:
-#if SIZEOF_SIZE_T == 8
-    case 8:
-        u.b[7] = p[7];
-        _Py_FALLTHROUGH;
-    case 7:
-        u.b[6] = p[6];
-        _Py_FALLTHROUGH;
-    case 6:
-        u.b[5] = p[5];
-        _Py_FALLTHROUGH;
-    case 5:
-        u.b[4] = p[4];
-        _Py_FALLTHROUGH;
-#endif
-    case 4:
-        u.b[3] = p[3];
-        _Py_FALLTHROUGH;
-    case 3:
-        u.b[2] = p[2];
-        _Py_FALLTHROUGH;
-    case 2:
-        u.b[1] = p[1];
-        _Py_FALLTHROUGH;
-    case 1:
-        u.b[0] = p[0];
-        break;
-    case 0:
-        break;
-    }
-    return u.s;
-}
-#endif
 
 /*
  * Find the first non-ASCII character in a byte sequence.
@@ -5077,12 +5030,17 @@ load_unaligned(const unsigned char *p, size_t size)
 static Py_ssize_t
 find_first_nonascii(const unsigned char *start, const unsigned char *end)
 {
+    // The search is done in `size_t` chunks.
+    // The start and end might not be aligned at `size_t` boundaries,
+    // so they're handled specially.
+
     const unsigned char *p = start;
 
     if (end - start >= SIZEOF_SIZE_T) {
         const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
         if (p < p2) {
+            // Avoid unaligned read.
             size_t u;
             memcpy(&u, p, sizeof(size_t));
             u &= ASCII_CHAR_MASK;
@@ -5114,9 +5072,14 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             p += SIZEOF_SIZE_T;
         }
     }
+
+    // less than size_t bytes left.
+    assert(end - p <= SIZEOF_SIZE_T);
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
-    // we can not use *(const size_t*)p to avoid buffer overrun.
-    size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
+    // Avoid unaligned read and read ahead.
+    size_t u = 0;
+    memcpy(&u, p, end - p);
+    u &= ASCII_CHAR_MASK;
     if (u) {
         return p - start + (ctz(u) - 7) / 8;
     }
