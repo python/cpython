@@ -2475,7 +2475,9 @@ new_reference(PyObject *op)
 {
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
-    op->ob_refcnt = 1;
+    op->ob_refcnt_full = 1;
+    assert(op->ob_refcnt == 1);
+    assert(op->ob_flags == 0);
 #else
     op->ob_tid = _Py_ThreadId();
     op->_padding = 0;

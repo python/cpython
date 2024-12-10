@@ -120,9 +120,19 @@ struct _object {
     __pragma(warning(disable: 4201))
 #endif
     union {
-       Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
-       PY_UINT32_T ob_refcnt_split[2];
+        PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
+        struct {
+#  if PY_BIG_ENDIAN
+            PY_UINT32_T ob_flags;
+            PY_UINT32_T ob_refcnt;
+#  else
+            PY_UINT32_T ob_refcnt;
+            PY_UINT32_T ob_flags;
+#  endif
+        };
+#else
+        Py_ssize_t ob_refcnt;
 #endif
     };
 #ifdef _MSC_VER

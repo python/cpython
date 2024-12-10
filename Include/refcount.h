@@ -252,13 +252,13 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
     }
 #elif SIZEOF_VOID_P > 4
-    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
+    PY_UINT32_T cur_refcnt = op->ob_refcnt;
     if (((int32_t)cur_refcnt) < 0) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
-    op->ob_refcnt_split[PY_BIG_ENDIAN] = cur_refcnt + 1;
+    op->ob_refcnt = cur_refcnt + 1;
 #else
     if (_Py_IsImmortal(op)) {
         _Py_INCREF_IMMORTAL_STAT_INC();
@@ -354,7 +354,13 @@ static inline void Py_DECREF(PyObject *op)
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+#if SIZEOF_VOID_P > 4
+    /* If an object has been freed, it will have a negative full refcnt
+     * If it has not it been freed, will have a very large refcnt */
+    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (UINT32_MAX - (1<<20))) {
+#else
     if (op->ob_refcnt <= 0) {
+#endif
         _Py_NegativeRefcount(filename, lineno, op);
     }
     if (_Py_IsImmortal(op)) {
