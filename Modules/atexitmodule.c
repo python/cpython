@@ -38,12 +38,13 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     callback->next = NULL;
 
     struct atexit_state *state = &interp->atexit;
-    if (state->ll_callbacks == NULL) {
+    atexit_callback *top = state->ll_callbacks;
+    if (top == NULL) {
         state->ll_callbacks = callback;
-        state->last_ll_callback = callback;
     }
     else {
-        state->last_ll_callback->next = callback;
+        callback->next = top;
+        state->ll_callbacks = callback;
     }
     return 0;
 }
