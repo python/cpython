@@ -357,7 +357,7 @@ New Syntax
   provides a standardized way of annotating a function's parameters
   and return value.  There are no semantics attached to such
   annotations except that they can be introspected at runtime using
-  the :attr:`~object.__annotations__` attribute.  The intent is to
+  the :attr:`!__annotations__` attribute.  The intent is to
   encourage experimentation through metaclasses, decorators or frameworks.
 
 * :pep:`3102`: Keyword-only arguments.  Named parameters occurring
