@@ -2682,7 +2682,7 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
     }
     if (!(as_bytes ? PyBytes_Check(attr) : PyUnicode_Check(attr))) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s attribute must be %s, not %T",
+                     "%.200s attribute must be %s",
                      name, as_bytes ? "bytes" : "unicode");
         return NULL;
     }
