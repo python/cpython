@@ -647,7 +647,7 @@ class IMAP4:
 
 
     def idle(self, duration=None):
-        """Return an Idler: an iterable context manager for the IDLE command
+        """Return an Idler: an iterable context manager for the IDLE command.
 
         :param duration:  Maximum duration (in seconds) to keep idling,
                           or None for no time limit.  To avoid inactivity
@@ -1399,7 +1399,7 @@ class IMAP4:
 
 
 class Idler:
-    """Iterable context manager: start IDLE & produce untagged responses
+    """Iterable context manager: start IDLE & produce untagged responses.
 
     An object of this type is returned by the IMAP4.idle() method.
     It sends the IDLE command when activated by the 'with' statement, produces
