@@ -434,10 +434,14 @@ since it is impossible to detect the termination of alien threads.
       Multiple threads may be given the same name.  The initial name is set by
       the constructor.
 
-      It's possible to change the name of a running thread, but the operating
-      system thread name is only updated if the name of the current thread is
-      set. Setting the name of a different thread does not update the operating
-      system thread name.
+
+      On some platforms, the thread name is set at the operating system level
+      when the thread starts, so that it is visible in task managers.
+      This name may be truncated to fit in a system-specific limit (for example,
+      15 bytes on Linux or 63 bytes on macOS).
+      Changes to *name* are only reflected at the OS level when the currently
+      running thread is renamed. (Setting the *name* attribute of a
+      different thread only updates the Python Thread object.)
 
       .. versionchanged:: 3.14
          Set the operating system thread name.
