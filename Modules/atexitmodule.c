@@ -227,8 +227,9 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     }
 
     struct atexit_state *state = get_atexit_state();
-    /* (Peter Bierma/ZeroIntensity) In theory, we could hold the lock for a shorter amount of time
-     * using some fancy compare-exchanges with the length. However, I'm lazy.
+    /* (Peter Bierma/ZeroIntensity) In theory, we could hold the
+     * lock for a shorter amount of time using some fancy compare-exchanges
+     * with the length. However, I'm lazy.
      */
     _PyAtExit_LOCK(state);
     if (state->ncallbacks >= state->callback_len) {
