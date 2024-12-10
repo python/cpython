@@ -1027,9 +1027,7 @@ class singledispatchmethod:
 
         self.dispatcher = singledispatch(func)
         self.func = func
-
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
+        self._method_cache = {}
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
@@ -1039,30 +1037,48 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
+        cache_key = id(obj)
+
+        try:
+            _obj_ref, _method = self._method_cache[id(obj)]
+        except KeyError:
+            pass
+        else:
+            if _obj_ref() is obj:
                 return _method
 
         dispatch = self.dispatcher.dispatch
         funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
-        def _method(*args, **kwargs):
-            if not args:
-                raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
+
+        def _remove(_):
+            self._method_cache.pop(cache_key, None)
+
+        import weakref # see comment in singledispatch function
+        try:
+            obj_ref = weakref.ref(obj, _remove)
+        except TypeError:
+            cache_key = None
+
+            def _method(*args, **kwargs):
+                if not args:
+                    raise TypeError(f'{funcname} requires at least '
+                                    '1 positional argument')
+                return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
+        else:
+            def _method(*args, **kwargs):
+                if not args:
+                    raise TypeError(f'{funcname} requires at least '
+                                    '1 positional argument')
+                # Make sure to use the weakref here to prevent storing
+                # a strong reference to obj in the cache
+                return dispatch(args[0].__class__).__get__(obj_ref(), cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
+        if cache_key:
+            self._method_cache[cache_key] = (obj_ref, _method)
 
         return _method
 
