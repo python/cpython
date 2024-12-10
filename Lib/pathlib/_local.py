@@ -7,6 +7,7 @@ import sys
 from errno import EXDEV
 from glob import _StringGlobber
 from itertools import chain
+from stat import S_ISDIR, S_ISREG, S_ISLNK
 from _collections_abc import Sequence
 
 try:
@@ -56,6 +57,67 @@ class _PathParents(Sequence):
 
     def __repr__(self):
         return "<{}.parents>".format(type(self._path).__name__)
+
+
+class _PathStatus:
+    """This object provides os.DirEntry-like access to the file type and file
+    attributes.  Don't try to construct it yourself."""
+    __slots__ = ('_path', '_repr', '_link_mode', '_file_mode')
+
+    def __init__(self, path):
+        self._path = str(path)
+        self._repr = f"<{type(path).__name__}.status>"
+
+    def __repr__(self):
+        return self._repr
+
+    def _get_link_mode(self):
+        try:
+            return self._link_mode
+        except AttributeError:
+            try:
+                self._link_mode = os.lstat(self._path).st_mode
+            except FileNotFoundError:
+                self._link_mode = 0
+            if not self.is_symlink():
+                # Not a symlink, so stat() will give the same result.
+                self._file_mode = self._link_mode
+            return self._link_mode
+
+    def _get_file_mode(self):
+        try:
+            return self._file_mode
+        except AttributeError:
+            try:
+                self._file_mode = os.stat(self._path).st_mode
+            except FileNotFoundError:
+                self._file_mode = 0
+            return self._file_mode
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+
+        if follow_symlinks:
+            return S_ISDIR(self._get_file_mode())
+        else:
+            return S_ISDIR(self._get_link_mode())
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file.
+        """
+        if follow_symlinks:
+            return S_ISREG(self._get_file_mode())
+        else:
+            return S_ISREG(self._get_link_mode())
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return S_ISLNK(self._get_link_mode())
 
 
 class PurePath(PurePathBase):
@@ -524,7 +586,7 @@ class Path(PathBase, PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = ()
+    __slots__ = ('_status',)
     as_uri = PurePath.as_uri
 
     @classmethod
@@ -535,6 +597,18 @@ class Path(PathBase, PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
+
+    @property
+    def status(self):
+        """
+        A Status object that exposes the file type and other file attributes
+        of this path.
+        """
+        try:
+            return self._status
+        except AttributeError:
+            self._status = _PathStatus(self)
+            return self._status
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -635,13 +709,11 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def _scandir(self):
-        """Yield os.DirEntry-like objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        return os.scandir(self)
+    def _from_dir_entry(self, dir_entry, path_str):
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._status = dir_entry
+        return path
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -651,10 +723,11 @@ class Path(PathBase, PurePath):
         """
         root_dir = str(self)
         with os.scandir(root_dir) as scandir_it:
-            paths = [entry.path for entry in scandir_it]
+            entries = list(scandir_it)
         if root_dir == '.':
-            paths = map(self._remove_leading_dot, paths)
-        return map(self._from_parsed_string, paths)
+            return (self._from_dir_entry(e, e.name) for e in entries)
+        else:
+            return (self._from_dir_entry(e, e.path) for e in entries)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any

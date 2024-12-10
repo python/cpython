@@ -6,7 +6,7 @@ import stat
 import unittest
 
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
-from pathlib._types import Parser
+from pathlib.types import Parser, Status
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -1898,21 +1898,20 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
                                            errno.ENOENT, errno.EINVAL))
 
-    def test_scandir(self):
+    def test_iterdir_status(self):
         p = self.cls(self.base)
-        with p._scandir() as entries:
-            self.assertTrue(list(entries))
-        with p._scandir() as entries:
-            for entry in entries:
-                child = p / entry.name
-                self.assertIsNotNone(entry)
-                self.assertEqual(entry.name, child.name)
-                self.assertEqual(entry.is_symlink(),
-                                 child.is_symlink())
-                self.assertEqual(entry.is_dir(follow_symlinks=False),
-                                 child.is_dir(follow_symlinks=False))
-                if entry.name != 'brokenLinkLoop':
-                    self.assertEqual(entry.is_dir(), child.is_dir())
+        for child in p.iterdir():
+            entry = child.status
+            self.assertIsInstance(entry, Status)
+            self.assertEqual(entry.is_dir(follow_symlinks=False),
+                             child.is_dir(follow_symlinks=False))
+            self.assertEqual(entry.is_file(follow_symlinks=False),
+                             child.is_file(follow_symlinks=False))
+            self.assertEqual(entry.is_symlink(),
+                             child.is_symlink())
+            if child.name != 'brokenLinkLoop':
+                self.assertEqual(entry.is_dir(), child.is_dir())
+                self.assertEqual(entry.is_file(), child.is_file())
 
     def test_glob_common(self):
         def _check(glob, expected):

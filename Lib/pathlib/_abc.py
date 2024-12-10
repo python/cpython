@@ -41,7 +41,11 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('_scandir')
+
+    @staticmethod
+    def scandir(path):
+        """Like os.scandir(), but generates (entry, name, path) tuples."""
+        return ((child.status, child.name, child) for child in path.iterdir())
 
     @staticmethod
     def concat_path(path, text):
@@ -367,6 +371,15 @@ class PathBase(PurePathBase):
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported"
 
+    @property
+    def status(self):
+        """
+        A Status object that exposes the file type and other file attributes
+        of this path.
+        """
+        # TODO: make this abstract, delete PathBase.stat().
+        return self
+
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
@@ -568,15 +581,6 @@ class PathBase(PurePathBase):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _scandir(self):
-        """Yield os.DirEntry-like objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        import contextlib
-        return contextlib.nullcontext(self.iterdir())
-
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -633,18 +637,16 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path._scandir() as entries:
-                    for entry in entries:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(path.joinpath(name))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
+                for child in path.iterdir():
+                    try:
+                        if child.status.is_dir(follow_symlinks=follow_symlinks):
+                            if not top_down:
+                                paths.append(child)
+                            dirnames.append(child.name)
+                        else:
+                            filenames.append(child.name)
+                    except OSError:
+                        filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
