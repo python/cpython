@@ -45,7 +45,7 @@ jobs:
     - name: Tests
       if: inputs.arch != 'arm64'
       run: >-
-        .\PCbuild\rt.bat
+        .\\PCbuild\\rt.bat
         -p "${ARCH}"
         -d -q -uall -u-cpu -rwW
         --slowest --timeout=1200 -j0
