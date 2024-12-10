@@ -149,8 +149,8 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
       Return a string representing an entire week formatted with the given width for each day.
       The *theweek* parameter is a list of tuples, where each tuple contains a day of
-      the month or ``0`` for padding, and the corresponding weekday where 0 is
-      Monday and 6 is Sunday. Each day is padded to the specified width.
+      the month or ``0`` for padding, and the corresponding weekday where ``0`` is
+      Monday and ``6`` is Sunday. Each day is padded to the specified width.
 
    .. method:: formatweekday(weekday, width=2)
 
