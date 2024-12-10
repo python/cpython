@@ -120,10 +120,12 @@ void
 _PyAtExit_Fini(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
-    // Only one thread can call this, no need to lock it
+    // Only one thread can call this, but atexit_cleanup_locked() assumes
+    // that the lock is held, so let's hold it anyway.
     _PyAtExit_ASSERT_UNLOCKED(state);
-
+    _PyAtExit_LOCK(state);
     atexit_cleanup_locked(state);
+    _PyAtExit_UNLOCK(state);
     PyMem_Free(state->callbacks);
     state->callbacks = NULL;
 
