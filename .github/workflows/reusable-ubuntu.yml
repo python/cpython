@@ -28,6 +28,8 @@ jobs:
       TERM: linux
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -94,7 +96,7 @@ jobs:
       if: ${{ !inputs.free-threading }}
       run: >-
         python Tools/build/check_warnings.py
-        --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output_ubuntu.txt
+        --compiler-output-file-path="${CPYTHON_BUILDDIR}/compiler_output_ubuntu.txt"
         --warning-ignore-file-path "${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu"
         --compiler-output-type=gcc
         --fail-on-regression

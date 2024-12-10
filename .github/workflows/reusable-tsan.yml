@@ -23,8 +23,13 @@ jobs:
     name: 'Thread sanitizer'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      OPTIONS: ${{ inputs.options }}
+      SUPPRESSIONS_PATH: ${{ inputs.suppressions_path }}
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
@@ -47,7 +52,7 @@ jobs:
         sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
       run: |
-        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }} handle_segv=0" >> "$GITHUB_ENV"
+        echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/${SUPPRESSIONS_PATH} handle_segv=0" >> "$GITHUB_ENV"
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: Add ccache to PATH
@@ -59,7 +64,7 @@ jobs:
         save: ${{ github.event_name == 'push' }}
         max-size: "200M"
     - name: Configure CPython
-      run: ${{ inputs.options }}
+      run: "${OPTIONS}"
     - name: Build CPython
       run: make -j4
     - name: Display build info
