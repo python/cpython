@@ -1171,6 +1171,41 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_start_new_thread_failed(self):
+        # gh-109746: if Python fails to start newly created thread
+        # due to failure of underlying PyThread_start_new_thread() call,
+        # its state should be removed from interpreter' thread states list
+        # to avoid its double cleanup
+        try:
+            from resource import setrlimit, RLIMIT_NPROC
+        except ImportError as err:
+            self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
+        code = """if 1:
+            import resource
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            limits = resource.getrlimit(resource.RLIMIT_NPROC)
+            [_, hard] = limits
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
+
+            try:
+                handle = _thread.start_joinable_thread(f)
+            except RuntimeError:
+                print('ok')
+            else:
+                print('!skip!')
+                handle.join()
+        """
+        _, out, err = assert_python_ok("-u", "-c", code)
+        out = out.strip()
+        if b'!skip!' in out:
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
+        self.assertEqual(out, b'ok')
+        self.assertEqual(err, b'')
+
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
         if support.check_sanitizer(thread=True, memory=True):
@@ -2068,6 +2103,85 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
+
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_set_name(self):
+        # set_name() limit in bytes
+        truncate = getattr(_thread, "_NAME_MAXLEN", None)
+        limit = truncate or 100
+
+        tests = [
+            # test short ASCII name
+            "CustomName",
+
+            # test short non-ASCII name
+            "namé€",
+
+            # embedded null character: name is truncated
+            # at the first null character
+            "embed\0null",
+
+            # Test long ASCII names (not truncated)
+            "x" * limit,
+
+            # Test long ASCII names (truncated)
+            "x" * (limit + 10),
+
+            # Test long non-ASCII name (truncated)
+            "x" * (limit - 1) + "é€",
+        ]
+        if os_helper.FS_NONASCII:
+            tests.append(f"nonascii:{os_helper.FS_NONASCII}")
+        if os_helper.TESTFN_UNENCODABLE:
+            tests.append(os_helper.TESTFN_UNENCODABLE)
+
+        if sys.platform.startswith("solaris"):
+            encoding = "utf-8"
+        else:
+            encoding = sys.getfilesystemencoding()
+
+        def work():
+            nonlocal work_name
+            work_name = _thread._get_name()
+
+        for name in tests:
+            encoded = name.encode(encoding, "replace")
+            if b'\0' in encoded:
+                encoded = encoded.split(b'\0', 1)[0]
+            if truncate is not None:
+                encoded = encoded[:truncate]
+            if sys.platform.startswith("solaris"):
+                expected = encoded.decode("utf-8", "surrogateescape")
+            else:
+                expected = os.fsdecode(encoded)
+
+            with self.subTest(name=name, expected=expected):
+                work_name = None
+                thread = threading.Thread(target=work, name=name)
+                thread.start()
+                thread.join()
+                self.assertEqual(work_name, expected,
+                                 f"{len(work_name)=} and {len(expected)=}")
+
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_change_name(self):
+        # Change the name of a thread while the thread is running
+
+        name1 = None
+        name2 = None
+        def work():
+            nonlocal name1, name2
+            name1 = _thread._get_name()
+            threading.current_thread().name = "new name"
+            name2 = _thread._get_name()
+
+        thread = threading.Thread(target=work, name="name")
+        thread.start()
+        thread.join()
+        self.assertEqual(name1, "name")
+        self.assertEqual(name2, "new name")
 
 
 class InterruptMainTests(unittest.TestCase):

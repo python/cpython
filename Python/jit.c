@@ -58,7 +58,12 @@ jit_alloc(size_t size)
     int failed = memory == NULL;
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    int prot = PROT_READ | PROT_WRITE;
+# ifdef MAP_JIT
+    flags |= MAP_JIT;
+    prot |= PROT_EXEC;
+# endif
+    unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -102,8 +107,11 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
+    int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-    int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#ifndef MAP_JIT
+    failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#endif
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
@@ -499,6 +507,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     if (memory == NULL) {
         return -1;
     }
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(0);
+#endif
     // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
         state.instruction_starts[i] += (uintptr_t)memory;
@@ -529,6 +540,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     data += group->data_size;
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(1);
+#endif
     if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;
