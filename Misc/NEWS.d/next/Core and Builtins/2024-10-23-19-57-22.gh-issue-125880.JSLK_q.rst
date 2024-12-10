@@ -1,0 +1,1 @@
+Fix a bug in PyREPL that caused :func:`exit` to always return 1.
