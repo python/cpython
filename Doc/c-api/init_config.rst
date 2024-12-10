@@ -1290,6 +1290,8 @@ PyConfig
 
       Default: ``0`` (don't use system log).
 
+      .. versionadded:: 3.13.2
+
    .. c:member:: int user_site_directory
 
       If non-zero, add the user site directory to :data:`sys.path`.

@@ -286,7 +286,7 @@ This will:
 * Run the test suite on an "iPhone SE (3rd generation)" simulator.
 
 On success, the test suite will exit and report successful completion of the
-test suite. On a 2022 M1 MacBook Pro, the test suite takes approximately 12
+test suite. On a 2022 M1 MacBook Pro, the test suite takes approximately 15
 minutes to run; a couple of extra minutes is required to compile the testbed
 project, and then boot and prepare the iOS simulator.
 
