@@ -738,10 +738,8 @@ unspecialize(_Py_CODEUNIT *instr)
 }
 
 static int function_kind(PyCodeObject *code);
-#ifndef Py_GIL_DISABLED
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
-#endif
 static uint32_t type_get_version(PyTypeObject *t, int opcode);
 
 static int
@@ -1012,7 +1010,9 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               PyObject *name, PyObject *descr,
                               DescriptorClassification kind, bool is_method,
                               uint32_t shared_keys_version);
+#ifndef Py_GIL_DISABLED
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
+#endif
 
 /* Returns true if instances of obj's class are
  * likely to have `name` in their __dict__.
@@ -1046,6 +1046,20 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
     return true;
 }
 
+#ifdef Py_GIL_DISABLED
+
+#define FT_UNIMPLEMENTED()                                        \
+    do {                                                          \
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR); \
+        return -1;                                                \
+    } while (0)
+
+#else
+
+#define FT_UNIMPLEMENTED()
+
+#endif
+
 static int
 specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name)
 {
@@ -1066,6 +1080,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
             return -1;
         case METHOD:
         {
+            FT_UNIMPLEMENTED();
             if (shadow) {
                 goto try_instance;
             }
@@ -1085,6 +1100,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
         }
         case PROPERTY:
         {
+            FT_UNIMPLEMENTED();
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             assert(Py_TYPE(descr) == &PyProperty_Type);
             PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
@@ -1116,6 +1132,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
         }
         case OBJECT_SLOT:
         {
+            FT_UNIMPLEMENTED();
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
             struct PyMemberDef *dmem = member->d_member;
             Py_ssize_t offset = dmem->offset;
@@ -1140,6 +1157,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
         }
         case DUNDER_CLASS:
         {
+            FT_UNIMPLEMENTED();
             Py_ssize_t offset = offsetof(PyObject, ob_type);
             assert(offset == (uint16_t)offset);
             cache->index = (uint16_t)offset;
@@ -1160,6 +1178,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
         {
             assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
+            FT_UNIMPLEMENTED();
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 return -1;
@@ -1191,6 +1210,8 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
             }
             return -1;
         case NON_DESCRIPTOR:
+            FT_UNIMPLEMENTED();
+
             if (shadow) {
                 goto try_instance;
             }
@@ -1211,6 +1232,8 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     }
     Py_UNREACHABLE();
 try_instance:
+    FT_UNIMPLEMENTED();
+
     if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
                                     LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
     {
@@ -1218,6 +1241,8 @@ try_instance:
     }
     return -1;
 }
+
+#undef FT_UNIMPLEMENTED
 
 void
 _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *name)
@@ -1457,6 +1482,8 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     }
 }
 
+#endif //  Py_GIL_DISABLED
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -1535,8 +1562,6 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     write_obj(cache->descr, descr);
     return 1;
 }
-
-#endif //  Py_GIL_DISABLED
 
 
 static void
@@ -1684,7 +1709,6 @@ function_kind(PyCodeObject *code) {
     return SIMPLE_FUNCTION;
 }
 
-#ifndef Py_GIL_DISABLED
 /* Returning false indicates a failure. */
 static bool
 function_check_args(PyObject *o, int expected_argcount, int opcode)
@@ -1717,7 +1741,6 @@ function_get_version(PyObject *o, int opcode)
     }
     return version;
 }
-#endif  // Py_GIL_DISABLED
 
 /* Returning 0 indicates a failure. */
 static uint32_t
