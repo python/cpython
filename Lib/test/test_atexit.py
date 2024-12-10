@@ -52,6 +52,7 @@ class FunctionalTest(unittest.TestCase):
     @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful without the GIL")
     def test_atexit_thread_safety(self):
         # GH-126907: atexit was not thread safe on the free-threaded build
+        source = """
         from threading import Thread
 
         def dummy():
@@ -67,9 +68,14 @@ class FunctionalTest(unittest.TestCase):
 
 
         threads = [Thread(target=thready) for _ in range(100)]
-        with threading_helper.start_threads(threads):
-            pass
+        for thread in threads:
+            thread.start()
 
+        for thread in threads:
+            thread.join()
+        """
+
+        assert_python_ok(textwrap.dedent(source))
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
