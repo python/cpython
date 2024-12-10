@@ -3660,10 +3660,6 @@ sock_listen(PySocketSockObject *s, PyObject *args)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    /* To avoid problems on systems that don't allow a negative backlog
-     * (which doesn't make sense anyway) we force a minimum value of 0. */
-    if (backlog < 0)
-        backlog = 0;
     res = listen(s->sock_fd, backlog);
     Py_END_ALLOW_THREADS
     if (res < 0)
