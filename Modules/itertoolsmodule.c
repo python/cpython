@@ -327,37 +327,54 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 static PyObject *
 pairwise_next(pairwiseobject *po)
 {
+#ifdef Py_GIL_DISABLED
+    PyObject *it = Py_XNewRef(po->it);
+#else
     PyObject *it = po->it;
-    PyObject *old = po->old;
-    PyObject *new, *result;
-
+#endif
     if (it == NULL) {
         return NULL;
     }
+
+    PyObject *old = Py_XNewRef(po->old);
+    PyObject *new, *result;
+
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
-        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(it);
+#endif
             return NULL;
         }
-        it = po->it;
-        if (it == NULL) {
+        Py_XSETREF(po->old, Py_NewRef(old));
+        if (po->it == NULL) {
+            // gh-109786: special case for re-entrant calls to pairwise next. the actual behavior is not
+            // important and this does not avoid any bugs (or does it?)
+            // the reason for having it is to make the behaviour equal to the python implementation
             Py_CLEAR(po->old);
+            Py_DECREF(old);
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(it);
+#endif
             return NULL;
         }
     }
-    Py_INCREF(old);
+
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
+#ifdef Py_GIL_DISABLED
+        Py_DECREF(it);
+#endif
         Py_DECREF(old);
         return NULL;
     }
 
     result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -380,7 +397,10 @@ pairwise_next(pairwiseobject *po)
     }
 
     Py_XSETREF(po->old, new);
-    Py_DECREF(old);
+    Py_DECREF(old); // instead of the decref here we could borrow the reference above
+#ifdef Py_GIL_DISABLED
+    Py_DECREF(it);
+#endif
     return result;
 }
 
