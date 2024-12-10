@@ -5,7 +5,8 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._types import Parser
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -31,22 +32,6 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
-
-class ParserBaseTest(unittest.TestCase):
-    cls = ParserBase
-
-    def test_unsupported_operation(self):
-        m = self.cls()
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            m.sep
-        self.assertRaises(e, m.join, 'foo')
-        self.assertRaises(e, m.split, 'foo')
-        self.assertRaises(e, m.splitdrive, 'foo')
-        self.assertRaises(e, m.splitext, 'foo')
-        self.assertRaises(e, m.normcase, 'foo')
-        self.assertRaises(e, m.isabs, 'foo')
-
 #
 # Tests for the pure classes.
 #
@@ -54,37 +39,6 @@ class ParserBaseTest(unittest.TestCase):
 
 class PurePathBaseTest(unittest.TestCase):
     cls = PurePathBase
-
-    def test_unsupported_operation_pure(self):
-        p = self.cls('foo')
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            p.drive
-        with self.assertRaises(e):
-            p.root
-        with self.assertRaises(e):
-            p.anchor
-        with self.assertRaises(e):
-            p.parts
-        with self.assertRaises(e):
-            p.parent
-        with self.assertRaises(e):
-            p.parents
-        with self.assertRaises(e):
-            p.name
-        with self.assertRaises(e):
-            p.stem
-        with self.assertRaises(e):
-            p.suffix
-        with self.assertRaises(e):
-            p.suffixes
-        self.assertRaises(e, p.with_name, 'bar')
-        self.assertRaises(e, p.with_stem, 'bar')
-        self.assertRaises(e, p.with_suffix, '.txt')
-        self.assertRaises(e, p.relative_to, '')
-        self.assertRaises(e, p.is_relative_to, '')
-        self.assertRaises(e, p.is_absolute)
-        self.assertRaises(e, p.match, '*')
 
     def test_magic_methods(self):
         P = self.cls
@@ -100,12 +54,11 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
     def test_parser(self):
-        self.assertIsInstance(self.cls.parser, ParserBase)
+        self.assertIs(self.cls.parser, posixpath)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
-    parser = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -135,6 +88,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.parser = p.parser
         self.sep = self.parser.sep
         self.altsep = self.parser.altsep
+
+    def test_parser(self):
+        self.assertIsInstance(self.cls.parser, Parser)
 
     def test_constructor_common(self):
         P = self.cls
@@ -1359,8 +1315,8 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.write_bytes, b'foo')
         self.assertRaises(e, p.write_text, 'foo')
         self.assertRaises(e, p.iterdir)
-        self.assertRaises(e, p.glob, '*')
-        self.assertRaises(e, p.rglob, '*')
+        self.assertRaises(e, lambda: list(p.glob('*')))
+        self.assertRaises(e, lambda: list(p.rglob('*')))
         self.assertRaises(e, lambda: list(p.walk()))
         self.assertRaises(e, p.expanduser)
         self.assertRaises(e, p.readlink)
@@ -1411,7 +1367,6 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
-    parser = posixpath
 
     _files = {}
     _directories = {}
