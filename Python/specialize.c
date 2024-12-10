@@ -131,10 +131,14 @@ _Py_GetSpecializationStats(void) {
 }
 
 
-#define PRINT_STAT(i, field) \
-    if (stats[i].field) { \
-        fprintf(out, "    opcode[%s]." #field " : %" PRIu64 "\n", _PyOpcode_OpName[i], stats[i].field); \
-    }
+#define PRINT_STAT(IDX, FIELD)                                      \
+    do {                                                            \
+        if (stats[IDX].FIELD) {                                     \
+            fprintf(out,                                            \
+                    "    opcode[%s]." #FIELD " : %" PRIu64 "\n",    \
+                    _PyOpcode_OpName[IDX], stats[IDX].FIELD);       \
+        }                                                           \
+    } while (0)
 
 static void
 print_spec_stats(FILE *out, OpcodeStats *stats)

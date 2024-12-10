@@ -154,14 +154,18 @@ ASSERT_DICT_LOCKED(PyObject *op)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 }
 #define ASSERT_DICT_LOCKED(op) ASSERT_DICT_LOCKED(_Py_CAST(PyObject*, op))
-#define ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(op)                         \
-    if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {       \
-        ASSERT_DICT_LOCKED(op);                                         \
-    }
-#define ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(op)                         \
-    if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {      \
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);                 \
-    }
+#define ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(OP)                         \
+    do {                                                                \
+        if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {   \
+            ASSERT_DICT_LOCKED(OP);                                     \
+        }                                                               \
+    } while (0)
+#define ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(OP)                          \
+    do {                                                                \
+        if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {   \
+            _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(OP);              \
+        }                                                               \
+    } while (0)
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
@@ -170,15 +174,19 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 
-#define LOCK_KEYS_IF_SPLIT(keys, kind) \
-        if (kind == DICT_KEYS_SPLIT) { \
-            LOCK_KEYS(keys);           \
-        }
+#define LOCK_KEYS_IF_SPLIT(KEYS, KIND)  \
+    do {                                \
+        if (KIND == DICT_KEYS_SPLIT) {  \
+            LOCK_KEYS(KEYS);            \
+        }                               \
+    } while (0)
 
-#define UNLOCK_KEYS_IF_SPLIT(keys, kind) \
-        if (kind == DICT_KEYS_SPLIT) {   \
-            UNLOCK_KEYS(keys);           \
-        }
+#define UNLOCK_KEYS_IF_SPLIT(KEYS, KIND)    \
+    do {                                    \
+        if (KIND == DICT_KEYS_SPLIT) {      \
+            UNLOCK_KEYS(KEYS);              \
+        }                                   \
+    } while (0)
 
 static inline Py_ssize_t
 load_keys_nentries(PyDictObject *mp)

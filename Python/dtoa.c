@@ -169,7 +169,11 @@ typedef uint64_t ULLong;
 /* End Python #define linking */
 
 #ifdef DEBUG
-#define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
+#define Bug(X)                      \
+    do {                            \
+        fprintf(stderr, "%s\n", X); \
+        exit(1);                    \
+    } while (0)
 #endif
 
 typedef union { double d; ULong L[2]; } U;

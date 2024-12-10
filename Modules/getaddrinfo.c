@@ -167,35 +167,37 @@ if (pai->ai_flags & AI_CANONNAME) {\
 }
 
 #ifdef HAVE_SOCKADDR_SA_LEN
-#define GET_AI(ai, gai_afd, addr, port) {\
-    char *p;\
-    if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) +\
-                                          ((gai_afd)->a_socklen)))\
-        == NULL) goto free;\
-    memcpy(ai, pai, sizeof(struct addrinfo));\
-    (ai)->ai_addr = (struct sockaddr *)((ai) + 1);\
-    memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);\
-    (ai)->ai_addr->sa_len = (ai)->ai_addrlen = (gai_afd)->a_socklen;\
-    (ai)->ai_addr->sa_family = (ai)->ai_family = (gai_afd)->a_af;\
-    ((struct sockinet *)(ai)->ai_addr)->si_port = port;\
-    p = (char *)((ai)->ai_addr);\
-    memcpy(p + (gai_afd)->a_off, (addr), (gai_afd)->a_addrlen);\
-}
+#define GET_AI(ai, gai_afd, addr, port)                                     \
+    do {                                                                    \
+        char *p;                                                            \
+        if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) +     \
+                                              ((gai_afd)->a_socklen)))      \
+            == NULL) goto free;                                             \
+        memcpy(ai, pai, sizeof(struct addrinfo));                           \
+        (ai)->ai_addr = (struct sockaddr *)((ai) + 1);                      \
+        memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);                     \
+        (ai)->ai_addr->sa_len = (ai)->ai_addrlen = (gai_afd)->a_socklen;    \
+        (ai)->ai_addr->sa_family = (ai)->ai_family = (gai_afd)->a_af;       \
+        ((struct sockinet *)(ai)->ai_addr)->si_port = port;                 \
+        p = (char *)((ai)->ai_addr);                                        \
+        memcpy(p + (gai_afd)->a_off, (addr), (gai_afd)->a_addrlen);         \
+    } while (0)
 #else
-#define GET_AI(ai, gai_afd, addr, port) {\
-    char *p;\
-    if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) +\
-                                          ((gai_afd)->a_socklen)))\
-        == NULL) goto free;\
-    memcpy(ai, pai, sizeof(struct addrinfo));\
-    (ai)->ai_addr = (struct sockaddr *)((ai) + 1);\
-    memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);\
-    (ai)->ai_addrlen = (gai_afd)->a_socklen;\
-    (ai)->ai_addr->sa_family = (ai)->ai_family = (gai_afd)->a_af;\
-    ((struct sockinet *)(ai)->ai_addr)->si_port = port;\
-    p = (char *)((ai)->ai_addr);\
-    memcpy(p + (gai_afd)->a_off, (addr), (gai_afd)->a_addrlen);\
-}
+#define GET_AI(ai, gai_afd, addr, port)                                 \
+    do {                                                                \
+        char *p;                                                        \
+        if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) + \
+                                              ((gai_afd)->a_socklen)))  \
+            == NULL) goto free;                                         \
+        memcpy(ai, pai, sizeof(struct addrinfo));                       \
+        (ai)->ai_addr = (struct sockaddr *)((ai) + 1);                  \
+        memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);                 \
+        (ai)->ai_addrlen = (gai_afd)->a_socklen;                        \
+        (ai)->ai_addr->sa_family = (ai)->ai_family = (gai_afd)->a_af;   \
+        ((struct sockinet *)(ai)->ai_addr)->si_port = port;             \
+        p = (char *)((ai)->ai_addr);                                    \
+        memcpy(p + (gai_afd)->a_off, (addr), (gai_afd)->a_addrlen);     \
+    } while (0)
 #endif
 
 #define ERR(err) { error = (err); goto bad; }

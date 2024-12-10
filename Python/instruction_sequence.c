@@ -28,9 +28,11 @@ typedef _Py_SourceLocation location;
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)             \
 
 static int
 instr_sequence_next_inst(instr_sequence *seq) {
