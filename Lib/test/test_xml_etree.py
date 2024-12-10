@@ -2680,18 +2680,66 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
+    def test_remove_with_clear_child(self):
         class X(ET.Element):
             def __eq__(self, o):
                 del e[:]
                 return False
+
+        # The pure Python implementation raises a ValueError but the C
+        # implementation raises a RuntimeError (like OrderedDict does).
+        exc_type = ValueError if ET is pyET else RuntimeError
+
         e = ET.Element('foo')
         e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+        self.assertRaises(exc_type, e.remove, ET.Element('baz'))
 
         e = ET.Element('foo')
         e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+        self.assertRaises(exc_type, e.remove, X('baz'))
+
+    def test_remove_with_clear_children(self):
+        # See: https://github.com/python/cpython/issues/126033
+
+        class X(ET.Element):
+            def __eq__(self, o):
+                root.clear()
+                return False
+
+        # The pure Python implementation raises a ValueError but the C
+        # implementation raises a RuntimeError (like OrderedDict does).
+        exc_type = ValueError if ET is pyET else RuntimeError
+
+        for foo_type, rem_type in [(X, ET.Element), (ET.Element, X)]:
+            with self.subTest(foo_type=foo_type, rem_type=rem_type):
+                root = ET.Element('.')
+                root.extend([foo_type('foo'), rem_type('bar')])
+                self.assertRaises(exc_type, root.remove, rem_type('baz'))
+
+    def test_remove_with_mutate_root(self):
+        # See: https://github.com/python/cpython/issues/126033
+
+        first_element = ET.Element('foo')
+
+        class X(ET.Element):
+            def __eq__(self, o):
+                # Remove the first element so that the list size changes.
+                # This causes an infinite recursion error in the Python
+                # implementation, but we do not really care about it.
+                #
+                # Depending on whether the first element is or is not
+                root.remove(first_element)
+                return False
+
+        # The pure Python implementation raises a ValueError but the C
+        # implementation raises a RuntimeError (like OrderedDict does).
+        exc_type = ValueError if ET is pyET else RuntimeError
+
+        for bar_type, rem_type in [(X, ET.Element), (ET.Element, X), (X, X)]:
+            with self.subTest(bar_type=bar_type, rem_type=rem_type):
+                root = ET.Element('.')
+                root.extend([first_element, bar_type('bar')])
+                self.assertRaises(exc_type, root.remove, rem_type('baz'))
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
