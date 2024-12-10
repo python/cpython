@@ -156,7 +156,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
       Return a string representing the name of a single weekday formatted to
       the specified width. The *weekday* parameter is an integer representing
-      the day of the week, where 0 is Monday and 6 is Sunday.
+      the day of the week, where ``0`` is Monday and ``6`` is Sunday.
 
    .. method:: formatweekheader(width=2)
 
