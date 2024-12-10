@@ -2863,6 +2863,7 @@ unicode_error_set_end_impl(PyObject *self, Py_ssize_t end)
     return 0;
 }
 
+// --- PyUnicodeEncodeObject: 'encoding' getters ------------------------------
 
 PyObject *
 PyUnicodeEncodeError_GetEncoding(PyObject *self)
@@ -2870,11 +2871,14 @@ PyUnicodeEncodeError_GetEncoding(PyObject *self)
     return unicode_error_get_encoding_impl(self);
 }
 
+
 PyObject *
 PyUnicodeDecodeError_GetEncoding(PyObject *self)
 {
     return unicode_error_get_encoding_impl(self);
 }
+
+// --- PyUnicodeEncodeObject: 'object' getters --------------------------------
 
 PyObject *
 PyUnicodeEncodeError_GetObject(PyObject *self)
@@ -2882,17 +2886,21 @@ PyUnicodeEncodeError_GetObject(PyObject *self)
     return unicode_error_get_object_impl(self, false);
 }
 
+
 PyObject *
 PyUnicodeDecodeError_GetObject(PyObject *self)
 {
     return unicode_error_get_object_impl(self, true);
 }
 
+
 PyObject *
 PyUnicodeTranslateError_GetObject(PyObject *self)
 {
     return unicode_error_get_object_impl(self, false);
 }
+
+// --- PyUnicodeEncodeObject: 'start' getters ---------------------------------
 
 int
 PyUnicodeEncodeError_GetStart(PyObject *self, Py_ssize_t *start)
@@ -2914,6 +2922,7 @@ PyUnicodeTranslateError_GetStart(PyObject *self, Py_ssize_t *start)
     return unicode_error_get_start_impl(self, start, false);
 }
 
+// --- PyUnicodeEncodeObject: 'start' setters ---------------------------------
 
 int
 PyUnicodeEncodeError_SetStart(PyObject *self, Py_ssize_t start)
@@ -2935,6 +2944,7 @@ PyUnicodeTranslateError_SetStart(PyObject *self, Py_ssize_t start)
     return unicode_error_set_start_impl(self, start);
 }
 
+// --- PyUnicodeEncodeObject: 'end' getters -----------------------------------
 
 int
 PyUnicodeEncodeError_GetEnd(PyObject *self, Py_ssize_t *end)
@@ -2956,6 +2966,7 @@ PyUnicodeTranslateError_GetEnd(PyObject *self, Py_ssize_t *end)
     return unicode_error_get_end_impl(self, end, false);
 }
 
+// --- PyUnicodeEncodeObject: 'end' setters -----------------------------------
 
 int
 PyUnicodeEncodeError_SetEnd(PyObject *self, Py_ssize_t end)
@@ -2977,6 +2988,7 @@ PyUnicodeTranslateError_SetEnd(PyObject *self, Py_ssize_t end)
     return unicode_error_set_end_impl(self, end);
 }
 
+// --- PyUnicodeEncodeObject: 'reason' getters --------------------------------
 
 PyObject *
 PyUnicodeEncodeError_GetReason(PyObject *self)
@@ -2998,6 +3010,7 @@ PyUnicodeTranslateError_GetReason(PyObject *self)
     return unicode_error_get_reason_impl(self);
 }
 
+// --- PyUnicodeEncodeObject: 'reason' setters --------------------------------
 
 int
 PyUnicodeEncodeError_SetReason(PyObject *self, const char *reason)
