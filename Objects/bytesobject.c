@@ -2562,7 +2562,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
   error:
     if (invalid_char == -1) {
         PyErr_SetString(PyExc_ValueError,
-                        "fromhex() arg must be of even length");
+                        "fromhex() arg must contain an even number of hexadecimal digits");
     } else {
         PyErr_Format(PyExc_ValueError,
                      "non-hexadecimal number found in "
