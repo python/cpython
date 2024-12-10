@@ -1,0 +1,2 @@
+Fix statistics for increments of object reference counts (in particular, when
+a reference count was increased by more than 1 in a single operation).
