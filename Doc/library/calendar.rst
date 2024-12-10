@@ -141,7 +141,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    .. method:: formatday(theday, weekday, width=2)
 
       Return a string representing a single day formatted with the given width
-      which defaults to 2. If *theday* is ``0``, return a string of spaces of
+      which defaults to ``2``. If *theday* is ``0``, return a string of spaces of
       the specified width, representing an empty day. The *weekday* parameter
       represents the day of the week, where ``0`` is Monday and ``6`` is Sunday.
 
