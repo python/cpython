@@ -19,6 +19,9 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
+/* Leave the low bits for refcount overflow for old stable ABI code */
+#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 7)
+
 #if SIZEOF_VOID_P > 4
 /*
 In 64+ bit systems, any object whose 32 bit reference count is >= 2**31
@@ -39,7 +42,8 @@ beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 
 */
-#define _Py_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(3UL << 30))
+#define _Py_IMMORTAL_INITIAL_REFCNT (3UL << 30)
+#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(_Py_IMMORTAL_INITIAL_REFCNT | (((Py_ssize_t)_Py_STATICALLY_ALLOCATED_FLAG) << 32)))
 
 #else
 /*
@@ -59,9 +63,6 @@ check by comparing the reference count field to the minimum immortality refcount
 #define _Py_STATIC_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(7L << 28))
 #define _Py_STATIC_IMMORTAL_MINIMUM_REFCNT ((Py_ssize_t)(6L << 28))
 #endif
-
-/* Leave the low bits for refcount overflow for old stable ABI code */
-#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 7)
 
 // Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
 // always 32-bits.
