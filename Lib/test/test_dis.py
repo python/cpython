@@ -3,6 +3,7 @@
 import contextlib
 import dis
 import io
+import opcode
 import re
 import sys
 import tempfile
@@ -12,8 +13,6 @@ from test.support import (captured_stdout, requires_debug_ranges,
                           requires_specialization, cpython_only,
                           os_helper)
 from test.support.bytecode_helper import BytecodeTestCase
-
-import opcode
 
 
 def get_tb():
