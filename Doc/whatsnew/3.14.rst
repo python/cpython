@@ -506,6 +506,15 @@ multiprocessing
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
 
+multiprocessing
+---------------
+
+* Add the :attr:`~multiprocessing.Process.closed` property to
+  :class:`multiprocessing.Process` objects to determine whether
+  they have been closed or not.
+  (Contributed by James Roy in :gh:`87063`.)
+
+
 operator
 --------
 
