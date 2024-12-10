@@ -1,1 +1,1 @@
-Add the :data:`~fcntl.F_DUPFD_QUERY` constant to the :mod:`fcntl` module.
+Add the ``F_DUPFD_QUERY`` constant to the :mod:`fcntl` module.
