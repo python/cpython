@@ -245,6 +245,13 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* iOS and macOS apps can now be configured to redirect ``stdout`` and
+  ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
+  :gh:`127592`.)
+
+* The iOS testbed is now able to stream test output while the test is running.
+  The testbed can also be used to run the test suite of projects other than
+  CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
 New modules
 ===========

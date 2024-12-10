@@ -4149,6 +4149,21 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
+   .. method:: count(value, /)
+
+      Count the number of occurrences of *value*.
+
+      .. versionadded:: next
+
+  .. method:: index(value, start=0, stop=sys.maxsize, /)
+
+      Return the index of the first occurrence of *value* (at or after
+      index *start* and before index *stop*).
+
+      Raises a :exc:`ValueError` if *value* cannot be found.
+
+      .. versionadded:: next
+
    There are also several readonly attributes available:
 
    .. attribute:: obj
