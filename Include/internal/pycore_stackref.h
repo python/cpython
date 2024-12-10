@@ -230,7 +230,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
     switch (tag) {
         case 0:
-            assert(!_Py_IsImmortal(obj));
             break;
         case Py_TAG_REFCNT:
             /* Can be immortal if object was made immortal after reference came into existence */
