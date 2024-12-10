@@ -54,14 +54,17 @@ def checkcache(filename=None):
     (This is not checked upon each call!)"""
 
     if filename is None:
-        filenames = list(cache.keys())
-    elif filename in cache:
-        filenames = [filename]
+        # get keys atomically
+        filenames = cache.copy().keys()
     else:
-        return
+        filenames = [filename]
 
     for filename in filenames:
-        entry = cache[filename]
+        try:
+            entry = cache[filename]
+        except KeyError:
+            continue
+
         if len(entry) == 1:
             # lazy cache entry, leave it lazy.
             continue
