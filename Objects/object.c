@@ -2475,12 +2475,16 @@ new_reference(PyObject *op)
 {
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
     op->ob_refcnt_full = 1;
     assert(op->ob_refcnt == 1);
     assert(op->ob_flags == 0);
 #else
+    op->ob_refcnt = 1;
+#endif
+#else
     op->ob_tid = _Py_ThreadId();
-    op->_padding = 0;
+    op->ob_flags = 0;
     op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
