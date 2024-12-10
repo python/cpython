@@ -269,7 +269,7 @@ changed.
   separate *mutable* type to hold buffered binary data,
   :class:`bytearray`.  Nearly all APIs that accept :class:`bytes` also
   accept :class:`bytearray`.  The mutable API is based on
-  :class:`collections.abc.MutableSequence`.
+  :class:`collections.MutableSequence <collections.abc.MutableSequence>`.
 
 * All backslashes in raw string literals are interpreted literally.
   This means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
@@ -533,8 +533,8 @@ consulted for longer descriptions.
 * :ref:`pep-3119`.  The :mod:`abc` module and the ABCs defined in the
   :mod:`collections` module plays a somewhat more prominent role in
   the language now, and built-in collection types like :class:`dict`
-  and :class:`list` conform to the :class:`collections.abc.MutableMapping`
-  and :class:`collections.abc.MutableSequence` ABCs, respectively.
+  and :class:`list` conform to the :class:`collections.MutableMapping <collections.abc.MutableMapping>`
+  and :class:`collections.MutableSequence <collections.abc.MutableSequence>` ABCs, respectively.
 
 * :ref:`pep-3127`.  As mentioned above, the new octal literal
   notation is the only one supported, and binary literals have been
