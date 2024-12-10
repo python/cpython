@@ -360,11 +360,13 @@ An :class:`IMAP4` instance has the following methods:
          processing 3 responses...
          [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
 
-      The ``IDLE`` context's maximum duration, as passed to :meth:`IMAP4.idle`,
-      is respected when waiting for the first response in a burst.
-      Therefore, an expired :class:`!Idler` will cause this generator
-      to return immediately without producing anything.  Callers should
-      consider this if using it in a loop.
+      .. tip::
+
+         The ``IDLE`` context's maximum duration, as passed to
+         :meth:`IMAP4.idle`, is respected when waiting for the first response
+         in a burst. Therefore, an expired :class:`!Idler` will cause this
+         generator to return immediately without producing anything.  Callers
+         should consider this if using it in a loop.
 
 
    .. _windows-pipe-timeout-warning:
