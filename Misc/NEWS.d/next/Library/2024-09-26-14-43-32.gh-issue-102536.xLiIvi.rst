@@ -1,0 +1,2 @@
+Added ``arch`` attribute to :data:`sys.implementation`
+to describe the current system platform.
