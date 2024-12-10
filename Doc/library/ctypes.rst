@@ -2008,24 +2008,6 @@ Utility functions
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
 
-.. function:: DllCanUnloadNow()
-
-   This function is a hook which allows implementing in-process
-   COM servers with ctypes.  It is called from the DllCanUnloadNow function that
-   the _ctypes extension dll exports.
-
-   .. availability:: Windows
-
-
-.. function:: DllGetClassObject()
-
-   This function is a hook which allows implementing in-process
-   COM servers with ctypes.  It is called from the DllGetClassObject function
-   that the ``_ctypes`` extension dll exports.
-
-   .. availability:: Windows
-
-
 .. function:: find_library(name)
    :module: ctypes.util
 
@@ -2826,3 +2808,25 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: next
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. function:: DllCanUnloadNow()
+              DllGetClassObject()
+
+   These functions are hooks which allowed implementing in-process
+   COM servers with ctypes.
+   To function, they required a third-party library, such as ``comtypes``,
+   along with third-party build/release tooling.
+
+   As of 2024, the state of tooling for in-process COM servers is unclear,
+   and is being discussed at :gh:`127369`.
+
+   Note that these functions will import and use the ``comtypes``
+   library, if it is installed.
+
+   .. availability:: Windows
+
+   .. deprecated-removed:: next 3.19

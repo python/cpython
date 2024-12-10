@@ -2,6 +2,7 @@
 
 import os as _os, sys as _sys
 import types as _types
+import warnings
 
 __version__ = "1.1.0"
 
@@ -564,6 +565,7 @@ else:
 
 if _os.name == "nt": # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
+        warnings._deprecated("ctypes.DllGetClassObject", remove=(3, 19))
         try:
             ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
@@ -572,11 +574,13 @@ if _os.name == "nt": # COM stuff
             return ccom.DllGetClassObject(rclsid, riid, ppv)
 
     def DllCanUnloadNow():
+        warnings._deprecated("ctypes.DllCanUnloadNow", remove=(3, 19))
         try:
             ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
             return 0 # S_OK
         return ccom.DllCanUnloadNow()
+
 
 from ctypes._endian import BigEndianStructure, LittleEndianStructure
 from ctypes._endian import BigEndianUnion, LittleEndianUnion
