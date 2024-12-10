@@ -2680,10 +2680,7 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
         PyErr_Format(PyExc_TypeError, "%.200s attribute not set", name);
         return NULL;
     }
-    if (!PyType_FastSubclass(
-            Py_TYPE(attr),
-            as_bytes ? Py_TPFLAGS_BYTES_SUBCLASS : Py_TPFLAGS_UNICODE_SUBCLASS
-    )) {
+    if (!(as_bytes ? PyBytes_Check(attr) : PyUnicode_Check(attr))) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s attribute must be %s, not %T",
                      name, as_bytes ? "bytes" : "unicode");
@@ -2793,7 +2790,7 @@ unicode_error_get_object_and_size(PyObject *self,
         return -1;
     }
     if (size != NULL) {
-        *size = as_bytes ? PyBytes_GET_SIZE(obj) : PyUnicode_GetLength(obj);
+        *size = as_bytes ? PyBytes_GET_SIZE(obj) : PyUnicode_GET_LENGTH(obj);
     }
     if (result != NULL) {
         *result = obj;
