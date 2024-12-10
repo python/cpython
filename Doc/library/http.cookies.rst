@@ -179,7 +179,7 @@ Morsel Objects
    .. versionchanged:: 3.8
       Added support for the :attr:`samesite` attribute.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Added support for the :attr:`partitioned` attribute.
 
 

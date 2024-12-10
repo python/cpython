@@ -255,15 +255,15 @@ class Morsel(dict):
     # variant on the left to the appropriate traditional
     # formatting on the right.
     _reserved = {
-        "expires": "expires",
-        "path": "Path",
-        "comment": "Comment",
-        "domain": "Domain",
-        "max-age": "Max-Age",
-        "secure": "Secure",
-        "httponly": "HttpOnly",
-        "version": "Version",
-        "samesite": "SameSite",
+        "expires"  : "expires",
+        "path"     : "Path",
+        "comment"  : "Comment",
+        "domain"   : "Domain",
+        "max-age"  : "Max-Age",
+        "secure"   : "Secure",
+        "httponly" : "HttpOnly",
+        "version"  : "Version",
+        "samesite" : "SameSite",
         "partitioned": "Partitioned",
     }
 
