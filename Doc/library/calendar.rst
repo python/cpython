@@ -175,7 +175,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
 
       Return a string representing the month's name centered within the
-      specified width. If *withyear* is True, include the year in the
+      specified width. If *withyear* is ``True``, include the year in the
       output. The *theyear* and *themonth* parameters specify the year
       and month for the name to be formatted.
 
