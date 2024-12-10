@@ -292,7 +292,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!tmp) {
         goto error;
     }
-    Py_ssize_t total_align = PyLong_AsInt(tmp);
+    Py_ssize_t total_align = PyLong_AsSsize_t(tmp);
     Py_DECREF(tmp);
     if (total_align < 0) {
         if (!PyErr_Occurred()) {
@@ -306,7 +306,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (!tmp) {
         goto error;
     }
-    Py_ssize_t total_size = PyLong_AsInt(tmp);
+    Py_ssize_t total_size = PyLong_AsSsize_t(tmp);
     Py_DECREF(tmp);
     if (total_size < 0) {
         if (!PyErr_Occurred()) {
