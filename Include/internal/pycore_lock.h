@@ -151,10 +151,12 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
+#define _PyThread_ident_t unsigned long long
+
 // A recursive mutex. The mutex should zero-initialized.
 typedef struct {
     PyMutex mutex;
-    unsigned long long thread;  // i.e., PyThread_get_thread_ident_ex()
+    _PyThread_ident_t thread;  // i.e., PyThread_get_thread_ident_ex()
     size_t level;
 } _PyRecursiveMutex;
 
@@ -163,6 +165,37 @@ PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
 extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
 extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
+
+PyAPI_FUNC(_PyThread_ident_t) PyThread_get_thread_ident_ex(void);
+
+static inline void
+_PyRecursiveMutex_LockFlags(_PyRecursiveMutex *m, _PyLockFlags flags)
+{
+    uint8_t expected = _Py_UNLOCKED;
+    if (_Py_atomic_compare_exchange_uint8(&m->mutex._bits, &expected, _Py_LOCKED)) {
+        m->thread = PyThread_get_thread_ident_ex();
+        assert(m->level == 0);
+    }
+    else {
+        _PyRecursiveMutex_LockTimed(m, -1, flags);
+    }
+}
+
+#ifdef HAVE_FORK
+PyAPI_FUNC(_PyThread_ident_t) PyThread_get_thread_ident_ex(void);
+
+static inline void
+_PyRecursiveMutex_at_fork_reinit(_PyRecursiveMutex *m,
+                                 _PyThread_ident_t parent)
+{
+    if (m->thread == parent) {
+        m->thread = PyThread_get_thread_ident_ex();
+    }
+    else {
+        memset(m, 0, sizeof(*m));
+    }
+}
+#endif
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
