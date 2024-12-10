@@ -192,6 +192,10 @@ top-level directory where Python was built. On Windows,
 executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 :mod:`test.support` --- Utilities for the Python test suite
 ===========================================================
