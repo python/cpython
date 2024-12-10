@@ -1007,9 +1007,11 @@ specialize_dict_access(
     return 1;
 }
 
-#ifndef Py_GIL_DISABLED
-static int specialize_attr_loadclassattr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
-    PyObject* descr, DescriptorClassification kind, bool is_method);
+static int
+specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
+                              PyObject *name, PyObject *descr,
+                              DescriptorClassification kind, bool is_method,
+                              uint32_t shared_keys_version);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
 /* Returns true if instances of obj's class are
@@ -1018,7 +1020,7 @@ static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyOb
  * For other objects, we check their actual dictionary.
  */
 static bool
-instance_has_key(PyObject *obj, PyObject* name)
+instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
 {
     PyTypeObject *cls = Py_TYPE(obj);
     if ((cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
@@ -1026,7 +1028,8 @@ instance_has_key(PyObject *obj, PyObject* name)
     }
     if (cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
-        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+        Py_ssize_t index =
+            _PyDictKeys_StringLookupAndVersion(keys, name, shared_keys_version);
         return index >= 0;
     }
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
@@ -1048,7 +1051,9 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyTypeObject *type = Py_TYPE(owner);
-    bool shadow = instance_has_key(owner, name);
+    // 0 is not a valid version
+    uint32_t shared_keys_version = 0;
+    bool shadow = instance_has_key(owner, name, &shared_keys_version);
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
@@ -1066,7 +1071,9 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
             }
             int oparg = instr->op.arg;
             if (oparg & 1) {
-                if (specialize_attr_loadclassattr(owner, instr, name, descr, kind, true)) {
+                if (specialize_attr_loadclassattr(owner, instr, name, descr,
+                                                  kind, true,
+                                                  shared_keys_version)) {
                     return 0;
                 }
                 else {
@@ -1188,7 +1195,9 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
                 goto try_instance;
             }
             if ((instr->op.arg & 1) == 0) {
-                if (specialize_attr_loadclassattr(owner, instr, name, descr, kind, false)) {
+                if (specialize_attr_loadclassattr(owner, instr, name, descr,
+                                                  kind, false,
+                                                  shared_keys_version)) {
                     return 0;
                 }
             }
@@ -1209,7 +1218,6 @@ try_instance:
     }
     return -1;
 }
-#endif //  Py_GIL_DISABLED
 
 void
 _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *name)
@@ -1239,12 +1247,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
         #endif
     }
     else {
-        #ifdef Py_GIL_DISABLED
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
-        fail = true;
-        #else
         fail = specialize_instance_load_attr(owner, instr, name);
-        #endif
     }
 
     if (fail) {
@@ -1458,8 +1461,10 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
 static int
-specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-PyObject *descr, DescriptorClassification kind, bool is_method)
+specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
+                              PyObject *name, PyObject *descr,
+                              DescriptorClassification kind, bool is_method,
+                              uint32_t shared_keys_version)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
     PyTypeObject *owner_cls = Py_TYPE(owner);
@@ -1467,15 +1472,15 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
     if (owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+#ifndef Py_GIL_DISABLED
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         assert(_PyDictKeys_StringLookup(keys, name) < 0);
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
-                _PyInterpreterState_GET(), keys);
-        if (keys_version == 0) {
+#endif
+        if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
-        write_u32(cache->keys_version, keys_version);
+        write_u32(cache->keys_version, shared_keys_version);
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
