@@ -155,18 +155,18 @@ Options:
 If `inputfile' is -, standard input is read.
 """)
 
-import os
+import ast
+import getopt
+import glob
 import importlib.machinery
 import importlib.util
+import os
 import sys
-import glob
 import time
-import getopt
-import ast
-import tokenize
-from collections import defaultdict
+from ast import AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor
 from dataclasses import dataclass, field
 from operator import itemgetter
+
 
 __version__ = '1.5'
 
@@ -224,17 +224,9 @@ def make_escapes(pass_nonascii):
 def escape_ascii(s, encoding):
     return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
 
+
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
-
-
-def is_literal_string(s):
-    return s[0] in '\'"' or (s[0] in 'rRuU' and s[1] in '\'"')
-
-
-def safe_eval(s):
-    # unwrap quotes, safely
-    return eval(s, {'__builtins__':{}}, {})
 
 
 def normalize(s, encoding):
@@ -347,273 +339,154 @@ class Message:
         self.is_docstring |= is_docstring
 
 
-def key_for(msgid, msgctxt=None):
-    if msgctxt is not None:
-        return (msgctxt, msgid)
-    return msgid
+class GettextVisitor(NodeVisitor):
+    def __init__(self, options, filename=None):
+        super().__init__()
+        self.options = options
+        self.filename = filename
+        self.messages = {}
 
+    def visit(self, node):
+        if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
+            self._extract_docstring(node)
+        super().visit(node)
 
-class TokenEater:
-    def __init__(self, options):
-        self.__options = options
-        self.__messages = {}
-        self.__state = self.__waiting
-        self.__data = defaultdict(str)
-        self.__curr_arg = 0
-        self.__curr_keyword = None
-        self.__lineno = -1
-        self.__freshmodule = 1
-        self.__curfile = None
-        self.__enclosurecount = 0
+    def visit_Call(self, node):
+        self._extract_message(node)
+        self.generic_visit(node)
 
-    def __call__(self, ttype, tstring, stup, etup, line):
-        # dispatch
-##        import token
-##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
-##              file=sys.stderr)
-        self.__state(ttype, tstring, stup[0])
-
-    def __waiting(self, ttype, tstring, lineno):
-        opts = self.__options
-        # Do docstring extractions, if enabled
-        if opts.docstrings and not opts.nodocstrings.get(self.__curfile):
-            # module docstring?
-            if self.__freshmodule:
-                if ttype == tokenize.STRING and is_literal_string(tstring):
-                    self.__addentry({'msgid': safe_eval(tstring)}, lineno, is_docstring=True)
-                    self.__freshmodule = 0
-                    return
-                if ttype in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
-                    return
-                self.__freshmodule = 0
-            # class or func/method docstring?
-            if ttype == tokenize.NAME and tstring in ('class', 'def'):
-                self.__state = self.__suiteseen
-                return
-        if ttype == tokenize.NAME and tstring in ('class', 'def'):
-            self.__state = self.__ignorenext
+    def _extract_docstring(self, node):
+        if not self.options.docstrings or self.options.nodocstrings.get(self.filename):
             return
-        if ttype == tokenize.NAME and tstring in opts.keywords:
-            self.__state = self.__keywordseen
-            self.__curr_keyword = tstring
+
+        if not node.body:
             return
-        if ttype == tokenize.STRING:
-            maybe_fstring = ast.parse(tstring, mode='eval').body
-            if not isinstance(maybe_fstring, ast.JoinedStr):
-                return
-            for value in filter(lambda node: isinstance(node, ast.FormattedValue),
-                                maybe_fstring.values):
-                for call in filter(lambda node: isinstance(node, ast.Call),
-                                   ast.walk(value)):
-                    func = call.func
-                    if isinstance(func, ast.Name):
-                        func_name = func.id
-                    elif isinstance(func, ast.Attribute):
-                        func_name = func.attr
-                    else:
-                        continue
 
-                    if func_name not in opts.keywords:
-                        continue
-                    if len(call.args) != 1:
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected amount of'
-                            ' positional arguments in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if call.keywords:
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    arg = call.args[0]
-                    if not isinstance(arg, ast.Constant):
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected argument type'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if isinstance(arg.value, str):
-                        self.__curr_keyword = func_name
-                        self.__addentry({'msgid': arg.value}, lineno)
+        if (docstring := ast.get_docstring(node, clean=True)) is not None:
+            lineno = node.body[0].lineno
+            self._add_message(lineno, docstring, is_docstring=True)
 
-    def __suiteseen(self, ttype, tstring, lineno):
-        # skip over any enclosure pairs until we see the colon
-        if ttype == tokenize.OP:
-            if tstring == ':' and self.__enclosurecount == 0:
-                # we see a colon and we're not in an enclosure: end of def
-                self.__state = self.__suitedocstring
-            elif tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
-
-    def __suitedocstring(self, ttype, tstring, lineno):
-        # ignore any intervening noise
-        if ttype == tokenize.STRING and is_literal_string(tstring):
-            self.__addentry({'msgid': safe_eval(tstring)}, lineno, is_docstring=True)
-            self.__state = self.__waiting
-        elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
-                           tokenize.COMMENT):
-            # there was no class docstring
-            self.__state = self.__waiting
-
-    def __keywordseen(self, ttype, tstring, lineno):
-        if ttype == tokenize.OP and tstring == '(':
-            self.__data.clear()
-            self.__curr_arg = 0
-            self.__enclosurecount = 0
-            self.__lineno = lineno
-            self.__state = self.__openseen
-        else:
-            self.__state = self.__waiting
-
-    def __openseen(self, ttype, tstring, lineno):
-        spec = self.__options.keywords[self.__curr_keyword]
-        arg_type = spec.get(self.__curr_arg)
-        expect_string_literal = arg_type is not None
-
-        if ttype == tokenize.OP and self.__enclosurecount == 0:
-            if tstring == ')':
-                # We've seen the last of the translatable strings.  Record the
-                # line number of the first line of the strings and update the list
-                # of messages seen.  Reset state for the next batch.  If there
-                # were no strings inside _(), then just ignore this entry.
-                if self.__data:
-                    self.__addentry(self.__data)
-                self.__state = self.__waiting
-                return
-            elif tstring == ',':
-                # Advance to the next argument
-                self.__curr_arg += 1
-                return
-
-        if expect_string_literal:
-            if ttype == tokenize.STRING and is_literal_string(tstring):
-                self.__data[arg_type] += safe_eval(tstring)
-            elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
-                               tokenize.NEWLINE, tokenize.NL):
-                # We are inside an argument which is a translatable string and
-                # we encountered a token that is not a string.  This is an error.
-                self.warn_unexpected_token(tstring)
-                self.__enclosurecount = 0
-                self.__state = self.__waiting
-        elif ttype == tokenize.OP:
-            if tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
-
-    def __ignorenext(self, ttype, tstring, lineno):
-        self.__state = self.__waiting
-
-    def __addentry(self, msg, lineno=None, *, is_docstring=False):
-        msgid = msg.get('msgid')
-        if msgid in self.__options.toexclude:
+    def _extract_message(self, node):
+        funcname = self._get_funcname(node)
+        if (spec := self.options.keywords.get(funcname)) is None:
             return
-        if not is_docstring:
-            spec = self.__options.keywords[self.__curr_keyword]
-            if not matches_spec(msg, spec):
+
+        if max(spec) >= len(node.args):
+            msg = _('*** {file}:{lineno}: Expected at least {count} positional argument(s) '
+                    'in gettext call, got {args_count}')
+            print(msg.format(file=self.filename, lineno=node.lineno,
+                             count=max(spec) + 1, args_count=len(node.args)),
+                  file=sys.stderr)
+            return
+
+        msg_data = {}
+        for position, arg_type in spec.items():
+            arg = node.args[position]
+            if not self._is_string_const(arg):
+                msg = _('*** {file}:{lineno}: Expected a string constant for '
+                        'argument {position}, got {arg}')
+                print(msg.format(file=self.filename, lineno=arg.lineno,
+                                 position=position + 1, arg=ast.unparse(arg)),
+                      file=sys.stderr)
                 return
-        if lineno is None:
-            lineno = self.__lineno
-        msgctxt = msg.get('msgctxt')
-        msgid_plural = msg.get('msgid_plural')
-        key = key_for(msgid, msgctxt)
-        if key in self.__messages:
-            self.__messages[key].add_location(
-                self.__curfile,
+            msg_data[arg_type] = arg.value
+
+        if not matches_spec(msg_data, spec):
+            return
+
+        lineno = node.lineno
+        self._add_message(lineno, **msg_data)
+
+    def _add_message(self, lineno, msgid, msgid_plural=None, msgctxt=None, *, is_docstring=False):
+        if msgid in self.options.toexclude:
+            return
+
+        key = self._key_for(msgid, msgctxt)
+        if message := self.messages.get(key):
+            message.add_location(
+                self.filename,
                 lineno,
                 msgid_plural,
                 is_docstring=is_docstring,
             )
         else:
-            self.__messages[key] = Message(
+            self.messages[key] = Message(
                 msgid=msgid,
                 msgid_plural=msgid_plural,
                 msgctxt=msgctxt,
-                locations={Location(self.__curfile, lineno)},
+                locations={Location(self.filename, lineno)},
                 is_docstring=is_docstring,
             )
 
-    def warn_unexpected_token(self, token):
-        print(_(
-            '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
-            ) % {
-            'token': token,
-            'file': self.__curfile,
-            'lineno': self.__lineno
-            }, file=sys.stderr)
+    def _key_for(self, msgid, msgctxt=None):
+        if msgctxt is not None:
+            return (msgctxt, msgid)
+        return msgid
 
-    def set_filename(self, filename):
-        self.__curfile = filename
-        self.__freshmodule = 1
+    def _get_funcname(self, node):
+        match node.func:
+            case ast.Name(id=id):
+                return id
+            case ast.Attribute(attr=attr):
+                return attr
+            case _:
+                return None
 
-    def write(self, fp):
-        options = self.__options
-        timestamp = time.strftime('%Y-%m-%d %H:%M%z')
-        encoding = fp.encoding if fp.encoding else 'UTF-8'
-        print(pot_header % {'time': timestamp, 'version': __version__,
-                            'charset': encoding,
-                            'encoding': '8bit'}, file=fp)
+    def _is_string_const(self, node):
+        return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
-        # Sort locations within each message by filename and lineno
-        sorted_keys = [
-            (key, sorted(msg.locations))
-            for key, msg in self.__messages.items()
-        ]
-        # Sort messages by locations
-        # For example, a message with locations [('test.py', 1), ('test.py', 2)] will
-        # appear before a message with locations [('test.py', 1), ('test.py', 3)]
-        sorted_keys.sort(key=itemgetter(1))
 
-        for key, locations in sorted_keys:
-            msg = self.__messages[key]
-            if options.writelocations:
-                # location comments are different b/w Solaris and GNU:
-                if options.locationstyle == options.SOLARIS:
-                    for location in locations:
-                        print(f'# File: {location.filename}, line: {location.lineno}', file=fp)
-                elif options.locationstyle == options.GNU:
-                    # fit as many locations on one line, as long as the
-                    # resulting line length doesn't exceed 'options.width'
-                    locline = '#:'
-                    for location in locations:
-                        s = f' {location.filename}:{location.lineno}'
-                        if len(locline) + len(s) <= options.width:
-                            locline = locline + s
-                        else:
-                            print(locline, file=fp)
-                            locline = f'#:{s}'
-                    if len(locline) > 2:
+def write_pot_file(messages, options, fp):
+    timestamp = time.strftime('%Y-%m-%d %H:%M%z')
+    encoding = fp.encoding if fp.encoding else 'UTF-8'
+    print(pot_header % {'time': timestamp, 'version': __version__,
+                        'charset': encoding,
+                        'encoding': '8bit'}, file=fp)
+
+    # Sort locations within each message by filename and lineno
+    sorted_keys = [
+        (key, sorted(msg.locations))
+        for key, msg in messages.items()
+    ]
+    # Sort messages by locations
+    # For example, a message with locations [('test.py', 1), ('test.py', 2)] will
+    # appear before a message with locations [('test.py', 1), ('test.py', 3)]
+    sorted_keys.sort(key=itemgetter(1))
+
+    for key, locations in sorted_keys:
+        msg = messages[key]
+        if options.writelocations:
+            # location comments are different b/w Solaris and GNU:
+            if options.locationstyle == options.SOLARIS:
+                for location in locations:
+                    print(f'# File: {location.filename}, line: {location.lineno}', file=fp)
+            elif options.locationstyle == options.GNU:
+                # fit as many locations on one line, as long as the
+                # resulting line length doesn't exceed 'options.width'
+                locline = '#:'
+                for location in locations:
+                    s = f' {location.filename}:{location.lineno}'
+                    if len(locline) + len(s) <= options.width:
+                        locline = locline + s
+                    else:
                         print(locline, file=fp)
-            if msg.is_docstring:
-                # If the entry was gleaned out of a docstring, then add a
-                # comment stating so.  This is to aid translators who may wish
-                # to skip translating some unimportant docstrings.
-                print('#, docstring', file=fp)
-            if msg.msgctxt is not None:
-                print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
-            print('msgid', normalize(msg.msgid, encoding), file=fp)
-            if msg.msgid_plural is not None:
-                print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
-                print('msgstr[0] ""', file=fp)
-                print('msgstr[1] ""\n', file=fp)
-            else:
-                print('msgstr ""\n', file=fp)
+                        locline = f'#:{s}'
+                if len(locline) > 2:
+                    print(locline, file=fp)
+        if msg.is_docstring:
+            # If the entry was gleaned out of a docstring, then add a
+            # comment stating so.  This is to aid translators who may wish
+            # to skip translating some unimportant docstrings.
+            print('#, docstring', file=fp)
+        if msg.msgctxt is not None:
+            print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
+        print('msgid', normalize(msg.msgid, encoding), file=fp)
+        if msg.msgid_plural is not None:
+            print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
+            print('msgstr[0] ""', file=fp)
+            print('msgstr[1] ""\n', file=fp)
+        else:
+            print('msgstr ""\n', file=fp)
 
 
 def main():
@@ -735,7 +608,7 @@ def main():
     args = expanded
 
     # slurp through all the files
-    eater = TokenEater(options)
+    visitor = GettextVisitor(options)
     for filename in args:
         if filename == '-':
             if options.verbose:
@@ -748,15 +621,8 @@ def main():
             fp = open(filename, 'rb')
             closep = 1
         try:
-            eater.set_filename(filename)
-            try:
-                tokens = tokenize.tokenize(fp.readline)
-                for _token in tokens:
-                    eater(*_token)
-            except tokenize.TokenError as e:
-                print('%s: %s, line %d, column %d' % (
-                    e.args[0], filename, e.args[1][0], e.args[1][1]),
-                    file=sys.stderr)
+            visitor.filename = filename
+            visitor.visit(ast.parse(fp.read()))
         finally:
             if closep:
                 fp.close()
@@ -771,7 +637,7 @@ def main():
         fp = open(options.outfile, 'w')
         closep = 1
     try:
-        eater.write(fp)
+        write_pot_file(visitor.messages, options, fp)
     finally:
         if closep:
             fp.close()
