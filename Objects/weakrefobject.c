@@ -96,7 +96,7 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
         self->wr_prev = NULL;
         self->wr_next = NULL;
     }
-    if (callback != NULL) {
+    if (callback != NULL && self->wr_callback != NULL) {
         *callback = self->wr_callback;
         self->wr_callback = NULL;
     }
@@ -1011,7 +1011,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     for (int done = 0; !done;) {
         LOCK_WEAKREFS(object);
         if (*list != NULL && is_basic_ref_or_proxy(*list)) {
-            PyObject *callback;
+            PyObject *callback = NULL;
             clear_weakref_lock_held(*list, &callback);
             assert(callback == NULL);
         }
@@ -1036,7 +1036,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
     Py_ssize_t num_items = 0;
     for (int done = 0; !done;) {
-        PyObject *callback = NULL;
+        PyObject *callback = Py_None;
         LOCK_WEAKREFS(object);
         PyWeakReference *cur = *list;
         if (cur != NULL) {
@@ -1046,18 +1046,18 @@ PyObject_ClearWeakRefs(PyObject *object)
                 PyTuple_SET_ITEM(tuple, num_items, (PyObject *) cur);
                 PyTuple_SET_ITEM(tuple, num_items + 1, callback);
                 num_items += 2;
-                callback = NULL;
+                callback = Py_None;
             }
         }
         done = (*list == NULL);
         UNLOCK_WEAKREFS(object);
 
-        Py_XDECREF(callback);
+        Py_DECREF(callback);
     }
 
     for (Py_ssize_t i = 0; i < num_items; i += 2) {
         PyObject *callback = PyTuple_GET_ITEM(tuple, i + 1);
-        if (callback != NULL) {
+        if (callback != Py_None) {
             PyObject *weakref = PyTuple_GET_ITEM(tuple, i);
             handle_callback((PyWeakReference *)weakref, callback);
         }

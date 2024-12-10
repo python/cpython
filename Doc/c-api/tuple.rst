@@ -86,7 +86,7 @@ Tuple Objects
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
    *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
-   and set an :exc:`IndexError` exception.
+   and set an :exc:`IndexError` exception. Both ``p`` and ``o`` must be non-``NULL``.
 
    .. note::
 
@@ -97,7 +97,7 @@ Tuple Objects
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
-   used to fill in brand new tuples.
+   used to fill in brand new tuples. Both ``p`` and ``o`` must be non-``NULL``.
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.

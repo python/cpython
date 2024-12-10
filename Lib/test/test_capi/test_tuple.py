@@ -57,7 +57,7 @@ class CAPITest(unittest.TestCase):
         self.assertIs(type(tup2), tuple)
         self.assertEqual(size(tup2), 1)
         self.assertIsNot(tup2, tup1)
-        self.assertTrue(checknull(tup2, 0))
+        self.assertIs(tup2[0], None)
 
         self.assertRaises(SystemError, tuple_new, -1)
         self.assertRaises(SystemError, tuple_new, PY_SSIZE_T_MIN)
@@ -71,8 +71,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(pack(1, [1]), ([1],))
         self.assertEqual(pack(2, [1], [2]), ([1], [2]))
 
-        self.assertRaises(SystemError, pack, PY_SSIZE_T_MIN)
-        self.assertRaises(SystemError, pack, -1)
+        self.assertRaises(ValueError, pack, PY_SSIZE_T_MIN)
+        self.assertRaises(ValueError, pack, -1)
         self.assertRaises(MemoryError, pack, PY_SSIZE_T_MAX)
 
         # CRASHES pack(1, NULL)
@@ -183,9 +183,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(setitem(tup, 0, []), ([], [2]))
         self.assertEqual(setitem(tup, 1, []), ([1], []))
 
-        tup2 = setitem(tup, 1, NULL)
-        self.assertTrue(checknull(tup2, 1))
-
         tup2 = TupleSubclass(([1], [2]))
         self.assertRaises(SystemError, setitem, tup2, 0, [])
 
@@ -196,8 +193,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setitem, [1], 0, [])
         self.assertRaises(SystemError, setitem, 42, 0, [])
 
-        # CRASHES setitem(NULL, 0, [])
-
     def test_tuple_set_item(self):
         # Test PyTuple_SET_ITEM()
         set_item = _testcapi.tuple_set_item
@@ -206,9 +201,6 @@ class CAPITest(unittest.TestCase):
         tup = ([1], [2])
         self.assertEqual(set_item(tup, 0, []), ([], [2]))
         self.assertEqual(set_item(tup, 1, []), ([1], []))
-
-        tup2 = set_item(tup, 1, NULL)
-        self.assertTrue(checknull(tup2, 1))
 
         tup2 = TupleSubclass(([1], [2]))
         self.assertIs(set_item(tup2, 0, []), tup2)
@@ -231,8 +223,8 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 2, False)
         self.assertEqual(len(a), 0)
         self.assertEqual(len(b), 2)
-        self.assertTrue(checknull(b, 0))
-        self.assertTrue(checknull(b, 1))
+        self.assertIs(b[0], None)
+        self.assertIs(b[1], None)
 
         a = ([1], [2], [3])
         b = resize(a, 3)
@@ -242,8 +234,8 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 5)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
-        self.assertTrue(checknull(b, 3))
-        self.assertTrue(checknull(b, 4))
+        self.assertIs(b[3], None)
+        self.assertIs(b[4], None)
 
         a = ()
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
