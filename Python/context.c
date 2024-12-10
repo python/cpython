@@ -128,9 +128,10 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     while (bits) {
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
-            PyContext_WatchCallback cb = interp->context_watchers[i];
+            PyContext_WatchCallback *cb = interp->context_watchers[i].callback;
+            PyObject *arg = interp->context_watchers[i].arg;
             assert(cb != NULL);
-            if (cb(event, ctx) < 0) {
+            if (cb(arg, event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
@@ -143,14 +144,15 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 
 
 int
-PyContext_AddWatcher(PyContext_WatchCallback callback)
+PyContext_AddWatcher(PyContext_WatchCallback *callback, PyObject *arg)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
 
     for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
-        if (!interp->context_watchers[i]) {
-            interp->context_watchers[i] = callback;
+        if (!interp->context_watchers[i].callback) {
+            interp->context_watchers[i].callback = callback;
+            Py_XSETREF(interp->context_watchers[i].arg, Py_XNewRef(arg));
             interp->active_context_watchers |= (1 << i);
             return i;
         }
@@ -170,11 +172,12 @@ PyContext_ClearWatcher(int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid context watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->context_watchers[watcher_id]) {
+    if (!interp->context_watchers[watcher_id].callback) {
         PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
         return -1;
     }
-    interp->context_watchers[watcher_id] = NULL;
+    interp->context_watchers[watcher_id].callback = NULL;
+    Py_CLEAR(interp->context_watchers[watcher_id].arg);
     interp->active_context_watchers &= ~(1 << watcher_id);
     return 0;
 }
