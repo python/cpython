@@ -546,6 +546,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD_OBJ 33
 #define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
 #define SPEC_FAIL_ATTR_SPLIT_DICT 35
+#define SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED 36
 
 /* Binary subscr and store subscr */
 
@@ -1498,6 +1499,14 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
 
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
+
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_HasDeferredRefcount(descr)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
+        return 0;
+    }
+#endif
+
     if (owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
 #ifndef Py_GIL_DISABLED
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
