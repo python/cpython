@@ -77,6 +77,13 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 #define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
 
 static inline PyObject *
+PyStackRef_NotDeferred_AsPyObject(_PyStackRef stackref)
+{
+    assert(!PyStackRef_IsDeferred(stackref));
+    return (PyObject *)stackref.bits;
+}
+
+static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
@@ -92,8 +99,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     assert(obj != NULL);
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    unsigned int tag = _Py_IsImmortal(obj) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
-    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+    return (_PyStackRef){ .bits = (uintptr_t)obj };
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
@@ -153,6 +159,8 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
     return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
 }
 
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
+
 
 #else // Py_GIL_DISABLED
 
@@ -177,12 +185,20 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 
 #define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) _Py_DECREF_SPECIALIZED(PyStackRef_AsPyObjectBorrow(stackref), dealloc)
 
 #endif // Py_GIL_DISABLED
 
-// Note: this is a macro because MSVC (Windows) has trouble inlining it.
+// Check if a stackref is exactly the same as another stackref, including the
+// the deferred bit. This can only be used safely if you know that the deferred
+// bits of `a` and `b` match.
+#define PyStackRef_IsExactly(a, b) \
+    (assert(((a).bits & Py_TAG_BITS) == ((b).bits & Py_TAG_BITS)), (a).bits == (b).bits)
 
-#define PyStackRef_Is(a, b) ((a).bits == (b).bits)
+// Checks that mask out the deferred bit in the free threading build.
+#define PyStackRef_IsNone(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_None)
+#define PyStackRef_IsTrue(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_True)
+#define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
 
 // Converts a PyStackRef back to a PyObject *, converting the
 // stackref to a new reference.

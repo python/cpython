@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
@@ -26,9 +27,9 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_uniqueid.h"      // _PyType_FinalizeIdPool()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -44,7 +45,9 @@
 #endif
 
 #if defined(__APPLE__)
+#  include <AvailabilityMacros.h>
 #  include <mach-o/loader.h>
+#  include <os/log.h>
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -74,9 +77,13 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
+#if defined(__APPLE__)
+static PyStatus init_apple_streams(PyThreadState *tstate);
+#endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
+
 
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
@@ -106,6 +113,7 @@ __attribute__ ((section (".PyRuntime")))
 #endif
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
+
 
 static int runtime_initialized = 0;
 
@@ -667,6 +675,13 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     config.gil = PyInterpreterConfig_OWN_GIL;
     config.check_multi_interp_extensions = 0;
     status = init_interp_settings(interp, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1247,6 +1262,14 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 #endif
+#if defined(__APPLE__)
+    if (config->use_system_logger) {
+        status = init_apple_streams(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
 #ifdef Py_DEBUG
     run_presite(tstate);
@@ -1300,14 +1323,26 @@ init_interp_main(PyThreadState *tstate)
             enabled = *env != '0';
         }
         if (enabled) {
-            PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-            if (opt == NULL) {
-                return _PyStatus_ERR("can't initialize optimizer");
+#ifdef _Py_JIT
+            // perf profiler works fine with tier 2 interpreter, so
+            // only checking for a "real JIT".
+            if (config->perf_profiling > 0) {
+                (void)PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "JIT deactivated as perf profiling support is active",
+                    0);
+            } else
+#endif
+            {
+                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
+                if (opt == NULL) {
+                    return _PyStatus_ERR("can't initialize optimizer");
+                }
+                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+                    return _PyStatus_ERR("can't install optimizer");
+                }
+                Py_DECREF(opt);
             }
-            if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                return _PyStatus_ERR("can't install optimizer");
-            }
-            Py_DECREF(opt);
         }
     }
 #endif
@@ -1866,7 +1901,6 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
-    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1887,6 +1921,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
+    _PyDtoa_Fini(tstate->interp);
 
     /* Free any delayed free requests immediately */
     _PyMem_FiniDelayed(tstate->interp);
@@ -2292,6 +2329,13 @@ new_interpreter(PyThreadState **tstate_p,
     status = init_interp_settings(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
+    }
+
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     // initialize the interp->obmalloc state.  This must be done after
@@ -2901,6 +2945,75 @@ done:
 }
 
 #endif  // __ANDROID__
+
+#if defined(__APPLE__)
+
+static PyObject *
+apple_log_write_impl(PyObject *self, PyObject *args)
+{
+    int logtype = 0;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "iy", &logtype, &text)) {
+        return NULL;
+    }
+
+    // Call the underlying Apple logging API. The os_log unified logging APIs
+    // were introduced in macOS 10.12, iOS 10.0, tvOS 10.0, and watchOS 3.0;
+    // this call is a no-op on older versions.
+    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+    // Pass the user-provided text through explicit %s formatting
+    // to avoid % literals being interpreted as a formatting directive.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    #endif
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef apple_log_write_method = {
+    "apple_log_write", apple_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
+init_apple_streams(PyThreadState *tstate)
+{
+    PyStatus status = _PyStatus_OK();
+    PyObject *_apple_support = NULL;
+    PyObject *apple_log_write = NULL;
+    PyObject *result = NULL;
+
+    _apple_support = PyImport_ImportModule("_apple_support");
+    if (_apple_support == NULL) {
+        goto error;
+    }
+
+    apple_log_write = PyCFunction_New(&apple_log_write_method, NULL);
+    if (apple_log_write == NULL) {
+        goto error;
+    }
+
+    // Initialize the logging streams, sending stdout -> Default; stderr -> Error
+    result = PyObject_CallMethod(
+        _apple_support, "init_streams", "Oii",
+        apple_log_write, OS_LOG_TYPE_DEFAULT, OS_LOG_TYPE_ERROR);
+    if (result == NULL) {
+        goto error;
+    }
+
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Apple log streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(apple_log_write);
+    Py_XDECREF(_apple_support);
+    return status;
+}
+
+#endif  // __APPLE__
 
 
 static void

@@ -47,10 +47,6 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Define to 1 if your system stores words within floats with the most
-   significant word first */
-#undef FLOAT_WORDS_BIGENDIAN
-
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -691,9 +687,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-#undef HAVE_LIBRESOLV
-
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
 
@@ -738,6 +731,9 @@
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
+#undef HAVE_LINUX_NETFILTER_IPV4_H
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
@@ -985,6 +981,9 @@
 /* Define to 1 if you have the `pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
+/* Define to 1 if you have the `pthread_getname_np' function. */
+#undef HAVE_PTHREAD_GETNAME_NP
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
@@ -993,6 +992,9 @@
 
 /* Define to 1 if you have the `pthread_kill' function. */
 #undef HAVE_PTHREAD_KILL
+
+/* Define to 1 if you have the `pthread_setname_np' function. */
+#undef HAVE_PTHREAD_SETNAME_NP
 
 /* Define to 1 if you have the `pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
@@ -1392,6 +1394,9 @@
 /* Define to 1 if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
 
+/* Define to 1 if you have the <sys/pidfd.h> header file. */
+#undef HAVE_SYS_PIDFD_H
+
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
 
@@ -1651,6 +1656,9 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Maximum length in bytes of a thread name */
+#undef PYTHREAD_NAME_MAXLEN
+
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
@@ -1681,6 +1689,9 @@
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
+
+/* Defined if _Complex C type can be used with libffi. */
+#undef Py_FFI_SUPPORT_C_COMPLEX
 
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED

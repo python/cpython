@@ -625,7 +625,7 @@ Process-wide parameters
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
    :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
-   script at build time.  The value is available to Python code as ``sys.prefix``.
+   script at build time.  The value is available to Python code as ``sys.base_prefix``.
    It is only useful on Unix.  See also the next function.
 
    This function should not be called before :c:func:`Py_Initialize`, otherwise
@@ -635,7 +635,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.prefix` instead.
+      Get :data:`sys.base_prefix` instead, or :data:`sys.prefix` if
+      :ref:`virtual environments <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -648,7 +649,8 @@ Process-wide parameters
    should not modify its value.  This corresponds to the :makevar:`exec_prefix`
    variable in the top-level :file:`Makefile` and the ``--exec-prefix``
    argument to the :program:`configure` script at build  time.  The value is
-   available to Python code as ``sys.exec_prefix``.  It is only useful on Unix.
+   available to Python code as ``sys.base_exec_prefix``.  It is only useful on
+   Unix.
 
    Background: The exec-prefix differs from the prefix when platform dependent
    files (such as executables and shared libraries) are installed in a different
@@ -679,7 +681,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.exec_prefix` instead.
+      Get :data:`sys.base_exec_prefix` instead, or :data:`sys.exec_prefix` if
+      :ref:`virtual environments <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
@@ -1195,7 +1198,7 @@ code, or when embedding the Python interpreter:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1257,7 +1260,7 @@ with sub-interpreters:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1375,6 +1378,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionchanged:: 3.9
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
+
+   .. versionchanged:: 3.13
+      The :c:member:`PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1547,7 +1553,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
       and terminate the current thread if called while the interpreter is finalizing.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1732,7 +1738,11 @@ function. You can create and destroy them using the following functions:
           .check_multi_interp_extensions = 1,
           .gil = PyInterpreterConfig_OWN_GIL,
       };
-      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+      PyThreadState *tstate = NULL;
+      PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+      if (PyStatus_Exception(status)) {
+          Py_ExitStatusException(status);
+      }
 
    Note that the config is used only briefly and does not get modified.
    During initialization the config's values are converted into various
@@ -2418,7 +2428,7 @@ Example usage::
 
 In the above example, :c:macro:`Py_SETREF` calls :c:macro:`Py_DECREF`, which
 can call arbitrary code through an object's deallocation function.  The critical
-section API avoids potentital deadlocks due to reentrancy and lock ordering
+section API avoids potential deadlocks due to reentrancy and lock ordering
 by allowing the runtime to temporarily suspend the critical section if the
 code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
@@ -2460,7 +2470,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection2 _py_cs2;
-          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
+          PyCriticalSection2_Begin(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
 
    In the default build, this macro expands to ``{``.
 
@@ -2472,7 +2482,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    In the free-threaded build, this macro expands to::
 
-          PyCriticalSection_End2(&_py_cs2);
+          PyCriticalSection2_End(&_py_cs2);
       }
 
    In the default build, this macro expands to ``}``.

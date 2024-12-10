@@ -196,6 +196,7 @@ iteration of the loop::
     Found an odd number 9
 
 .. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
 
 :keyword:`!else` Clauses on Loops
 =================================
@@ -461,8 +462,8 @@ Defining Functions
 We can create a function that writes the Fibonacci series to an arbitrary
 boundary::
 
-   >>> def fib(n):    # write Fibonacci series up to n
-   ...     """Print a Fibonacci series up to n."""
+   >>> def fib(n):    # write Fibonacci series less than n
+   ...     """Print a Fibonacci series less than n."""
    ...     a, b = 0, 1
    ...     while a < n:
    ...         print(a, end=' ')

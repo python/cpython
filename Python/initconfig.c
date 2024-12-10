@@ -134,6 +134,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
 #ifdef Py_GIL_DISABLED
     SPEC(enable_gil, INT, READ_ONLY, NO_SYS),
+    SPEC(tlbc_enabled, INT, READ_ONLY, NO_SYS),
 #endif
     SPEC(faulthandler, BOOL, READ_ONLY, NO_SYS),
     SPEC(filesystem_encoding, WSTR, READ_ONLY, NO_SYS),
@@ -167,6 +168,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
     SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
+#ifdef __APPLE__
+    SPEC(use_system_logger, BOOL, PUBLIC, NO_SYS),
+#endif
     SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_user_site
     SPEC(warn_default_encoding, BOOL, READ_ONLY, NO_SYS),
 
@@ -315,8 +319,13 @@ The following implementation-specific options are available:\n\
 "\
 -X showrefcount: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
-         the interactive interpreter; only works on debug builds\n\
--X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
+         the interactive interpreter; only works on debug builds\n"
+#ifdef Py_GIL_DISABLED
+"-X tlbc=[0|1]: enable (1) or disable (0) thread-local bytecode. Also\n\
+         PYTHON_TLBC\n"
+#endif
+"\
+-X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
@@ -399,6 +408,9 @@ static const char usage_envvars[] =
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
 #ifdef Py_STATS
 "PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
+#endif
+#ifdef Py_GIL_DISABLED
+"PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
@@ -875,6 +887,9 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
+#ifdef __APPLE__
+    assert(config->use_system_logger >= 0);
+#endif
 #ifdef Py_STATS
     assert(config->_pystats >= 0);
 #endif
@@ -977,8 +992,12 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+#ifdef __APPLE__
+    config->use_system_logger = 0;
+#endif
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
+    config->tlbc_enabled = 1;
 #endif
 }
 
@@ -1004,6 +1023,9 @@ config_init_defaults(PyConfig *config)
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
+#endif
+#ifdef __APPLE__
+    config->use_system_logger = 0;
 #endif
 }
 
@@ -1038,6 +1060,9 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
+#endif
+#ifdef __APPLE__
+    config->use_system_logger = 0;
 #endif
 }
 
@@ -1863,6 +1888,36 @@ error:
 }
 
 static PyStatus
+config_init_tlbc(PyConfig *config)
+{
+#ifdef Py_GIL_DISABLED
+    const char *env = config_get_env(config, "PYTHON_TLBC");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_TLBC=N: N is missing or invalid");
+        }
+        config->tlbc_enabled = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"tlbc");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X tlbc=n: n is missing or invalid");
+        }
+        config->tlbc_enabled = enabled;
+    }
+    return _PyStatus_OK();
+#else
+    return _PyStatus_OK();
+#endif
+}
+
+static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
     int active = 0;
@@ -2110,6 +2165,11 @@ config_read_complex_options(PyConfig *config)
         }
     }
 #endif
+
+    status = config_init_tlbc(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     return _PyStatus_OK();
 }
@@ -3457,6 +3517,9 @@ PyInitConfig_Create(void)
 void
 PyInitConfig_Free(PyInitConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
     free(config->err_msg);
     free(config);
 }

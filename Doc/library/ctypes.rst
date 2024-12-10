@@ -397,7 +397,7 @@ as calling functions with a fixed number of parameters. On some platforms, and i
 particular ARM64 for Apple Platforms, the calling convention for variadic functions
 is different than that for regular functions.
 
-On those platforms it is required to specify the :attr:`~_FuncPtr.argtypes`
+On those platforms it is required to specify the :attr:`~_CFuncPtr.argtypes`
 attribute for the regular, non-variadic, function arguments:
 
 .. code-block:: python3
@@ -405,7 +405,7 @@ attribute for the regular, non-variadic, function arguments:
    libc.printf.argtypes = [ctypes.c_char_p]
 
 Because specifying the attribute does not inhibit portability it is advised to always
-specify :attr:`~_FuncPtr.argtypes` for all variadic functions.
+specify :attr:`~_CFuncPtr.argtypes` for all variadic functions.
 
 
 .. _ctypes-calling-functions-with-own-custom-data-types:
@@ -440,9 +440,9 @@ Specifying the required argument types (function prototypes)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to specify the required argument types of functions exported from
-DLLs by setting the :attr:`~_FuncPtr.argtypes` attribute.
+DLLs by setting the :attr:`~_CFuncPtr.argtypes` attribute.
 
-:attr:`~_FuncPtr.argtypes` must be a sequence of C data types (the :func:`!printf` function is
+:attr:`~_CFuncPtr.argtypes` must be a sequence of C data types (the :func:`!printf` function is
 probably not a good example here, because it takes a variable number and
 different types of parameters depending on the format string, on the other hand
 this is quite handy to experiment with this feature)::
@@ -467,7 +467,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
 
 If you have defined your own classes which you pass to function calls, you have
 to implement a :meth:`~_CData.from_param` class method for them to be able to use them
-in the :attr:`~_FuncPtr.argtypes` sequence. The :meth:`~_CData.from_param` class method receives
+in the :attr:`~_CFuncPtr.argtypes` sequence. The :meth:`~_CData.from_param` class method receives
 the Python object passed to the function call, it should do a typecheck or
 whatever is needed to make sure this object is acceptable, and then return the
 object itself, its :attr:`!_as_parameter_` attribute, or whatever you want to
@@ -490,7 +490,7 @@ Return types
 
 
 By default functions are assumed to return the C :c:expr:`int` type.  Other
-return types can be specified by setting the :attr:`~_FuncPtr.restype` attribute of the
+return types can be specified by setting the :attr:`~_CFuncPtr.restype` attribute of the
 function object.
 
 The C prototype of :c:func:`time` is ``time_t time(time_t *)``. Because :c:type:`time_t`
@@ -499,7 +499,7 @@ specify the :attr:`!restype` attribute::
 
    >>> libc.time.restype = c_time_t
 
-The argument types can be specified using :attr:`~_FuncPtr.argtypes`::
+The argument types can be specified using :attr:`~_CFuncPtr.argtypes`::
 
    >>> libc.time.argtypes = (POINTER(c_time_t),)
 
@@ -522,7 +522,7 @@ a string pointer and a char, and returns a pointer to a string::
    >>>
 
 If you want to avoid the :func:`ord("x") <ord>` calls above, you can set the
-:attr:`~_FuncPtr.argtypes` attribute, and the second argument will be converted from a
+:attr:`~_CFuncPtr.argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char:
 
 .. doctest::
@@ -541,7 +541,7 @@ single character Python bytes object into a C char:
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
-the :attr:`~_FuncPtr.restype` attribute, if the foreign function returns an integer.  The
+the :attr:`~_CFuncPtr.restype` attribute, if the foreign function returns an integer.  The
 callable will be called with the *integer* the C function returns, and the
 result of this call will be used as the result of your function call. This is
 useful to check for error return values and automatically raise an exception::
@@ -569,7 +569,7 @@ get the string representation of an error code, and *returns* an exception.
 :func:`GetLastError` to retrieve it.
 
 Please note that a much more powerful error checking mechanism is available
-through the :attr:`~_FuncPtr.errcheck` attribute;
+through the :attr:`~_CFuncPtr.errcheck` attribute;
 see the reference manual for details.
 
 
@@ -877,7 +877,7 @@ Type conversions
 ^^^^^^^^^^^^^^^^
 
 Usually, ctypes does strict type checking.  This means, if you have
-``POINTER(c_int)`` in the :attr:`~_FuncPtr.argtypes` list of a function or as the type of
+``POINTER(c_int)`` in the :attr:`~_CFuncPtr.argtypes` list of a function or as the type of
 a member field in a structure definition, only instances of exactly the same
 type are accepted.  There are some exceptions to this rule, where ctypes accepts
 other objects.  For example, you can pass compatible array instances instead of
@@ -898,7 +898,7 @@ pointer types.  So, for ``POINTER(c_int)``, ctypes accepts an array of c_int::
    >>>
 
 In addition, if a function argument is explicitly declared to be a pointer type
-(such as ``POINTER(c_int)``) in :attr:`~_FuncPtr.argtypes`, an object of the pointed
+(such as ``POINTER(c_int)``) in :attr:`~_CFuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
 
@@ -1413,12 +1413,14 @@ way is to instantiate one of the following classes:
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Windows only: Instances of this class represent loaded shared libraries,
+   Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
    values contain information specifying whether the function call failed or
    succeeded, together with additional error code.  If the return value signals a
    failure, an :class:`OSError` is automatically raised.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised,
@@ -1431,13 +1433,16 @@ way is to instantiate one of the following classes:
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Windows only: Instances of this class represent loaded shared libraries,
+   Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.12
 
       The *name* parameter can now be a :term:`path-like object`.
+
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1574,13 +1579,17 @@ These prefabricated library loaders are available:
 .. data:: windll
    :noindex:
 
-   Windows only: Creates :class:`WinDLL` instances.
+   Creates :class:`WinDLL` instances.
+
+   .. availability:: Windows
 
 
 .. data:: oledll
    :noindex:
 
-   Windows only: Creates :class:`OleDLL` instances.
+   Creates :class:`OleDLL` instances.
+
+   .. availability:: Windows
 
 
 .. data:: pydll
@@ -1627,10 +1636,20 @@ As explained in the previous section, foreign functions can be accessed as
 attributes of loaded shared libraries.  The function objects created in this way
 by default accept any number of arguments, accept any ctypes data instances as
 arguments, and return the default result type specified by the library loader.
-They are instances of a private class:
 
+They are instances of a private local class :class:`!_FuncPtr` (not exposed
+in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
 
-.. class:: _FuncPtr
+.. doctest::
+
+   >>> import ctypes
+   >>> lib = ctypes.CDLL(None)
+   >>> issubclass(lib._FuncPtr, ctypes._CFuncPtr)
+   True
+   >>> lib._FuncPtr is ctypes._CFuncPtr
+   False
+
+.. class:: _CFuncPtr
 
    Base class for C callable foreign functions.
 
@@ -1697,12 +1716,6 @@ They are instances of a private class:
       and raise an exception if the foreign function call failed.
 
 
-.. exception:: ArgumentError
-
-   This exception is raised when a foreign function call cannot convert one of the
-   passed arguments.
-
-
 .. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
@@ -1742,10 +1755,12 @@ See :ref:`ctypes-callback-functions` for examples.
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   Windows only: The returned function prototype creates functions that use the
+   The returned function prototype creates functions that use the
    ``stdcall`` calling convention.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
    same meaning as above.
+
+   .. availability:: Windows
 
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
@@ -1789,14 +1804,19 @@ different ways, depending on the type and number of the parameters in the call:
    integer. *name* is name of the COM method. *iid* is an optional pointer to
    the interface identifier which is used in extended error reporting.
 
+   If *iid* is not specified, an :exc:`OSError` is raised if the COM method
+   call fails. If *iid* is specified, a :exc:`~ctypes.COMError` is raised
+   instead.
+
    COM methods use a special calling convention: They require a pointer to
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
 
+
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
 
-*paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
+*paramflags* must be a tuple of the same length as :attr:`~_CFuncPtr.argtypes`.
 
 Each item in this tuple contains further information about a parameter, it must
 be a tuple containing one, two, or three items.
@@ -1867,7 +1887,7 @@ value if there is a single one, or a tuple containing the output parameter
 values when there are more than one, so the GetWindowRect function now returns a
 RECT instance, when called.
 
-Output parameters can be combined with the :attr:`~_FuncPtr.errcheck` protocol to do
+Output parameters can be combined with the :attr:`~_CFuncPtr.errcheck` protocol to do
 further output processing and error checking.  The win32 ``GetWindowRect`` api
 function returns a ``BOOL`` to signal success or failure, so this function could
 do the error checking, and raises an exception when the api call failed::
@@ -1880,7 +1900,7 @@ do the error checking, and raises an exception when the api call failed::
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
-If the :attr:`~_FuncPtr.errcheck` function returns the argument tuple it receives
+If the :attr:`~_CFuncPtr.errcheck` function returns the argument tuple it receives
 unchanged, :mod:`ctypes` continues the normal processing it does on the output
 parameters.  If you want to return a tuple of window coordinates instead of a
 ``RECT`` instance, you can retrieve the fields in the function and return them
@@ -1929,6 +1949,24 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
+
+   .. availability:: Windows
+
+   .. versionadded:: next
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
@@ -1972,16 +2010,20 @@ Utility functions
 
 .. function:: DllCanUnloadNow()
 
-   Windows only: This function is a hook which allows implementing in-process
+   This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllCanUnloadNow function that
    the _ctypes extension dll exports.
+
+   .. availability:: Windows
 
 
 .. function:: DllGetClassObject()
 
-   Windows only: This function is a hook which allows implementing in-process
+   This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllGetClassObject function
    that the ``_ctypes`` extension dll exports.
+
+   .. availability:: Windows
 
 
 .. function:: find_library(name)
@@ -1998,7 +2040,7 @@ Utility functions
 .. function:: find_msvcrt()
    :module: ctypes.util
 
-   Windows only: return the filename of the VC runtime library used by Python,
+   Returns the filename of the VC runtime library used by Python,
    and by the extension modules.  If the name of the library cannot be
    determined, ``None`` is returned.
 
@@ -2006,19 +2048,26 @@ Utility functions
    with a call to the ``free(void *)``, it is important that you use the
    function in the same library that allocated the memory.
 
+   .. availability:: Windows
+
 
 .. function:: FormatError([code])
 
-   Windows only: Returns a textual description of the error code *code*.  If no
-   error code is specified, the last error code is used by calling the Windows
-   api function GetLastError.
+   Returns a textual description of the error code *code*.  If no error code is
+   specified, the last error code is used by calling the Windows API function
+   :func:`GetLastError`.
+
+   .. availability:: Windows
 
 
 .. function:: GetLastError()
 
-   Windows only: Returns the last error code set by Windows in the calling thread.
+   Returns the last error code set by Windows in the calling thread.
    This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
+
+   .. availability:: Windows
+
 
 .. function:: get_errno()
 
@@ -2029,10 +2078,13 @@ Utility functions
 
 .. function:: get_last_error()
 
-   Windows only: returns the current value of the ctypes-private copy of the system
+   Returns the current value of the ctypes-private copy of the system
    :data:`!LastError` variable in the calling thread.
 
+   .. availability:: Windows
+
    .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
+
 
 .. function:: memmove(dst, src, count)
 
@@ -2082,9 +2134,11 @@ Utility functions
 
 .. function:: set_last_error(value)
 
-   Windows only: set the current value of the ctypes-private copy of the system
+   Sets the current value of the ctypes-private copy of the system
    :data:`!LastError` variable in the calling thread to *value* and return the
    previous value.
+
+   .. availability:: Windows
 
    .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
 
@@ -2106,11 +2160,12 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.3
       An instance of :exc:`WindowsError` used to be created, which is now an
@@ -2180,7 +2235,7 @@ Data types
 
       This method adapts *obj* to a ctypes type.  It is called with the actual
       object used in a foreign function call when the type is present in the
-      foreign function's :attr:`~_FuncPtr.argtypes` tuple;
+      foreign function's :attr:`~_CFuncPtr.argtypes` tuple;
       it must return an object that can be used as a function call parameter.
 
       All ctypes data types have a default implementation of this classmethod
@@ -2246,7 +2301,7 @@ Fundamental data types
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
 converted to native Python types.  In other words, if a foreign function has a
-:attr:`~_FuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
+:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
 object, *not* a :class:`c_char_p` instance.
 
 .. XXX above is false, it actually returns a Unicode string
@@ -2303,7 +2358,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. class:: c_float_complex
@@ -2475,8 +2530,10 @@ These are the fundamental ctypes data types:
 
 .. class:: HRESULT
 
-   Windows only: Represents a :c:type:`!HRESULT` value, which contains success or
+   Represents a :c:type:`!HRESULT` value, which contains success or
    error information for a function or method call.
+
+   .. availability:: Windows
 
 
 .. class:: py_object
@@ -2731,3 +2788,41 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
+
+
+.. _ctypes-exceptions:
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: ArgumentError
+
+   This exception is raised when a foreign function call cannot convert one of the
+   passed arguments.
+
+
+.. exception:: COMError(hresult, text, details)
+
+   This exception is raised when a COM method call failed.
+
+   .. attribute:: hresult
+
+      The integer value representing the error code.
+
+   .. attribute:: text
+
+      The error message.
+
+   .. attribute:: details
+
+      The 5-tuple ``(descr, source, helpfile, helpcontext, progid)``.
+
+      *descr* is the textual description.  *source* is the language-dependent
+      ``ProgID`` for the class or application that raised the error.  *helpfile*
+      is the path of the help file.  *helpcontext* is the help context
+      identifier.  *progid* is the ``ProgID`` of the interface that defined the
+      error.
+
+   .. availability:: Windows
+
+   .. versionadded:: next

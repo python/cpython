@@ -719,7 +719,7 @@ class NestedWith(unittest.TestCase):
         try:
             with self.Dummy() as a, self.InitRaises():
                 pass
-        except:
+        except RuntimeError:
             pass
         self.assertTrue(a.enter_called)
         self.assertTrue(a.exit_called)

@@ -2748,6 +2748,141 @@ static PySequenceMethods memory_as_sequence = {
 };
 
 
+/****************************************************************************/
+/*                              Counting                                    */
+/****************************************************************************/
+
+/*[clinic input]
+memoryview.count
+
+    value: object
+    /
+
+Count the number of occurrences of a value.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_count(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+{
+    PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t count = 0;
+    PyObject *item = NULL;
+    while (PyIter_NextItem(iter, &item)) {
+        if (item == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+        if (item == value) {
+            Py_DECREF(item);
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+            continue;
+        }
+        int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (contained > 0) { // more likely than 'contained < 0'
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+        }
+        else if (contained < 0) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    }
+    Py_DECREF(iter);
+    return PyLong_FromSsize_t(count);
+}
+
+
+/**************************************************************************/
+/*                             Lookup                                     */
+/**************************************************************************/
+
+/*[clinic input]
+memoryview.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of a value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+{
+    const Py_buffer *view = &self->view;
+    CHECK_RELEASED(self);
+
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid lookup on 0-dim memory");
+        return NULL;
+    }
+
+    if (view->ndim == 1) {
+        Py_ssize_t n = view->shape[0];
+
+        if (start < 0) {
+            start = Py_MAX(start + n, 0);
+        }
+
+        if (stop < 0) {
+            stop = Py_MAX(stop + n, 0);
+        }
+
+        stop = Py_MIN(stop, n);
+        assert(stop >= 0);
+        assert(stop <= n);
+
+        start = Py_MIN(start, stop);
+        assert(0 <= start);
+        assert(start <= stop);
+
+        PyObject *obj = _PyObject_CAST(self);
+        for (Py_ssize_t index = start; index < stop; index++) {
+            // Note: while memoryviews can be mutated during iterations
+            // when calling the == operator, their shape cannot. As such,
+            // it is safe to assume that the index remains valid for the
+            // entire loop.
+            assert(index < n);
+
+            PyObject *item = memory_item(obj, index);
+            if (item == NULL) {
+                return NULL;
+            }
+            if (item == value) {
+                Py_DECREF(item);
+                return PyLong_FromSsize_t(index);
+            }
+            int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+            Py_DECREF(item);
+            if (contained > 0) {  // more likely than 'contained < 0'
+                return PyLong_FromSsize_t(index);
+            }
+            else if (contained < 0) {
+                return NULL;
+            }
+        }
+
+        PyErr_SetString(PyExc_ValueError, "memoryview.index(x): x not found");
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "multi-dimensional lookup is not implemented");
+    return NULL;
+
+}
+
+
 /**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
@@ -3284,8 +3419,11 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
+    MEMORYVIEW_COUNT_METHODDEF
+    MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
 
@@ -3355,6 +3493,7 @@ memory_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
+    CHECK_RELEASED(seq);
     PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
     int ndims = obj->view.ndim;
     if (ndims == 0) {

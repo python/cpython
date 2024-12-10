@@ -370,10 +370,14 @@ class ImportTests(unittest.TestCase):
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
         if hasattr(_testcapi, "__file__"):
-            self.assertEqual(cm.exception.path, _testcapi.__file__)
+            # The path on the exception is strictly the spec origin, not the
+            # module's __file__. For most cases, these are the same; but on
+            # iOS, the Framework relocation process results in the exception
+            # being raised from the spec location.
+            self.assertEqual(cm.exception.path, _testcapi.__spec__.origin)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|fwork|pyd)\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*(\.(so|pyd))?\)"
             )
         else:
             self.assertEqual(
@@ -803,105 +807,178 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
+    def test_frozen_module_from_import_error(self):
+        with self.assertRaises(ImportError) as cm:
+            from os import this_will_never_exist
+        self.assertIn(
+            f"cannot import name 'this_will_never_exist' from 'os' ({os.__file__})",
+            str(cm.exception),
+        )
+        with self.assertRaises(ImportError) as cm:
+            from sys import this_will_never_exist
+        self.assertIn(
+            "cannot import name 'this_will_never_exist' from 'sys' (unknown location)",
+            str(cm.exception),
+        )
+
+        scripts = [
+            """
+import os
+os.__spec__.has_location = False
+os.__file__ = []
+from os import this_will_never_exist
+""",
+            """
+import os
+os.__spec__.has_location = False
+del os.__file__
+from os import this_will_never_exist
+""",
+              """
+import os
+os.__spec__.origin = []
+os.__file__ = []
+from os import this_will_never_exist
+"""
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"cannot import name 'this_will_never_exist' "
+                    b"from 'os' (unknown location)"
+                )
+                popen = script_helper.spawn_python("-c", script)
+                stdout, stderr = popen.communicate()
+                self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
-        with os_helper.temp_dir() as tmp:
-            with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
-                f.write("import fractions\nfractions.Fraction")
-
-            expected_error = (
-                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
-                rb"\(consider renaming '.*fractions.py' since it has the "
-                rb"same name as the standard library module named 'fractions' "
-                rb"and the import system gives it precedence\)"
+        script_errors = [
+            (
+                "import fractions\nfractions.Fraction",
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction'"
+            ),
+            (
+                "from fractions import Fraction",
+                rb"ImportError: cannot import name 'Fraction' from 'fractions'"
             )
+        ]
+        for script, error in script_errors:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
+                with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
+                    f.write(script)
 
-            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                expected_error = error + (
+                    rb" \(consider renaming '.*fractions.py' since it has the "
+                    rb"same name as the standard library module named 'fractions' "
+                    rb"and prevents importing that standard library module\)"
+                )
 
-            popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            # and there's no error at all when using -P
-            popen = script_helper.spawn_python('-P', 'fractions.py', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertEqual(stdout, b'')
+                popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            tmp_child = os.path.join(tmp, "child")
-            os.mkdir(tmp_child)
+                # and there's no error at all when using -P
+                popen = script_helper.spawn_python('-P', 'fractions.py', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertEqual(stdout, b'')
 
-            # test the logic with different cwd
-            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp_child)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                tmp_child = os.path.join(tmp, "child")
+                os.mkdir(tmp_child)
 
-            popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp_child)
-            stdout, stderr = popen.communicate()
-            self.assertEqual(stdout, b'')  # no error
+                # test the logic with different cwd
+                popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp_child)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp_child)
-            stdout, stderr = popen.communicate()
-            self.assertEqual(stdout, b'')  # no error
+                popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp_child)
+                stdout, stderr = popen.communicate()
+                self.assertEqual(stdout, b'')  # no error
+
+                popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp_child)
+                stdout, stderr = popen.communicate()
+                self.assertEqual(stdout, b'')  # no error
 
     def test_package_shadowing_stdlib_module(self):
-        with os_helper.temp_dir() as tmp:
-            os.mkdir(os.path.join(tmp, "fractions"))
-            with open(os.path.join(tmp, "fractions", "__init__.py"), "w", encoding='utf-8') as f:
-                f.write("shadowing_module = True")
-            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
-                f.write("""
-import fractions
-fractions.shadowing_module
-fractions.Fraction
-""")
-
-            expected_error = (
-                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
-                rb"\(consider renaming '.*fractions.__init__.py' since it has the "
-                rb"same name as the standard library module named 'fractions' "
-                rb"and the import system gives it precedence\)"
+        script_errors = [
+            (
+                "fractions.Fraction",
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction'"
+            ),
+            (
+                "from fractions import Fraction",
+                rb"ImportError: cannot import name 'Fraction' from 'fractions'"
             )
+        ]
+        for script, error in script_errors:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
+                os.mkdir(os.path.join(tmp, "fractions"))
+                with open(
+                    os.path.join(tmp, "fractions", "__init__.py"), "w", encoding='utf-8'
+                ) as f:
+                    f.write("shadowing_module = True")
+                with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                    f.write("import fractions; fractions.shadowing_module\n")
+                    f.write(script)
 
-            popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                expected_error = error + (
+                    rb" \(consider renaming '.*[\\/]fractions[\\/]+__init__.py' since it has the "
+                    rb"same name as the standard library module named 'fractions' "
+                    rb"and prevents importing that standard library module\)"
+                )
 
-            popen = script_helper.spawn_python('-m', 'main', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            # and there's no shadowing at all when using -P
-            popen = script_helper.spawn_python('-P', 'main.py', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, b"module 'fractions' has no attribute 'shadowing_module'")
+                popen = script_helper.spawn_python('-m', 'main', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
+
+                # and there's no shadowing at all when using -P
+                popen = script_helper.spawn_python('-P', 'main.py', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, b"module 'fractions' has no attribute 'shadowing_module'")
 
     def test_script_shadowing_third_party(self):
-        with os_helper.temp_dir() as tmp:
-            with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
-                f.write("import numpy\nnumpy.array")
-
-            expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'array' "
-                rb"\(consider renaming '.*numpy.py' if it has the "
-                rb"same name as a third-party module you intended to import\)\s+\Z"
+        script_errors = [
+            (
+                "import numpy\nnumpy.array",
+                rb"AttributeError: module 'numpy' has no attribute 'array'"
+            ),
+            (
+                "from numpy import array",
+                rb"ImportError: cannot import name 'array' from 'numpy'"
             )
+        ]
+        for script, error in script_errors:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
+                with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
+                    f.write(script)
 
-            popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                expected_error = error + (
+                    rb" \(consider renaming '.*numpy.py' if it has the "
+                    rb"same name as a library you intended to import\)\s+\Z"
+                )
 
-            popen = script_helper.spawn_python('-m', 'numpy', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
-            popen = script_helper.spawn_python('-c', 'import numpy', cwd=tmp)
-            stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+                popen = script_helper.spawn_python('-m', 'numpy', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
+
+                popen = script_helper.spawn_python('-c', 'import numpy', cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
 
     def test_script_maybe_not_shadowing_third_party(self):
         with os_helper.temp_dir() as tmp:
@@ -911,8 +988,14 @@ fractions.Fraction
             expected_error = (
                 rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\Z"
             )
-
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            expected_error = (
+                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\Z"
+            )
+            popen = script_helper.spawn_python('-c', 'from numpy import attr', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
@@ -920,6 +1003,8 @@ fractions.Fraction
         with os_helper.temp_dir() as tmp:
             with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
                 f.write("shadowing_module = True")
+
+            # Unhashable str subclass
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
 import fractions
@@ -932,11 +1017,28 @@ try:
 except TypeError as e:
     print(str(e))
 """)
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import fractions
+fractions.shadowing_module
+class substr(str):
+    __hash__ = None
+fractions.__name__ = substr('fractions')
+try:
+    from fractions import Fraction
+except TypeError as e:
+    print(str(e))
+""")
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
 
+            # Various issues with sys module
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
 import fractions
@@ -961,18 +1063,45 @@ try:
 except AttributeError as e:
     print(str(e))
 """)
-
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(
-                stdout.splitlines(),
-                [
-                    b"module 'fractions' has no attribute 'Fraction'",
-                    b"module 'fractions' has no attribute 'Fraction'",
-                    b"module 'fractions' has no attribute 'Fraction'",
-                ],
-            )
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 3)
+            for line in lines:
+                self.assertEqual(line, b"module 'fractions' has no attribute 'Fraction'")
 
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import fractions
+fractions.shadowing_module
+
+import sys
+sys.stdlib_module_names = None
+try:
+    from fractions import Fraction
+except ImportError as e:
+    print(str(e))
+
+del sys.stdlib_module_names
+try:
+    from fractions import Fraction
+except ImportError as e:
+    print(str(e))
+
+sys.path = [0]
+try:
+    from fractions import Fraction
+except ImportError as e:
+    print(str(e))
+""")
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 3)
+            for line in lines:
+                self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
+
+            # Various issues with origin
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
 import fractions
@@ -983,7 +1112,7 @@ try:
 except AttributeError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     fractions.Fraction
 except AttributeError as e:
@@ -992,37 +1121,74 @@ except AttributeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(
-                stdout.splitlines(),
-                [
-                    b"module 'fractions' has no attribute 'Fraction'",
-                    b"module 'fractions' has no attribute 'Fraction'"
-                ],
-            )
-
-    def test_script_shadowing_stdlib_sys_path_modification(self):
-        with os_helper.temp_dir() as tmp:
-            with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
-                f.write("shadowing_module = True")
-
-            expected_error = (
-                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
-                rb"\(consider renaming '.*fractions.py' since it has the "
-                rb"same name as the standard library module named 'fractions' "
-                rb"and the import system gives it precedence\)"
-            )
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 2)
+            for line in lines:
+                self.assertEqual(line, b"module 'fractions' has no attribute 'Fraction'")
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
-import sys
-sys.path.insert(0, "this_folder_does_not_exist")
 import fractions
-fractions.Fraction
-""")
+fractions.shadowing_module
+del fractions.__spec__.origin
+try:
+    from fractions import Fraction
+except ImportError as e:
+    print(str(e))
 
+fractions.__spec__.origin = []
+try:
+    from fractions import Fraction
+except ImportError as e:
+    print(str(e))
+""")
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertRegex(stdout, expected_error)
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 2)
+            for line in lines:
+                self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
+
+    def test_script_shadowing_stdlib_sys_path_modification(self):
+        script_errors = [
+            (
+                "import fractions\nfractions.Fraction",
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction'"
+            ),
+            (
+                "from fractions import Fraction",
+                rb"ImportError: cannot import name 'Fraction' from 'fractions'"
+            )
+        ]
+        for script, error in script_errors:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
+                with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
+                    f.write("shadowing_module = True")
+                with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                    f.write('import sys; sys.path.insert(0, "this_folder_does_not_exist")\n')
+                    f.write(script)
+                expected_error = error + (
+                    rb" \(consider renaming '.*fractions.py' since it has the "
+                    rb"same name as the standard library module named 'fractions' "
+                    rb"and prevents importing that standard library module\)"
+                )
+
+                popen = script_helper.spawn_python("main.py", cwd=tmp)
+                stdout, stderr = popen.communicate()
+                self.assertRegex(stdout, expected_error)
+
+    def test_create_dynamic_null(self):
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec:
+                name = "a\x00b"
+                origin = "abc"
+            _imp.create_dynamic(Spec())
+
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec2:
+                name = "abc"
+                origin = "a\x00b"
+            _imp.create_dynamic(Spec2())
 
 
 @skip_if_dont_write_bytecode
@@ -1125,7 +1291,7 @@ class PycRewritingTests(unittest.TestCase):
 import sys
 code_filename = sys._getframe().f_code.co_filename
 module_filename = __file__
-constant = 1
+constant = 1000
 def func():
     pass
 func_filename = func.__code__.co_filename
@@ -1194,7 +1360,7 @@ func_filename = func.__code__.co_filename
             code = marshal.load(f)
         constants = list(code.co_consts)
         foreign_code = importlib.import_module.__code__
-        pos = constants.index(1)
+        pos = constants.index(1000)
         constants[pos] = foreign_code
         code = code.replace(co_consts=tuple(constants))
         with open(self.compiled_name, "wb") as f:

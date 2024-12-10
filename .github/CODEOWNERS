@@ -16,14 +16,17 @@ configure*                    @erlend-aasland @corona10
 Makefile.pre.in               @erlend-aasland
 Modules/Setup*                @erlend-aasland
 
+# argparse
+**/*argparse*                 @savannahostrowski
+
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
+**/*asyncio*                  @1st1 @asvetlov @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
-**/*jit*                      @brandtbucher
+**/*jit*                      @brandtbucher @savannahostrowski
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -78,6 +81,17 @@ Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
 Tools/build/generate_global_objects.py  @ericsnowcurrently
 
+# Initialization
+Doc/library/sys_path_init.rst @FFY00
+Doc/c-api/init_config.rst     @FFY00
+
+# getpath
+**/*getpath*                  @FFY00
+
+# site
+**/*site.py                   @FFY00
+Doc/library/site.rst          @FFY00
+
 # Exceptions
 Lib/test/test_except*.py      @iritkatriel
 Objects/exceptions.c          @iritkatriel
@@ -88,14 +102,13 @@ Objects/exceptions.c          @iritkatriel
 **/sha*                       @gpshead @tiran
 Modules/md5*                  @gpshead @tiran
 **/*blake*                    @gpshead @tiran
-Modules/_blake2/**            @gpshead @tiran
 Modules/_hacl/**              @gpshead
 
 # logging
 **/*logging*                  @vsajip
 
 # venv
-**/*venv*                     @vsajip
+**/*venv*                     @vsajip @FFY00
 
 # Launcher
 /PC/launcher.c                @vsajip
@@ -255,8 +268,8 @@ Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
-**/*Android*                  @mhsmith
-**/*android*                  @mhsmith
+**/*Android*                  @mhsmith @freakboy3742
+**/*android*                  @mhsmith @freakboy3742
 
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
@@ -267,7 +280,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-/Tools/wasm/                  @brettcannon
+/Tools/wasm/                  @brettcannon @freakboy3742
 
 # SBOM
 /Misc/externals.spdx.json     @sethmlarson
@@ -280,3 +293,5 @@ Lib/test/test_configparser.py @jaraco
 
 # Doc sections
 Doc/reference/                @willingc
+
+**/*weakref*                  @kumaraditya303
