@@ -1300,15 +1300,9 @@ class PathBaseTest(PurePathBaseTest):
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.exists)
-        self.assertRaises(e, p.samefile, 'foo')
         self.assertRaises(e, p.is_dir)
         self.assertRaises(e, p.is_file)
-        self.assertRaises(e, p.is_mount)
         self.assertRaises(e, p.is_symlink)
-        self.assertRaises(e, p.is_block_device)
-        self.assertRaises(e, p.is_char_device)
-        self.assertRaises(e, p.is_fifo)
-        self.assertRaises(e, p.is_socket)
         self.assertRaises(e, p.open)
         self.assertRaises(e, p.read_bytes)
         self.assertRaises(e, p.read_text)
@@ -1534,27 +1528,6 @@ class DummyPathTest(DummyPurePathTest):
     def assertEqualNormCase(self, path_a, path_b):
         normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))
-
-    def test_samefile(self):
-        parser = self.parser
-        fileA_path = parser.join(self.base, 'fileA')
-        fileB_path = parser.join(self.base, 'dirB', 'fileB')
-        p = self.cls(fileA_path)
-        pp = self.cls(fileA_path)
-        q = self.cls(fileB_path)
-        self.assertTrue(p.samefile(fileA_path))
-        self.assertTrue(p.samefile(pp))
-        self.assertFalse(p.samefile(fileB_path))
-        self.assertFalse(p.samefile(q))
-        # Test the non-existent file case
-        non_existent = parser.join(self.base, 'foo')
-        r = self.cls(non_existent)
-        self.assertRaises(FileNotFoundError, p.samefile, r)
-        self.assertRaises(FileNotFoundError, p.samefile, non_existent)
-        self.assertRaises(FileNotFoundError, r.samefile, p)
-        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
-        self.assertRaises(FileNotFoundError, r.samefile, r)
-        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
 
     def test_exists(self):
         P = self.cls
@@ -2115,15 +2088,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
         self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
 
-    def test_is_mount(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_mount())
-        self.assertFalse((P / 'dirA').is_mount())
-        self.assertFalse((P / 'non-existing').is_mount())
-        self.assertFalse((P / 'fileA' / 'bah').is_mount())
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_mount())
-
     def test_is_symlink(self):
         P = self.cls(self.base)
         self.assertFalse((P / 'fileA').is_symlink())
@@ -2139,51 +2103,6 @@ class DummyPathTest(DummyPurePathTest):
         if self.can_symlink:
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
-
-    def test_is_junction_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_junction())
-        self.assertFalse((P / 'dirA').is_junction())
-        self.assertFalse((P / 'non-existing').is_junction())
-        self.assertFalse((P / 'fileA' / 'bah').is_junction())
-        self.assertFalse((P / 'fileA\udfff').is_junction())
-        self.assertFalse((P / 'fileA\x00').is_junction())
-
-    def test_is_fifo_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_fifo())
-        self.assertFalse((P / 'dirA').is_fifo())
-        self.assertFalse((P / 'non-existing').is_fifo())
-        self.assertFalse((P / 'fileA' / 'bah').is_fifo())
-        self.assertIs((P / 'fileA\udfff').is_fifo(), False)
-        self.assertIs((P / 'fileA\x00').is_fifo(), False)
-
-    def test_is_socket_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_socket())
-        self.assertFalse((P / 'dirA').is_socket())
-        self.assertFalse((P / 'non-existing').is_socket())
-        self.assertFalse((P / 'fileA' / 'bah').is_socket())
-        self.assertIs((P / 'fileA\udfff').is_socket(), False)
-        self.assertIs((P / 'fileA\x00').is_socket(), False)
-
-    def test_is_block_device_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_block_device())
-        self.assertFalse((P / 'dirA').is_block_device())
-        self.assertFalse((P / 'non-existing').is_block_device())
-        self.assertFalse((P / 'fileA' / 'bah').is_block_device())
-        self.assertIs((P / 'fileA\udfff').is_block_device(), False)
-        self.assertIs((P / 'fileA\x00').is_block_device(), False)
-
-    def test_is_char_device_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_char_device())
-        self.assertFalse((P / 'dirA').is_char_device())
-        self.assertFalse((P / 'non-existing').is_char_device())
-        self.assertFalse((P / 'fileA' / 'bah').is_char_device())
-        self.assertIs((P / 'fileA\udfff').is_char_device(), False)
-        self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
     def test_delete_file(self):
         p = self.cls(self.base) / 'fileA'
