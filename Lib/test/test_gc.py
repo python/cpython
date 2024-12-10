@@ -1161,19 +1161,27 @@ class IncrementalGCTests(unittest.TestCase):
             return head
 
         head = make_ll(1000)
+        count = 1000
+
+        # There will be some objects we aren't counting,
+        # e.g. the gc stats dicts. This test checks
+        # that the counts don't grow, so we try to
+        # correct for the uncounted objects
+        # This is just an estimate.
+        CORRECTION = 20
 
         enabled = gc.isenabled()
         gc.enable()
         olds = []
         initial_heap_size = _testinternalcapi.get_tracked_heap_size()
-        iterations = max(20_000, initial_heap_size)
-        for i in range(iterations):
+        for i in range(20_000):
             newhead = make_ll(20)
+            count += 20
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
                 new_objects = _testinternalcapi.get_tracked_heap_size() - initial_heap_size
-                self.assertLess(new_objects, initial_heap_size/2, f"Heap growing. Reached limit after {i} iterations")
+                self.assertLess(new_objects, 27_000, f"Heap growing. Reached limit after {i} iterations")
                 del olds[:]
         if not enabled:
             gc.disable()
