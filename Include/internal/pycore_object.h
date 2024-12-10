@@ -137,7 +137,11 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
     _Py_AddRefTotal(_PyThreadState_GET(), n);
 #endif
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt += (PY_UINT32_T)n;
+#else
     op->ob_refcnt += n;
+#endif
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;

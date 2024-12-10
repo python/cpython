@@ -142,6 +142,7 @@ static inline Py_ALWAYS_INLINE int _Py_IsStaticImmortal(PyObject *op)
 PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+    assert(refcnt >= 0);
 #if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
     // Stable ABI implements Py_SET_REFCNT() as a function call
     // on limited C API version 3.13 and newer.
@@ -154,9 +155,12 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsImmortal(ob)) {
         return;
     }
-
 #ifndef Py_GIL_DISABLED
+#if SIZEOF_VOID_P > 4
+    ob->ob_refcnt = (PY_UINT32_T)refcnt;
+#else
     ob->ob_refcnt = refcnt;
+#endif
 #else
     if (_Py_IsOwnedByCurrentThread(ob)) {
         if ((size_t)refcnt > (size_t)UINT32_MAX) {
