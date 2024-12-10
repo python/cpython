@@ -2859,6 +2859,20 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
     }
 
+    if (origin == NULL) {
+        // Fall back to __file__ for diagnostics if we don't have
+        // an origin that is a location
+        origin = PyModule_GetFilenameObject(v);
+        if (origin == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                goto done;
+            }
+            // PyModule_GetFilenameObject raised "module filename missing"
+            _PyErr_Clear(tstate);
+        }
+        assert(origin == NULL || PyUnicode_Check(origin));
+    }
+
     if (is_possibly_shadowing_stdlib) {
         assert(origin);
         errmsg = PyUnicode_FromFormat(
@@ -2919,9 +2933,11 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
 
 done_with_errmsg:
-    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
-    Py_DECREF(errmsg);
+    if (errmsg != NULL) {
+        /* NULL checks for mod_name and origin done by _PyErr_SetImportErrorWithNameFrom */
+        _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+        Py_DECREF(errmsg);
+    }
 
 done:
     Py_XDECREF(origin);
