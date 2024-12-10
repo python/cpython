@@ -110,10 +110,16 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         goto error;
     }
 
-    Py_ssize_t bit_size = NUM_BITS(size);
-    if (bit_size) {
+    if (bit_size_obj != Py_None) {
+#ifdef Py_DEBUG
+        Py_ssize_t bit_size = NUM_BITS(size);
         assert(bit_size > 0);
         assert(bit_size <= info->size * 8);
+        // Currently, the bit size is specified redundantly
+        // in NUM_BITS(size) and bit_size_obj.
+        // Verify that they match.
+        assert(PyLong_AsSsize_t(bit_size_obj) == bit_size);
+#endif
         switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
