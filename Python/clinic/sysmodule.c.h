@@ -1625,6 +1625,38 @@ exit:
     return return_value;
 }
 
+#if defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0)
+
+PyDoc_STRVAR(sys__jit_enabled__doc__,
+"_jit_enabled($module, /)\n"
+"--\n"
+"\n"
+"Returns True if JIT is enabled, False otherwise.");
+
+#define SYS__JIT_ENABLED_METHODDEF    \
+    {"_jit_enabled", (PyCFunction)sys__jit_enabled, METH_NOARGS, sys__jit_enabled__doc__},
+
+static int
+sys__jit_enabled_impl(PyObject *module);
+
+static PyObject *
+sys__jit_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__jit_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(_Py_TIER2) && (_Py_TIER2 % 2 != 0) */
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1668,4 +1700,8 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6d4f6cd20419b675 input=a9049054013a1b77]*/
+
+#ifndef SYS__JIT_ENABLED_METHODDEF
+    #define SYS__JIT_ENABLED_METHODDEF
+#endif /* !defined(SYS__JIT_ENABLED_METHODDEF) */
+/*[clinic end generated code: output=ddccb4b54c4d3e0e input=a9049054013a1b77]*/
