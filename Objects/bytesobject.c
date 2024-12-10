@@ -2540,6 +2540,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             goto error;
         }
         str++;
+
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
             /* NULL at the end of the string */
