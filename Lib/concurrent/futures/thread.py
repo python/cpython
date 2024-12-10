@@ -28,7 +28,8 @@ def _python_exit():
     for t, q in items:
         q.put(None)
     for t, q in items:
-        t.join()
+        while t.is_alive():
+            t.join(timeout=2)
 
 # Register for `_python_exit()` to be called just before joining all
 # non-daemon threads. This is used instead of `atexit.register()` for
