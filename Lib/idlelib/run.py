@@ -463,7 +463,7 @@ class StdioFile(io.TextIOBase):
         return '<%s>' % self.tags
 
     def isatty(self):
-        return True
+        return False
 
 
 class StdOutputFile(StdioFile):
