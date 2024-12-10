@@ -1236,17 +1236,6 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
-
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
 {

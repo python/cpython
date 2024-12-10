@@ -3353,6 +3353,22 @@ type_freeze(PyObject *module, PyObject *args)
     Py_RETURN_NONE;
 }
 
+struct atexit_data {
+    int called;
+    PyThreadState *tstate;
+    PyInterpreterState *interp;
+};
+
+static void
+atexit_callback(void *data)
+{
+    struct atexit_data *at_data = (struct atexit_data *)data;
+    // Ensure that the callback is from the same interpreter
+    assert(PyThreadState_Get() == at_data->tstate);
+    assert(PyInterpreterState_Get() == at_data->interp);
+    ++at_data->called;
+}
+
 static PyObject *
 test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -3360,14 +3376,25 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = Py_NewInterpreter();
 
     struct atexit_data data = {0};
-    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
+    data.tstate = PyThreadState_Get();
+    data.interp = PyInterpreterState_Get();
+
+    int amount = 10;
+    for (int i = 0; i < amount; ++i)
+    {
+        int res = PyUnstable_AtExit(tstate->interp, atexit_callback, (void *)&data);
+        if (res < 0) {
+            Py_EndInterpreter(tstate);
+            PyThreadState_Swap(oldts);
+            PyErr_SetString(PyExc_RuntimeError, "atexit callback failed");
+            return NULL;
+        }
     }
 
-    if (data.called == 0) {
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+
+    if (data.called != amount) {
         PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
         return NULL;
     }
