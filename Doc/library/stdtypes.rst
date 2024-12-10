@@ -4155,6 +4155,15 @@ copying.
 
       .. versionadded:: next
 
+  .. method:: index(value, start=0, stop=sys.maxsize, /)
+
+      Return the index of the first occurrence of *value* (at or after
+      index *start* and before index *stop*).
+
+      Raises a :exc:`ValueError` if *value* cannot be found.
+
+      .. versionadded:: next
+
    There are also several readonly attributes available:
 
    .. attribute:: obj

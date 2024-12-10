@@ -362,8 +362,10 @@ is_dead(PyObject *o)
 }
 # endif
 
-void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+// Decrement the shared reference count of an object. Return 1 if the object
+// is dead and should be deallocated, 0 otherwise.
+static int
+_Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 {
     // Should we queue the object for the owning thread to merge?
     int should_queue;
@@ -404,6 +406,15 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
+        return 1;
+    }
+    return 0;
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
         _Py_Dealloc(o);
     }
 }
@@ -472,6 +483,26 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
     return refcnt;
 }
+
+// The more complicated "slow" path for undoing the resurrection of an object.
+int
+_PyObject_ResurrectEndSlow(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        // If the object is owned by the current thread, give up ownership and
+        // merge the refcount. This isn't necessary in all cases, but it
+        // simplifies the implementation.
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
+        return refcount != 0;
+    }
+    int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
+    return !is_dead;
+}
+
+
 #endif  /* Py_GIL_DISABLED */
 
 
@@ -550,7 +581,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    Py_SET_REFCNT(self, 1);
+    _PyObject_ResurrectStart(self);
 
     PyObject_CallFinalizer(self);
 
@@ -560,8 +591,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
-    if (Py_REFCNT(self) == 0) {
+    if (!_PyObject_ResurrectEnd(self)) {
         return 0;         /* this is the normal path out */
     }
 

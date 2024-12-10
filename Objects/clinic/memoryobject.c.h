@@ -428,3 +428,50 @@ PyDoc_STRVAR(memoryview_count__doc__,
 #define MEMORYVIEW_COUNT_METHODDEF    \
     {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
 /*[clinic end generated code: output=16b2646e88b1b300 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(memoryview_index__doc__,
+"index($self, value, start=0, stop=sys.maxsize, /)\n"
+"--\n"
+"\n"
+"Return the index of the first occurrence of a value.\n"
+"\n"
+"Raises ValueError if the value is not present.");
+
+#define MEMORYVIEW_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(memoryview_index), METH_FASTCALL, memoryview_index__doc__},
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop);
+
+static PyObject *
+memoryview_index(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *value;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = memoryview_index_impl(self, value, start, stop);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=2742d371dba7314f input=a9049054013a1b77]*/
