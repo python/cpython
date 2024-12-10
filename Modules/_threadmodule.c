@@ -2423,8 +2423,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 
 #ifdef PYTHREAD_NAME_MAXLEN
     // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    size_t len = PyBytes_GET_SIZE(name_encoded);
-    if (len > PYTHREAD_NAME_MAXLEN) {
+    if (PyBytes_GET_SIZE(name_encoded) > PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated;
         truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
                                               PYTHREAD_NAME_MAXLEN);
