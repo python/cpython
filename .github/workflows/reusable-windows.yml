@@ -49,3 +49,4 @@ jobs:
         -p "${ARCH}"
         -d -q -uall -u-cpu -rwW
         --slowest --timeout=1200 -j0
+      shell: bash
