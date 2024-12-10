@@ -143,7 +143,7 @@ async def log_stream_task(initial_devices):
                 sys.stdout.write(line)
 
 
-async def xcode_test(location, simulator):
+async def xcode_test(location, simulator, verbose):
     # Run the test suite on the named simulator
     args = [
         "xcodebuild",
@@ -159,6 +159,9 @@ async def xcode_test(location, simulator):
         "-derivedDataPath",
         str(location / "DerivedData"),
     ]
+    if not verbose:
+        args += ["-quiet"]
+
     async with async_process(
         *args,
         stdout=subprocess.PIPE,
@@ -254,7 +257,7 @@ def update_plist(testbed_path, args):
         plistlib.dump(info, f)
 
 
-async def run_testbed(simulator: str, args: list[str]):
+async def run_testbed(simulator: str, args: list[str], verbose: bool=False):
     location = Path(__file__).parent
     print("Updating plist...")
     update_plist(location, args)
@@ -267,7 +270,7 @@ async def run_testbed(simulator: str, args: list[str]):
     try:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(log_stream_task(initial_devices))
-            tg.create_task(xcode_test(location, simulator))
+            tg.create_task(xcode_test(location, simulator=simulator, verbose=verbose))
     except* MySystemExit as e:
         raise SystemExit(*e.exceptions[0].args) from None
     except* subprocess.CalledProcessError as e:
@@ -326,6 +329,11 @@ def main():
         default="iPhone SE (3rd Generation)",
         help="The name of the simulator to use (default: 'iPhone SE (3rd Generation)')",
     )
+    run.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose output",
+    )
 
     try:
         pos = sys.argv.index("--")
@@ -359,6 +367,7 @@ def main():
             asyncio.run(
                 run_testbed(
                     simulator=context.simulator,
+                    verbose=context.verbose,
                     args=test_args,
                 )
             )
