@@ -2354,8 +2354,7 @@ class TestDisCLI(unittest.TestCase):
                         CACHE                    0 (func_version: 0)
                         CACHE                    0
                         POP_TOP
-                        LOAD_CONST               0 (None)
-                        RETURN_VALUE
+                        RETURN_CONST             0 (None)
         '''
         for flag in ['-C', '--show-caches']:
             self.check_output(source, expect, flag)
@@ -2366,8 +2365,7 @@ class TestDisCLI(unittest.TestCase):
         expect = '''
             0          0       RESUME                   0
 
-            1          2       LOAD_CONST               0 (None)
-                       4       RETURN_VALUE
+            1          2       RETURN_CONST             0 (None)
         '''
         for flag in ['-O', '--show-offsets']:
             self.check_output(source, expect, flag)
