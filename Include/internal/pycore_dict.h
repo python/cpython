@@ -113,7 +113,18 @@ extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
+
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
+
+/* Look up a string key in an all unicode dict keys, assign the keys object a version, and
+ * stored it in version.
+ *
+ * Returns DKIX_ERROR if key is not a string or if the keys object is not all
+ * strings.
+ *
+ * Returns DKIX_EMPTY if the key is not present.
+ */
+extern Py_ssize_t _PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dictkeys, PyObject *key, uint32_t *version);
 PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
