@@ -16,6 +16,12 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+static const char *codecs_builtin_error_handlers[] = {
+    "strict", "ignore", "replace",
+    "xmlcharrefreplace", "backslashreplace", "namereplace",
+    "surrogatepass", "surrogateescape",
+};
+
 const char *Py_hexdigits = "0123456789abcdef";
 
 /* --- Codec Registry ----------------------------------------------------- */
@@ -618,6 +624,20 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
                                 name, error);
 }
 
+int _PyCodec_UnregisterError(const char *name)
+{
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(codecs_builtin_error_handlers); ++i) {
+        if (strcmp(name, codecs_builtin_error_handlers[i]) == 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "cannot un-register built-in error handler '%s'", name);
+            return -1;
+        }
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->codecs.initialized);
+    return PyDict_PopString(interp->codecs.error_registry, name, NULL);
+}
+
 /* Lookup the error handling callback function registered under the
    name error. As a special case NULL can be passed, in which case
    the error handling callback for strict encoding will be returned. */
@@ -676,7 +696,7 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
-    return Py_BuildValue("(Nn)", PyUnicode_New(0, 0), end);
+    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
@@ -1470,6 +1490,8 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         }
     };
+    // ensure that the built-in error handlers' names are kept in sync
+    assert(Py_ARRAY_LENGTH(methods) == Py_ARRAY_LENGTH(codecs_builtin_error_handlers));
 
     assert(interp->codecs.initialized == 0);
     interp->codecs.search_path = PyList_New(0);

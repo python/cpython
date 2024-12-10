@@ -167,6 +167,8 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyCell_GET`              | :c:func:`PyCell_Get`              |
++-----------------------------------+-----------------------------------+
 
 Not all APIs that return borrowed references are problematic.  For
 example, :c:func:`PyTuple_GetItem` is safe because tuples are immutable.
@@ -180,6 +182,8 @@ Some of these functions were added in Python 3.13.  You can use the
 `pythoncapi-compat <https://github.com/python/pythoncapi-compat>`_ package
 to provide implementations of these functions for older Python versions.
 
+
+.. _free-threaded-memory-allocation:
 
 Memory Allocation APIs
 ======================

@@ -6,7 +6,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
     Use the latest available version of Visual Studio to build. To override
-    this and build with an earlier version, pass "/p:PlatformToolset=v100"
+    this and build with an earlier version, pass "/p:PlatformToolset=v141"
     (for example) when building.
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
@@ -14,10 +14,6 @@
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '17.0'">v143</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '16.0'">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</BasePlatformToolset>
 
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">$(BasePlatformToolset)</PlatformToolset>
     <ICCBuild>false</ICCBuild>

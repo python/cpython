@@ -10,6 +10,7 @@ import textwrap
 import types
 import unittest
 import weakref
+from pathlib import Path
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -17,7 +18,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -28,6 +29,16 @@ from test.test_ast.snippets import (
 STDLIB = os.path.dirname(ast.__file__)
 STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
 STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
+
+AST_REPR_DATA_FILE = Path(__file__).parent / "data" / "ast_repr.txt"
+
+def ast_repr_get_test_cases() -> list[str]:
+    return exec_tests + eval_tests
+
+
+def ast_repr_update_snapshots() -> None:
+    data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
+    AST_REPR_DATA_FILE.write_text("\n".join(data))
 
 
 class AST_Tests(unittest.TestCase):
@@ -72,6 +83,23 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    def test_AST_fields_NULL_check(self):
+        # See: https://github.com/python/cpython/issues/126105
+        old_value = ast.AST._fields
+
+        def cleanup():
+            ast.AST._fields = old_value
+        self.addCleanup(cleanup)
+
+        del ast.AST._fields
+
+        msg = "type object 'ast.AST' has no attribute '_fields'"
+        # Both examples used to crash:
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST(arg1=123)
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST()
 
     def test_AST_garbage_collection(self):
         class X:
@@ -408,7 +436,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <ast.expr", str(cm.exception))
+        self.assertIn("but got expr()", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -717,6 +745,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
@@ -771,6 +800,19 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+    def test_repr(self) -> None:
+        snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
+        for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
+            with self.subTest(test_input=test):
+                self.assertEqual(repr(ast.parse(test)), snapshot)
+
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
 
 
 class CopyTests(unittest.TestCase):
@@ -1620,6 +1662,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1627,6 +1670,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2235,7 +2279,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
@@ -2279,7 +2323,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 
@@ -2287,7 +2331,7 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
+                  1000,
                   2.0,
                   3j,
                   "unicode",
@@ -3332,5 +3376,8 @@ class ASTOptimiziationTests(unittest.TestCase):
             self.assert_ast(result_code, non_optimized_target, optimized_target)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        ast_repr_update_snapshots()
+        sys.exit(0)
     unittest.main()

@@ -25,7 +25,6 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
-from test.support import suppress_immortalization
 from test.support import expected_failure_if_gil_disabled
 from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
@@ -101,11 +100,18 @@ class CAPITest(unittest.TestCase):
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
-        msg = ("Fatal Python error: PyThreadState_Get: "
-               "the function must be called with the GIL held, "
-               "after Python initialization and before Python finalization, "
-               "but the GIL is released "
-               "(the current Python thread state is NULL)").encode()
+        if not support.Py_GIL_DISABLED:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with the GIL held, "
+                   "after Python initialization and before Python finalization, "
+                   "but the GIL is released "
+                   "(the current Python thread state is NULL)").encode()
+        else:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with an active thread state, "
+                   "after Python initialization and before Python finalization, "
+                   "but it was called without an active thread state. "
+                   "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
@@ -481,7 +487,6 @@ class CAPITest(unittest.TestCase):
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -499,7 +504,6 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
         self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
         class A(_testcapi.HeapGcCType):
             def __init__(self):
@@ -722,22 +726,24 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(metaclass)
 
-    def test_heaptype_with_custom_metaclass_deprecation(self):
+    def test_heaptype_base_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        # gh-103968: a metaclass with custom tp_new is deprecated, but still
-        # allowed for functions that existed in 3.11
-        # (PyType_FromSpecWithBases is used here).
         class Base(metaclass=metaclass):
             pass
 
         # Class creation from C
-        with warnings_helper.check_warnings(
-                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
-                ):
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
             sub = _testcapi.make_type_with_base(Base)
-        self.assertTrue(issubclass(sub, Base))
-        self.assertIsInstance(sub, metaclass)
+
+    def test_heaptype_with_tp_vectorcall(self):
+        tp = _testcapi.HeapCTypeVectorcall
+        v0 = tp.__new__(tp)
+        v0.__init__()
+        v1 = tp()
+        self.assertEqual(v0.value, 2)
+        self.assertEqual(v1.value, 1)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
         for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
@@ -1142,6 +1148,77 @@ class CAPITest(unittest.TestCase):
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
+    def test_get_base_by_token(self):
+        def get_base_by_token(src, key, comparable=True):
+            def run(use_mro):
+                find_first = _testcapi.pytype_getbasebytoken
+                ret1, result = find_first(src, key, use_mro, True)
+                ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertIn(ret1, (0, 1))
+                self.assertEqual(ret1, result is not None)
+                self.assertEqual(ret1, ret2)
+                self.assertIsNone(no_result)
+                return result
+
+            found_in_mro = run(True)
+            found_in_bases = run(False)
+            if comparable:
+                self.assertIs(found_in_mro, found_in_bases)
+                return found_in_mro
+            return found_in_mro, found_in_bases
+
+        create_type = _testcapi.create_type_with_token
+        get_token = _testcapi.get_tp_token
+
+        Py_TP_USE_SPEC = _testcapi.Py_TP_USE_SPEC
+        self.assertEqual(Py_TP_USE_SPEC, 0)
+
+        A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
+        self.assertTrue(get_token(A1) != Py_TP_USE_SPEC)
+
+        B1 = create_type('_testcapi.B1', id(self))
+        self.assertTrue(get_token(B1) == id(self))
+
+        tokenA1 = get_token(A1)
+        # find A1 from A1
+        found = get_base_by_token(A1, tokenA1)
+        self.assertIs(found, A1)
+
+        # no token in static types
+        STATIC = type(1)
+        self.assertEqual(get_token(STATIC), 0)
+        found = get_base_by_token(STATIC, tokenA1)
+        self.assertIs(found, None)
+
+        # no token in pure subtypes
+        class A2(A1): pass
+        self.assertEqual(get_token(A2), 0)
+        # find A1
+        class Z(STATIC, B1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, A1)
+
+        # searching for NULL token is an error
+        with self.assertRaises(SystemError):
+            get_base_by_token(Z, 0)
+        with self.assertRaises(SystemError):
+            get_base_by_token(STATIC, 0)
+
+        # share the token with A1
+        C1 = create_type('_testcapi.C1', tokenA1)
+        self.assertTrue(get_token(C1) == tokenA1)
+
+        # find C1 first by shared token
+        class Z(C1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, C1)
+        # B1 not found
+        found = get_base_by_token(Z, get_token(B1))
+        self.assertIs(found, None)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getbasebytoken(
+                'not a type', id(self), True, False)
 
     def test_gen_get_code(self):
         def genf(): yield
@@ -2067,6 +2144,7 @@ class SubinterpreterTest(unittest.TestCase):
         # test fails, assume that the environment in this process may
         # be altered and suspect.
 
+    @requires_subinterpreters
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_configured_settings(self):
         """

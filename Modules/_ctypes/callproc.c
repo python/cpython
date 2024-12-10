@@ -105,7 +105,7 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #include "../_complex.h"          // complex
 #endif
 
@@ -655,7 +655,7 @@ union result {
     double d;
     float f;
     void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
     double complex C;
     float complex E;
     long double complex F;
@@ -1623,13 +1623,39 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
+#undef USE_DLERROR
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     ptr = dlsym((void*)handle, name);
-    if (!ptr) {
-        PyErr_SetString(PyExc_OSError,
-                               dlerror());
-        return NULL;
+    if (ptr) {
+        return PyLong_FromVoidPtr(ptr);
     }
-    return PyLong_FromVoidPtr(ptr);
+	#ifdef USE_DLERROR
+    const char *dlerr = dlerror();
+    if (dlerr) {
+        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
+        if (message) {
+            PyErr_SetObject(PyExc_OSError, message);
+            Py_DECREF(message);
+            return NULL;
+        }
+        // Ignore errors from PyUnicode_DecodeLocale,
+        // fall back to the generic error below.
+        PyErr_Clear();
+    }
+	#endif
+	#undef USE_DLERROR
+    PyErr_Format(PyExc_OSError, "symbol '%s' not found", name);
+    return NULL;
 }
 #endif
 

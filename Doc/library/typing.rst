@@ -1316,7 +1316,7 @@ These can be used as types in annotations. They all support subscription using
          year: int
 
       def mutate_movie(m: Movie) -> None:
-         m["year"] = 1992  # allowed
+         m["year"] = 1999  # allowed
          m["title"] = "The Matrix"  # typechecker error
 
    There is no runtime checking for this property.
@@ -1457,6 +1457,23 @@ These can be used as types in annotations. They all support subscription using
         typing.Annotated[int, 'very', 'important', 'metadata']
         >>> X.__metadata__
         ('very', 'important', 'metadata')
+
+   * At runtime, if you want to retrieve the original
+     type wrapped by ``Annotated``, use the :attr:`!__origin__` attribute:
+
+     .. doctest::
+
+        >>> from typing import Annotated, get_origin
+        >>> Password = Annotated[str, "secret"]
+        >>> Password.__origin__
+        <class 'str'>
+
+     Note that using :func:`get_origin` will return ``Annotated`` itself:
+
+     .. doctest::
+
+        >>> get_origin(Password)
+        typing.Annotated
 
    .. seealso::
 
@@ -1709,11 +1726,11 @@ without the dedicated syntax, as documented below.
       class Sequence[T]:  # T is a TypeVar
           ...
 
-   This syntax can also be used to create bound and constrained type
+   This syntax can also be used to create bounded and constrained type
    variables::
 
-      class StrSequence[S: str]:  # S is a TypeVar bound to str
-          ...
+      class StrSequence[S: str]:  # S is a TypeVar with a `str` upper bound;
+          ...                     # we can say that S is "bounded by `str`"
 
 
       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
@@ -1746,8 +1763,8 @@ without the dedicated syntax, as documented below.
           """Add two strings or bytes objects together."""
           return x + y
 
-   Note that type variables can be *bound*, *constrained*, or neither, but
-   cannot be both bound *and* constrained.
+   Note that type variables can be *bounded*, *constrained*, or neither, but
+   cannot be both bounded *and* constrained.
 
    The variance of type variables is inferred by type checkers when they are created
    through the :ref:`type parameter syntax <type-params>` or when
@@ -1757,8 +1774,8 @@ without the dedicated syntax, as documented below.
    By default, manually created type variables are invariant.
    See :pep:`484` and :pep:`695` for more details.
 
-   Bound type variables and constrained type variables have different
-   semantics in several important ways. Using a *bound* type variable means
+   Bounded type variables and constrained type variables have different
+   semantics in several important ways. Using a *bounded* type variable means
    that the ``TypeVar`` will be solved using the most specific type possible::
 
       x = print_capitalized('a string')
@@ -1772,8 +1789,8 @@ without the dedicated syntax, as documented below.
 
       z = print_capitalized(45)  # error: int is not a subtype of str
 
-   Type variables can be bound to concrete types, abstract types (ABCs or
-   protocols), and even unions of types::
+   The upper bound of a type variable can be a concrete type, abstract type
+   (ABC or Protocol), or even a union of types::
 
       # Can be anything with an __abs__ method
       def print_abs[T: SupportsAbs](arg: T) -> None:
@@ -1817,13 +1834,23 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __bound__
 
-      The bound of the type variable, if any.
+      The upper bound of the type variable, if any.
 
       .. versionchanged:: 3.12
 
          For type variables created through :ref:`type parameter syntax <type-params>`,
          the bound is evaluated only when the attribute is accessed, not when
          the type variable is created (see :ref:`lazy-evaluation`).
+
+   .. method:: evaluate_bound
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__bound__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__bound__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
 
    .. attribute:: __constraints__
 
@@ -1835,12 +1862,32 @@ without the dedicated syntax, as documented below.
          the constraints are evaluated only when the attribute is accessed, not when
          the type variable is created (see :ref:`lazy-evaluation`).
 
+   .. method:: evaluate_constraints
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__constraints__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__constraints__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
+
    .. attribute:: __default__
 
       The default value of the type variable, or :data:`typing.NoDefault` if it
       has no default.
 
       .. versionadded:: 3.13
+
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
 
    .. method:: has_default()
 
@@ -1980,6 +2027,16 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVarTuple.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVarTuple.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
+
    .. method:: has_default()
 
       Return whether or not the type variable tuple has a default value. This is equivalent
@@ -2043,7 +2100,7 @@ without the dedicated syntax, as documented below.
           return x + y
 
    Without ``ParamSpec``, the simplest way to annotate this previously was to
-   use a :class:`TypeVar` with bound ``Callable[..., Any]``.  However this
+   use a :class:`TypeVar` with upper bound ``Callable[..., Any]``.  However this
    causes two problems:
 
    1. The type checker can't type check the ``inner`` function because
@@ -2075,6 +2132,16 @@ without the dedicated syntax, as documented below.
       has no default.
 
       .. versionadded:: 3.13
+
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~ParamSpec.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~ParamSpec.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
 
    .. method:: has_default()
 
@@ -2200,6 +2267,32 @@ without the dedicated syntax, as documented below.
          >>> Recursive.__value__
          Mutually
 
+   .. method:: evaluate_value
+
+      An :term:`evaluate function` corresponding to the :attr:`__value__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`__value__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format:
+
+      .. doctest::
+
+         >>> type Alias = undefined
+         >>> Alias.__value__
+         Traceback (most recent call last):
+         ...
+         NameError: name 'undefined' is not defined
+         >>> from annotationlib import Format, call_evaluate_function
+         >>> Alias.evaluate_value(Format.VALUE)
+         Traceback (most recent call last):
+         ...
+         NameError: name 'undefined' is not defined
+         >>> call_evaluate_function(Alias.evaluate_value, Format.FORWARDREF)
+         ForwardRef('undefined')
+
+      .. versionadded:: 3.14
+
+
 Other special directives
 """"""""""""""""""""""""
 
@@ -2256,7 +2349,9 @@ types.
 
    Backward-compatible usage::
 
-       # For creating a generic NamedTuple on Python 3.11 or lower
+       # For creating a generic NamedTuple on Python 3.11
+       T = TypeVar("T")
+
        class Group(NamedTuple, Generic[T]):
            key: T
            group: list[T]
@@ -2790,7 +2885,7 @@ Functions and decorators
 
    .. seealso::
       `Unreachable Code and Exhaustiveness Checking
-      <https://typing.readthedocs.io/en/latest/source/unreachable.html>`__ has more
+      <https://typing.readthedocs.io/en/latest/guides/unreachable.html>`__ has more
       information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
@@ -3176,7 +3271,8 @@ Introspection helpers
      empty dictionary is returned.
    * If *obj* is a class ``C``, the function returns a dictionary that merges
      annotations from ``C``'s base classes with those on ``C`` directly. This
-     is done by traversing ``C.__mro__`` and iteratively combining
+     is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
+     combining
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
@@ -3222,6 +3318,7 @@ Introspection helpers
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
       assert get_origin(Union[int, str]) is Union
+      assert get_origin(Annotated[str, "metadata"]) is Annotated
       P = ParamSpec('P')
       assert get_origin(P.args) is P
       assert get_origin(P.kwargs) is P
@@ -3306,7 +3403,7 @@ Introspection helpers
    Class used for internal typing representation of string forward references.
 
    For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  ``ForwardRef`` should not be instantiated by
+   ``List[ForwardRef("SomeClass")]``.  :class:`!ForwardRef` should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::
@@ -3315,6 +3412,39 @@ Introspection helpers
       will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
+
+   .. versionchanged:: 3.14
+      This is now an alias for :class:`annotationlib.ForwardRef`.
+
+.. function:: evaluate_forward_ref(forward_ref, *, owner=None, globals=None, locals=None, type_params=None, format=annotationlib.Format.VALUE)
+
+   Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
+
+   This is similar to calling :meth:`annotationlib.ForwardRef.evaluate`,
+   but unlike that method, :func:`!evaluate_forward_ref` also:
+
+   * Recursively evaluates forward references nested within the type hint.
+   * Raises :exc:`TypeError` when it encounters certain objects that are
+     not valid type hints.
+   * Replaces type hints that evaluate to :const:`!None` with
+     :class:`types.NoneType`.
+   * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
+     :attr:`~annotationlib.Format.STRING` formats.
+
+   *forward_ref* must be an instance of :class:`~annotationlib.ForwardRef`.
+   *owner*, if given, should be the object that holds the annotations that
+   the forward reference derived from, such as a module, class object, or function.
+   It is used to infer the namespaces to use for looking up names.
+   *globals* and *locals* can also be explicitly given to provide
+   the global and local namespaces.
+   *type_params* is a tuple of :ref:`type parameters <type-params>` that
+   are in scope when evaluating the forward reference.
+   This parameter must be provided (though it may be an empty tuple) if *owner*
+   is not given and the forward reference does not already have an owner set.
+   *format* specifies the format of the annotation and is a member of
+   the :class:`annotationlib.Format` enum.
+
+   .. versionadded:: 3.14
 
 .. data:: NoDefault
 

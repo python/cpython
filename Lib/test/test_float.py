@@ -175,7 +175,7 @@ class GeneralFloatCases(unittest.TestCase):
         # non-UTF-8 byte string
         check(b'123\xa0')
 
-    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE', '')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
@@ -863,7 +863,7 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(repr(float(negs)), str(float(negs)))
 
 @support.requires_IEEE_754
-class RoundTestCase(unittest.TestCase):
+class RoundTestCase(unittest.TestCase, FloatsAreIdenticalMixin):
 
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
@@ -893,10 +893,10 @@ class RoundTestCase(unittest.TestCase):
 
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
-            self.assertEqual(round(123.456, n), 0.0)
-            self.assertEqual(round(-123.456, n), -0.0)
-            self.assertEqual(round(1e300, n), 0.0)
-            self.assertEqual(round(1e-320, n), 0.0)
+            self.assertFloatsAreIdentical(round(123.456, n), 0.0)
+            self.assertFloatsAreIdentical(round(-123.456, n), -0.0)
+            self.assertFloatsAreIdentical(round(1e300, n), 0.0)
+            self.assertFloatsAreIdentical(round(1e-320, n), 0.0)
 
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)

@@ -317,10 +317,14 @@ static int
 capsule_traverse(PyCapsule *capsule, visitproc visit, void *arg)
 {
     // Capsule object is only tracked by the GC
-    // if _PyCapsule_SetTraverse() is called
-    assert(capsule->traverse_func != NULL);
+    // if _PyCapsule_SetTraverse() is called, but
+    // this can still be manually triggered by gc.get_referents()
 
-    return capsule->traverse_func((PyObject*)capsule, visit, arg);
+    if (capsule->traverse_func != NULL) {
+        return capsule->traverse_func((PyObject*)capsule, visit, arg);
+    }
+
+    return 0;
 }
 
 

@@ -267,6 +267,8 @@ class Morsel(dict):
         "partitioned": "Partitioned",
     }
 
+    _reserved_defaults = dict.fromkeys(_reserved, "")
+
     _flags = {'secure', 'httponly', 'partitioned'}
 
     def __init__(self):
@@ -274,8 +276,7 @@ class Morsel(dict):
         self._key = self._value = self._coded_value = None
 
         # Set default attributes
-        for key in self._reserved:
-            dict.__setitem__(self, key, "")
+        dict.update(self, self._reserved_defaults)
 
     @property
     def key(self):

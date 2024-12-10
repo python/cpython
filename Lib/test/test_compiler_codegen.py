@@ -29,13 +29,13 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 0, 1),
             ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
-            ('LOAD_CONST', 1, 1),
+            ('LOAD_SMALL_INT', 42, 1),
             ('JUMP_NO_INTERRUPT', exit_lbl := self.Label()),
             false_lbl,
-            ('LOAD_CONST', 2, 1),
+            ('LOAD_SMALL_INT', 24, 1),
             exit_lbl,
             ('POP_TOP', None),
-            ('LOAD_CONST', 3),
+            ('LOAD_CONST', 1),
             ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
@@ -82,7 +82,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 # Function body
                 ('RESUME', 0),
                 ('LOAD_FAST', 0),
-                ('LOAD_CONST', 1),
+                ('LOAD_SMALL_INT', 42),
                 ('BINARY_OP', 0),
                 ('RETURN_VALUE', None),
                 ('LOAD_CONST', 0),
@@ -125,23 +125,23 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 [
                     ('RESUME', 0),
                     ('NOP', None),
-                    ('LOAD_CONST', 1),
+                    ('LOAD_SMALL_INT', 12),
                     ('RETURN_VALUE', None),
-                    ('LOAD_CONST', 0),
+                    ('LOAD_CONST', 1),
                     ('RETURN_VALUE', None),
                 ],
                 [
                     ('RESUME', 0),
-                    ('LOAD_CONST', 1),
+                    ('LOAD_SMALL_INT', 1),
                     ('STORE_FAST', 0),
-                    ('LOAD_CONST', 2),
+                    ('LOAD_SMALL_INT', 2),
                     ('STORE_FAST', 1),
-                    ('LOAD_CONST', 3),
+                    ('LOAD_SMALL_INT', 3),
                     ('STORE_FAST', 2),
-                    ('LOAD_CONST', 4),
+                    ('LOAD_SMALL_INT', 4),
                     ('STORE_FAST', 3),
                     ('NOP', None),
-                    ('LOAD_CONST', 5),
+                    ('LOAD_SMALL_INT', 42),
                     ('RETURN_VALUE', None),
                     ('LOAD_CONST', 0),
                     ('RETURN_VALUE', None),
@@ -152,5 +152,8 @@ class IsolatedCodeGenTests(CodegenTestCase):
 
     def test_syntax_error__return_not_in_function(self):
         snippet = "return 42"
-        with self.assertRaisesRegex(SyntaxError, "'return' outside function"):
+        with self.assertRaisesRegex(SyntaxError, "'return' outside function") as cm:
             self.codegen_test(snippet, None)
+        self.assertIsNone(cm.exception.text)
+        self.assertEqual(cm.exception.offset, 1)
+        self.assertEqual(cm.exception.end_offset, 10)

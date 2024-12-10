@@ -192,6 +192,10 @@ top-level directory where Python was built. On Windows,
 executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 :mod:`test.support` --- Utilities for the Python test suite
 ===========================================================
@@ -946,7 +950,7 @@ The :mod:`test.support` module defines the following functions:
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
    The *extra* argument can be a set of names that wouldn't otherwise be automatically
-   detected as "public", like objects without a proper ``__module__``
+   detected as "public", like objects without a proper :attr:`~definition.__module__`
    attribute. If provided, it will be added to the automatically detected ones.
 
    The *not_exported* argument can be a set of names that must not be treated
