@@ -601,7 +601,7 @@ class Executor(object):
             Exception: If fn(*args) raises for any values.
         """
         if buffersize is not None and buffersize < 1:
-            raise ValueError("buffersize must be None or > 0.")
+            raise ValueError("buffersize must be None or > 0")
 
         if timeout is not None:
             end_time = timeout + time.monotonic()

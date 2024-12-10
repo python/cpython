@@ -74,7 +74,7 @@ class ExecutorTest:
 
     def test_map_with_buffersize(self):
         iterable = range(4)
-        with self.assertRaisesRegex(ValueError, "buffersize must be None or > 0."):
+        with self.assertRaisesRegex(ValueError, "buffersize must be None or > 0"):
             self.executor.map(bool, iterable, buffersize=0)
         self.assertEqual(
             list(self.executor.map(str, iterable, buffersize=1)),
