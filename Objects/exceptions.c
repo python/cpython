@@ -2668,6 +2668,10 @@ SimpleExtendsException(PyExc_ValueError, UnicodeError,
                        "Unicode related error.");
 
 
+/*
+ * Check the validity of 'attr' as a unicode or bytes object depending
+ * on 'as_bytes' and return a new reference on it if it is the case.
+ */
 static PyObject *
 as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 {
@@ -2689,6 +2693,11 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 }
 
 
+/*
+ * Return the underlying (str) 'encoding' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ */
 static inline PyObject *
 unicode_error_get_encoding_impl(PyObject *self)
 {
@@ -2699,6 +2708,12 @@ unicode_error_get_encoding_impl(PyObject *self)
 }
 
 
+/*
+ * Return the underlying 'object' attribute of a Unicode Error object
+ * as a bytes or a string instance, depending on the 'as_bytes' flag.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ */
 static inline PyObject *
 unicode_error_get_object_impl(PyObject *self, int as_bytes)
 {
@@ -2709,6 +2724,11 @@ unicode_error_get_object_impl(PyObject *self, int as_bytes)
 }
 
 
+/*
+ * Return the underlying (str) 'reason' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ */
 static inline PyObject *
 unicode_error_get_reason_impl(PyObject *self)
 {
@@ -2719,6 +2739,13 @@ unicode_error_get_reason_impl(PyObject *self)
 }
 
 
+/*
+ * Set the underlying (str) 'reason' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
 static inline int
 unicode_error_set_reason_impl(PyObject *self, const char *reason)
 {
@@ -2734,7 +2761,19 @@ unicode_error_set_reason_impl(PyObject *self, const char *reason)
 }
 
 
-static inline int
+/*
+ * Get the underlying 'object' attribute of a Unicode Error object
+ * as a bytes or a string instance, depending on the 'as_bytes' flag.
+ *
+ * The result is stored in 'result' and its size in 'size',
+ * which can be NULL to indicate that the value would be
+ * discarded after the call.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static int
 unicode_error_get_object_and_size(PyObject *self,
                                   PyObject **result, Py_ssize_t *size,
                                   int as_bytes)
@@ -2808,6 +2847,13 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 }
 
 
+/*
+ * Retrieve and adjust the 'start' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
 static inline int
 unicode_error_get_start_impl(PyObject *self, Py_ssize_t *start, int as_bytes)
 {
@@ -2825,6 +2871,13 @@ unicode_error_get_start_impl(PyObject *self, Py_ssize_t *start, int as_bytes)
 }
 
 
+/*
+ * Set the 'start' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
 static inline int
 unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 {
@@ -2836,6 +2889,13 @@ unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 }
 
 
+/*
+ * Retrieve and adjust the 'end' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
 static inline int
 unicode_error_get_end_impl(PyObject *self, Py_ssize_t *end, int as_bytes)
 {
@@ -2853,6 +2913,13 @@ unicode_error_get_end_impl(PyObject *self, Py_ssize_t *end, int as_bytes)
 }
 
 
+/*
+ * Set the 'end' attribute of a Unicode Error object.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ *
+ * Return 0 on success and -1 on failure.
+ */
 static inline int
 unicode_error_set_end_impl(PyObject *self, Py_ssize_t end)
 {
