@@ -75,6 +75,8 @@ class FunctionalTest(unittest.TestCase):
             thread.join()
         """
 
+        # atexit._clear() has some evil side effects, and we don't
+        # want them to affect the rest of the tests.
         assert_python_ok(textwrap.dedent(source))
 
 @support.cpython_only
