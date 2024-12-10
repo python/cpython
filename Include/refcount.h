@@ -54,9 +54,14 @@ immortality, but the execution would still be correct.
 Reference count increases and decreases will first go through an immortality
 check by comparing the reference count field to the minimum immortality refcount.
 */
-#define _Py_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(3L << 29))
+#define _Py_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(5L << 28))
 #define _Py_IMMORTAL_MINIMUM_REFCNT ((Py_ssize_t)(1L << 30))
+#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(7L << 28))
+#define _Py_STATIC_IMMORTAL_MINIMUM_REFCNT ((Py_ssize_t)(6L << 28))
 #endif
+
+/* Leave the low bits for refcount overflow for old stable ABI code */
+#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 7)
 
 // Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
 // always 32-bits.
@@ -122,6 +127,16 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
 
+
+static inline Py_ALWAYS_INLINE int _Py_IsStaticImmortal(PyObject *op)
+{
+#if defined(Py_GIL_DISABLED) || SIZEOF_VOID_P > 4
+    return (op->ob_flags & _Py_STATICALLY_ALLOCATED_FLAG) != 0;
+#else
+    return op->ob_refcnt >= _Py_STATIC_IMMORTAL_MINIMUM_REFCNT;
+#endif
+}
+#define _Py_IsStaticImmortal(op) _Py_IsStaticImmortal(_PyObject_CAST(op))
 
 // Py_SET_REFCNT() implementation for stable ABI
 PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);

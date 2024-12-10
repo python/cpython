@@ -73,14 +73,24 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
         .ob_type = (type)                           \
+    }
+#else
+#if SIZEOF_VOID_P > 4
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG, \
+        .ob_type = (type)                 \
     }
 #else
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT, \
+        .ob_refcnt = _Py_STATIC_IMMORTAL_INITIAL_REFCNT, \
         .ob_type = (type)                 \
     }
+#endif
 #endif
 #define _PyVarObject_HEAD_INIT(type, size)    \
     {                                         \
