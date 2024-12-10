@@ -468,7 +468,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty :class:`str`.
+   13 and ``month_name[0]`` is the empty :class:`str`.
 
        >>> import calendar
        >>> list(calendar.month_name)
