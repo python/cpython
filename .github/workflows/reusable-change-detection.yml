@@ -61,6 +61,8 @@ jobs:
     - run: >-
         echo '${{ github.event_name }}'
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Check for source changes
       id: check
       run: |
