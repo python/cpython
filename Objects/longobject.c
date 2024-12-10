@@ -6874,7 +6874,8 @@ error:
 }
 
 
-void PyLongWriter_Discard(PyLongWriter *writer)
+void
+PyLongWriter_Discard(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;
     assert(Py_REFCNT(obj) == 1);
@@ -6882,7 +6883,8 @@ void PyLongWriter_Discard(PyLongWriter *writer)
 }
 
 
-PyObject* PyLongWriter_Finish(PyLongWriter *writer)
+PyObject*
+PyLongWriter_Finish(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;
     assert(Py_REFCNT(obj) == 1);
