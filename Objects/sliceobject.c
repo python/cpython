@@ -34,11 +34,15 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 ellipsis_dealloc(PyObject *ellipsis)
 {
+#ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref Ellipsis out of existence. Instead,
-     * since Ellipsis is an immortal object, re-set the reference count.
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since Notimplemented is an immortal object, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
      */
     _Py_SetImmortal(ellipsis);
+#endif
 }
 
 static PyObject *
