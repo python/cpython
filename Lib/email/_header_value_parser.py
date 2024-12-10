@@ -2829,6 +2829,13 @@ def _refold_parse_tree(parse_tree, *, policy):
             _fold_mime_parameters(part, lines, maxlen, encoding)
             continue
 
+        allow_refolding_subparts = True
+        if part.token_type == 'encoded-word':
+            # A parsed encoded-word containing specials must remain encoded,
+            # to keep specials from sneaking into a structured header unquoted.
+            # (The encoded-word can be split for folding.)
+            allow_refolding_subparts = SPECIALSNL.isdisjoint(tstr)
+
         if want_encoding and not wrap_as_ew_blocked:
             if not part.as_ew_allowed:
                 want_encoding = False
@@ -2848,7 +2855,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # want it on a line by itself even if it fits, or it
                 # doesn't fit on a line by itself.  Either way, fall through
                 # to unpacking the subparts and wrapping them.
-            if not hasattr(part, 'encode'):
+            if allow_refolding_subparts and not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
                 parts = list(part) + parts
                 want_encoding = False
@@ -2902,7 +2909,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 leading_whitespace = ''.join(whitespace_accumulator)
                 last_ew = None
                 continue
-        if not hasattr(part, 'encode'):
+        if allow_refolding_subparts and not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
             if not part.as_ew_allowed:
