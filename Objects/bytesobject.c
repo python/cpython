@@ -2540,16 +2540,14 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             goto error;
         }
         str++;
-
-        /* Check if we have a second digit */
-        if (str >= end) {
-            invalid_char = -1;
-            goto error;
-        }
-
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            /* NULL at the end of the string */
+            if (bot == 37){
+                invalid_char = -1;
+            } else {
+                invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            }
             goto error;
         }
         str++;
