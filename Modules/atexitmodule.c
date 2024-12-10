@@ -20,8 +20,8 @@
 #else
 #  define _PyAtExit_LOCK(state)
 #  define _PyAtExit_UNLOCK(state)
-#  define _PyAtExit_ASSERT_LOCKED()
-#  define _PyAtExit_ASSERT_UNLOCKED()
+#  define _PyAtExit_ASSERT_LOCKED(state)
+#  define _PyAtExit_ASSERT_UNLOCKED(state)
 #endif
 
 /* ===================================================================== */
