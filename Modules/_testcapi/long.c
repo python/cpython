@@ -193,6 +193,9 @@ pylong_export(PyObject *module, PyObject *obj)
     const digit *export_long_digits = export_long.digits;
 
     PyObject *digits = PyList_New(0);
+    if (digits == NULL) {
+        goto error;
+    }
     for (Py_ssize_t i = 0; i < export_long.ndigits; i++) {
         PyObject *item = PyLong_FromUnsignedLong(export_long_digits[i]);
         if (item == NULL) {
@@ -214,7 +217,7 @@ pylong_export(PyObject *module, PyObject *obj)
     return res;
 
 error:
-    Py_DECREF(digits);
+    Py_XDECREF(digits);
     PyLong_FreeExport(&export_long);
     return NULL;
 }
@@ -225,8 +228,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
 {
     int negative;
     PyObject *list;
-    if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list))
-    {
+    if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list)) {
         return NULL;
     }
     Py_ssize_t ndigits = PyList_GET_SIZE(list);

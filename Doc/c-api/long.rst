@@ -657,7 +657,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 Export API
 ^^^^^^^^^^
 
-.. versionadded:: 3.14
+.. versionadded:: next
 
 .. c:struct:: PyLongLayout
 
@@ -692,7 +692,7 @@ Export API
       Digit endianness:
 
       - ``1`` for most significant byte first (big endian)
-      - ``-1`` for least significant first (little endian)
+      - ``-1`` for least significant byte first (little endian)
 
 
 .. c:function:: const PyLongLayout* PyLong_GetNativeLayout(void)
@@ -743,6 +743,8 @@ Export API
 
    Export a Python :class:`int` object.
 
+   *export_long* must not be ``NULL``.
+
    On success, set *\*export_long* and return ``0``.
    On error, set an exception and return ``-1``.
 
@@ -760,7 +762,7 @@ PyLongWriter API
 
 The :c:type:`PyLongWriter` API can be used to import an integer.
 
-.. versionadded:: 3.14
+.. versionadded:: next
 
 .. c:struct:: PyLongWriter
 
@@ -789,7 +791,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    :c:func:`PyLongWriter_Discard` to destroy the writer instance.  Digits must
    be in the range [``0``; ``(1 << bits_per_digit) - 1``]  (where the
    :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits per digit).
-   The unused most-significant digits must be set to ``0``.
+   The unused most significant digits must be set to ``0``.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
@@ -808,5 +810,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
 
    Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   *writer* must not be ``NULL``.
 
    The writer instance is invalid after the call.

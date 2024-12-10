@@ -738,12 +738,15 @@ class LongTests(unittest.TestCase):
         self.assertEqual(pylong_export(0), 0)
         self.assertEqual(pylong_export(123), 123)
         self.assertEqual(pylong_export(-123), -123)
+        self.assertEqual(pylong_export(IntSubclass(123)), 123)
 
         # use an array, doesn't fit into int64_t
         self.assertEqual(pylong_export(base**10 * 2 + 1),
                          (0, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
         self.assertEqual(pylong_export(-(base**10 * 2 + 1)),
                          (1, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
+        self.assertEqual(pylong_export(IntSubclass(base**10 * 2 + 1)),
+                         (0, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
 
         for value in (1.0, 0+1j, "abc"):
             with self.subTest(value=value):

@@ -6853,13 +6853,13 @@ PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
 {
     if (ndigits <= 0) {
         PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
-        return NULL;
+        goto error;
     }
     assert(digits != NULL);
 
     PyLongObject *obj = _PyLong_New(ndigits);
     if (obj == NULL) {
-        return NULL;
+        goto error;
     }
     if (negative) {
         _PyLong_FlipSign(obj);
@@ -6867,6 +6867,10 @@ PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
 
     *digits = obj->long_value.ob_digit;
     return (PyLongWriter*)obj;
+
+error:
+    *digits = NULL;
+    return NULL;
 }
 
 
