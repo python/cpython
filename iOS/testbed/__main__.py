@@ -145,6 +145,7 @@ async def log_stream_task(initial_devices):
 
 async def xcode_test(location, simulator, verbose):
     # Run the test suite on the named simulator
+    print("Starting xcodebuild...")
     args = [
         "xcodebuild",
         "test",
@@ -259,8 +260,9 @@ def update_plist(testbed_path, args):
 
 async def run_testbed(simulator: str, args: list[str], verbose: bool=False):
     location = Path(__file__).parent
-    print("Updating plist...")
+    print("Updating plist...", end="", flush=True)
     update_plist(location, args)
+    print(" done.")
 
     # Get the list of devices that are booted at the start of the test run.
     # The simulator started by the test suite will be detected as the new
