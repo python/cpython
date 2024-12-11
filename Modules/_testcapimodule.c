@@ -3338,6 +3338,54 @@ pyeval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
     return Py_XNewRef(PyEval_GetLocals());
 }
 
+struct atexit_data {
+    int called;
+    PyThreadState *tstate;
+    PyInterpreterState *interp;
+};
+
+static void
+atexit_callback(void *data)
+{
+    struct atexit_data *at_data = (struct atexit_data *)data;
+    // Ensure that the callback is from the same interpreter
+    assert(PyThreadState_Get() == at_data->tstate);
+    assert(PyInterpreterState_Get() == at_data->interp);
+    ++at_data->called;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    data.tstate = PyThreadState_Get();
+    data.interp = PyInterpreterState_Get();
+
+    int amount = 10;
+    for (int i = 0; i < amount; ++i)
+    {
+        int res = PyUnstable_AtExit(tstate->interp, atexit_callback, (void *)&data);
+        if (res < 0) {
+            Py_EndInterpreter(tstate);
+            PyThreadState_Swap(oldts);
+            PyErr_SetString(PyExc_RuntimeError, "atexit callback failed");
+            return NULL;
+        }
+    }
+
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+
+    if (data.called != amount) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3483,6 +3531,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"pyeval_getlocals", pyeval_getlocals, METH_NOARGS},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
