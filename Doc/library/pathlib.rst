@@ -1189,8 +1189,10 @@ Querying file type and status
       ...     print('symlink')
       ... elif p.status.is_dir():
       ...     print('directory')
+      ... elif p.status.exists():
+      ...     print('something else')
       ... else:
-      ...     print('other')
+      ...     print('not found')
       ...
       directory
 
