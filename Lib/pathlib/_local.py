@@ -108,6 +108,35 @@ class _PathStatus:
         return S_ISLNK(self._get_mode(follow_symlinks=False))
 
 
+class _DirEntryStatus:
+    __slots__ = ('_entry', '_repr')
+
+    def __init__(self, path, entry):
+        self._entry = entry
+        self._repr = f"<{type(path).__name__}.status>"
+
+    def __repr__(self):
+        return self._repr
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+        return self._entry.is_dir(follow_symlinks=follow_symlinks)
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file.
+        """
+        return self._entry.is_file(follow_symlinks=follow_symlinks)
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return self._entry.is_symlink()
+
+
 class PurePath(PurePathBase):
     """Base class for manipulating paths without I/O.
 
@@ -762,7 +791,7 @@ class Path(PathBase, PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._status = dir_entry
+        path._status = _DirEntryStatus(path, dir_entry)
         return path
 
     def iterdir(self):

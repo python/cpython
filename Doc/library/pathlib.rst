@@ -1195,11 +1195,8 @@ Querying file type and status
       directory
 
    If the path was generated from :meth:`Path.iterdir` then this attribute is
-   an :class:`os.DirEntry` instance. These objects are initialized with some
-   information about the file type; see the :func:`os.scandir` docs for
-   details. In other cases, this attribute is an instance of an internal
-   pathlib class which initially knows nothing about the file status. In
-   either case, merely accessing :attr:`Path.status` does not perform any
+   initialized with information about the file type gleaned from scanning the
+   parent. Merely accessing :attr:`Path.status` does not perform any
    filesystem queries.
 
    To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
