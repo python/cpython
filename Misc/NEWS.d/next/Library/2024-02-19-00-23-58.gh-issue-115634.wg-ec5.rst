@@ -1,0 +1,1 @@
+Fixed the halt issue for :class:`ProcessPoolExecutor` when the task submission is fast to saturate **max_workers** and then all worker processes are killed due to **max_tasks_per_child**.
