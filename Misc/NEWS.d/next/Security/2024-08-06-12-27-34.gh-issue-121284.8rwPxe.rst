@@ -1,0 +1,4 @@
+Fix a problem where email.policy.default header refolding could incorrectly
+convert an RFC 2047 encoded-word containing commas or other special
+characters to unencoded, unquoted text, enabling sender or recipient
+spoofing via a carefully crafted display-name.
