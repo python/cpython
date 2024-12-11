@@ -22,6 +22,7 @@ from docutils.utils import new_document
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.domains.changeset import VersionChange
 from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
