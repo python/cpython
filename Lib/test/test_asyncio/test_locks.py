@@ -1,5 +1,5 @@
 """Tests for locks.py"""
-
+import signal
 import unittest
 from unittest import mock
 import re
@@ -21,6 +21,7 @@ RGX_REPR = re.compile(STR_RGX_REPR)
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):
