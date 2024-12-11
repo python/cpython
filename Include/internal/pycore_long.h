@@ -157,7 +157,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
- * 2: Reserved for immortality bit. Set to 1 for the small ints
+ * 2: Set to 1 for the small ints
  * 3+ Unsigned digit count
  */
 #define SIGN_MASK 3
