@@ -12,6 +12,18 @@
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
+#ifdef Py_GIL_DISABLED
+#  define _PyAtExit_LOCK(state) PyMutex_Lock(&state->lock);
+#  define _PyAtExit_UNLOCK(state) PyMutex_Unlock(&state->lock);
+#  define _PyAtExit_ASSERT_LOCKED(state) assert(PyMutex_IsLocked(&state->lock));
+#  define _PyAtExit_ASSERT_UNLOCKED(state) assert(!PyMutex_IsLocked(&state->lock));
+#else
+#  define _PyAtExit_LOCK(state)
+#  define _PyAtExit_UNLOCK(state)
+#  define _PyAtExit_ASSERT_LOCKED(state)
+#  define _PyAtExit_ASSERT_UNLOCKED(state)
+#endif
+
 /* ===================================================================== */
 /* Callback machinery. */
 
@@ -38,6 +50,7 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     callback->next = NULL;
 
     struct atexit_state *state = &interp->atexit;
+    _PyAtExit_LOCK(state);
     if (state->ll_callbacks == NULL) {
         state->ll_callbacks = callback;
         state->last_ll_callback = callback;
@@ -45,26 +58,33 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     else {
         state->last_ll_callback->next = callback;
     }
+    _PyAtExit_UNLOCK(state);
     return 0;
 }
 
 
 static void
-atexit_delete_cb(struct atexit_state *state, int i)
+atexit_delete_cb_locked(struct atexit_state *state, int i)
 {
     atexit_py_callback *cb = state->callbacks[i];
     state->callbacks[i] = NULL;
+
+    // Finalizers might be re-entrant. Technically, we don't need
+    // the lock anymore, but the caller assumes that it still holds the lock.
+    _PyAtExit_UNLOCK(state);
 
     Py_DECREF(cb->func);
     Py_DECREF(cb->args);
     Py_XDECREF(cb->kwargs);
     PyMem_Free(cb);
+
+    _PyAtExit_LOCK(state);
 }
 
 
 /* Clear all callbacks without calling them */
 static void
-atexit_cleanup(struct atexit_state *state)
+atexit_cleanup_locked(struct atexit_state *state)
 {
     atexit_py_callback *cb;
     for (int i = 0; i < state->ncallbacks; i++) {
@@ -72,7 +92,7 @@ atexit_cleanup(struct atexit_state *state)
         if (cb == NULL)
             continue;
 
-        atexit_delete_cb(state, i);
+        atexit_delete_cb_locked(state, i);
     }
     state->ncallbacks = 0;
 }
@@ -84,6 +104,7 @@ _PyAtExit_Init(PyInterpreterState *interp)
     struct atexit_state *state = &interp->atexit;
     // _PyAtExit_Init() must only be called once
     assert(state->callbacks == NULL);
+    _PyAtExit_ASSERT_UNLOCKED(state);
 
     state->callback_len = 32;
     state->ncallbacks = 0;
@@ -99,7 +120,12 @@ void
 _PyAtExit_Fini(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
-    atexit_cleanup(state);
+    // Only one thread can call this, but atexit_cleanup_locked() assumes
+    // that the lock is held, so let's hold it anyway.
+    _PyAtExit_ASSERT_UNLOCKED(state);
+    _PyAtExit_LOCK(state);
+    atexit_cleanup_locked(state);
+    _PyAtExit_UNLOCK(state);
     PyMem_Free(state->callbacks);
     state->callbacks = NULL;
 
@@ -118,8 +144,9 @@ _PyAtExit_Fini(PyInterpreterState *interp)
 
 
 static void
-atexit_callfuncs(struct atexit_state *state)
+atexit_callfuncs_locked(struct atexit_state *state)
 {
+    _PyAtExit_ASSERT_LOCKED(state);
     assert(!PyErr_Occurred());
 
     if (state->ncallbacks == 0) {
@@ -133,20 +160,26 @@ atexit_callfuncs(struct atexit_state *state)
         }
 
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
-        PyObject* the_func = Py_NewRef(cb->func);
-        PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
+        // No need to hold a strong reference to the arguments though
+        PyObject *func = Py_NewRef(cb->func);
+        PyObject *args = cb->args;
+        PyObject *kwargs = cb->kwargs;
+
+        // Unlock for re-entrancy problems
+        _PyAtExit_UNLOCK(state);
+        PyObject *res = PyObject_Call(func, args, kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
-                "Exception ignored in atexit callback %R", the_func);
+                "Exception ignored in atexit callback %R", func);
         }
         else {
             Py_DECREF(res);
         }
-        Py_DECREF(the_func);
+        Py_DECREF(func);
+        _PyAtExit_LOCK(state);
     }
 
-    atexit_cleanup(state);
-
+    atexit_cleanup_locked(state);
     assert(!PyErr_Occurred());
 }
 
@@ -155,7 +188,9 @@ void
 _PyAtExit_Call(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
-    atexit_callfuncs(state);
+    _PyAtExit_LOCK(state);
+    atexit_callfuncs_locked(state);
+    _PyAtExit_UNLOCK(state);
 }
 
 
@@ -192,12 +227,18 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     }
 
     struct atexit_state *state = get_atexit_state();
+    /* (Peter Bierma/ZeroIntensity) In theory, we could hold the
+     * lock for a shorter amount of time using some fancy compare-exchanges
+     * with the length. However, I'm lazy.
+     */
+    _PyAtExit_LOCK(state);
     if (state->ncallbacks >= state->callback_len) {
         atexit_py_callback **r;
         state->callback_len += 16;
         size_t size = sizeof(atexit_py_callback*) * (size_t)state->callback_len;
         r = (atexit_py_callback**)PyMem_Realloc(state->callbacks, size);
         if (r == NULL) {
+            _PyAtExit_UNLOCK(state);
             return PyErr_NoMemory();
         }
         state->callbacks = r;
@@ -205,18 +246,21 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 
     atexit_py_callback *callback = PyMem_Malloc(sizeof(atexit_py_callback));
     if (callback == NULL) {
+        _PyAtExit_UNLOCK(state);
         return PyErr_NoMemory();
     }
 
     callback->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (callback->args == NULL) {
         PyMem_Free(callback);
+        _PyAtExit_UNLOCK(state);
         return NULL;
     }
     callback->func = Py_NewRef(func);
     callback->kwargs = Py_XNewRef(kwargs);
 
     state->callbacks[state->ncallbacks++] = callback;
+    _PyAtExit_UNLOCK(state);
 
     return Py_NewRef(func);
 }
@@ -233,7 +277,9 @@ static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
-    atexit_callfuncs(state);
+    _PyAtExit_LOCK(state);
+    atexit_callfuncs_locked(state);
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
@@ -246,7 +292,10 @@ Clear the list of previously registered exit functions.");
 static PyObject *
 atexit_clear(PyObject *module, PyObject *unused)
 {
-    atexit_cleanup(get_atexit_state());
+    struct atexit_state *state = get_atexit_state();
+    _PyAtExit_LOCK(state);
+    atexit_cleanup_locked(state);
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
@@ -260,7 +309,10 @@ static PyObject *
 atexit_ncallbacks(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
-    return PyLong_FromSsize_t(state->ncallbacks);
+    _PyAtExit_LOCK(state);
+    PyObject *res = PyLong_FromSsize_t(state->ncallbacks);
+    _PyAtExit_UNLOCK(state);
+    return res;
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
@@ -276,21 +328,33 @@ static PyObject *
 atexit_unregister(PyObject *module, PyObject *func)
 {
     struct atexit_state *state = get_atexit_state();
+    _PyAtExit_LOCK(state);
     for (int i = 0; i < state->ncallbacks; i++)
     {
         atexit_py_callback *cb = state->callbacks[i];
         if (cb == NULL) {
             continue;
         }
+        PyObject *to_compare = cb->func;
 
-        int eq = PyObject_RichCompareBool(cb->func, func, Py_EQ);
+        // Unlock for custom __eq__ causing re-entrancy
+        _PyAtExit_UNLOCK(state);
+        int eq = PyObject_RichCompareBool(to_compare, func, Py_EQ);
         if (eq < 0) {
             return NULL;
         }
+        _PyAtExit_LOCK(state);
+        if (state->callbacks[i] == NULL)
+        {
+            // Edge case: another thread might have
+            // unregistered the function while we released the lock.
+            continue;
+        }
         if (eq) {
-            atexit_delete_cb(state, i);
+            atexit_delete_cb_locked(state, i);
         }
     }
+    _PyAtExit_UNLOCK(state);
     Py_RETURN_NONE;
 }
 
