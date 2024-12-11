@@ -5441,7 +5441,7 @@
             {
                 uint16_t dictoffset = read_u16(&this_instr[4].cache);
                 char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
-                PyObject *dict = *(PyObject **)ptr;
+                PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }

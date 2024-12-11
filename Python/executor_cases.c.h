@@ -3923,7 +3923,7 @@
             owner = stack_pointer[-1];
             uint16_t dictoffset = (uint16_t)CURRENT_OPERAND0();
             char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
-            PyObject *dict = *(PyObject **)ptr;
+            PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
             /* This object has a __dict__, just not yet created */
             if (dict != NULL) {
                 UOP_STAT_INC(uopcode, miss);
