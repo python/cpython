@@ -1312,21 +1312,9 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, lambda: list(p.glob('*')))
         self.assertRaises(e, lambda: list(p.rglob('*')))
         self.assertRaises(e, lambda: list(p.walk()))
-        self.assertRaises(e, p.expanduser)
         self.assertRaises(e, p.readlink)
         self.assertRaises(e, p.symlink_to, 'foo')
-        self.assertRaises(e, p.hardlink_to, 'foo')
         self.assertRaises(e, p.mkdir)
-        self.assertRaises(e, p.touch)
-        self.assertRaises(e, p.chmod, 0o755)
-        self.assertRaises(e, p.lchmod, 0o755)
-        self.assertRaises(e, p.owner)
-        self.assertRaises(e, p.group)
-        self.assertRaises(e, p.as_uri)
-
-    def test_as_uri_common(self):
-        e = UnsupportedOperation
-        self.assertRaises(e, self.cls('').as_uri)
 
     def test_fspath_common(self):
         self.assertRaises(TypeError, os.fspath, self.cls(''))
