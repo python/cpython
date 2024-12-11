@@ -6,7 +6,49 @@ from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
 
+
+class GrammarSnippetDirective(SphinxDirective):
+    """Transform a grammar-snippet directive to a Sphinx literal_block
+
+    That is, turn something like:
+
+        .. grammar-snippet:: file
+           :group: python-grammar
+
+           file: (NEWLINE | statement)*
+
+    into something similar to Sphinx productionlist, but better suited
+    for our needs:
+    - Instead of `::=`, use a colon, as in `Grammar/python.gram`
+    - Show the listing almost as is, with no auto-aligment.
+      The only special character is the backtick, which marks tokens.
+
+    Unlike Sphinx's productionlist, this directive supports options.
+    The "group" must be given as a named option.
+    The content must be preceded by a blank line (like with most ReST
+    directives).
+    """
+    has_content = True
+    option_spec = {
+        'group': directives.unchanged,
+    }
+
+    # We currently ignore arguments.
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+
+    def run(self):
+        return make_snippet(self, self.options, self.content)
+
+
 def make_snippet(directive, options, content):
+    """Create a literal block from options & content.
+
+    This implements the common functionality for GrammarSnippetDirective
+    and CompatProductionList.
+    """
+
     group_name = options['group']
 
     # Docutils elements have a `rawsource` attribute that is supposed to be
@@ -99,40 +141,14 @@ def make_snippet(directive, options, content):
     return [node]
 
 
-class GrammarSnippetDirective(SphinxDirective):
-    """Transform a grammar-snippet directive to a Sphinx productionlist
-
-    That is, turn something like:
-
-        .. grammar-snippet:: file
-           :group: python-grammar
-
-           file: (NEWLINE | statement)*
-
-    into something similar to Sphinx productionlist, but better suited
-    for our needs:
-    - Instead of `::=`, use a colon, as in `Grammar/python.gram`
-    - Show the listing almost as is, with no auto-aligment.
-      The only special character is the backtick, which marks tokens.
-
-    Unlike Sphinx's productionlist, this directive supports options.
-    The "group" must be given as an option.
-    """
-    has_content = True
-    option_spec = {
-        'group': directives.unchanged,
-    }
-
-    # We currently ignore arguments.
-    required_arguments = 0
-    optional_arguments = 1
-    final_argument_whitespace = True
-
-    def run(self):
-        return make_snippet(self, self.options, self.content)
-
-
 class CompatProductionList(SphinxDirective):
+    """Create grammar snippets from ReST productionlist syntax
+
+    This is intended to be a transitional directive, used while we switch
+    from productionlist to grammar-snippet.
+    It makes existing docs that use the ReST syntax look like grammar-snippet,
+    as much as possible.
+    """
     has_content = False
     required_arguments = 1
     optional_arguments = 0
