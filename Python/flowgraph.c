@@ -557,6 +557,12 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
+    assert(b->b_next->b_iused > 0);
+    assert(b->b_next->b_instr[0].i_opcode == NOT_TAKEN);
+    b->b_next->b_instr[0].i_opcode = NOP;
+    b->b_next->b_instr[0].i_loc = NO_LOCATION;
+    RETURN_IF_ERROR(
+        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
     last->i_opcode = reversed_opcode;
