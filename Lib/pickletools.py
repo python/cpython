@@ -2542,8 +2542,6 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
         stack.extend(after)
 
     print("highest protocol among opcodes =", maxproto, file=out)
-    if stack:
-        raise ValueError("stack not empty after STOP: %r" % stack)
 
 # For use in the doctest, simply as an example of a class to pickle.
 class _Example:
