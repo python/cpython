@@ -1,0 +1,2 @@
+Deprecate the functions :func:`ctypes.DllGetClassObject` and
+:func:`ctypes.DllCanUnloadNow`; plan their removal for Python 3.19.

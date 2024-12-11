@@ -489,8 +489,22 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     long retval;
     static PyObject *context;
 
-    if (context == NULL)
+    if (context == NULL) {
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
+    }
+    if (!context) {
+        PyErr_WriteUnraisable(NULL);
+        return E_FAIL;
+    }
+
+    if (PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "GetClassObject from _ctypes is deprecated and will be removed in Python 3.19",
+        1) < 0)
+    {
+        PyErr_WriteUnraisable(context);
+        return E_FAIL;
+    }
 
     func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
     if (!func) {
@@ -565,8 +579,22 @@ long Call_CanUnloadNow(void)
     long retval;
     static PyObject *context;
 
-    if (context == NULL)
+    if (context == NULL) {
         context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
+    }
+    if (!context) {
+        PyErr_WriteUnraisable(NULL);
+        return E_FAIL;
+    }
+
+    if (PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "DllCanUnloadNow from _ctypes is deprecated and will be removed in Python 3.19",
+        1) < 0)
+    {
+        PyErr_WriteUnraisable(context);
+        return E_FAIL;
+    }
 
     mod = PyImport_ImportModule("ctypes");
     if (!mod) {
