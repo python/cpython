@@ -1,0 +1,1 @@
+Add support for HTTP Range header in ``SimpleHTTPServer``
