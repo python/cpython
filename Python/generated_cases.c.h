@@ -4623,7 +4623,6 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_FOR_ITER);
             /* Skip 1 cache entry */
-            _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4631,7 +4630,6 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
-                target = next_instr;
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
@@ -4652,9 +4650,9 @@
                 STACK_SHRINK(1);
                 PyStackRef_CLOSE(iter_stackref);
                 /* Skip END_FOR and POP_TOP */
-                target = next_instr + oparg + 2;
+                _Py_CODEUNIT *target = next_instr + oparg + 2;
+                INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
-            INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -4759,6 +4757,15 @@
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
+        TARGET(INSTRUMENTED_NOT_TAKEN) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(INSTRUMENTED_NOT_TAKEN);
+            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            DISPATCH();
+        }
+
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
@@ -4767,10 +4774,11 @@
             /* Skip 1 cache entry */
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsFalse(cond);
-            int offset = flag * oparg;
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            int jump = PyStackRef_IsFalse(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
             DISPATCH();
         }
 
@@ -4781,17 +4789,14 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_IsNone(value_stackref);
-            int offset;
-            if (flag) {
-                offset = oparg;
+            int jump = PyStackRef_IsNone(value_stackref);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             else {
                 PyStackRef_CLOSE(value_stackref);
-                offset = 0;
             }
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -4802,19 +4807,12 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NOT_NONE);
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
-            int offset;
-            int nflag = PyStackRef_IsNone(value_stackref);
-            if (nflag) {
-                offset = 0;
-            }
-            else {
+            int jump = !PyStackRef_IsNone(value_stackref);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
                 PyStackRef_CLOSE(value_stackref);
-                offset = oparg;
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
-            #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | !nflag;
-            #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
         }
 
@@ -4826,10 +4824,11 @@
             /* Skip 1 cache entry */
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsTrue(cond);
-            int offset = flag * oparg;
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            int jump = PyStackRef_IsTrue(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
             DISPATCH();
         }
 
@@ -6655,6 +6654,13 @@
             DISPATCH();
         }
 
+        TARGET(NOT_TAKEN) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(NOT_TAKEN);
+            DISPATCH();
+        }
+
         TARGET(POP_EXCEPT) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
@@ -6683,7 +6689,7 @@
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -6715,7 +6721,7 @@
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
                 RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-                JUMPBY(oparg * flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -6748,7 +6754,7 @@
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
                 RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-                JUMPBY(oparg * flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -6766,7 +6772,7 @@
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
