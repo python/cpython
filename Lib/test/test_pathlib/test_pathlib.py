@@ -1786,12 +1786,30 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         st = p.stat()
         self.assertEqual(st, p.lstat())
 
-    def test_is_junction(self):
+    def test_is_junction_false(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_junction())
+        self.assertFalse((P / 'dirA').is_junction())
+        self.assertFalse((P / 'non-existing').is_junction())
+        self.assertFalse((P / 'fileA' / 'bah').is_junction())
+        self.assertFalse((P / 'fileA\udfff').is_junction())
+        self.assertFalse((P / 'fileA\x00').is_junction())
+
+    def test_is_junction_true(self):
         P = self.cls(self.base)
 
         with mock.patch.object(P.parser, 'isjunction'):
             self.assertEqual(P.is_junction(), P.parser.isjunction.return_value)
             P.parser.isjunction.assert_called_once_with(P)
+
+    def test_is_fifo_false(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_fifo())
+        self.assertFalse((P / 'dirA').is_fifo())
+        self.assertFalse((P / 'non-existing').is_fifo())
+        self.assertFalse((P / 'fileA' / 'bah').is_fifo())
+        self.assertIs((P / 'fileA\udfff').is_fifo(), False)
+        self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1807,6 +1825,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFalse(P.is_file())
         self.assertIs(self.cls(self.base, 'myfifo\udfff').is_fifo(), False)
         self.assertIs(self.cls(self.base, 'myfifo\x00').is_fifo(), False)
+
+    def test_is_socket_false(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_socket())
+        self.assertFalse((P / 'dirA').is_socket())
+        self.assertFalse((P / 'non-existing').is_socket())
+        self.assertFalse((P / 'fileA' / 'bah').is_socket())
+        self.assertIs((P / 'fileA\udfff').is_socket(), False)
+        self.assertIs((P / 'fileA\x00').is_socket(), False)
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
     @unittest.skipIf(
@@ -1831,6 +1858,24 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\udfff').is_socket(), False)
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
+    def test_is_block_device_false(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_block_device())
+        self.assertFalse((P / 'dirA').is_block_device())
+        self.assertFalse((P / 'non-existing').is_block_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_block_device())
+        self.assertIs((P / 'fileA\udfff').is_block_device(), False)
+        self.assertIs((P / 'fileA\x00').is_block_device(), False)
+
+    def test_is_char_device_false(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_char_device())
+        self.assertFalse((P / 'dirA').is_char_device())
+        self.assertFalse((P / 'non-existing').is_char_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_char_device())
+        self.assertIs((P / 'fileA\udfff').is_char_device(), False)
+        self.assertIs((P / 'fileA\x00').is_char_device(), False)
+
     def test_is_char_device_true(self):
         # os.devnull should generally be a char device.
         P = self.cls(os.devnull)
@@ -1842,13 +1887,41 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(f'{os.devnull}\udfff').is_char_device(), False)
         self.assertIs(self.cls(f'{os.devnull}\x00').is_char_device(), False)
 
-    def test_is_mount_root(self):
+    def test_is_mount(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_mount())
+        self.assertFalse((P / 'dirA').is_mount())
+        self.assertFalse((P / 'non-existing').is_mount())
+        self.assertFalse((P / 'fileA' / 'bah').is_mount())
+        if self.can_symlink:
+            self.assertFalse((P / 'linkA').is_mount())
         if os.name == 'nt':
             R = self.cls('c:\\')
         else:
             R = self.cls('/')
         self.assertTrue(R.is_mount())
         self.assertFalse((R / '\udfff').is_mount())
+
+    def test_samefile(self):
+        parser = self.parser
+        fileA_path = parser.join(self.base, 'fileA')
+        fileB_path = parser.join(self.base, 'dirB', 'fileB')
+        p = self.cls(fileA_path)
+        pp = self.cls(fileA_path)
+        q = self.cls(fileB_path)
+        self.assertTrue(p.samefile(fileA_path))
+        self.assertTrue(p.samefile(pp))
+        self.assertFalse(p.samefile(fileB_path))
+        self.assertFalse(p.samefile(q))
+        # Test the non-existent file case
+        non_existent = parser.join(self.base, 'foo')
+        r = self.cls(non_existent)
+        self.assertRaises(FileNotFoundError, p.samefile, r)
+        self.assertRaises(FileNotFoundError, p.samefile, non_existent)
+        self.assertRaises(FileNotFoundError, r.samefile, p)
+        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
+        self.assertRaises(FileNotFoundError, r.samefile, r)
+        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
 
     def test_passing_kwargs_errors(self):
         with self.assertRaises(TypeError):

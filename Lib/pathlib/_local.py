@@ -4,9 +4,10 @@ import operator
 import os
 import posixpath
 import sys
-from errno import EXDEV
+from errno import EINVAL, EXDEV
 from glob import _StringGlobber
 from itertools import chain
+from stat import S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -595,6 +596,68 @@ class Path(PathBase, PurePath):
         Whether this path is a junction.
         """
         return os.path.isjunction(self)
+
+    def is_block_device(self):
+        """
+        Whether this path is a block device.
+        """
+        try:
+            return S_ISBLK(self.stat().st_mode)
+        except (OSError, ValueError):
+            return False
+
+    def is_char_device(self):
+        """
+        Whether this path is a character device.
+        """
+        try:
+            return S_ISCHR(self.stat().st_mode)
+        except (OSError, ValueError):
+            return False
+
+    def is_fifo(self):
+        """
+        Whether this path is a FIFO.
+        """
+        try:
+            return S_ISFIFO(self.stat().st_mode)
+        except (OSError, ValueError):
+            return False
+
+    def is_socket(self):
+        """
+        Whether this path is a socket.
+        """
+        try:
+            return S_ISSOCK(self.stat().st_mode)
+        except (OSError, ValueError):
+            return False
+
+    def samefile(self, other_path):
+        """Return whether other_path is the same or not as this file
+        (as returned by os.path.samefile()).
+        """
+        st = self.stat()
+        try:
+            other_st = other_path.stat()
+        except AttributeError:
+            other_st = self.with_segments(other_path).stat()
+        return (st.st_ino == other_st.st_ino and
+                st.st_dev == other_st.st_dev)
+
+    def _ensure_different_file(self, other_path):
+        """
+        Raise OSError(EINVAL) if both paths refer to the same file.
+        """
+        try:
+            if not self.samefile(other_path):
+                return
+        except (OSError, ValueError):
+            return
+        err = OSError(EINVAL, "Source and target are the same file")
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
