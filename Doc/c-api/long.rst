@@ -749,7 +749,8 @@ Export API
    On error, set an exception and return ``-1``.
 
    If *export_long->digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must
-   be called when the export is no longer needed.
+   be called when the export is no longer needed. Otherwise, calling
+   :c:func:`PyLong_FreeExport` is optional.
 
 
 .. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
