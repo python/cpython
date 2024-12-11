@@ -1033,6 +1033,7 @@ specialize_dict_access(
 static int
 specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               PyObject *name, PyObject *descr,
+                              unsigned int tp_version,
                               DescriptorClassification kind, bool is_method,
                               uint32_t shared_keys_version);
 #ifndef Py_GIL_DISABLED
@@ -1105,14 +1106,14 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             return -1;
         case METHOD:
         {
-            FT_UNIMPLEMENTED();
             if (shadow) {
+                FT_UNIMPLEMENTED();
                 goto try_instance;
             }
             int oparg = instr->op.arg;
             if (oparg & 1) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
-                                                  kind, true,
+                                                  tp_version, kind, true,
                                                   shared_keys_version)) {
                     return 0;
                 }
@@ -1242,7 +1243,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             }
             if ((instr->op.arg & 1) == 0) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
-                                                  kind, false,
+                                                  tp_version, kind, false,
                                                   shared_keys_version)) {
                     return 0;
                 }
@@ -1546,6 +1547,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 static int
 specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               PyObject *name, PyObject *descr,
+                              unsigned int tp_version,
                               DescriptorClassification kind, bool is_method,
                               uint32_t shared_keys_version)
 {
@@ -1622,7 +1624,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     *  PyType_Modified usages in typeobject.c). The MCACHE has been
     *  working since Python 2.6 and it's battle-tested.
     */
-    write_u32(cache->type_version, owner_cls->tp_version_tag);
+    write_u32(cache->type_version, tp_version);
     write_obj(cache->descr, descr);
     return 1;
 }
