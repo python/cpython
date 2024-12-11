@@ -1040,6 +1040,17 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 #endif
 
+static PyDictObject *
+get_managed_dict_ref(PyObject *obj)
+{
+    PyDictObject *dict;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    dict = _PyObject_GetManagedDict(obj);
+    Py_XINCREF(dict);
+    Py_END_CRITICAL_SECTION();
+    return dict;
+}
+
 /* Returns true if instances of obj's class are
  * likely to have `name` in their __dict__.
  * For objects with inline values, we check in the shared keys.
@@ -1058,14 +1069,17 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
             _PyDictKeys_StringLookupAndVersion(keys, name, shared_keys_version);
         return index >= 0;
     }
-    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    PyDictObject *dict = get_managed_dict_ref(obj);
     if (dict == NULL || !PyDict_CheckExact(dict)) {
+        Py_XDECREF(dict);
         return false;
     }
     if (dict->ma_values) {
+        Py_DECREF(dict);
         return false;
     }
     Py_ssize_t index = _PyDict_LookupIndex(dict, name);
+    Py_DECREF(dict);
     if (index < 0) {
         return false;
     }
