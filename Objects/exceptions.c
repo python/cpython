@@ -2753,7 +2753,7 @@ unicode_error_set_reason_impl(PyObject *self, const char *reason)
     // TODO(picnixz): do an assert-only type-check when gh-127694 is merged
     //                (the caller function must do an eager type-check)
     PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
-    Py_XSETREF(*&exc->reason, value);
+    Py_XSETREF(exc->reason, value);
     return 0;
 }
 
