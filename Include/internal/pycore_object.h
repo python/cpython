@@ -73,14 +73,24 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
         .ob_type = (type)                           \
+    }
+#else
+#if SIZEOF_VOID_P > 4
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG, \
+        .ob_type = (type)                 \
     }
 #else
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT, \
+        .ob_refcnt = _Py_STATIC_IMMORTAL_INITIAL_REFCNT, \
         .ob_type = (type)                 \
     }
+#endif
 #endif
 #define _PyVarObject_HEAD_INIT(type, size)    \
     {                                         \
@@ -127,7 +137,11 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
     _Py_AddRefTotal(_PyThreadState_GET(), n);
 #endif
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt += (PY_UINT32_T)n;
+#else
     op->ob_refcnt += n;
+#endif
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
@@ -697,7 +711,51 @@ _PyObject_SetMaybeWeakref(PyObject *op)
     }
 }
 
+extern int _PyObject_ResurrectEndSlow(PyObject *op);
 #endif
+
+// Temporarily resurrects an object during deallocation. The refcount is set
+// to one.
+static inline void
+_PyObject_ResurrectStart(PyObject *op)
+{
+    assert(Py_REFCNT(op) == 0);
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_ThreadId());
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 1);
+    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
+#else
+    Py_SET_REFCNT(op, 1);
+#endif
+}
+
+// Undoes an object resurrection by decrementing the refcount without calling
+// _Py_Dealloc(). Returns 0 if the object is dead (the normal case), and
+// deallocation should continue. Returns 1 if the object is still alive.
+static inline int
+_PyObject_ResurrectEnd(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    _Py_DecRefTotal(_PyThreadState_GET());
+#endif
+#ifndef Py_GIL_DISABLED
+    Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+    return Py_REFCNT(op) != 0;
+#else
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
+    if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
+        // Fast-path: object has a single refcount and is owned by this thread
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        return 0;
+    }
+    // Slow-path: object has a shared refcount or is not owned by this thread
+    return _PyObject_ResurrectEndSlow(op);
+#endif
+}
 
 /* Tries to incref op and returns 1 if successful or 0 otherwise. */
 static inline int
