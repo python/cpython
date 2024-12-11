@@ -1,7 +1,11 @@
+import _ctypes
 import os
-import sys
-import unittest
 import platform
+import re
+import sys
+import test.support
+import unittest
+
 
 FOO_C = r"""
 #include <unistd.h>
@@ -117,6 +121,18 @@ class TestNullDlsym(unittest.TestCase):
 
             # Assert that the IFUNC was called
             self.assertEqual(os.read(pipe_r, 2), b'OK')
+
+
+class TestCAPI(unittest.TestCase):
+
+    @unittest.skipUnless(hasattr(_ctypes, 'dlopen'), 'require ctypes.dlopen()')
+    @test.support.run_with_locales('LC_ALL', 'fr_FR.utf8', 'fr_FR.iso88591')
+    def test_localized_error(self):
+        with self.assertRaisesRegex(
+            OSError,
+            re.escape("foo.so: Ne peut ouvrir le fichier d'objet partagé"),
+        ):
+            _ctypes.dlopen('foo.so', 2)
 
 
 if __name__ == "__main__":
