@@ -28,6 +28,7 @@ class GrammarSnippetDirective(SphinxDirective):
     The content must be preceded by a blank line (like with most ReST
     directives).
     """
+
     has_content = True
     option_spec = {
         'group': directives.unchanged,
@@ -88,7 +89,7 @@ def make_snippet(directive, options, content):
         for match in grammar_re.finditer(line):
             # Handle text between matches
             if match.start() > last_pos:
-                literal += nodes.Text(line[last_pos:match.start()])
+                literal += nodes.Text(line[last_pos : match.start()])
             last_pos = match.end()
 
             # Handle matches
@@ -108,10 +109,16 @@ def make_snippet(directive, options, content):
                     domain = directive.env.domains['std']
                     obj_name = f"{group_name}:{name}"
                     prefix = f'grammar-token-{group_name}'
-                    node_id = make_id(directive.env, directive.state.document, prefix, name)
+                    node_id = make_id(
+                        directive.env, directive.state.document, prefix, name
+                    )
                     name_node['ids'].append(node_id)
-                    directive.state.document.note_implicit_target(name_node, name_node)
-                    domain.note_object('token', obj_name, node_id, location=name_node)
+                    directive.state.document.note_implicit_target(
+                        name_node, name_node
+                    )
+                    domain.note_object(
+                        'token', obj_name, node_id, location=name_node
+                    )
 
                     text_node = nodes.Text(name)
                     name_node += text_node
@@ -134,7 +141,8 @@ def make_snippet(directive, options, content):
         literal += nodes.Text(line[last_pos:] + '\n')
 
     node = nodes.paragraph(
-        '', '',
+        '',
+        '',
         literal,
     )
 
@@ -149,6 +157,7 @@ class CompatProductionList(SphinxDirective):
     It makes existing docs that use the ReST syntax look like grammar-snippet,
     as much as possible.
     """
+
     has_content = False
     required_arguments = 1
     optional_arguments = 0
@@ -177,5 +186,7 @@ class CompatProductionList(SphinxDirective):
 
 def setup(app):
     app.add_directive('grammar-snippet', GrammarSnippetDirective)
-    app.add_directive_to_domain('std', 'productionlist', CompatProductionList, override=True)
+    app.add_directive_to_domain(
+        'std', 'productionlist', CompatProductionList, override=True
+    )
     return {'version': '1.0', 'parallel_read_safe': True}
