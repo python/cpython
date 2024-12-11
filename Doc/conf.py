@@ -20,7 +20,6 @@ sys.path.append(os.path.abspath('includes'))
 # Python specific content from Doc/Tools/extensions/pyspecific.py
 from pyspecific import SOURCE_URI
 
-
 # General configuration
 # ---------------------
 

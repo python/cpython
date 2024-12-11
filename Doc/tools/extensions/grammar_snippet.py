@@ -1,7 +1,7 @@
 import re
+
 from docutils import nodes
 from docutils.parsers.rst import directives
-
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
@@ -174,7 +174,7 @@ class CompatProductionList(SphinxDirective):
         align_column = max(line.index(':') for line in lines[1:]) + 1
         content = []
         for line in lines[1:]:
-            rule_name, colon, text = line.partition(':')
+            rule_name, _colon, text = line.partition(':')
             rule_name = rule_name.strip()
             if rule_name:
                 name_part = rule_name + ':'
