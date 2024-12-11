@@ -1,5 +1,8 @@
 #ifndef Py_TRACEMALLOC_H
 #define Py_TRACEMALLOC_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef Py_LIMITED_API
 /* Track an allocated memory block in the tracemalloc module.
@@ -67,6 +70,8 @@ PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTracedMemory(void);
 /* Set the peak size of traced memory blocks to the current size */
 PyAPI_FUNC(void) _PyTraceMalloc_ResetPeak(void);
 
+#ifdef __cplusplus
+}
 #endif
-
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_TRACEMALLOC_H */
