@@ -966,6 +966,64 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
 }
 
 static int
+specialize_inline_values_access(
+    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    PyObject *name, int base_op, int values_op)
+{
+    PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+    assert(PyUnicode_CheckExact(name));
+    Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+    assert (index != DKIX_ERROR);
+    if (index == DKIX_EMPTY) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
+        return 0;
+    }
+    assert(index >= 0);
+    char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
+    Py_ssize_t offset = value_addr - (char *)owner;
+    if (offset != (uint16_t)offset) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    write_u32(cache->version, type->tp_version_tag);
+    cache->index = (uint16_t)offset;
+    specialize(instr, values_op);
+    return 1;
+}
+
+static int
+specialize_managed_dict_access(
+    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    PyObject *name, int base_op, int hint_op)
+{
+    PyDictObject *dict = _PyObject_GetManagedDict(owner);
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+    if (dict == NULL || !PyDict_CheckExact(dict)) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
+        return 0;
+    }
+    // We found an instance with a __dict__.
+    if (dict->ma_values) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
+        return 0;
+    }
+    Py_ssize_t index =
+            _PyDict_LookupIndex(dict, name);
+    if (index != (uint16_t)index) {
+        SPECIALIZATION_FAIL(base_op,
+                            index == DKIX_EMPTY ?
+                            SPEC_FAIL_ATTR_NOT_IN_DICT :
+                            SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    cache->index = (uint16_t)index;
+    write_u32(cache->version, type->tp_version_tag);
+    specialize(instr, hint_op);
+    return 1;
+}
+
+static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     DescriptorClassification kind, PyObject *name,
@@ -979,55 +1037,17 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
         _PyObject_InlineValues(owner)->valid &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
-        PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
-        assert(PyUnicode_CheckExact(name));
-        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
-        assert (index != DKIX_ERROR);
-        if (index == DKIX_EMPTY) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
-            return 0;
-        }
-        assert(index >= 0);
-        char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
-        Py_ssize_t offset = value_addr - (char *)owner;
-        if (offset != (uint16_t)offset) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
-        }
-        write_u32(cache->version, type->tp_version_tag);
-        cache->index = (uint16_t)offset;
-        specialize(instr, values_op);
+        return specialize_inline_values_access(
+            owner, instr, type, name, base_op, values_op);
     }
     else {
-        PyDictObject *dict = _PyObject_GetManagedDict(owner);
-        if (dict == NULL || !PyDict_CheckExact(dict)) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
-            return 0;
-        }
-        // We found an instance with a __dict__.
-        if (dict->ma_values) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
-            return 0;
-        }
-        Py_ssize_t index =
-            _PyDict_LookupIndex(dict, name);
-        if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op,
-                                index == DKIX_EMPTY ?
-                                SPEC_FAIL_ATTR_NOT_IN_DICT :
-                                SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
-        }
-        cache->index = (uint16_t)index;
-        write_u32(cache->version, type->tp_version_tag);
-        specialize(instr, hint_op);
+        return specialize_managed_dict_access(
+            owner, instr, type, name, base_op, hint_op);
     }
-    return 1;
 }
 
 static int
