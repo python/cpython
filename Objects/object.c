@@ -2521,6 +2521,10 @@ _Py_SetImmortalUntracked(PyObject *op)
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }
 #endif
+    // Check if already immortal to avoid degrading from static immortal to plain immortal
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_GIL_DISABLED
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
