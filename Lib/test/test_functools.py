@@ -3240,6 +3240,25 @@ class TestSingleDispatch(unittest.TestCase):
             def _(arg: undefined):
                 return "forward reference"
 
+    def test_singledispatchmethod_hash_comparision_equal(self):
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class A:
+            value: int
+
+            @functools.singledispatchmethod
+            def dispatch(self, x):
+                return id(self)
+
+        t1 = A(1)
+        t2 = A(1)
+
+        assert t1 == t2
+        assert id(t1) == t1.dispatch(2)
+        assert id(t2) == t2.dispatch(2) # gh-127750
+
+
 class CachedCostItem:
     _cost = 1
 
