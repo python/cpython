@@ -446,15 +446,15 @@ class DeprecatedRemoved(Directive):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
+        env = self.state.document.settings.env
         version = (
-            expand_version_arg(self.arguments[0], self.config.release),
+            expand_version_arg(self.arguments[0], env.config.release),
             self.arguments[1],
         )
         if version[1] == 'next':
             raise ValueError(
                 'deprecated-removed:: second argument cannot be `next`')
         node['version'] = version
-        env = self.state.document.settings.env
         current_version = tuple(int(e) for e in env.config.version.split('.'))
         removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
         if current_version < removed_version:
