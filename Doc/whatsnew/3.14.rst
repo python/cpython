@@ -525,6 +525,9 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.GRND_INSECURE` constant to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127776`.)
+
 
 pathlib
 -------
