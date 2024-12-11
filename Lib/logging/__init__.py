@@ -1483,7 +1483,7 @@ class Logger(Filterer):
         self.level = _checkLevel(level)
         self.parent = None
         self.propagate = True
-        self.handlers = []
+        self.handlers = set()
         self.disabled = False
         self._cache = {}
 
@@ -1685,7 +1685,7 @@ class Logger(Filterer):
         """
         with _lock:
             if not (hdlr in self.handlers):
-                self.handlers.append(hdlr)
+                self.handlers.add(hdlr)
 
     def removeHandler(self, hdlr):
         """
