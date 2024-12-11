@@ -482,6 +482,8 @@ class OperatorTestCase:
                 return f
             def baz(*args, **kwds):
                 return kwds['name'], kwds['self']
+            def return_arguments(self, *args, **kwds):
+                return args, kwds
         a = A()
         f = operator.methodcaller('foo')
         self.assertRaises(IndexError, f, a)
@@ -497,6 +499,17 @@ class OperatorTestCase:
         self.assertEqual(f(a), 5)
         f = operator.methodcaller('baz', name='spam', self='eggs')
         self.assertEqual(f(a), ('spam', 'eggs'))
+
+        many_positional_arguments = tuple(range(10))
+        many_kw_arguments = dict(zip('abcdefghij', range(10)))
+        f = operator.methodcaller('return_arguments', *many_positional_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, {}))
+
+        f = operator.methodcaller('return_arguments', **many_kw_arguments)
+        self.assertEqual(f(a), ((), many_kw_arguments))
+
+        f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
 
     def test_inplace(self):
         operator = self.module
