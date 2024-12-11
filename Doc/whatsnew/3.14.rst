@@ -1034,6 +1034,11 @@ New features
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
 
+* Add :c:func:`Py_fopen` function to open a file. Similar to the
+  :c:func:`!fopen` function, but the *path* parameter is a Python object and an
+  exception is set on error.
+  (Contributed by Victor Stinner in :gh:`127350`.)
+
 Porting to Python 3.14
 ----------------------
 
