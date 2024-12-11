@@ -7071,6 +7071,45 @@ class SendRecvFdsTests(unittest.TestCase):
             data = os.read(rfd, 100)
             self.assertEqual(data,  str(index).encode())
 
+    def testSendAndRecvFdsByAddress(self):
+        def close_pipes(pipes):
+            for fd1, fd2 in pipes:
+                os.close(fd1)
+                os.close(fd2)
+
+        def close_fds(fds):
+            for fd in fds:
+                os.close(fd)
+
+        # send 10 file descriptors
+        pipes = [os.pipe() for _ in range(10)]
+        self.addCleanup(close_pipes, pipes)
+        fds = [rfd for rfd, wfd in pipes]
+
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, address)
+        socket_helper.bind_unix_socket(sock, address)
+
+        socket.send_fds(sock, [MSG], fds, 0, address)
+
+        # request more data and file descriptors than expected
+        msg, fds2, flags, addr = socket.recv_fds(sock, len(MSG) * 2, len(fds) * 2)
+        self.addCleanup(close_fds, fds2)
+
+        self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds2), len(fds))
+        self.assertEqual(flags, 0)
+
+        # test that file descriptors are connected
+        for index, fds in enumerate(pipes):
+            rfd, wfd = fds
+            os.write(wfd, str(index).encode())
+
+        for index, rfd in enumerate(fds2):
+            data = os.read(rfd, 100)
+            self.assertEqual(data,  str(index).encode())
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
