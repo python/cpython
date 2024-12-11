@@ -59,6 +59,52 @@ class CookieTests(unittest.TestCase):
             for k, v in sorted(case['dict'].items()):
                 self.assertEqual(C[k].value, v)
 
+    def test_obsolete_rfc850_date_format(self):
+        # Test cases with different days and dates in obsolete RFC 850 format
+        test_cases = [
+            # from RFC 850, change EST to GMT
+            # https://datatracker.ietf.org/doc/html/rfc850#section-2
+            {
+                'data': 'key=value; expires=Saturday, 01-Jan-83 00:00:00 GMT',
+                'output': 'Saturday, 01-Jan-83 00:00:00 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 19-Nov-82 16:59:30 GMT',
+                'output': 'Friday, 19-Nov-82 16:59:30 GMT'
+            },
+            # from RFC 9110
+            # https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.7-6
+            {
+                'data': 'key=value; expires=Sunday, 06-Nov-94 08:49:37 GMT',
+                'output': 'Sunday, 06-Nov-94 08:49:37 GMT'
+            },
+            # other test cases
+            {
+                'data': 'key=value; expires=Wednesday, 09-Nov-94 08:49:37 GMT',
+                'output': 'Wednesday, 09-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 11-Nov-94 08:49:37 GMT',
+                'output': 'Friday, 11-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Monday, 14-Nov-94 08:49:37 GMT',
+                'output': 'Monday, 14-Nov-94 08:49:37 GMT'
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(data=case['data']):
+                C = cookies.SimpleCookie()
+                C.load(case['data'])
+
+                # Extract the cookie name from the data string
+                cookie_name = case['data'].split('=')[0]
+
+                # Check if the cookie is loaded correctly
+                self.assertIn(cookie_name, C)
+                self.assertEqual(C[cookie_name].get('expires'), case['output'])
+
     def test_unquote(self):
         cases = [
             (r'a="b=\""', 'b="'),
