@@ -2046,7 +2046,7 @@ PySequence_Tuple(PyObject *v)
             }
             break;
         }
-        if (_PyList_AppendTakeRef(list, item)) {
+        if (_PyList_AppendTakeRef(list, item) < 0) {
             Py_DECREF(list);
             Py_DECREF(it);
             return NULL;
