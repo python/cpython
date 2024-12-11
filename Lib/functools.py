@@ -1029,7 +1029,7 @@ class singledispatchmethod:
         self.func = func
 
         import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
+        self._method_cache = weakref.WeakValueDictionary()
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
@@ -1039,15 +1039,12 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
-                return _method
+        try:
+            _method = self._method_cache[id(obj)]
+        except KeyError:
+            pass
+        else:
+            return _method
 
         dispatch = self.dispatcher.dispatch
         funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
@@ -1057,12 +1054,12 @@ class singledispatchmethod:
                                 '1 positional argument')
             return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
+        _method.__self_reference = _method # create strong reference to _method. see gh-127751
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
+        self._method_cache[id(obj)] = _method
 
         return _method
 
