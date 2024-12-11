@@ -60,6 +60,7 @@ __all__ = [
     "skip_on_s390x",
     "without_optimizer",
     "force_not_colorized",
+    "force_not_colorized_test_class",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     ]
@@ -2853,6 +2854,44 @@ def force_not_colorized(func):
                 if value is not None:
                     os.environ[key] = value
     return wrapper
+
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal not to be colorized."""
+    original_setup = cls.setUp
+    original_teardown = cls.tearDown
+
+    @functools.wraps(cls.setUp)
+    def setUp_wrapper(self, *args, **kwargs):
+        import _colorize
+
+        self._original_fn = _colorize.can_colorize
+        self._variables: dict[str, str | None] = {
+            "PYTHON_COLORS": None,
+            "FORCE_COLOR": None,
+            "NO_COLOR": None,
+        }
+        for key in self._variables:
+            self._variables[key] = os.environ.pop(key, None)
+        os.environ["NO_COLOR"] = "1"
+        _colorize.can_colorize = lambda: False
+        return original_setup(self, *args, **kwargs)
+
+    @functools.wraps(cls.tearDown)
+    def tearDown_wrapper(self, *args, **kwargs):
+        import _colorize
+
+        _colorize.can_colorize = self._original_fn
+        del os.environ["NO_COLOR"]
+        for key, value in self._variables.items():
+            if value is not None:
+                os.environ[key] = value
+        return original_teardown(self, *args, **kwargs)
+
+    cls.setUp = setUp_wrapper
+    cls.tearDown = tearDown_wrapper
+    return cls
 
 
 def initialized_with_pyrepl():
