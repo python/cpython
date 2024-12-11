@@ -87,7 +87,7 @@ Interactive input
 
 Input in interactive mode is parsed using the following grammar:
 
-... grammar-snippet::
+.. grammar-snippet::
    :group: python-grammar
 
    interactive_input: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE
