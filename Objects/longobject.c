@@ -3617,7 +3617,7 @@ _long_is_small_int(PyObject *op)
 {
     PyLongObject *long_object = (PyLongObject *)op;
 
-    return (int)(long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK);
+    return (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
 }
 
 static void
