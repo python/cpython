@@ -728,6 +728,29 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
+    def test_invalid_headers(self):
+        invalid_headers = [
+            ('Invalid Header', 'contains space'),
+            ('Tab\tHeader', 'contains tab'),
+            ('Colon:Header', 'contains colon'),
+            ('', 'Empty name'),
+            (' LeadingSpace', 'starts with space'),
+            ('TrailingSpace ', 'ends with space'),
+        ]
+        for name, value in invalid_headers:
+            with self.assertRaises(ValueError) as cm:
+               Message().add_header(name, value)
+            self.assertIn("Invalid header field name", str(cm.exception))
+
+        invalid_headers = [
+            ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x1F', 'control character'),
+        ]
+        for name, value in invalid_headers:
+            with self.assertRaises(ValueError) as cm:
+               Message().add_header(name, value)
+            self.assertIn(f"Header field name {name!r} contains invalid characters", str(cm.exception))
+
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
             msg = Message()

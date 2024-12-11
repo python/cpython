@@ -1,0 +1,2 @@
+The :meth:`email.message.Message.add_header` method now validates header
+field names according to :rfc:`5322`.
