@@ -1749,7 +1749,7 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
     return -1;
 }
 
-/* Writes the node and ougoing edges for a single tracelet in graphviz format.
+/* Writes the node and outgoing edges for a single tracelet in graphviz format.
  * Each tracelet is presented as a table of the uops it contains.
  * If Py_STATS is enabled, execution counts are included.
  *
@@ -1776,7 +1776,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
         fprintf(out, ": %d</td></tr>\n", line);
     }
     for (uint32_t i = 0; i < executor->code_size; i++) {
-        /* Write row for uop. Each row has a port, for incoming edges */
+        /* Write row for uop. Each row has a port, for outgoing edges */
         _PyUOpInstruction const *inst = &executor->trace[i];
         const char *opname = _PyOpcode_uop_name[inst->opcode];
 #ifdef Py_STATS
