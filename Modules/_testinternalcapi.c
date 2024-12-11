@@ -2081,6 +2081,7 @@ get_tracked_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromInt64(PyInterpreterState_Get()->gc.heap_size);
 }
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
