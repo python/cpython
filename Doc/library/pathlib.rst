@@ -1177,6 +1177,39 @@ Querying file type and status
    .. versionadded:: 3.5
 
 
+.. attribute:: Path.status
+
+   A :class:`~pathlib.types.Status` object that supports querying file type
+   information. The object exposes methods that cache their results, which can
+   help reduce the number of system calls needed when switching on file type.
+   For example::
+
+      >>> p = Path('src')
+      >>> if p.status.is_symlink():
+      ...     print('symlink')
+      ... elif p.status.is_dir():
+      ...     print('directory')
+      ... else:
+      ...     print('other')
+      ...
+      directory
+
+   If the path was generated from :meth:`Path.iterdir` then this attribute is
+   an :class:`os.DirEntry` instance. These objects are initialized with some
+   information about the file type; see the :func:`os.scandir` docs for
+   details. In other cases, this attribute is an instance of an internal
+   pathlib class which initially knows nothing about the file status. In
+   either case, merely accessing :attr:`Path.status` does not perform any
+   filesystem queries.
+
+   To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
+   :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
+   this attribute. There is no way to reset the cache; instead you can create
+   a new path object with an empty status cache via ``p = Path(p)``.
+
+   .. versionadded:: 3.14
+
+
 Reading and writing files
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1903,3 +1936,48 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. [4] :func:`os.walk` always follows symlinks when categorizing paths into
    *dirnames* and *filenames*, whereas :meth:`Path.walk` categorizes all
    symlinks into *filenames* when *follow_symlinks* is false (the default.)
+
+
+Protocols
+---------
+
+.. module:: pathlib.types
+   :synopsis: pathlib types for static type checking
+
+
+The :mod:`pathlib.types` module provides types for static type checking.
+
+.. versionadded:: 3.14
+
+
+.. class:: Status()
+
+   A :class:`typing.Protocol` describing the
+   :attr:`Path.status <pathlib.Path.status>` attribute. Implementations may
+   return cached results from their methods.
+
+   .. method:: is_dir(*, follow_symlinks=True)
+
+      Return ``True`` if this status is a directory or a symbolic link
+      pointing to a directory; return ``False`` if the status is or points to
+      any other kind of file, or if it doesn’t exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if this status
+      is a directory (without following symlinks); return ``False`` if the
+      status is any other kind of file or if it doesn’t exist.
+
+   .. method:: is_file(*, follow_symlinks=True)
+
+      Return ``True`` if this status is a file or a symbolic link pointing to
+      a file; return ``False`` if the status is or points to a directory or
+      other non-file, or if it doesn’t exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if this status
+      is a file (without following symlinks); return ``False`` if the status
+      is a directory or other other non-file, or if it doesn’t exist.
+
+   .. method:: is_symlink()
+
+      Return ``True`` if this status is a symbolic link (even if broken);
+      return ``False`` if the status points to a directory or any kind of
+      file, or if it doesn’t exist.
