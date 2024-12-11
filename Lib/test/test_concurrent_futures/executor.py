@@ -1,3 +1,4 @@
+import itertools
 import threading
 import time
 import weakref
@@ -70,6 +71,54 @@ class ExecutorTest:
             self.fail('expected TimeoutError')
 
         self.assertEqual([None, None], results)
+
+    def test_map_with_buffersize(self):
+        iterable = range(4)
+        with self.assertRaisesRegex(ValueError, "buffersize must be None or > 0"):
+            self.executor.map(bool, iterable, buffersize=0)
+        self.assertEqual(
+            list(self.executor.map(str, iterable, buffersize=1)),
+            ["0", "1", "2", "3"],
+        )
+        self.assertEqual(
+            list(self.executor.map(str, iterable, buffersize=2)),
+            ["0", "1", "2", "3"],
+        )
+
+        # test with multiple input iterables
+        self.assertEqual(
+            list(self.executor.map(int.__add__, iterable, iterable, buffersize=2)),
+            [0, 2, 4, 6],
+        )
+
+        # test without input iterable
+        no_result = self.executor.map(bool, buffersize=2)
+        with self.assertRaises(StopIteration):
+            next(no_result)
+
+    def test_map_with_buffersize_on_infinite_iterable(self):
+        results = self.executor.map(str, itertools.count(1), buffersize=1)
+        self.assertEqual(next(iter(results)), "1")
+
+    def test_map_with_buffersize_on_iterable_smaller_than_buffer(self):
+        iterable = range(2)
+        results = self.executor.map(str, iterable, buffersize=8)
+        self.assertListEqual(list(results), ["0", "1"])
+
+    def test_map_with_buffersize_on_empty_iterable(self):
+        results = self.executor.map(str, [], buffersize=8)
+        self.assertListEqual(list(results), [])
+
+    def test_map_with_buffersize_when_buffer_becomes_full(self):
+        iterator = iter(range(8))
+        buffersize = 4
+        self.executor.map(str, iterator, buffersize=buffersize)
+        self.executor.shutdown(wait=True)
+        self.assertEqual(
+            next(iterator),
+            buffersize,
+            msg="only the first `buffersize` elements should be processed",
+        )
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
