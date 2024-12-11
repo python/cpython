@@ -2164,6 +2164,25 @@ class MiscTestCase(unittest.TestCase):
                 self.assertEqual(work_name, expected,
                                  f"{len(work_name)=} and {len(expected)=}")
 
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_change_name(self):
+        # Change the name of a thread while the thread is running
+
+        name1 = None
+        name2 = None
+        def work():
+            nonlocal name1, name2
+            name1 = _thread._get_name()
+            threading.current_thread().name = "new name"
+            name2 = _thread._get_name()
+
+        thread = threading.Thread(target=work, name="name")
+        thread.start()
+        thread.join()
+        self.assertEqual(name1, "name")
+        self.assertEqual(name2, "new name")
+
 
 class InterruptMainTests(unittest.TestCase):
     def check_interrupt_main_with_signal_handler(self, signum):
