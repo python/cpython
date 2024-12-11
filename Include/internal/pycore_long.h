@@ -263,8 +263,6 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
-#define IMMORTAL_BIT(val) (((-_PY_NSMALLNEGINTS <= val) && (val < _PY_NSMALLPOSINTS)) * IMMORTALITY_BIT_MASK)
-
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) \
     ((uintptr_t)(1 - (sign)) | ((uintptr_t)(size) << NON_SIZE_BITS))
 
@@ -299,7 +297,7 @@ _PyLong_FlipSign(PyLongObject *op) {
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
-                (val) == 0 ? 0 : 1) | IMMORTAL_BIT(val), \
+                (val) == 0 ? 0 : 1) | IMMORTALITY_BIT_MASK, \
             { ((val) >= 0 ? (val) : -(val)) }, \
         } \
     }
