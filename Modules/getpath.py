@@ -593,6 +593,13 @@ else:
         if prefix and not stdlib_dir:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
 
+    # Note: the `home` variable in pyvenv.cfg is not always accurate.
+    # Detect prefix by searching from *real* executable location for the stdlib_dir.
+    if STDLIB_SUBDIR and STDLIB_LANDMARKS and base_executable and not prefix:
+        prefix = search_up(base_executable, *STDLIB_LANDMARKS)
+        if prefix and not stdlib_dir:
+            stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
+
     if PREFIX and not prefix:
         prefix = PREFIX
         if not any(isfile(joinpath(prefix, f)) for f in STDLIB_LANDMARKS):
@@ -612,6 +619,9 @@ else:
             exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if not exec_prefix and base_executable:
+            base_executable_dir = dirname(base_executable)
+            exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
