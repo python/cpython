@@ -5,7 +5,8 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._types import Parser
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -31,22 +32,6 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
-
-class ParserBaseTest(unittest.TestCase):
-    cls = ParserBase
-
-    def test_unsupported_operation(self):
-        m = self.cls()
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            m.sep
-        self.assertRaises(e, m.join, 'foo')
-        self.assertRaises(e, m.split, 'foo')
-        self.assertRaises(e, m.splitdrive, 'foo')
-        self.assertRaises(e, m.splitext, 'foo')
-        self.assertRaises(e, m.normcase, 'foo')
-        self.assertRaises(e, m.isabs, 'foo')
-
 #
 # Tests for the pure classes.
 #
@@ -54,37 +39,6 @@ class ParserBaseTest(unittest.TestCase):
 
 class PurePathBaseTest(unittest.TestCase):
     cls = PurePathBase
-
-    def test_unsupported_operation_pure(self):
-        p = self.cls('foo')
-        e = UnsupportedOperation
-        with self.assertRaises(e):
-            p.drive
-        with self.assertRaises(e):
-            p.root
-        with self.assertRaises(e):
-            p.anchor
-        with self.assertRaises(e):
-            p.parts
-        with self.assertRaises(e):
-            p.parent
-        with self.assertRaises(e):
-            p.parents
-        with self.assertRaises(e):
-            p.name
-        with self.assertRaises(e):
-            p.stem
-        with self.assertRaises(e):
-            p.suffix
-        with self.assertRaises(e):
-            p.suffixes
-        self.assertRaises(e, p.with_name, 'bar')
-        self.assertRaises(e, p.with_stem, 'bar')
-        self.assertRaises(e, p.with_suffix, '.txt')
-        self.assertRaises(e, p.relative_to, '')
-        self.assertRaises(e, p.is_relative_to, '')
-        self.assertRaises(e, p.is_absolute)
-        self.assertRaises(e, p.match, '*')
 
     def test_magic_methods(self):
         P = self.cls
@@ -100,12 +54,11 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
     def test_parser(self):
-        self.assertIsInstance(self.cls.parser, ParserBase)
+        self.assertIs(self.cls.parser, posixpath)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
-    parser = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -135,6 +88,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.parser = p.parser
         self.sep = self.parser.sep
         self.altsep = self.parser.altsep
+
+    def test_parser(self):
+        self.assertIsInstance(self.cls.parser, Parser)
 
     def test_constructor_common(self):
         P = self.cls
@@ -1344,23 +1300,17 @@ class PathBaseTest(PurePathBaseTest):
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.exists)
-        self.assertRaises(e, p.samefile, 'foo')
         self.assertRaises(e, p.is_dir)
         self.assertRaises(e, p.is_file)
-        self.assertRaises(e, p.is_mount)
         self.assertRaises(e, p.is_symlink)
-        self.assertRaises(e, p.is_block_device)
-        self.assertRaises(e, p.is_char_device)
-        self.assertRaises(e, p.is_fifo)
-        self.assertRaises(e, p.is_socket)
         self.assertRaises(e, p.open)
         self.assertRaises(e, p.read_bytes)
         self.assertRaises(e, p.read_text)
         self.assertRaises(e, p.write_bytes, b'foo')
         self.assertRaises(e, p.write_text, 'foo')
         self.assertRaises(e, p.iterdir)
-        self.assertRaises(e, p.glob, '*')
-        self.assertRaises(e, p.rglob, '*')
+        self.assertRaises(e, lambda: list(p.glob('*')))
+        self.assertRaises(e, lambda: list(p.rglob('*')))
         self.assertRaises(e, lambda: list(p.walk()))
         self.assertRaises(e, p.expanduser)
         self.assertRaises(e, p.readlink)
@@ -1370,8 +1320,6 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.touch)
         self.assertRaises(e, p.chmod, 0o755)
         self.assertRaises(e, p.lchmod, 0o755)
-        self.assertRaises(e, p.unlink)
-        self.assertRaises(e, p.rmdir)
         self.assertRaises(e, p.owner)
         self.assertRaises(e, p.group)
         self.assertRaises(e, p.as_uri)
@@ -1413,7 +1361,6 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
-    parser = posixpath
 
     _files = {}
     _directories = {}
@@ -1493,31 +1440,18 @@ class DummyPath(PathBase):
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
-    def unlink(self, missing_ok=False):
-        path = str(self)
-        name = self.name
-        parent = str(self.parent)
-        if path in self._directories:
-            raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
-        elif path in self._files:
-            self._directories[parent].remove(name)
-            del self._files[path]
-        elif not missing_ok:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
-
-    def rmdir(self):
+    def _delete(self):
         path = str(self)
         if path in self._files:
-            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
-        elif path not in self._directories:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
-        elif self._directories[path]:
-            raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
-        else:
-            name = self.name
-            parent = str(self.parent)
-            self._directories[parent].remove(name)
+            del self._files[path]
+        elif path in self._directories:
+            for name in list(self._directories[path]):
+                self.joinpath(name)._delete()
             del self._directories[path]
+        else:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+        parent = str(self.parent)
+        self._directories[parent].remove(self.name)
 
 
 class DummyPathTest(DummyPurePathTest):
@@ -1594,27 +1528,6 @@ class DummyPathTest(DummyPurePathTest):
     def assertEqualNormCase(self, path_a, path_b):
         normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))
-
-    def test_samefile(self):
-        parser = self.parser
-        fileA_path = parser.join(self.base, 'fileA')
-        fileB_path = parser.join(self.base, 'dirB', 'fileB')
-        p = self.cls(fileA_path)
-        pp = self.cls(fileA_path)
-        q = self.cls(fileB_path)
-        self.assertTrue(p.samefile(fileA_path))
-        self.assertTrue(p.samefile(pp))
-        self.assertFalse(p.samefile(fileB_path))
-        self.assertFalse(p.samefile(q))
-        # Test the non-existent file case
-        non_existent = parser.join(self.base, 'foo')
-        r = self.cls(non_existent)
-        self.assertRaises(FileNotFoundError, p.samefile, r)
-        self.assertRaises(FileNotFoundError, p.samefile, non_existent)
-        self.assertRaises(FileNotFoundError, r.samefile, p)
-        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
-        self.assertRaises(FileNotFoundError, r.samefile, r)
-        self.assertRaises(FileNotFoundError, r.samefile, non_existent)
 
     def test_exists(self):
         P = self.cls
@@ -2175,15 +2088,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
         self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
 
-    def test_is_mount(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_mount())
-        self.assertFalse((P / 'dirA').is_mount())
-        self.assertFalse((P / 'non-existing').is_mount())
-        self.assertFalse((P / 'fileA' / 'bah').is_mount())
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_mount())
-
     def test_is_symlink(self):
         P = self.cls(self.base)
         self.assertFalse((P / 'fileA').is_symlink())
@@ -2200,75 +2104,11 @@ class DummyPathTest(DummyPurePathTest):
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
-    def test_is_junction_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_junction())
-        self.assertFalse((P / 'dirA').is_junction())
-        self.assertFalse((P / 'non-existing').is_junction())
-        self.assertFalse((P / 'fileA' / 'bah').is_junction())
-        self.assertFalse((P / 'fileA\udfff').is_junction())
-        self.assertFalse((P / 'fileA\x00').is_junction())
-
-    def test_is_fifo_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_fifo())
-        self.assertFalse((P / 'dirA').is_fifo())
-        self.assertFalse((P / 'non-existing').is_fifo())
-        self.assertFalse((P / 'fileA' / 'bah').is_fifo())
-        self.assertIs((P / 'fileA\udfff').is_fifo(), False)
-        self.assertIs((P / 'fileA\x00').is_fifo(), False)
-
-    def test_is_socket_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_socket())
-        self.assertFalse((P / 'dirA').is_socket())
-        self.assertFalse((P / 'non-existing').is_socket())
-        self.assertFalse((P / 'fileA' / 'bah').is_socket())
-        self.assertIs((P / 'fileA\udfff').is_socket(), False)
-        self.assertIs((P / 'fileA\x00').is_socket(), False)
-
-    def test_is_block_device_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_block_device())
-        self.assertFalse((P / 'dirA').is_block_device())
-        self.assertFalse((P / 'non-existing').is_block_device())
-        self.assertFalse((P / 'fileA' / 'bah').is_block_device())
-        self.assertIs((P / 'fileA\udfff').is_block_device(), False)
-        self.assertIs((P / 'fileA\x00').is_block_device(), False)
-
-    def test_is_char_device_false(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_char_device())
-        self.assertFalse((P / 'dirA').is_char_device())
-        self.assertFalse((P / 'non-existing').is_char_device())
-        self.assertFalse((P / 'fileA' / 'bah').is_char_device())
-        self.assertIs((P / 'fileA\udfff').is_char_device(), False)
-        self.assertIs((P / 'fileA\x00').is_char_device(), False)
-
-    def test_unlink(self):
-        p = self.cls(self.base) / 'fileA'
-        p.unlink()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
-
-    def test_unlink_missing_ok(self):
-        p = self.cls(self.base) / 'fileAAA'
-        self.assertFileNotFound(p.unlink)
-        p.unlink(missing_ok=True)
-
-    def test_rmdir(self):
-        p = self.cls(self.base) / 'dirA'
-        for q in p.iterdir():
-            q.unlink()
-        p.rmdir()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
-
     def test_delete_file(self):
         p = self.cls(self.base) / 'fileA'
         p._delete()
         self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
+        self.assertFileNotFound(p._delete)
 
     def test_delete_dir(self):
         base = self.cls(self.base)
@@ -2347,7 +2187,7 @@ class DummyPathWalkTest(unittest.TestCase):
 
     def tearDown(self):
         base = self.cls(self.base)
-        base._rmtree()
+        base._delete()
 
     def test_walk_topdown(self):
         walker = self.walk_path.walk()
