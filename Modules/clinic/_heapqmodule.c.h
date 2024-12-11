@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_heapq_heappush__doc__,
@@ -146,6 +147,68 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_heapq_heapremove__doc__,
+"heapremove($module, heap, index, item=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Remove the element at the given index maintaining the heap invariant.\n"
+"\n"
+"An optional item can be provided to replace the removed item. The removed\n"
+"item is returned.\n"
+"This can be used to efficiently remove an item from the heap or\n"
+"to readjust the heap when the comparative \"value\" of\n"
+"an item changes by removing and re-inserting the same item, e.g:\n"
+"\n"
+"    item.value=new_value\n"
+"    idx = heap.index(item)\n"
+"    heapq.heapremove(heap, idx, item)");
+
+#define _HEAPQ_HEAPREMOVE_METHODDEF    \
+    {"heapremove", _PyCFunction_CAST(_heapq_heapremove), METH_FASTCALL, _heapq_heapremove__doc__},
+
+static PyObject *
+_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
+                       PyObject *item);
+
+static PyObject *
+_heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    Py_ssize_t index;
+    PyObject *item = NULL;
+
+    if (!_PyArg_CheckPositional("heapremove", nargs, 2, 3)) {
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heapremove", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    item = args[2];
+skip_optional:
+    return_value = _heapq_heapremove_impl(module, heap, index, item);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_heapq_heapify__doc__,
 "heapify($module, heap, /)\n"
 "--\n"
@@ -267,4 +330,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10ce297f0322c817 input=a9049054013a1b77]*/
