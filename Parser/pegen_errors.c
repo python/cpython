@@ -276,7 +276,7 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
         assert(p->tok->fp_interactive);
         // We can reach this point if the tokenizer buffers for interactive source have not been
         // initialized because we failed to decode the original source with the given locale.
-        return PyUnicode_FromStringAndSize("", 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
@@ -359,7 +359,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
             error_line = get_error_line_from_tokenizer_buffers(p, lineno);
         }
         else {
-            error_line = PyUnicode_FromStringAndSize("", 0);
+            error_line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
         if (!error_line) {
             goto error;

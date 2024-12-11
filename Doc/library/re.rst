@@ -572,6 +572,12 @@ character ``'$'``.
    Word boundaries are determined by the current locale
    if the :py:const:`~re.LOCALE` flag is used.
 
+   .. note::
+
+      Note that ``\B`` does not match an empty string, which differs from
+      RE implementations in other programming languages such as Perl.
+      This behavior is kept for compatibility reasons.
+
 .. index:: single: \d; in regular expressions
 
 ``\d``
@@ -600,10 +606,9 @@ character ``'$'``.
 
 ``\s``
    For Unicode (str) patterns:
-      Matches Unicode whitespace characters (which includes
-      ``[ \t\n\r\f\v]``, and also many other characters, for example the
-      non-breaking spaces mandated by typography rules in many
-      languages).
+      Matches Unicode whitespace characters (as defined by :py:meth:`str.isspace`).
+      This includes ``[ \t\n\r\f\v]``, and also many other characters, for example the
+      non-breaking spaces mandated by typography rules in many languages.
 
       Matches ``[ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 

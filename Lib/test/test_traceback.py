@@ -150,7 +150,7 @@ class TracebackCases(unittest.TestCase):
             import traceback
             try:
                 x = 1 / 0
-            except:
+            except ZeroDivisionError:
                 traceback.print_exc()
             """)
         try:
@@ -550,9 +550,10 @@ class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         try:
             callable()
-            self.fail("No exception thrown.")
-        except:
+        except BaseException:
             return traceback.format_exc().splitlines()[slice_start:slice_end]
+        else:
+            self.fail("No exception thrown.")
 
     callable_line = get_exception.__code__.co_firstlineno + 2
 
@@ -2096,6 +2097,7 @@ class TracebackFormatMixin:
         return e
 
     @cpython_only
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_capi(self):
         from _testcapi import exception_print
         LIMIT = 75
@@ -2107,6 +2109,7 @@ class TracebackFormatMixin:
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()
@@ -2237,7 +2240,7 @@ class BaseExceptionReportingTests:
         try:
             try:
                 raise Exception
-            except:
+            except Exception:
                 raise ZeroDivisionError from None
         except ZeroDivisionError as _:
             e = _
@@ -2589,9 +2592,9 @@ class BaseExceptionReportingTests:
             try:
                 try:
                     raise EG("eg1", [ValueError(1), TypeError(2)])
-                except:
+                except EG:
                     raise EG("eg2", [ValueError(3), TypeError(4)])
-            except:
+            except EG:
                 raise ImportError(5)
 
         expected = (
@@ -2641,7 +2644,7 @@ class BaseExceptionReportingTests:
                 except Exception as e:
                     exc = e
                 raise EG("eg", [VE(1), exc, VE(4)])
-            except:
+            except EG:
                 raise EG("top", [VE(5)])
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
@@ -3307,6 +3310,41 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+
+        # statement to execute and to get a ZeroDivisionError for a traceback
+        statement = "abcdef = 1 / 0 and 2.0"
+        colno = statement.index('1 / 0')
+        end_colno = colno + len('1 / 0')
+
+        # Actual line to use when rendering the traceback
+        # and whose AST will be extracted (it will be empty).
+        cached_line = '# this line will be used during rendering'
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as file:
+            file.write(cached_line)
+        linecache.updatecache(TESTFN, {})
+
+        try:
+            exec(compile(statement, TESTFN, "exec"))
+        except ZeroDivisionError as exc:
+            # This is the simplest way to create a StackSummary
+            # whose FrameSummary items have their column offsets.
+            s = traceback.TracebackException.from_exception(exc).stack
+            self.assertIsInstance(s, traceback.StackSummary)
+            with unittest.mock.patch.object(s, '_should_show_carets',
+                                            wraps=s._should_show_carets) as ff:
+                self.assertEqual(len(s), 2)
+                self.assertListEqual(
+                    s.format_frame_summary(s[1]).splitlines(),
+                    [
+                        f'  File "{TESTFN}", line 1, in <module>',
+                        f'    {cached_line}'
+                     ]
+                )
+                ff.assert_called_with(colno, end_colno, [cached_line], None)
+
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
@@ -3419,7 +3457,7 @@ class TestTracebackException(unittest.TestCase):
         def f():
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 f()
 
         try:
@@ -3523,7 +3561,7 @@ class TestTracebackException(unittest.TestCase):
         def raise_exc():
             try:
                 raise ValueError('bad value')
-            except:
+            except ValueError:
                 raise
 
         def raise_with_locals():
@@ -4452,9 +4490,8 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
-        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_') or name in denylist:
+            if name.startswith('_'):
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
@@ -4601,6 +4638,49 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
+    def test_colorized_traceback_from_exception_group(self):
+        def foo():
+            exceptions = []
+            try:
+                1 / 0
+            except ZeroDivisionError as inner_exc:
+                exceptions.append(inner_exc)
+            raise ExceptionGroup("test", exceptions)
+
+        try:
+            foo()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
+        lno_foo = foo.__code__.co_firstlineno
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        expected = [f"  + Exception Group Traceback (most recent call last):",
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
+                   f'  |     {red}foo{reset}{boldr}(){reset}',
+                   f'  |     {red}~~~{reset}{boldr}^^{reset}',
+                   f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                   f"  |     foo = {foo}",
+                   f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
+                   f'  |     raise ExceptionGroup("test", exceptions)',
+                   f"  |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'  | {boldm}ExceptionGroup{reset}: {magenta}test (1 sub-exception){reset}',
+                   f'  +-+---------------- 1 ----------------',
+                   f'    | Traceback (most recent call last):',
+                   f'    |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+3}{reset}, in {magenta}foo{reset}',
+                   f'    |     {red}1 {reset}{boldr}/{reset}{red} 0{reset}',
+                   f'    |     {red}~~{reset}{boldr}^{reset}{red}~~{reset}',
+                   f"    |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'    | {boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}',
+                   f'    +------------------------------------']
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()

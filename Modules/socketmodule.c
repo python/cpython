@@ -810,7 +810,9 @@ internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
 
     /* s->sock_timeout is in seconds, timeout in ms */
     ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
-    assert(ms <= INT_MAX);
+    if (ms > INT_MAX) {
+        ms = INT_MAX;
+    }
 
     /* On some OSes, typically BSD-based ones, the timeout parameter of the
        poll() syscall, when negative, must be exactly INFTIM, where defined,
@@ -822,6 +824,7 @@ internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
         ms = -1;
 #endif
     }
+    assert(INT_MIN <= ms && ms <= INT_MAX);
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
@@ -3166,6 +3169,17 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            int dummy;
+            res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
+                           sizeof(flag), NULL, 0, &dummy, NULL, NULL);
+            if (res >= 0) {
+                s->quickack = flag;
+            }
+            goto done;
+        }
+#endif
         res = setsockopt(s->sock_fd, level, optname,
                          (char*)&flag, sizeof flag);
         goto done;
@@ -3250,6 +3264,11 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             if (res < 0)
                 return s->errorhandler();
             return PyLong_FromUnsignedLong(vflag);
+        }
+#endif
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            return PyLong_FromLong(s->quickack);
         }
 #endif
         flagsize = sizeof flag;
@@ -3405,6 +3424,18 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Common functionality for socket.connect and socket.connect_ex.
+ *
+ * If *raise* is set:
+ * - On success, return 0.
+ * - On any failure, return -1 with an exception set.
+ * If *raise* is zero:
+ * - On success, return 0.
+ * - On connect() failure, return errno (without an exception set)
+ * - On other error, return -1 with an exception set.
+ *
+ *   Note that -1 is a valid errno value on some systems.
+ */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3489,8 +3520,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -3520,8 +3553,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     return PyLong_FromLong((long) res);
 }
@@ -5316,6 +5350,9 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+#ifdef MS_WINDOWS
+        ((PySocketSockObject *)new)->quickack = 0;
+#endif
     }
     return new;
 }
@@ -5602,7 +5639,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
         return PyErr_SetFromWindowsErr(0);
 
     if (size == 0)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
@@ -7557,35 +7594,19 @@ socket_exec(PyObject *m)
     /*  */
     ADD_INT_MACRO(m, AF_NETLINK);
     ADD_INT_MACRO(m, NETLINK_ROUTE);
-#ifdef NETLINK_SKIP
-    ADD_INT_MACRO(m, NETLINK_SKIP);
-#endif
-#ifdef NETLINK_W1
-    ADD_INT_MACRO(m, NETLINK_W1);
-#endif
     ADD_INT_MACRO(m, NETLINK_USERSOCK);
     ADD_INT_MACRO(m, NETLINK_FIREWALL);
-#ifdef NETLINK_TCPDIAG
-    ADD_INT_MACRO(m, NETLINK_TCPDIAG);
-#endif
 #ifdef NETLINK_NFLOG
     ADD_INT_MACRO(m, NETLINK_NFLOG);
 #endif
 #ifdef NETLINK_XFRM
     ADD_INT_MACRO(m, NETLINK_XFRM);
 #endif
-#ifdef NETLINK_ARPD
-    ADD_INT_MACRO(m, NETLINK_ARPD);
-#endif
-#ifdef NETLINK_ROUTE6
-    ADD_INT_MACRO(m, NETLINK_ROUTE6);
-#endif
+#ifdef NETLINK_IP6_FW
     ADD_INT_MACRO(m, NETLINK_IP6_FW);
+#endif
 #ifdef NETLINK_DNRTMSG
     ADD_INT_MACRO(m, NETLINK_DNRTMSG);
-#endif
-#ifdef NETLINK_TAPBASE
-    ADD_INT_MACRO(m, NETLINK_TAPBASE);
 #endif
 #ifdef NETLINK_CRYPTO
     ADD_INT_MACRO(m, NETLINK_CRYPTO);
@@ -7886,6 +7907,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  SO_OOBINLINE
     ADD_INT_MACRO(m, SO_OOBINLINE);
+#endif
+#ifdef  SO_ORIGINAL_DST
+    ADD_INT_MACRO(m, SO_ORIGINAL_DST);
 #endif
 #ifndef __GNU__
 #ifdef  SO_REUSEPORT
@@ -8541,6 +8565,9 @@ socket_exec(PyObject *m)
 #ifdef IPV6_RECVDSTOPTS
     ADD_INT_MACRO(m, IPV6_RECVDSTOPTS);
 #endif
+#ifdef IPV6_RECVERR
+    ADD_INT_MACRO(m, IPV6_RECVERR);
+#endif
 #ifdef IPV6_RECVHOPLIMIT
     ADD_INT_MACRO(m, IPV6_RECVHOPLIMIT);
 #endif
@@ -8615,6 +8642,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  TCP_CONNECTION_INFO
     ADD_INT_MACRO(m, TCP_CONNECTION_INFO);
+#endif
+#ifdef  SIO_TCP_SET_ACK_FREQUENCY
+#define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
 #endif
 #ifdef  TCP_QUICKACK
     ADD_INT_MACRO(m, TCP_QUICKACK);

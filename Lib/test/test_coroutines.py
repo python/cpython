@@ -1185,7 +1185,7 @@ class CoroutineTest(unittest.TestCase):
         async def g():
             try:
                 raise KeyError
-            except:
+            except KeyError:
                 return await f()
 
         _, result = run_async(g())

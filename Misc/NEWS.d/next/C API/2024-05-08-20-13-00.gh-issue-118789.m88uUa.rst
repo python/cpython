@@ -1,2 +1,0 @@
-Restore ``_PyWeakref_ClearRef`` that was previously removed in Python 3.13
-alpha 1.

@@ -106,7 +106,7 @@ for t in (types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref):
+          weakref.ref, super):
     d[t] = _copy_immutable
 
 d[list] = list.copy

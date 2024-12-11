@@ -403,7 +403,7 @@ after encoding it to utf-8, not before.
 .. nonce: pDZR6V
 .. section: Library
 
-Added :meth:`pathlib.Path.with_stem()` to create a new Path with the stem
+Added :meth:`pathlib.Path.with_stem` to create a new Path with the stem
 replaced.
 
 ..
@@ -866,7 +866,7 @@ of source of the class. Patch by Karthikeyan Singaravelan.
 .. nonce: vHC7YQ
 .. section: Library
 
-Deprecate passing None as an argument for :func:`shlex.split()`'s ``s``
+Deprecate passing None as an argument for :func:`shlex.split`'s ``s``
 parameter.  Patch by Zackery Spytz.
 
 ..

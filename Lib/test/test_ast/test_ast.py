@@ -10,6 +10,7 @@ import textwrap
 import types
 import unittest
 import weakref
+from pathlib import Path
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -17,7 +18,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -28,6 +29,16 @@ from test.test_ast.snippets import (
 STDLIB = os.path.dirname(ast.__file__)
 STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
 STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
+
+AST_REPR_DATA_FILE = Path(__file__).parent / "data" / "ast_repr.txt"
+
+def ast_repr_get_test_cases() -> list[str]:
+    return exec_tests + eval_tests
+
+
+def ast_repr_update_snapshots() -> None:
+    data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
+    AST_REPR_DATA_FILE.write_text("\n".join(data))
 
 
 class AST_Tests(unittest.TestCase):
@@ -72,6 +83,23 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    def test_AST_fields_NULL_check(self):
+        # See: https://github.com/python/cpython/issues/126105
+        old_value = ast.AST._fields
+
+        def cleanup():
+            ast.AST._fields = old_value
+        self.addCleanup(cleanup)
+
+        del ast.AST._fields
+
+        msg = "type object 'ast.AST' has no attribute '_fields'"
+        # Both examples used to crash:
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST(arg1=123)
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST()
 
     def test_AST_garbage_collection(self):
         class X:
@@ -408,7 +436,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <ast.expr", str(cm.exception))
+        self.assertIn("but got expr()", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -717,6 +745,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
@@ -771,6 +800,19 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+    def test_repr(self) -> None:
+        snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
+        for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
+            with self.subTest(test_input=test):
+                self.assertEqual(repr(ast.parse(test)), snapshot)
+
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
 
 
 class CopyTests(unittest.TestCase):
@@ -1620,6 +1662,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1627,6 +1670,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2235,7 +2279,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
@@ -2279,7 +2323,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 
@@ -2287,7 +2331,7 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
+                  1000,
                   2.0,
                   3j,
                   "unicode",
@@ -3062,8 +3106,8 @@ class ASTOptimiziationTests(unittest.TestCase):
     def wrap_expr(self, expr):
         return ast.Module(body=[ast.Expr(value=expr)])
 
-    def wrap_for(self, for_statement):
-        return ast.Module(body=[for_statement])
+    def wrap_statement(self, statement):
+        return ast.Module(body=[statement])
 
     def assert_ast(self, code, non_optimized_target, optimized_target):
         non_optimized_tree = ast.parse(code, optimize=-1)
@@ -3090,16 +3134,16 @@ class ASTOptimiziationTests(unittest.TestCase):
             f"{ast.dump(optimized_tree)}",
         )
 
+    def create_binop(self, operand, left=ast.Constant(1), right=ast.Constant(1)):
+            return ast.BinOp(left=left, op=self.binop[operand], right=right)
+
     def test_folding_binop(self):
         code = "1 %s 1"
         operators = self.binop.keys()
 
-        def create_binop(operand, left=ast.Constant(1), right=ast.Constant(1)):
-            return ast.BinOp(left=left, op=self.binop[operand], right=right)
-
         for op in operators:
             result_code = code % op
-            non_optimized_target = self.wrap_expr(create_binop(op))
+            non_optimized_target = self.wrap_expr(self.create_binop(op))
             optimized_target = self.wrap_expr(ast.Constant(value=eval(result_code)))
 
             with self.subTest(
@@ -3111,7 +3155,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         # Multiplication of constant tuples must be folded
         code = "(1,) * 3"
-        non_optimized_target = self.wrap_expr(create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
+        non_optimized_target = self.wrap_expr(self.create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
         optimized_target = self.wrap_expr(ast.Constant(eval(code)))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
@@ -3222,12 +3266,12 @@ class ASTOptimiziationTests(unittest.TestCase):
         ]
 
         for left, right, ast_cls, optimized_iter in braces:
-            non_optimized_target = self.wrap_for(ast.For(
+            non_optimized_target = self.wrap_statement(ast.For(
                 target=ast.Name(id="_", ctx=ast.Store()),
                 iter=ast_cls(elts=[ast.Constant(1)]),
                 body=[ast.Pass()]
             ))
-            optimized_target = self.wrap_for(ast.For(
+            optimized_target = self.wrap_statement(ast.For(
                 target=ast.Name(id="_", ctx=ast.Store()),
                 iter=ast.Constant(value=optimized_iter),
                 body=[ast.Pass()]
@@ -3245,6 +3289,95 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
+    def test_folding_type_param_in_function_def(self):
+        code = "def foo[%s = 1 + 1](): pass"
 
-if __name__ == "__main__":
+        unoptimized_binop = self.create_binop("+")
+        unoptimized_type_params = [
+            ("T", "T", ast.TypeVar),
+            ("**P", "P", ast.ParamSpec),
+            ("*Ts", "Ts", ast.TypeVarTuple),
+        ]
+
+        for type, name, type_param in unoptimized_type_params:
+            result_code = code % type
+            optimized_target = self.wrap_statement(
+                ast.FunctionDef(
+                    name='foo',
+                    args=ast.arguments(),
+                    body=[ast.Pass()],
+                    type_params=[type_param(name=name, default_value=ast.Constant(2))]
+                )
+            )
+            non_optimized_target = self.wrap_statement(
+                ast.FunctionDef(
+                    name='foo',
+                    args=ast.arguments(),
+                    body=[ast.Pass()],
+                    type_params=[type_param(name=name, default_value=unoptimized_binop)]
+                )
+            )
+            self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+    def test_folding_type_param_in_class_def(self):
+        code = "class foo[%s = 1 + 1]: pass"
+
+        unoptimized_binop = self.create_binop("+")
+        unoptimized_type_params = [
+            ("T", "T", ast.TypeVar),
+            ("**P", "P", ast.ParamSpec),
+            ("*Ts", "Ts", ast.TypeVarTuple),
+        ]
+
+        for type, name, type_param in unoptimized_type_params:
+            result_code = code % type
+            optimized_target = self.wrap_statement(
+                ast.ClassDef(
+                    name='foo',
+                    body=[ast.Pass()],
+                    type_params=[type_param(name=name, default_value=ast.Constant(2))]
+                )
+            )
+            non_optimized_target = self.wrap_statement(
+                ast.ClassDef(
+                    name='foo',
+                    body=[ast.Pass()],
+                    type_params=[type_param(name=name, default_value=unoptimized_binop)]
+                )
+            )
+            self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+    def test_folding_type_param_in_type_alias(self):
+        code = "type foo[%s = 1 + 1] = 1"
+
+        unoptimized_binop = self.create_binop("+")
+        unoptimized_type_params = [
+            ("T", "T", ast.TypeVar),
+            ("**P", "P", ast.ParamSpec),
+            ("*Ts", "Ts", ast.TypeVarTuple),
+        ]
+
+        for type, name, type_param in unoptimized_type_params:
+            result_code = code % type
+            optimized_target = self.wrap_statement(
+                ast.TypeAlias(
+                    name=ast.Name(id='foo', ctx=ast.Store()),
+                    type_params=[type_param(name=name, default_value=ast.Constant(2))],
+                    value=ast.Constant(value=1),
+                )
+            )
+            non_optimized_target = self.wrap_statement(
+                ast.TypeAlias(
+                    name=ast.Name(id='foo', ctx=ast.Store()),
+                    type_params=[type_param(name=name, default_value=unoptimized_binop)],
+                    value=ast.Constant(value=1),
+                )
+            )
+            self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        ast_repr_update_snapshots()
+        sys.exit(0)
     unittest.main()
