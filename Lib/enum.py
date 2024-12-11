@@ -348,6 +348,7 @@ class EnumDict(dict):
         self._last_values = []
         self._ignore = []
         self._auto_called = False
+        self._cls_name = None
 
     def __setitem__(self, key, value):
         """
@@ -358,7 +359,7 @@ class EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_private(self._cls_name, key):
+        if self._cls_name is not None and _is_private(self._cls_name, key):
             # do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
@@ -406,7 +407,7 @@ class EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        elif _is_internal_class(self._cls_name, value):
+        elif self._cls_name is not None and _is_internal_class(self._cls_name, value):
             # do nothing, name will be a normal attribute
             pass
         else:
