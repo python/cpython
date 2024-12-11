@@ -2045,11 +2045,15 @@ none_repr(PyObject *op)
 static void
 none_dealloc(PyObject* none)
 {
+#ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref None out of existence. Instead,
-     * since None is an immortal object, re-set the reference count.
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since Notimplemented is an immortal object, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
      */
     _Py_SetImmortal(none);
+#endif
 }
 
 static PyObject *
@@ -2191,11 +2195,15 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 notimplemented_dealloc(PyObject *notimplemented)
 {
+#ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref NotImplemented out of existence. Instead,
      * since Notimplemented is an immortal object, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
      */
     _Py_SetImmortal(notimplemented);
+#endif
 }
 
 static int

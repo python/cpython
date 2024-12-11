@@ -3614,9 +3614,12 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 static void
 long_dealloc(PyObject *self)
 {
+#ifndef Py_GIL_DISABLED
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref small Ints out of existence. Instead,
      * since small Ints are immortal, re-set the reference count.
+     *
+     * See PEP 683, section Accidental De-Immortalizing for details
      */
     PyLongObject *pylong = (PyLongObject*)self;
     if (pylong && _PyLong_IsCompact(pylong)) {
@@ -3629,6 +3632,7 @@ long_dealloc(PyObject *self)
             }
         }
     }
+#endif
     Py_TYPE(self)->tp_free(self);
 }
 
