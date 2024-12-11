@@ -1564,7 +1564,8 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     }
 #endif
 
-    if (owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    unsigned long tp_flags = PyType_GetFlags(owner_cls);
+    if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
 #ifndef Py_GIL_DISABLED
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         assert(_PyDictKeys_StringLookup(keys, name) < 0);
@@ -1578,7 +1579,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     }
     else {
         Py_ssize_t dictoffset;
-        if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        if (tp_flags & Py_TPFLAGS_MANAGED_DICT) {
             dictoffset = MANAGED_DICT_OFFSET;
         }
         else {
