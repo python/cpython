@@ -3175,6 +3175,25 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
+_PyList_AsTupleAndClear(PyListObject *self)
+{
+    assert(self != NULL);
+    PyObject *ret;
+    if (self->ob_item == NULL) {
+        return PyTuple_New(0);
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    PyObject **items = self->ob_item;
+    Py_ssize_t size = Py_SIZE(self);
+    self->ob_item = NULL;
+    Py_SET_SIZE(self, 0);
+    ret = _PyTuple_FromArraySteal(items, size);
+    free_list_items(items, false);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
+PyObject *
 _PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
