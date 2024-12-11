@@ -909,8 +909,7 @@ class PyLongObjectPtr(PyObjectPtr):
                 - 0: Positive
                 - 1: Zero
                 - 2: Negative
-            The third lowest bit of lv_tag is reserved for an immortality flag, and is
-            set to 1 for the small ints.
+            The third lowest bit of lv_tag is set to 1 for the small ints and 0 otherwise.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
