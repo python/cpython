@@ -743,7 +743,7 @@ class TestMessageAPI(TestEmailBase):
             self.assertIn("Invalid header field name", str(cm.exception))
 
         invalid_headers = [
-             ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x7F', 'Non-ASCII character'),
             ('Header\x1F', 'control character'),
         ]
         for name, value in invalid_headers:
