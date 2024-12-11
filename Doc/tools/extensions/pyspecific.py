@@ -456,13 +456,13 @@ class DeprecatedRemoved(Directive):
                 'deprecated-removed:: second argument cannot be `next`')
         node['version'] = version
         current_version = tuple(int(e) for e in env.config.version.split('.'))
-        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        removed_version = tuple(int(e) for e in version[1].split('.'))
         if current_version < removed_version:
             label = self._deprecated_label
         else:
             label = self._removed_label
 
-        text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
+        text = label.format(deprecated=version[0], removed=version[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
