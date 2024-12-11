@@ -467,7 +467,7 @@ class BaseBytesTest:
         for value, position in (("a ", 1), (" aa a ", 5),(" aa a a ", 5)):
             with self.assertRaises(ValueError) as cm:
                 self.type2test.fromhex(value)
-            self.assertIn(f"non-hexadecimal number found in fromhex() arg at {position}", str(cm.exception))
+            self.assertIn(f"non-hexadecimal number found in fromhex() arg at position {position}", str(cm.exception))
 
         for data, pos in (
             # invalid first hexadecimal character
