@@ -157,13 +157,9 @@ See :pep:`667` for more information.
 
    The type of frame :func:`locals` proxy objects.
 
-   .. versionadded:: 3.13
-
 .. c:function:: int PyFrameLocalsProxy_Check(PyObject *obj)
 
    Return non-zero if *obj* is a frame :func:`locals` proxy.
-
-   .. versionadded:: 3.13
 
 Internal Frames
 ^^^^^^^^^^^^^^^
