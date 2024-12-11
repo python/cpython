@@ -426,3 +426,7 @@ Process Control
    function registered last is called first. Each cleanup function will be called
    at most once.  Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
+
+   .. seealso::
+
+      :c:func:`PyUnstable_AtExit` for passing a ``void *data`` argument.
