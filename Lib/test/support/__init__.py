@@ -17,6 +17,7 @@ import time
 import types
 import unittest
 import warnings
+from collections.abc import Callable
 
 
 __all__ = [
@@ -2832,30 +2833,44 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
+def _disable_terminal_color() -> Callable[[], bool]:
+    import _colorize
+
+    original_fn = _colorize.can_colorize
+    variables: dict[str, str | None] = {
+        "PYTHON_COLORS": None,
+        "FORCE_COLOR": None,
+        "NO_COLOR": None,
+    }
+    for key in variables:
+        variables[key] = os.environ.pop(key, None)
+    os.environ["NO_COLOR"] = "1"
+    _colorize.can_colorize = lambda: False
+    return original_fn, variables
+
+
+def _re_enable_terminal_color(
+    original_fn: Callable[[], bool], variables: dict[str, str | None]
+):
+    import _colorize
+
+    _colorize.can_colorize = original_fn
+    del os.environ["NO_COLOR"]
+    for key, value in variables.items():
+        if value is not None:
+            os.environ[key] = value
+
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import _colorize
-        original_fn = _colorize.can_colorize
-        variables: dict[str, str | None] = {
-            "PYTHON_COLORS": None, "FORCE_COLOR": None, "NO_COLOR": None
-        }
         try:
-            for key in variables:
-                variables[key] = os.environ.pop(key, None)
-            os.environ["NO_COLOR"] = "1"
-            _colorize.can_colorize = lambda: False
+            original_fn, variables = _disable_terminal_color()
             return func(*args, **kwargs)
         finally:
-            _colorize.can_colorize = original_fn
-            del os.environ["NO_COLOR"]
-            for key, value in variables.items():
-                if value is not None:
-                    os.environ[key] = value
+            _re_enable_terminal_color(original_fn, variables)
     return wrapper
-
-
 
 def force_not_colorized_test_class(cls):
     """Force the terminal not to be colorized."""
@@ -2864,29 +2879,13 @@ def force_not_colorized_test_class(cls):
 
     @functools.wraps(cls.setUp)
     def setUp_wrapper(self, *args, **kwargs):
-        import _colorize
+        self._original_fn, self._variables = _disable_terminal_color()
 
-        self._original_fn = _colorize.can_colorize
-        self._variables: dict[str, str | None] = {
-            "PYTHON_COLORS": None,
-            "FORCE_COLOR": None,
-            "NO_COLOR": None,
-        }
-        for key in self._variables:
-            self._variables[key] = os.environ.pop(key, None)
-        os.environ["NO_COLOR"] = "1"
-        _colorize.can_colorize = lambda: False
         return original_setup(self, *args, **kwargs)
 
     @functools.wraps(cls.tearDown)
     def tearDown_wrapper(self, *args, **kwargs):
-        import _colorize
-
-        _colorize.can_colorize = self._original_fn
-        del os.environ["NO_COLOR"]
-        for key, value in self._variables.items():
-            if value is not None:
-                os.environ[key] = value
+        _re_enable_terminal_color(self._original_fn, self._variables)
         return original_teardown(self, *args, **kwargs)
 
     cls.setUp = setUp_wrapper
