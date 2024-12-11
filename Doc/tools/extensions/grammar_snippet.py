@@ -133,19 +133,33 @@ class GrammarSnippetDirective(SphinxDirective):
 
 
 class CompatProductionList(SphinxDirective):
-    has_content = True
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
     option_spec = {}
 
-    # We currently ignore arguments.
-    required_arguments = 1
-
     def run(self):
-        options = {'group': self.arguments[0]}
-        content = self.content
+        # The "content" of a productionlist is actually the first and only
+        # argument. The first line is the group; the rest is the content lines.
+        lines = self.arguments[0].splitlines()
+        group = lines[0].strip()
+        options = {'group': group}
+        # We assume there's a colon in each line; align on it.
+        align_column = max(line.index(':') for line in lines[1:]) + 1
+        content = []
+        for line in lines[1:]:
+            rule_name, colon, text = line.partition(':')
+            rule_name = rule_name.strip()
+            if rule_name:
+                name_part = rule_name + ':'
+            else:
+                name_part = ''
+            content.append(f'{name_part:<{align_column}}{text}')
         return make_snippet(self, options, content)
 
 
 def setup(app):
     app.add_directive('grammar-snippet', GrammarSnippetDirective)
-    app.add_directive('productionlist', CompatProductionList, override=True)
+    app.add_directive_to_domain('std', 'productionlist', CompatProductionList, override=True)
     return {'version': '1.0', 'parallel_read_safe': True}
