@@ -1,0 +1,3 @@
+Fix error message in :func:`bytes.fromhex` when given an odd number of
+digits to properly indicate that an even number of hexadecimal digits is
+required.
