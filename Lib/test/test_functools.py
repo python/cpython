@@ -3,6 +3,7 @@ import builtins
 import collections
 import collections.abc
 import copy
+import gc
 from itertools import permutations
 import pickle
 from random import choice
@@ -3257,6 +3258,33 @@ class TestSingleDispatch(unittest.TestCase):
         assert t1 == t2
         assert id(t1) == t1.dispatch(2)
         assert id(t2) == t2.dispatch(2) # gh-127750
+
+    def test_singledispatchmethod_object_references(self):
+        class ReferenceTest:
+            instance_counter = 0
+
+            def __init__(self):
+                ReferenceTest.instance_counter = ReferenceTest.instance_counter + 1
+
+            def __del__(self):
+                ReferenceTest.instance_counter = ReferenceTest.instance_counter - 1
+
+            @functools.singledispatchmethod
+            def go(self, item):
+                pass
+
+        assert ReferenceTest.instance_counter == 0
+        t=ReferenceTest()
+        assert ReferenceTest.instance_counter == 1
+        x = []
+        for ii in range(1000):
+            t = ReferenceTest()
+            t.go(ii)
+            x.append(t)
+        del t
+        del x
+        gc.collect()
+        assert ReferenceTest.instance_counter == 0
 
 
 class CachedCostItem:
