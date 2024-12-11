@@ -122,12 +122,15 @@ _PyImport_ReleaseLock(PyInterpreterState *interp)
     _PyRecursiveMutex_Unlock(&IMPORT_LOCK(interp));
 }
 
+#ifdef HAVE_FORK
 void
-_PyImport_ReInitLock(PyInterpreterState *interp)
+_PyImport_ReInitLock(PyInterpreterState *interp, PyThread_ident_t parent)
 {
-    // gh-126688: Thread id may change after fork() on some operating systems.
-    IMPORT_LOCK(interp).thread = PyThread_get_thread_ident_ex();
+    /* The forking thread always holds the import lock. */
+    assert(IMPORT_LOCK(interp).thread == parent);
+    _PyRecursiveMutex_at_fork_reinit(&IMPORT_LOCK(interp), parent);
 }
+#endif
 
 
 /***************/
