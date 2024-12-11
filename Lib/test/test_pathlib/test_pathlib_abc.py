@@ -2020,7 +2020,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
-    def test_exists(self):
+    def test_status_exists(self):
         p = self.cls(self.base)
         self.assertTrue(p.status.exists())
         self.assertTrue((p / 'dirA').status.exists())
