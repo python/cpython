@@ -1,0 +1,2 @@
+Fix a vulnerability in the :mod:`imaplib` module, when connecting to a
+malicious server could cause an arbitrary amount of memory to be consumed.
