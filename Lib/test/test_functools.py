@@ -3,6 +3,7 @@ import builtins
 import collections
 import collections.abc
 import copy
+import gc
 from itertools import permutations
 import pickle
 from random import choice
@@ -3227,6 +3228,52 @@ class TestSingleDispatch(unittest.TestCase):
             @f.register
             def _(arg: undefined):
                 return "forward reference"
+
+    def test_singledispatchmethod_hash_comparision_equal(self):
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class A:
+            value: int
+
+            @functools.singledispatchmethod
+            def dispatch(self, x):
+                return id(self)
+
+        t1 = A(1)
+        t2 = A(1)
+
+        assert t1 == t2
+        assert id(t1) == t1.dispatch(2)
+        assert id(t2) == t2.dispatch(2) # gh-127750
+
+    def test_singledispatchmethod_object_references(self):
+        class ReferenceTest:
+            instance_counter = 0
+
+            def __init__(self):
+                ReferenceTest.instance_counter = ReferenceTest.instance_counter + 1
+
+            def __del__(self):
+                ReferenceTest.instance_counter = ReferenceTest.instance_counter - 1
+
+            @functools.singledispatchmethod
+            def go(self, item):
+                pass
+
+        assert ReferenceTest.instance_counter == 0
+        t=ReferenceTest()
+        assert ReferenceTest.instance_counter == 1
+        x = []
+        for ii in range(1000):
+            t = ReferenceTest()
+            t.go(ii)
+            x.append(t)
+        del t
+        del x
+        gc.collect()
+        assert ReferenceTest.instance_counter == 0
+
 
 class CachedCostItem:
     _cost = 1
