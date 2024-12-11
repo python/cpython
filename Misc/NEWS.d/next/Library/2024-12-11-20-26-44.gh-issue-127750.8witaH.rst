@@ -1,0 +1,1 @@
+Update caching of :class:`functools.singledispatchmethod` to avoid collisions of objects which compare equal.
