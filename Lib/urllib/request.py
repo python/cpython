@@ -876,9 +876,9 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.authenticated = {}
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
@@ -1488,10 +1488,7 @@ class FileHandler(BaseHandler):
                 host, port = _splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
+                origurl = 'file:' + pathname2url(localfile)
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
@@ -1657,6 +1654,9 @@ else:
             # URL has an empty authority section, so the path begins on the
             # third character.
             pathname = pathname[2:]
+        elif pathname[:12] == '//localhost/':
+            # Skip past 'localhost' authority.
+            pathname = pathname[11:]
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return unquote(pathname, encoding=encoding, errors=errors)
@@ -1664,6 +1664,12 @@ else:
     def pathname2url(pathname):
         """OS-specific conversion from a file system path to a relative URL
         of the 'file' scheme; not recommended for general use."""
+        if pathname[:1] == '/':
+            # Add explicitly empty authority to absolute path. If the path
+            # starts with exactly one slash then this change is mostly
+            # cosmetic, but if it begins with two or more slashes then this
+            # avoids interpreting the path as a URL authority.
+            pathname = '//' + pathname
         encoding = sys.getfilesystemencoding()
         errors = sys.getfilesystemencodeerrors()
         return quote(pathname, encoding=encoding, errors=errors)
