@@ -1953,6 +1953,14 @@ The :mod:`pathlib.types` module provides types for static type checking.
    :attr:`Path.status <pathlib.Path.status>` attribute. Implementations may
    return cached results from their methods.
 
+   .. method:: exists(*, follow_symlinks=True)
+
+      Return ``True`` if this path status is for an existing file or
+      directory, or any other kind of file.
+
+      If *follow_symlinks* is ``False``, return ``True`` for symlinks without
+      checking if their targets exist.
+
    .. method:: is_dir(*, follow_symlinks=True)
 
       Return ``True`` if this status is a directory or a symbolic link

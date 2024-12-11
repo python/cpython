@@ -1876,13 +1876,23 @@ class DummyPathTest(DummyPurePathTest):
         for child in p.iterdir():
             entry = child.status
             self.assertIsInstance(entry, Status)
+            self.assertTrue(entry.exists(follow_symlinks=False))
             self.assertEqual(entry.is_dir(follow_symlinks=False),
                              child.is_dir(follow_symlinks=False))
             self.assertEqual(entry.is_file(follow_symlinks=False),
                              child.is_file(follow_symlinks=False))
             self.assertEqual(entry.is_symlink(),
                              child.is_symlink())
-            if child.name != 'brokenLinkLoop':
+            if child.name == 'brokenLink':
+                self.assertFalse(entry.exists())
+                self.assertFalse(entry.is_dir())
+                self.assertFalse(entry.is_file())
+            elif child.name == 'brokenLinkLoop':
+                self.assertRaises(OSError, entry.exists)
+                self.assertRaises(OSError, entry.is_dir)
+                self.assertRaises(OSError, entry.is_file)
+            else:
+                self.assertTrue(entry.exists())
                 self.assertEqual(entry.is_dir(), child.is_dir())
                 self.assertEqual(entry.is_file(), child.is_file())
 
@@ -2009,6 +2019,27 @@ class DummyPathTest(DummyPurePathTest):
         p = P(self.base, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
+
+    def test_exists(self):
+        p = self.cls(self.base)
+        self.assertTrue(p.status.exists())
+        self.assertTrue((p / 'dirA').status.exists())
+        self.assertTrue((p / 'dirA').status.exists(follow_symlinks=False))
+        self.assertTrue((p / 'fileA').status.exists())
+        self.assertTrue((p / 'fileA').status.exists(follow_symlinks=False))
+        self.assertFalse((p / 'non-existing').status.exists())
+        self.assertFalse((p / 'non-existing').status.exists(follow_symlinks=False))
+        if self.can_symlink:
+            self.assertTrue((p / 'linkA').status.exists())
+            self.assertTrue((p / 'linkA').status.exists(follow_symlinks=False))
+            self.assertTrue((p / 'linkB').status.exists())
+            self.assertTrue((p / 'linkB').status.exists(follow_symlinks=True))
+            self.assertFalse((p / 'brokenLink').status.exists())
+            self.assertTrue((p / 'brokenLink').status.exists(follow_symlinks=False))
+        self.assertFalse((p / 'fileA\udfff').status.exists())
+        self.assertFalse((p / 'fileA\udfff').status.exists(follow_symlinks=False))
+        self.assertFalse((p / 'fileA\x00').status.exists())
+        self.assertFalse((p / 'fileA\x00').status.exists(follow_symlinks=False))
 
     def test_status_is_dir(self):
         p = self.cls(self.base)

@@ -89,6 +89,12 @@ class _PathStatus:
                 self._mode = [mode, mode]
         return mode
 
+    def exists(self, *, follow_symlinks=True):
+        """
+        Whether this path exists
+        """
+        return self._get_mode(follow_symlinks=follow_symlinks) > 0
+
     def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
@@ -117,6 +123,17 @@ class _DirEntryStatus:
 
     def __repr__(self):
         return self._repr
+
+    def exists(self, *, follow_symlinks=True):
+        """
+        Whether this path exists
+        """
+        if follow_symlinks:
+            try:
+                self._entry.stat()
+            except FileNotFoundError:
+                return False
+        return True
 
     def is_dir(self, *, follow_symlinks=True):
         """

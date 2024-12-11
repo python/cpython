@@ -1769,6 +1769,22 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    def test_status_exists_caching(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertFalse(q.status.exists())
+        self.assertFalse(q.status.exists(follow_symlinks=False))
+        q.write_text('hullo')
+        self.assertFalse(q.status.exists())
+        self.assertFalse(q.status.exists(follow_symlinks=False))
+
+        q = p / 'myfile'  # same path, new instance.
+        self.assertTrue(q.status.exists())
+        self.assertTrue(q.status.exists(follow_symlinks=False))
+        q.unlink()
+        self.assertTrue(q.status.exists())
+        self.assertTrue(q.status.exists(follow_symlinks=False))
+
     def test_status_is_dir_caching(self):
         p = self.cls(self.base)
         q = p / 'mydir'
