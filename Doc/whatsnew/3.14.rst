@@ -599,6 +599,9 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+* Add :func:`sys._jit_enabled` to determine at runtime if the
+  :ref:`JIT compiler <whatsnew313-jit-compiler>` is active.
+
 
 tkinter
 -------
