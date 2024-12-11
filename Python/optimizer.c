@@ -1749,12 +1749,21 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
     return -1;
 }
 
+/* Writes the node and ougoing edges for a single tracelet in graphviz format.
+ * Each tracelet is presented as a table of the uops it contains.
+ * If Py_STATS is enabled, execution counts are included.
+ *
+ * https://graphviz.readthedocs.io/en/stable/manual.html
+ * https://graphviz.org/gallery/
+ */
 static void
-dump_executor(_PyExecutorObject *executor, FILE *out)
+executor_to_gv(_PyExecutorObject *executor, FILE *out)
 {
     PyCodeObject *code = executor->vm_data.code;
     fprintf(out, "executor_%p [\n", executor);
     fprintf(out, "    shape = none\n");
+
+    /* Write the HTML table for the uops */
     fprintf(out, "    label = <<table border=\"0\" cellspacing=\"0\">\n");
     fprintf(out, "        <tr><td port=\"start\" border=\"1\" ><b>Executor</b></td></tr>\n");
     if (code == NULL) {
@@ -1767,6 +1776,7 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
         fprintf(out, ": %d</td></tr>\n", line);
     }
     for (uint32_t i = 0; i < executor->code_size; i++) {
+        /* Write row for uop. Each row has a port, for incoming edges */
         _PyUOpInstruction const *inst = &executor->trace[i];
         const char *opname = _PyOpcode_uop_name[inst->opcode];
 #ifdef Py_STATS
@@ -1778,8 +1788,10 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
             break;
         }
     }
-    fprintf(out, "    label = </table>>\n");
+    fprintf(out, "    </table>>\n");
     fprintf(out, "]\n\n");
+
+    /* Write all the outgoing edges */
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t flags = _PyUop_Flags[inst->opcode];
@@ -1802,6 +1814,7 @@ dump_executor(_PyExecutorObject *executor, FILE *out)
     }
 }
 
+/* Write the graph of all the live tracelets in graphviz format. */
 int
 _PyDumpExecutors(FILE *out)
 {
@@ -1809,7 +1822,7 @@ _PyDumpExecutors(FILE *out)
     fprintf(out, "    rankdir = \"LR\"\n\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        dump_executor(exec, out);
+        executor_to_gv(exec, out);
         exec = exec->vm_data.links.next;
     }
     fprintf(out, "}\n\n");
