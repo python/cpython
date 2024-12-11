@@ -141,6 +141,145 @@ pylong_aspid(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+layout_to_dict(const PyLongLayout *layout)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        goto error;
+    }
+
+#define SET_DICT(KEY, EXPR) \
+    do { \
+        PyObject *value = (EXPR); \
+        if (value == NULL) { \
+            goto error; \
+        } \
+        int res = PyDict_SetItemString(dict, KEY, value); \
+        Py_DECREF(value); \
+        if (res < 0) { \
+            goto error; \
+        } \
+    } while (0)
+
+    SET_DICT("bits_per_digit", PyLong_FromUnsignedLong(layout->bits_per_digit));
+    SET_DICT("digit_size", PyLong_FromUnsignedLong(layout->digit_size));
+    SET_DICT("digits_order", PyLong_FromLong(layout->digits_order));
+    SET_DICT("digit_endianness", PyLong_FromLong(layout->digit_endianness));
+#undef SET_DICT
+
+    return dict;
+
+error:
+    Py_XDECREF(dict);
+    return NULL;
+}
+
+
+static PyObject *
+pylong_export(PyObject *module, PyObject *obj)
+{
+    PyLongExport export_long;
+    if (PyLong_Export(obj, &export_long) < 0) {
+        return NULL;
+    }
+
+    if (export_long.digits == NULL) {
+        return PyLong_FromInt64(export_long.value);
+        // PyLong_FreeExport() is not needed in this case
+    }
+
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
+    const digit *export_long_digits = export_long.digits;
+
+    PyObject *digits = PyList_New(0);
+    if (digits == NULL) {
+        goto error;
+    }
+    for (Py_ssize_t i = 0; i < export_long.ndigits; i++) {
+        PyObject *item = PyLong_FromUnsignedLong(export_long_digits[i]);
+        if (item == NULL) {
+            goto error;
+        }
+
+        if (PyList_Append(digits, item) < 0) {
+            Py_DECREF(item);
+            goto error;
+        }
+        Py_DECREF(item);
+    }
+
+    PyObject *res = Py_BuildValue("(iN)", export_long.negative, digits);
+
+    PyLong_FreeExport(&export_long);
+    assert(export_long._reserved == 0);
+
+    return res;
+
+error:
+    Py_XDECREF(digits);
+    PyLong_FreeExport(&export_long);
+    return NULL;
+}
+
+
+static PyObject *
+pylongwriter_create(PyObject *module, PyObject *args)
+{
+    int negative;
+    PyObject *list;
+    if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list)) {
+        return NULL;
+    }
+    Py_ssize_t ndigits = PyList_GET_SIZE(list);
+
+    digit *digits = PyMem_Malloc((size_t)ndigits * sizeof(digit));
+    if (digits == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
+        PyObject *item = PyList_GET_ITEM(list, i);
+
+        long num = PyLong_AsLong(item);
+        if (num == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        if (num < 0 || num >= PyLong_BASE) {
+            PyErr_SetString(PyExc_ValueError, "digit doesn't fit into digit");
+            goto error;
+        }
+        digits[i] = (digit)num;
+    }
+
+    void *writer_digits;
+    PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
+                                               &writer_digits);
+    if (writer == NULL) {
+        goto error;
+    }
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
+    memcpy(writer_digits, digits, (size_t)ndigits * sizeof(digit));
+    PyObject *res = PyLongWriter_Finish(writer);
+    PyMem_Free(digits);
+
+    return res;
+
+error:
+    PyMem_Free(digits);
+    return NULL;
+}
+
+
+static PyObject *
+get_pylong_layout(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    const PyLongLayout *layout = PyLong_GetNativeLayout();
+    return layout_to_dict(layout);
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -148,6 +287,9 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_export",               pylong_export,              METH_O},
+    {"pylongwriter_create",         pylongwriter_create,        METH_VARARGS},
+    {"get_pylong_layout",           get_pylong_layout,          METH_NOARGS},
     {"pylong_ispositive",           pylong_ispositive,          METH_O},
     {"pylong_isnegative",           pylong_isnegative,          METH_O},
     {"pylong_iszero",               pylong_iszero,              METH_O},
