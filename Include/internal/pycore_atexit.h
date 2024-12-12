@@ -44,7 +44,6 @@ typedef struct {
 
 struct atexit_state {
     atexit_callback *ll_callbacks;
-    atexit_callback *last_ll_callback;
 
     // XXX The rest of the state could be moved to the atexit module state
     // and a low-level callback added for it during module exec.
@@ -54,7 +53,7 @@ struct atexit_state {
     int callback_len;
 };
 
-// Export for '_xxinterpchannels' shared extension
+// Export for '_interpchannels' shared extension
 PyAPI_FUNC(int) _Py_AtExit(
     PyInterpreterState *interp,
     atexit_datacallbackfunc func,

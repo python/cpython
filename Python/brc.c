@@ -14,7 +14,7 @@
 // thread states within each bucket.
 //
 // The queueing thread uses the eval breaker mechanism to notify the owning
-// thread that it has objects to merge. Additionaly, all queued objects are
+// thread that it has objects to merge. Additionally, all queued objects are
 // merged during GC.
 #include "Python.h"
 #include "pycore_object.h"      // _Py_ExplicitMergeRefcount
@@ -197,7 +197,7 @@ _Py_brc_after_fork(PyInterpreterState *interp)
 {
     // Unlock all bucket mutexes. Some of the buckets may be locked because
     // locks can be handed off to a parked thread (see lock.c). We don't have
-    // to worry about consistency here, becuase no thread can be actively
+    // to worry about consistency here, because no thread can be actively
     // modifying a bucket, but it might be paused (not yet woken up) on a
     // PyMutex_Lock while holding that lock.
     for (Py_ssize_t i = 0; i < _Py_BRC_NUM_BUCKETS; i++) {

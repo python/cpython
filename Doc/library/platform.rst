@@ -1,5 +1,5 @@
-:mod:`platform` ---  Access to underlying platform's identifying data
-=====================================================================
+:mod:`!platform` ---  Access to underlying platform's identifying data
+======================================================================
 
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
@@ -150,7 +150,7 @@ Cross Platform
 
    On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``,
    ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or
-   ``'Linux'``), use :func:`os.uname()`.
+   ``'Linux'``), use :func:`os.uname`.
 
 .. function:: system_alias(system, release, version)
 
@@ -165,7 +165,7 @@ Cross Platform
    returned if the value cannot be determined.
 
    On iOS and Android, this is the user-facing OS version. To obtain the
-   Darwin or Linux kernel version, use :func:`os.uname()`.
+   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 
@@ -219,8 +219,8 @@ Windows Platform
    default to an empty string).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
-   and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
-   to the OS version being free of debugging code. It could also state *'Checked'*
+   and ``'Multiprocessor Free'`` on multi processor machines. The ``'Free'`` refers
+   to the OS version being free of debugging code. It could also state ``'Checked'``
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 
@@ -359,3 +359,15 @@ Android Platform
    <https://storage.googleapis.com/play_public/supported_devices.html>`__.
 
    .. versionadded:: 3.13
+
+
+Miscellaneous
+-------------
+
+.. function:: invalidate_caches()
+
+   Clear out the internal cache of information, such as the :func:`uname`.
+   This is typically useful when the platform's :func:`node` is changed
+   by an external process and one needs to retrieve the updated value.
+
+   .. versionadded:: 3.14

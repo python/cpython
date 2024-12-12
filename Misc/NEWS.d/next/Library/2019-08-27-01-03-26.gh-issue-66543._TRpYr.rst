@@ -1,4 +1,0 @@
-Make :func:`mimetypes.guess_type` properly parsing of URLs with only a host
-name, URLs containing fragment or query, and filenames with only a UNC
-sharepoint on Windows.
-Based on patch by Dong-hee Na.

@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// Exported for the _xxinterpchannels module.
+// Exported for the _interpchannels module.
 PyAPI_FUNC(int) _PyBuffer_ReleaseInInterpreter(
         PyInterpreterState *interp, Py_buffer *view);
 PyAPI_FUNC(int) _PyBuffer_ReleaseInInterpreterAndRawFree(
