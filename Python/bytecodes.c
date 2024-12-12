@@ -2217,16 +2217,30 @@ dummy_func(
             PyObject *attr_o;
 
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
+            DEOPT_IF(!LOCK_OBJECT(dict));
+            if (hint >= (size_t)dict->ma_keys->dk_nentries) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys));
+            if (!DK_IS_UNICODE(dict->ma_keys)) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name);
+            if (ep->me_key != name) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             attr_o = ep->me_value;
-            DEOPT_IF(attr_o == NULL);
+            if (attr_o == NULL) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
+            UNLOCK_OBJECT(dict);
             null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
