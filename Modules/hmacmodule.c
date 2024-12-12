@@ -383,6 +383,10 @@ class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
 //
 // - Helpers with the "_hacl" prefix are thin wrappers around HACL* functions.
 //   Buffer lengths given as inputs should fit on 32-bit integers.
+//
+// - Helpers with the "hmac_" prefix act on HMAC objects and accept buffers
+//   whose length fits on 32-bit or 64-bit integers (depending on the host
+//   machine).
 
 /*
  * Handle the HACL* exit code.
@@ -585,6 +589,99 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 
 // --- HMAC object ------------------------------------------------------------
 
+/*
+ * Update the HMAC object with the given buffer.
+ *
+ * This unconditionally acquires the lock on the HMAC object.
+ *
+ * On DEBUG builds, each update() call is verified.
+ * On other builds, only the last update() call is verified.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static int
+hmac_update_state_with_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
+{
+    int res = 0;
+    Py_BEGIN_ALLOW_THREADS
+        PyMutex_Lock(&self->mutex);  // unconditionally acquire a lock
+        Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
+        goto done;
+#ifndef NDEBUG
+error:
+        res = -1;
+#else
+        Py_UNREACHABLE();
+#endif
+done:
+        PyMutex_Unlock(&self->mutex);
+    Py_END_ALLOW_THREADS
+    return res;
+}
+
+/*
+ * Update the HMAC object with the given buffer.
+ *
+ * This conditionally acquires the lock on the HMAC object.
+ *
+ * On DEBUG builds, each update() call is verified.
+ * On other builds, only the last update() call is verified.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static int
+hmac_update_state_cond_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
+{
+    ENTER_HASHLIB(self);  // conditionally acquire a lock
+    Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
+    LEAVE_HASHLIB(self);
+    return 0;
+
+#ifndef NDEBUG
+error:
+    LEAVE_HASHLIB(self);
+    return -1;
+#else
+    Py_UNREACHABLE();
+#endif
+}
+
+/*
+ * Update the internal HMAC state with the given buffer.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static inline int
+hmac_update_state(HMACObject *self, uint8_t *buf, Py_ssize_t len)
+{
+    assert(buf != 0);
+    assert(len >= 0);
+    return len == 0
+               ? 0 /* nothing to do */
+               : len < HASHLIB_GIL_MINSIZE
+                     ? hmac_update_state_cond_lock(self, buf, len)
+                     : hmac_update_state_with_lock(self, buf, len);
+}
+
+/*[clinic input]
+_hmac.HMAC.update
+
+    msg as msgobj: object
+
+Update the HMAC object with the given message.
+[clinic start generated code]*/
+
+static PyObject *
+_hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
+/*[clinic end generated code: output=962134ada5e55985 input=7c0ea830efb03367]*/
+{
+    Py_buffer msg;
+    GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
+    int rc = hmac_update_state(self, msg.buf, msg.len);
+    PyBuffer_Release(&msg);
+    return rc < 0 ? NULL : Py_None;
+}
+
 /*[clinic input]
 @getter
 _hmac.HMAC.name
@@ -658,6 +755,7 @@ HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyMethodDef HMACObject_methods[] = {
+    _HMAC_HMAC_UPDATE_METHODDEF
     {NULL, NULL, 0, NULL} /* sentinel */
 };
 
