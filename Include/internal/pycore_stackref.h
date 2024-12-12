@@ -346,7 +346,7 @@ PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
     if (!PyStackRef_HasCount(ref)) {
-        Py_INCREF_MORTAL(BITS_TO_PTR(ref));
+        Py_INCREF(BITS_TO_PTR(ref));
     }
     return ref;
 }
@@ -364,7 +364,7 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
         return ref;
     }
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
-    Py_INCREF_MORTAL(obj);
+    Py_INCREF(obj);
     ref.bits = (uintptr_t)obj;
     PyStackRef_CheckValid(ref);
     return ref;

@@ -1898,7 +1898,7 @@
                 callable = &stack_pointer[-3 - oparg];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1908,7 +1908,7 @@
                 }
                 OPCODE_DEFERRED_INC(CALL_KW);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             /* Skip 2 cache entries */
             // _MAYBE_EXPAND_METHOD_KW
@@ -2102,16 +2102,14 @@
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(kwnames);
-                if (new_frame == NULL) {
-                    stack_pointer += -3 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
+                if (new_frame == NULL) {
+                    goto error;
+                }
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2282,16 +2280,14 @@
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(kwnames);
-                if (new_frame == NULL) {
-                    stack_pointer += -3 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
+                if (new_frame == NULL) {
+                    goto error;
+                }
             }
             // _SAVE_RETURN_OFFSET
             {

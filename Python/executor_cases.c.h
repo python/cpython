@@ -5269,12 +5269,14 @@
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(kwnames);
-            if (new_frame == NULL) JUMP_TO_ERROR();
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
+            if (new_frame == NULL) {
+                JUMP_TO_ERROR();
+            }
             break;
         }
 
