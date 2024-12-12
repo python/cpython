@@ -4,10 +4,11 @@ import subprocess
 from test import support
 import unittest
 import test.test_unittest
-from test.support import force_not_colorized
+from test.support import force_not_colorized_test_class
 from test.test_unittest.test_result import BufferedWriter
 
 
+@force_not_colorized_test_class
 class Test_TestProgram(unittest.TestCase):
 
     def test_discovery_from_dotted_path(self):
@@ -121,7 +122,6 @@ class Test_TestProgram(unittest.TestCase):
         self.assertEqual(['test.test_unittest', 'test.test_unittest2'],
                           program.testNames)
 
-    @force_not_colorized
     def test_NonExit(self):
         stream = BufferedWriter()
         program = unittest.main(exit=False,
@@ -137,7 +137,6 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
-    @force_not_colorized
     def test_Exit(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit) as cm:
@@ -155,7 +154,6 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
-    @force_not_colorized
     def test_ExitAsDefault(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit):
@@ -171,7 +169,6 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
-    @force_not_colorized
     def test_ExitSkippedSuite(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit) as cm:
@@ -184,7 +181,6 @@ class Test_TestProgram(unittest.TestCase):
         expected = '\n\nOK (skipped=1)\n'
         self.assertTrue(out.endswith(expected))
 
-    @force_not_colorized
     def test_ExitEmptySuite(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit) as cm:
