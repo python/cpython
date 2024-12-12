@@ -843,12 +843,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
-   import collections
-   import contextlib
-   import functools
-   import math
-   import operator
-   import random
+   from collections import deque
+   from contextlib import suppress
+   from functools import reduce
+   from math import sumprod, isqrt
+   from operator import itemgetter, getitem, mul, neg
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -885,13 +884,13 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def tail(n, iterable):
        "Return an iterator over the last n items."
        # tail(3, 'ABCDEFG') → E F G
-       return iter(collections.deque(iterable, maxlen=n))
+       return iter(deque(iterable, maxlen=n))
 
    def consume(iterator, n=None):
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
-           collections.deque(iterator, maxlen=0)
+           deque(iterator, maxlen=0)
        else:
            next(islice(iterator, n, n), None)
 
@@ -919,8 +918,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # unique_justseen('AAAABBBCCDAABBB') → A B C D A B
        # unique_justseen('ABBcCAD', str.casefold) → A B c A D
        if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+           return map(itemgetter(0), groupby(iterable))
+       return map(next, map(itemgetter(1), groupby(iterable, key)))
 
    def unique_everseen(iterable, key=None):
        "Yield unique elements, preserving order. Remember all elements ever seen."
@@ -947,7 +946,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
        iterator = iter(iterable)
-       window = collections.deque(islice(iterator, n - 1), maxlen=n)
+       window = deque(islice(iterator, n - 1), maxlen=n)
        for x in iterator:
            window.append(x)
            yield tuple(window)
@@ -981,7 +980,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Return all contiguous non-empty subslices of a sequence."
        # subslices('ABCD') → A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
-       return map(operator.getitem, repeat(seq), slices)
+       return map(getitem, repeat(seq), slices)
 
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
@@ -995,7 +994,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        else:
            stop = len(iterable) if stop is None else stop
            i = start
-           with contextlib.suppress(ValueError):
+           with suppress(ValueError):
                while True:
                    yield (i := seq_index(value, i, stop))
                    i += 1
@@ -1003,7 +1002,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def iter_except(func, exception, first=None):
        "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
-       with contextlib.suppress(exception):
+       with suppress(exception):
            if first is not None:
                yield first()
            while True:
@@ -1189,6 +1188,10 @@ The following recipes have a more mathematical flavor:
     [25, 26, 27, 28]
 
     Now, we test all of the itertool recipes
+
+    >>> import collections
+    >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
