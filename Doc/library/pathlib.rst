@@ -1197,9 +1197,9 @@ Querying file type and status
       directory
 
    If the path was generated from :meth:`Path.iterdir` then this attribute is
-   initialized with information about the file type gleaned from scanning the
-   parent. Merely accessing :attr:`Path.status` does not perform any
-   filesystem queries.
+   initialized with some information about the file type gleaned from scanning
+   the parent directory. Merely accessing :attr:`Path.status` does not perform
+   any filesystem queries.
 
    To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
    :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
@@ -1957,34 +1957,34 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
    .. method:: exists(*, follow_symlinks=True)
 
-      Return ``True`` if this path status is for an existing file or
-      directory, or any other kind of file.
+      Return ``True`` if the path is an existing file or directory, or any
+      other kind of file; return ``False`` if the path doesn't exist.
 
       If *follow_symlinks* is ``False``, return ``True`` for symlinks without
       checking if their targets exist.
 
    .. method:: is_dir(*, follow_symlinks=True)
 
-      Return ``True`` if this status is a directory or a symbolic link
-      pointing to a directory; return ``False`` if the status is or points to
-      any other kind of file, or if it doesn’t exist.
+      Return ``True`` if the path is a directory, or a symbolic link pointing
+      to a directory; return ``False`` if the path is (or points to) any other
+      kind of file, or if it doesn't exist.
 
-      If *follow_symlinks* is ``False``, return ``True`` only if this status
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
       is a directory (without following symlinks); return ``False`` if the
-      status is any other kind of file or if it doesn’t exist.
+      path is any other kind of file, or if it doesn't exist.
 
    .. method:: is_file(*, follow_symlinks=True)
 
-      Return ``True`` if this status is a file or a symbolic link pointing to
-      a file; return ``False`` if the status is or points to a directory or
-      other non-file, or if it doesn’t exist.
+      Return ``True`` if the path is a file, or a symbolic link pointing to
+      a file; return ``False`` if the path is (or points to) a directory or
+      other non-file, or if it doesn't exist.
 
-      If *follow_symlinks* is ``False``, return ``True`` only if this status
-      is a file (without following symlinks); return ``False`` if the status
-      is a directory or other other non-file, or if it doesn’t exist.
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a file (without following symlinks); return ``False`` if the path
+      is a directory or other other non-file, or if it doesn't exist.
 
    .. method:: is_symlink()
 
-      Return ``True`` if this status is a symbolic link (even if broken);
-      return ``False`` if the status points to a directory or any kind of
-      file, or if it doesn’t exist.
+      Return ``True`` if the path is a symbolic link (even if broken); return
+      ``False`` if the path is a directory or any kind of file, or if it
+      doesn't exist.

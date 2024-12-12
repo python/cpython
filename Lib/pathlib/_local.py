@@ -60,8 +60,8 @@ class _PathParents(Sequence):
 
 
 class _PathStatus:
-    """This object provides os.DirEntry-like access to the file type and file
-    attributes.  Don't try to construct it yourself."""
+    """Implementation of pathlib.types.Status that provides file status
+    information. Don't try to construct it yourself."""
     __slots__ = ('_path', '_repr', '_mode')
 
     def __init__(self, path):
@@ -115,6 +115,9 @@ class _PathStatus:
 
 
 class _DirEntryStatus:
+    """Implementation of pathlib.types.Status that provides file status
+    information by querying a wrapped os.DirEntry object. Don't try to
+    construct it yourself."""
     __slots__ = ('_entry', '_repr')
 
     def __init__(self, path, entry):
