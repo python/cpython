@@ -1,4 +1,3 @@
-import _ctypes
 import os
 import platform
 import re
@@ -123,16 +122,27 @@ class TestNullDlsym(unittest.TestCase):
             self.assertEqual(os.read(pipe_r, 2), b'OK')
 
 
-class TestCAPI(unittest.TestCase):
+@unittest.skipUnless(sys.platform.startswith('linux'),
+                     'test requires _ctypes.dlopen()')
+class TestLinuxLocalization(unittest.TestCase):
 
-    @unittest.skipUnless(hasattr(_ctypes, 'dlopen'), 'require ctypes.dlopen()')
-    @test.support.run_with_locales('LC_ALL', 'fr_FR.utf8', 'fr_FR.iso88591')
+    @test.support.run_with_locale(
+        'LC_ALL',
+        'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+        '',
+    )
     def test_localized_error(self):
-        with self.assertRaisesRegex(
-            OSError,
-            re.escape("foo.so: Ne peut ouvrir le fichier d'objet partagé"),
-        ):
-            _ctypes.dlopen('foo.so', 2)
+        # An ImportError would be propagated and would be unexpected on Linux.
+        from _ctypes import dlopen
+
+        missing_filename = b'missing\xff.so'
+        # Depending whether the locale is ISO-88591 or not, we may either
+        # encode '\xff' as '\udcff' or 'ÿ', but we are only interested in
+        # avoiding a UnicodeDecodeError when reporting the dlerror() error
+        # message which contains the localized filename.
+        filename_pattern = r'missing[ÿ|\udcff].so:.+'
+        with self.assertRaisesRegex(OSError, filename_pattern):
+            dlopen(missing_filename, 2)
 
 
 if __name__ == "__main__":
