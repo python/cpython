@@ -493,6 +493,18 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
+# gh-127274: CALL_ALLOC_AND_ENTER_INIT will only cache __init__ methods that
+# are deferred. We only defer functions defined at the top-level.
+class MyClass:
+    def __init__(self):
+        pass
+
+
+class InitTakesArg:
+    def __init__(self, arg):
+        self.arg = arg
+
+
 class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
@@ -522,12 +534,8 @@ class TestCallCache(TestBase):
             f()
 
     @disabling_optimizer
-    @requires_specialization
+    @requires_specialization_ft
     def test_assign_init_code(self):
-        class MyClass:
-            def __init__(self):
-                pass
-
         def instantiate():
             return MyClass()
 
@@ -543,6 +551,20 @@ class TestCallCache(TestBase):
         # args
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
+
+    @disabling_optimizer
+    @requires_specialization_ft
+    def test_push_init_frame_fails(self):
+        def instantiate():
+            return InitTakesArg()
+
+        for _ in range(2):
+            with self.assertRaises(TypeError):
+                instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        with self.assertRaises(TypeError):
+            instantiate()
 
 
 @threading_helper.requires_working_threading()
@@ -1251,6 +1273,45 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization_ft
+    def test_load_super_attr(self):
+        """Ensure that LOAD_SUPER_ATTR is specialized as expected."""
+
+        class A:
+            def __init__(self):
+                meth = super().__init__
+                super().__init__()
+
+        for _ in range(100):
+            A()
+
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
+
+        # Temporarily replace super() with something else.
+        real_super = super
+
+        def fake_super():
+            def init(self):
+                pass
+
+            return init
+
+        # Force unspecialize
+        globals()['super'] = fake_super
+        try:
+            # Should be unspecialized after enough calls.
+            for _ in range(100):
+                A()
+        finally:
+            globals()['super'] = real_super
+
+        # Ensure the specialized instructions are not present
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+
+    @cpython_only
+    @requires_specialization_ft
     def test_contain_op(self):
         def contains_op_dict():
             for _ in range(100):
@@ -1271,6 +1332,48 @@ class TestSpecializer(TestBase):
         contains_op_set()
         self.assert_specialized(contains_op_set, "CONTAINS_OP_SET")
         self.assert_no_opcode(contains_op_set, "CONTAINS_OP")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_send_with(self):
+        def run_async(coro):
+            while True:
+                try:
+                    coro.send(None)
+                except StopIteration:
+                    break
+
+        class CM:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                pass
+
+        async def send_with():
+            for i in range(100):
+                async with CM():
+                    x = 1
+
+        run_async(send_with())
+        # Note there are still unspecialized "SEND" opcodes in the
+        # cleanup paths of the 'with' statement.
+        self.assert_specialized(send_with, "SEND_GEN")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_send_yield_from(self):
+        def g():
+            yield None
+
+        def send_yield_from():
+            yield from g()
+
+        for i in range(100):
+            list(send_yield_from())
+
+        self.assert_specialized(send_yield_from, "SEND_GEN")
+        self.assert_no_opcode(send_yield_from, "SEND")
 
     @cpython_only
     @requires_specialization_ft

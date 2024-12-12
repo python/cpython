@@ -317,9 +317,15 @@ Edge and Level Trigger Polling (epoll) Objects
    +-------------------------+-----------------------------------------------+
    | :const:`EPOLLMSG`       | Ignored.                                      |
    +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLWAKEUP`    | Prevents sleep during event waiting.          |
+   +-------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.6
       :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
+      or later.
+
+   .. versionadded:: next
+      :const:`EPOLLWAKEUP` was added. It's only supported by Linux Kernel 3.5
       or later.
 
 .. method:: epoll.close()
