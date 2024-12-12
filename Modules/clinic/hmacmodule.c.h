@@ -64,6 +64,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_hmac_HMAC_digest__doc__,
+"digest($self, /)\n"
+"--\n"
+"\n"
+"Return the digest of the bytes passed to the update() method so far.");
+
+#define _HMAC_HMAC_DIGEST_METHODDEF    \
+    {"digest", (PyCFunction)_hmac_HMAC_digest, METH_NOARGS, _hmac_HMAC_digest__doc__},
+
+static PyObject *
+_hmac_HMAC_digest_impl(HMACObject *self);
+
+static PyObject *
+_hmac_HMAC_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _hmac_HMAC_digest_impl((HMACObject *)self);
+}
+
+PyDoc_STRVAR(_hmac_HMAC_hexdigest__doc__,
+"hexdigest($self, /)\n"
+"--\n"
+"\n"
+"Return hexadecimal digest of the bytes passed to the update() method so far.\n"
+"\n"
+"This may be used to exchange the value safely in email or other non-binary\n"
+"environments.");
+
+#define _HMAC_HMAC_HEXDIGEST_METHODDEF    \
+    {"hexdigest", (PyCFunction)_hmac_HMAC_hexdigest, METH_NOARGS, _hmac_HMAC_hexdigest__doc__},
+
+static PyObject *
+_hmac_HMAC_hexdigest_impl(HMACObject *self);
+
+static PyObject *
+_hmac_HMAC_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _hmac_HMAC_hexdigest_impl((HMACObject *)self);
+}
+
 #if !defined(_hmac_HMAC_name_DOCSTR)
 #  define _hmac_HMAC_name_DOCSTR NULL
 #endif
@@ -528,4 +567,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee95583e077dcfdf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51a224ad3322770f input=a9049054013a1b77]*/
