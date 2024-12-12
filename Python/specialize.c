@@ -1153,7 +1153,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         case METHOD:
         {
             if (shadow) {
-                FT_UNIMPLEMENTED();
                 goto try_instance;
             }
             int oparg = instr->op.arg;
@@ -1282,8 +1281,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             }
             return -1;
         case NON_DESCRIPTOR:
-            FT_UNIMPLEMENTED();
-
             if (shadow) {
                 goto try_instance;
             }
@@ -1304,8 +1301,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
     }
     Py_UNREACHABLE();
 try_instance:
-    FT_UNIMPLEMENTED();
-
     if (specialize_dict_access(owner, instr, type, tp_version, kind, name, LOAD_ATTR,
                                     LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
     {
