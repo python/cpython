@@ -144,6 +144,9 @@ typedef enum HMAC_Hash_Kind {
     /* Blake family */
     DECL_HACL_HMAC_HASH_KIND(blake2s_32, Blake2S_32)
     DECL_HACL_HMAC_HASH_KIND(blake2b_32, Blake2B_32)
+    /* Blake runtime family (should not be used statically) */
+    DECL_HACL_HMAC_HASH_KIND(vectorized_blake2s_32, Blake2S_128)
+    DECL_HACL_HMAC_HASH_KIND(vectorized_blake2b_32, Blake2B_256)
 #undef DECL_HACL_HMAC_HASH_KIND
 } HMAC_Hash_Kind;
 
@@ -325,6 +328,9 @@ typedef struct hmacmodule_state {
     PyTypeObject *hmac_type;
     /* interned strings */
     PyObject *str_lower;
+
+    bool can_run_simd128;
+    bool can_run_simd256;
 } hmacmodule_state;
 
 static inline hmacmodule_state *
@@ -388,6 +394,67 @@ class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
 // - Helpers with the "hmac_" prefix act on HMAC objects and accept buffers
 //   whose length fits on 32-bit or 64-bit integers (depending on the host
 //   machine).
+
+/*
+ * Assert that a HMAC hash kind is a static kind.
+ *
+ * A "static" kind is specified in the 'py_hmac_static_hinfo'
+ * table and is always independent of the host CPUID features.
+ */
+#ifndef NDEBUG
+static void
+assert_is_static_hmac_hash_kind(HMAC_Hash_Kind kind)
+{
+    switch (kind) {
+        case Py_hmac_kind_hash_unknown: {
+            Py_FatalError("HMAC hash kind must be a known kind");
+            return;
+        }
+        case Py_hmac_kind_hmac_vectorized_blake2s_32:
+        case Py_hmac_kind_hmac_vectorized_blake2b_32: {
+            Py_FatalError("HMAC hash kind must not be a vectorized kind");
+            return;
+        }
+        default:
+            return;
+    }
+}
+#else
+static inline void
+assert_is_static_hmac_hash_kind(HMAC_Hash_Kind Py_UNUSED(kind)) {}
+#endif
+
+/*
+ * Convert a HMAC hash static kind into a runtime kind.
+ *
+ * A "runtime" kind is derived from a static kind and depends
+ * on the host CPUID features. In particular, this is the kind
+ * that a HMAC object internally stores.
+ */
+static HMAC_Hash_Kind
+narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
+{
+    switch (kind) {
+        case Py_hmac_kind_hmac_blake2s_32: {
+#if HACL_CAN_COMPILE_SIMD128
+            if (state->can_run_simd128) {
+                return Py_hmac_kind_hmac_vectorized_blake2s_32;
+            }
+#endif
+            return kind;
+        }
+        case Py_hmac_kind_hmac_blake2b_32: {
+#if HACL_CAN_COMPILE_SIMD256
+            if (state->can_run_simd256) {
+                return Py_hmac_kind_hmac_vectorized_blake2b_32;
+            }
+#endif
+            return kind;
+        }
+        default:
+            return kind;
+    }
+}
 
 /*
  * Handle the HACL* exit code.
@@ -1264,7 +1331,16 @@ py_hmac_hinfo_ht_new(void)
     }
 
     for (const py_hmac_hinfo *e = py_hmac_static_hinfo; e->name != NULL; e++) {
-        assert(e->kind != Py_hmac_kind_hash_unknown);
+        /*
+         * The real kind of a HMAC object is obtained only once and is
+         * derived from the kind of the 'py_hmac_hinfo' that could be
+         * found by its name.
+         *
+         * Since 'vectorized_blake2{s,b}_32' depend on the runtime CPUID
+         * features, we should not create 'py_hmac_hinfo' entries for them.
+         */
+        assert_is_static_hmac_hash_kind(e->kind);
+
         py_hmac_hinfo *value = PyMem_Malloc(sizeof(py_hmac_hinfo));
         if (value == NULL) {
             PyErr_NoMemory();
@@ -1366,6 +1442,24 @@ hmacmodule_init_strings(hmacmodule_state *state)
     return 0;
 }
 
+static void
+hmacmodule_init_cpu_features(hmacmodule_state *state)
+{
+#if HACL_CAN_COMPILE_SIMD128
+    // TODO: use py_cpuid_features (gh-125022) to deduce what we want
+    state->can_run_simd128 = false;
+#else
+    state->can_run_simd128 = false;
+#endif
+
+#if HACL_CAN_COMPILE_SIMD256
+    // TODO: use py_cpuid_features (gh-125022) to deduce what we want
+    state->can_run_simd256 = false;
+#else
+    state->can_run_simd256 = false;
+#endif
+}
+
 static int
 hmacmodule_exec(PyObject *module)
 {
@@ -1382,6 +1476,7 @@ hmacmodule_exec(PyObject *module)
     if (hmacmodule_init_strings(state) < 0) {
         return -1;
     }
+    hmacmodule_init_cpu_features(state);
     return 0;
 }
 
