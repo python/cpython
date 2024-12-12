@@ -246,37 +246,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testcapi_err_setlocalestring__doc__,
-"err_setlocalestring($module, exc, value, /)\n"
-"--\n"
-"\n");
-
-#define _TESTCAPI_ERR_SETLOCALESTRING_METHODDEF    \
-    {"err_setlocalestring", _PyCFunction_CAST(_testcapi_err_setlocalestring), METH_FASTCALL, _testcapi_err_setlocalestring__doc__},
-
-static PyObject *
-_testcapi_err_setlocalestring_impl(PyObject *module, PyObject *exc,
-                                   const char *value,
-                                   Py_ssize_t value_length);
-
-static PyObject *
-_testcapi_err_setlocalestring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *exc;
-    const char *value;
-    Py_ssize_t value_length;
-
-    if (!_PyArg_ParseStack(args, nargs, "Oz#:err_setlocalestring",
-        &exc, &value, &value_length)) {
-        goto exit;
-    }
-    return_value = _testcapi_err_setlocalestring_impl(module, exc, value, value_length);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_testcapi_err_setfromerrnowithfilename__doc__,
 "err_setfromerrnowithfilename($module, error, exc, value, /)\n"
 "--\n"
@@ -488,4 +457,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=51b21bb9bec436bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d917e9ec082e69ee input=a9049054013a1b77]*/

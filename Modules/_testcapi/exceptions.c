@@ -157,24 +157,6 @@ _testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
     return NULL;
 }
 
-/*[clinic input]
-_testcapi.err_setlocalestring
-    exc: object
-    value: str(zeroes=True, accept={robuffer, str, NoneType})
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_err_setlocalestring_impl(PyObject *module, PyObject *exc,
-                                   const char *value,
-                                   Py_ssize_t value_length)
-/*[clinic end generated code: output=5c02a10d4eb573d7 input=628c26bdc2497a92]*/
-{
-    NULLABLE(exc)
-    _PyErr_SetLocaleString(exc, value);
-    return NULL;
-}
-
 
 /*[clinic input]
 _testcapi.err_setfromerrnowithfilename
@@ -418,7 +400,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
     _TESTCAPI_ERR_SETSTRING_METHODDEF
-    _TESTCAPI_ERR_SETLOCALESTRING_METHODDEF
     _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
     _TESTCAPI_RAISE_MEMORYERROR_METHODDEF

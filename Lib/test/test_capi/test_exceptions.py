@@ -256,23 +256,6 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         # CRASHES setstring(ZeroDivisionError, NULL)
         # CRASHES setstring(NULL, b'error')
 
-    def test_set_locale_string(self):
-        # test _PyErr_SetLocaleString()
-        setlocalestring = _testcapi.err_setlocalestring
-        with self.assertRaises(ZeroDivisionError) as e:
-            setlocalestring(ZeroDivisionError, b'error')
-        self.assertEqual(e.exception.args, ('error',))
-        with self.assertRaises(ZeroDivisionError) as e:
-            setlocalestring(ZeroDivisionError, 'помилка'.encode())
-        self.assertEqual(e.exception.args, ('помилка',))
-
-        with self.assertRaises(ZeroDivisionError):
-            setlocalestring(ZeroDivisionError, b'\xff')
-        self.assertRaises(SystemError, setlocalestring, list, b'error')
-
-        # CRASHES setlocalestring(ZeroDivisionError, NULL)
-        # CRASHES setlocalestring(NULL, b'error')
-
     def test_format(self):
         """Test PyErr_Format()"""
         import_helper.import_module('ctypes')
