@@ -459,6 +459,12 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
+        # For odd number of character(s)
+        for value in ("a", "aaa", "deadbee"):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn("fromhex() arg must contain an even number of hexadecimal digits", str(cm.exception))
+
         for data, pos in (
             # invalid first hexadecimal character
             ('12 x4 56', 3),
