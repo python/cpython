@@ -1299,6 +1299,10 @@ PyLong_GetSign:int:::
 PyLong_GetSign:PyObject*:v:0:
 PyLong_GetSign:int*:sign::
 
+PyLong_Export:int:::
+PyLong_Export:PyObject*:obj:0:
+PyLong_Export:PyLongExport*:export_long::
+
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
 
