@@ -81,7 +81,6 @@ class PurePathBase:
         '_raw_paths',
     )
     parser = posixpath
-    _globber = PathGlobber
 
     def __init__(self, *args):
         for arg in args:
@@ -321,7 +320,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(sep, case_sensitive)
+        globber = PathGlobber(sep, case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -337,7 +336,7 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
+        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
 
@@ -512,7 +511,7 @@ class PathBase(PurePathBase):
         else:
             case_pedantic = True
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts)
         return select(self)
 

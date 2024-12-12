@@ -101,7 +101,6 @@ class PurePath(PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = _StringGlobber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -497,7 +496,7 @@ class PurePath(PurePathBase):
         # paths shouldn't match wildcards, so we change it to the empty string.
         path = str(self) if self.parts else ''
         pattern = str(pattern) if pattern.parts else ''
-        globber = self._globber(self.parser.sep, case_sensitive, recursive=True)
+        globber = _StringGlobber(self.parser.sep, case_sensitive, recursive=True)
         return globber.compile(pattern)(path) is not None
 
 # Subclassing os.PathLike makes isinstance() checks slower,
@@ -743,7 +742,7 @@ class Path(PathBase, PurePath):
             case_pedantic = True
         parts = self._parse_pattern(pattern)
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts[::-1])
         root = str(self)
         paths = select(root)
