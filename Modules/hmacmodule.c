@@ -498,6 +498,24 @@ _hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
 }
 
 /*
+ * Return a new HACL* internal state or return NULL on failure.
+ *
+ * An appropriate exception is set if the state cannot be created.
+ */
+static HACL_HMAC_state *
+_hacl_hmac_state_new(HMAC_Hash_Kind kind, uint8_t *key, uint32_t len)
+{
+    assert(kind != Py_hmac_kind_hash_unknown);
+    HACL_HMAC_state *state = NULL;
+    hacl_errno_t retcode = Hacl_Streaming_HMAC_malloc_(kind, key, len, &state);
+    if (_hacl_convert_errno(retcode, NULL) < 0) {
+        assert(state == NULL);
+        return NULL;
+    }
+    return state;
+}
+
+/*
  * Free the HACL* internal state.
  */
 static inline void
@@ -656,6 +674,164 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 }
 
 // --- HMAC object ------------------------------------------------------------
+
+/*
+ * Use the HMAC information 'info' to populate the corresponding fields.
+ *
+ * The real 'kind' for BLAKE-2 is obtained once and depends on both static
+ * capabilities (supported compiler flags) and runtime CPUID features.
+ */
+static void
+hmac_set_hinfo(hmacmodule_state *state,
+               HMACObject *self, const py_hmac_hinfo *info)
+{
+    assert(info->display_name != NULL);
+    self->name = Py_NewRef(info->display_name);
+    assert_is_static_hmac_hash_kind(info->kind);
+    self->kind = narrow_hmac_hash_kind(state, info->kind);
+    assert(info->block_size <= Py_hmac_hash_max_block_size);
+    self->block_size = info->block_size;
+    assert(info->digest_size <= Py_hmac_hash_max_digest_size);
+    self->digest_size = info->digest_size;
+    assert(info->api.compute != NULL);
+    assert(info->api.compute_py != NULL);
+    self->api = info->api;
+}
+
+/*
+ * Create initial HACL* internal state with the given key.
+ *
+ * This function MUST only be called by the HMAC object constructor
+ * and after hmac_set_hinfo() has been called, lest the behaviour is
+ * undefined.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static int
+hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
+{
+    assert(key != NULL);
+#ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
+    // Technically speaking, we could hash the key to make it small
+    // but it would require to call the hash functions ourselves and
+    // not rely on HACL* implementation anymore. As such, we explicitly
+    // reject keys that do not fit on 32 bits until HACL* handles them.
+    if (len > UINT32_MAX_AS_SSIZE_T) {
+        PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);
+        return -1;
+    }
+#endif
+    assert(self->kind != Py_hmac_kind_hash_unknown);
+    // _hacl_hmac_state_new() may set an exception on error
+    self->state = _hacl_hmac_state_new(self->kind, key, len);
+    return self->state == NULL ? -1 : 0;
+}
+
+/*
+ * Feed initial data.
+ *
+ * This function MUST only be called by the HMAC object constructor
+ * and after hmac_set_hinfo() and hmac_new_initial_state() have been
+ * called, lest the behaviour is undefined.
+ *
+ * Return 0 on success and -1 on failure.
+ */
+static int
+hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
+{
+    assert(self->name != NULL);
+    assert(self->state != NULL);
+    if (len == 0) {
+        // do nothing if the buffer is empty
+        return 0;
+    }
+
+    if (len < HASHLIB_GIL_MINSIZE) {
+        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, return -1);
+        return 0;
+    }
+
+    int res = 0;
+    Py_BEGIN_ALLOW_THREADS
+        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, goto error);
+        goto done;
+#ifndef NDEBUG
+error:
+        res = -1;
+#else
+        Py_UNREACHABLE();
+#endif
+done:
+    Py_END_ALLOW_THREADS
+    return res;
+}
+
+/*[clinic input]
+_hmac.new
+
+    key as keyobj: object
+    msg as msgobj: object(c_default="NULL") = None
+    digestmod as hash_info_ref: object(c_default="NULL") = None
+
+Return a new HMAC object.
+[clinic start generated code]*/
+
+static PyObject *
+_hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
+               PyObject *hash_info_ref)
+/*[clinic end generated code: output=7c7573a427d58758 input=92fc7c0a00707d42]*/
+{
+    hmacmodule_state *state = get_hmacmodule_state(module);
+    if (hash_info_ref == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "new() missing 1 required argument 'digestmod'");
+        return NULL;
+    }
+
+    const py_hmac_hinfo *info = find_hash_info(state, hash_info_ref);
+    if (info == NULL) {
+        return NULL;
+    }
+
+    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    if (self == NULL) {
+        return NULL;
+    }
+    HASHLIB_INIT_MUTEX(self);
+    hmac_set_hinfo(state, self, info);
+    int rc;
+    // Create the HACL* internal state with the given key.
+    Py_buffer key;
+    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error_on_key);
+    rc = hmac_new_initial_state(self, key.buf, key.len);
+    PyBuffer_Release(&key);
+    if (rc < 0) {
+        goto error;
+    }
+    // Feed the internal state the initial message if any.
+    if (msgobj != NULL && msgobj != Py_None) {
+        Py_buffer msg;
+        GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
+        rc = hmac_feed_initial_data(self, msg.buf, msg.len);
+        PyBuffer_Release(&msg);
+#ifndef NDEBUG
+        if (rc < 0) {
+            goto error;
+        }
+#else
+        (void)rc;
+#endif
+    }
+    assert(rc == 0);
+    PyObject_GC_Track(self);
+    return (PyObject *)self;
+
+error_on_key:
+    self->state = NULL;
+error:
+    Py_DECREF(self);
+    return NULL;
+}
 
 /*
  * Copy HMAC hash information from 'src' to 'out'.
@@ -1240,6 +1416,7 @@ _hmac_compute_blake2b_32_impl(PyObject *module, PyObject *key, PyObject *msg)
 // --- HMAC module methods ----------------------------------------------------
 
 static PyMethodDef hmacmodule_methods[] = {
+    _HMAC_NEW_METHODDEF
     /* one-shot dispatcher */
     _HMAC_COMPUTE_DIGEST_METHODDEF
     /* one-shot methods */
