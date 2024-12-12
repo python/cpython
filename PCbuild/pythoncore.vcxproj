@@ -431,6 +431,8 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_HMAC.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_HMAC.c" />
     <ClCompile Include="..\Modules\_hacl\Lib_Memzero0.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
