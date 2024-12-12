@@ -229,6 +229,31 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self._check_str(p.__fspath__(), ('a/b',))
         self._check_str(os.fspath(p), ('a/b',))
 
+    def test_bytes(self):
+        P = self.cls
+        with self.assertRaises(TypeError):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
     def test_bytes_exc_message(self):
         P = self.cls
         message = (r"argument should be a str or an os\.PathLike object "
