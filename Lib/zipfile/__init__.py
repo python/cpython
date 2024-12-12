@@ -241,7 +241,9 @@ def is_zipfile(filename):
     result = False
     try:
         if hasattr(filename, "read"):
+            pos = filename.tell()
             result = _check_zipfile(fp=filename)
+            filename.seek(pos)
         else:
             with open(filename, "rb") as fp:
                 result = _check_zipfile(fp)
@@ -309,7 +311,7 @@ def _EndRecData(fpin):
         fpin.seek(-sizeEndCentDir, 2)
     except OSError:
         return None
-    data = fpin.read()
+    data = fpin.read(sizeEndCentDir)
     if (len(data) == sizeEndCentDir and
         data[0:4] == stringEndArchive and
         data[-2:] == b"\000\000"):
@@ -329,9 +331,9 @@ def _EndRecData(fpin):
     # record signature. The comment is the last item in the ZIP file and may be
     # up to 64K long.  It is assumed that the "end of central directory" magic
     # number does not appear in the comment.
-    maxCommentStart = max(filesize - (1 << 16) - sizeEndCentDir, 0)
+    maxCommentStart = max(filesize - ZIP_MAX_COMMENT - sizeEndCentDir, 0)
     fpin.seek(maxCommentStart, 0)
-    data = fpin.read()
+    data = fpin.read(ZIP_MAX_COMMENT + sizeEndCentDir)
     start = data.rfind(stringEndArchive)
     if start >= 0:
         # found the magic number; attempt to unpack and interpret

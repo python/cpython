@@ -1,6 +1,6 @@
 .. highlight:: c
 
-.. _monitoring:
+.. _c-api-monitoring:
 
 Monitoring C API
 ================
@@ -141,18 +141,18 @@ would typically correspond to a python function.
    to the base-2 logarithm of ``sys.monitoring.events.PY_START``.
    ``state_array`` is an array with a monitoring state entry for each event in
    ``event_types``, it is allocated by the user but populated by
-   ``PyMonitoring_EnterScope`` with information about the activation state of
+   :c:func:`!PyMonitoring_EnterScope` with information about the activation state of
    the event. The size of ``event_types`` (and hence also of ``state_array``)
    is given in ``length``.
 
    The ``version`` argument is a pointer to a value which should be allocated
    by the user together with ``state_array`` and initialized to 0,
-   and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
+   and then set only by :c:func:`!PyMonitoring_EnterScope` itself. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
 
    The scopes referred to here are lexical scopes: a function, class or method.
-   ``PyMonitoring_EnterScope`` should be called whenever the lexical scope is
+   :c:func:`!PyMonitoring_EnterScope` should be called whenever the lexical scope is
    entered. Scopes can be reentered, reusing the same *state_array* and *version*,
    in situations like when emulating a recursive Python function. When a code-like's
    execution is paused, such as when emulating a generator, the scope needs to
@@ -189,4 +189,4 @@ would typically correspond to a python function.
 
 .. c:function:: int PyMonitoring_ExitScope(void)
 
-   Exit the last scope that was entered with ``PyMonitoring_EnterScope``.
+   Exit the last scope that was entered with :c:func:`!PyMonitoring_EnterScope`.

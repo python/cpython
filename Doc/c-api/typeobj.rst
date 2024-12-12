@@ -355,7 +355,7 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`newfunc`           | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
-|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyTypeObject` * |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
@@ -567,12 +567,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    For :ref:`statically allocated type objects <static-types>`,
    the *tp_name* field should contain a dot.
-   Everything before the last dot is made accessible as the :attr:`__module__`
+   Everything before the last dot is made accessible as the :attr:`~type.__module__`
    attribute, and everything after the last dot is made accessible as the
-   :attr:`~definition.__name__` attribute.
+   :attr:`~type.__name__` attribute.
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
-   :attr:`~definition.__name__` attribute, and the :attr:`__module__` attribute is undefined
+   :attr:`~type.__name__` attribute, and the :attr:`~type.__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
@@ -681,6 +681,19 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          tp->tp_free(self);
          Py_DECREF(tp);
      }
+
+   .. warning::
+
+      In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
+      any Python thread, not just the thread which created the object (if the
+      object becomes part of a refcount cycle, that cycle might be collected by
+      a garbage collection on any thread).  This is not a problem for Python
+      API calls, since the thread on which :c:member:`!tp_dealloc` is called
+      will own the Global Interpreter Lock (GIL).  However, if the object being
+      destroyed in turn destroys objects from some other C or C++ library, care
+      should be taken to ensure that destroying those objects on the thread
+      which called :c:member:`!tp_dealloc` will not violate any assumptions of
+      the library.
 
 
    **Inheritance:**
@@ -1131,7 +1144,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
 
-      This bit indicates that instances of the class have a ``__dict__``
+      This bit indicates that instances of the class have a `~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
@@ -1335,8 +1348,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
-   type object.  This is exposed as the :attr:`__doc__` attribute on the type and
-   instances of the type.
+   type object.  This is exposed as the :attr:`~type.__doc__` attribute on the
+   type and instances of the type.
 
    **Inheritance:**
 
@@ -2036,7 +2049,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    A collection of subclasses.  Internal use only.  May be an invalid pointer.
 
    To get a list of subclasses, call the Python method
-   :py:meth:`~class.__subclasses__`.
+   :py:meth:`~type.__subclasses__`.
 
    .. versionchanged:: 3.12
 
@@ -2108,17 +2121,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           /* Restore the saved exception. */
           PyErr_Restore(error_type, error_value, error_traceback);
       }
-
-   Also, note that, in a garbage collected Python,
-   :c:member:`~PyTypeObject.tp_dealloc` may be called from
-   any Python thread, not just the thread which created the object (if the object
-   becomes part of a refcount cycle, that cycle might be collected by a garbage
-   collection on any thread).  This is not a problem for Python API calls, since
-   the thread on which tp_dealloc is called will own the Global Interpreter Lock
-   (GIL). However, if the object being destroyed in turn destroys objects from some
-   other C or C++ library, care should be taken to ensure that destroying those
-   objects on the thread which called tp_dealloc will not violate any assumptions
-   of the library.
 
    **Inheritance:**
 
@@ -2228,7 +2230,7 @@ This is done by filling a :c:type:`PyType_Spec` structure and calling
 .. _number-structs:
 
 Number Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2342,7 +2344,7 @@ Number Object Structures
 .. _mapping-structs:
 
 Mapping Object Structures
-=========================
+-------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2379,7 +2381,7 @@ Mapping Object Structures
 .. _sequence-structs:
 
 Sequence Object Structures
-==========================
+--------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2459,7 +2461,7 @@ Sequence Object Structures
 .. _buffer-structs:
 
 Buffer Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Greg J. Stein <greg@lyra.org>
 .. sectionauthor:: Benjamin Peterson
@@ -2554,7 +2556,7 @@ Buffer Object Structures
 
 
 Async Object Structures
-=======================
+-----------------------
 
 .. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
@@ -2622,7 +2624,7 @@ Async Object Structures
 .. _slot-typedefs:
 
 Slot Type typedefs
-==================
+------------------
 
 .. c:type:: PyObject *(*allocfunc)(PyTypeObject *cls, Py_ssize_t nitems)
 
@@ -2645,7 +2647,7 @@ Slot Type typedefs
 
    See :c:member:`~PyTypeObject.tp_free`.
 
-.. c:type:: PyObject *(*newfunc)(PyObject *, PyObject *, PyObject *)
+.. c:type:: PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *)
 
    See :c:member:`~PyTypeObject.tp_new`.
 
@@ -2731,7 +2733,7 @@ Slot Type typedefs
 .. _typedef-examples:
 
 Examples
-========
+--------
 
 The following are simple examples of Python type definitions.  They
 include common usage you may encounter.  Some demonstrate tricky corner

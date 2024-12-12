@@ -90,7 +90,7 @@ If a name is bound in a block, it is a local variable of that block, unless
 declared as :keyword:`nonlocal` or :keyword:`global`.  If a name is bound at
 the module level, it is a global variable.  (The variables of the module code
 block are local and global.)  If a variable is used in a code block but not
-defined there, it is a :dfn:`free variable`.
+defined there, it is a :term:`free variable`.
 
 Each occurrence of a name in the program text refers to the :dfn:`binding` of
 that name established by the following name resolution rules.
@@ -226,8 +226,8 @@ Annotation scopes differ from function scopes in the following ways:
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within annotation scopes can introduce new names.
 * While annotation scopes have an internal name, that name is not reflected in the
-  :term:`__qualname__ <qualified name>` of objects defined within the scope.
-  Instead, the :attr:`!__qualname__`
+  :term:`qualified name` of objects defined within the scope.
+  Instead, the :attr:`~definition.__qualname__`
   of such objects is as if the object were defined in the enclosing scope.
 
 .. versionadded:: 3.12
@@ -337,6 +337,9 @@ enclosing namespace, but in the global namespace.  [#]_ The :func:`exec` and
 :func:`eval` functions have optional arguments to override the global and local
 namespace.  If only one namespace is specified, it is used for both.
 
+.. XXX(ncoghlan) above is only accurate for string execution. When executing code objects,
+   closure cells may now be passed explicitly to resolve co_freevars references.
+   Docs issue: https://github.com/python/cpython/issues/122826
 
 .. _exceptions:
 

@@ -276,8 +276,8 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
-the class: ``"A simple example class"``.
+:attr:`~type.__doc__` is also a valid attribute, returning the docstring
+belonging to the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
 object is a parameterless function that returns a new instance of the class.
@@ -932,6 +932,6 @@ Examples::
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's
-   namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
+   namespace; the name ``__dict__`` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.

@@ -64,8 +64,8 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
     }
 }
 
-// Unlock a mutex, returns 0 if the mutex is not locked (used for improved
-// error messages).
+// Unlock a mutex, returns -1 if the mutex is not locked (used for improved
+// error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
 
@@ -160,8 +160,9 @@ typedef struct {
 
 PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
 PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
-
+extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while

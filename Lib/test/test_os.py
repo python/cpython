@@ -805,14 +805,28 @@ class UtimeTests(unittest.TestCase):
         set_time(filename, (atime_ns, mtime_ns))
         st = os.stat(filename)
 
-        if support_subsecond:
-            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
-            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+        if support.is_emscripten:
+            # Emscripten timestamps are roundtripped through a 53 bit integer of
+            # nanoseconds. If we want to represent ~50 years which is an 11
+            # digits number of seconds:
+            # 2*log10(60) + log10(24) + log10(365) + log10(60) + log10(50)
+            # is about 11. Because 53 * log10(2) is about 16, we only have 5
+            # digits worth of sub-second precision.
+            # Some day it would be good to fix this upstream.
+            delta=1e-5
+            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
+            self.assertAlmostEqual(st.st_mtime_ns, mtime_ns, delta=1e9 * 1e-5)
         else:
-            self.assertEqual(st.st_atime, atime_ns * 1e-9)
-            self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
-        self.assertEqual(st.st_atime_ns, atime_ns)
-        self.assertEqual(st.st_mtime_ns, mtime_ns)
+            if support_subsecond:
+                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
+                self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+            else:
+                self.assertEqual(st.st_atime, atime_ns * 1e-9)
+                self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
+            self.assertEqual(st.st_atime_ns, atime_ns)
+            self.assertEqual(st.st_mtime_ns, mtime_ns)
 
     def test_utime(self):
         def set_time(filename, ns):
@@ -1298,8 +1312,8 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self._test_underlying_process_env('_A_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
-    def test_refresh(self):
-        # Test os.environ.refresh()
+    def test_reload_environ(self):
+        # Test os.reload_environ()
         has_environb = hasattr(os, 'environb')
 
         # Test with putenv() which doesn't update os.environ
@@ -1309,7 +1323,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'python_value')
 
-        os.environ.refresh()
+        os.reload_environ()
         self.assertEqual(os.environ['test_env'], 'new_value')
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'new_value')
@@ -1320,28 +1334,28 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'new_value')
 
-        os.environ.refresh()
+        os.reload_environ()
         self.assertNotIn('test_env', os.environ)
         if has_environb:
             self.assertNotIn(b'test_env', os.environb)
 
         if has_environb:
-            # test os.environb.refresh() with putenv()
+            # test reload_environ() on os.environb with putenv()
             os.environb[b'test_env'] = b'python_value2'
             os.putenv("test_env", "new_value2")
             self.assertEqual(os.environb[b'test_env'], b'python_value2')
             self.assertEqual(os.environ['test_env'], 'python_value2')
 
-            os.environb.refresh()
+            os.reload_environ()
             self.assertEqual(os.environb[b'test_env'], b'new_value2')
             self.assertEqual(os.environ['test_env'], 'new_value2')
 
-            # test os.environb.refresh() with unsetenv()
+            # test reload_environ() on os.environb with unsetenv()
             os.unsetenv('test_env')
             self.assertEqual(os.environb[b'test_env'], b'new_value2')
             self.assertEqual(os.environ['test_env'], 'new_value2')
 
-            os.environb.refresh()
+            os.reload_environ()
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
@@ -2351,9 +2365,13 @@ class Win32ErrorTests(unittest.TestCase):
 
 @unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdatasync", "fstat",
-               "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
-    singles_fildes = {"fchdir", "fdatasync", "fsync"}
+    singles = ["fchdir", "dup", "fstat", "fstatvfs", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir"}
+    # systemd-nspawn --suppress-sync=true does not verify fd passed
+    # fdatasync() and fsync(), and always returns success
+    if not support.in_systemd_nspawn_sync_suppressed():
+        singles += ["fdatasync", "fsync"]
+        singles_fildes |= {"fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
@@ -2443,8 +2461,8 @@ class TestInvalidFD(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
-    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
+        self.assertIn("PC_NAME_MAX", os.pathconf_names)
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
         self.check_bool(os.pathconf, "PC_NAME_MAX")
@@ -3173,7 +3191,8 @@ class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.wintypes
+        # Ruff false positive -- it thinks we're redefining `ctypes` here
+        import ctypes.wintypes  # noqa: F811
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
@@ -3962,10 +3981,10 @@ class ExtendedAttributeTests(unittest.TestCase):
         xattr.remove("user.test")
         self.assertEqual(set(listxattr(fn)), xattr)
         self.assertEqual(getxattr(fn, s("user.test2"), **kwargs), b"foo")
-        setxattr(fn, s("user.test"), b"a"*1024, **kwargs)
-        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*1024)
+        setxattr(fn, s("user.test"), b"a"*256, **kwargs)
+        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*256)
         removexattr(fn, s("user.test"), **kwargs)
-        many = sorted("user.test{}".format(i) for i in range(100))
+        many = sorted("user.test{}".format(i) for i in range(32))
         for thing in many:
             setxattr(fn, thing, b"x", **kwargs)
         self.assertEqual(set(listxattr(fn)), set(init_xattr) | set(many))
@@ -4169,6 +4188,7 @@ class EventfdTests(unittest.TestCase):
         os.eventfd_read(fd)
 
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
