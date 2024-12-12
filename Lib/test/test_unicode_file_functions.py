@@ -125,7 +125,7 @@ class UnicodeFileTests(unittest.TestCase):
     # open(), os.stat(), etc. don't raise any exception.
     @unittest.skipIf(is_apple, 'irrelevant test on Apple platforms')
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
+        support.is_wasi,
         "test fails on Emscripten/WASI when host platform is macOS."
     )
     def test_normalize(self):
