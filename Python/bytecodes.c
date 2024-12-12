@@ -2136,7 +2136,7 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
+            DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
         split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {

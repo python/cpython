@@ -5397,7 +5397,7 @@
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
+                DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid), LOAD_ATTR);
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {

@@ -2583,7 +2583,7 @@
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            if (!_PyObject_InlineValues(owner_o)->valid) {
+            if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
