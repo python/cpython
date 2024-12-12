@@ -571,12 +571,6 @@ class PathBase(PurePathBase):
                 yield path, dirnames, filenames
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
-    def expanduser(self):
-        """ Return a new path with expanded ~ and ~user constructs
-        (as returned by os.path.expanduser)
-        """
-        raise UnsupportedOperation(self._unsupported_msg('expanduser()'))
-
     def readlink(self):
         """
         Return the path to which the symbolic link points.
@@ -596,20 +590,6 @@ class PathBase(PurePathBase):
         is used by copy().
         """
         self.symlink_to(link.readlink())
-
-    def hardlink_to(self, target):
-        """
-        Make this path a hard link pointing to the same file as *target*.
-
-        Note the order of arguments (self, target) is the reverse of os.link's.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('hardlink_to()'))
-
-    def touch(self, mode=0o666, exist_ok=True):
-        """
-        Create this file with the given access mode, if it doesn't exist.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('touch()'))
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
@@ -729,37 +709,3 @@ class PathBase(PurePathBase):
         else:
             target = self.with_segments(target_dir, name)
         return self.move(target)
-
-    def chmod(self, mode, *, follow_symlinks=True):
-        """
-        Change the permissions of the path, like os.chmod().
-        """
-        raise UnsupportedOperation(self._unsupported_msg('chmod()'))
-
-    def lchmod(self, mode):
-        """
-        Like chmod(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chmod(mode, follow_symlinks=False)
-
-    def owner(self, *, follow_symlinks=True):
-        """
-        Return the login name of the file owner.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('owner()'))
-
-    def group(self, *, follow_symlinks=True):
-        """
-        Return the group name of the file gid.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('group()'))
-
-    @classmethod
-    def from_uri(cls, uri):
-        """Return a new path from the given 'file' URI."""
-        raise UnsupportedOperation(cls._unsupported_msg('from_uri()'))
-
-    def as_uri(self):
-        """Return the path as a URI."""
-        raise UnsupportedOperation(self._unsupported_msg('as_uri()'))
