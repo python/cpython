@@ -20,15 +20,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
 
 
-__all__ = ["UnsupportedOperation"]
-
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is attempted.
-    """
-    pass
-
-
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
@@ -353,8 +344,8 @@ class PathBase(PurePathBase):
 
     This class provides dummy implementations for many methods that derived
     classes can override selectively; the default implementations raise
-    UnsupportedOperation. The most basic methods, such as stat() and open(),
-    directly raise UnsupportedOperation; these basic methods are called by
+    NotImplementedError. The most basic methods, such as stat() and open(),
+    directly raise NotImplementedError; these basic methods are called by
     other methods such as is_dir() and read_text().
 
     The Path class derives this class to implement local filesystem paths.
@@ -363,16 +354,12 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported"
-
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('stat()'))
+        raise NotImplementedError
 
     # Convenience functions for querying the stat results
 
@@ -448,7 +435,7 @@ class PathBase(PurePathBase):
         Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('open()'))
+        raise NotImplementedError
 
     def read_bytes(self):
         """
@@ -498,7 +485,7 @@ class PathBase(PurePathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
+        raise NotImplementedError
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
@@ -575,14 +562,14 @@ class PathBase(PurePathBase):
         """
         Return the path to which the symbolic link points.
         """
-        raise UnsupportedOperation(self._unsupported_msg('readlink()'))
+        raise NotImplementedError
 
     def symlink_to(self, target, target_is_directory=False):
         """
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        raise UnsupportedOperation(self._unsupported_msg('symlink_to()'))
+        raise NotImplementedError
 
     def _symlink_to_target_of(self, link):
         """
@@ -595,7 +582,7 @@ class PathBase(PurePathBase):
         """
         Create a new directory at this given path.
         """
-        raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+        raise NotImplementedError
 
     # Metadata keys supported by this path type.
     _readable_metadata = _writable_metadata = frozenset()
@@ -604,13 +591,13 @@ class PathBase(PurePathBase):
         """
         Returns path metadata as a dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
+        raise NotImplementedError
 
     def _write_metadata(self, metadata, *, follow_symlinks=True):
         """
         Sets path metadata from the given dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
+        raise NotImplementedError
 
     def _copy_metadata(self, target, *, follow_symlinks=True):
         """
@@ -687,7 +674,7 @@ class PathBase(PurePathBase):
         """
         Delete this file or directory (including all sub-directories).
         """
-        raise UnsupportedOperation(self._unsupported_msg('_delete()'))
+        raise NotImplementedError
 
     def move(self, target):
         """
