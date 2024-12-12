@@ -1,1 +1,1 @@
-Fix ``socket.send_fds`` ignoring flags and address parameters
+Fix :func:`socket.send_fds` ignoring flags and address parameters.
