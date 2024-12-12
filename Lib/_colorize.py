@@ -32,14 +32,6 @@ def get_colors(colorize: bool = False) -> ANSIColors:
 
 
 def can_colorize() -> bool:
-    if sys.platform == "win32":
-        try:
-            import nt
-
-            if not nt._supports_virtual_terminal():
-                return False
-        except (ImportError, AttributeError):
-            return False
     if not sys.flags.ignore_environment:
         if os.environ.get("PYTHON_COLORS") == "0":
             return False
@@ -57,6 +49,15 @@ def can_colorize() -> bool:
 
     if not hasattr(sys.stderr, "fileno"):
         return False
+
+    if sys.platform == "win32":
+        try:
+            import nt
+
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
 
     try:
         return os.isatty(sys.stderr.fileno())
