@@ -8,6 +8,62 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_hmac_HMAC_update__doc__,
+"update($self, /, msg)\n"
+"--\n"
+"\n"
+"Update the HMAC object with the given message.");
+
+#define _HMAC_HMAC_UPDATE_METHODDEF    \
+    {"update", _PyCFunction_CAST(_hmac_HMAC_update), METH_FASTCALL|METH_KEYWORDS, _hmac_HMAC_update__doc__},
+
+static PyObject *
+_hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj);
+
+static PyObject *
+_hmac_HMAC_update(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(msg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"msg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "update",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *msgobj;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    msgobj = args[0];
+    return_value = _hmac_HMAC_update_impl((HMACObject *)self, msgobj);
+
+exit:
+    return return_value;
+}
+
 #if !defined(_hmac_HMAC_name_DOCSTR)
 #  define _hmac_HMAC_name_DOCSTR NULL
 #endif
@@ -472,4 +528,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3ccaa9e79eace79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee95583e077dcfdf input=a9049054013a1b77]*/
