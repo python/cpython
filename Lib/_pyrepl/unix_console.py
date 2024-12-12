@@ -29,6 +29,7 @@ import signal
 import struct
 import termios
 import time
+import platform
 from fcntl import ioctl
 
 from . import curses
@@ -109,7 +110,7 @@ delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 try:
     poll: type[select.poll] = select.poll
 except AttributeError:
-    # this is exactly the minumum necessary to support what we
+    # this is exactly the minimum necessary to support what we
     # do with poll objects
     class MinimalPoll:
         def __init__(self):
@@ -198,8 +199,14 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
+    def more_in_buffer(self) -> bool:
+        return bool(
+            self.input_buffer
+            and self.input_buffer_pos < len(self.input_buffer)
+        )
+
     def __read(self, n: int) -> bytes:
-        if not self.input_buffer or self.input_buffer_pos >= len(self.input_buffer):
+        if not self.more_in_buffer():
             self.input_buffer = os.read(self.input_fd, 10000)
 
         ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
@@ -334,6 +341,10 @@ class UnixConsole(Console):
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
+        # In macOS terminal we need to deactivate line wrap via ANSI escape code
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7l")
+
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
@@ -362,6 +373,9 @@ class UnixConsole(Console):
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
 
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7h")
+
         if hasattr(self, "old_sigwinch"):
             signal.signal(signal.SIGWINCH, self.old_sigwinch)
             del self.old_sigwinch
@@ -385,6 +399,7 @@ class UnixConsole(Console):
         """
         if not block and not self.wait(timeout=0):
             return None
+
         while self.event_queue.empty():
             while True:
                 try:
@@ -405,7 +420,11 @@ class UnixConsole(Console):
         """
         Wait for events on the console.
         """
-        return bool(self.pollob.poll(timeout))
+        return (
+            not self.event_queue.empty()
+            or self.more_in_buffer()
+            or bool(self.pollob.poll(timeout))
+        )
 
     def set_cursor_vis(self, visible):
         """
@@ -613,7 +632,7 @@ class UnixConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]

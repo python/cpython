@@ -28,6 +28,7 @@ from __future__ import annotations
 import _sitebuiltins
 import linecache
 import functools
+import os
 import sys
 import code
 
@@ -50,7 +51,9 @@ def check() -> str:
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        if term := os.environ.get("TERM", ""):
+            term = f"; TERM={term}"
+        return str(str(e) or repr(e) or "unknown error") + term
     return ""
 
 
@@ -76,6 +79,7 @@ REPL_COMMANDS = {
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
 
@@ -158,11 +162,10 @@ def run_multiline_interactive_console(
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
-            if r.last_command and 'isearch' in r.last_command.__name__:
-                r.isearch_direction = ''
-                r.console.forgetinput()
-                r.pop_input_trans()
-                r.dirty = True
+            if r.input_trans is r.isearch_trans:
+                r.do_cmd(("isearch-end", [""]))
+            r.pos = len(r.get_unicode())
+            r.dirty = True
             r.refresh()
             r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")

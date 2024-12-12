@@ -783,7 +783,7 @@ class SubprocessMixin:
 
     def test_subprocess_protocol_events(self):
         # gh-108973: Test that all subprocess protocol methods are called.
-        # The protocol methods are not called in a determistic order.
+        # The protocol methods are not called in a deterministic order.
         # The order depends on the event loop and the operating system.
         events = []
         fds = [1, 2]

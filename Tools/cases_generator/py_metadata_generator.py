@@ -18,7 +18,6 @@ from cwriter import CWriter
 from typing import TextIO
 
 
-
 DEFAULT_OUTPUT = ROOT / "Lib/_opcode_metadata.py"
 
 

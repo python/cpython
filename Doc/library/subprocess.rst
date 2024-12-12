@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -608,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -618,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -626,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -1561,36 +1561,22 @@ runtime):
       Module which provides function to parse and escape command lines.
 
 
-.. _disable_vfork:
 .. _disable_posix_spawn:
 
-Disabling use of ``vfork()`` or ``posix_spawn()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Disable use of ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly unusual situation where you need to
-prevent ``vfork()`` from being used by Python, you can set the
-:const:`subprocess._USE_VFORK` attribute to a false value.
-
-::
-
-   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
-
-Setting this has no impact on use of ``posix_spawn()`` which could use
-``vfork()`` internally within its libc implementation.  There is a similar
-:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
-that.
-
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 
-It is safe to set these to false on any Python version. They will have no
-effect on older versions when unsupported. Do not assume the attributes are
-available to read. Despite their names, a true value does not indicate that the
+It is safe to set this to false on any Python version. It will have no
+effect on older or newer versions where unsupported. Do not assume the attribute
+is available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
@@ -1598,4 +1584,3 @@ reproduce the issue you were seeing. Link to that issue from a comment in your
 code.
 
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
-.. versionadded:: 3.11 ``_USE_VFORK``

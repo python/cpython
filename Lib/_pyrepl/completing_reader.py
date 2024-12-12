@@ -91,7 +91,7 @@ def build_menu(
         #          D E F                       B E
         #          G                           C F
         #
-        # "fill" the table with empty words, so we always have the same amout
+        # "fill" the table with empty words, so we always have the same amount
         # of rows for each column
         missing = cols*rows - len(wordlist)
         wordlist = wordlist + ['']*missing

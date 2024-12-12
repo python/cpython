@@ -197,7 +197,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       >>> del k1      # d = {k2: 2}
 
    .. versionchanged:: 3.9
-      Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+      Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
 :class:`WeakKeyDictionary` objects have an additional method that
 exposes the internal references directly.  The references are not guaranteed to

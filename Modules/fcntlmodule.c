@@ -580,12 +580,17 @@ all_ins(PyObject* m)
 #ifdef F_GETPIPE_SZ
     if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
 #endif
+
+/* On Android, FICLONE is blocked by SELinux. */
+#ifndef __ANDROID__
 #ifdef FICLONE
     if (PyModule_AddIntMacro(m, FICLONE)) return -1;
 #endif
 #ifdef FICLONERANGE
     if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
 #endif
+#endif
+
 #ifdef F_GETOWN_EX
     // since Linux 2.6.32
     if (PyModule_AddIntMacro(m, F_GETOWN_EX)) return -1;

@@ -31,6 +31,22 @@ typedef struct _PyThreadStateImpl {
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelists freelists;
     struct _brc_thread_state brc;
+    struct {
+        // The per-thread refcounts
+        Py_ssize_t *values;
+
+        // Size of the refcounts array.
+        Py_ssize_t size;
+
+        // If set, don't use per-thread refcounts
+        int is_finalized;
+    } refcounts;
+
+    // Index to use to retrieve thread-local bytecode for this thread
+    int32_t tlbc_index;
+
+    // When >1, code objects do not immortalize their non-string constants.
+    int suppress_co_const_immortalization;
 #endif
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
@@ -38,7 +54,6 @@ typedef struct _PyThreadStateImpl {
 #endif
 
 } _PyThreadStateImpl;
-
 
 #ifdef __cplusplus
 }

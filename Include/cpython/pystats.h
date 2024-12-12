@@ -70,6 +70,10 @@ typedef struct _object_stats {
     uint64_t decrefs;
     uint64_t interpreter_increfs;
     uint64_t interpreter_decrefs;
+    uint64_t immortal_increfs;
+    uint64_t immortal_decrefs;
+    uint64_t interpreter_immortal_increfs;
+    uint64_t interpreter_immortal_decrefs;
     uint64_t allocations;
     uint64_t allocations512;
     uint64_t allocations4k;
@@ -95,6 +99,8 @@ typedef struct _gc_stats {
     uint64_t collections;
     uint64_t object_visits;
     uint64_t objects_collected;
+    uint64_t objects_transitively_reachable;
+    uint64_t objects_not_transitively_reachable;
 } GCStats;
 
 typedef struct _uop_stats {
@@ -163,7 +169,11 @@ PyAPI_DATA(PyStats*) _Py_stats;
 #ifdef _PY_INTERPRETER
 #  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_increfs++; } while (0)
 #  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_decrefs++; } while (0)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_increfs++; } while (0)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_decrefs++; } while (0)
 #else
 #  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.increfs++; } while (0)
 #  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.decrefs++; } while (0)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_increfs++; } while (0)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_decrefs++; } while (0)
 #endif

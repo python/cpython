@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
-           'warning', 'getLogRecordFactory', 'setLogRecordFactory',
+           'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
            'getHandlerByName', 'getHandlerNames']
 
@@ -1530,6 +1530,11 @@ class Logger(Filterer):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Log 'msg % args' with severity 'ERROR'.
@@ -1906,6 +1911,11 @@ class LoggerAdapter(object):
         """
         self.log(WARNING, msg, *args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Delegate an error call to the underlying logger.
@@ -2168,6 +2178,11 @@ def warning(msg, *args, **kwargs):
     if len(root.handlers) == 0:
         basicConfig()
     root.warning(msg, *args, **kwargs)
+
+def warn(msg, *args, **kwargs):
+    warnings.warn("The 'warn' function is deprecated, "
+        "use 'warning' instead", DeprecationWarning, 2)
+    warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
     """

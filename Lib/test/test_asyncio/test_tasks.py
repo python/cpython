@@ -20,6 +20,7 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
@@ -1939,6 +1940,7 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_iscoroutinefunction(self):
         def fn():
             pass
@@ -1956,6 +1958,7 @@ class BaseTaskTests:
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
         self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
@@ -2684,6 +2687,28 @@ class BaseTaskTests:
             self.assertIs(task.get_context(), context)
         finally:
             loop.close()
+
+    def test_proper_refcounts(self):
+        # see: https://github.com/python/cpython/issues/126083
+        class Break:
+            def __str__(self):
+                raise RuntimeError("break")
+
+        obj = object()
+        initial_refcount = sys.getrefcount(obj)
+
+        coro = coroutine_function()
+        loop = asyncio.new_event_loop()
+        task = asyncio.Task.__new__(asyncio.Task)
+
+        for _ in range(5):
+            with self.assertRaisesRegex(RuntimeError, 'break'):
+                task.__init__(coro, loop=loop, context=obj, name=Break())
+
+        coro.close()
+        del task
+
+        self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
 
 def add_subclass_tests(cls):

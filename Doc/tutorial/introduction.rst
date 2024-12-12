@@ -197,21 +197,19 @@ and workarounds.
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+the end of the line.  In the following example, the initial newline is not
+included::
 
-   print("""\
+   >>> print("""\
+   ... Usage: thingy [OPTIONS]
+   ...      -h                        Display this usage message
+   ...      -H hostname               Hostname to connect to
+   ... """)
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """)
 
-produces the following output (note that the initial newline is not included):
-
-.. code-block:: text
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   >>>
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
@@ -501,8 +499,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b
