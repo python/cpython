@@ -976,7 +976,8 @@ specialize_inline_values_access_lock_held(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(owner);
-    Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+    uint32_t version;
+    Py_ssize_t index = _PyDictKeys_StringLookupAndVersion(keys, name, &version);
     assert (index != DKIX_ERROR);
     if (index == DKIX_EMPTY) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
