@@ -170,6 +170,119 @@ typedef struct py_hmac_hacl_api {
 #endif
 
 /*
+ * Assert that 'LEN' can be safely casted to uint32_t.
+ *
+ * The 'LEN' parameter should be convertible to Py_ssize_t.
+ */
+#ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
+#define Py_CHECK_HACL_UINT32_T_LENGTH(LEN)                  \
+    do {                                                    \
+        assert((Py_ssize_t)(LEN) <= UINT32_MAX_AS_SSIZE_T); \
+    } while (0)
+#else
+#define Py_CHECK_HACL_UINT32_T_LENGTH(LEN)
+#endif
+
+/*
+ * Call the HACL* HMAC-HASH update function on the given data.
+ *
+ * The magnitude of 'LEN' is not checked and thus 'LEN' must be
+ * safely convertible to a uint32_t value.
+ */
+#define Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, LEN)          \
+    Hacl_Streaming_HMAC_update(HACL_STATE, BUF, (uint32_t)(LEN))
+
+/*
+ * Call the HACL* HMAC-HASH update function on the given data.
+ *
+ * On DEBUG builds, the 'ERRACTION' statements are executed if
+ * the update() call returned a non-successful HACL* exit code.
+ *
+ * The buffer 'BUF' and its length 'LEN' are left untouched.
+ *
+ * The formal signature of this macro is:
+ *
+ *     (HACL_HMAC_state *, uint8_t *, uint32_t, PyObject *, (C statements))
+ */
+#ifndef NDEBUG
+#define Py_HMAC_HACL_UPDATE_ONCE(                                           \
+    HACL_STATE, BUF, LEN,                                                   \
+    ALGORITHM, ERRACTION                                                    \
+)                                                                           \
+    do {                                                                    \
+        Py_CHECK_HACL_UINT32_T_LENGTH(LEN);                                 \
+        hacl_errno_t code = Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, LEN); \
+        if (_hacl_convert_errno(code, (ALGORITHM)) < 0) {                   \
+            ERRACTION;                                                      \
+        }                                                                   \
+    } while (0)
+#else
+#define Py_HMAC_HACL_UPDATE_ONCE(                                   \
+    HACL_STATE, BUF, LEN,                                           \
+    _ALGORITHM, _ERRACTION                                          \
+)                                                                   \
+    do {                                                            \
+        (void)Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, (LEN));     \
+    } while (0)
+#endif
+
+/*
+ * Repetivively call the HACL* HMAC-HASH update function on the given
+ * data until the buffer length 'LEN' is strictly less than UINT32_MAX.
+ *
+ * On builds with PY_SSIZE_T_MAX <= UINT32_MAX, this is a no-op.
+ *
+ * The buffer 'BUF' (resp. 'LEN') is advanced (resp. decremented)
+ * by UINT32_MAX after each update. On DEBUG builds, each update()
+ * call is verified and the 'ERRACTION' statements are executed if
+ * a non-successful HACL* exit code is being returned.
+ *
+ * In particular, 'BUF' and 'LEN' must be variable names and not
+ * expressions on their own.
+ *
+ * The formal signature of this macro is:
+ *
+ *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
+ */
+#ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
+#define Py_HMAC_HACL_UPDATE_LOOP(                                   \
+    HACL_STATE, BUF, LEN,                                           \
+    ALGORITHM, ERRACTION                                            \
+)                                                                   \
+    do {                                                            \
+        while ((Py_ssize_t)LEN > UINT32_MAX_AS_SSIZE_T) {           \
+            Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, UINT32_MAX,   \
+                                     ALGORITHM, ERRACTION);         \
+            BUF += UINT32_MAX;                                      \
+            LEN -= UINT32_MAX;                                      \
+        }                                                           \
+    } while (0)
+#else
+#define Py_HMAC_HACL_UPDATE_LOOP(   \
+    HACL_STATE, BUF, LEN,           \
+    _ALGORITHM, _ERRACTION          \
+)
+#endif
+
+/*
+ * Perform the HMAC-HASH update() operation in a streaming fashion.
+ *
+ * The formal signature of this macro is:
+ *
+ *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
+ */
+#define Py_HMAC_HACL_UPDATE(                            \
+    HACL_STATE, BUF, LEN,                               \
+    ALGORITHM, ERRACTION                                \
+)                                                       \
+    do {                                                \
+        Py_HMAC_HACL_UPDATE_LOOP(HACL_STATE, BUF, LEN,  \
+                                 ALGORITHM, ERRACTION); \
+        Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, LEN,  \
+                                 ALGORITHM, ERRACTION); \
+    } while (0)
+
+/*
  * HMAC underlying hash function static information.
  */
 typedef struct py_hmac_hinfo {
@@ -265,6 +378,52 @@ class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
 #undef clinic_state
 
 // --- Helpers ----------------------------------------------------------------
+//
+// The helpers have the following naming conventions:
+//
+// - Helpers with the "_hacl" prefix are thin wrappers around HACL* functions.
+//   Buffer lengths given as inputs should fit on 32-bit integers.
+
+/*
+ * Handle the HACL* exit code.
+ *
+ * If 'code' represents a successful operation, this returns 0.
+ * Otherwise, this sets an appropriate exception and returns -1.
+ */
+static int
+_hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
+{
+    switch (code) {
+        case Hacl_Streaming_Types_Success: {
+            return 0;
+        }
+        case Hacl_Streaming_Types_InvalidAlgorithm: {
+            // only makes sense if an algorithm is known at call time
+            assert(algorithm != NULL);
+            assert(PyUnicode_CheckExact(algorithm));
+            PyErr_Format(PyExc_ValueError, "invalid algorithm: %U", algorithm);
+            return -1;
+        }
+        case Hacl_Streaming_Types_InvalidLength: {
+            PyErr_SetString(PyExc_ValueError, "invalid length");
+            return -1;
+        }
+        case Hacl_Streaming_Types_MaximumLengthExceeded: {
+            PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
+            return -1;
+        }
+        case Hacl_Streaming_Types_OutOfMemory: {
+            PyErr_NoMemory();
+            return -1;
+        }
+        default: {
+            PyErr_Format(PyExc_RuntimeError,
+                         "HACL* internal routine failed with error code: %d",
+                         code);
+            return -1;
+        }
+    }
+}
 
 /*
  * Free the HACL* internal state.
