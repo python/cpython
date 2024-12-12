@@ -35,12 +35,17 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
-from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support import (
+    ALWAYS_EQ,
+    MISSING_C_DOCSTRINGS,
+    cpython_only,
+    force_not_colorized,
+    has_subprocess_support,
+    import_helper,
+)
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
-from test.support import has_subprocess_support
 from test import support
 
 from test.test_inspect import inspect_fodder as mod
@@ -890,6 +895,7 @@ class TestGetsourceStdlib(unittest.TestCase):
         self.assertEqual(src.splitlines(True), lines)
 
 class TestGetsourceInteractive(unittest.TestCase):
+    @force_not_colorized
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
         # there is no `__file__` in the __main__ module

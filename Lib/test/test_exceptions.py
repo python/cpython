@@ -11,11 +11,17 @@ from codecs import BOM_UTF8
 from itertools import product
 from textwrap import dedent
 
-from test.support import (captured_stderr, check_impl_detail,
-                          cpython_only, gc_collect,
-                          no_tracing, script_helper,
-                          SuppressCrashReport,
-                          force_not_colorized)
+from test.support import (
+    SuppressCrashReport,
+    captured_stderr,
+    check_impl_detail,
+    cpython_only,
+    force_not_colorized,
+    force_not_colorized_test_class,
+    gc_collect,
+    no_tracing,
+    script_helper,
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
@@ -1465,6 +1471,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @force_not_colorized
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -2180,6 +2187,7 @@ class AssertionErrorTests(unittest.TestCase):
                 self.assertEqual(result[-len(expected):], expected)
 
 
+@force_not_colorized_test_class
 class SyntaxErrorTests(unittest.TestCase):
     maxDiff = None
 

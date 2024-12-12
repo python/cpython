@@ -7,12 +7,18 @@
 """
 
 import hashlib
-from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+from http.client import HTTPException
+from test.support import (
+    check_disallow_instantiation,
+    cpython_only,
+    force_not_colorized,
+    open_urlresource,
+    requires_resource,
+    script_helper,
+)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -277,6 +283,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # Ensure that the type disallows instantiation (bpo-43916)
         check_disallow_instantiation(self, unicodedata.UCD)
 
+    @force_not_colorized
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
