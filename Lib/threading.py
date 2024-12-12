@@ -1026,16 +1026,20 @@ class Thread:
         def _set_native_id(self):
             self._native_id = get_native_id()
 
+    def _set_os_name(self):
+        if _set_name is None or not self._name:
+            return
+        try:
+            _set_name(self._name)
+        except OSError:
+            pass
+
     def _bootstrap_inner(self):
         try:
             self._set_ident()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
-            if _set_name is not None and self._name:
-                try:
-                    _set_name(self._name)
-                except OSError:
-                    pass
+            self._set_os_name()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1115,6 +1119,8 @@ class Thread:
     def name(self, name):
         assert self._initialized, "Thread.__init__() not called"
         self._name = str(name)
+        if get_ident() == self._ident:
+            self._set_os_name()
 
     @property
     def ident(self):

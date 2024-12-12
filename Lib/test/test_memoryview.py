@@ -15,6 +15,7 @@ import copy
 import pickle
 import struct
 
+from itertools import product
 from test.support import import_helper
 
 
@@ -58,11 +59,52 @@ class AbstractMemoryTests:
         for tp in self._types:
             self.check_getitem_with_type(tp)
 
+    def test_index(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)  # may be a sub-view
+            l = m.tolist()
+            k = 2 * len(self._source)
+
+            for chi in self._source:
+                if chi in l:
+                    self.assertEqual(m.index(chi), l.index(chi))
+                else:
+                    self.assertRaises(ValueError, m.index, chi)
+
+                for start, stop in product(range(-k, k), range(-k, k)):
+                    index = -1
+                    try:
+                        index = l.index(chi, start, stop)
+                    except ValueError:
+                        pass
+
+                    if index == -1:
+                        self.assertRaises(ValueError, m.index, chi, start, stop)
+                    else:
+                        self.assertEqual(m.index(chi, start, stop), index)
+
     def test_iter(self):
         for tp in self._types:
             b = tp(self._source)
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
+
+    def test_count(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            l = m.tolist()
+            for ch in list(m):
+                self.assertEqual(m.count(ch), l.count(ch))
+
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # may be sliced
+            l = m.tolist()
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), l.count(ord('a')))
+                self.assertEqual(m.count(ord('b')), l.count(ord('b')))
+                self.assertEqual(m.count(ord('c')), l.count(ord('c')))
 
     def test_setitem_readonly(self):
         if not self.ro_type:
@@ -437,6 +479,18 @@ class BaseMemoryviewTests:
 
     def _check_contents(self, tp, obj, contents):
         self.assertEqual(obj, tp(contents))
+
+    def test_count(self):
+        super().test_count()
+        for tp in self._types:
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # should not be sliced
+            self.assertEqual(len(b), len(m))
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), 5)
+                self.assertEqual(m.count(ord('b')), 0)
+                self.assertEqual(m.count(ord('c')), 3)
+
 
 class BaseMemorySliceTests:
     source_bytes = b"XabcdefY"
