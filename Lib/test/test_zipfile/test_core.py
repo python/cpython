@@ -2334,7 +2334,7 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(-1), b'men!')
 
     def test_uncompressed_interleaved_seek_read(self):
-        # Issue 127847: Make sure the position in the archive is correct
+        # gh-127847: Make sure the position in the archive is correct
         # in the special case of seeking in a ZIP_STORED entry.
         with zipfile.ZipFile(TESTFN, "w") as zipf:
             zipf.writestr("a.txt", "123")
