@@ -2255,12 +2255,20 @@ dummy_func(
         split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
-            char *addr = (char *)owner_o + index;
-            PyObject *attr_o = *(PyObject **)addr;
+            PyObject **addr = (PyObject **)((char *)owner_o + index);
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
             DEOPT_IF(attr_o == NULL);
+            #ifdef Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+            DEOPT_IF(!increfed);
+            #else
+            // XXX - Bug in cases generator
+            Py_INCREF(attr_o);
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            #endif
             STAT_INC(LOAD_ATTR, hit);
+
             null = PyStackRef_NULL;
-            attr = PyStackRef_FromPyObjectNew(attr_o);
             DECREF_INPUTS();
         }
 

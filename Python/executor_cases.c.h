@@ -2805,15 +2805,25 @@
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            char *addr = (char *)owner_o + index;
-            PyObject *attr_o = *(PyObject **)addr;
+            PyObject **addr = (PyObject **)((char *)owner_o + index);
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+            if (!increfed) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #else
+            // XXX - Bug in cases generator
+            Py_INCREF(attr_o);
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            #endif
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
-            attr = PyStackRef_FromPyObjectNew(attr_o);
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             break;
@@ -2827,15 +2837,25 @@
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            char *addr = (char *)owner_o + index;
-            PyObject *attr_o = *(PyObject **)addr;
+            PyObject **addr = (PyObject **)((char *)owner_o + index);
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+            if (!increfed) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #else
+            // XXX - Bug in cases generator
+            Py_INCREF(attr_o);
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            #endif
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
-            attr = PyStackRef_FromPyObjectNew(attr_o);
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             stack_pointer[0] = null;

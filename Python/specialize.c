@@ -1203,7 +1203,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         }
         case OBJECT_SLOT:
         {
-            FT_UNIMPLEMENTED();
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
             struct PyMemberDef *dmem = member->d_member;
             Py_ssize_t offset = dmem->offset;
@@ -1222,17 +1221,16 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             assert(dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
-            write_u32(cache->version, type->tp_version_tag);
+            write_u32(cache->version, tp_version);
             specialize(instr, LOAD_ATTR_SLOT);
             return 0;
         }
         case DUNDER_CLASS:
         {
-            FT_UNIMPLEMENTED();
             Py_ssize_t offset = offsetof(PyObject, ob_type);
             assert(offset == (uint16_t)offset);
             cache->index = (uint16_t)offset;
-            write_u32(cache->version, type->tp_version_tag);
+            write_u32(cache->version, tp_version);
             specialize(instr, LOAD_ATTR_SLOT);
             return 0;
         }

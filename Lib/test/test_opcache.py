@@ -948,6 +948,33 @@ class TestRacesDoNotCrash(TestBase):
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
+    def test_load_attr_slot(self):
+        def get_items():
+            class C:
+                __slots__ = ["a", "b"]
+
+            items = []
+            for i in range(self.ITEMS):
+                item = C()
+                item.a = i
+                item.b = i + self.ITEMS
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                item.a
+                item.b
+
+        def write(items):
+            for item in items:
+                item.a = 100
+                item.b = 200
+
+        opname = "LOAD_ATTR_SLOT"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
     def test_load_attr_with_hint(self):
         def get_items():
             class C:

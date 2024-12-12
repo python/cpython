@@ -5768,12 +5768,19 @@
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                char *addr = (char *)owner_o + index;
-                PyObject *attr_o = *(PyObject **)addr;
+                PyObject **addr = (PyObject **)((char *)owner_o + index);
+                PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
                 DEOPT_IF(attr_o == NULL, LOAD_ATTR);
+                #ifdef Py_GIL_DISABLED
+                int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+                DEOPT_IF(!increfed, LOAD_ATTR);
+                #else
+                // XXX - Bug in cases generator
+                Py_INCREF(attr_o);
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                #endif
                 STAT_INC(LOAD_ATTR, hit);
                 null = PyStackRef_NULL;
-                attr = PyStackRef_FromPyObjectNew(attr_o);
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
