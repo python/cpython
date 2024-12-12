@@ -1776,7 +1776,12 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
         fprintf(out, ": %d</td></tr>\n", line);
     }
     for (uint32_t i = 0; i < executor->code_size; i++) {
-        /* Write row for uop. Each row has a port, for outgoing edges */
+        /* Write row for uop.
+         * The `port` is a marker so that outgoing edges can
+         * be placed correctly. If a row is marked `port=17`,
+         * then the outgoing edge is `{EXEC_NAME}:17 -> {TARGET}`
+         * https://graphviz.readthedocs.io/en/stable/manual.html#node-ports-compass
+         */
         _PyUOpInstruction const *inst = &executor->trace[i];
         const char *opname = _PyOpcode_uop_name[inst->opcode];
 #ifdef Py_STATS
