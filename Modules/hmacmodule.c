@@ -466,6 +466,14 @@ _hmac_HMAC_digest_size_get_impl(HMACObject *self)
     return PyLong_FromUInt32(self->digest_size);
 }
 
+static PyObject *
+HMACObject_repr(PyObject *self)
+{
+    HMACObject *hmac = HMACObject_CAST(self);
+    assert(hmac->name != NULL);
+    return PyUnicode_FromFormat("<%U HMAC object @ %p>", hmac->name, self);
+}
+
 static int
 HMACObject_clear(PyObject *self)
 {
@@ -505,6 +513,7 @@ static PyGetSetDef HMACObject_getsets[] = {
 };
 
 static PyType_Slot HMACObject_Type_slots[] = {
+    {Py_tp_repr, HMACObject_repr},
     {Py_tp_methods, HMACObject_methods},
     {Py_tp_getset, HMACObject_getsets},
     {Py_tp_clear, HMACObject_clear},
