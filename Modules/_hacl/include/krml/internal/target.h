@@ -173,6 +173,13 @@
 #  endif
 #endif
 
+/* In expression position, use the comma-operator and a malloc to return an
+ * expression of the right size. KaRaMeL passes t as the parameter to the macro.
+ */
+#define KRML_EABORT(t, msg)                                                    \
+  (KRML_HOST_PRINTF("KaRaMeL abort at %s:%d\n%s\n", __FILE__, __LINE__, msg),  \
+   KRML_HOST_EXIT(255), *((t *)KRML_HOST_MALLOC(sizeof(t))))
+
 /* In FStar.Buffer.fst, the size of arrays is uint32_t, but it's a number of
  * *elements*. Do an ugly, run-time check (some of which KaRaMeL can eliminate).
  */
