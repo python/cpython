@@ -180,9 +180,10 @@ def get_syscalls(code, strace_flags, prelude="", cleanup="",
 @cache
 def _can_strace():
     res = strace_python("import sys; sys.exit(0)", [], check=False)
-    assert res.events(), "Should have parsed multiple calls"
-
-    return res.strace_returncode == 0 and res.python_returncode == 0
+    if res.strace_returncode == 0 and res.python_returncode == 0:
+        assert res.events(), "Should have parsed multiple calls"
+        return True
+    return False
 
 
 def requires_strace():
