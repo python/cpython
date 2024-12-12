@@ -877,6 +877,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns the sequence elements n times."
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+   def loops(n):
+       "Loop n times. Like range(n) but without creating integers."
+       # for _ in loops(100): ...
+       return repeat(None, n)
+
    def tail(n, iterable):
        "Return an iterator over the last n items."
        # tail(3, 'ABCDEFG') → E F G
@@ -1010,7 +1015,7 @@ The following recipes have a more mathematical flavor:
 .. testcode::
 
    def powerset(iterable):
-       "powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       # powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
@@ -1113,6 +1118,11 @@ The following recipes have a more mathematical flavor:
        if n > 1:
            yield n
 
+   def is_prime(n):
+       "Return True if n is prime."
+       # is_prime(1_000_000_000_000_403) → True
+       return n > 1 and next(factor(n)) == n
+
    def totient(n):
        "Count of natural numbers up to n that are coprime to n."
        # https://mathworld.wolfram.com/TotientFunction.html
@@ -1200,6 +1210,16 @@ The following recipes have a more mathematical flavor:
 
     >>> list(islice(tabulate(lambda x: 2*x), 4))
     [0, 2, 4, 6]
+
+
+    >>> for _ in loops(5):
+    ...     print('hi')
+    ...
+    hi
+    hi
+    hi
+    hi
+    hi
 
 
     >>> list(tail(3, 'ABCDEFG'))
@@ -1472,6 +1492,23 @@ The following recipes have a more mathematical flavor:
     78498
     >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
     >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
+
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    >>> list(filter(is_prime, range(-100, 100))) == small_primes
+    True
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> any(map(is_prime, carmichael))
+    False
+    >>> # https://www.wolframalpha.com/input?i=is+128884753939+prime
+    >>> is_prime(128_884_753_939)           # large prime
+    True
+    >>> is_prime(999953 * 999983)           # large semiprime
+    False
+    >>> is_prime(1_000_000_000_000_007)     # factor() example
+    False
+    >>> is_prime(1_000_000_000_000_403)     # factor() example
     True
 
 
