@@ -1015,7 +1015,7 @@ The following recipes have a more mathematical flavor:
 .. testcode::
 
    def powerset(iterable):
-       "powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       # powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
@@ -1104,11 +1104,6 @@ The following recipes have a more mathematical flavor:
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        yield from iter_index(data, 1, start=3)
 
-   def is_prime(n):
-       "Return True if n is prime."
-       # is_prime(1_000_000_000_000_403) → True
-       return n > 1 and all(n % p for p in sieve(math.isqrt(n) + 1))
-
    def factor(n):
        "Prime factors of n."
        # factor(99) → 3 3 11
@@ -1122,6 +1117,11 @@ The following recipes have a more mathematical flavor:
                    return
        if n > 1:
            yield n
+
+   def is_prime(n):
+       "Return True if n is prime."
+       # is_prime(1_000_000_000_000_403) → True
+       return n > 1 and next(factor(n)) == n
 
    def totient(n):
        "Count of natural numbers up to n that are coprime to n."
