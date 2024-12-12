@@ -968,6 +968,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
 static int
 specialize_inline_values_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    unsigned int tp_version,
     PyObject *name, int base_op, int values_op)
 {
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
@@ -986,7 +987,7 @@ specialize_inline_values_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
         return 0;
     }
-    write_u32(cache->version, type->tp_version_tag);
+    write_u32(cache->version, tp_version);
     cache->index = (uint16_t)offset;
     specialize(instr, values_op);
     return 1;
@@ -995,6 +996,7 @@ specialize_inline_values_access(
 static int
 specialize_managed_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    unsigned int tp_version,
     PyObject *name, int base_op, int hint_op)
 {
     PyDictObject *dict = _PyObject_GetManagedDict(owner);
@@ -1018,7 +1020,7 @@ specialize_managed_dict_access(
         return 0;
     }
     cache->index = (uint16_t)index;
-    write_u32(cache->version, type->tp_version_tag);
+    write_u32(cache->version, tp_version);
     specialize(instr, hint_op);
     return 1;
 }
@@ -1026,7 +1028,7 @@ specialize_managed_dict_access(
 static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
-    DescriptorClassification kind, PyObject *name,
+    unsigned int tp_version, DescriptorClassification kind, PyObject *name,
     int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
@@ -1042,11 +1044,11 @@ specialize_dict_access(
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
         return specialize_inline_values_access(
-            owner, instr, type, name, base_op, values_op);
+            owner, instr, type, tp_version, name, base_op, values_op);
     }
     else {
         return specialize_managed_dict_access(
-            owner, instr, type, name, base_op, hint_op);
+            owner, instr, type, tp_version, name, base_op, hint_op);
     }
 }
 
@@ -1294,7 +1296,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
 try_instance:
     FT_UNIMPLEMENTED();
 
-    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
+    if (specialize_dict_access(owner, instr, type, tp_version, kind, name, LOAD_ATTR,
                                     LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
     {
         return 0;
@@ -1442,8 +1444,8 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
             goto fail;
         case ABSENT:
-            if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
-                                    STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
+            if (specialize_dict_access(owner, instr, type, tp_version, kind, name, STORE_ATTR,
+                                       STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
             {
                 goto success;
             }
