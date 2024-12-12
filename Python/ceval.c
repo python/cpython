@@ -1500,7 +1500,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-
+    for (Py_ssize_t i = 0; i < argcount; i++) {
+        PyStackRef_CheckValid(args[i]);
+    }
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;

@@ -226,11 +226,11 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #ifdef Py_DEBUG
 
 static inline void PyStackRef_CheckValid(_PyStackRef ref) {
+    assert(ref.bits != 0);
     int tag = ref.bits & Py_TAG_BITS;
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
     switch (tag) {
         case 0:
-            break;
         case Py_TAG_REFCNT:
             /* Can be immortal if object was made immortal after reference came into existence */
             assert(obj != NULL && obj != Py_True && obj != Py_False && obj != Py_None);
@@ -346,7 +346,7 @@ PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
     if (!PyStackRef_HasCount(ref)) {
-        Py_INCREF(BITS_TO_PTR(ref));
+        Py_INCREF_MORTAL(BITS_TO_PTR(ref));
     }
     return ref;
 }

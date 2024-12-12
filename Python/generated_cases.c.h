@@ -2096,7 +2096,7 @@
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame = _PyEvalFramePushAndInit(
+                _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                     tstate, callable[0], locals,
                     args, positional_args, kwnames_o, frame
                 );
@@ -2104,12 +2104,10 @@
                 PyStackRef_CLOSE(kwnames);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
-                stack_pointer += -2 - oparg;
+                stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                if (new_frame == NULL) {
-                    goto error;
-                }
+                if (temp == NULL) goto error;
+                new_frame = temp;
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2126,8 +2124,6 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyInterpreterFrame *temp = new_frame;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
@@ -2274,7 +2270,7 @@
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame = _PyEvalFramePushAndInit(
+                _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                     tstate, callable[0], locals,
                     args, positional_args, kwnames_o, frame
                 );
@@ -2282,12 +2278,10 @@
                 PyStackRef_CLOSE(kwnames);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
-                stack_pointer += -2 - oparg;
+                stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                if (new_frame == NULL) {
-                    goto error;
-                }
+                if (temp == NULL) goto error;
+                new_frame = temp;
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2304,8 +2298,6 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyInterpreterFrame *temp = new_frame;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);

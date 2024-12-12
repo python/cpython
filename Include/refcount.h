@@ -245,7 +245,7 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 #ifndef Py_GIL_DISABLED
 static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
 {
-    assert(!_Py_IsImmortal(op));
+    assert(!_Py_IsStaticImmortal(op));
     op->ob_refcnt++;
     _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
