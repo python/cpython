@@ -2599,15 +2599,24 @@
             uint16_t offset = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-            PyObject *attr_o = *value_ptr;
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(LOAD_ATTR, hit);
+            #ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            #else
             Py_INCREF(attr_o);
-            null = PyStackRef_NULL;
             attr = PyStackRef_FromPyObjectSteal(attr_o);
+            #endif
+            STAT_INC(LOAD_ATTR, hit);
+            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             break;
@@ -2622,15 +2631,24 @@
             uint16_t offset = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-            PyObject *attr_o = *value_ptr;
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
             if (attr_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(LOAD_ATTR, hit);
+            #ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            #else
             Py_INCREF(attr_o);
-            null = PyStackRef_NULL;
             attr = PyStackRef_FromPyObjectSteal(attr_o);
+            #endif
+            STAT_INC(LOAD_ATTR, hit);
+            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             stack_pointer[0] = null;
