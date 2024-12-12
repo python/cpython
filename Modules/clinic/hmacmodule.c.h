@@ -8,6 +8,77 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_hmac_new__doc__,
+"new($module, /, key, msg=None, digestmod=None)\n"
+"--\n"
+"\n"
+"Return a new HMAC object.");
+
+#define _HMAC_NEW_METHODDEF    \
+    {"new", _PyCFunction_CAST(_hmac_new), METH_FASTCALL|METH_KEYWORDS, _hmac_new__doc__},
+
+static PyObject *
+_hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
+               PyObject *hash_info_ref);
+
+static PyObject *
+_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(key), &_Py_ID(msg), &_Py_ID(digestmod), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"key", "msg", "digestmod", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "new",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *keyobj;
+    PyObject *msgobj = NULL;
+    PyObject *hash_info_ref = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    keyobj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        msgobj = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    hash_info_ref = args[2];
+skip_optional_pos:
+    return_value = _hmac_new_impl(module, keyobj, msgobj, hash_info_ref);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_hmac_HMAC_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -589,4 +660,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1b21b57fed96fa4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f8ee3b852e0e09e3 input=a9049054013a1b77]*/
