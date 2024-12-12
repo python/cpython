@@ -6044,7 +6044,7 @@ class TestResourceTracker(unittest.TestCase):
                 self._test_resource_tracker_leak_resources(
                     cleanup=cleanup,
                 )
-    
+
     def test_resource_tracker_blocked_signals(self):
         #
         # gh-127586: Check that resource_tracker does not override blocked signals of caller.
