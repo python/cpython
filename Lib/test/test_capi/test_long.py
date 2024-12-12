@@ -748,10 +748,9 @@ class LongTests(unittest.TestCase):
         self.assertEqual(pylong_export(IntSubclass(base**10 * 2 + 1)),
                          (0, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
 
-        for value in (1.0, 0+1j, "abc"):
-            with self.subTest(value=value):
-                with self.assertRaises(TypeError):
-                    pylong_export(value)
+        self.assertRaises(TypeError, pylong_export, 1.0)
+        self.assertRaises(TypeError, pylong_export, 0+1j)
+        self.assertRaises(TypeError, pylong_export, "abc")
 
     def test_longwriter_create(self):
         # Test PyLongWriter_Create()

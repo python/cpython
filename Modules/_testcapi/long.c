@@ -144,35 +144,11 @@ pylong_aspid(PyObject *module, PyObject *arg)
 static PyObject *
 layout_to_dict(const PyLongLayout *layout)
 {
-    PyObject *dict = PyDict_New();
-    if (dict == NULL) {
-        goto error;
-    }
-
-#define SET_DICT(KEY, EXPR) \
-    do { \
-        PyObject *value = (EXPR); \
-        if (value == NULL) { \
-            goto error; \
-        } \
-        int res = PyDict_SetItemString(dict, KEY, value); \
-        Py_DECREF(value); \
-        if (res < 0) { \
-            goto error; \
-        } \
-    } while (0)
-
-    SET_DICT("bits_per_digit", PyLong_FromUnsignedLong(layout->bits_per_digit));
-    SET_DICT("digit_size", PyLong_FromUnsignedLong(layout->digit_size));
-    SET_DICT("digits_order", PyLong_FromLong(layout->digits_order));
-    SET_DICT("digit_endianness", PyLong_FromLong(layout->digit_endianness));
-#undef SET_DICT
-
-    return dict;
-
-error:
-    Py_XDECREF(dict);
-    return NULL;
+    return Py_BuildValue("{sisisisi}",
+        "bits_per_digit", (int)layout->bits_per_digit,
+        "digit_size", (int)layout->digit_size,
+        "digits_order", (int)layout->digits_order,
+        "digit_endianness", (int)layout->digit_endianness);
 }
 
 
@@ -185,6 +161,9 @@ pylong_export(PyObject *module, PyObject *obj)
     }
 
     if (export_long.digits == NULL) {
+        assert(export_long.negative == 0);
+        assert(export_long.ndigits == 0);
+        assert(export_long.digits == NULL);
         return PyLong_FromInt64(export_long.value);
         // PyLong_FreeExport() is not needed in this case
     }
@@ -209,6 +188,7 @@ pylong_export(PyObject *module, PyObject *obj)
         Py_DECREF(item);
     }
 
+    assert(export_long.value == 0);
     PyObject *res = Py_BuildValue("(iN)", export_long.negative, digits);
 
     PyLong_FreeExport(&export_long);
@@ -228,6 +208,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
 {
     int negative;
     PyObject *list;
+    // TODO(vstinner): write test for negative ndigits and digits==NULL
     if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list)) {
         return NULL;
     }
