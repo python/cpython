@@ -186,7 +186,9 @@ def clone_testbed(
         sys.exit(10)
 
     if framework is None:
-        if not (source / "Python.xcframework/ios-arm64_x86_64-simulator/bin").is_dir():
+        if not (
+            source / "Python.xcframework/ios-arm64_x86_64-simulator/bin"
+        ).is_dir():
             print(
                 f"The testbed being cloned ({source}) does not contain "
                 f"a simulator framework. Re-run with --framework"
@@ -214,23 +216,27 @@ def clone_testbed(
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="", flush=True)
-            xc_framework_path = target / "Python.xcframework"
+            xc_framework_path = (target / "Python.xcframework").resolve()
             if xc_framework_path.is_dir():
                 shutil.rmtree(xc_framework_path)
             else:
                 xc_framework_path.unlink()
-            xc_framework_path.symlink_to(framework)
+            xc_framework_path.symlink_to(
+                framework.relative_to(xc_framework_path.parent, walk_up=True)
+            )
             print(" done")
         else:
             print("  Installing simulator framework...", end="", flush=True)
             sim_framework_path = (
                 target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
-            )
+            ).resolve()
             if sim_framework_path.is_dir():
                 shutil.rmtree(sim_framework_path)
             else:
                 sim_framework_path.unlink()
-            sim_framework_path.symlink_to(framework)
+            sim_framework_path.symlink_to(
+                framework.relative_to(sim_framework_path.parent, walk_up=True)
+            )
             print(" done")
     else:
         print("  Using pre-existing iOS framework.")
@@ -351,7 +357,7 @@ def main():
         clone_testbed(
             source=Path(__file__).parent,
             target=Path(context.location),
-            framework=Path(context.framework) if context.framework else None,
+            framework=Path(context.framework).resolve() if context.framework else None,
             apps=[Path(app) for app in context.apps],
         )
     elif context.subcommand == "run":
