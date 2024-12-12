@@ -2341,8 +2341,8 @@ class OtherTests(unittest.TestCase):
             zipf.writestr("b.txt", "456")
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             with zipf.open("a.txt", "r") as a, zipf.open("b.txt", "r") as b:
-                a.read(1)
-                b.seek(1)
+                self.assertEqual(a.read(1), b"1")
+                self.assertEqual(b.seek(1), 1)
                 self.assertEqual(b.read(1), b"5")
 
     @requires_bz2()
