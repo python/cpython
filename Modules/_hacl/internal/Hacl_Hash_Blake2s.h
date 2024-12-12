@@ -35,8 +35,6 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "internal/Hacl_Impl_Blake2_Constants.h"
-#include "internal/Hacl_Hash_Blake2b.h"
 #include "../Hacl_Hash_Blake2s.h"
 
 void Hacl_Hash_Blake2s_init(uint32_t *hash, uint32_t kk, uint32_t nn);
