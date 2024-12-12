@@ -184,7 +184,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
-static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
+static inline void _Py_SetMortal(PyObject *op, short refcnt)
 {
     if (op) {
         assert(_Py_IsImmortal(op));
