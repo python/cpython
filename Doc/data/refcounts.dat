@@ -1303,6 +1303,9 @@ PyLong_Export:int:::
 PyLong_Export:PyObject*:obj:0:
 PyLong_Export:PyLongExport*:export_long::
 
+PyLongWriter_Finish:PyObject*::+1:
+PyLongWriter_Finish:PyLongWriter*:writer::
+
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
 
