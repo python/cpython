@@ -104,8 +104,7 @@ def strace_python(code, strace_flags, check=True):
         return StraceResult(
             strace_returncode=-1,
             python_returncode=-1,
-            event_bytes= \
-                f"error({reason},details={details!r}) = -1".encode('utf-8'),
+            event_bytes= f"error({reason},details={details!r}) = -1".encode('utf-8'),
             stdout=res.out if res else b"",
             stderr=res.err if res else b"")
 
