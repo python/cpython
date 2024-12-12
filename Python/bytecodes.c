@@ -2167,7 +2167,7 @@ dummy_func(
             mod_keys = keys;
         }
 
-        op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys: PyDictKeysObject* -- attr, null if (oparg & 1))) {
+        op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys: PyDictKeysObject * -- attr, null if (oparg & 1))) {
             assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
