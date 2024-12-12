@@ -164,8 +164,9 @@ pylong_export(PyObject *module, PyObject *obj)
         assert(export_long.negative == 0);
         assert(export_long.ndigits == 0);
         assert(export_long.digits == NULL);
-        return PyLong_FromInt64(export_long.value);
-        // PyLong_FreeExport() is not needed in this case
+        PyObject *res = PyLong_FromInt64(export_long.value);
+        PyLong_FreeExport(&export_long);
+        return res;
     }
 
     assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));

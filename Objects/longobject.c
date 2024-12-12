@@ -6797,6 +6797,7 @@ int
 PyLong_Export(PyObject *obj, PyLongExport *export_long)
 {
     if (!PyLong_Check(obj)) {
+        memset(export_long, 0, sizeof(*export_long));
         PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
         return -1;
     }

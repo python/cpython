@@ -703,8 +703,8 @@ Export API
 
    The function must not be called before Python initialization nor after
    Python finalization. The returned layout is valid until Python is
-   finalized. The layout is the same for all Python sub-interpreters and
-   so it can be cached.
+   finalized. The layout is the same for all Python sub-interpreters
+   in a process, and so it can be cached.
 
 
 .. c:struct:: PyLongExport
@@ -714,10 +714,8 @@ Export API
    There are two cases:
 
    * If :c:member:`digits` is ``NULL``, only use the :c:member:`value` member.
-     Calling :c:func:`PyLong_FreeExport` is optional in this case.
    * If :c:member:`digits` is not ``NULL``, use :c:member:`negative`,
      :c:member:`ndigits` and :c:member:`digits` members.
-     Calling :c:func:`PyLong_FreeExport` is mandatory in this case.
 
    .. c:member:: int64_t value
 
@@ -743,19 +741,27 @@ Export API
 
    Export a Python :class:`int` object.
 
-   *export_long* must not be ``NULL``.
+   *export_long* must point to a :c:struct:`PyLongExport` structure allocated
+   by the caller. It must not be ``NULL``.
 
-   On success, set *\*export_long* and return ``0``.
+   On success, fill in *\*export_long* and return ``0``.
    On error, set an exception and return ``-1``.
 
-   If *export_long->digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must
-   be called when the export is no longer needed. Otherwise, calling
-   :c:func:`PyLong_FreeExport` is optional.
+   :c:func:`PyLong_FreeExport` must be called when the export is no longer
+   needed.
+
+    .. impl-detail::
+        This function always succeeds if *obj* is a Python :class:`int` object
+        or a subclass.
 
 
 .. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
 
    Release the export *export_long* created by :c:func:`PyLong_Export`.
+
+   .. impl-detail::
+      Calling :c:func:`PyLong_FreeExport` is optional if *export_long->digits*
+      is ``NULL``.
 
 
 PyLongWriter API
@@ -787,12 +793,18 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    *digits* must not be NULL.
 
-   The caller can either initialize the array of digits *digits* and then
-   either call :c:func:`PyLongWriter_Finish` to get a Python :class:`int` or
-   :c:func:`PyLongWriter_Discard` to destroy the writer instance.  Digits must
-   be in the range [``0``; ``(1 << bits_per_digit) - 1``]  (where the
-   :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits per digit).
-   The unused most significant digits must be set to ``0``.
+   After a successful call to this function, the caller should fill in the
+   array of digits *digits* and then call :c:func:`PyLongWriter_Finish` to get
+   a Python :class:`int`.
+   The layout of *digits* is described by :c:func:`PyLong_GetNativeLayout`.
+
+   Digits must be in the range [``0``; ``(1 << bits_per_digit) - 1``]
+   (where the :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits
+   per digit).
+   Any unused most significant digits must be set to ``0``.
+
+   Alternately, call :c:func:`PyLongWriter_Discard` to destroy the writer
+   instance without creating an :class:`~int` object.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
@@ -805,7 +817,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The function takes care of normalizing the digits and converts the object
    to a compact integer if needed.
 
-   The writer instance is invalid after the call.
+   The writer instance and the *digits* array are invalid after the call.
 
 
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
@@ -814,4 +826,4 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    *writer* must not be ``NULL``.
 
-   The writer instance is invalid after the call.
+   The writer instance and the *digits* array are invalid after the call.
