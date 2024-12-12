@@ -526,7 +526,6 @@ class Path(PathBase, PurePath):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
-    as_uri = PurePath.as_uri
 
     @classmethod
     def _unsupported_msg(cls, attribute):
@@ -813,6 +812,12 @@ class Path(PathBase, PurePath):
             """
             uid = self.stat(follow_symlinks=follow_symlinks).st_uid
             return pwd.getpwuid(uid).pw_name
+    else:
+        def owner(self, *, follow_symlinks=True):
+            """
+            Return the login name of the file owner.
+            """
+            raise UnsupportedOperation(self._unsupported_msg('owner()'))
 
     if grp:
         def group(self, *, follow_symlinks=True):
@@ -821,6 +826,12 @@ class Path(PathBase, PurePath):
             """
             gid = self.stat(follow_symlinks=follow_symlinks).st_gid
             return grp.getgrgid(gid).gr_name
+    else:
+        def group(self, *, follow_symlinks=True):
+            """
+            Return the group name of the file gid.
+            """
+            raise UnsupportedOperation(self._unsupported_msg('group()'))
 
     if hasattr(os, "readlink"):
         def readlink(self):
@@ -891,6 +902,13 @@ class Path(PathBase, PurePath):
         Change the permissions of the path, like os.chmod().
         """
         os.chmod(self, mode, follow_symlinks=follow_symlinks)
+
+    def lchmod(self, mode):
+        """
+        Like chmod(), except if the path points to a symlink, the symlink's
+        permissions are changed, rather than its target's.
+        """
+        self.chmod(mode, follow_symlinks=False)
 
     def unlink(self, missing_ok=False):
         """
@@ -988,6 +1006,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (self, target) is the reverse of os.link's.
             """
             os.link(target, self)
+    else:
+        def hardlink_to(self, target):
+            """
+            Make this path a hard link pointing to the same file as *target*.
+
+            Note the order of arguments (self, target) is the reverse of os.link's.
+            """
+            raise UnsupportedOperation(self._unsupported_msg('hardlink_to()'))
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
