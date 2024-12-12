@@ -141,6 +141,7 @@ async def log_stream_task(initial_devices):
             else:
                 suppress_dupes = False
                 sys.stdout.write(line)
+            sys.stdout.flush()
 
 
 async def xcode_test(location, simulator, verbose):
@@ -170,6 +171,7 @@ async def xcode_test(location, simulator, verbose):
     ) as process:
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
             sys.stdout.write(line)
+            sys.stdout.flush()
 
         status = await asyncio.wait_for(process.wait(), timeout=1)
         exit(status)
