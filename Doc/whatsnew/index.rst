@@ -11,6 +11,8 @@ anyone wishing to stay up-to-date after a new release.
 .. toctree::
    :maxdepth: 2
 
+   3.14.rst
+   3.13.rst
    3.12.rst
    3.11.rst
    3.10.rst
@@ -33,8 +35,8 @@ anyone wishing to stay up-to-date after a new release.
    2.1.rst
    2.0.rst
 
-The "Changelog" is an HTML version of the `file built
-<https://pypi.org/project/blurb>`_ from the contents of the
+The "Changelog" is an HTML version of the :pypi:`file built<blurb>`
+from the contents of the
 :source:`Misc/NEWS.d` directory tree, which contains *all* nontrivial changes
 to Python for the current version.
 

@@ -1,2 +1,0 @@
-Add .pyi as a recognized extension for IDLE on macOS.    This allows opening
-stub files by double clicking on them in the Finder.

@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+# NOTE: to be removed once no longer used in https://github.com/python/buildmaster-config/blob/main/master/custom/factories.py .
+
 # function
 usage() {
     echo "wasi-env - Run command with WASI-SDK"
@@ -55,7 +57,6 @@ if command -v ccache >/dev/null 2>&1; then
     CXX="ccache ${CXX}"
 fi
 
-LDSHARED="${WASI_SDK_PATH}/bin/wasm-ld"
 AR="${WASI_SDK_PATH}/bin/llvm-ar"
 RANLIB="${WASI_SDK_PATH}/bin/ranlib"
 
@@ -72,5 +73,5 @@ export CFLAGS LDFLAGS
 export PKG_CONFIG_PATH PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR
 export PATH
 
-# no exec, it makes arvg[0] path absolute.
+# no exec, it makes argv[0] path absolute.
 "$@"

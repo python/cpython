@@ -3,12 +3,13 @@ import importlib
 import io
 import sys
 import types
-from pathlib import Path, PurePath
+import pathlib
+import contextlib
 
-from . import data01
-from . import zipdata01
 from importlib.resources.abc import ResourceReader
-from test.support import import_helper
+from test.support import import_helper, os_helper
+from . import zip as zip_
+from . import _path
 
 
 from importlib.machinery import ModuleSpec
@@ -67,7 +68,7 @@ def create_package(file=None, path=None, is_package=True, contents=()):
     )
 
 
-class CommonTests(metaclass=abc.ABCMeta):
+class CommonTestsBase(metaclass=abc.ABCMeta):
     """
     Tests shared by test_open, test_path, and test_read.
     """
@@ -80,43 +81,44 @@ class CommonTests(metaclass=abc.ABCMeta):
         """
 
     def test_package_name(self):
-        # Passing in the package name should succeed.
-        self.execute(data01.__name__, 'utf-8.file')
+        """
+        Passing in the package name should succeed.
+        """
+        self.execute(self.data.__name__, 'utf-8.file')
 
     def test_package_object(self):
-        # Passing in the package itself should succeed.
-        self.execute(data01, 'utf-8.file')
+        """
+        Passing in the package itself should succeed.
+        """
+        self.execute(self.data, 'utf-8.file')
 
     def test_string_path(self):
-        # Passing in a string for the path should succeed.
+        """
+        Passing in a string for the path should succeed.
+        """
         path = 'utf-8.file'
-        self.execute(data01, path)
+        self.execute(self.data, path)
 
     def test_pathlib_path(self):
-        # Passing in a pathlib.PurePath object for the path should succeed.
-        path = PurePath('utf-8.file')
-        self.execute(data01, path)
+        """
+        Passing in a pathlib.PurePath object for the path should succeed.
+        """
+        path = pathlib.PurePath('utf-8.file')
+        self.execute(self.data, path)
 
     def test_importing_module_as_side_effect(self):
-        # The anchor package can already be imported.
-        del sys.modules[data01.__name__]
-        self.execute(data01.__name__, 'utf-8.file')
-
-    def test_non_package_by_name(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            self.execute(__name__, 'utf-8.file')
-
-    def test_non_package_by_package(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            module = sys.modules['test.test_importlib.resources.util']
-            self.execute(module, 'utf-8.file')
+        """
+        The anchor package can already be imported.
+        """
+        del sys.modules[self.data.__name__]
+        self.execute(self.data.__name__, 'utf-8.file')
 
     def test_missing_path(self):
-        # Attempting to open or read or request the path for a
-        # non-existent path should succeed if open_resource
-        # can return a viable data stream.
+        """
+        Attempting to open or read or request the path for a
+        non-existent path should succeed if open_resource
+        can return a viable data stream.
+        """
         bytes_data = io.BytesIO(b'Hello, world!')
         package = create_package(file=bytes_data, path=FileNotFoundError())
         self.execute(package, 'utf-8.file')
@@ -139,40 +141,66 @@ class CommonTests(metaclass=abc.ABCMeta):
             self.execute(package, 'utf-8.file')
 
 
-class ZipSetupBase:
-    ZIP_MODULE = None
+fixtures = dict(
+    data01={
+        '__init__.py': '',
+        'binary.file': bytes(range(4)),
+        'utf-16.file': '\ufeffHello, UTF-16 world!\n'.encode('utf-16-le'),
+        'utf-8.file': 'Hello, UTF-8 world!\n'.encode('utf-8'),
+        'subdirectory': {
+            '__init__.py': '',
+            'binary.file': bytes(range(4, 8)),
+        },
+    },
+    data02={
+        '__init__.py': '',
+        'one': {'__init__.py': '', 'resource1.txt': 'one resource'},
+        'two': {'__init__.py': '', 'resource2.txt': 'two resource'},
+        'subdirectory': {'subsubdir': {'resource.txt': 'a resource'}},
+    },
+    namespacedata01={
+        'binary.file': bytes(range(4)),
+        'utf-16.file': '\ufeffHello, UTF-16 world!\n'.encode('utf-16-le'),
+        'utf-8.file': 'Hello, UTF-8 world!\n'.encode('utf-8'),
+        'subdirectory': {
+            'binary.file': bytes(range(12, 16)),
+        },
+    },
+)
 
-    @classmethod
-    def setUpClass(cls):
-        data_path = Path(cls.ZIP_MODULE.__file__)
-        data_dir = data_path.parent
-        cls._zip_path = str(data_dir / 'ziptestdata.zip')
-        sys.path.append(cls._zip_path)
-        cls.data = importlib.import_module('ziptestdata')
 
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            sys.path.remove(cls._zip_path)
-        except ValueError:
-            pass
-
-        try:
-            del sys.path_importer_cache[cls._zip_path]
-            del sys.modules[cls.data.__name__]
-        except KeyError:
-            pass
-
-        try:
-            del cls.data
-            del cls._zip_path
-        except AttributeError:
-            pass
-
+class ModuleSetup:
     def setUp(self):
-        modules = import_helper.modules_setup()
-        self.addCleanup(import_helper.modules_cleanup, *modules)
+        self.fixtures = contextlib.ExitStack()
+        self.addCleanup(self.fixtures.close)
+
+        self.fixtures.enter_context(import_helper.isolated_modules())
+        self.data = self.load_fixture(self.MODULE)
+
+    def load_fixture(self, module):
+        self.tree_on_path({module: fixtures[module]})
+        return importlib.import_module(module)
 
 
-class ZipSetup(ZipSetupBase):
-    ZIP_MODULE = zipdata01  # type: ignore
+class ZipSetup(ModuleSetup):
+    MODULE = 'data01'
+
+    def tree_on_path(self, spec):
+        temp_dir = self.fixtures.enter_context(os_helper.temp_dir())
+        modules = pathlib.Path(temp_dir) / 'zipped modules.zip'
+        self.fixtures.enter_context(
+            import_helper.DirsOnSysPath(str(zip_.make_zip_file(spec, modules)))
+        )
+
+
+class DiskSetup(ModuleSetup):
+    MODULE = 'data01'
+
+    def tree_on_path(self, spec):
+        temp_dir = self.fixtures.enter_context(os_helper.temp_dir())
+        _path.build(spec, pathlib.Path(temp_dir))
+        self.fixtures.enter_context(import_helper.DirsOnSysPath(temp_dir))
+
+
+class CommonTests(DiskSetup, CommonTestsBase):
+    pass

@@ -1,2 +1,0 @@
-Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-bases is deprecated and is planned to be disabled in Python 3.14.

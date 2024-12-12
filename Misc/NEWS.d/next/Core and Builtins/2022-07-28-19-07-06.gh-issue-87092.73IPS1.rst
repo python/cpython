@@ -1,1 +1,0 @@
-Create a 'jump target label' abstraction in the compiler so that the compiler's codegen stage does not work directly with basic blocks. This prepares the code for changes to the underlying CFG generation mechanism.

@@ -1,2 +1,0 @@
-Reload ``opcode`` when raising ``unknown opcode error`` in the interpreter main loop,
-for C compilers to generate dispatching code independently.

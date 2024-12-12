@@ -34,6 +34,11 @@ typedef struct {
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
     int isbytes; /* pattern type (1 - bytes, 0 - string, -1 - None) */
+#ifdef Py_DEBUG
+    /* for simulation of user interruption */
+    int fail_after_count;
+    PyObject *fail_after_exc;
+#endif
     /* pattern code */
     Py_ssize_t codesize;
     SRE_CODE code[1];
@@ -52,11 +57,25 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
+typedef struct {
+    PyObject_VAR_HEAD
+    Py_ssize_t chunks;  /* the number of group references and non-NULL literals
+                         * self->chunks <= 2*Py_SIZE(self) + 1 */
+    PyObject *literal;
+    struct {
+        Py_ssize_t index;
+        PyObject *literal;  /* NULL if empty */
+    } items[0];
+} TemplateObject;
+
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */
     const void* last_ptr; /* helper to check for infinite loops */
     struct SRE_REPEAT_T *prev; /* points to previous repeat context */
+    /* for SRE_REPEAT pool */
+    struct SRE_REPEAT_T *pool_prev;
+    struct SRE_REPEAT_T *pool_next;
 } SRE_REPEAT;
 
 typedef struct {
@@ -73,6 +92,7 @@ typedef struct {
     int charsize; /* character size */
     int match_all;
     int must_advance;
+    int debug;
     /* marks */
     int lastmark;
     int lastindex;
@@ -83,11 +103,19 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    /* SRE_REPEAT pool */
+    SRE_REPEAT *repeat_pool_used;
+    SRE_REPEAT *repeat_pool_unused;
+    unsigned int sigcount;
+#ifdef Py_DEBUG
+    int fail_after_count;
+    PyObject *fail_after_exc;
+#endif
 } SRE_STATE;
 
 typedef struct {
     PyObject_HEAD
-    PyObject* pattern;
+    PatternObject* pattern;
     SRE_STATE state;
     int executing;
 } ScannerObject;

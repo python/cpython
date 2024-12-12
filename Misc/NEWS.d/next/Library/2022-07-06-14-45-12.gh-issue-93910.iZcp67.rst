@@ -1,3 +1,0 @@
-The ability to access the other values of an enum on an enum (e.g.
-``Color.RED.BLUE``) has been restored in order to fix a performance
-regression.

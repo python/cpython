@@ -1,3 +1,0 @@
-Update :data:`sqlite3.Cursor.rowcount` when a DML statement has run to
-completion. This fixes the row count for SQL queries like
-``UPDATE ... RETURNING``. Patch by Erlend E. Aasland.

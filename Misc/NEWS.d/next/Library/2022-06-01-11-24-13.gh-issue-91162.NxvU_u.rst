@@ -1,5 +1,0 @@
-Support splitting of unpacked arbitrary-length tuple over ``TypeVar`` and
-``TypeVarTuple`` parameters. For example:
-
-* ``A[T, *Ts][*tuple[int, ...]]`` -> ``A[int, *tuple[int, ...]]``
-* ``A[*Ts, T][*tuple[int, ...]]`` -> ``A[*tuple[int, ...], int]``

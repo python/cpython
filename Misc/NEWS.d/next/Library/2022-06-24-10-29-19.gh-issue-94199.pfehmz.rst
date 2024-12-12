@@ -1,3 +1,0 @@
-Remove the :func:`ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
-use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead. Patch by Victor
-Stinner.

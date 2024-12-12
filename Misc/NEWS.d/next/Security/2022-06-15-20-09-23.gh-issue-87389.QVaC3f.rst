@@ -1,3 +1,0 @@
-:mod:`http.server`: Fix an open redirection vulnerability in the HTTP server
-when an URI path starts with ``//``.  Vulnerability discovered, and initial
-fix proposed, by Hamza Avvan.

@@ -13,8 +13,14 @@ import array
 import io
 import copy
 import pickle
+import struct
 
+from itertools import product
 from test.support import import_helper
+
+
+class MyObject:
+    pass
 
 
 class AbstractMemoryTests:
@@ -53,11 +59,52 @@ class AbstractMemoryTests:
         for tp in self._types:
             self.check_getitem_with_type(tp)
 
+    def test_index(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)  # may be a sub-view
+            l = m.tolist()
+            k = 2 * len(self._source)
+
+            for chi in self._source:
+                if chi in l:
+                    self.assertEqual(m.index(chi), l.index(chi))
+                else:
+                    self.assertRaises(ValueError, m.index, chi)
+
+                for start, stop in product(range(-k, k), range(-k, k)):
+                    index = -1
+                    try:
+                        index = l.index(chi, start, stop)
+                    except ValueError:
+                        pass
+
+                    if index == -1:
+                        self.assertRaises(ValueError, m.index, chi, start, stop)
+                    else:
+                        self.assertEqual(m.index(chi, start, stop), index)
+
     def test_iter(self):
         for tp in self._types:
             b = tp(self._source)
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
+
+    def test_count(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            l = m.tolist()
+            for ch in list(m):
+                self.assertEqual(m.count(ch), l.count(ch))
+
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # may be sliced
+            l = m.tolist()
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), l.count(ord('a')))
+                self.assertEqual(m.count(ord('b')), l.count(ord('b')))
+                self.assertEqual(m.count(ord('c')), l.count(ord('c')))
 
     def test_setitem_readonly(self):
         if not self.ro_type:
@@ -226,8 +273,6 @@ class AbstractMemoryTests:
                 def __init__(self, base):
                     self.m = memoryview(base)
             class MySource(tp):
-                pass
-            class MyObject:
                 pass
 
             # Create a reference cycle through a memoryview object.
@@ -435,6 +480,18 @@ class BaseMemoryviewTests:
     def _check_contents(self, tp, obj, contents):
         self.assertEqual(obj, tp(contents))
 
+    def test_count(self):
+        super().test_count()
+        for tp in self._types:
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # should not be sliced
+            self.assertEqual(len(b), len(m))
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), 5)
+                self.assertEqual(m.count(ord('b')), 0)
+                self.assertEqual(m.count(ord('c')), 3)
+
+
 class BaseMemorySliceTests:
     source_bytes = b"XabcdefY"
 
@@ -526,6 +583,14 @@ class OtherTest(unittest.TestCase):
                 m[:2] = memoryview(p6).cast(format)[:2]
                 m[2:] = memoryview(p6).cast(format)[2:]
                 self.assertEqual(d.value, 0.6)
+
+    def test_half_float(self):
+        half_data = struct.pack('eee', 0.0, -1.5, 1.5)
+        float_data = struct.pack('fff', 0.0, -1.5, 1.5)
+        half_view = memoryview(half_data).cast('e')
+        float_view = memoryview(float_data).cast('f')
+        self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
+        self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
@@ -646,6 +711,27 @@ class OtherTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[0] = MyBool()
         self.assertEqual(ba[:8], b'\0'*8)
+
+    def test_buffer_reference_loop(self):
+        m = memoryview(b'abc').__buffer__(0)
+        o = MyObject()
+        o.m = m
+        o.o = o
+        wr = weakref.ref(o)
+        del m, o
+        gc.collect()
+        self.assertIsNone(wr())
+
+    def test_picklebuffer_reference_loop(self):
+        pb = pickle.PickleBuffer(memoryview(b'abc'))
+        o = MyObject()
+        o.pb = pb
+        o.o = o
+        wr = weakref.ref(o)
+        del pb, o
+        gc.collect()
+        self.assertIsNone(wr())
+
 
 if __name__ == "__main__":
     unittest.main()

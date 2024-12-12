@@ -68,7 +68,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -86,7 +86,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -175,7 +175,7 @@ their completion.
 
    * the :meth:`~asyncio.subprocess.Process.communicate` and
      :meth:`~asyncio.subprocess.Process.wait` methods don't have a
-     *timeout* parameter: use the :func:`wait_for` function;
+     *timeout* parameter: use the :func:`~asyncio.wait_for` function;
 
    * the :meth:`Process.wait() <asyncio.subprocess.Process.wait>` method
      is asynchronous, whereas :meth:`subprocess.Popen.wait` method
@@ -207,8 +207,9 @@ their completion.
       Interact with process:
 
       1. send data to *stdin* (if *input* is not ``None``);
-      2. read data from *stdout* and *stderr*, until EOF is reached;
-      3. wait for process to terminate.
+      2. closes *stdin*;
+      3. read data from *stdout* and *stderr*, until EOF is reached;
+      4. wait for process to terminate.
 
       The optional *input* argument is the data (:class:`bytes` object)
       that will be sent to the child process.
@@ -229,13 +230,17 @@ their completion.
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
 
+      .. versionchanged:: 3.12
+
+         *stdin* gets closed when `input=None` too.
+
    .. method:: send_signal(signal)
 
       Sends the signal *signal* to the child process.
 
       .. note::
 
-         On Windows, :py:data:`SIGTERM` is an alias for :meth:`terminate`.
+         On Windows, :py:const:`~signal.SIGTERM` is an alias for :meth:`terminate`.
          ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` can be sent to processes
          started with a *creationflags* parameter which includes
          ``CREATE_NEW_PROCESS_GROUP``.
@@ -244,10 +249,10 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:data:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`~signal.SIGTERM` to the
       child process.
 
-      On Windows the Win32 API function :c:func:`TerminateProcess` is
+      On Windows the Win32 API function :c:func:`!TerminateProcess` is
       called to stop the child process.
 
    .. method:: kill()
@@ -310,18 +315,6 @@ default.
 
 On Windows subprocesses are provided by :class:`ProactorEventLoop` only (default),
 :class:`SelectorEventLoop` has no subprocess support.
-
-On UNIX *child watchers* are used for subprocess finish waiting, see
-:ref:`asyncio-watchers` for more info.
-
-
-.. versionchanged:: 3.8
-
-   UNIX switched to use :class:`ThreadedChildWatcher` for spawning subprocesses from
-   different threads without any limitation.
-
-   Spawning a subprocess with *inactive* current child watcher raises
-   :exc:`RuntimeError`.
 
 Note that alternative event loop implementations might have own limitations;
 please refer to their documentation.

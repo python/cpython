@@ -25,22 +25,21 @@ def constructor(object):
 
 # Example: provide pickling support for complex numbers.
 
-try:
-    complex
-except NameError:
-    pass
-else:
+def pickle_complex(c):
+    return complex, (c.real, c.imag)
 
-    def pickle_complex(c):
-        return complex, (c.real, c.imag)
-
-    pickle(complex, pickle_complex, complex)
+pickle(complex, pickle_complex, complex)
 
 def pickle_union(obj):
     import functools, operator
     return functools.reduce, (operator.or_, obj.__args__)
 
 pickle(type(int | str), pickle_union)
+
+def pickle_super(obj):
+    return super, (obj.__thisclass__, obj.__self__)
+
+pickle(super, pickle_super)
 
 # Support for pickling new-style objects
 

@@ -1,2 +1,0 @@
-Fix a regression in ``configure`` script that caused some header checks to
-ignore custom ``CPPFLAGS``. The regression was introduced in :gh:`94802`.

@@ -1,3 +1,0 @@
-Fix sign placement when specifying width or precision in
-:c:func:`PyUnicode_FromFormat` and :c:func:`PyUnicode_FromFormatV`.
-Patch by Philip Georgi.

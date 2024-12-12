@@ -17,8 +17,7 @@ return_self(PyObject *self)
 {
 #if !STRINGLIB_MUTABLE
     if (STRINGLIB_CHECK_EXACT(self)) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
 #endif
     return STRINGLIB_NEW(STRINGLIB_STR(self), STRINGLIB_LEN(self));

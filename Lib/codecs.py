@@ -111,6 +111,9 @@ class CodecInfo(tuple):
                 (self.__class__.__module__, self.__class__.__qualname__,
                  self.name, id(self))
 
+    def __getnewargs__(self):
+        return tuple(self)
+
 class Codec:
 
     """ Defines the interface for stateless encoders/decoders.
@@ -414,6 +417,9 @@ class StreamWriter(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReader(Codec):
@@ -663,6 +669,9 @@ class StreamReader(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReaderWriter:
@@ -749,6 +758,9 @@ class StreamReaderWriter:
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ###
 
@@ -866,6 +878,9 @@ class StreamRecoder:
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ### Shortcuts
 
 def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
@@ -878,7 +893,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         codecs. Output is also codec dependent and will usually be
         Unicode as well.
 
-        Underlying encoded files are always opened in binary mode.
+        If encoding is not None, then the
+        underlying encoded files are always opened in binary mode.
         The default file mode is 'r', meaning to open the file in read mode.
 
         encoding specifies the encoding which is to be used for the
@@ -1093,24 +1109,15 @@ def make_encoding_map(decoding_map):
 
 ### error handlers
 
-try:
-    strict_errors = lookup_error("strict")
-    ignore_errors = lookup_error("ignore")
-    replace_errors = lookup_error("replace")
-    xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
-    backslashreplace_errors = lookup_error("backslashreplace")
-    namereplace_errors = lookup_error("namereplace")
-except LookupError:
-    # In --disable-unicode builds, these error handler are missing
-    strict_errors = None
-    ignore_errors = None
-    replace_errors = None
-    xmlcharrefreplace_errors = None
-    backslashreplace_errors = None
-    namereplace_errors = None
+strict_errors = lookup_error("strict")
+ignore_errors = lookup_error("ignore")
+replace_errors = lookup_error("replace")
+xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
+backslashreplace_errors = lookup_error("backslashreplace")
+namereplace_errors = lookup_error("namereplace")
 
 # Tell modulefinder that using codecs probably needs the encodings
 # package
 _false = 0
 if _false:
-    import encodings
+    import encodings  # noqa: F401

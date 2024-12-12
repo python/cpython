@@ -1,20 +1,23 @@
-import unittest
-from ctypes import *
-from binascii import hexlify
+import binascii
 import re
+import unittest
+from ctypes import c_byte, Structure, POINTER, cast
+
 
 def dump(obj):
     # helper function to dump memory contents in hex, with a hyphen
     # between the bytes.
-    h = hexlify(memoryview(obj)).decode()
+    h = binascii.hexlify(memoryview(obj)).decode()
     return re.sub(r"(..)", r"\1-", h)[:-1]
 
 
 class Value(Structure):
     _fields_ = [("val", c_byte)]
 
+
 class Container(Structure):
     _fields_ = [("pvalues", POINTER(Value))]
+
 
 class Test(unittest.TestCase):
     def test(self):
@@ -59,6 +62,7 @@ class Test(unittest.TestCase):
             (values, dump(val_array)),
             ([1, 2, 3, 4], "01-02-03-04")
         )
+
 
 if __name__ == "__main__":
     unittest.main()

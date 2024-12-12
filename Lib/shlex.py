@@ -333,10 +333,7 @@ def quote(s):
 
 
 def _print_tokens(lexer):
-    while 1:
-        tt = lexer.get_token()
-        if not tt:
-            break
+    while tt := lexer.get_token():
         print("Token: " + repr(tt))
 
 if __name__ == '__main__':

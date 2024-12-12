@@ -1,24 +1,31 @@
+import ctypes
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
-import _ctypes_test
+from ctypes import (Structure, CDLL, CFUNCTYPE,
+                    POINTER, pointer, byref,
+                    c_short, c_int, c_long, c_longlong,
+                    c_byte, c_wchar, c_float, c_double,
+                    ArgumentError)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
+
 
 dll = CDLL(_ctypes_test.__file__)
 
 try:
-    CALLBACK_FUNCTYPE = WINFUNCTYPE
-except NameError:
+    CALLBACK_FUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     CALLBACK_FUNCTYPE = CFUNCTYPE
 
+
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
+
 
 class BasicWrapTestCase(unittest.TestCase):
     def wrap(self, param):
         return param
 
-    @need_symbol('c_wchar')
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
@@ -67,8 +74,6 @@ class BasicWrapTestCase(unittest.TestCase):
         f(self.wrap(2**18), self.wrap(cb))
         self.assertEqual(args, expected)
 
-    ################################################################
-
     def test_callbacks(self):
         f = dll._testfunc_callback_i_if
         f.restype = c_int
@@ -77,7 +82,6 @@ class BasicWrapTestCase(unittest.TestCase):
         MyCallback = CFUNCTYPE(c_int, c_int)
 
         def callback(value):
-            #print "called back with", value
             return value
 
         cb = MyCallback(callback)
@@ -114,7 +118,6 @@ class BasicWrapTestCase(unittest.TestCase):
         f.argtypes = [c_int, MyCallback]
 
         def callback(value):
-            #print "called back with", value
             self.assertEqual(type(value), int)
             return value
 
@@ -122,9 +125,7 @@ class BasicWrapTestCase(unittest.TestCase):
         result = f(self.wrap(-10), self.wrap(cb))
         self.assertEqual(result, -18)
 
-    @need_symbol('c_longlong')
     def test_longlong_callbacks(self):
-
         f = dll._testfunc_callback_q_qf
         f.restype = c_longlong
 
@@ -192,9 +193,7 @@ class BasicWrapTestCase(unittest.TestCase):
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_recursive_as_param(self):
-        from ctypes import c_int
-
-        class A(object):
+        class A:
             pass
 
         a = A()
@@ -203,18 +202,15 @@ class BasicWrapTestCase(unittest.TestCase):
             c_int.from_param(a)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class AsParamWrapper(object):
+class AsParamWrapper:
     def __init__(self, param):
         self._as_parameter_ = param
 
 class AsParamWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamWrapper
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class AsParamPropertyWrapper(object):
+class AsParamPropertyWrapper:
     def __init__(self, param):
         self._param = param
 
@@ -225,7 +221,17 @@ class AsParamPropertyWrapper(object):
 class AsParamPropertyWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamPropertyWrapper
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class AsParamNestedWrapperTestCase(BasicWrapTestCase):
+    """Test that _as_parameter_ is evaluated recursively.
+
+    The _as_parameter_ attribute can be another object which
+    defines its own _as_parameter_ attribute.
+    """
+
+    def wrap(self, param):
+        return AsParamWrapper(AsParamWrapper(AsParamWrapper(param)))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,13 +7,15 @@ from test.support import warnings_helper, captured_stdout
 import traceback
 import unittest
 from unittest.util import strclass
+from test.support import force_not_colorized
+from test.test_unittest.support import BufferedWriter
 
 
 class MockTraceback(object):
     class TracebackException:
         def __init__(self, *args, **kwargs):
             self.capture_locals = kwargs.get('capture_locals', False)
-        def format(self):
+        def format(self, **kwargs):
             result = ['A traceback']
             if self.capture_locals:
                 result.append('locals')
@@ -31,22 +33,6 @@ def bad_cleanup1():
 def bad_cleanup2():
     print('do cleanup2')
     raise ValueError('bad cleanup2')
-
-
-class BufferedWriter:
-    def __init__(self):
-        self.result = ''
-        self.buffer = ''
-
-    def write(self, arg):
-        self.buffer += arg
-
-    def flush(self):
-        self.result += self.buffer
-        self.buffer = ''
-
-    def getvalue(self):
-        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -201,7 +187,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             test.fail("foo")
-        except:
+        except AssertionError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()
@@ -220,6 +206,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, test)
         self.assertIsInstance(formatted_exc, str)
 
+    @force_not_colorized
     def test_addFailure_filter_traceback_frames(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -229,7 +216,7 @@ class Test_TestResult(unittest.TestCase):
         def get_exc_info():
             try:
                 test.fail("foo")
-            except:
+            except AssertionError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -246,6 +233,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
 
+    @force_not_colorized
     def test_addFailure_filter_traceback_frames_context(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -256,9 +244,9 @@ class Test_TestResult(unittest.TestCase):
             try:
                 try:
                     test.fail("foo")
-                except:
+                except AssertionError:
                     raise ValueError(42)
-            except:
+            except ValueError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -274,6 +262,64 @@ class Test_TestResult(unittest.TestCase):
         dropped = [l for l in full_exc if l not in formatted_exc]
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
+
+    @force_not_colorized
+    def test_addFailure_filter_traceback_frames_chained_exception_self_loop(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                loop = Exception("Loop")
+                loop.__cause__ = loop
+                loop.__context__ = loop
+                raise loop
+            except Exception:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
+
+    @force_not_colorized
+    def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                # Create two directionally opposed cycles
+                # __cause__ in one direction, __context__ in the other
+                A, B, C = Exception("A"), Exception("B"), Exception("C")
+                edges = [(C, B), (B, A), (A, C)]
+                for ex1, ex2 in edges:
+                    ex1.__cause__ = ex2
+                    ex2.__context__ = ex1
+                raise C
+            except Exception:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: C\n"), 1)
 
     # "addError(test, err)"
     # ...
@@ -304,7 +350,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             raise TypeError()
-        except:
+        except TypeError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()
@@ -405,10 +451,12 @@ class Test_TestResult(unittest.TestCase):
         result.addUnexpectedSuccess(None)
         self.assertTrue(result.shouldStop)
 
+    @force_not_colorized
     def testFailFastSetByRunner(self):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
@@ -577,6 +625,7 @@ class Test_TextTestResult(unittest.TestCase):
         test.run(result)
         return stream.getvalue()
 
+    @force_not_colorized
     def testDotsOutput(self):
         self.assertEqual(self._run_test('testSuccess', 1), '.')
         self.assertEqual(self._run_test('testSkip', 1), 's')
@@ -585,6 +634,7 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(self._run_test('testExpectedFailure', 1), 'x')
         self.assertEqual(self._run_test('testUnexpectedSuccess', 1), 'u')
 
+    @force_not_colorized
     def testLongOutput(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSuccess', 2),
@@ -600,17 +650,21 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(self._run_test('testUnexpectedSuccess', 2),
                          f'testUnexpectedSuccess ({classname}.testUnexpectedSuccess) ... unexpected success\n')
 
+    @force_not_colorized
     def testDotsOutputSubTestSuccess(self):
         self.assertEqual(self._run_test('testSubTestSuccess', 1), '.')
 
+    @force_not_colorized
     def testLongOutputSubTestSuccess(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSubTestSuccess', 2),
                          f'testSubTestSuccess ({classname}.testSubTestSuccess) ... ok\n')
 
+    @force_not_colorized
     def testDotsOutputSubTestMixed(self):
         self.assertEqual(self._run_test('testSubTestMixed', 1), 'sFE')
 
+    @force_not_colorized
     def testLongOutputSubTestMixed(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSubTestMixed', 2),
@@ -619,6 +673,7 @@ class Test_TextTestResult(unittest.TestCase):
                 f'  testSubTestMixed ({classname}.testSubTestMixed) [fail] (c=3) ... FAIL\n'
                 f'  testSubTestMixed ({classname}.testSubTestMixed) [error] (d=4) ... ERROR\n')
 
+    @force_not_colorized
     def testDotsOutputTearDownFail(self):
         out = self._run_test('testSuccess', 1, AssertionError('fail'))
         self.assertEqual(out, 'F')
@@ -629,6 +684,7 @@ class Test_TextTestResult(unittest.TestCase):
         out = self._run_test('testSkip', 1, AssertionError('fail'))
         self.assertEqual(out, 'sF')
 
+    @force_not_colorized
     def testLongOutputTearDownFail(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         out = self._run_test('testSuccess', 2, AssertionError('fail'))

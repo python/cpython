@@ -1,3 +1,5 @@
+.. _functional-howto:
+
 ********************************
   Functional Programming HOWTO
 ********************************
@@ -994,7 +996,7 @@ requesting iterator-2 and its corresponding key.
 The functools module
 ====================
 
-The :mod:`functools` module in Python 2.5 contains some higher-order functions.
+The :mod:`functools` module contains some higher-order functions.
 A **higher-order function** takes one or more functions as input and returns a
 new function.  The most useful tool in this module is the
 :func:`functools.partial` function.
@@ -1072,8 +1074,8 @@ write the obvious :keyword:`for` loop::
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 <itertools.accumulate>`.  It performs the same calculation, but instead of
-returning only the final result, :func:`accumulate` returns an iterator that
-also yields each partial result::
+returning only the final result, :func:`~itertools.accumulate` returns an iterator
+that also yields each partial result::
 
     itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
@@ -1208,8 +1210,8 @@ General
 -------
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
-Gerald Jay Sussman with Julie Sussman.  Full text at
-https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+Gerald Jay Sussman with Julie Sussman.  The book can be found at
+https://mitpress.mit.edu/sicp.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style

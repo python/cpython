@@ -1,0 +1,14 @@
+<doc>
+   <e1></e1>
+   <e2></e2>
+   <e3 id="elem3" name="elem3"></e3>
+   <e4 id="elem4" name="elem4"></e4>
+   <e5 xmlns="http://example.org" xmlns:a="http://www.w3.org" xmlns:b="http://www.ietf.org" attr="I'm" attr2="all" b:attr="sorted" a:attr="out"></e5>
+   <e6>
+      <e7 xmlns="http://www.ietf.org">
+         <e8 xmlns="">
+            <e9 attr="default"></e9>
+         </e8>
+      </e7>
+   </e6>
+</doc>

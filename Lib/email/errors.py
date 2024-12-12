@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -27,6 +27,10 @@ class MultipartConversionError(MessageError, TypeError):
 
 class CharsetError(MessageError):
     """An illegal charset was given."""
+
+
+class HeaderWriteError(MessageError):
+    """Error while writing headers."""
 
 
 # These are parsing defects which the parser was able to work around.

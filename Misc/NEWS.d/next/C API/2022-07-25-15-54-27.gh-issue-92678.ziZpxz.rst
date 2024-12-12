@@ -1,3 +1,0 @@
-Adds unstable C-API functions ``_PyObject_VisitManagedDict`` and
-``_PyObject_ClearManagedDict`` to allow C extensions to allow the VM to
-manage their object's dictionaries.

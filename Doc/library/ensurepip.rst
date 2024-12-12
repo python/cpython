@@ -1,11 +1,13 @@
-:mod:`ensurepip` --- Bootstrapping the ``pip`` installer
-========================================================
+:mod:`!ensurepip` --- Bootstrapping the ``pip`` installer
+=========================================================
 
 .. module:: ensurepip
    :synopsis: Bootstrapping the "pip" installer into an existing Python
               installation or virtual environment.
 
 .. versionadded:: 3.4
+
+**Source code:** :source:`Lib/ensurepip`
 
 --------------
 
@@ -36,7 +38,7 @@ when creating a virtual environment) or after explicitly uninstalling
    :pep:`453`: Explicit bootstrapping of pip in Python installations
       The original rationale and specification for this module.
 
-.. include:: ../includes/wasm-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Command line interface
 ----------------------
@@ -59,7 +61,7 @@ By default, ``pip`` is installed into the current virtual environment
 active virtual environment). The installation location can be controlled
 through two additional command line options:
 
-* ``--root <dir>``: Installs ``pip`` relative to the given root directory
+* :samp:`--root {dir}`: Installs ``pip`` relative to the given root directory
   rather than the root of the currently active virtual environment (if any)
   or the default root for the current Python installation.
 * ``--user``: Installs ``pip`` into the user site packages directory rather

@@ -1,7 +1,0 @@
-:func:`inspect.iscoroutinefunction`, :func:`inspect.isgeneratorfunction`,
-and :func:`inspect.isasyncgenfunction` now properly return ``True`` for
-duck-typed function-like objects like instances of
-:class:`unittest.mock.AsyncMock`.
-
-This makes :func:`inspect.iscoroutinefunction` consistent with the
-behavior of :func:`asyncio.iscoroutinefunction`.  Patch by Mehdi ABAAKOUK.

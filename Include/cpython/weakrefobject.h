@@ -30,18 +30,25 @@ struct _PyWeakReference {
     PyWeakReference *wr_prev;
     PyWeakReference *wr_next;
     vectorcallfunc vectorcall;
-};
 
-PyAPI_FUNC(Py_ssize_t) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+#ifdef Py_GIL_DISABLED
+    /* Pointer to the lock used when clearing in free-threaded builds.
+     * Normally this can be derived from wr_object, but in some cases we need
+     * to lock after wr_object has been set to Py_None.
+     */
+    PyMutex *weakrefs_lock;
+#endif
+};
 
 PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 
-static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj) {
-    PyWeakReference *ref;
-    PyObject *obj;
-    assert(PyWeakref_Check(ref_obj));
-    ref = _Py_CAST(PyWeakReference*, ref_obj);
-    obj = ref->wr_object;
+#define _PyWeakref_CAST(op) \
+    (assert(PyWeakref_Check(op)), _Py_CAST(PyWeakReference*, (op)))
+
+Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)
+{
+    PyWeakReference *ref = _PyWeakref_CAST(ref_obj);
+    PyObject *obj = ref->wr_object;
     // Explanation for the Py_REFCNT() check: when a weakref's target is part
     // of a long chain of deallocations which triggers the trashcan mechanism,
     // clearing the weakrefs can be delayed long after the target's refcount

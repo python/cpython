@@ -3,6 +3,7 @@ import asyncio
 import contextvars
 import re
 import signal
+import sys
 import threading
 import unittest
 from test.test_asyncio import utils as test_utils
@@ -92,8 +93,8 @@ class RunTests(BaseTest):
     def test_asyncio_run_only_coro(self):
         for o in {1, lambda: None}:
             with self.subTest(obj=o), \
-                    self.assertRaisesRegex(ValueError,
-                                           'a coroutine was expected'):
+                    self.assertRaisesRegex(TypeError,
+                                           'an awaitable is required'):
                 asyncio.run(o)
 
     def test_asyncio_run_debug(self):
@@ -101,11 +102,14 @@ class RunTests(BaseTest):
             loop = asyncio.get_event_loop()
             self.assertIs(loop.get_debug(), expected)
 
-        asyncio.run(main(False))
+        asyncio.run(main(False), debug=False)
         asyncio.run(main(True), debug=True)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
             asyncio.run(main(True))
             asyncio.run(main(False), debug=False)
+        with mock.patch('asyncio.coroutines._is_debug_mode', lambda: False):
+            asyncio.run(main(True), debug=True)
+            asyncio.run(main(False))
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
@@ -243,6 +247,8 @@ class RunTests(BaseTest):
             def get_loop(self, *args, **kwargs):
                 return self._task.get_loop(*args, **kwargs)
 
+            def set_name(self, *args, **kwargs):
+                return self._task.set_name(*args, **kwargs)
 
         async def main():
             interrupt_self()
@@ -256,6 +262,26 @@ class RunTests(BaseTest):
         asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
         with self.assertRaises(asyncio.CancelledError):
             asyncio.run(main())
+
+    def test_asyncio_run_loop_factory(self):
+        factory = mock.Mock()
+        loop = factory.return_value = self.new_loop()
+
+        async def main():
+            self.assertEqual(asyncio.get_running_loop(), loop)
+
+        asyncio.run(main(), loop_factory=factory)
+        factory.assert_called_once_with()
+
+    def test_loop_factory_default_event_loop(self):
+        async def main():
+            if sys.platform == "win32":
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop)
+            else:
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 
 class RunnerTests(BaseTest):
@@ -293,19 +319,28 @@ class RunnerTests(BaseTest):
     def test_run_non_coro(self):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
+                TypeError,
+                "an awaitable is required"
             ):
                 runner.run(123)
 
     def test_run_future(self):
         with asyncio.Runner() as runner:
-            with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
-            ):
-                fut = runner.get_loop().create_future()
-                runner.run(fut)
+            fut = runner.get_loop().create_future()
+            fut.set_result('done')
+            self.assertEqual('done', runner.run(fut))
+
+    def test_run_awaitable(self):
+        class MyAwaitable:
+            def __await__(self):
+                return self.run().__await__()
+
+            @staticmethod
+            async def run():
+                return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(MyAwaitable()))
 
     def test_explicit_close(self):
         runner = asyncio.Runner()
@@ -468,6 +503,24 @@ class RunnerTests(BaseTest):
 
         self.assertEqual(1, policy.set_event_loop.call_count)
         runner.close()
+
+    def test_no_repr_is_call_on_the_task_result(self):
+        # See https://github.com/python/cpython/issues/112559.
+        class MyResult:
+            def __init__(self):
+                self.repr_count = 0
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        async def coro():
+            return MyResult()
+
+
+        with asyncio.Runner() as runner:
+            result = runner.run(coro())
+
+        self.assertEqual(0, result.repr_count)
 
 
 if __name__ == '__main__':
