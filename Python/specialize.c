@@ -3,6 +3,7 @@
 #include "opcode.h"
 
 #include "pycore_code.h"
+#include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
@@ -966,7 +967,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
 }
 
 static int
-specialize_inline_values_access(
+specialize_inline_values_access_lock_held(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     unsigned int tp_version,
     PyObject *name, int base_op, int values_op)
@@ -974,6 +975,7 @@ specialize_inline_values_access(
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(owner);
     Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
     assert (index != DKIX_ERROR);
     if (index == DKIX_EMPTY) {
@@ -994,13 +996,16 @@ specialize_inline_values_access(
 }
 
 static int
-specialize_managed_dict_access(
+specialize_managed_dict_access_lock_held(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     unsigned int tp_version,
     PyObject *name, int base_op, int hint_op)
 {
     PyDictObject *dict = _PyObject_GetManagedDict(owner);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(owner);
+
     if (dict == NULL || !PyDict_CheckExact(dict)) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
         return 0;
@@ -1039,17 +1044,21 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(owner);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
         _PyObject_InlineValues(owner)->valid &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
-        return specialize_inline_values_access(
+        result = specialize_inline_values_access_lock_held(
             owner, instr, type, tp_version, name, base_op, values_op);
     }
     else {
-        return specialize_managed_dict_access(
+        result = specialize_managed_dict_access_lock_held(
             owner, instr, type, tp_version, name, base_op, hint_op);
     }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
