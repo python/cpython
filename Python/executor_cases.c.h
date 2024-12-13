@@ -2982,8 +2982,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #ifdef Py_GIL_DISABLED
-            dict = _PyObject_GetManagedDict(owner_o);
-            if (dict == NULL) {
+            if (dict != _PyObject_GetManagedDict(owner_o)) {
                 UNLOCK_OBJECT(dict);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);

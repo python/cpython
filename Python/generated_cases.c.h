@@ -7457,8 +7457,7 @@
                 DEOPT_IF(dict == NULL, STORE_ATTR);
                 DEOPT_IF(!LOCK_OBJECT(dict), STORE_ATTR);
                 #ifdef Py_GIL_DISABLED
-                dict = _PyObject_GetManagedDict(owner_o);
-                if (dict == NULL) {
+                if (dict != _PyObject_GetManagedDict(owner_o)) {
                     UNLOCK_OBJECT(dict);
                     DEOPT_IF(true, STORE_ATTR);
                 }

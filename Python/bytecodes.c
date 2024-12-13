@@ -2385,8 +2385,7 @@ dummy_func(
             DEOPT_IF(dict == NULL);
             DEOPT_IF(!LOCK_OBJECT(dict));
             #ifdef Py_GIL_DISABLED
-            dict = _PyObject_GetManagedDict(owner_o);
-            if (dict == NULL) {
+            if (dict != _PyObject_GetManagedDict(owner_o)) {
                 UNLOCK_OBJECT(dict);
                 DEOPT_IF(true);
             }
