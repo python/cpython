@@ -17,7 +17,7 @@ _testcapi.py_fopen
     mode: str
     /
 
-Call Py_fopen() and return fread(256).
+Call Py_fopen(), fread(256) and Py_fclose(). Return read bytes.
 [clinic start generated code]*/
 
 static PyObject *
@@ -31,7 +31,7 @@ _testcapi_py_fopen_impl(PyObject *module, PyObject *path, const char *mode)
 
     char buffer[256];
     size_t size = fread(buffer, 1, Py_ARRAY_LENGTH(buffer), fp);
-    fclose(fp);
+    Py_fclose(fp);
 
     return PyBytes_FromStringAndSize(buffer, size);
 }

@@ -5,3 +5,5 @@
 PyAPI_FUNC(FILE*) Py_fopen(
     PyObject *path,
     const char *mode);
+
+PyAPI_FUNC(int) Py_fclose(FILE *file);
