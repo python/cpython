@@ -90,7 +90,7 @@ class _PolicyBase:
         """
         return self.clone(**other.__dict__)
 
-def validate_header(name, value):
+def validate_header(name):
     # Validate header name according to RFC 5322
     import re
     if not re.match(r'^[^\s:]+$', name):
@@ -322,7 +322,7 @@ class Compat32(Policy):
         """+
         The name and value are returned unmodified.
         """
-        validate_header(name, value)
+        validate_header(name)
         return (name, value)
 
     def header_fetch_parse(self, name, value):
