@@ -1735,7 +1735,7 @@ The following recipes have a more mathematical flavor:
 
     # Old recipes and their tests which are guaranteed to continue to work.
 
-    def sumprod(vec1, vec2):
+    def old_sumprod_recipe(vec1, vec2):
         "Compute a sum of products."
         return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
 
@@ -1818,7 +1818,7 @@ The following recipes have a more mathematical flavor:
     32
 
 
-    >>> sumprod([1,2,3], [4,5,6])
+    >>> old_sumprod_recipe([1,2,3], [4,5,6])
     32
 
 
