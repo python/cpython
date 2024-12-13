@@ -1190,10 +1190,6 @@ The following recipes have a more mathematical flavor:
 
     Now, we test all of the itertool recipes
 
-    >>> import collections
-    >>> import math
-    >>> import random
-
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> # Verify that the input is consumed lazily
