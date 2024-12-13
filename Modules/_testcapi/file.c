@@ -22,7 +22,7 @@ Call Py_fopen(), fread(256) and Py_fclose(). Return read bytes.
 
 static PyObject *
 _testcapi_py_fopen_impl(PyObject *module, PyObject *path, const char *mode)
-/*[clinic end generated code: output=5a900af000f759de input=0878c2f9333abd60]*/
+/*[clinic end generated code: output=5a900af000f759de input=d7e7b8f0fd151953]*/
 {
     FILE *fp = Py_fopen(path, mode);
     if (fp == NULL) {

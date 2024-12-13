@@ -8,7 +8,7 @@ PyDoc_STRVAR(_testcapi_py_fopen__doc__,
 "py_fopen($module, path, mode, /)\n"
 "--\n"
 "\n"
-"Call Py_fopen() and return fread(256).");
+"Call Py_fopen(), fread(256) and Py_fclose(). Return read bytes.");
 
 #define _TESTCAPI_PY_FOPEN_METHODDEF    \
     {"py_fopen", _PyCFunction_CAST(_testcapi_py_fopen), METH_FASTCALL, _testcapi_py_fopen__doc__},
@@ -45,4 +45,4 @@ _testcapi_py_fopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=968f4f4a620f13cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9fe964c3e5a0c32 input=a9049054013a1b77]*/
