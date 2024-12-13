@@ -2690,11 +2690,10 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 }
 
 
-#define _PyUnicodeError_CAST(PTR)   ((PyUnicodeErrorObject *)(PTR))
 #define PyUnicodeError_Check(PTR)   \
     PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
 #define PyUnicodeError_CAST(PTR)    \
-    (assert(PyUnicodeError_Check(PTR)), _PyUnicodeError_CAST(PTR))
+    (assert(PyUnicodeError_Check(PTR)), ((PyUnicodeErrorObject *)(PTR)))
 
 
 static inline int
