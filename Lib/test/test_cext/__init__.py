@@ -1,5 +1,9 @@
-# gh-91321: Build a basic C++ test extension to check that the Python C API is
-# compatible with C++ and does not emit C++ compiler warnings.
+# gh-116869: Build a basic C test extension to check that the Python C API
+# does not emit C compiler warnings.
+#
+# The Python C API must be compatible with building
+# with the -Werror=declaration-after-statement compiler flag.
+
 import os.path
 import shlex
 import shutil
@@ -8,7 +12,7 @@ import unittest
 from test import support
 
 
-SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
+SOURCE = os.path.join(os.path.dirname(__file__), 'extension.c')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
@@ -24,25 +28,23 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_venv_with_pip()
 @support.requires_subprocess()
 @support.requires_resource('cpu')
-class TestCPPExt(unittest.TestCase):
+class TestExt(unittest.TestCase):
+    # Default build with no options
     def test_build(self):
-        self.check_build('_testcppext')
+        self.check_build('_test_cext')
 
-    def test_build_cpp03(self):
-        self.check_build('_testcpp03ext', std='c++03')
+    def test_build_c11(self):
+        self.check_build('_test_c11_cext', std='c11')
 
-    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
-    def test_build_cpp11(self):
-        self.check_build('_testcpp11ext', std='c++11')
-
-    # Only test C++14 on MSVC.
-    # On s390x RHEL7, GCC 4.8.5 doesn't support C++14.
-    @unittest.skipIf(not support.MS_WINDOWS, "need Windows")
-    def test_build_cpp14(self):
-        self.check_build('_testcpp14ext', std='c++14')
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
+    def test_build_c99(self):
+        self.check_build('_test_c99_cext', std='c99')
 
     def test_build_limited(self):
-        self.check_build('_testcppext_limited', limited=True)
+        self.check_build('_test_limited_cext', limited=True)
+
+    def test_build_limited_c11(self):
+        self.check_build('_test_limited_c11_cext', limited=True, std='c11')
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
@@ -59,7 +61,7 @@ class TestCPPExt(unittest.TestCase):
         def run_cmd(operation, cmd):
             env = os.environ.copy()
             if std:
-                env['CPYTHON_TEST_CPP_STD'] = std
+                env['CPYTHON_TEST_STD'] = std
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
@@ -78,7 +80,7 @@ class TestCPPExt(unittest.TestCase):
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
 
-        # Build and install the C++ extension
+        # Build and install the C extension
         cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
@@ -95,7 +97,7 @@ class TestCPPExt(unittest.TestCase):
                '-c', 'pass']
         run_cmd('Reference run', cmd)
 
-        # Import the C++ extension
+        # Import the C extension
         cmd = [python_exe,
                '-X', 'dev',
                '-X', 'showrefcount',

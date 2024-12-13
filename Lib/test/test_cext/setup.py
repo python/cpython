@@ -1,27 +1,34 @@
-# gh-91321: Build a basic C++ test extension to check that the Python C API is
-# compatible with C++ and does not emit C++ compiler warnings.
+# gh-91321: Build a basic C test extension to check that the Python C API is
+# compatible with C and does not emit C compiler warnings.
 import os
 import platform
 import shlex
+import sys
 import sysconfig
 from test import support
 
 from setuptools import setup, Extension
 
 
-SOURCE = 'extension.cpp'
+SOURCE = 'extension.c'
 
 if not support.MS_WINDOWS:
-    # C++ compiler flags for GCC and clang
-    CPPFLAGS = [
-        # gh-91321: The purpose of _testcppext extension is to check that building
-        # a C++ extension using the Python C API does not emit C++ compiler
-        # warnings
+    # C compiler flags for GCC and clang
+    CFLAGS = [
+        # The purpose of test_cext extension is to check that building a C
+        # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+
+        # gh-120593: Check the 'const' qualifier
+        '-Wcast-qual',
+
+        # gh-116869: The Python C API must be compatible with building
+        # with the -Werror=declaration-after-statement compiler flag.
+        '-Werror=declaration-after-statement',
     ]
 else:
     # MSVC compiler flags
-    CPPFLAGS = [
+    CFLAGS = [
         # Display warnings level 1 to 4
         '/W4',
         # Treat all compiler warnings as compiler errors
@@ -30,24 +37,22 @@ else:
 
 
 def main():
-    cppflags = list(CPPFLAGS)
-    std = os.environ.get("CPYTHON_TEST_CPP_STD", "")
+    std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
 
-    cppflags = list(CPPFLAGS)
-    cppflags.append(f'-DMODULE_NAME={module_name}')
+    cflags = list(CFLAGS)
+    cflags.append(f'-DMODULE_NAME={module_name}')
 
     # Add -std=STD or /std:STD (MSVC) compiler flag
     if std:
         if support.MS_WINDOWS:
-            cppflags.append(f'/std:{std}')
+            cflags.append(f'/std:{std}')
         else:
-            cppflags.append(f'-std={std}')
+            cflags.append(f'-std={std}')
 
-    # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
-    # option emits a C++ compiler warning. Remove "-std11" option from the
-    # CC command.
+    # Remove existing -std or /std options from CC command line.
+    # Python adds -std=c11 option.
     cmd = (sysconfig.get_config_var('CC') or '')
     if cmd is not None:
         if support.MS_WINDOWS:
@@ -63,7 +68,7 @@ def main():
     # Define Py_LIMITED_API macro
     if limited:
         version = sys.hexversion
-        cppflags.append(f'-DPy_LIMITED_API={version:#x}')
+        cflags.append(f'-DPy_LIMITED_API={version:#x}')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
@@ -80,18 +85,17 @@ def main():
             print(f"Add PCbuild directory: {pcbuild}")
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
+    for env_name in ('CC', 'CFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:
             print(f"{env_name} env var: <missing>")
-    print(f"extra_compile_args: {cppflags!r}")
+    print(f"extra_compile_args: {cflags!r}")
 
     ext = Extension(
         module_name,
         sources=[SOURCE],
-        language='c++',
-        extra_compile_args=cppflags,
+        extra_compile_args=cflags,
         include_dirs=include_dirs,
         library_dirs=library_dirs)
     setup(name=f'internal_{module_name}',
