@@ -1040,9 +1040,9 @@ New features
   deferred reference counting, as outlined in :pep:`703`.
 
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
- :c:func:`PyMonitoring_FireBranchRightEvent` for generating
- :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
- events, respectively.
+  :c:func:`PyMonitoring_FireBranchRightEvent` for generating
+  :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+  events, respectively.
 
 Porting to Python 3.14
 ----------------------
