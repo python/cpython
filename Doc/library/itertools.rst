@@ -1021,7 +1021,7 @@ The following recipes have a more mathematical flavor:
    def sum_of_squares(iterable):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) → 1400
-       return math.sumprod(*tee(iterable))
+       return sumprod(*tee(iterable))
 
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
@@ -1037,7 +1037,7 @@ The following recipes have a more mathematical flavor:
        "Multiply two matrices."
        # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80), (41, 60)
        n = len(m2[0])
-       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+       return batched(starmap(sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
@@ -1058,7 +1058,7 @@ The following recipes have a more mathematical flavor:
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
        windowed_signal = sliding_window(padded_signal, n)
-       return map(math.sumprod, repeat(kernel), windowed_signal)
+       return map(sumprod, repeat(kernel), windowed_signal)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -1066,8 +1066,8 @@ The following recipes have a more mathematical flavor:
           (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
        """
        # polynomial_from_roots([5, -4, 3]) → [1, -4, -17, 60]
-       factors = zip(repeat(1), map(operator.neg, roots))
-       return list(functools.reduce(convolve, factors, [1]))
+       factors = zip(repeat(1), map(neg, roots))
+       return list(reduce(convolve, factors, [1]))
 
    def polynomial_eval(coefficients, x):
        """Evaluate a polynomial at a specific value.
@@ -1080,7 +1080,7 @@ The following recipes have a more mathematical flavor:
        if not n:
            return type(x)(0)
        powers = map(pow, repeat(x), reversed(range(n)))
-       return math.sumprod(coefficients, powers)
+       return sumprod(coefficients, powers)
 
    def polynomial_derivative(coefficients):
        """Compute the first derivative of a polynomial.
@@ -1091,7 +1091,7 @@ The following recipes have a more mathematical flavor:
        # polynomial_derivative([1, -4, -17, 60]) → [3, -8, -17]
        n = len(coefficients)
        powers = reversed(range(1, n))
-       return list(map(operator.mul, coefficients, powers))
+       return list(map(mul, coefficients, powers))
 
    def sieve(n):
        "Primes less than n."
@@ -1099,7 +1099,7 @@ The following recipes have a more mathematical flavor:
        if n > 2:
            yield 2
        data = bytearray((0, 1)) * (n // 2)
-       for p in iter_index(data, 1, start=3, stop=math.isqrt(n) + 1):
+       for p in iter_index(data, 1, start=3, stop=isqrt(n) + 1):
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        yield from iter_index(data, 1, start=3)
 
@@ -1108,7 +1108,7 @@ The following recipes have a more mathematical flavor:
        # factor(99) → 3 3 11
        # factor(1_000_000_000_000_007) → 47 59 360620266859
        # factor(1_000_000_000_000_403) → 1000000000000403
-       for prime in sieve(math.isqrt(n) + 1):
+       for prime in sieve(isqrt(n) + 1):
            while not n % prime:
                yield prime
                n //= prime
