@@ -23,9 +23,10 @@ askfloat -- get a float from the user
 askstring -- get a string from the user
 """
 
-from tkinter import *
+from tkinter import Button, Entry, Frame, Label, Message, Tk, Toplevel
 from tkinter import _get_temp_root, _destroy_temp_root
 from tkinter import messagebox
+from tkinter.constants import ACTIVE, BOTH, END, LEFT, RIDGE, W, E
 
 
 class SimpleDialog:
