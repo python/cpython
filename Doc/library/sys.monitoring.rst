@@ -195,9 +195,9 @@ The local events are:
 Deprecated event
 ''''''''''''''''
 
-* :monitoring-event:`BRANCH`
+* ``BRANCH``
 
-The :monitoring-event:`BRANCH` event is deprecated in 3.14.
+The ``BRANCH`` event is deprecated in 3.14.
 Using :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
 events will give much better performance as they can be disabled
 independently.

@@ -75,9 +75,14 @@ See :mod:`sys.monitoring` for descriptions of the events.
    Fire a ``JUMP`` event.
 
 
-.. c:function:: int PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+.. c:function:: int PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
 
-   Fire a ``BRANCH`` event.
+   Fire a ``BRANCH_LEFT`` event.
+
+
+.. c:function:: int PyMonitoring_FireRightBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+
+   Fire a ``BRANCH_RIGHT`` event.
 
 
 .. c:function:: int PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *retval)
