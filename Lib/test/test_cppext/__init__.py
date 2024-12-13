@@ -41,7 +41,6 @@ class TestCPPExt(unittest.TestCase):
     def test_build_cpp14(self):
         self.check_build('_testcpp14ext', std='c++14')
 
-    @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited(self):
         self.check_build('_testcppext_limited', limited=True)
 
