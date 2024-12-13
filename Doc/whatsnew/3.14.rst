@@ -1045,6 +1045,12 @@ New features
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
 
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+
 Porting to Python 3.14
 ----------------------
 
