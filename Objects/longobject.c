@@ -6,6 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE, _Py_FREELIST_POP
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -42,7 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
 }
 
 static inline int
@@ -220,15 +221,18 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
     if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        _PyObject_Init((PyObject*)v, &PyLong_Type);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
-    _PyObject_Init((PyObject*)v, &PyLong_Type);
     v->long_value.ob_digit[0] = abs_x;
     return (PyObject*)v;
 }
@@ -3619,6 +3623,24 @@ _long_is_small_int(PyObject *op)
     return (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
 }
 
+void
+_PyLong_ExactDealloc(PyObject *self)
+{
+    assert(PyLong_CheckExact(self));
+#ifndef Py_GIL_DISABLED
+    if (_long_is_small_int(self)) {
+        // See PEP 683, section Accidental De-Immortalizing for details
+        _Py_SetImmortal(self);
+        return;
+    }
+#endif
+    if (_PyLong_IsCompact((PyLongObject *)self)) {
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
+    }
+    PyObject_Free(self);
+}
+
 static void
 long_dealloc(PyObject *self)
 {
@@ -3633,7 +3655,11 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-#endif
+#endif    
+    if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
+    }
     Py_TYPE(self)->tp_free(self);
 }
 
