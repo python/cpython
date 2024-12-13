@@ -1639,6 +1639,41 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_pystackref_frompyobject_new_next_to_cmacro(self):
+        input = """
+        inst(OP, (-- out1, out2)) {
+            PyObject *obj = SPAM();
+            #ifdef Py_GIL_DISABLED
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #else
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #endif
+            out2 = PyStackRef_FromPyObjectNew(obj);
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef out1;
+            _PyStackRef out2;
+            PyObject *obj = SPAM();
+            #ifdef Py_GIL_DISABLED
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #else
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #endif
+            out2 = PyStackRef_FromPyObjectNew(obj);
+            stack_pointer[0] = out1;
+            stack_pointer[1] = out2;
+            stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
     def test_pop_dead_inputs_all_live(self):
         input = """
         inst(OP, (a, b --)) {

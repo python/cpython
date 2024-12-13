@@ -5411,8 +5411,7 @@
                     DEOPT_IF(true, LOAD_ATTR);
                 }
                 #else
-                Py_INCREF(attr_o);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
                 null = PyStackRef_NULL;
