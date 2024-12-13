@@ -981,7 +981,7 @@ specialize_dict_access_inline(
         return 0;
     }
     cache->index = (uint16_t)offset;
-    write_u32(cache->version, type->tp_version_tag);
+    write_u32(cache->version, tp_version);
     specialize(instr, values_op);
     return 1;
 }
