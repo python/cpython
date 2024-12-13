@@ -2932,11 +2932,11 @@ static PyObject *make_branch_handler(int tool_id, PyObject *handler, bool right)
     return (PyObject *)callback;
 }
 
+/* Consumes a reference to obj */
 static PyObject *exchange_callables(int tool_id, int event_id, PyObject *obj)
 {
     PyInterpreterState *is = _PyInterpreterState_GET();
-    return _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id],
-                                                 Py_XNewRef(obj));
+    return _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id], obj);
 }
 
 PyObject *
