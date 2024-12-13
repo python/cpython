@@ -1,0 +1,1 @@
+Test the limited C API in test_cppext. Patch by Victor Stinner.
