@@ -84,6 +84,8 @@
 @MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA3.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__BLAKE2_TRUE@_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
 
+@MODULE__HMAC_TRUE@_hmac hmacmodule.c
+
 ############################################################################
 # XML and text
 
