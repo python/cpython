@@ -139,6 +139,8 @@ typedef struct py_hmac_hinfo {
 typedef struct hmacmodule_state {
     _Py_hashtable_t *hinfo_table;
     PyObject *unknown_hash_error;
+    /* interned strings */
+    PyObject *str_lower;
 } hmacmodule_state;
 
 static inline hmacmodule_state *
@@ -348,6 +350,21 @@ hmacmodule_init_exceptions(PyObject *module, hmacmodule_state *state)
 }
 
 static int
+hmacmodule_init_strings(hmacmodule_state *state)
+{
+#define ADD_STR(ATTR, STRING)                       \
+    do {                                            \
+        state->ATTR = PyUnicode_FromString(STRING); \
+        if (state->ATTR == NULL) {                  \
+            return -1;                              \
+        }                                           \
+    } while (0)
+    ADD_STR(str_lower, "lower");
+#undef ADD_STR
+    return 0;
+}
+
+static int
 hmacmodule_exec(PyObject *module)
 {
     hmacmodule_state *state = get_hmacmodule_state(module);
@@ -355,6 +372,9 @@ hmacmodule_exec(PyObject *module)
         return -1;
     }
     if (hmacmodule_init_exceptions(module, state) < 0) {
+        return -1;
+    }
+    if (hmacmodule_init_strings(state) < 0) {
         return -1;
     }
     return 0;
@@ -366,6 +386,7 @@ hmacmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(mod));
     hmacmodule_state *state = get_hmacmodule_state(mod);
     Py_VISIT(state->unknown_hash_error);
+    Py_VISIT(state->str_lower);
     return 0;
 }
 
@@ -378,6 +399,7 @@ hmacmodule_clear(PyObject *mod)
         state->hinfo_table = NULL;
     }
     Py_CLEAR(state->unknown_hash_error);
+    Py_CLEAR(state->str_lower);
     return 0;
 }
 
