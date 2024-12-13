@@ -858,7 +858,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return map(function, count(start))
 
    def repeatfunc(function, times=None, *args):
-       "Repeat calls to function with specified arguments."
+       "Repeat calls to a function with specified arguments."
        if times is None:
            return starmap(function, repeat(args))
        return starmap(function, repeat(args, times))
@@ -1019,10 +1019,10 @@ The following recipes have a more mathematical flavor:
        # sum_of_squares([10, 20, 30]) → 1400
        return sumprod(*tee(iterable))
 
-   def reshape(matrix, cols):
+   def reshape(matrix, columns):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2), (3, 4, 5)
-       return batched(chain.from_iterable(matrix), cols, strict=True)
+       return batched(chain.from_iterable(matrix), columns, strict=True)
 
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
