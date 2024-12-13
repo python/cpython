@@ -55,6 +55,8 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
 /* other API */
 
+PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
+
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
 // _PyLong_GetZero() and _PyLong_GetOne() must always be available

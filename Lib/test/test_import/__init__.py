@@ -807,6 +807,50 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
+    def test_frozen_module_from_import_error(self):
+        with self.assertRaises(ImportError) as cm:
+            from os import this_will_never_exist
+        self.assertIn(
+            f"cannot import name 'this_will_never_exist' from 'os' ({os.__file__})",
+            str(cm.exception),
+        )
+        with self.assertRaises(ImportError) as cm:
+            from sys import this_will_never_exist
+        self.assertIn(
+            "cannot import name 'this_will_never_exist' from 'sys' (unknown location)",
+            str(cm.exception),
+        )
+
+        scripts = [
+            """
+import os
+os.__spec__.has_location = False
+os.__file__ = []
+from os import this_will_never_exist
+""",
+            """
+import os
+os.__spec__.has_location = False
+del os.__file__
+from os import this_will_never_exist
+""",
+              """
+import os
+os.__spec__.origin = []
+os.__file__ = []
+from os import this_will_never_exist
+"""
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"cannot import name 'this_will_never_exist' "
+                    b"from 'os' (unknown location)"
+                )
+                popen = script_helper.spawn_python("-c", script)
+                stdout, stderr = popen.communicate()
+                self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
@@ -1068,7 +1112,7 @@ try:
 except AttributeError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     fractions.Fraction
 except AttributeError as e:
@@ -1092,7 +1136,7 @@ try:
 except ImportError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     from fractions import Fraction
 except ImportError as e:
