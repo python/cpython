@@ -1042,7 +1042,7 @@ specialize_dict_access(
     }
     int result;
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
-        _PyObject_InlineValues(owner)->valid &&
+        FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner)->valid) &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
         Py_BEGIN_CRITICAL_SECTION(owner);
