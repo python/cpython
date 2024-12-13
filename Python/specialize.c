@@ -944,13 +944,13 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr) {
 #endif //!Py_GIL_DISABLED
 
 static DescriptorClassification
-analyze_descriptor_store(PyTypeObject *type, PyObject *name, PyObject **descr)
+analyze_descriptor_store(PyTypeObject *type, PyObject *name, PyObject **descr, unsigned int *tp_version)
 {
     if (type->tp_setattro != PyObject_GenericSetAttr) {
         *descr = NULL;
         return GETSET_OVERRIDDEN;
     }
-    PyObject *descriptor = _PyType_LookupRef(type, name);
+    PyObject *descriptor = _PyType_LookupRefAndVersion(type, name, tp_version);
     *descr = descriptor;
     if (descriptor_is_class(descriptor, name)) {
         return DUNDER_CLASS;
@@ -1330,11 +1330,11 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
         goto fail;
     }
-    uint32_t tp_version = type_get_version(type, STORE_ATTR);
+    unsigned int tp_version = 0;
+    DescriptorClassification kind = analyze_descriptor_store(type, name, &descr, &tp_version);
     if (tp_version == 0) {
         goto fail;
     }
-    DescriptorClassification kind = analyze_descriptor_store(type, name, &descr);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     switch(kind) {
         case OVERRIDING:
