@@ -3655,7 +3655,7 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-#endif    
+#endif
     if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
