@@ -940,7 +940,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def unique(iterable, key=None, reverse=False):
       "Yield unique elements in sorted order. Supports unhashable inputs."
       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      return unique_justseen(sorted(iterable, key=key, reverse=reverse), key=key)
+      sequenced = sorted(iterable, key=key, reverse=reverse)
+      return unique_justseen(sequenced, key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
