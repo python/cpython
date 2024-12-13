@@ -20,6 +20,11 @@
 #include "Python.h"
 #include "pycore_hashtable.h"
 
+// Small mismatch between the variable names Python defines as part of configure
+// at the ones HACL* expects to be set in order to enable those headers.
+#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
+#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
+
 #include "_hacl/Hacl_HMAC.h"
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
 #include "_hacl/Hacl_Streaming_Types.h" // Hacl_Streaming_Types_error_code
@@ -203,6 +208,8 @@ typedef struct py_hmac_hinfo {
 typedef struct hmacmodule_state {
     _Py_hashtable_t *hinfo_table;
     PyObject *unknown_hash_error;
+    /* HMAC object type */
+    PyTypeObject *hmac_type;
     /* interned strings */
     PyObject *str_lower;
 } hmacmodule_state;
@@ -215,16 +222,61 @@ get_hmacmodule_state(PyObject *module)
     return (hmacmodule_state *)state;
 }
 
+static inline hmacmodule_state *
+get_hmacmodule_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (hmacmodule_state *)state;
+}
+
+// --- HMAC Object ------------------------------------------------------------
+
+typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
+
+typedef struct HMACObject {
+    PyObject_HEAD
+
+    bool use_mutex;
+    PyMutex mutex;
+
+    // Hash function information
+    PyObject *name;         // rendered name (exact unicode object)
+    HMAC_Hash_Kind kind;    // can be used for runtime dispatch (must be known)
+    uint32_t block_size;
+    uint32_t digest_size;
+    py_hmac_hacl_api api;
+
+    // HMAC HACL* internal state.
+    HACL_HMAC_state *state;
+} HMACObject;
+
+#define HMACObject_CAST(op) ((HMACObject *)(op))
+
 // --- HMAC module clinic configuration ---------------------------------------
 
 /*[clinic input]
 module _hmac
+class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c8bab73fde49ba8a]*/
 
+#define clinic_state()  (get_hmacmodule_state_by_cls(Py_TYPE(self)))
 #include "clinic/hmacmodule.c.h"
+#undef clinic_state
 
 // --- Helpers ----------------------------------------------------------------
+
+/*
+ * Free the HACL* internal state.
+ */
+static inline void
+_hacl_hmac_state_free(HACL_HMAC_state *state)
+{
+    if (state != NULL) {
+        Hacl_Streaming_HMAC_free(state);
+    }
+}
 
 /* Static information used to construct the hash table. */
 static const py_hmac_hinfo py_hmac_static_hinfo[] = {
@@ -374,6 +426,63 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
     return 1;
 #endif
 }
+
+// --- HMAC object ------------------------------------------------------------
+
+static int
+HMACObject_clear(PyObject *self)
+{
+    HMACObject *hmac = HMACObject_CAST(self);
+    Py_CLEAR(hmac->name);
+    _hacl_hmac_state_free(hmac->state);
+    hmac->state = NULL;
+    return 0;
+}
+
+static void
+HMACObject_dealloc(PyObject *self)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)HMACObject_clear(self);
+    type->tp_free(self);
+    Py_DECREF(type);
+}
+
+static int
+HMACObject_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static PyMethodDef HMACObject_methods[] = {
+    {NULL, NULL, 0, NULL} /* sentinel */
+};
+
+static PyGetSetDef HMACObject_getsets[] = {
+    {NULL, NULL, NULL, NULL, NULL} /* sentinel */
+};
+
+static PyType_Slot HMACObject_Type_slots[] = {
+    {Py_tp_methods, HMACObject_methods},
+    {Py_tp_getset, HMACObject_getsets},
+    {Py_tp_clear, HMACObject_clear},
+    {Py_tp_dealloc, HMACObject_dealloc},
+    {Py_tp_traverse, HMACObject_traverse},
+    {0, NULL} /* sentinel */
+};
+
+static PyType_Spec HMAC_Type_spec = {
+    .name = "_hmac.HMAC",
+    .basicsize = sizeof(HMACObject),
+    .flags = Py_TPFLAGS_DEFAULT
+             | Py_TPFLAGS_DISALLOW_INSTANTIATION
+             | Py_TPFLAGS_HEAPTYPE
+             | Py_TPFLAGS_IMMUTABLETYPE
+             | Py_TPFLAGS_HAVE_GC,
+    .slots = HMACObject_Type_slots,
+};
 
 // --- One-shot HMAC-HASH interface -------------------------------------------
 
@@ -803,6 +912,21 @@ hmacmodule_init_exceptions(PyObject *module, hmacmodule_state *state)
 }
 
 static int
+hmacmodule_init_hmac_type(PyObject *module, hmacmodule_state *state)
+{
+    state->hmac_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+                                                                &HMAC_Type_spec,
+                                                                NULL);
+    if (state->hmac_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->hmac_type) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 hmacmodule_init_strings(hmacmodule_state *state)
 {
 #define ADD_STR(ATTR, STRING)                       \
@@ -827,6 +951,9 @@ hmacmodule_exec(PyObject *module)
     if (hmacmodule_init_exceptions(module, state) < 0) {
         return -1;
     }
+    if (hmacmodule_init_hmac_type(module, state) < 0) {
+        return -1;
+    }
     if (hmacmodule_init_strings(state) < 0) {
         return -1;
     }
@@ -839,6 +966,7 @@ hmacmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(mod));
     hmacmodule_state *state = get_hmacmodule_state(mod);
     Py_VISIT(state->unknown_hash_error);
+    Py_VISIT(state->hmac_type);
     Py_VISIT(state->str_lower);
     return 0;
 }
@@ -852,6 +980,7 @@ hmacmodule_clear(PyObject *mod)
         state->hinfo_table = NULL;
     }
     Py_CLEAR(state->unknown_hash_error);
+    Py_CLEAR(state->hmac_type);
     Py_CLEAR(state->str_lower);
     return 0;
 }
