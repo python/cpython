@@ -221,7 +221,9 @@ struct _typeobject {
     PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
-    /* Type attribute cache version tag. Added in version 2.6 */
+    /* Type attribute cache version tag. Added in version 2.6.
+     * If zero, the cache is invalid and must be initialized.
+     */
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
@@ -229,8 +231,16 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* Number of tp_version_tag values used.
+     * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
+     * disabled for this type (e.g. due to custom MRO entries).
+     * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
+     */
     uint16_t tp_versions_used;
 };
+
+#define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
 
 /* This struct is used by the specializer
  * It should be treated as an opaque blob
