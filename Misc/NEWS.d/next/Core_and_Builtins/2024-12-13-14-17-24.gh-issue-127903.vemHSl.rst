@@ -1,0 +1,2 @@
+Fix segmentation fault in debug mode in ``_copy_characters`` when there is
+nothing to copy.
