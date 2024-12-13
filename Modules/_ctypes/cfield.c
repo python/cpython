@@ -1470,12 +1470,12 @@ _Py_COMP_DIAG_POP
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    static bool initialized = 0;
+    static bool initialized = false;
     static PyMutex mutex = {0};
     PyMutex_Lock(&mutex);
     if (!initialized) {
         _ctypes_init_fielddesc();
-        initialized = 1;
+        initialized = true;
     }
     PyMutex_Unlock(&mutex);
     struct fielddesc *result = NULL;
