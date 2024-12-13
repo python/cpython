@@ -998,19 +998,14 @@ specialize_inline_values_access_lock_held(
 
 static int
 specialize_managed_dict_access_lock_held(
-    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    PyDictObject *dict, _Py_CODEUNIT *instr, PyTypeObject *type,
     unsigned int tp_version,
     PyObject *name, int base_op, int hint_op)
 {
-    PyDictObject *dict = _PyObject_GetManagedDict(owner);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(owner);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
 
-    if (dict == NULL || !PyDict_CheckExact(dict)) {
-        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
-        return 0;
-    }
     // We found an instance with a __dict__.
     if (dict->ma_values) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
@@ -1046,19 +1041,26 @@ specialize_dict_access(
         return 0;
     }
     int result;
-    Py_BEGIN_CRITICAL_SECTION(owner);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
         _PyObject_InlineValues(owner)->valid &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
+        Py_BEGIN_CRITICAL_SECTION(owner);
         result = specialize_inline_values_access_lock_held(
             owner, instr, type, tp_version, name, base_op, values_op);
+        Py_END_CRITICAL_SECTION();
     }
     else {
+        PyDictObject *dict = _PyObject_GetManagedDict(owner);
+        if (dict == NULL || !PyDict_CheckExact(dict)) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
+            return 0;
+        }
+        Py_BEGIN_CRITICAL_SECTION(dict);
         result = specialize_managed_dict_access_lock_held(
-            owner, instr, type, tp_version, name, base_op, hint_op);
+            dict, instr, type, tp_version, name, base_op, hint_op);
+        Py_END_CRITICAL_SECTION();
     }
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 
