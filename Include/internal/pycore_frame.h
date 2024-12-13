@@ -158,7 +158,6 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     dest->stackpointer = dest->localsplus + stacktop;
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
-        PyStackRef_CheckValid(dest->localsplus[i]);
     }
 
 #ifdef Py_GIL_DISABLED

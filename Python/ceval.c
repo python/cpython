@@ -1898,9 +1898,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     if (kwnames) {
         total_args += PyTuple_GET_SIZE(kwnames);
     }
+    _PyStackRef stack_array[8];
     _PyStackRef *arguments;
     if (total_args <= 8) {
-        _PyStackRef stack_array[8];
         arguments = stack_array;
     }
     else {
