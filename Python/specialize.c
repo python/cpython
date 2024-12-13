@@ -1252,7 +1252,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         {
             assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
-            FT_UNIMPLEMENTED();
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 return -1;
@@ -1269,10 +1268,16 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
             }
+            #ifdef Py_GIL_DISABLED
+            if (!_PyObject_HasDeferredRefcount(descr)) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
+                return -1;
+            }
+            #endif
             write_u32(lm_cache->keys_version, version);
             /* borrowed */
             write_obj(lm_cache->descr, descr);
-            write_u32(lm_cache->type_version, type->tp_version_tag);
+            write_u32(lm_cache->type_version, tp_version);
             specialize(instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             return 0;
         }
