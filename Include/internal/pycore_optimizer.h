@@ -211,6 +211,9 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsSymbol **stack_pointer;
     _Py_UopsSymbol **stack;
     _Py_UopsSymbol **locals;
+
+    // Cannot be NULL.
+    _Py_UopsSymbol *f_funcobj;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
@@ -271,7 +274,8 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     PyCodeObject *co,
     int curr_stackentries,
     _Py_UopsSymbol **args,
-    int arg_len);
+    int arg_len,
+    _Py_UopsSymbol *f_funcobj);
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
