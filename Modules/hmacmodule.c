@@ -21,6 +21,8 @@
 
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
 
+#include <stdbool.h>
+
 // --- HMAC underlying hash function static information -----------------------
 
 #define Py_hmac_hash_max_block_size             128
@@ -197,6 +199,94 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
         0,
     },
 };
+
+static inline bool
+find_hash_info_by_utf8name(hmacmodule_state *state,
+                           const char *name,
+                           const py_hmac_hinfo **info)
+{
+    assert(name != NULL);
+    *info = _Py_hashtable_get(state->hinfo_table, name);
+    return *info != NULL;
+}
+
+static int
+find_hash_info_by_name(hmacmodule_state *state,
+                       PyObject *name,
+                       const py_hmac_hinfo **info)
+{
+    const char *utf8name = PyUnicode_AsUTF8(name);
+    if (utf8name == NULL) {
+        goto error;
+    }
+    if (find_hash_info_by_utf8name(state, utf8name, info)) {
+        return 1;
+    }
+
+    // try to find an alternative using the lowercase name
+    PyObject *lower = PyObject_CallMethodNoArgs(name, state->str_lower);
+    if (lower == NULL) {
+        goto error;
+    }
+    const char *utf8lower = PyUnicode_AsUTF8(lower);
+    if (utf8lower == NULL) {
+        Py_DECREF(lower);
+        goto error;
+    }
+    int found = find_hash_info_by_utf8name(state, utf8lower, info);
+    Py_DECREF(lower);
+    return found;
+
+error:
+    *info = NULL;
+    return -1;
+}
+
+/*
+ * Find the corresponding HMAC hash function static information.
+ *
+ * If an error occurs or if nothing can be found, this
+ * returns -1 or 0 respectively, and sets 'info' to NULL.
+ * Otherwise, this returns 1 and stores the result in 'info'.
+ *
+ * Parameters
+ *
+ *      state           The HMAC module state.
+ *      hash_info_ref   An input to hashlib.new().
+ *      info            The deduced information, if any.
+ */
+static int
+find_hash_info_impl(hmacmodule_state *state,
+                    PyObject *hash_info_ref,
+                    const py_hmac_hinfo **info)
+{
+    if (PyUnicode_Check(hash_info_ref)) {
+        return find_hash_info_by_name(state, hash_info_ref, info);
+    }
+    // NOTE(picnixz): For now, we only support named algorithms.
+    // In the future, we need to decide whether 'hashlib.openssl_md5'
+    // would make sense as an alias to 'md5' and how to remove OpenSSL.
+    *info = NULL;
+    return 0;
+}
+
+static const py_hmac_hinfo *
+find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
+{
+    const py_hmac_hinfo *info = NULL;
+    int rc = find_hash_info_impl(state, hash_info_ref, &info);
+    // The code below could be simplfied with only 'rc == 0' case,
+    // but we are deliberately verbose to ease future improvements.
+    if (rc < 0) {
+        return NULL;
+    }
+    if (rc == 0) {
+        PyErr_Format(state->unknown_hash_error,
+                     "unsupported hash type: %R", hash_info_ref);
+        return NULL;
+    }
+    return info;
+}
 
 // --- HMAC module methods ----------------------------------------------------
 
