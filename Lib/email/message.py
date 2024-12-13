@@ -564,14 +564,6 @@ class Message:
         msg.add_header('content-disposition', 'attachment',
                        filename='Fußballer.ppt'))
         """
-        # Validate header name according to RFC 5322
-        if not _name or ' ' in _name or '\t' in _name or ':' in _name:
-            raise ValueError(f"Invalid header field name {_name!r}")
-
-        # Only allow printable ASCII characters
-        if any(ord(c) < 33 or ord(c) > 126 for c in _name):
-            raise ValueError(f"Header field name {_name!r} contains invalid characters")
-
         parts = []
         for k, v in _params.items():
             if v is None:
