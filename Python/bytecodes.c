@@ -2282,7 +2282,7 @@ dummy_func(
 
             EXIT_IF(!PyType_Check(owner_o));
             assert(type_version != 0);
-            EXIT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
+            EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {

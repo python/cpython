@@ -2874,7 +2874,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             assert(type_version != 0);
-            if (((PyTypeObject *)owner_o)->tp_version_tag != type_version) {
+            if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

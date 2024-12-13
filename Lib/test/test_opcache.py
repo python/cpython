@@ -717,11 +717,16 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_class(self):
         def get_items():
+            class B:
+                pass
+
             class C:
-                a = object()
+                # a must be set to an instance that uses deferred reference
+                # counting
+                a = B
 
             items = []
             for _ in range(self.ITEMS):
