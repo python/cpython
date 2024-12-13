@@ -90,6 +90,13 @@ class _PolicyBase:
         """
         return self.clone(**other.__dict__)
 
+def validate_header(name, value):
+    # Validate header name according to RFC 5322
+    if not name or ' ' in name or '\t' in name or ':' in name:
+        raise ValueError(f"Invalid header field name {name!r}")
+    # Only allow printable ASCII characters
+    if any(ord(c) < 33 or ord(c) > 126 for c in name):
+        raise ValueError(f"Header field name {name!r} contains invalid characters")
 
 def _append_doc(doc, added_doc):
     doc = doc.rsplit('\n', 1)[0]
@@ -314,6 +321,7 @@ class Compat32(Policy):
         """+
         The name and value are returned unmodified.
         """
+        validate_header(name, value)
         return (name, value)
 
     def header_fetch_parse(self, name, value):
