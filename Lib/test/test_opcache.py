@@ -1388,8 +1388,6 @@ class TestSpecializer(TestBase):
 
         set_slot()
 
-        #dis.dis(set_slot, adaptive=True)
-
         self.assert_specialized(set_slot, "STORE_ATTR_SLOT")
         self.assert_no_opcode(set_slot, "STORE_ATTR")
 

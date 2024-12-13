@@ -1113,6 +1113,10 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION_AND_LOCK: {
+            break;
+        }
+
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
             break;
         }

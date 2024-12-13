@@ -7348,33 +7348,37 @@
             _PyStackRef owner;
             _PyStackRef value;
             /* Skip 1 cache entry */
-            // _GUARD_TYPE_VERSION
+            // _GUARD_TYPE_VERSION_AND_LOCK
             {
                 owner = stack_pointer[-1];
                 uint32_t type_version = read_u32(&this_instr[2].cache);
-                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(type_version != 0);
-                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version, STORE_ATTR);
+                DEOPT_IF(!LOCK_OBJECT(owner_o), STORE_ATTR);
+                PyTypeObject *tp = Py_TYPE(owner_o);
+                if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
+                    UNLOCK_OBJECT(owner_o);
+                    DEOPT_IF(true, STORE_ATTR);
+                }
             }
             // _GUARD_DORV_NO_DICT
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(_PyObject_GetManagedDict(owner_o), STORE_ATTR);
-                DEOPT_IF(FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid) == 0, STORE_ATTR);
+                if (_PyObject_GetManagedDict(owner_o) ||
+                    !FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                    UNLOCK_OBJECT(owner_o);
+                    DEOPT_IF(true, STORE_ATTR);
+                }
             }
             // _STORE_ATTR_INSTANCE_VALUE
             {
                 value = stack_pointer[-2];
                 uint16_t offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                DEOPT_IF(!LOCK_OBJECT(owner_o), STORE_ATTR);
-                if (_PyObject_GetManagedDict(owner_o) == NULL) {
-                    UNLOCK_OBJECT(owner_o);
-                    DEOPT_IF(true, STORE_ATTR);
-                }
                 STAT_INC(STORE_ATTR, hit);
+                assert(_PyObject_GetManagedDict(owner_o) == NULL);
                 PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
                 PyObject *old_value = *value_ptr;
                 FT_ATOMIC_STORE_PTR_RELEASE(*value_ptr, PyStackRef_AsPyObjectSteal(value));
@@ -7452,10 +7456,13 @@
                 PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
                 DEOPT_IF(dict == NULL, STORE_ATTR);
                 DEOPT_IF(!LOCK_OBJECT(dict), STORE_ATTR);
+                #ifdef Py_GIL_DISABLED
+                dict = _PyObject_GetManagedDict(owner_o);
                 if (dict == NULL) {
                     UNLOCK_OBJECT(dict);
                     DEOPT_IF(true, STORE_ATTR);
                 }
+                #endif
                 assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (hint >= (size_t)dict->ma_keys->dk_nentries ||

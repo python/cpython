@@ -890,74 +890,78 @@ descriptor_is_class(PyObject *descriptor, PyObject *name)
 
 #ifndef Py_GIL_DISABLED
 static DescriptorClassification
-analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
-{
+analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr) {
     bool has_getattr = false;
-    if (store) {
-        if (type->tp_setattro != PyObject_GenericSetAttr) {
+    getattrofunc getattro_slot = type->tp_getattro;
+    if (getattro_slot == PyObject_GenericGetAttr) {
+        /* Normal attribute lookup; */
+        has_getattr = false;
+    }
+    else if (getattro_slot == _Py_slot_tp_getattr_hook ||
+        getattro_slot == _Py_slot_tp_getattro) {
+        /* One or both of __getattribute__ or __getattr__ may have been
+         overridden See typeobject.c for why these functions are special. */
+        PyObject *getattribute = _PyType_LookupRef(type, &_Py_ID(__getattribute__));
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        bool has_custom_getattribute = getattribute != NULL &&
+            getattribute != interp->callable_cache.object__getattribute__;
+        PyObject *getattr = _PyType_LookupRef(type, &_Py_ID(__getattr__));
+        has_getattr = getattr != NULL;
+        Py_XDECREF(getattr);
+        if (has_custom_getattribute) {
+            if (getattro_slot == _Py_slot_tp_getattro &&
+                !has_getattr &&
+                Py_IS_TYPE(getattribute, &PyFunction_Type)) {
+                *descr = getattribute;
+                return GETATTRIBUTE_IS_PYTHON_FUNCTION;
+            }
+            /* Potentially both __getattr__ and __getattribute__ are set.
+               Too complicated */
+            Py_DECREF(getattribute);
             *descr = NULL;
             return GETSET_OVERRIDDEN;
         }
+        /* Potentially has __getattr__ but no custom __getattribute__.
+           Fall through to usual descriptor analysis.
+           Usual attribute lookup should only be allowed at runtime
+           if we can guarantee that there is no way an exception can be
+           raised. This means some specializations, e.g. specializing
+           for property() isn't safe.
+        */
+        Py_XDECREF(getattribute);
     }
     else {
-        getattrofunc getattro_slot = type->tp_getattro;
-        if (getattro_slot == PyObject_GenericGetAttr) {
-            /* Normal attribute lookup; */
-            has_getattr = false;
-        }
-        else if (getattro_slot == _Py_slot_tp_getattr_hook ||
-            getattro_slot == _Py_slot_tp_getattro) {
-            /* One or both of __getattribute__ or __getattr__ may have been
-             overridden See typeobject.c for why these functions are special. */
-            PyObject *getattribute = _PyType_LookupRef(type, &_Py_ID(__getattribute__));
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            bool has_custom_getattribute = getattribute != NULL &&
-                getattribute != interp->callable_cache.object__getattribute__;
-            PyObject *getattr = _PyType_LookupRef(type, &_Py_ID(__getattr__));
-            has_getattr = getattr != NULL;
-            Py_XDECREF(getattr);
-            if (has_custom_getattribute) {
-                if (getattro_slot == _Py_slot_tp_getattro &&
-                    !has_getattr &&
-                    Py_IS_TYPE(getattribute, &PyFunction_Type)) {
-                    *descr = getattribute;
-                    return GETATTRIBUTE_IS_PYTHON_FUNCTION;
-                }
-                /* Potentially both __getattr__ and __getattribute__ are set.
-                   Too complicated */
-                Py_DECREF(getattribute);
-                *descr = NULL;
-                return GETSET_OVERRIDDEN;
-            }
-            /* Potentially has __getattr__ but no custom __getattribute__.
-               Fall through to usual descriptor analysis.
-               Usual attribute lookup should only be allowed at runtime
-               if we can guarantee that there is no way an exception can be
-               raised. This means some specializations, e.g. specializing
-               for property() isn't safe.
-            */
-            Py_XDECREF(getattribute);
-        }
-        else {
-            *descr = NULL;
-            return GETSET_OVERRIDDEN;
-        }
+        *descr = NULL;
+        return GETSET_OVERRIDDEN;
     }
     PyObject *descriptor = _PyType_LookupRef(type, name);
     *descr = descriptor;
-    if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
-        if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
-            return DUNDER_CLASS;
-        }
+    if (descriptor_is_class(descriptor, name)) {
+        return DUNDER_CLASS;
     }
     return classify_descriptor(descriptor, has_getattr);
 }
 #endif //!Py_GIL_DISABLED
 
+static DescriptorClassification
+analyze_descriptor_store(PyTypeObject *type, PyObject *name, PyObject **descr)
+{
+    if (type->tp_setattro != PyObject_GenericSetAttr) {
+        *descr = NULL;
+        return GETSET_OVERRIDDEN;
+    }
+    PyObject *descriptor = _PyType_LookupRef(type, name);
+    *descr = descriptor;
+    if (descriptor_is_class(descriptor, name)) {
+        return DUNDER_CLASS;
+    }
+    return classify_descriptor(descriptor, false);
+}
+
 static int
 specialize_dict_access_inline(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
-    DescriptorClassification kind, PyObject *name,
+    DescriptorClassification kind, PyObject *name, unsigned int tp_version,
     int base_op, int values_op)
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -985,7 +989,7 @@ specialize_dict_access_inline(
 static int
 specialize_dict_access_hint(
     PyDictObject *dict, _Py_CODEUNIT *instr, PyTypeObject *type,
-    DescriptorClassification kind, PyObject *name,
+    DescriptorClassification kind, PyObject *name, unsigned int tp_version,
     int base_op, int hint_op)
 {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -1003,7 +1007,7 @@ specialize_dict_access_hint(
         return 0;
     }
     cache->index = (uint16_t)index;
-    write_u32(cache->version, type->tp_version_tag);
+    write_u32(cache->version, tp_version);
     specialize(instr, hint_op);
     return 1;
 }
@@ -1012,7 +1016,7 @@ specialize_dict_access_hint(
 static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
-    DescriptorClassification kind, PyObject *name,
+    DescriptorClassification kind, PyObject *name, unsigned int tp_version,
     int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
@@ -1024,12 +1028,22 @@ specialize_dict_access(
         return 0;
     }
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
-        _PyObject_InlineValues(owner)->valid &&
+        FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner)->valid) &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
         int res;
         Py_BEGIN_CRITICAL_SECTION(owner);
-        res = specialize_dict_access_inline(owner, instr, type, kind, name, base_op, values_op);
+        PyDictObject *dict = _PyObject_GetManagedDict(owner);
+        if (dict == NULL) {
+            // managed dict, not materialized, inline values valid
+            res = specialize_dict_access_inline(owner, instr, type, kind, name,
+                                                tp_version, base_op, values_op);
+        }
+        else {
+            // lost race and dict was created, fail specialization
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OTHER);
+            res = 0;
+        }
         Py_END_CRITICAL_SECTION();
         return res;
     }
@@ -1041,7 +1055,9 @@ specialize_dict_access(
         }
         int res;
         Py_BEGIN_CRITICAL_SECTION(dict);
-        res =  specialize_dict_access_hint(dict, instr, type, kind, name, base_op, hint_op);
+        // materialized managed dict
+        res = specialize_dict_access_hint(dict, instr, type, kind, name,
+                                          tp_version, base_op, hint_op);
         Py_END_CRITICAL_SECTION();
         return res;
     }
@@ -1090,7 +1106,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     PyTypeObject *type = Py_TYPE(owner);
     bool shadow = instance_has_key(owner, name);
     PyObject *descr = NULL;
-    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
+    DescriptorClassification kind = analyze_descriptor_load(type, name, &descr);
     Py_XDECREF(descr); // turn strong ref into a borrowed ref
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (type_get_version(type, LOAD_ATTR) == 0) {
@@ -1243,8 +1259,8 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     }
     Py_UNREACHABLE();
 try_instance:
-    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
-                                    LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
+    if (specialize_dict_access(owner, instr, type, kind, name, type->tp_version_tag,
+                               LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
     {
         return 0;
     }
@@ -1318,7 +1334,7 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
     if (tp_version == 0) {
         goto fail;
     }
-    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    DescriptorClassification kind = analyze_descriptor_store(type, name, &descr);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     switch(kind) {
         case OVERRIDING:
@@ -1378,10 +1394,9 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
             goto fail;
         case ABSENT:
-            if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
-                                    STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
-            {
-                write_u32(cache->version, tp_version);
+            if (specialize_dict_access(owner, instr, type, kind, name, tp_version,
+                                       STORE_ATTR, STORE_ATTR_INSTANCE_VALUE,
+                                       STORE_ATTR_WITH_HINT)) {
                 goto success;
             }
     }
@@ -1460,7 +1475,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     }
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
-    kind = analyze_descriptor(cls, name, &descr, 0);
+    kind = analyze_descriptor_load(cls, name, &descr);
     Py_XDECREF(descr); // turn strong ref into a borrowed ref
     if (type_get_version(cls, LOAD_ATTR) == 0) {
         return -1;
