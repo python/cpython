@@ -3035,10 +3035,10 @@ branchesiter_dealloc(branchesiterator *bi)
     PyObject_Free(bi);
 }
 
-PyTypeObject _PyBranchesIterator = {
+static PyTypeObject _PyBranchesIterator = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "line_iterator",                    /* tp_name */
-    sizeof(branchesiterator),               /* tp_basicsize */
+    sizeof(branchesiterator),           /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
     .tp_dealloc = (destructor)branchesiter_dealloc,
