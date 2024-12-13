@@ -53,32 +53,11 @@ PyUnstable_AtExit(PyInterpreterState *interp,
 }
 
 
-static void
-atexit_delete_cb(struct atexit_state *state, int i)
-{
-    atexit_py_callback *cb = state->callbacks[i];
-    state->callbacks[i] = NULL;
-
-    Py_DECREF(cb->func);
-    Py_DECREF(cb->args);
-    Py_XDECREF(cb->kwargs);
-    PyMem_Free(cb);
-}
-
-
 /* Clear all callbacks without calling them */
 static void
 atexit_cleanup(struct atexit_state *state)
 {
-    atexit_py_callback *cb;
-    for (int i = 0; i < state->ncallbacks; i++) {
-        cb = state->callbacks[i];
-        if (cb == NULL)
-            continue;
-
-        atexit_delete_cb(state, i);
-    }
-    state->ncallbacks = 0;
+    PyList_Clear(state->callbacks);
 }
 
 
@@ -89,24 +68,16 @@ _PyAtExit_Init(PyInterpreterState *interp)
     // _PyAtExit_Init() must only be called once
     assert(state->callbacks == NULL);
 
-    state->callback_len = 32;
-    state->ncallbacks = 0;
-    state->callbacks = PyMem_New(atexit_py_callback*, state->callback_len);
+    state->callbacks = PyList_New(32);
     if (state->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
     return _PyStatus_OK();
 }
 
-
-void
-_PyAtExit_Fini(PyInterpreterState *interp)
+static void
+atexit_call_lowlevel_locked(struct atexit_state *state)
 {
-    struct atexit_state *state = &interp->atexit;
-    atexit_cleanup(state);
-    PyMem_Free(state->callbacks);
-    state->callbacks = NULL;
-
     atexit_callback *next = state->ll_callbacks;
     state->ll_callbacks = NULL;
     while (next != NULL) {
@@ -120,22 +91,31 @@ _PyAtExit_Fini(PyInterpreterState *interp)
     }
 }
 
+void
+_PyAtExit_Fini(PyInterpreterState *interp)
+{
+    struct atexit_state *state = &interp->atexit;
+    atexit_cleanup(state);
+    Py_CLEAR(state->callbacks);
+    atexit_call_lowlevel_locked(state);
+}
+
 
 static void
 atexit_callfuncs(struct atexit_state *state)
 {
     assert(!PyErr_Occurred());
 
-    if (state->ncallbacks == 0) {
+    // Create a copy of the list for thread safety
+    PyObject *copy = PyList_GetSlice(state->callbacks, 0, Py_SIZE(state->callbacks));
+    if (copy == NULL)
+    {
+        PyErr_WriteUnraisable(NULL);
         return;
     }
 
-    for (int i = state->ncallbacks - 1; i >= 0; i--) {
-        atexit_py_callback *cb = state->callbacks[i];
-        if (cb == NULL) {
-            continue;
-        }
-
+    for (Py_ssize_t i = 0; i < Py_SIZE(copy); ++i) {
+        PyObject *@s
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
         PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);

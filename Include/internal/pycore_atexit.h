@@ -36,21 +36,16 @@ typedef struct atexit_callback {
     struct atexit_callback *next;
 } atexit_callback;
 
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_py_callback;
-
 struct atexit_state {
     atexit_callback *ll_callbacks;
 
     // XXX The rest of the state could be moved to the atexit module state
     // and a low-level callback added for it during module exec.
     // For the moment we leave it here.
-    atexit_py_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
+
+    // List containing tuples with callback information.
+    // e.g. [(func, args, kwargs), ...]
+    PyObject *callbacks;
 };
 
 // Export for '_interpchannels' shared extension
