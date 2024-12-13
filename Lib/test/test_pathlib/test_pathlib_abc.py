@@ -5,7 +5,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._abc import PurePathBase, PathBase
 from pathlib._types import Parser
 import posixpath
 
@@ -26,11 +26,6 @@ def needs_windows(fn):
     _tests_needing_windows.add(fn.__name__)
     return fn
 
-
-class UnsupportedOperationTest(unittest.TestCase):
-    def test_is_notimplemented(self):
-        self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
-        self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
 #
 # Tests for the pure classes.
@@ -1294,10 +1289,9 @@ class DummyPurePathTest(unittest.TestCase):
 class PathBaseTest(PurePathBaseTest):
     cls = PathBase
 
-    def test_unsupported_operation(self):
-        P = self.cls
+    def test_not_implemented_error(self):
         p = self.cls('')
-        e = UnsupportedOperation
+        e = NotImplementedError
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.exists)
         self.assertRaises(e, p.is_dir)
