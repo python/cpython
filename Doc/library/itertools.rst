@@ -30,11 +30,6 @@ For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-These tools and their built-in counterparts also work well with the high-speed
-functions in the :mod:`operator` module.  For example, the multiplication
-operator can be mapped across two vectors to form an efficient dot-product:
-``sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))``.
-
 
 **Infinite iterators:**
 
