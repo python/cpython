@@ -138,6 +138,7 @@ typedef struct py_hmac_hinfo {
 
 typedef struct hmacmodule_state {
     _Py_hashtable_t *hinfo_table;
+    PyObject *unknown_hash_error;
 } hmacmodule_state;
 
 static inline hmacmodule_state *
@@ -329,10 +330,31 @@ hmacmodule_init_hash_info_table(hmacmodule_state *state)
 }
 
 static int
+hmacmodule_init_exceptions(PyObject *module, hmacmodule_state *state)
+{
+#define ADD_EXC(ATTR, NAME, BASE)                                       \
+    do {                                                                \
+        state->ATTR = PyErr_NewException("_hmac." NAME, BASE, NULL);    \
+        if (state->ATTR == NULL) {                                      \
+            return -1;                                                  \
+        }                                                               \
+        if (PyModule_AddObjectRef(module, NAME, state->ATTR) < 0) {     \
+            return -1;                                                  \
+        }                                                               \
+    } while (0)
+    ADD_EXC(unknown_hash_error, "UnknownHashError", PyExc_ValueError);
+#undef ADD_EXC
+    return 0;
+}
+
+static int
 hmacmodule_exec(PyObject *module)
 {
     hmacmodule_state *state = get_hmacmodule_state(module);
     if (hmacmodule_init_hash_info_table(state) < 0) {
+        return -1;
+    }
+    if (hmacmodule_init_exceptions(module, state) < 0) {
         return -1;
     }
     return 0;
@@ -343,6 +365,7 @@ hmacmodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(mod));
     hmacmodule_state *state = get_hmacmodule_state(mod);
+    Py_VISIT(state->unknown_hash_error);
     return 0;
 }
 
@@ -354,6 +377,7 @@ hmacmodule_clear(PyObject *mod)
         _Py_hashtable_destroy(state->hinfo_table);
         state->hinfo_table = NULL;
     }
+    Py_CLEAR(state->unknown_hash_error);
     return 0;
 }
 
