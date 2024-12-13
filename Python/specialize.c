@@ -2107,7 +2107,7 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     write_u32(cache->func_version, version);
-    instr->op.code = bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY;
+    specialize(instr, bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY);
     return 0;
 }
 
@@ -2202,10 +2202,9 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
 {
     PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[CALL_KW] == INLINE_CACHE_ENTRIES_CALL_KW);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL_KW);
-    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail;
     if (PyFunction_Check(callable)) {
         fail = specialize_py_call_kw((PyFunctionObject *)callable, instr, nargs, false);
@@ -2221,19 +2220,11 @@ _Py_Specialize_CallKw(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
         }
     }
     else {
-        instr->op.code = CALL_KW_NON_PY;
+        specialize(instr, CALL_KW_NON_PY);
         fail = 0;
     }
     if (fail) {
-        STAT_INC(CALL, failure);
-        assert(!PyErr_Occurred());
-        instr->op.code = CALL_KW;
-        cache->counter = adaptive_counter_backoff(cache->counter);
-    }
-    else {
-        STAT_INC(CALL, success);
-        assert(!PyErr_Occurred());
-        cache->counter = adaptive_counter_cooldown();
+        unspecialize(instr);
     }
 }
 

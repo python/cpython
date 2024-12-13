@@ -749,7 +749,7 @@ const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
@@ -759,7 +759,7 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
         }
     }
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return name;
 }
@@ -768,12 +768,12 @@ const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return oldcontext;
 }

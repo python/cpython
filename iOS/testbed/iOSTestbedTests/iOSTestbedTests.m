@@ -24,8 +24,11 @@
 
     NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
 
-    // Disable all color, as the Xcode log can't display color
+    // Set some other common environment indicators to disable color, as the
+    // Xcode log can't display color. Stdout will report that it is *not* a
+    // TTY.
     setenv("NO_COLOR", "1", true);
+    setenv("PY_COLORS", "0", true);
 
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
