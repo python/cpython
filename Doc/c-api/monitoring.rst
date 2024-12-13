@@ -173,7 +173,8 @@ would typically correspond to a python function.
    ================================================== =====================================
    Macro                                              Event
    ================================================== =====================================
-   .. c:macro:: PY_MONITORING_EVENT_BRANCH            :monitoring-event:`BRANCH`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_LEFT       :monitoring-event:`BRANCH_LEFT`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_RIGHT      :monitoring-event:`BRANCH_RIGHT`
    .. c:macro:: PY_MONITORING_EVENT_CALL              :monitoring-event:`CALL`
    .. c:macro:: PY_MONITORING_EVENT_C_RAISE           :monitoring-event:`C_RAISE`
    .. c:macro:: PY_MONITORING_EVENT_C_RETURN          :monitoring-event:`C_RETURN`
