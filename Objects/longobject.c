@@ -6750,6 +6750,7 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
     return _PyLong_CompactValue((PyLongObject*)op);
 }
 
+
 PyObject* PyLong_FromInt32(int32_t value)
 { return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
 
@@ -6814,4 +6815,123 @@ int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
 int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 {
     LONG_TO_UINT(obj, value, "C uint64_t");
+}
+
+
+static const PyLongLayout PyLong_LAYOUT = {
+    .bits_per_digit = PyLong_SHIFT,
+    .digits_order = -1,  // least significant first
+    .digit_endianness = PY_LITTLE_ENDIAN ? -1 : 1,
+    .digit_size = sizeof(digit),
+};
+
+
+const PyLongLayout*
+PyLong_GetNativeLayout(void)
+{
+    return &PyLong_LAYOUT;
+}
+
+
+int
+PyLong_Export(PyObject *obj, PyLongExport *export_long)
+{
+    if (!PyLong_Check(obj)) {
+        memset(export_long, 0, sizeof(*export_long));
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
+        return -1;
+    }
+
+    // Fast-path: try to convert to a int64_t
+    int overflow;
+#if SIZEOF_LONG == 8
+    long value = PyLong_AsLongAndOverflow(obj, &overflow);
+#else
+    // Windows has 32-bit long, so use 64-bit long long instead
+    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
+#endif
+    Py_BUILD_ASSERT(sizeof(value) == sizeof(int64_t));
+    // the function cannot fail since obj is a PyLongObject
+    assert(!(value == -1 && PyErr_Occurred()));
+
+    if (!overflow) {
+        export_long->value = value;
+        export_long->negative = 0;
+        export_long->ndigits = 0;
+        export_long->digits = NULL;
+        export_long->_reserved = 0;
+    }
+    else {
+        PyLongObject *self = (PyLongObject*)obj;
+        export_long->value = 0;
+        export_long->negative = _PyLong_IsNegative(self);
+        export_long->ndigits = _PyLong_DigitCount(self);
+        if (export_long->ndigits == 0) {
+            export_long->ndigits = 1;
+        }
+        export_long->digits = self->long_value.ob_digit;
+        export_long->_reserved = (Py_uintptr_t)Py_NewRef(obj);
+    }
+    return 0;
+}
+
+
+void
+PyLong_FreeExport(PyLongExport *export_long)
+{
+    PyObject *obj = (PyObject*)export_long->_reserved;
+    if (obj) {
+        export_long->_reserved = 0;
+        Py_DECREF(obj);
+    }
+}
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+PyLongWriter*
+PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
+{
+    if (ndigits <= 0) {
+        PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
+        goto error;
+    }
+    assert(digits != NULL);
+
+    PyLongObject *obj = _PyLong_New(ndigits);
+    if (obj == NULL) {
+        goto error;
+    }
+    if (negative) {
+        _PyLong_FlipSign(obj);
+    }
+
+    *digits = obj->long_value.ob_digit;
+    return (PyLongWriter*)obj;
+
+error:
+    *digits = NULL;
+    return NULL;
+}
+
+
+void
+PyLongWriter_Discard(PyLongWriter *writer)
+{
+    PyLongObject *obj = (PyLongObject *)writer;
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+}
+
+
+PyObject*
+PyLongWriter_Finish(PyLongWriter *writer)
+{
+    PyLongObject *obj = (PyLongObject *)writer;
+    assert(Py_REFCNT(obj) == 1);
+
+    // Normalize and get singleton if possible
+    obj = maybe_small_long(long_normalize(obj));
+
+    return (PyObject*)obj;
 }
