@@ -201,12 +201,140 @@ static PyMethodDef hmacmodule_methods[] = {
     {NULL, NULL, 0, NULL} /* sentinel */
 };
 
+// --- HMAC static information table ------------------------------------------
+
+static inline Py_uhash_t
+py_hmac_hinfo_ht_hash(const void *name)
+{
+    return Py_HashBuffer(name, strlen((const char *)name));
+}
+
+static inline int
+py_hmac_hinfo_ht_comp(const void *a, const void *b)
+{
+    return strcmp((const char *)a, (const char *)b) == 0;
+}
+
+static void
+py_hmac_hinfo_ht_free(void *hinfo)
+{
+    py_hmac_hinfo *entry = (py_hmac_hinfo *)hinfo;
+    assert(entry->display_name != NULL);
+    if (--(entry->refcnt) == 0) {
+        Py_CLEAR(entry->display_name);
+        PyMem_Free(hinfo);
+    }
+}
+
+/*
+ * Equivalent to table.setdefault(key, info).
+ *
+ * Return 1 if a new item has been created, 0 if 'key' is NULL or
+ * an entry 'table[key]' existed, and -1 if a memory error occurs.
+ *
+ * To reduce memory footprint, 'info' may be a borrowed reference,
+ * namely, multiple keys can be associated with the same 'info'.
+ *
+ * In particular, resources owned by 'info' must only be released
+ * when a single key associated with 'info' remains.
+ */
+static int
+py_hmac_hinfo_ht_add(_Py_hashtable_t *table, const void *key, void *info)
+{
+    if (key == NULL || _Py_hashtable_get_entry(table, key) != NULL) {
+        return 0;
+    }
+    if (_Py_hashtable_set(table, key, info) < 0) {
+        assert(!PyErr_Occurred());
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 1;
+}
+
+/*
+ * Create a new hashtable from the static 'py_hmac_static_hinfo' object,
+ * or set an exception and return NULL if an error occurs.
+ */
+static _Py_hashtable_t *
+py_hmac_hinfo_ht_new(void)
+{
+    _Py_hashtable_t *table = _Py_hashtable_new_full(
+        py_hmac_hinfo_ht_hash,
+        py_hmac_hinfo_ht_comp,
+        NULL,
+        py_hmac_hinfo_ht_free,
+        NULL
+    );
+
+    if (table == NULL) {
+        assert(!PyErr_Occurred());
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (const py_hmac_hinfo *e = py_hmac_static_hinfo; e->name != NULL; e++) {
+        assert(e->kind != Py_hmac_kind_hash_unknown);
+        py_hmac_hinfo *value = PyMem_Malloc(sizeof(py_hmac_hinfo));
+        if (value == NULL) {
+            PyErr_NoMemory();
+            goto error;
+        }
+
+        memcpy(value, e, sizeof(py_hmac_hinfo));
+        assert(value->display_name == NULL);
+        value->refcnt = 0;
+
+#define Py_HMAC_HINFO_LINK(KEY)                                 \
+        do {                                                    \
+            int rc = py_hmac_hinfo_ht_add(table, KEY, value);   \
+            if (rc < 0) {                                       \
+                PyMem_Free(value);                              \
+                goto error;                                     \
+            }                                                   \
+            else if (rc == 1) {                                 \
+                value->refcnt++;                                \
+            }                                                   \
+        } while (0)
+        Py_HMAC_HINFO_LINK(e->name);
+        Py_HMAC_HINFO_LINK(e->hashlib_name);
+#undef Py_HMAC_HINFO_LINK
+        assert(value->refcnt > 0);
+        assert(value->display_name == NULL);
+        value->display_name = PyUnicode_FromString(
+            /* display name is synchronized with hashlib's name */
+            e->hashlib_name == NULL ? e->name : e->hashlib_name
+        );
+        if (value->display_name == NULL) {
+            PyMem_Free(value);
+            goto error;
+        }
+    }
+
+    return table;
+
+error:
+    _Py_hashtable_destroy(table);
+    return NULL;
+}
+
 // --- HMAC module initialization and finalization functions ------------------
+
+static int
+hmacmodule_init_hash_info_table(hmacmodule_state *state)
+{
+    // py_hmac_hinfo_ht_new() sets an exception on error
+    state->hinfo_table = py_hmac_hinfo_ht_new();
+    return state->hinfo_table == NULL ? -1 : 0;
+}
 
 static int
 hmacmodule_exec(PyObject *module)
 {
     hmacmodule_state *state = get_hmacmodule_state(module);
+    if (hmacmodule_init_hash_info_table(state) < 0) {
+        return -1;
+    }
     return 0;
 }
 
@@ -222,6 +350,10 @@ static int
 hmacmodule_clear(PyObject *mod)
 {
     hmacmodule_state *state = get_hmacmodule_state(mod);
+    if (state->hinfo_table != NULL) {
+        _Py_hashtable_destroy(state->hinfo_table);
+        state->hinfo_table = NULL;
+    }
     return 0;
 }
 
