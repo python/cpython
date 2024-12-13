@@ -238,7 +238,7 @@ Operating System Utilities
 
 .. c:function:: int Py_fclose(FILE *file)
 
-   Call ``fclose(file)``.
+   Closes files that were opened by :c:func:`Py_fopen`.
 
    .. versionadded:: next
 
