@@ -80,7 +80,7 @@ See :mod:`sys.monitoring` for descriptions of the events.
    Fire a ``BRANCH_LEFT`` event.
 
 
-.. c:function:: int PyMonitoring_FireRightBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+.. c:function:: int PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
 
    Fire a ``BRANCH_RIGHT`` event.
 
