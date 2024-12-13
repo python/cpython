@@ -17,10 +17,127 @@
 #endif
 
 #include "Python.h"
+#include "pycore_hashtable.h"
+
+#include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
+
+// --- HMAC underlying hash function static information -----------------------
+
+#define Py_hmac_hash_max_block_size             128
+#define Py_hmac_hash_max_digest_size            64
+
+/* MD-5 */
+// HACL_HID = md5
+#define Py_hmac_md5_block_size                  64
+#define Py_hmac_md5_digest_size                 16
+
+/* SHA-1 family */
+// HACL_HID = sha1
+#define Py_hmac_sha1_block_size                 64
+#define Py_hmac_sha1_digest_size                20
+
+/* SHA-2 family */
+// HACL_HID = sha2_224
+#define Py_hmac_sha2_224_block_size             64
+#define Py_hmac_sha2_224_digest_size            28
+
+// HACL_HID = sha2_256
+#define Py_hmac_sha2_256_block_size             64
+#define Py_hmac_sha2_256_digest_size            32
+
+// HACL_HID = sha2_384
+#define Py_hmac_sha2_384_block_size             128
+#define Py_hmac_sha2_384_digest_size            48
+
+// HACL_HID = sha2_512
+#define Py_hmac_sha2_512_block_size             128
+#define Py_hmac_sha2_512_digest_size            64
+
+/* SHA-3 family */
+// HACL_HID = sha3_224
+#define Py_hmac_sha3_224_block_size             144
+#define Py_hmac_sha3_224_digest_size            28
+
+// HACL_HID = sha3_256
+#define Py_hmac_sha3_256_block_size             136
+#define Py_hmac_sha3_256_digest_size            32
+
+// HACL_HID = sha3_384
+#define Py_hmac_sha3_384_block_size             104
+#define Py_hmac_sha3_384_digest_size            48
+
+// HACL_HID = sha3_512
+#define Py_hmac_sha3_512_block_size             72
+#define Py_hmac_sha3_512_digest_size            64
+
+/* Blake2 family */
+// HACL_HID = blake2s_32
+#define Py_hmac_blake2s_32_block_size           64
+#define Py_hmac_blake2s_32_digest_size          32
+
+// HACL_HID = blake2b_32
+#define Py_hmac_blake2b_32_block_size           128
+#define Py_hmac_blake2b_32_digest_size          64
+
+/* Enumeration indicating the underlying hash function used by HMAC. */
+typedef enum HMAC_Hash_Kind {
+    Py_hmac_kind_hash_unknown = -1,
+#define DECL_HACL_HMAC_HASH_KIND(NAME, HACL_NAME)  \
+    Py_hmac_kind_hmac_ ## NAME = Hacl_Agile_Hash_ ## HACL_NAME,
+    /* MD5 */
+    DECL_HACL_HMAC_HASH_KIND(md5, MD5)
+    /* SHA-1 */
+    DECL_HACL_HMAC_HASH_KIND(sha1, SHA1)
+    /* SHA-2 family */
+    DECL_HACL_HMAC_HASH_KIND(sha2_224, SHA2_224)
+    DECL_HACL_HMAC_HASH_KIND(sha2_256, SHA2_256)
+    DECL_HACL_HMAC_HASH_KIND(sha2_384, SHA2_384)
+    DECL_HACL_HMAC_HASH_KIND(sha2_512, SHA2_512)
+    /* SHA-3 family */
+    DECL_HACL_HMAC_HASH_KIND(sha3_224, SHA3_224)
+    DECL_HACL_HMAC_HASH_KIND(sha3_256, SHA3_256)
+    DECL_HACL_HMAC_HASH_KIND(sha3_384, SHA3_384)
+    DECL_HACL_HMAC_HASH_KIND(sha3_512, SHA3_512)
+    /* Blake family */
+    DECL_HACL_HMAC_HASH_KIND(blake2s_32, Blake2S_32)
+    DECL_HACL_HMAC_HASH_KIND(blake2b_32, Blake2B_32)
+#undef DECL_HACL_HMAC_HASH_KIND
+} HMAC_Hash_Kind;
+
+/*
+ * HMAC underlying hash function static information.
+ */
+typedef struct py_hmac_hinfo {
+    /*
+     * Name of the hash function used by the HACL* HMAC module.
+     *
+     * This name may differ from the hashlib names. For instance,
+     * SHA-2/224 is named "sha2_224" instead of "sha224" as it is
+     * done by 'hashlib'.
+     */
+    const char *name;
+
+    /* hash function information */
+    HMAC_Hash_Kind kind;
+    uint32_t block_size;
+    uint32_t digest_size;
+
+    /*
+     * Cached field storing the 'hashlib_name' field as a Python string.
+     *
+     * This field is NULL by default in the items of "py_hmac_static_hinfo"
+     * but will be populated when creating the module's state "hinfo_table".
+     */
+    PyObject *display_name;
+    const char *hashlib_name;   /* hashlib preferred name (default: name) */
+
+    Py_ssize_t refcnt;
+} py_hmac_hinfo;
 
 // --- HMAC module state ------------------------------------------------------
 
 typedef struct hmacmodule_state {
+    _Py_hashtable_t *hinfo_table;
 } hmacmodule_state;
 
 static inline hmacmodule_state *
@@ -37,6 +154,46 @@ get_hmacmodule_state(PyObject *module)
 module _hmac
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=799f0f10157d561f]*/
+
+// --- Helpers ----------------------------------------------------------------
+
+/* Static information used to construct the hash table. */
+static const py_hmac_hinfo py_hmac_static_hinfo[] = {
+#define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME)            \
+    {                                                       \
+        .name = Py_STRINGIFY(HACL_HID),                     \
+        .kind = Py_hmac_kind_hmac_ ## HACL_HID,             \
+        .block_size = Py_hmac_## HACL_HID ##_block_size,    \
+        .digest_size = Py_hmac_## HACL_HID ##_digest_size,  \
+        .display_name = NULL,                               \
+        .hashlib_name = HLIB_NAME,                          \
+        .refcnt = 0,                                        \
+    }
+    /* MD5 */
+    Py_HMAC_HINFO_ENTRY(md5, NULL),
+    /* SHA-1 */
+    Py_HMAC_HINFO_ENTRY(sha1, NULL),
+    /* SHA-2 family */
+    Py_HMAC_HINFO_ENTRY(sha2_224, "sha224"),
+    Py_HMAC_HINFO_ENTRY(sha2_256, "sha256"),
+    Py_HMAC_HINFO_ENTRY(sha2_384, "sha384"),
+    Py_HMAC_HINFO_ENTRY(sha2_512, "sha512"),
+    /* SHA-3 family */
+    Py_HMAC_HINFO_ENTRY(sha3_224, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_256, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_384, NULL),
+    Py_HMAC_HINFO_ENTRY(sha3_512, NULL),
+    /* Blake family */
+    Py_HMAC_HINFO_ENTRY(blake2s_32, "blake2s"),
+    Py_HMAC_HINFO_ENTRY(blake2b_32, "blake2b"),
+#undef Py_HMAC_HINFO_ENTRY
+    /* sentinel */
+    {
+        NULL, Py_hmac_kind_hash_unknown, 0, 0,
+        NULL, NULL,
+        0,
+    },
+};
 
 // --- HMAC module methods ----------------------------------------------------
 
