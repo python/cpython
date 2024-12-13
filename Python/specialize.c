@@ -1114,20 +1114,6 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
     return true;
 }
 
-#ifdef Py_GIL_DISABLED
-
-#define FT_UNIMPLEMENTED()                                        \
-    do {                                                          \
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR); \
-        return -1;                                                \
-    } while (0)
-
-#else
-
-#define FT_UNIMPLEMENTED()
-
-#endif
-
 static int
 do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
                                  bool shadow, uint32_t shared_keys_version,
@@ -1312,8 +1298,6 @@ try_instance:
     }
     return -1;
 }
-
-#undef FT_UNIMPLEMENTED
 
 static int
 specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name)
