@@ -426,6 +426,43 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 
 // --- HMAC object ------------------------------------------------------------
 
+/*[clinic input]
+@getter
+_hmac.HMAC.name
+[clinic start generated code]*/
+
+static PyObject *
+_hmac_HMAC_name_get_impl(HMACObject *self)
+/*[clinic end generated code: output=ae693f09778d96d9 input=41c2c5dd1cf47fbc]*/
+{
+    assert(self->name != NULL);
+    return PyUnicode_FromFormat("hmac-%U", self->name);
+}
+
+/*[clinic input]
+@getter
+_hmac.HMAC.block_size
+[clinic start generated code]*/
+
+static PyObject *
+_hmac_HMAC_block_size_get_impl(HMACObject *self)
+/*[clinic end generated code: output=52cb11dee4e80cae input=9dda6b8d43e995b4]*/
+{
+    return PyLong_FromUInt32(self->block_size);
+}
+
+/*[clinic input]
+@getter
+_hmac.HMAC.digest_size
+[clinic start generated code]*/
+
+static PyObject *
+_hmac_HMAC_digest_size_get_impl(HMACObject *self)
+/*[clinic end generated code: output=22eeca1010ac6255 input=5622bb2840025b5a]*/
+{
+    return PyLong_FromUInt32(self->digest_size);
+}
+
 static int
 HMACObject_clear(PyObject *op)
 {
@@ -458,6 +495,9 @@ static PyMethodDef HMACObject_methods[] = {
 };
 
 static PyGetSetDef HMACObject_getsets[] = {
+    _HMAC_HMAC_NAME_GETSETDEF
+    _HMAC_HMAC_BLOCK_SIZE_GETSETDEF
+    _HMAC_HMAC_DIGEST_SIZE_GETSETDEF
     {NULL, NULL, NULL, NULL, NULL} /* sentinel */
 };
 
