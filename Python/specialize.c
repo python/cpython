@@ -1171,7 +1171,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         }
         case PROPERTY:
         {
-            FT_UNIMPLEMENTED();
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             assert(Py_TYPE(descr) == &PyProperty_Type);
             PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
@@ -1194,8 +1193,14 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
             }
-            assert(type->tp_version_tag != 0);
-            write_u32(lm_cache->type_version, type->tp_version_tag);
+            #ifdef Py_GIL_DISABLED
+            if (!_PyObject_HasDeferredRefcount(fget)) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
+                return -1;
+            }
+            #endif
+            assert(tp_version != 0);
+            write_u32(lm_cache->type_version, tp_version);
             /* borrowed */
             write_obj(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
