@@ -2129,7 +2129,7 @@ dummy_func(
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
             assert(type_version != 0);
-            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
+            EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version);
         }
 
         op(_GUARD_TYPE_VERSION_AND_LOCK, (type_version/2, owner -- owner)) {
@@ -2137,7 +2137,7 @@ dummy_func(
             assert(type_version != 0);
             EXIT_IF(!LOCK_OBJECT(owner_o));
             PyTypeObject *tp = Py_TYPE(owner_o);
-            if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
+            if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UNLOCK_OBJECT(owner_o);
                 EXIT_IF(true);
             }

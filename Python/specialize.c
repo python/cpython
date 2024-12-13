@@ -1774,7 +1774,7 @@ function_get_version(PyObject *o, int opcode)
 static uint32_t
 type_get_version(PyTypeObject *t, int opcode)
 {
-    uint32_t version = FT_ATOMIC_LOAD_UINT32_RELAXED(t->tp_version_tag);
+    uint32_t version = FT_ATOMIC_LOAD_UINT_RELAXED(t->tp_version_tag);
     if (version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return 0;
