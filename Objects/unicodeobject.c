@@ -5077,21 +5077,24 @@ load_unaligned(const unsigned char *p, size_t size)
 static Py_ssize_t
 find_first_nonascii(const unsigned char *start, const unsigned char *end)
 {
+    // The search is done in `size_t` chunks.
+    // The start and end might not be aligned at `size_t` boundaries,
+    // so they're handled specially.
+
     const unsigned char *p = start;
 
     if (end - start >= SIZEOF_SIZE_T) {
-        const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
+        // Avoid unaligned read.
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
-        if (p < p2) {
-            size_t u;
-            memcpy(&u, p, sizeof(size_t));
-            u &= ASCII_CHAR_MASK;
-            if (u) {
-                return (ctz(u) - 7) / 8;
-            }
-            p = p2;
+        size_t u;
+        memcpy(&u, p, sizeof(size_t));
+        u &= ASCII_CHAR_MASK;
+        if (u) {
+            return (ctz(u) - 7) / 8;
         }
+        p = _Py_ALIGN_DOWN(p + SIZEOF_SIZE_T, SIZEOF_SIZE_T);
 #else /* PY_LITTLE_ENDIAN && HAVE_CTZ */
+        const unsigned char *p2 = _Py_ALIGN_UP(p, SIZEOF_SIZE_T);
         while (p < p2) {
             if (*p & 0x80) {
                 return p - start;
@@ -5099,6 +5102,7 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             p++;
         }
 #endif
+
         const unsigned char *e = end - SIZEOF_SIZE_T;
         while (p <= e) {
             size_t u = (*(const size_t *)p) & ASCII_CHAR_MASK;
@@ -5115,6 +5119,7 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
         }
     }
 #if PY_LITTLE_ENDIAN && HAVE_CTZ
+    assert((end - p) < SIZEOF_SIZE_T);
     // we can not use *(const size_t*)p to avoid buffer overrun.
     size_t u = load_unaligned(p, end - p) & ASCII_CHAR_MASK;
     if (u) {
