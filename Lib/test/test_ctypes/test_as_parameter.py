@@ -5,7 +5,6 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
-import ctypes
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
