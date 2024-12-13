@@ -976,8 +976,13 @@ specialize_inline_values_access_lock_held(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(owner);
-    uint32_t version;
-    Py_ssize_t index = _PyDictKeys_StringLookupAndVersion(keys, name, &version);
+    #ifdef Py_GIL_DISABLED
+    PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH);
+    #endif
+    Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+    #ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&keys->dk_mutex);
+    #endif
     assert (index != DKIX_ERROR);
     if (index == DKIX_EMPTY) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
