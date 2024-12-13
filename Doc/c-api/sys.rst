@@ -240,11 +240,6 @@ Operating System Utilities
 
    Call ``fclose(file)``.
 
-   This function is needed on Windows: ``FILE*`` files opened by
-   :c:func:`Py_fopen` in the Python DLL must be closed by the Python DLL to use
-   the same C runtime version. Otherwise, calling ``fclose()`` directly can
-   cause undefined behavior.
-
    .. versionadded:: next
 
 

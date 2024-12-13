@@ -1839,9 +1839,9 @@ Py_fopen(PyObject *path, const char *mode)
 
 // Call fclose().
 //
-// This function is needed on Windows: FILE* files opened by Py_fopen() in the
-// Python DLL must be closed by the Python DLL to use the same C runtime
-// version. Otherwise, calling fclose() directly can cause undefined behavior.
+// On Windows, files opened by Py_fopen() in the Python DLL must be closed by
+// the Python DLL to use the same C runtime version. Otherwise, calling
+// fclose() directly can cause undefined behavior.
 int
 Py_fclose(FILE *file)
 {
