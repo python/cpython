@@ -58,6 +58,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: Runner image version
         run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
       - name: Check Autoconf and aclocal versions
@@ -94,6 +95,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -268,6 +271,8 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
@@ -328,6 +333,8 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -411,7 +418,7 @@ jobs:
         #
         # (GH-104097) test_sysconfig is skipped because it has tests that are
         # failing when executed from inside a virtual environment.
-        ${{ env.VENV_PYTHON }} -m test \
+        "${VENV_PYTHON}" -m test \
           -W \
           -o \
           -j4 \
@@ -446,6 +453,8 @@ jobs:
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
