@@ -213,8 +213,7 @@ class TestGdbm(unittest.TestCase):
     )
     def test_localized_error(self):
         with temp_dir() as d:
-            filename = os.path.join(os.fsencode(d), b'\xff')
-            create_empty_file(filename)
+            create_empty_file(os.path.join(d, TESTFN))
             self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
 
 
