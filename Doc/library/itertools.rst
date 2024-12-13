@@ -862,11 +862,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Return function(0), function(1), ..."
        return map(function, count(start))
 
-   def repeatfunc(func, times=None, *args):
-       "Repeat calls to func with specified arguments."
+   def repeatfunc(function, times=None, *args):
+       "Repeat calls to function with specified arguments."
        if times is None:
-           return starmap(func, repeat(args))
-       return starmap(func, repeat(args, times))
+           return starmap(function, repeat(args))
+       return starmap(function, repeat(args, times))
 
    def flatten(list_of_lists):
        "Flatten one level of nesting."
@@ -1000,14 +1000,14 @@ and :term:`generators <generator>` which incur interpreter overhead.
                    yield (i := seq_index(value, i, stop))
                    i += 1
 
-   def iter_except(func, exception, first=None):
+   def iter_except(function, exception, first=None):
        "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
        with suppress(exception):
            if first is not None:
                yield first()
            while True:
-               yield func()
+               yield function()
 
 
 The following recipes have a more mathematical flavor:
