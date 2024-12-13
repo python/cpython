@@ -97,7 +97,7 @@ def validate_header(name):
         raise ValueError(f"Invalid header field name {name!r}")
     # Only allow printable ASCII characters
     if any(ord(c) < 33 or ord(c) > 126 for c in name):
-        raise ValueError(f"Header field name {name!r} contains invalid characters")
+        raise ValueError(f"Invalid header field name {name!r}")
 
 def _append_doc(doc, added_doc):
     doc = doc.rsplit('\n', 1)[0]
