@@ -63,6 +63,7 @@ union _PyStackRef;
 
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
+PyAPI_FUNC(int) _PyList_Remove(PyObject *self, PyObject *value);
 
 #ifdef __cplusplus
 }
