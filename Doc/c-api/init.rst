@@ -2102,7 +2102,7 @@ Python-level trace functions in previous versions.
    Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
    belonging to the current interpreter instead of the setting it only on the current thread.
 
-   The caller must hold the :term:`GIL`.
+   The caller must have an active :term:`thread state`.
 
    As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
    setting the trace functions in all threads.
