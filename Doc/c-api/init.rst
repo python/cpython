@@ -1926,9 +1926,9 @@ pointer and a void pointer argument.
    This function doesn't need a current thread state to run, and it doesn't
    need the global interpreter lock.
 
-   To call this function in a subinterpreter, the caller must hold the GIL.
-   Otherwise, the function *func* can be scheduled to be called from the wrong
-   interpreter.
+   To call this function in a subinterpreter, the caller must have an active
+   :term:`thread state`. Otherwise, the function *func* can be scheduled to
+   be called from the wrong interpreter.
 
    .. warning::
       This is a low-level function, only useful for very special cases.
