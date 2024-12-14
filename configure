@@ -11042,10 +11042,10 @@ then :
   printf "%s\n" "#define HAVE_PTY_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "linux/sched.h" "ac_cv_header_sched_h" "$ac_includes_default"
-if test "x$ac_cv_header_sched_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "linux/sched.h" "ac_cv_header_linux_sched_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_sched_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_SCHED_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_LINUX_SCHED_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "setjmp.h" "ac_cv_header_setjmp_h" "$ac_includes_default"
