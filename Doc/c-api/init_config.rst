@@ -1893,8 +1893,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an active :term:`thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
