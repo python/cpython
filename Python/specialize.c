@@ -974,6 +974,7 @@ specialize_inline_values_access_lock_held(
         return 0;
     }
     assert(index >= 0);
+    assert(_PyObject_InlineValues(owner)->valid);
     char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
     Py_ssize_t offset = value_addr - (char *)owner;
     if (offset != (uint16_t)offset) {
@@ -1036,8 +1037,15 @@ specialize_dict_access(
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
         Py_BEGIN_CRITICAL_SECTION(owner);
-        result = specialize_inline_values_access_lock_held(
-            owner, instr, type, tp_version, name, base_op, values_op);
+        if (_PyObject_GetManagedDict(owner)) {
+            // Somebody materialized the dict
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OTHER);
+            result = 0;
+        }
+        else {
+            result = specialize_inline_values_access_lock_held(
+                owner, instr, type, tp_version, name, base_op, values_op);
+        }
         Py_END_CRITICAL_SECTION();
     }
     else {
