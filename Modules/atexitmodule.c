@@ -258,16 +258,13 @@ atexit_unregister_locked(PyObject *callbacks, PyObject *func)
         PyObject *tuple = PyList_GET_ITEM(callbacks, i);
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
-
-        Py_INCREF(to_compare);
         int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
-        Py_DECREF(to_compare);
 
         if (cmp == 1) {
             if (PyList_SetSlice(callbacks, i, i + 1, NULL) < 0) {
                 return -1;
             }
-            return 0;
+            --i;
         }
         else if (cmp < 0) {
             return -1;

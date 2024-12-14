@@ -76,7 +76,7 @@ class FunctionalTest(unittest.TestCase):
 
         # atexit._clear() has some evil side effects, and we don't
         # want them to affect the rest of the tests.
-        script_helper.assert_python_ok(textwrap.dedent(source))
+        script_helper.assert_python_ok("-c", textwrap.dedent(source))
 
 
 @support.cpython_only
