@@ -554,7 +554,7 @@ Runtime checks:
   called on a memory block allocated by :c:func:`PyMem_Malloc`.
 - Detect write before the start of the buffer (buffer underflow).
 - Detect write after the end of the buffer (buffer overflow).
-- Check that the :term:`GIL <global interpreter lock>` is held when
+- Check that a :term:`thread state` is active when
   allocator functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex:
   :c:func:`PyObject_Malloc`) and :c:macro:`PYMEM_DOMAIN_MEM` (ex:
   :c:func:`PyMem_Malloc`) domains are called.
