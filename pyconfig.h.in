@@ -1077,6 +1077,9 @@
 /* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
 
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
 /* Define to 1 if you have the `sched_rr_get_interval' function. */
 #undef HAVE_SCHED_RR_GET_INTERVAL
 

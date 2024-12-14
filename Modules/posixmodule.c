@@ -308,6 +308,10 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_SCHED_H
+#  include <sched.h>
+#endif
+
+#ifdef HAVE_LINUX_SCHED_H
 #  include <linux/sched.h>
 #endif
 
