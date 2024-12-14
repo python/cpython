@@ -909,14 +909,13 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
             PyInterpreterState *interp = _PyInterpreterState_GET();
             bool has_custom_getattribute = getattribute != NULL &&
                 getattribute != interp->callable_cache.object__getattribute__;
-            PyObject *getattr = _PyType_LookupRef(type, &_Py_ID(__getattr__));
+            PyObject *getattr = _PyType_Lookup(type, &_Py_ID(__getattr__));
             has_getattr = getattr != NULL;
             if (has_custom_getattribute) {
                 if (getattro_slot == _Py_slot_tp_getattro &&
                     !has_getattr &&
                     Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                     *descr = getattribute;
-                    assert(getattr == NULL);
                     *tp_version = ga_version;
                     return GETATTRIBUTE_IS_PYTHON_FUNCTION;
                 }
@@ -924,7 +923,6 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
                    Too complicated */
                 *descr = NULL;
                 Py_XDECREF(getattribute);
-                Py_XDECREF(getattr);
                 return GETSET_OVERRIDDEN;
             }
             /* Potentially has __getattr__ but no custom __getattribute__.
@@ -934,7 +932,6 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, unsigne
                raised. This means some specializations, e.g. specializing
                for property() isn't safe.
             */
-            Py_XDECREF(getattr);
             Py_XDECREF(getattribute);
         }
         else {
@@ -1289,7 +1286,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
     uint32_t shared_keys_version = 0;
     bool shadow = instance_has_key(owner, name, &shared_keys_version);
     PyObject *descr = NULL;
-    unsigned int tp_version;
+    unsigned int tp_version = 0;
     PyTypeObject *type = Py_TYPE(owner);
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, &tp_version, 0);
     int result = do_specialize_instance_load_attr(owner, instr, name, shadow, shared_keys_version, kind, descr, tp_version);
@@ -1480,7 +1477,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN);
         return -1;
     }
-    unsigned int meta_version;
+    unsigned int meta_version = 0;
     PyObject *metadescriptor = _PyType_LookupRefAndVersion(Py_TYPE(cls), name, &meta_version);
     DescriptorClassification metakind = classify_descriptor(metadescriptor, false);
     Py_XDECREF(metadescriptor);
@@ -1498,7 +1495,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     }
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
-    unsigned int tp_version;
+    unsigned int tp_version = 0;
     kind = analyze_descriptor(cls, name, &descr, &tp_version, 0);
     if (tp_version == 0) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
