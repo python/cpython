@@ -115,6 +115,7 @@ class TestNullDlsym(unittest.TestCase):
                 _ctypes.dlsym(L, "foo")
 
 
+@unittest.skipUnless(os.name != 'nt', 'test requires dlerror() calls')
 class TestLocalization(unittest.TestCase):
 
     @staticmethod
@@ -148,7 +149,7 @@ class TestLocalization(unittest.TestCase):
             with self.assertRaises(AttributeError) as cm:
                 dll.foo
             if sys.platform.startswith('linux'):
-                # On macOS or Windows, the filename is not reported by dlerror()
+                # On macOS, the filename is not reported by dlerror().
                 self.assertIn('test_from_dll.so', str(cm.exception))
 
     @configure_locales
@@ -159,7 +160,7 @@ class TestLocalization(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 c_int.in_dll(dll, 'foo')
             if sys.platform.startswith('linux'):
-                # On macOS or Windows, the filename is not reported by dlerror()
+                # On macOS, the filename is not reported by dlerror().
                 self.assertIn('test_in_dll.so', str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
@@ -187,7 +188,7 @@ class TestLocalization(unittest.TestCase):
             with self.assertRaises(OSError) as cm:
                 _ctypes.dlsym(dll, 'foo')
             if sys.platform.startswith('linux'):
-                # On macOS or Windows, the filename is not reported by dlerror()
+                # On macOS, the filename is not reported by dlerror().
                 self.assertIn('test_dlsym.so', str(cm.exception))
 
 
