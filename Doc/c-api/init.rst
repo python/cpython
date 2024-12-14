@@ -1467,7 +1467,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Issue a fatal error if there no current Python thread state or no current
    interpreter. It cannot return NULL.
 
-   The caller must hold the GIL.
+   The caller must have an active :term:`thread state`.
 
    .. versionadded:: 3.9
 
