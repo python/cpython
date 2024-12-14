@@ -602,6 +602,60 @@ PyCData_reduce(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ss
     return PyCData_reduce_impl(myself, cls);
 }
 
+#if !defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
+#  define _ctypes_CFuncPtr_errcheck_DOCSTR NULL
+#endif
+#if defined(_CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF)
+#  undef _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, (setter)_ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#else
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", NULL, (setter)_ctypes_CFuncPtr_errcheck_set, NULL},
+#endif
+
+static int
+_ctypes_CFuncPtr_errcheck_set_impl(PyCFuncPtrObject *self, PyObject *value);
+
+static int
+_ctypes_CFuncPtr_errcheck_set(PyCFuncPtrObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_CFuncPtr_errcheck_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ctypes_CFuncPtr_errcheck__doc__,
+"a function to check for errors");
+#define _ctypes_CFuncPtr_errcheck_DOCSTR _ctypes_CFuncPtr_errcheck__doc__
+
+#if !defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
+#  define _ctypes_CFuncPtr_errcheck_DOCSTR NULL
+#endif
+#if defined(_CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF)
+#  undef _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, (setter)_ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#else
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, NULL, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_CFuncPtr_errcheck_get_impl(PyCFuncPtrObject *self);
+
+static PyObject *
+_ctypes_CFuncPtr_errcheck_get(PyCFuncPtrObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_CFuncPtr_errcheck_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if !defined(_ctypes_CFuncPtr_restype_DOCSTR)
 #  define _ctypes_CFuncPtr_restype_DOCSTR NULL
 #endif
@@ -730,4 +784,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=844834e45c4bf037 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67e66bba915fe5b6 input=a9049054013a1b77]*/

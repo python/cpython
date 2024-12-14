@@ -3430,21 +3430,37 @@ generic_pycdata_new(ctypes_state *st,
   PyCFuncPtr_Type
 */
 
+/*[clinic input]
+@critical_section
+@setter
+_ctypes.CFuncPtr.errcheck
+[clinic start generated code]*/
+
 static int
-PyCFuncPtr_set_errcheck(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_errcheck_set_impl(PyCFuncPtrObject *self, PyObject *value)
+/*[clinic end generated code: output=6580cf1ffdf3b9fb input=84930bb16c490b33]*/
 {
-    if (ob && !PyCallable_Check(ob)) {
+    if (value && !PyCallable_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "the errcheck attribute must be callable");
         return -1;
     }
-    Py_XINCREF(ob);
-    Py_XSETREF(self->errcheck, ob);
+    Py_XINCREF(value);
+    Py_XSETREF(self->errcheck, value);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ctypes.CFuncPtr.errcheck
+
+a function to check for errors
+[clinic start generated code]*/
+
 static PyObject *
-PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_errcheck_get_impl(PyCFuncPtrObject *self)
+/*[clinic end generated code: output=dfa6fb5c6f90fd14 input=4672135fef37819f]*/
 {
     if (self->errcheck) {
         return Py_NewRef(self->errcheck);
@@ -3575,8 +3591,7 @@ _ctypes_CFuncPtr_argtypes_get_impl(PyCFuncPtrObject *self)
 }
 
 static PyGetSetDef PyCFuncPtr_getsets[] = {
-    { "errcheck", (getter)PyCFuncPtr_get_errcheck, (setter)PyCFuncPtr_set_errcheck,
-      "a function to check for errors", NULL },
+    _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
     _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF
     _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF
     { NULL, NULL }
