@@ -190,7 +190,7 @@ class TestLocalization(unittest.TestCase):
                 _ctypes.dlsym(dll, 'foo')
             if sys.platform.startswith('linux'):
                 # On macOS or Windows, the filename is not reported by dlerror()
-                self.assertIn('test_in_dll.so', str(cm.exception))
+                self.assertIn('test_dlsym.so', str(cm.exception))
 
 
 if __name__ == "__main__":
