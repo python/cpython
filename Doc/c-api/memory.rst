@@ -484,12 +484,12 @@ Customize Memory Allocators
    zero bytes.
 
    For the :c:macro:`PYMEM_DOMAIN_RAW` domain, the allocator must be
-   thread-safe: the :term:`GIL <global interpreter lock>` is not held when the
+   thread-safe: a :term:`thread state` is not held when the
    allocator is called.
 
    For the remaining domains, the allocator must also be thread-safe:
    the allocator may be called in different interpreters that do not
-   share a ``GIL``.
+   share a :term:`GIL`.
 
    If the new allocator is not a hook (does not call the previous allocator),
    the :c:func:`PyMem_SetupDebugHooks` function must be called to reinstall the
