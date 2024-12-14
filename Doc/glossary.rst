@@ -136,7 +136,11 @@ Glossary
 
       A :term:`thread state` that is :term:`active <current thread state>`
       for the current thread. If no thread state is attached, then the
-      :term:`current thread state` is ``NULL``.
+      :term:`current thread state` is ``NULL``. Attempting to call Python
+      without an attached thread state will generally result in a fatal error.
+
+      A thread state can be attached and detached explicitly by the user, or
+      implicitly by the interpreter.
 
       On most builds of Python, having an attached thread state means that the
       caller holds the :term:`GIL` for the current interpreter.    
@@ -1303,8 +1307,10 @@ Glossary
 
    thread state
       In Python's C API, a thread state is a structure that holds
-      information about the current thread. A thread state must be
-      :term:`active <current thread state>` for the current thread in order to call most of the C API.
+      information about the current thread. A thread state can be
+      attached or detached. An :term:`attached thread state` is required
+      to call most of the C API, unless a function explicitly documents
+      otherwise.
 
       See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
       information.
