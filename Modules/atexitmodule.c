@@ -196,7 +196,8 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     }
 
     struct atexit_state *state = get_atexit_state();
-    if (PyList_Append(state->callbacks, tuple) < 0)
+    // atexit callbacks go in a LIFO order
+    if (PyList_Insert(state->callbacks, 0, tuple) < 0)
     {
         Py_DECREF(tuple);
         return NULL;
@@ -250,6 +251,31 @@ atexit_ncallbacks(PyObject *module, PyObject *unused)
     return PyLong_FromSsize_t(Py_SIZE(state->callbacks));
 }
 
+static int
+atexit_unregister_locked(PyObject *callbacks, PyObject *func)
+{
+    for (Py_ssize_t i = 0; i < Py_SIZE(callbacks); ++i) {
+        PyObject *tuple = PyList_GET_ITEM(callbacks, i);
+        assert(PyTuple_CheckExact(tuple));
+        PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
+
+        Py_INCREF(to_compare);
+        int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
+        Py_DECREF(to_compare);
+
+        if (cmp == 1) {
+            if (PyList_SetSlice(callbacks, i, i + 1, NULL) < 0) {
+                return -1;
+            }
+            return 0;
+        }
+        else if (cmp < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
 
 PyDoc_STRVAR(atexit_unregister__doc__,
 "unregister($module, func, /)\n\
@@ -264,12 +290,11 @@ static PyObject *
 atexit_unregister(PyObject *module, PyObject *func)
 {
     struct atexit_state *state = get_atexit_state();
-    if (_PyList_Remove(state->callbacks, func) < 0)
-    {
-        PyErr_Clear();
-        Py_RETURN_NONE;
-    }
-    Py_RETURN_NONE;
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(state->callbacks);
+    result = atexit_unregister_locked(state->callbacks, func);
+    Py_END_CRITICAL_SECTION();
+    return result < 0 ? NULL : Py_None;
 }
 
 

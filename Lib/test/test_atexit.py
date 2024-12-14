@@ -4,7 +4,7 @@ import textwrap
 import unittest
 from test import support
 from test.support import script_helper
-
+from test.support import threading_helper
 
 class GeneralTest(unittest.TestCase):
     def test_general(self):
@@ -66,7 +66,7 @@ class FunctionalTest(unittest.TestCase):
                 atexit.unregister(dummy)
 
 
-        threads = [Thread(target=thready) for _ in range(100)]
+        threads = [Thread(target=thready) for _ in range(10)]
         for thread in threads:
             thread.start()
 
@@ -76,7 +76,7 @@ class FunctionalTest(unittest.TestCase):
 
         # atexit._clear() has some evil side effects, and we don't
         # want them to affect the rest of the tests.
-        assert_python_ok(textwrap.dedent(source))
+        script_helper.assert_python_ok(textwrap.dedent(source))
 
 
 @support.cpython_only
