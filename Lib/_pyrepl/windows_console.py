@@ -128,7 +128,7 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
-        self.key_repeat_queue: dequeue[Event] = deque()
+        self.key_repeat_queue: deque[Event] = deque()
         try:
             self.out = io._WindowsConsoleIO(self.output_fd, "w")  # type: ignore[attr-defined]
         except ValueError:
