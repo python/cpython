@@ -1232,9 +1232,9 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
-   Return the current thread state.  The global interpreter lock must be held.
-   When the current thread state is ``NULL``, this issues a fatal error (so that
-   the caller needn't check for ``NULL``).
+   Return the active :term:`thread state`. If there is no active :term:`thread state` (such
+   as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
+   error (so that the caller needn't check for ``NULL``).
 
    See also :c:func:`PyThreadState_GetUnchecked`.
 
@@ -1252,9 +1252,12 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
-   Swap the current thread state with the thread state given by the argument
-   *tstate*, which may be ``NULL``.  The global interpreter lock must be held
-   and is not released.
+   Swap the current :term:`thread state` with *tstate*.
+   
+   If there is an attached :term:`thread state` for the current
+   thread, it will be detached. Upon returning from this function, 
+   *tstate* will become attached instead if it's not ``NULL``. If it
+   is ``NULL``, then no :term:`thread state` will be attached upon returning.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -1263,7 +1266,7 @@ with sub-interpreters:
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
    Ensure that the current thread is ready to call the Python C API regardless
-   of the current state of Python, or of the global interpreter lock. This may
+   of the current state of Python, or of the global interpreter lock.This may
    be called as many times as desired by a thread as long as each call is
    matched with a call to :c:func:`PyGILState_Release`. In general, other
    thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
@@ -1272,15 +1275,15 @@ with sub-interpreters:
    :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
    acceptable.
 
-   The return value is an opaque "handle" to the thread state when
+   The return value is an opaque "handle" to the :term:`thread state`` when
    :c:func:`PyGILState_Ensure` was called, and must be passed to
    :c:func:`PyGILState_Release` to ensure Python is left in the same state. Even
    though recursive calls are allowed, these handles *cannot* be shared - each
    unique call to :c:func:`PyGILState_Ensure` must save the handle for its call
    to :c:func:`PyGILState_Release`.
 
-   When the function returns, the current thread will hold the GIL and be able
-   to call arbitrary Python code.  Failure is a fatal error.
+   When the function returns, there will be an active :term:`thread state`
+   and the thread will be able to call arbitrary Python code.  Failure is a fatal error.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing will
@@ -1305,7 +1308,7 @@ with sub-interpreters:
 
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
-   Get the current thread state for this thread.  May return ``NULL`` if no
+   Get the current :term:`thread state` for this thread.  May return ``NULL`` if no
    GILState API has been used on the current thread.  Note that the main thread
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
@@ -1313,13 +1316,13 @@ with sub-interpreters:
 
 .. c:function:: int PyGILState_Check()
 
-   Return ``1`` if the current thread is holding the GIL and ``0`` otherwise.
+   Return ``1`` if the current thread is holding the :term:`GIL` and ``0`` otherwise.
    This function can be called from any thread at any time.
    Only if it has had its Python thread state initialized and currently is
-   holding the GIL will it return ``1``.
+   holding the :term:`GIL` will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
-   knowing that the GIL is locked can allow the caller to perform sensitive
+   knowing that the :term:`GIL` is locked can allow the caller to perform sensitive
    actions or otherwise behave differently.
 
    .. versionadded:: 3.4
