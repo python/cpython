@@ -2144,10 +2144,10 @@ Reference tracing
 
    Not that tracer functions **must not** create Python objects inside or
    otherwise the call will be re-entrant. The tracer also **must not** clear
-   any existing exception or set an exception.  The GIL will be held every time
-   the tracer function is called.
+   any existing exception or set an exception.  A :term:`thread state` will be active
+   every time the tracer function is called.
 
-   The GIL must be held when calling this function.
+   The :term:`thread state` must be active when calling this function.
 
 .. versionadded:: 3.13
 
