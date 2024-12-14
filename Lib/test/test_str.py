@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -1907,6 +1908,11 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # Issue #127903: segmentation fault in debug mode in ``_copy_characters``
+        # when there is nothing to copy.
+        self.assertEqual(datetime.datetime(2013, 11, 10, 14, 20, 59).strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
