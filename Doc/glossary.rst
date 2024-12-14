@@ -36,6 +36,13 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   active thread state
+
+      The :c:data:`PyThreadState` pointer to a :term:`thread state` for the current thread.
+      The per-thread pointer might be ``NULL``, in which case Python code should not
+      get executed. If the active thread state is non-``NULL``, then the :term:`thread state`
+      that it points to is considered to be :term:`attached <attached thread state>`.  
+
    annotate function
       A function that can be called to retrieve the :term:`annotations <annotation>`
       of an object. This function is accessible as the :attr:`~object.__annotate__`
@@ -131,6 +138,14 @@ Glossary
       :keyword:`async for` resolves the awaitables returned by an asynchronous
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
+
+   attached thread state
+
+      A :term:`thread state` that is :term:`active <active thread state>`
+      for the current thread.
+
+      On most builds of Python, an attached thread state means that the
+      caller holds the :term:`GIL` for the current interpreter.    
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -1288,12 +1303,7 @@ Glossary
    thread state
       In Python's C API, a thread state is a structure that holds
       information about the current thread. A thread state must be
-      active for the current thread in order to call most of the C API.
-
-      On most builds of Python, an attached thread state means that the
-      caller holds the :term:`GIL` for the current interpreter, but on
-      :term:`free-threaded <free-threading>` builds, multiple thread states
-      can be active at once.
+      :term:`active <active thread state>` for the current thread in order to call most of the C API.
 
       See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
       information.

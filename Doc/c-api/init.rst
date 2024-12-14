@@ -573,7 +573,7 @@ Initializing and finalizing the interpreter
    This is similar to :c:func:`Py_AtExit`, but takes an explicit interpreter and
    data pointer for the callback.
 
-   A :term:`thread state` must be active for *interp*.
+   There must be an :term:`attached thread state` for *interp*.
 
    .. versionadded:: 3.13
 
@@ -1206,7 +1206,7 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Detach the active :term:`thread state` (if it has been created) and
+   Detach the :term:`active thread state` (if it has been created) and
    return it.
 
 
@@ -1228,7 +1228,7 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
-   Return the active :term:`thread state`. If there is no active :term:`thread state` (such
+   Return the :term:`active thread state`. If there is no :term:`active thread state` (such
    as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
    error (so that the caller needn't check for ``NULL``).
 
@@ -1278,7 +1278,7 @@ with sub-interpreters:
    unique call to :c:func:`PyGILState_Ensure` must save the handle for its call
    to :c:func:`PyGILState_Release`.
 
-   When the function returns, there will be an active :term:`thread state`
+   When the function returns, there will be an :term:`attached thread state`
    and the thread will be able to call arbitrary Python code.  Failure is a fatal error.
 
    .. note::
@@ -1418,7 +1418,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
-   Destroy the active :term:`thread state` and detach it.
+   Destroy the :term:`active thread state` and detach it.
    The current :term:`thread state` must have been reset with a previous call
    to :c:func:`PyThreadState_Clear`.
 
@@ -1482,7 +1482,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Issue a fatal error if there no current Python thread state or no current
    interpreter. It cannot return NULL.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.9
 
@@ -1492,7 +1492,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Return the interpreter's unique ID.  If there was any error in doing
    so then ``-1`` is returned and an error is set.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.7
 
@@ -1552,7 +1552,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Asynchronously raise an exception in a thread. The *id* argument is the thread
    id of the target thread; *exc* is the exception object to be raised. This
    function does not steal any references to *exc*. To prevent naive misuse, you
-   must write your own C extension to call this.  Must be called with an active :term:`thread state`.
+   must write your own C extension to call this.  Must be called with an :term:`attached thread state`.
    Returns the number of thread states modified; this is normally one, but will be
    zero if the thread id isn't found.  If *exc* is ``NULL``, the pending
    exception (if any) for the thread is cleared. This raises no exceptions.
@@ -2084,14 +2084,14 @@ Python-level trace functions in previous versions.
 
    See also the :func:`sys.setprofile` function.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
 .. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
    belonging to the current interpreter instead of the setting it only on the current thread.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
    As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
    setting the profile functions in all threads.
@@ -2110,14 +2110,14 @@ Python-level trace functions in previous versions.
 
    See also the :func:`sys.settrace` function.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
 .. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
    belonging to the current interpreter instead of the setting it only on the current thread.
 
-   The caller must have an active :term:`thread state`.
+   The caller must have an :term:`attached thread state`.
 
    As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
    setting the trace functions in all threads.

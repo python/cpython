@@ -110,12 +110,12 @@ The three allocation domains are:
 
 * Raw domain: intended for allocating memory for general-purpose memory
   buffers where the allocation *must* go to the system allocator or where the
-  allocator can operate without an active :term:`thread state`. The memory
+  allocator can operate without an :term:`attached thread state`. The memory
   is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
 * "Mem" domain: intended for allocating memory for Python buffers and
   general-purpose memory buffers where the allocation must be performed with
-  an active :term:`thread state`. The memory is taken from the Python private heap.
+  an :term:`attached thread state`. The memory is taken from the Python private heap.
   See :ref:`Memory Interface <memoryinterface>`.
 
 * Object domain: intended for allocating memory for Python objects. The
@@ -506,7 +506,7 @@ Customize Memory Allocators
          :c:func:`Py_InitializeFromConfig` to install a custom memory
          allocator. There are no restrictions over the installed allocator
          other than the ones imposed by the domain (for instance, the Raw
-         Domain allows the allocator to be called without an active :term:`thread state`).
+         Domain allows the allocator to be called without an :term:`attached thread state`).
          See :ref:`the section on allocator domains <allocator-domains>` for more
          information.
 

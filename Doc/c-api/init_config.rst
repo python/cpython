@@ -1893,7 +1893,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must have an active :term:`thread state`. The function cannot
+   The caller must have an :term:`attached thread state`. The function cannot
    be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
@@ -1916,7 +1916,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must have an active :term:`thread state`. The function cannot
+   The caller must have an :term:`attached thread state`. The function cannot
    be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
@@ -1931,7 +1931,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
    * Raise a :exc:`TypeError` if *value* has not the proper type.
 
-   The caller must have an active :term:`thread state`. The function cannot
+   The caller must have an :term:`attached thread state`. The function cannot
    be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
