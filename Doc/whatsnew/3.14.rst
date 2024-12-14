@@ -1023,6 +1023,17 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
+
+  * :c:func:`PyLong_GetNativeLayout`;
+  * :c:func:`PyLong_Export`;
+  * :c:func:`PyLong_FreeExport`;
+  * :c:func:`PyLongWriter_Create`;
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
+
+  (Contributed by Victor Stinner in :gh:`102471`.)
+
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
@@ -1039,10 +1050,16 @@ New features
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
 
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
   :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
   events, respectively.
+
 
 Porting to Python 3.14
 ----------------------

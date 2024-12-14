@@ -63,6 +63,14 @@ def needs_symlinks(fn):
     _tests_needing_symlinks.add(fn.__name__)
     return fn
 
+
+
+class UnsupportedOperationTest(unittest.TestCase):
+    def test_is_notimplemented(self):
+        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
+        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+
+
 #
 # Tests for the pure classes.
 #
