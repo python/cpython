@@ -147,20 +147,22 @@ class TestLocalization(unittest.TestCase):
         with tempfile.TemporaryDirectory() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_from_dll.so')
             dll = CDLL(dstname)
-            # on macOS, the filename is not reported by dlerror()
-            pat = '.+' if sys.platform == 'darwin' else r'test_from_dll\.so'
-            with self.assertRaisesRegex(AttributeError, pat):
+            with self.assertRaises(AttributeError) as cm:
                 dll.foo
+            if sys.platform.startswith('linux'):
+                # On macOS or Windows, the filename is not reported by dlerror()
+                self.assertIn('test_from_dll.so', str(cm.exception))
 
     @configure_locales
     def test_localized_error_in_dll(self):
         with tempfile.TemporaryDirectory() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_in_dll.so')
             dll = CDLL(dstname)
-            # on macOS, the filename is not reported by dlerror()
-            pat = '.+' if sys.platform == 'darwin' else r'test_in_dll\.so'
-            with self.assertRaisesRegex(ValueError, pat):
+            with self.assertRaises(ValueError) as cm:
                 c_int.in_dll(dll, 'foo')
+            if sys.platform.startswith('linux'):
+                # On macOS or Windows, the filename is not reported by dlerror()
+                self.assertIn('test_in_dll.so', str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
                          'test requires _ctypes.dlopen()')
@@ -184,10 +186,11 @@ class TestLocalization(unittest.TestCase):
         with tempfile.TemporaryDirectory() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_dlsym.so')
             dll = _ctypes.dlopen(dstname)
-            # on macOS, the filename is not reported by dlerror()
-            pat = '.+' if sys.platform == 'darwin' else r'test_dlsym\.so'
-            with self.assertRaisesRegex(OSError, pat):
+            with self.assertRaises(OSError) as cm:
                 _ctypes.dlsym(dll, 'foo')
+            if sys.platform.startswith('linux'):
+                # On macOS or Windows, the filename is not reported by dlerror()
+                self.assertIn('test_in_dll.so', str(cm.exception))
 
 
 if __name__ == "__main__":
