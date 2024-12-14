@@ -38,10 +38,8 @@ def has_gcc():
                            stderr=subprocess.DEVNULL) == 0
 
 
-@unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
-                     'test requires _ctypes.dlopen()')
-@unittest.skipUnless(hasattr(_ctypes, 'dlsym'),
-                     'test requires _ctypes.dlsym()')
+@unittest.skipUnless(sys.platform.startswith('linux'),
+                     'test requires GNU IFUNC support')
 class TestNullDlsym(unittest.TestCase):
     """GH-126554: Ensure that we catch NULL dlsym return values
 
