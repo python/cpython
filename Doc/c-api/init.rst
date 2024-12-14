@@ -2069,7 +2069,7 @@ Python-level trace functions in previous versions.
 
    See also the :func:`sys.setprofile` function.
 
-   The caller must hold the :term:`GIL`.
+   The caller must have an active :term:`thread state`.
 
 .. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
 
