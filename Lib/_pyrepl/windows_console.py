@@ -415,9 +415,10 @@ class WindowsConsole(Console):
             if event is None and block:
                 continue
 
-            # Queue this key event to be repeated if wRepeatCount > 1, such as when a 'dead key' is pressed twice
-            for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
-                self.key_repeat_queue.appendleft(event)
+            if event is not None:
+                # Queue this key event to be repeated if wRepeatCount > 1, such as when a 'dead key' is pressed twice
+                for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
+                    self.key_repeat_queue.appendleft(event)
 
             return event
 
