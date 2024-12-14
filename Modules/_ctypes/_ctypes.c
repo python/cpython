@@ -3528,22 +3528,20 @@ _ctypes.CFuncPtr.argtypes
 static int
 _ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value)
 /*[clinic end generated code: output=596a36e2ae89d7d1 input=c4627573e980aa8b]*/
-static int
-PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
 {
     PyObject *converters;
 
-    if (ob == NULL || ob == Py_None) {
+    if (value == NULL || value == Py_None) {
         Py_CLEAR(self->converters);
         Py_CLEAR(self->argtypes);
     } else {
         ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
-        converters = converters_from_argtypes(st, ob);
+        converters = converters_from_argtypes(st, value);
         if (!converters)
             return -1;
         Py_XSETREF(self->converters, converters);
-        Py_INCREF(ob);
-        Py_XSETREF(self->argtypes, ob);
+        Py_INCREF(value);
+        Py_XSETREF(self->argtypes, value);
     }
     return 0;
 }
@@ -3559,8 +3557,6 @@ specify the argument types
 static PyObject *
 _ctypes_CFuncPtr_argtypes_get_impl(PyCFuncPtrObject *self)
 /*[clinic end generated code: output=c46b05a1b0f99172 input=37a8a545a56f8ae2]*/
-static PyObject *
-PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 {
     if (self->argtypes) {
         return Py_NewRef(self->argtypes);
