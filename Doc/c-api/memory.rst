@@ -327,8 +327,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   The :term:`GIL <global interpreter lock>` must be held when using these
-   functions.
+   A :term:`thread state` must be active when using these functions.
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
