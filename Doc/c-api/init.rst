@@ -1821,7 +1821,7 @@ function. You can create and destroy them using the following functions:
    the current thread state is ``NULL``.  All thread states associated
    with this interpreter are destroyed.  The global interpreter lock
    used by the target interpreter must be held before calling this
-   function.  No GIL is held when it returns.
+   function.  No :term:`thread state` is active when it returns.
 
    :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
