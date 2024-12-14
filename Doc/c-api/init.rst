@@ -1411,7 +1411,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
-   Destroy a :term:`thread state`` object.  *tstate* should not
+   Destroy a :term:`thread state` object.  *tstate* should not
    be :term:`attached <attached thread state>` to any thread.
    *tstate* must have been reset with a previous call to
    :c:func:`PyThreadState_Clear`.

@@ -137,10 +137,12 @@ Glossary
       A :term:`thread state` that is :term:`active <current thread state>`
       for the current thread. If no thread state is attached, then the
       :term:`current thread state` is ``NULL``. Attempting to call Python
-      without an attached thread state will generally result in a fatal error.
+      without an attached thread state will result in a fatal error.
 
       A thread state can be attached and detached explicitly by the user, or
-      implicitly by the interpreter.
+      implicitly by the interpreter in between calls. For example, an attached
+      thread state is detached upon entering a :c:macro:`Py_BEGIN_ALLOW_THREADS`
+      block, and then re-attached when :c:macro:`Py_END_ALLOW_THREADS` is reached.
 
       On most builds of Python, having an attached thread state means that the
       caller holds the :term:`GIL` for the current interpreter.    
@@ -348,10 +350,15 @@ Glossary
 
    current thread state
 
-      The :c:data:`PyThreadState` pointer to a :term:`thread state` for the current thread.
-      The per-thread pointer might be ``NULL``, in which case Python code should not
-      get executed. If the current thread state is non-``NULL``, then the :term:`thread state`
-      that it points to is considered to be :term:`attached <attached thread state>`.  
+      A per-thread :c:data:`PyThreadState` pointer for the current thread.
+      The pointer might be ``NULL``, in which case Python code should not
+      get executed.
+      
+      If the current thread state is non-``NULL``, then the :term:`thread state`
+      that it points to is considered to be :term:`attached <attached thread state>`.
+
+      The per-thread pointer can be acquired via :c:func:`PyThreadState_Get` or
+      :c:func:`PyThreadState_GetUnchecked` if it might be ``NULL``.
 
    decorator
       A function returning another function, usually applied as a function
