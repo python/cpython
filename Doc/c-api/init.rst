@@ -2076,7 +2076,7 @@ Python-level trace functions in previous versions.
    Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
    belonging to the current interpreter instead of the setting it only on the current thread.
 
-   The caller must hold the :term:`GIL`.
+   The caller must have an active :term:`thread state`.
 
    As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
    setting the profile functions in all threads.
