@@ -1729,10 +1729,11 @@ function. You can create and destroy them using the following functions:
    must be held before calling this function and is still held when it
    returns.  Likewise a current thread state must be set on entry.  On
    success, the returned thread state will be set as current.  If the
-   sub-interpreter is created with its own GIL then the GIL of the
-   calling interpreter will be released.  When the function returns,
-   the new interpreter's GIL will be held by the current thread and
-   the previously interpreter's GIL will remain released here.
+   sub-interpreter is created with its own :term:`thread state` then the
+   :term:`thread state` of the calling interpreter will be detached.
+   When the function returns, the new interpreter's :term:`thread state`
+   will be activated for the current thread and the previously interpreter's
+   :term:`thread state` will remain detached here.
 
    .. versionadded:: 3.12
 
