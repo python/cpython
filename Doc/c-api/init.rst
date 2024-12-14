@@ -573,7 +573,7 @@ Initializing and finalizing the interpreter
    This is similar to :c:func:`Py_AtExit`, but takes an explicit interpreter and
    data pointer for the callback.
 
-   The :term:`GIL` must be held for *interp*.
+   A :term:`thread state` must be active for *interp*.
 
    .. versionadded:: 3.13
 
