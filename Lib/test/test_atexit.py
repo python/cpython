@@ -64,6 +64,7 @@ class FunctionalTest(unittest.TestCase):
                 atexit._clear()
                 atexit.register(dummy)
                 atexit.unregister(dummy)
+                atexit._run_exitfuncs()
 
 
         threads = [Thread(target=thready) for _ in range(10)]
