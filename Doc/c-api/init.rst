@@ -963,7 +963,7 @@ a file, so that other Python threads can run in the meantime.
 
 The Python interpreter keeps some thread-specific bookkeeping information
 inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
-There's also one :term:`thread-local variable <active thread state>` pointing to the
+There's also one :term:`thread-local variable <current thread state>` pointing to the
 current :c:type:`PyThreadState`: it can be retrieved using :c:func:`PyThreadState_Get`.
 
 A thread can only have one :term:`attached thread state` at a time. An attached
@@ -1204,13 +1204,13 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Detach the :term:`active thread state` (if it has been created) and
+   Detach the :term:`current thread state` (if it has been created) and
    return it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Set the :term:`active thread state` to *tstate*, which must not be ``NULL``.
+   Set the :term:`current thread state` to *tstate*, which must not be ``NULL``.
    The passed :term:`thread state` **should not** be :term:`attached <attached thread state>`,
    otherwise deadlock ensues.
 
@@ -1226,7 +1226,7 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
-   Return the :term:`active thread state`. If the :term:`active thread state` is ``NULL``
+   Return the :term:`current thread state`. If the :term:`current thread state` is ``NULL``
    (such as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
    error (so that the caller needn't check for ``NULL``).
 
@@ -1246,13 +1246,13 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
-   Set the :term:`active thread state` to *tstate*, and return
+   Set the :term:`current thread state` to *tstate*, and return
    the old value.
    
    If there is an :term:`attached thread state` for the current
    thread, it will be detached. Upon returning from this function, 
    *tstate* will become :term:`attached <attached thread state>` instead
-   if it's not ``NULL``. If it is ``NULL``, then the :term:`active thread state`
+   if it's not ``NULL``. If it is ``NULL``, then the :term:`current thread state`
    will be ``NULL``.
 
 
@@ -1304,7 +1304,7 @@ with sub-interpreters:
 
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
-   Get the :term:`active thread state` for this thread.  May return ``NULL`` if no
+   Get the :term:`current thread state` for this thread.  May return ``NULL`` if no
    GILState API has been used on the current thread.  Note that the main thread
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
@@ -1419,7 +1419,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
-   Destroy the :term:`attached thread state` and set the :term:`active thread state`
+   Destroy the :term:`attached thread state` and set the :term:`current thread state`
    to ``NULL``. The :term:`thread state <attached thread state>` must have been reset
    with a previous call to :c:func:`PyThreadState_Clear`.
 

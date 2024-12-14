@@ -1,2 +1,2 @@
-Improve error message when calling the C API without an active thread state
+Improve error message when calling the C API without an current thread state
 on the :term:`free-threaded <free threading>` build.

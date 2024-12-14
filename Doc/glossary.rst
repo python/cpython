@@ -36,13 +36,6 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
-   active thread state
-
-      The :c:data:`PyThreadState` pointer to a :term:`thread state` for the current thread.
-      The per-thread pointer might be ``NULL``, in which case Python code should not
-      get executed. If the active thread state is non-``NULL``, then the :term:`thread state`
-      that it points to is considered to be :term:`attached <attached thread state>`.  
-
    annotate function
       A function that can be called to retrieve the :term:`annotations <annotation>`
       of an object. This function is accessible as the :attr:`~object.__annotate__`
@@ -141,10 +134,11 @@ Glossary
 
    attached thread state
 
-      A :term:`thread state` that is :term:`active <active thread state>`
-      for the current thread.
+      A :term:`thread state` that is :term:`active <current thread state>`
+      for the current thread. If no thread state is attached, then the
+      :term:`current thread state` is ``NULL``.
 
-      On most builds of Python, an attached thread state means that the
+      On most builds of Python, having an attached thread state means that the
       caller holds the :term:`GIL` for the current interpreter.    
 
    attribute
@@ -347,6 +341,13 @@ Glossary
       thread has its own current context.  Frameworks for executing asynchronous
       tasks (see :mod:`asyncio`) associate each task with a context which
       becomes the current context whenever the task starts or resumes execution.
+
+   current thread state
+
+      The :c:data:`PyThreadState` pointer to a :term:`thread state` for the current thread.
+      The per-thread pointer might be ``NULL``, in which case Python code should not
+      get executed. If the current thread state is non-``NULL``, then the :term:`thread state`
+      that it points to is considered to be :term:`attached <attached thread state>`.  
 
    decorator
       A function returning another function, usually applied as a function
@@ -1303,7 +1304,7 @@ Glossary
    thread state
       In Python's C API, a thread state is a structure that holds
       information about the current thread. A thread state must be
-      :term:`active <active thread state>` for the current thread in order to call most of the C API.
+      :term:`active <current thread state>` for the current thread in order to call most of the C API.
 
       See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
       information.

@@ -83,8 +83,8 @@ require the caller to have an :term:`attached thread state`.
 On success, the functions return ``0``.
 
 On failure, they set ``*result`` to ``0`` and return ``-1``, *without* setting
-an exception. To get the cause of the error, attach a :term:`thread state`, and call the
-regular (non-``Raw``) function. Note that the regular function may succeed after
+an exception. To get the cause of the error, :term:`attach <attached thread state>` a :term:`thread state`,
+and call the regular (non-``Raw``) function. Note that the regular function may succeed after
 the ``Raw`` one failed.
 
 .. c:function:: int PyTime_MonotonicRaw(PyTime_t *result)
