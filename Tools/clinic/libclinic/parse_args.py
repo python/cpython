@@ -147,7 +147,7 @@ GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({getset_basename}__doc__,
     {docstring});
     #if defined({getset_basename}_DOCSTR)
-        #undef {getset_basename}_DOCSTR
+    #   undef {getset_basename}_DOCSTR
     #endif
     #define {getset_basename}_DOCSTR {getset_basename}__doc__
 """)
