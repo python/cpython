@@ -139,8 +139,8 @@ Raw Memory Interface
 ====================
 
 The following function sets are wrappers to the system allocator. These
-functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
-need to be held.
+functions are thread-safe, so a :term:`thread state` does not
+need to be active.
 
 The :ref:`default raw memory allocator <default-memory-allocators>` uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
