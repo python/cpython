@@ -2215,7 +2215,7 @@ CPython C level APIs are similar to those offered by pthreads and Windows:
 use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
-The GIL does *not* need to be held when calling these functions; they supply
+A :term:`thread state` does *not* need to be active when calling these functions; they supply
 their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
@@ -2385,7 +2385,7 @@ The C-API provides a basic mutual exclusion lock.
 
    Lock mutex *m*.  If another thread has already locked it, the calling
    thread will block until the mutex is unlocked.  While blocked, the thread
-   will temporarily release the :term:`GIL` if it is held.
+   will temporarily detach the current :term:`thread state` if one is active.
 
    .. versionadded:: 3.13
 
