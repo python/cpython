@@ -41,6 +41,7 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     callback->next = NULL;
 
     struct atexit_state *state = &interp->atexit;
+    _PyAtExit_LockCallbacks(state);
     atexit_callback *top = state->ll_callbacks;
     if (top == NULL) {
         state->ll_callbacks = callback;
@@ -49,6 +50,7 @@ PyUnstable_AtExit(PyInterpreterState *interp,
         callback->next = top;
         state->ll_callbacks = callback;
     }
+    _PyAtExit_UnlockCallbacks(state);
     return 0;
 }
 
