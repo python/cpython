@@ -1210,17 +1210,14 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Release the global interpreter lock (if it has been created) and reset the
-   thread state to ``NULL``, returning the previous thread state (which is not
-   ``NULL``).  If the lock has been created, the current thread must have
-   acquired it.
+   Detach the active :term:`thread state` (if it has been created) and
+   return it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock (if it has been created) and set the
-   thread state to *tstate*, which must not be ``NULL``.  If the lock has been
-   created, the current thread must not have acquired it, otherwise deadlock
+   Set the current :term:`thread state` to *tstate*, which must not be ``NULL``.
+   The passed :term:`thread state` **should not** be attached, otherwise deadlock
    ensues.
 
    .. note::
