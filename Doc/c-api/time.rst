@@ -56,7 +56,7 @@ range.
 system time.)
 
 As any other C API (unless otherwise specified), the functions must be called
-with the :term:`GIL` held.
+with an active :term:`thread state`.
 
 .. c:function:: int PyTime_Monotonic(PyTime_t *result)
 
