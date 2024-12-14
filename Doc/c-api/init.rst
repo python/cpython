@@ -1433,16 +1433,16 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    See also :c:func:`PyEval_GetFrame`.
 
-   *tstate* must not be ``NULL``.
+   *tstate* must not be ``NULL``, and must be :term:`attached <attached thread state>`.
 
    .. versionadded:: 3.9
 
 
 .. c:function:: uint64_t PyThreadState_GetID(PyThreadState *tstate)
 
-   Get the unique thread state identifier of the Python thread state *tstate*.
+   Get the unique :term:`thread state` identifier of the Python thread state *tstate*.
 
-   *tstate* must not be ``NULL``.
+   *tstate* must not be ``NULL``, and must be :term:`attached <attached thread state>`.
 
    .. versionadded:: 3.9
 
@@ -1451,7 +1451,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the interpreter of the Python thread state *tstate*.
 
-   *tstate* must not be ``NULL``.
+   *tstate* must not be ``NULL``, and must be :term:`attached <attached thread state>`.
 
    .. versionadded:: 3.9
 
@@ -1480,10 +1480,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current interpreter.
 
-   Issue a fatal error if there no current Python thread state or no current
+   Issue a fatal error if there no :term:`attached thread state` or no current
    interpreter. It cannot return NULL.
-
-   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.9
 
@@ -1543,9 +1541,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Return a dictionary in which extensions can store thread-specific state
    information.  Each extension should use a unique key to use to store state in
-   the dictionary.  It is okay to call this function when no current thread state
-   is available. If this function returns ``NULL``, no exception has been raised and
-   the caller should assume no current thread state is available.
+   the dictionary.  It is okay to call this function when no :term:`thread state`
+   is :term:`attached <attached thread state>`. If this function returns
+   ``NULL``, no exception has been raised and the caller should assume no
+   thread state is attached.
 
 
 .. c:function:: int PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
@@ -1564,9 +1563,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock and set the current thread state to
-   *tstate*, which must not be ``NULL``.  The lock must have been created earlier.
-   If this thread already has the lock, deadlock ensues.
+   Set the :term:`current thread state` to *tstate*, which must not be ``NULL`` or
+   :term:`attached <attached thread state>`.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing will
@@ -1589,10 +1587,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
-   Reset the current thread state to ``NULL`` and release the global interpreter
-   lock.  The lock must have been created earlier and must be held by the current
-   thread.  The *tstate* argument, which must not be ``NULL``, is only used to check
-   that it represents the current thread state --- if it isn't, a fatal error is
+   Reset the :term:`current thread state` to ``NULL``.
+   The *tstate* argument, which must not be ``NULL``, is only used to check
+   that it represents the :term:`attached thread state` --- if it isn't, a fatal error is
    reported.
 
    :c:func:`PyEval_SaveThread` is a higher-level function which is always
@@ -1732,20 +1729,19 @@ function. You can create and destroy them using the following functions:
    The given *config* controls the options with which the interpreter
    is initialized.
 
-   Upon success, *tstate_p* will be set to the first thread state
-   created in the new
-   sub-interpreter.  This thread state is made in the current thread state.
+   Upon success, *tstate_p* will be set to the first :term:`thread state`
+   created in the new sub-interpreter.  This thread state is
+   :term:`attached <attached thread state>`.
    Note that no actual thread is created; see the discussion of thread states
    below.  If creation of the new interpreter is unsuccessful,
    *tstate_p* is set to ``NULL``;
    no exception is set since the exception state is stored in the
-   current thread state and there may not be a current thread state.
+   :term:`attached thread state`, which might not exist.
 
-   Like all other Python/C API functions, the global interpreter lock
-   must be held before calling this function and is still held when it
-   returns.  Likewise a current thread state must be set on entry.  On
-   success, the returned thread state will be set as current.  If the
-   sub-interpreter is created with its own :term:`GIL` then the
+   Like all other Python/C API functions, an :term:`attached thread state`
+   must be present before calling this function, but it might be detached upon
+   returning. On success, the returned thread state will be :term:`attached <attached thread state>`.
+   If the sub-interpreter is created with its own :term:`GIL` then the
    :term:`attached thread state` of the calling interpreter will be detached.
    When the function returns, the new interpreter's :term:`thread state`
    will be :term:`attached <attached thread state>` to the current thread and
@@ -1831,14 +1827,10 @@ function. You can create and destroy them using the following functions:
 
    .. index:: single: Py_FinalizeEx (C function)
 
-   Destroy the (sub-)interpreter represented by the given thread state.
-   The given thread state must be the current thread state.  See the
-   discussion of thread states below.  When the call returns,
-   the current thread state is ``NULL``.  All thread states associated
-   with this interpreter are destroyed.  The global interpreter lock
-   used by the target interpreter must be held before calling this
-   function.  No :term:`thread state` is :term:`attached <attached thread state>`
-   when it returns.
+   Destroy the (sub-)interpreter represented by the given :term:`thread state`.
+   The given thread state must be :term:`attached <attached thread state>`.
+   When the call returns, the :term:`current thread state` is ``NULL``.
+   All thread states associated with this interpreter are destroyed.
 
    :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
