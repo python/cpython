@@ -209,11 +209,12 @@ class TestGdbm(unittest.TestCase):
     @support.run_with_locale(
         'LC_ALL',
         'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+        'fr_FR.utf8', 'en_US.utf8',
         '',
     )
     def test_localized_error(self):
         with temp_dir() as d:
-            create_empty_file(os.path.join(d, TESTFN))
+            create_empty_file(os.path.join(d, 'test'))
             self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
 
 
