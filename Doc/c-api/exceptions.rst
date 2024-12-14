@@ -413,7 +413,7 @@ Querying the error indicator
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
 
-   The caller must hold the GIL.
+   The caller must have an active :term:`thread state`.
 
    .. note::
 
