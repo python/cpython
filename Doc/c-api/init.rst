@@ -1018,13 +1018,23 @@ The block above expands to the following code::
    single: PyEval_RestoreThread (C function)
    single: PyEval_SaveThread (C function)
 
-Here is how these functions work: the global interpreter lock is used to protect the pointer to the
-current :term:`thread state`.  When releasing the lock and saving the :term:`thread state`,
-the current thread state pointer must be retrieved before the lock is released
-(since another thread could immediately acquire the lock and store its own :term:`thread
-state` in the global variable). Conversely, when acquiring the lock and restoring
-the :term:`thread state`, the lock must be acquired before storing the :term:`thread state``
-pointer.
+Here is how these functions work:
+
+The :term:`thread state` holds the :term:`GIL` for the entire interpreter. When detaching
+the :term:`thread state`, the :term:`GIL` is released, allowing other threads to attach
+their own :term:`thread state`, thus getting the :term:`GIL` and can start executing.
+The pointer to the now-detached :term:`thread state`` is stored as a local variable.
+Upon reaching :c:macro:`Py_END_ALLOW_THREADS`, the :term:`thread state` that was
+previously attached is given to :c:func:`PyEval_RestoreThread`. This function will
+block until another thread that the :term:`GIL` can be re-acquired, thus allowing
+the :term:`thread state` to get re-attached and the C API can be called again.
+
+For :term:`free-threaded <free-threading>` builds, the :term:`GIL` is normally
+out of the question, but detaching the thread state is still required for blocking I/O
+and long operations. The difference is that threads don't have to wait for the :term:`GIL`
+to be released to attach their thread state, allowing true multi-core parallelism.
+
+:c:func:`PyEval_SaveThread`
 
 .. note::
    Calling system I/O functions is the most common use case for detaching
@@ -1044,16 +1054,15 @@ When threads are created using the dedicated Python APIs (such as the
 :mod:`threading` module), a thread state is automatically associated to them
 and the code showed above is therefore correct.  However, when threads are
 created from C (for example by a third-party library with its own thread
-management), they don't hold the GIL, nor is there a thread state structure
-for them.
+management), they don't hold the :term:`GIL`, because they don't have a
+:term:`thread state`.
 
 If you need to call Python code from these threads (often this will be part
 of a callback API provided by the aforementioned third-party library),
 you must first register these threads with the interpreter by
-creating a thread state data structure, then acquiring the GIL, and finally
-storing their thread state pointer, before you can start using the Python/C
-API.  When you are done, you should reset the thread state pointer, release
-the GIL, and finally free the thread state data structure.
+creating a :term:`thread state` before you can start using the Python/C
+API.  When you are done, you should detach the :term:`thread state`, and
+finally free it.
 
 The :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release` functions do
 all of the above automatically.  The typical idiom for calling into Python
@@ -1126,21 +1135,19 @@ is marked as *finalizing*: :c:func:`_Py_IsFinalizing` and
 thread* that initiated finalization (typically the main thread) is allowed to
 acquire the :term:`GIL`.
 
-If any thread, other than the finalization thread, attempts to acquire the GIL
-during finalization, either explicitly via :c:func:`PyGILState_Ensure`,
-:c:macro:`Py_END_ALLOW_THREADS`, :c:func:`PyEval_AcquireThread`, or
-:c:func:`PyEval_AcquireLock`, or implicitly when the interpreter attempts to
-reacquire it after having yielded it, the thread enters **a permanently blocked
-state** where it remains until the program exits.  In most cases this is
-harmless, but this can result in deadlock if a later stage of finalization
-attempts to acquire a lock owned by the blocked thread, or otherwise waits on
-the blocked thread.
+If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
+during finalization, either explicitly via a :term:`thread state` function, or
+implicitly when the interpreter attempts yields the :term:`GIL` by detaching the
+:term:`thread state`, the thread enters **a permanently blocked state** where it
+remains until the program exits.  In most cases this is harmless, but this can result
+in deadlock if a later stage of finalization attempts to acquire a lock owned by the
+blocked thread, or otherwise waits on the blocked thread.
 
 Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
 finalizations further up the call stack when such threads were forcibly exited
-here in CPython 3.13 and earlier. The CPython runtime GIL acquiring C APIs
-have never had any error reporting or handling expectations at GIL acquisition
-time that would've allowed for graceful exit from this situation. Changing that
+here in CPython 3.13 and earlier. The CPython runtime :term:`thread state` C APIs
+have never had any error reporting or handling expectations at :term:`thread state`
+attachment time that would've allowed for graceful exit from this situation. Changing that
 would require new stable C APIs and rewriting the majority of C code in the
 CPython ecosystem to use those with error handling.
 
