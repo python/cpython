@@ -940,7 +940,8 @@ Thread State and the Global Interpreter Lock
    single: interpreter lock
    single: lock, interpreter
 
-The Python interpreter is not fully thread-safe.  In order to support
+Unless on a :term:`free-threaded <free-threading>` build of :term:`CPython`,
+the Python interpreter is not fully thread-safe.  In order to support
 multi-threaded Python programs, there's a global lock, called the :term:`global
 interpreter lock` or :term:`GIL`, that must be held by the current thread before
 it can safely access Python objects. Without the lock, even the simplest
@@ -961,14 +962,28 @@ a file, so that other Python threads can run in the meantime.
    single: PyThreadState (C type)
 
 The Python interpreter keeps some thread-specific bookkeeping information
-inside a data structure called :c:type:`PyThreadState`.  There's also one
-global variable pointing to the current :c:type:`PyThreadState`: it can
+inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
+There's also one thread-local variable pointing to the current :c:type:`PyThreadState`: it can
 be retrieved using :c:func:`PyThreadState_Get`.
 
-Releasing the GIL from extension code
--------------------------------------
+A thread can only have one attached :term:`thread state` at a time. An attached
+:term:`thread state` is typically analogous with holding the :term:`GIL`, except on
+:term:`free-threaded <free-threading>` builds.  On builds with the :term:`GIL` enabled,
+attaching a thread state will block until the :term:`GIL` can be acquired.
+However,  even on builds with the :term:`GIL` disabled, it is still required
+to have a :term:`thread state` attached to the current thread to call most of
+the C API.
 
-Most extension code manipulating the :term:`GIL` has the following simple
+In general, a :term:`thread state` will always be active for the current thread
+when using Python's C API. Only in some specific cases (such as in a
+:c:macro:`Py_BEGIN_ALLOW_THREADS` block) will the thread not have an active
+thread state. If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns
+``NULL``.
+
+Detaching the thread state from extension code
+----------------------------------------------
+
+Most extension code manipulating the :term:`thread state` has the following simple
 structure::
 
    Save the thread state in a local variable.
@@ -1004,20 +1019,20 @@ The block above expands to the following code::
    single: PyEval_SaveThread (C function)
 
 Here is how these functions work: the global interpreter lock is used to protect the pointer to the
-current thread state.  When releasing the lock and saving the thread state,
+current :term:`thread state`.  When releasing the lock and saving the :term:`thread state`,
 the current thread state pointer must be retrieved before the lock is released
-(since another thread could immediately acquire the lock and store its own thread
-state in the global variable). Conversely, when acquiring the lock and restoring
-the thread state, the lock must be acquired before storing the thread state
+(since another thread could immediately acquire the lock and store its own :term:`thread
+state` in the global variable). Conversely, when acquiring the lock and restoring
+the :term:`thread state`, the lock must be acquired before storing the :term:`thread state``
 pointer.
 
 .. note::
-   Calling system I/O functions is the most common use case for releasing
-   the GIL, but it can also be useful before calling long-running computations
-   which don't need access to Python objects, such as compression or
-   cryptographic functions operating over memory buffers.  For example, the
-   standard :mod:`zlib` and :mod:`hashlib` modules release the GIL when
-   compressing or hashing data.
+   Calling system I/O functions is the most common use case for detaching
+   the :term:`thread state`, but it can also be useful before calling
+   long-running computations which don't need access to Python objects, such
+   as compression or cryptographic functions operating over memory buffers.
+   For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
+   :term:`thread state` when compressing or hashing data.
 
 
 .. _gilstate:
