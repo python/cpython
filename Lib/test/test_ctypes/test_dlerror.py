@@ -133,7 +133,7 @@ class TestLocalization(unittest.TestCase):
         if not has_gcc():
             raise unittest.SkipTest("gcc is missing")
 
-    def make_libfoo(self, outdir, so_libname):
+    def make_empty_lib(self, outdir, so_libname):
         srcname = os.path.join(outdir, 'empty.c')
         dstname = os.path.join(outdir, so_libname)
         create_empty_file(srcname)
@@ -145,7 +145,7 @@ class TestLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_from_dll(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'test_from_dll.so')
+            dstname = self.make_empty_lib(outdir, 'test_from_dll.so')
             dll = CDLL(dstname)
             # on macOS, the filename is not reported by dlerror()
             pat = '.+' if sys.platform == 'darwin' else r'test_from_dll\.so'
@@ -155,7 +155,7 @@ class TestLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_in_dll(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'test_in_dll.so')
+            dstname = self.make_empty_lib(outdir, 'test_in_dll.so')
             dll = CDLL(dstname)
             # on macOS, the filename is not reported by dlerror()
             pat = '.+' if sys.platform == 'darwin' else r'test_in_dll\.so'
@@ -182,7 +182,7 @@ class TestLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_dlsym(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'test_dlsym.so')
+            dstname = self.make_empty_lib(outdir, 'test_dlsym.so')
             dll = _ctypes.dlopen(dstname)
             # on macOS, the filename is not reported by dlerror()
             pat = '.+' if sys.platform == 'darwin' else r'test_dlsym\.so'
