@@ -302,7 +302,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_SCHED_H
-#  include <sched.h>
+#  include <linux/sched.h>
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
