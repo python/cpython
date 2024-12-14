@@ -3680,8 +3680,8 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return PyLong_FromInt64(val);
     }
 
-    n = (mpd_sizeinbase(x, 2) +
-         layout->bits_per_digit - 1) / layout->bits_per_digit;
+    const uint8_t bpd = layout->bits_per_digit;
+    n = (mpd_sizeinbase(x, 2) + bpd - 1) / bpd;
     PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n,
                                                (void**)&ob_digit);
     /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
