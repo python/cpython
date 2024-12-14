@@ -1,12 +1,13 @@
 import _ctypes
-
 import os
 import platform
 import subprocess
+import sys
 import tempfile
 import test.support
 import unittest
 from ctypes import CDLL, c_int
+from test.support.os_helper import create_empty_file
 
 
 FOO_C = r"""
@@ -116,7 +117,7 @@ class TestNullDlsym(unittest.TestCase):
                 _ctypes.dlsym(L, "foo")
 
 
-class TestLinuxLocalization(unittest.TestCase):
+class TestLocalization(unittest.TestCase):
 
     @staticmethod
     def configure_locales(func):
@@ -132,11 +133,10 @@ class TestLinuxLocalization(unittest.TestCase):
         if not has_gcc():
             raise unittest.SkipTest("gcc is missing")
 
-    def make_libfoo(self, outdir, source, so_libname):
-        srcname = os.path.join(outdir, 'source.c')
+    def make_libfoo(self, outdir, so_libname):
+        srcname = os.path.join(outdir, 'empty.c')
         dstname = os.path.join(outdir, so_libname)
-        with open(srcname, 'w') as f:
-            f.write(source)
+        create_empty_file(srcname)
         args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
         p = subprocess.run(args, capture_output=True)
         p.check_returncode()
@@ -145,17 +145,21 @@ class TestLinuxLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_from_dll(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_in_dll.so')
+            dstname = self.make_libfoo(outdir, 'test_from_dll.so')
             dll = CDLL(dstname)
-            with self.assertRaisesRegex(AttributeError, r'test_in_dll\.so:.+'):
+            # on macOS, the filename is not reported by dlerror()
+            pat = '.+' if sys.platform == 'darwin' else r'test_from_dll\.so'
+            with self.assertRaisesRegex(AttributeError, pat):
                 dll.foo
 
     @configure_locales
     def test_localized_error_in_dll(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_in_dll.so')
+            dstname = self.make_libfoo(outdir, 'test_in_dll.so')
             dll = CDLL(dstname)
-            with self.assertRaisesRegex(ValueError, r'test_in_dll\.so:.+'):
+            # on macOS, the filename is not reported by dlerror()
+            pat = '.+' if sys.platform == 'darwin' else r'test_in_dll\.so'
+            with self.assertRaisesRegex(ValueError, pat):
                 c_int.in_dll(dll, 'foo')
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
@@ -167,7 +171,7 @@ class TestLinuxLocalization(unittest.TestCase):
         # but we are only interested in avoiding a UnicodeDecodeError
         # when reporting the dlerror() error message which contains
         # the localized filename.
-        filename_pattern = r'missing.*?\.so:.+'
+        filename_pattern = r'missing.*?\.so'
         with self.assertRaisesRegex(OSError, filename_pattern):
             _ctypes.dlopen(missing_filename, 2)
 
@@ -178,9 +182,11 @@ class TestLinuxLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_dlsym(self):
         with tempfile.TemporaryDirectory() as outdir:
-            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_dlsym.so')
+            dstname = self.make_libfoo(outdir, 'test_dlsym.so')
             dll = _ctypes.dlopen(dstname)
-            with self.assertRaisesRegex(OSError, r'test_dlsym\.so:.+'):
+            # on macOS, the filename is not reported by dlerror()
+            pat = '.+' if sys.platform == 'darwin' else r'test_dlsym\.so'
+            with self.assertRaisesRegex(OSError, pat):
                 _ctypes.dlsym(dll, 'foo')
 
 
