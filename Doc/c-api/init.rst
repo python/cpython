@@ -963,16 +963,15 @@ a file, so that other Python threads can run in the meantime.
 
 The Python interpreter keeps some thread-specific bookkeeping information
 inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
-There's also one thread-local variable pointing to the current :c:type:`PyThreadState`: it can
-be retrieved using :c:func:`PyThreadState_Get`.
+There's also one :term:`thread-local variable <active thread state>` pointing to the
+current :c:type:`PyThreadState`: it can be retrieved using :c:func:`PyThreadState_Get`.
 
 A thread can only have one :term:`attached thread state` at a time. An attached
 thread state is typically analogous with holding the :term:`GIL`, except on
 :term:`free-threaded <free threading>` builds.  On builds with the :term:`GIL` enabled,
-attaching a thread state will block until the :term:`GIL` can be acquired.
-However,  even on builds with the :term:`GIL` disabled, it is still required
-to have a thread state attached to the current thread to call most of
-the C API.
+:term:`attaching <attached thread state>` a thread state will block until the :term:`GIL`
+can be acquired. However,  even on builds with the :term:`GIL` disabled, it is still required
+to have an attached thread state to call most of the C API.
 
 In general, there will always be an :term:`attached thread state` when using Python's C API.
 Only in some specific cases (such as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block) will the
@@ -1132,9 +1131,8 @@ thread* that initiated finalization (typically the main thread) is allowed to
 acquire the :term:`GIL`.
 
 If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
-during finalization, either explicitly via a :term:`thread state` function, or
-implicitly when the interpreter attempts yields the :term:`GIL` by detaching the
-:term:`thread state <attached thread state>`, the thread enters **a permanently blocked state**
+during finalization, either explicitly or
+implicitly, the thread enters **a permanently blocked state**
 where it remains until the program exits.  In most cases this is harmless, but this can result
 in deadlock if a later stage of finalization attempts to acquire a lock owned by the
 blocked thread, or otherwise waits on the blocked thread.
@@ -1212,9 +1210,9 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Set the current :term:`thread state` to *tstate*, which must not be ``NULL``.
-   The passed :term:`thread state` **should not** be attached, otherwise deadlock
-   ensues.
+   Set the :term:`active thread state` to *tstate*, which must not be ``NULL``.
+   The passed :term:`thread state` **should not** be :term:`attached <attached thread state>`,
+   otherwise deadlock ensues.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing will
@@ -1228,8 +1226,8 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
-   Return the :term:`active thread state`. If there is no :term:`active thread state` (such
-   as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
+   Return the :term:`active thread state`. If the :term:`active thread state` is ``NULL``
+   (such as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
    error (so that the caller needn't check for ``NULL``).
 
    See also :c:func:`PyThreadState_GetUnchecked`.
@@ -1248,12 +1246,14 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
-   Swap the current :term:`thread state` with *tstate*.
+   Set the :term:`active thread state` to *tstate*, and return
+   the old value.
    
-   If there is an attached :term:`thread state` for the current
+   If there is an :term:`attached thread state` for the current
    thread, it will be detached. Upon returning from this function, 
-   *tstate* will become attached instead if it's not ``NULL``. If it
-   is ``NULL``, then no :term:`thread state` will be attached upon returning.
+   *tstate* will become :term:`attached <attached thread state>` instead
+   if it's not ``NULL``. If it is ``NULL``, then the :term:`active thread state`
+   will be ``NULL``.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -1271,7 +1271,7 @@ with sub-interpreters:
    :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
    acceptable.
 
-   The return value is an opaque "handle" to the :term:`thread state` when
+   The return value is an opaque "handle" to the :term:`attached thread state` when
    :c:func:`PyGILState_Ensure` was called, and must be passed to
    :c:func:`PyGILState_Release` to ensure Python is left in the same state. Even
    though recursive calls are allowed, these handles *cannot* be shared - each
@@ -1304,7 +1304,7 @@ with sub-interpreters:
 
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
-   Get the current :term:`thread state` for this thread.  May return ``NULL`` if no
+   Get the :term:`active thread state` for this thread.  May return ``NULL`` if no
    GILState API has been used on the current thread.  Note that the main thread
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
@@ -1364,13 +1364,13 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. versionchanged:: 3.7
    :c:func:`Py_Initialize()` now initializes the :term:`GIL`
-   and actives a :term:`thread state`.
+   and sets an :term:`attached thread state`.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_New()
 
-   Create a new interpreter state object.  A :term:`thread state` need not
-   be attached, but may be held if it is necessary to serialize calls to this
+   Create a new interpreter state object.  An :term:`attached thread state` is not needed,
+   but may optionally exist if it is necessary to serialize calls to this
    function.
 
    .. audit-event:: cpython.PyInterpreterState_New "" c.PyInterpreterState_New
@@ -1378,28 +1378,28 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
-   Reset all information in an interpreter state object.  A :term:`thread state`
-   for the interpreter must be attached.
+   Reset all information in an interpreter state object.  There must be
+   an :term:`attached thread state` for the the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)
 
-   Destroy an interpreter state object.  A :term:`thread state` for the interpreter
-   shouldn't be attached.  The interpreter state must have been reset with a previous call to
-   :c:func:`PyInterpreterState_Clear`.
+   Destroy an interpreter state object.  There **should not** be an
+   :term:`attached thread state` for the target interpreter. The interpreter
+   state must have been reset with a previous call to :c:func:`PyInterpreterState_Clear`.
 
 
 .. c:function:: PyThreadState* PyThreadState_New(PyInterpreterState *interp)
 
    Create a new thread state object belonging to the given interpreter object.
-   A :term:`thread state` can be optionally attached.
+   An :term:`attached thread state` is not needed.
 
 .. c:function:: void PyThreadState_Clear(PyThreadState *tstate)
 
-   Reset all information in a :term:`thread state` object.  The 
-   :term:`thread state` must be active for the current thread.
+   Reset all information in a :term:`thread state` object.  *tstate*
+   must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
@@ -1411,16 +1411,17 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
-   Destroy a :term:`thread state`` object.  The :term:`thread state` should not
-   be active. *tstate* must have been reset with a previous call to
+   Destroy a :term:`thread state`` object.  *tstate* should not
+   be :term:`attached <attached thread state>` to any thread.
+   *tstate* must have been reset with a previous call to
    :c:func:`PyThreadState_Clear`.
 
 
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
-   Destroy the :term:`active thread state` and detach it.
-   The current :term:`thread state` must have been reset with a previous call
-   to :c:func:`PyThreadState_Clear`.
+   Destroy the :term:`attached thread state` and set the :term:`active thread state`
+   to ``NULL``. The :term:`thread state <attached thread state>` must have been reset
+   with a previous call to :c:func:`PyThreadState_Clear`.
 
 
 .. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
@@ -1744,11 +1745,11 @@ function. You can create and destroy them using the following functions:
    must be held before calling this function and is still held when it
    returns.  Likewise a current thread state must be set on entry.  On
    success, the returned thread state will be set as current.  If the
-   sub-interpreter is created with its own :term:`thread state` then the
-   :term:`thread state` of the calling interpreter will be detached.
+   sub-interpreter is created with its own :term:`GIL` then the
+   :term:`attached thread state` of the calling interpreter will be detached.
    When the function returns, the new interpreter's :term:`thread state`
-   will be activated for the current thread and the previously interpreter's
-   :term:`thread state` will remain detached here.
+   will be :term:`attached <attached thread state>` to the current thread and
+   the previous interpreter's :term:`attached thread state` will remain detached.
 
    .. versionadded:: 3.12
 
@@ -1836,7 +1837,8 @@ function. You can create and destroy them using the following functions:
    the current thread state is ``NULL``.  All thread states associated
    with this interpreter are destroyed.  The global interpreter lock
    used by the target interpreter must be held before calling this
-   function.  No :term:`thread state` is active when it returns.
+   function.  No :term:`thread state` is :term:`attached <attached thread state>`
+   when it returns.
 
    :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
@@ -1941,8 +1943,8 @@ pointer and a void pointer argument.
    This function doesn't need a current thread state to run, and it doesn't
    need the global interpreter lock.
 
-   To call this function in a subinterpreter, the caller must have an active
-   :term:`thread state`. Otherwise, the function *func* can be scheduled to
+   To call this function in a subinterpreter, the caller must have an
+   :term:`attached thread state`. Otherwise, the function *func* can be scheduled to
    be called from the wrong interpreter.
 
    .. warning::
@@ -2162,7 +2164,7 @@ Reference tracing
    any existing exception or set an exception.  A :term:`thread state` will be active
    every time the tracer function is called.
 
-   The :term:`thread state` must be active when calling this function.
+   There must be an :term:`attached thread state` when calling this function.
 
 .. versionadded:: 3.13
 
@@ -2173,7 +2175,7 @@ Reference tracing
    If no tracer was registered this function will return NULL and will set the
    **data** pointer to NULL.
 
-   A :term:`thread state` must be active when calling this function.
+   There must be an :term:`attached thread state` when calling this function.
 
 .. versionadded:: 3.13
 
@@ -2230,8 +2232,8 @@ CPython C level APIs are similar to those offered by pthreads and Windows:
 use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
-A :term:`thread state` does *not* need to be active when calling these functions; they supply
-their own locking.
+A :term:`thread state` does *not* need to be :term:`attached <attached thread state>`
+when calling these functions; they suppl their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.
@@ -2400,7 +2402,7 @@ The C-API provides a basic mutual exclusion lock.
 
    Lock mutex *m*.  If another thread has already locked it, the calling
    thread will block until the mutex is unlocked.  While blocked, the thread
-   will temporarily detach the current :term:`thread state` if one is active.
+   will temporarily detach the :term:`attached thread state` if one exists.
 
    .. versionadded:: 3.13
 

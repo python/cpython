@@ -140,7 +140,7 @@ Raw Memory Interface
 
 The following function sets are wrappers to the system allocator. These
 functions are thread-safe, so a :term:`thread state` does not
-need to be active.
+need to be :term:`attached <attached thread state>`.
 
 The :ref:`default raw memory allocator <default-memory-allocators>` uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
@@ -213,8 +213,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   A :term:`thread state` must be active when using these
-   functions.
+   There must be an :term:`attached thread state` when using these functions.
 
 .. versionchanged:: 3.6
 
@@ -327,7 +326,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   A :term:`thread state` must be active when using these functions.
+   There must be an :term:`attached thread state` when using these functions.
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
@@ -484,8 +483,8 @@ Customize Memory Allocators
    zero bytes.
 
    For the :c:macro:`PYMEM_DOMAIN_RAW` domain, the allocator must be
-   thread-safe: a :term:`thread state` is not held when the
-   allocator is called.
+   thread-safe: a :term:`thread state` is not :term:`attached <attached thread state>`
+   when the allocator is called.
 
    For the remaining domains, the allocator must also be thread-safe:
    the allocator may be called in different interpreters that do not
@@ -554,7 +553,7 @@ Runtime checks:
   called on a memory block allocated by :c:func:`PyMem_Malloc`.
 - Detect write before the start of the buffer (buffer underflow).
 - Detect write after the end of the buffer (buffer overflow).
-- Check that a :term:`thread state` is active when
+- Check that there is an :term:`attached thread state` when
   allocator functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex:
   :c:func:`PyObject_Malloc`) and :c:macro:`PYMEM_DOMAIN_MEM` (ex:
   :c:func:`PyMem_Malloc`) domains are called.
@@ -619,8 +618,8 @@ PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
    The :c:func:`PyMem_SetupDebugHooks` function now also works on Python
    compiled in release mode.  On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
-   The debug hooks now also check if a :term:`thread state` is active when functions of
-   :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
+   The debug hooks now also check if there is an :term:`attached thread state` when
+   functions of :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
    called.
 
 .. versionchanged:: 3.8
