@@ -7,7 +7,7 @@ import tempfile
 import test.support
 import unittest
 from ctypes import CDLL, c_int
-from test.support.os_helper import create_empty_file
+from test.support.os_helper import create_empty_file, temp_dir
 
 
 FOO_C = r"""
@@ -144,7 +144,7 @@ class TestLocalization(unittest.TestCase):
 
     @configure_locales
     def test_localized_error_from_dll(self):
-        with tempfile.TemporaryDirectory() as outdir:
+        with temp_dir() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_from_dll.so')
             dll = CDLL(dstname)
             with self.assertRaises(AttributeError) as cm:
@@ -155,7 +155,7 @@ class TestLocalization(unittest.TestCase):
 
     @configure_locales
     def test_localized_error_in_dll(self):
-        with tempfile.TemporaryDirectory() as outdir:
+        with temp_dir() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_in_dll.so')
             dll = CDLL(dstname)
             with self.assertRaises(ValueError) as cm:
@@ -183,7 +183,7 @@ class TestLocalization(unittest.TestCase):
                          'test requires _ctypes.dlsym()')
     @configure_locales
     def test_localized_error_dlsym(self):
-        with tempfile.TemporaryDirectory() as outdir:
+        with temp_dir() as outdir:
             dstname = self.make_empty_lib(outdir, 'test_dlsym.so')
             dll = _ctypes.dlopen(dstname)
             with self.assertRaises(OSError) as cm:
