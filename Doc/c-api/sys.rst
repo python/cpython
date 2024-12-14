@@ -346,7 +346,7 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is always called with the GIL held by the Python
+   The hook function is always called with a :term:`thread state` by the Python
    interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
