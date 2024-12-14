@@ -2158,7 +2158,7 @@ Reference tracing
    If no tracer was registered this function will return NULL and will set the
    **data** pointer to NULL.
 
-   The GIL must be held when calling this function.
+   A :term:`thread state` must be active when calling this function.
 
 .. versionadded:: 3.13
 
