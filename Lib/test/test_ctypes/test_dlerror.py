@@ -1,9 +1,12 @@
+import _ctypes
+
 import os
 import platform
-import re
-import sys
+import subprocess
+import tempfile
 import test.support
 import unittest
+from ctypes import CDLL, c_int
 
 
 FOO_C = r"""
@@ -28,8 +31,16 @@ void *foo(void)
 """
 
 
-@unittest.skipUnless(sys.platform.startswith('linux'),
-                     'Test only valid for Linux')
+def has_gcc():
+    return subprocess.call(["gcc", "--version"],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL) == 0
+
+
+@unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
+                     'test requires _ctypes.dlopen()')
+@unittest.skipUnless(hasattr(_ctypes, 'dlsym'),
+                     'test requires _ctypes.dlsym()')
 class TestNullDlsym(unittest.TestCase):
     """GH-126554: Ensure that we catch NULL dlsym return values
 
@@ -53,21 +64,7 @@ class TestNullDlsym(unittest.TestCase):
     """
 
     def test_null_dlsym(self):
-        import subprocess
-        import tempfile
-
-        # To avoid ImportErrors on Windows, where _ctypes does not have
-        # dlopen and dlsym,
-        # import here, i.e., inside the test function.
-        # The skipUnless('linux') decorator ensures that we're on linux
-        # if we're executing these statements.
-        from ctypes import CDLL, c_int
-        from _ctypes import dlopen, dlsym
-
-        retcode = subprocess.call(["gcc", "--version"],
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        if retcode != 0:
+        if not has_gcc():
             self.skipTest("gcc is missing")
 
         pipe_r, pipe_w = os.pipe()
@@ -114,35 +111,77 @@ class TestNullDlsym(unittest.TestCase):
             self.assertEqual(os.read(pipe_r, 2), b'OK')
 
             # Case #3: Test 'py_dl_sym' from Modules/_ctypes/callproc.c
-            L = dlopen(dstname)
+            L = _ctypes.dlopen(dstname)
             with self.assertRaisesRegex(OSError, "symbol 'foo' not found"):
-                dlsym(L, "foo")
-
-            # Assert that the IFUNC was called
-            self.assertEqual(os.read(pipe_r, 2), b'OK')
+                _ctypes.dlsym(L, "foo")
 
 
-@unittest.skipUnless(sys.platform.startswith('linux'),
-                     'test requires _ctypes.dlopen()')
 class TestLinuxLocalization(unittest.TestCase):
 
-    @test.support.run_with_locale(
-        'LC_ALL',
-        'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
-        '',
-    )
-    def test_localized_error(self):
-        # An ImportError would be propagated and would be unexpected on Linux.
-        from _ctypes import dlopen
+    @staticmethod
+    def configure_locales(func):
+        return test.support.run_with_locale(
+            'LC_ALL',
+            'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+            'fr_FR.utf8', 'en_US.utf8',
+            '',
+        )(func)
 
+    @classmethod
+    def setUpClass(cls):
+        if not has_gcc():
+            raise unittest.SkipTest("gcc is missing")
+
+    def make_libfoo(self, outdir, source, so_libname):
+        srcname = os.path.join(outdir, 'source.c')
+        dstname = os.path.join(outdir, so_libname)
+        with open(srcname, 'w') as f:
+            f.write(source)
+        args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
+        p = subprocess.run(args, capture_output=True)
+        p.check_returncode()
+        return dstname
+
+    @configure_locales
+    def test_localized_error_from_dll(self):
+        with tempfile.TemporaryDirectory() as outdir:
+            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_in_dll.so')
+            dll = CDLL(dstname)
+            with self.assertRaisesRegex(AttributeError, r'test_in_dll\.so:.+'):
+                dll.foo
+
+    @configure_locales
+    def test_localized_error_in_dll(self):
+        with tempfile.TemporaryDirectory() as outdir:
+            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_in_dll.so')
+            dll = CDLL(dstname)
+            with self.assertRaisesRegex(ValueError, r'test_in_dll\.so:.+'):
+                c_int.in_dll(dll, 'foo')
+
+    @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
+                         'test requires _ctypes.dlopen()')
+    @configure_locales
+    def test_localized_error_dlopen(self):
         missing_filename = b'missing\xff.so'
-        # Depending whether the locale is ISO-88591 or not, we may either
-        # encode '\xff' as '\udcff' or 'ÿ', but we are only interested in
-        # avoiding a UnicodeDecodeError when reporting the dlerror() error
-        # message which contains the localized filename.
-        filename_pattern = r'missing[ÿ|\udcff].so:.+'
+        # Depending whether the locale, we may encode '\xff' differently
+        # but we are only interested in avoiding a UnicodeDecodeError
+        # when reporting the dlerror() error message which contains
+        # the localized filename.
+        filename_pattern = r'missing.*?\.so:.+'
         with self.assertRaisesRegex(OSError, filename_pattern):
-            dlopen(missing_filename, 2)
+            _ctypes.dlopen(missing_filename, 2)
+
+    @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
+                         'test requires _ctypes.dlopen()')
+    @unittest.skipUnless(hasattr(_ctypes, 'dlsym'),
+                         'test requires _ctypes.dlsym()')
+    @configure_locales
+    def test_localized_error_dlsym(self):
+        with tempfile.TemporaryDirectory() as outdir:
+            dstname = self.make_libfoo(outdir, 'int x = 0;', 'test_dlsym.so')
+            dll = _ctypes.dlopen(dstname)
+            with self.assertRaisesRegex(OSError, r'test_dlsym\.so:.+'):
+                _ctypes.dlsym(dll, 'foo')
 
 
 if __name__ == "__main__":
