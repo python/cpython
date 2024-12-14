@@ -110,12 +110,12 @@ The three allocation domains are:
 
 * Raw domain: intended for allocating memory for general-purpose memory
   buffers where the allocation *must* go to the system allocator or where the
-  allocator can operate without the :term:`GIL`. The memory is requested directly
-  from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
+  allocator can operate without an active :term:`thread state`. The memory
+  is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
 * "Mem" domain: intended for allocating memory for Python buffers and
   general-purpose memory buffers where the allocation must be performed with
-  the :term:`GIL` held. The memory is taken from the Python private heap.
+  an active :term:`thread state`. The memory is taken from the Python private heap.
   See :ref:`Memory Interface <memoryinterface>`.
 
 * Object domain: intended for allocating memory for Python objects. The
