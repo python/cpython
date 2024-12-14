@@ -120,9 +120,8 @@ atexit_callfuncs(struct atexit_state *state)
         // no other threads can access this list.
         PyObject *tuple = PyList_GET_ITEM(copy, i);
         assert(PyTuple_CheckExact(tuple));
-        // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
-        // XXX Is this still needed?
-        PyObject *the_func = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));
+
+        PyObject *the_func = PyTuple_GET_ITEM(tuple, 0);
         PyObject *kwargs = PyTuple_GET_ITEM(tuple, 2);
         PyObject *res = PyObject_Call(the_func,
                                       PyTuple_GET_ITEM(tuple, 1),
@@ -134,7 +133,6 @@ atexit_callfuncs(struct atexit_state *state)
         else {
             Py_DECREF(res);
         }
-        Py_DECREF(the_func);
     }
 
     Py_DECREF(copy);
