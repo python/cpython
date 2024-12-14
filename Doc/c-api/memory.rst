@@ -213,7 +213,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   The :term:`GIL <global interpreter lock>` must be held when using these
+   A :term:`thread state` must be active when using these
    functions.
 
 .. versionchanged:: 3.6
