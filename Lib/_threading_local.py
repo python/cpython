@@ -108,7 +108,7 @@ Note that subclasses can define slots, but they are not thread
 local. They are shared across threads:
 
   >>> class MyLocal(local):
-  ...     __slots__ = 'number'
+  ...     __slots__ = ['number']
 
   >>> mydata = MyLocal()
   >>> mydata.number = 42
