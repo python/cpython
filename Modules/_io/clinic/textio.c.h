@@ -209,7 +209,7 @@ PyDoc_STRVAR(_io__TextIOBase_encoding__doc__,
 "\n"
 "Subclasses should override.");
 #if defined(_io__TextIOBase_encoding_DOCSTR)
-    #undef _io__TextIOBase_encoding_DOCSTR
+#   undef _io__TextIOBase_encoding_DOCSTR
 #endif
 #define _io__TextIOBase_encoding_DOCSTR _io__TextIOBase_encoding__doc__
 
@@ -239,7 +239,7 @@ PyDoc_STRVAR(_io__TextIOBase_newlines__doc__,
 "\n"
 "Subclasses should override.");
 #if defined(_io__TextIOBase_newlines_DOCSTR)
-    #undef _io__TextIOBase_newlines_DOCSTR
+#   undef _io__TextIOBase_newlines_DOCSTR
 #endif
 #define _io__TextIOBase_newlines_DOCSTR _io__TextIOBase_newlines__doc__
 
@@ -267,7 +267,7 @@ PyDoc_STRVAR(_io__TextIOBase_errors__doc__,
 "\n"
 "Subclasses should override.");
 #if defined(_io__TextIOBase_errors_DOCSTR)
-    #undef _io__TextIOBase_errors_DOCSTR
+#   undef _io__TextIOBase_errors_DOCSTR
 #endif
 #define _io__TextIOBase_errors_DOCSTR _io__TextIOBase_errors__doc__
 
@@ -1290,4 +1290,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=a5fb7aa35e510524 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=423a320f087792b9 input=a9049054013a1b77]*/

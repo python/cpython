@@ -5400,7 +5400,7 @@ my silly docstring
 PyDoc_STRVAR(Test_setter_first_with_docstr__doc__,
 "my silly docstring");
 #if defined(Test_setter_first_with_docstr_DOCSTR)
-    #undef Test_setter_first_with_docstr_DOCSTR
+#   undef Test_setter_first_with_docstr_DOCSTR
 #endif
 #define Test_setter_first_with_docstr_DOCSTR Test_setter_first_with_docstr__doc__
 
@@ -5425,7 +5425,7 @@ Test_setter_first_with_docstr_get(TestObj *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_setter_first_with_docstr_get_impl(TestObj *self)
-/*[clinic end generated code: output=af9c9b2fcd03c0de input=10af4e43b3cb34dc]*/
+/*[clinic end generated code: output=749a30266f9fb443 input=10af4e43b3cb34dc]*/
 
 /*[clinic input]
 output push
