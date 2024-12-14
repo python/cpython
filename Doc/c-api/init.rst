@@ -966,18 +966,17 @@ inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread
 There's also one thread-local variable pointing to the current :c:type:`PyThreadState`: it can
 be retrieved using :c:func:`PyThreadState_Get`.
 
-A thread can only have one attached :term:`thread state` at a time. An attached
-:term:`thread state` is typically analogous with holding the :term:`GIL`, except on
+A thread can only have one :term:`attached thread state` at a time. An attached
+thread state is typically analogous with holding the :term:`GIL`, except on
 :term:`free-threaded <free threading>` builds.  On builds with the :term:`GIL` enabled,
 attaching a thread state will block until the :term:`GIL` can be acquired.
 However,  even on builds with the :term:`GIL` disabled, it is still required
-to have a :term:`thread state` attached to the current thread to call most of
+to have a thread state attached to the current thread to call most of
 the C API.
 
-In general, a :term:`thread state` will always be active for the current thread
-when using Python's C API. Only in some specific cases (such as in a
-:c:macro:`Py_BEGIN_ALLOW_THREADS` block) will the thread not have an active
-thread state. If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns
+In general, there will always be an :term:`attached thread state` when using Python's C API.
+Only in some specific cases (such as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block) will the
+thread not have an attached thread state. If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns
 ``NULL``.
 
 Detaching the thread state from extension code
@@ -1018,14 +1017,15 @@ The block above expands to the following code::
 
 Here is how these functions work:
 
-The :term:`thread state` holds the :term:`GIL` for the entire interpreter. When detaching
-the :term:`thread state`, the :term:`GIL` is released, allowing other threads to attach
-their own :term:`thread state`, thus getting the :term:`GIL` and can start executing.
-The pointer to the now-detached :term:`thread state` is stored as a local variable.
-Upon reaching :c:macro:`Py_END_ALLOW_THREADS`, the :term:`thread state` that was
-previously attached is given to :c:func:`PyEval_RestoreThread`. This function will
-block until another thread that the :term:`GIL` can be re-acquired, thus allowing
-the :term:`thread state` to get re-attached and the C API can be called again.
+The :term:`attached thread state` holds the :term:`GIL` for the entire interpreter. When detaching
+the :term:`attached thread state`, the :term:`GIL` is released, allowing other threads to attach
+a thread state to their own thread, thus getting the :term:`GIL` and can start executing.
+The pointer to the prior :term:`attached thread state` is stored as a local variable.
+Upon reaching :c:macro:`Py_END_ALLOW_THREADS`, the thread state that was
+previously :term:`attached <attached thread state>` is passed to :c:func:`PyEval_RestoreThread`.
+This function will block until another releases its :term:`thread state <attached thread state>`,
+thus allowing the old :term:`thread state <attached thread state>` to get re-attached and the
+C API can be called again.
 
 For :term:`free-threaded <free threading>` builds, the :term:`GIL` is normally
 out of the question, but detaching the thread state is still required for blocking I/O
@@ -1038,7 +1038,7 @@ to be released to attach their thread state, allowing true multi-core parallelis
    long-running computations which don't need access to Python objects, such
    as compression or cryptographic functions operating over memory buffers.
    For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
-   :term:`thread state` when compressing or hashing data.
+   :term:`attached thread state` when compressing or hashing data.
 
 
 .. _gilstate:
@@ -1050,14 +1050,14 @@ When threads are created using the dedicated Python APIs (such as the
 :mod:`threading` module), a thread state is automatically associated to them
 and the code showed above is therefore correct.  However, when threads are
 created from C (for example by a third-party library with its own thread
-management), they don't hold the :term:`GIL`, because they don't have a
-:term:`thread state`.
+management), they don't hold the :term:`GIL`, because they don't have an
+:term:`attached thread state`.
 
 If you need to call Python code from these threads (often this will be part
 of a callback API provided by the aforementioned third-party library),
 you must first register these threads with the interpreter by
-creating a :term:`thread state` before you can start using the Python/C
-API.  When you are done, you should detach the :term:`thread state`, and
+creating an :term:`attached thread state` before you can start using the Python/C
+API.  When you are done, you should detach the :term:`thread state <attached thread state>`, and
 finally free it.
 
 The :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release` functions do
@@ -1134,8 +1134,8 @@ acquire the :term:`GIL`.
 If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
 during finalization, either explicitly via a :term:`thread state` function, or
 implicitly when the interpreter attempts yields the :term:`GIL` by detaching the
-:term:`thread state`, the thread enters **a permanently blocked state** where it
-remains until the program exits.  In most cases this is harmless, but this can result
+:term:`thread state <attached thread state>`, the thread enters **a permanently blocked state**
+where it remains until the program exits.  In most cases this is harmless, but this can result
 in deadlock if a later stage of finalization attempts to acquire a lock owned by the
 blocked thread, or otherwise waits on the blocked thread.
 
