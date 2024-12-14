@@ -137,7 +137,7 @@ class TestLocalization(unittest.TestCase):
         srcname = os.path.join(outdir, 'empty.c')
         dstname = os.path.join(outdir, so_libname)
         create_empty_file(srcname)
-        args = ['gcc', '-fPIC', '-shared', '-o', dstname, srcname]
+        args = ['gcc', '-shared', '-o', dstname, srcname]
         p = subprocess.run(args, capture_output=True)
         p.check_returncode()
         return dstname
