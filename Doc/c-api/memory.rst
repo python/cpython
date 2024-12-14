@@ -619,7 +619,7 @@ PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
    The :c:func:`PyMem_SetupDebugHooks` function now also works on Python
    compiled in release mode.  On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
-   The debug hooks now also check if the GIL is held when functions of
+   The debug hooks now also check if a :term:`thread state` is active when functions of
    :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
    called.
 
