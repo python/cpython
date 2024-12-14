@@ -940,7 +940,7 @@ Thread State and the Global Interpreter Lock
    single: interpreter lock
    single: lock, interpreter
 
-Unless on a :term:`free-threaded <free-threading>` build of :term:`CPython`,
+Unless on a :term:`free-threaded <free threading>` build of :term:`CPython`,
 the Python interpreter is not fully thread-safe.  In order to support
 multi-threaded Python programs, there's a global lock, called the :term:`global
 interpreter lock` or :term:`GIL`, that must be held by the current thread before
@@ -968,7 +968,7 @@ be retrieved using :c:func:`PyThreadState_Get`.
 
 A thread can only have one attached :term:`thread state` at a time. An attached
 :term:`thread state` is typically analogous with holding the :term:`GIL`, except on
-:term:`free-threaded <free-threading>` builds.  On builds with the :term:`GIL` enabled,
+:term:`free-threaded <free threading>` builds.  On builds with the :term:`GIL` enabled,
 attaching a thread state will block until the :term:`GIL` can be acquired.
 However,  even on builds with the :term:`GIL` disabled, it is still required
 to have a :term:`thread state` attached to the current thread to call most of
@@ -1023,18 +1023,16 @@ Here is how these functions work:
 The :term:`thread state` holds the :term:`GIL` for the entire interpreter. When detaching
 the :term:`thread state`, the :term:`GIL` is released, allowing other threads to attach
 their own :term:`thread state`, thus getting the :term:`GIL` and can start executing.
-The pointer to the now-detached :term:`thread state`` is stored as a local variable.
+The pointer to the now-detached :term:`thread state` is stored as a local variable.
 Upon reaching :c:macro:`Py_END_ALLOW_THREADS`, the :term:`thread state` that was
 previously attached is given to :c:func:`PyEval_RestoreThread`. This function will
 block until another thread that the :term:`GIL` can be re-acquired, thus allowing
 the :term:`thread state` to get re-attached and the C API can be called again.
 
-For :term:`free-threaded <free-threading>` builds, the :term:`GIL` is normally
+For :term:`free-threaded <free threading>` builds, the :term:`GIL` is normally
 out of the question, but detaching the thread state is still required for blocking I/O
 and long operations. The difference is that threads don't have to wait for the :term:`GIL`
 to be released to attach their thread state, allowing true multi-core parallelism.
-
-:c:func:`PyEval_SaveThread`
 
 .. note::
    Calling system I/O functions is the most common use case for detaching
@@ -1275,7 +1273,7 @@ with sub-interpreters:
    :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
    acceptable.
 
-   The return value is an opaque "handle" to the :term:`thread state`` when
+   The return value is an opaque "handle" to the :term:`thread state` when
    :c:func:`PyGILState_Ensure` was called, and must be passed to
    :c:func:`PyGILState_Release` to ensure Python is left in the same state. Even
    though recursive calls are allowed, these handles *cannot* be shared - each
