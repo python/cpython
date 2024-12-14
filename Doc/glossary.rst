@@ -622,6 +622,10 @@ Glossary
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
 
+      In Python's C API, a function might declare that it requires (or doesn't require)
+      the GIL to be held in order to use it. This refers to having an active
+      :term:`thread state` for the current thread.
+
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
       time of the corresponding source file to determine its validity. See
@@ -1280,6 +1284,19 @@ Glossary
 
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+
+   thread state
+      In Python's C API, a thread state is a structure that holds
+      information about the current thread. A thread state must be
+      active for the current thread in order to call most of the C API.
+
+      On most builds of Python, an attached thread state means that the
+      caller holds the :term:`GIL` for the current interpreter, but on
+      :term:`free-threaded <free-threading>` builds, multiple thread states
+      can be active at once.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
