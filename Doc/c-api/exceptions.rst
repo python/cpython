@@ -675,7 +675,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an active :term:`thread state` and from a C signal handler.
 
 
 .. c:function:: int PyErr_SetInterruptEx(int signum)
