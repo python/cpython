@@ -987,9 +987,7 @@ Most extension code manipulating the :term:`thread state` has the following simp
 structure::
 
    Save the thread state in a local variable.
-   Release the global interpreter lock.
    ... Do some blocking I/O operation ...
-   Reacquire the global interpreter lock.
    Restore the thread state from the local variable.
 
 This is so common that a pair of macros exists to simplify it::
@@ -1371,8 +1369,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: PyInterpreterState* PyInterpreterState_New()
 
-   Create a new interpreter state object.  The global interpreter lock need not
-   be held, but may be held if it is necessary to serialize calls to this
+   Create a new interpreter state object.  A :term:`thread state` need not
+   be attached, but may be held if it is necessary to serialize calls to this
    function.
 
    .. audit-event:: cpython.PyInterpreterState_New "" c.PyInterpreterState_New
@@ -1380,30 +1378,28 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
-   Reset all information in an interpreter state object.  The global interpreter
-   lock must be held.
+   Reset all information in an interpreter state object.  A :term:`thread state`
+   for the interpreter must be attached.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)
 
-   Destroy an interpreter state object.  The global interpreter lock need not be
-   held.  The interpreter state must have been reset with a previous call to
+   Destroy an interpreter state object.  A :term:`thread state` for the interpreter
+   shouldn't be attached.  The interpreter state must have been reset with a previous call to
    :c:func:`PyInterpreterState_Clear`.
 
 
 .. c:function:: PyThreadState* PyThreadState_New(PyInterpreterState *interp)
 
    Create a new thread state object belonging to the given interpreter object.
-   The global interpreter lock need not be held, but may be held if it is
-   necessary to serialize calls to this function.
-
+   A :term:`thread state` can be optionally attached.
 
 .. c:function:: void PyThreadState_Clear(PyThreadState *tstate)
 
-   Reset all information in a thread state object.  The global interpreter lock
-   must be held.
+   Reset all information in a :term:`thread state` object.  The 
+   :term:`thread state` must be active for the current thread.
 
    .. versionchanged:: 3.9
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
@@ -1415,16 +1411,15 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
-   Destroy a thread state object.  The global interpreter lock need not be held.
-   The thread state must have been reset with a previous call to
+   Destroy a :term:`thread state`` object.  The :term:`thread state` should not
+   be active. *tstate* must have been reset with a previous call to
    :c:func:`PyThreadState_Clear`.
 
 
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
-   Destroy the current thread state and release the global interpreter lock.
-   Like :c:func:`PyThreadState_Delete`, the global interpreter lock must
-   be held. The thread state must have been reset with a previous call
+   Destroy the active :term:`thread state` and detach it.
+   The current :term:`thread state` must have been reset with a previous call
    to :c:func:`PyThreadState_Clear`.
 
 
