@@ -151,7 +151,7 @@ def is_ubuntu():
 
 if is_ubuntu():
     def seclevel_workaround(*ctxs):
-        """"Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
+        """Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
