@@ -1345,7 +1345,8 @@ Low-level API
 All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. versionchanged:: 3.7
-   :c:func:`Py_Initialize()` now initializes the :term:`GIL`.
+   :c:func:`Py_Initialize()` now initializes the :term:`GIL`
+   and actives a :term:`thread state`.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_New()
