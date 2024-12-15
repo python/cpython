@@ -1634,11 +1634,16 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 {
     if (self->extra == NULL) {
         /* element has no children, so raise exception */
-        goto not_found;
+        goto error;
     }
 
     Py_ssize_t i;
-    const Py_ssize_t length = self->extra->length;
+    // When iterating over the list of children, we need to check that the
+    // list is not cleared (self->extra != NULL) and that we are still within
+    // the correct bounds (i < self->extra->length).
+    //
+    // We deliberately avoid protecting against children lists that grow
+    // faster than the index since list objects do not protect against it.
     for (i = 0; self->extra && i < self->extra->length; i++) {
         if (self->extra->children[i] == subelement) {
             break;
@@ -1646,26 +1651,19 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
         PyObject *child = Py_NewRef(self->extra->children[i]);
         int rc = PyObject_RichCompareBool(child, subelement, Py_EQ);
         Py_DECREF(child);
-        if (self->extra ==  NULL || self->extra->length != length) {
-            goto fail;
-        }
-        if (rc > 0) {
-            break;
-        }
-        else if (rc < 0) {
+        if (rc < 0) {
             return NULL;
+        }
+        else if (rc > 0) {
+            break;
         }
     }
 
     // An extra check must be done if the mutation occurs at the very last
     // step and removes or clears the 'extra' list (the condition on the
     // length would not be satisfied any more).
-    if (self->extra == NULL || self->extra->length != length) {
-        goto fail;
-    }
-    else if (i >= self->extra->length) {
-        /* subelement is not in children, so raise exception */
-        goto not_found;
+    if (self->extra == NULL || i >= self->extra->length) {
+        goto error;
     }
 
     PyObject *found = self->extra->children[i];
@@ -1678,12 +1676,8 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     Py_DECREF(found);
     Py_RETURN_NONE;
 
-not_found:
+error:
     PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
-    return NULL;
-
-fail:
-    PyErr_SetString(PyExc_RuntimeError, "children mutated during iteration");
     return NULL;
 }
 
