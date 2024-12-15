@@ -1262,7 +1262,7 @@ with sub-interpreters:
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
    Ensure that the current thread is ready to call the Python C API regardless
-   of the current state of Python, or of the global interpreter lock.This may
+   of the current state of Python, or of the :term:`current thread state`. This may
    be called as many times as desired by a thread as long as each call is
    matched with a call to :c:func:`PyGILState_Release`. In general, other
    thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
@@ -1924,16 +1924,16 @@ pointer and a void pointer argument.
    both these conditions met:
 
    * on a :term:`bytecode` boundary;
-   * with the main thread holding the :term:`global interpreter lock`
+   * with the main thread holding an :term:`attached thread state`
      (*func* can therefore use the full C API).
 
    *func* must return ``0`` on success, or ``-1`` on failure with an exception
    set.  *func* won't be interrupted to perform another asynchronous
    notification recursively, but it can still be interrupted to switch
-   threads if the global interpreter lock is released.
+   threads if the :term:`thread state <attached thread state>` is detached.
 
    This function doesn't need a current thread state to run, and it doesn't
-   need the global interpreter lock.
+   need an :term:`attached thread state`.
 
    To call this function in a subinterpreter, the caller must have an
    :term:`attached thread state`. Otherwise, the function *func* can be scheduled to

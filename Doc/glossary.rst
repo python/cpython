@@ -649,9 +649,9 @@ Glossary
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
 
-      In Python's C API, a function might declare that it requires (or doesn't require)
-      the GIL to be held in order to use it. This refers to having an active
-      :term:`thread state` for the current thread.
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
