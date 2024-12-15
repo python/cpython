@@ -70,6 +70,15 @@ class ResourceLoader(Loader):
 
     """
 
+    def __init__(self):
+        import warnings
+        warnings.warn("importlib.abc.ResourceLoader is deprecated in "
+                      "favour of supporting resource loading through "
+                      "importlib.resources.abc.ResourceReader.",
+                      DeprecationWarning, stacklevel=2)
+        super().__init__()
+
+
     @abc.abstractmethod
     def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
