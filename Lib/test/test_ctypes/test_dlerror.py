@@ -114,6 +114,9 @@ class TestNullDlsym(unittest.TestCase):
             with self.assertRaisesRegex(OSError, "symbol 'foo' not found"):
                 _ctypes.dlsym(L, "foo")
 
+            # Assert that the IFUNC was called
+            self.assertEqual(os.read(pipe_r, 2), b'OK')
+
 
 @unittest.skipUnless(os.name != 'nt', 'test requires dlerror() calls')
 class TestLocalization(unittest.TestCase):
