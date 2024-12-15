@@ -1,0 +1,2 @@
+Fix the loaded ``libpython`` library not being taken into account when
+calculating :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`.
