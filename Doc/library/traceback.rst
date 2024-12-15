@@ -44,6 +44,10 @@ The module's API can be divided into two parts:
   necessary for later formatting without holding references to actual exception
   and traceback objects.
 
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 Module-Level Functions
 ----------------------
@@ -270,7 +274,7 @@ Module-Level Functions
 :class:`!TracebackException` objects are created from actual exceptions to
 capture data for later printing.  They offer a more lightweight method of
 storing this information by avoiding holding references to
-:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects
+:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects.
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 

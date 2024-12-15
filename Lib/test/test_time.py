@@ -116,6 +116,7 @@ class TimeTestCase(unittest.TestCase):
                          'need time.pthread_getcpuclockid()')
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
+    @unittest.skipIf(support.is_emscripten, "Fails to find clock")
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
@@ -538,6 +539,9 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipIf(
         support.is_wasi, "process_time not available on WASI"
+    )
+    @unittest.skipIf(
+        support.is_emscripten, "process_time present but doesn't exclude sleep"
     )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
