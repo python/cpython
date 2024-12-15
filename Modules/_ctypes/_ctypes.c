@@ -796,10 +796,10 @@ CDataType_in_dll(PyObject *type, PyObject *args)
         (void)dlerror();
     #endif
     address = (void *)dlsym(handle, name);
+#endif
     if (address) {
         return PyCData_AtAddress(type, address);
     }
-#endif
     #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
@@ -3625,7 +3625,6 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         (void)dlerror();
     #endif
     address = (PPROC)dlsym(handle, name);
-
     if (!address) {
 	#ifdef USE_DLERROR
         const char *dlerr = dlerror();
