@@ -1780,7 +1780,9 @@ _Py_Specialize_BinarySubscr(
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
             goto fail;
         }
-        if (_PyType_CacheGetItemForSpecialization(container_type, descriptor) < 0) {
+
+        PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
+        if (_PyType_CacheGetItemForSpecialization(ht, descriptor) < 0) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }

@@ -517,12 +517,11 @@
                 container = stack_pointer[-2];
                 PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
                 DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
-                uint32_t cached_version;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *getitem = _PyType_GetItemFromCacheWithVersion(tp, &cached_version);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                PyObject *getitem = FT_ATOMIC_LOAD_PTR_RELAXED(ht->_spec_cache.getitem);
                 DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
                 assert(PyFunction_Check(getitem));
+                uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
                 DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version, BINARY_SUBSCR);
                 PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
                 assert(code->co_argcount == 2);
@@ -533,9 +532,8 @@
             {
                 sub = stack_pointer[-1];
                 PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *getitem = _PyType_GetItemFromCache(tp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                PyObject *getitem = FT_ATOMIC_LOAD_PTR_RELAXED(ht->_spec_cache.getitem);
                 DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
                 new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(getitem), 2, frame);
                 new_frame->localsplus[0] = container;

@@ -5693,16 +5693,12 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
 }
 
 int
-_PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor)
+_PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor)
 {
     int ret = 0;
-    if (!type) {
-        return -1;
-    }
     BEGIN_TYPE_LOCK();
     // This pointer is invalidated by PyType_Modified (see the comment on
     // struct _specialization_cache):
-    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
     if (!_PyFunction_IsVersionValid(version)) {
@@ -5714,40 +5710,6 @@ _PyType_CacheGetItemForSpecialization(PyTypeObject *type, PyObject *descriptor)
 end:
     END_TYPE_LOCK();
     return ret;
-}
-
-PyObject *
-_PyType_GetItemFromCache(PyTypeObject *type)
-{
-    PyObject *res = NULL;
-    BEGIN_TYPE_LOCK();
-    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
-    res = ht->_spec_cache.getitem;
-    if (res == NULL || !PyFunction_Check(res)) {
-        res = NULL;
-    }
-    END_TYPE_LOCK();
-    return res;
-}
-
-PyObject *
-_PyType_GetItemFromCacheWithVersion(PyTypeObject *type, uint32_t *version)
-{
-    PyObject *res = NULL;
-    BEGIN_TYPE_LOCK();
-    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
-    res = ht->_spec_cache.getitem;
-    if (res == NULL) {
-        goto end;
-    }
-    if (!PyFunction_Check(res)) {
-        res = NULL;
-        goto end;
-    }
-    *version = ht->_spec_cache.getitem_version;
-end:
-    END_TYPE_LOCK();
-    return res;
 }
 
 static void

@@ -1131,15 +1131,14 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            uint32_t cached_version;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *getitem = _PyType_GetItemFromCacheWithVersion(tp, &cached_version);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = FT_ATOMIC_LOAD_PTR_RELAXED(ht->_spec_cache.getitem);
             if (getitem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
             assert(PyFunction_Check(getitem));
+            uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
             if (((PyFunctionObject *)getitem)->func_version != cached_version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -1161,9 +1160,8 @@
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *getitem = _PyType_GetItemFromCache(tp);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = FT_ATOMIC_LOAD_PTR_RELAXED(ht->_spec_cache.getitem);
             if (getitem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
