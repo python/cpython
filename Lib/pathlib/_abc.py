@@ -34,7 +34,7 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
-def _parse_path(path):
+def _explode_path(path):
     """
     Split the path into a 2-tuple (anchor, parts), where *anchor* is the
     uppermost parent of the path (equivalent to path.parents[-1]), and
@@ -131,7 +131,7 @@ class PurePathBase:
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return _parse_path(self)[0]
+        return _explode_path(self)[0]
 
     @property
     def name(self):
@@ -209,8 +209,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = _parse_path(self)
-        anchor1, parts1 = _parse_path(other)
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -232,8 +232,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = _parse_path(self)
-        anchor1, parts1 = _parse_path(other)
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             return False
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -248,7 +248,7 @@ class PurePathBase:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = _parse_path(self)
+        anchor, parts = _explode_path(self)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -500,7 +500,7 @@ class PathBase(PurePathBase):
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
-        anchor, parts = _parse_path(pattern)
+        anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
         if case_sensitive is None:
