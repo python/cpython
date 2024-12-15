@@ -1,4 +1,4 @@
-"""Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
+"""Base2 (MSBF and LSBF), Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
 
 # Modified 04-Oct-1995 by Jack Jansen to use binascii module
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
@@ -17,6 +17,8 @@ __all__ = [
     'b32hexencode', 'b32hexdecode', 'b16encode', 'b16decode',
     # Base85 and Ascii85 encodings
     'b85encode', 'b85decode', 'a85encode', 'a85decode', 'z85encode', 'z85decode',
+    # Base2MSBF and Base2LSBF encodings
+    'b2msbfencode', 'b2msbfdecode', 'b2lsbfencode', 'b2lsbfdecode',
     # Standard Base64 encoding
     'standard_b64encode', 'standard_b64decode',
     # Some common Base64 alternatives.  As referenced by RFC 3458, see thread
@@ -521,6 +523,54 @@ def z85decode(s):
         return b85decode(s)
     except ValueError as e:
         raise ValueError(e.args[0].replace('base85', 'z85')) from None
+
+
+
+# Base2 encodings/decodings
+
+# Base2MSBF (Most Significant Bit First): The binary digits are processed starting with the most significant
+# bit (the leftmost bit in standard notation). This is the most common format when writing or interpreting
+# binary numbers in human-readable form.
+def b2msbfencode(s):
+    """Encode bytes-like object s in Base2MSBF format and return a bytes object."""
+    if not isinstance(s, bytes_types):
+        s = memoryview(s).tobytes()
+    return ''.join(format(byte, '08b') for byte in s).encode('ascii')
+
+def b2msbfdecode(s):
+    """Decode the Base2MSBF encoded bytes-like object or ASCII string s.
+
+    The result is returned as a bytes object.
+    """
+    s = _bytes_from_decode_data(s)
+    if any(c not in '01' for c in s.decode('ascii')):
+        raise ValueError("Base2MSBF input must be a string of '0' and '1'.")
+    if len(s) % 8 != 0:
+        raise ValueError("Base2MSBF input length must be a multiple of 8.")
+    return bytes(int(s[i:i + 8], 2) for i in range(0, len(s), 8))
+
+# Base2LSBF (Least Significant Bit First): The binary digits are processed starting with the least significant
+# bit (the rightmost bit in standard notation). This order is often used in systems where lower-order bits
+# are easier to access or modify.
+def b2lsbfencode(s):
+    """Encode bytes-like object s in Base2LSBF format and return a bytes object."""
+    if not isinstance(s, bytes_types):
+        s = memoryview(s).tobytes()
+    return ''.join(format(byte, '08b')[::-1] for byte in s).encode('ascii')  # Reverse each byte's bits
+
+def b2lsbfdecode(s):
+    """Decode the Base2LSBF encoded bytes-like object or ASCII string s.
+
+    The result is returned as a bytes object.
+    """
+    s = _bytes_from_decode_data(s)
+    if any(c not in '01' for c in s.decode('ascii')):
+        raise ValueError("Base2LSBF input must be a string of '0' and '1'.")
+    if len(s) % 8 != 0:
+        raise ValueError("Base2LSBF input length must be a multiple of 8.")
+    return bytes(int(s[i:i + 8][::-1], 2) for i in range(0, len(s), 8))
+
+
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
