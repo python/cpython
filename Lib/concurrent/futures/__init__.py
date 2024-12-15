@@ -23,11 +23,13 @@ __all__ = (
     'ALL_COMPLETED',
     'CancelledError',
     'TimeoutError',
+    'InvalidStateError',
     'BrokenExecutor',
     'Future',
     'Executor',
     'wait',
     'as_completed',
+    'InterpreterPoolExecutor',
     'ProcessPoolExecutor',
     'ThreadPoolExecutor',
 )
@@ -38,7 +40,7 @@ def __dir__():
 
 
 def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor
+    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
 
     if name == 'ProcessPoolExecutor':
         from .process import ProcessPoolExecutor as pe
@@ -50,4 +52,13 @@ def __getattr__(name):
         ThreadPoolExecutor = te
         return te
 
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    if name == 'InterpreterPoolExecutor':
+        try:
+            from .interpreter import InterpreterPoolExecutor as ie
+        except ModuleNotFoundError:
+            ie = InterpreterPoolExecutor = None
+        else:
+            InterpreterPoolExecutor = ie
+        return ie
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

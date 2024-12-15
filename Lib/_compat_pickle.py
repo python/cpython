@@ -22,7 +22,6 @@ IMPORT_MAPPING = {
     'tkMessageBox': 'tkinter.messagebox',
     'ScrolledText': 'tkinter.scrolledtext',
     'Tkconstants': 'tkinter.constants',
-    'Tix': 'tkinter.tix',
     'ttk': 'tkinter.ttk',
     'Tkinter': 'tkinter',
     'markupbase': '_markupbase',
@@ -249,3 +248,4 @@ PYTHON3_IMPORTERROR_EXCEPTIONS = (
 
 for excname in PYTHON3_IMPORTERROR_EXCEPTIONS:
     REVERSE_NAME_MAPPING[('builtins', excname)] = ('exceptions', 'ImportError')
+del excname

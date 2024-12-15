@@ -776,6 +776,18 @@ class TestRawDataManager(TestEmailBase):
             foo
             """).encode('ascii'))
 
+    def test_set_content_bytes_cte_7bit(self):
+        m = self._make_message()
+        m.set_content(b'ASCII-only message.\n',
+            maintype='application', subtype='octet-stream', cte='7bit')
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: application/octet-stream
+            Content-Transfer-Encoding: 7bit
+            MIME-Version: 1.0
+
+            ASCII-only message.
+            """))
+
     content_object_params = {
         'text_plain': ('content', ()),
         'text_html': ('content', ('html',)),

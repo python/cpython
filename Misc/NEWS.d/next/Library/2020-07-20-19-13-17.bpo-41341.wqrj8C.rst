@@ -1,1 +1,0 @@
-Recursive evaluation of `typing.ForwardRef` in `get_type_hints`.

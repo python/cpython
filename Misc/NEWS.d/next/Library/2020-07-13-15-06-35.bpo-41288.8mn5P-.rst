@@ -1,2 +1,0 @@
-Unpickling invalid NEWOBJ_EX opcode with the C implementation raises now
-UnpicklingError instead of crashing.

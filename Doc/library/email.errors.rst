@@ -1,5 +1,5 @@
-:mod:`email.errors`: Exception and Defect classes
--------------------------------------------------
+:mod:`!email.errors`: Exception and Defect classes
+--------------------------------------------------
 
 .. module:: email.errors
    :synopsis: The exception classes used by the email package.
@@ -59,6 +59,22 @@ The following exception classes are defined in the :mod:`email.errors` module:
    :class:`~email.mime.image.MIMEImage`).
 
 
+.. exception:: HeaderWriteError()
+
+   Raised when an error occurs when the :mod:`~email.generator` outputs
+   headers.
+
+
+.. exception:: MessageDefect()
+
+   This is the base class for all defects found when parsing email messages.
+   It is derived from :exc:`ValueError`.
+
+.. exception:: HeaderDefect()
+
+   This is the base class for all defects found when parsing email headers.
+   It is derived from :exc:`MessageDefect`.
+
 Here is the list of the defects that the :class:`~email.parser.FeedParser`
 can find while parsing messages.  Note that the defects are added to the message
 where the problem was found, so for example, if a message nested inside a
@@ -112,3 +128,6 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`InvalidBase64LengthDefect` -- When decoding a block of base64 encoded
   bytes, the number of non-padding base64 characters was invalid (1 more than
   a multiple of 4).  The encoded block was kept as-is.
+
+* :class:`InvalidDateDefect` -- When decoding an invalid or unparsable date field.
+  The original value is kept as-is.

@@ -4,10 +4,9 @@ import os
 import pathlib
 import sys
 import textwrap
-import tokenize
 import token
-
-from typing import Any, cast, Dict, IO, Type, Final
+import tokenize
+from typing import IO, Any, Dict, Final, Optional, Type, cast
 
 from pegen.build import compile_c_extension
 from pegen.c_generator import CParserGenerator
@@ -18,7 +17,7 @@ from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
 ALL_TOKENS = token.tok_name
-EXACT_TOKENS = token.EXACT_TOKEN_TYPES  # type: ignore
+EXACT_TOKENS = token.EXACT_TOKEN_TYPES
 NON_EXACT_TOKENS = {
     name for index, name in token.tok_name.items() if index not in EXACT_TOKENS.values()
 }
@@ -38,11 +37,11 @@ def generate_parser(grammar: Grammar) -> Type[Parser]:
 
 def run_parser(file: IO[bytes], parser_class: Type[Parser], *, verbose: bool = False) -> Any:
     # Run a parser on a file (stream).
-    tokenizer = Tokenizer(tokenize.generate_tokens(file.readline))  # type: ignore # typeshed issue #3515
+    tokenizer = Tokenizer(tokenize.generate_tokens(file.readline))  # type: ignore[arg-type] # typeshed issue #3515
     parser = parser_class(tokenizer, verbose=verbose)
     result = parser.start()
     if result is None:
-        raise parser.make_syntax_error()
+        raise parser.make_syntax_error("invalid syntax")
     return result
 
 
@@ -53,7 +52,7 @@ def parse_string(
     if dedent:
         source = textwrap.dedent(source)
     file = io.StringIO(source)
-    return run_parser(file, parser_class, verbose=verbose)  # type: ignore # typeshed issue #3515
+    return run_parser(file, parser_class, verbose=verbose)  # type: ignore[arg-type] # typeshed issue #3515
 
 
 def make_parser(source: str) -> Type[Parser]:
@@ -66,6 +65,7 @@ def import_file(full_name: str, path: str) -> Any:
     """Import a python module from a path"""
 
     spec = importlib.util.spec_from_file_location(full_name, path)
+    assert spec is not None
     mod = importlib.util.module_from_spec(spec)
 
     # We assume this is not None and has an exec_module() method.
@@ -83,7 +83,10 @@ def generate_c_parser_source(grammar: Grammar) -> str:
 
 
 def generate_parser_c_extension(
-    grammar: Grammar, path: pathlib.PurePath, debug: bool = False
+    grammar: Grammar,
+    path: pathlib.PurePath,
+    debug: bool = False,
+    library_dir: Optional[str] = None,
 ) -> Any:
     """Generate a parser c extension for the given grammar in the given path
 
@@ -101,13 +104,19 @@ def generate_parser_c_extension(
             grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
         )
         genr.generate("parse.c")
-    compile_c_extension(str(source), build_dir=str(path))
+    compile_c_extension(
+        str(source),
+        build_dir=str(path),
+        # Significant test_peg_generator speedups
+        disable_optimization=True,
+        library_dir=library_dir,
+    )
 
 
 def print_memstats() -> bool:
-    MiB: Final = 2 ** 20
+    MiB: Final = 2**20
     try:
-        import psutil  # type: ignore
+        import psutil
     except ImportError:
         return False
     print("Memory stats:")

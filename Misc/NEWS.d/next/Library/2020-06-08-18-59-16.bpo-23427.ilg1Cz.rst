@@ -1,2 +1,0 @@
-Add :data:`sys.orig_argv` attribute: the list of the original command line
-arguments passed to the Python executable.

@@ -1,2 +1,0 @@
-Changes the registered MIME type for ``.py`` files on Windows to
-``text/x-python`` instead of ``text/plain``.

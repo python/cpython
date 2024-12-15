@@ -1,2 +1,0 @@
-:func:`mimetypes.read_mime_types` function reads the rule file using UTF-8 encoding, not the locale encoding.
-Patch by Srinivas Reddy Thatiparthy.

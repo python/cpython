@@ -1,2 +1,0 @@
-Fix a hang that can arise after :meth:`generator.throw` due to a cycle
-in the exception context chain.

@@ -66,23 +66,24 @@ your system.)
 The above action would run :func:`re.compile` and print profile results like
 the following::
 
-         197 function calls (192 primitive calls) in 0.002 seconds
+         214 function calls (207 primitive calls) in 0.002 seconds
 
-   Ordered by: standard name
+   Ordered by: cumulative time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.002    0.002 {built-in method builtins.exec}
         1    0.000    0.000    0.001    0.001 <string>:1(<module>)
-        1    0.000    0.000    0.001    0.001 re.py:212(compile)
-        1    0.000    0.000    0.001    0.001 re.py:268(_compile)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:172(_compile_charset)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:201(_optimize_charset)
-        4    0.000    0.000    0.000    0.000 sre_compile.py:25(_identityfunction)
-      3/1    0.000    0.000    0.000    0.000 sre_compile.py:33(_compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:250(compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:289(_compile)
+        1    0.000    0.000    0.000    0.000 _compiler.py:759(compile)
+        1    0.000    0.000    0.000    0.000 _parser.py:937(parse)
+        1    0.000    0.000    0.000    0.000 _compiler.py:598(_code)
+        1    0.000    0.000    0.000    0.000 _parser.py:435(_parse_sub)
 
-The first line indicates that 197 calls were monitored.  Of those calls, 192
+The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: standard name``, indicates that the text string in the
-far right column was used to sort the output. The column headings include:
+next line: ``Ordered by: cumulative time`` indicates the output is sorted
+by the ``cumtime`` values. The column headings include:
 
 ncalls
    for the number of calls.
@@ -120,6 +121,8 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
+.. _profile-cli:
+
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
 profile another script.  For example::
 
@@ -132,11 +135,11 @@ the output by. This only applies when ``-o`` is not supplied.
 
 ``-m`` specifies that a module is being profiled instead of a script.
 
-   .. versionadded:: 3.7
-      Added the ``-m`` option to :mod:`cProfile`.
+.. versionadded:: 3.7
+   Added the ``-m`` option to :mod:`cProfile`.
 
-   .. versionadded:: 3.8
-      Added the ``-m`` option to :mod:`profile`.
+.. versionadded:: 3.8
+   Added the ``-m`` option to :mod:`profile`.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -231,7 +234,7 @@ functions:
 .. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
-   globals and locals dictionaries for the *command* string. This routine
+   globals and locals mappings for the *command* string. This routine
    executes::
 
       exec(command, globals, locals)
@@ -273,7 +276,7 @@ functions:
       with cProfile.Profile() as pr:
           # ... do something ...
 
-      pr.print_stats()
+          pr.print_stats()
 
    .. versionchanged:: 3.8
       Added context manager support.
@@ -295,6 +298,13 @@ functions:
 
       Create a :class:`~pstats.Stats` object based on the current
       profile and print the results to stdout.
+
+      The *sort* parameter specifies the sorting order of the displayed
+      statistics. It accepts a single key or a tuple of keys to enable
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>`.
+
+      .. versionadded:: 3.13
+         :meth:`~Profile.print_stats` now accepts a tuple of keys.
 
    .. method:: dump_stats(filename)
 
@@ -525,16 +535,16 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
 
 
-    .. method:: get_stats_profile()
+   .. method:: get_stats_profile()
 
       This method returns an instance of StatsProfile, which contains a mapping
       of function names to instances of FunctionProfile. Each FunctionProfile
       instance holds information related to the function's profile such as how
       long the function took to run, how many times it was called, etc...
 
-       .. versionadded:: 3.9
-          Added the following dataclasses: StatsProfile, FunctionProfile.
-          Added the following function: get_stats_profile.
+      .. versionadded:: 3.9
+         Added the following dataclasses: StatsProfile, FunctionProfile.
+         Added the following function: get_stats_profile.
 
 .. _deterministic-profiling:
 
@@ -622,7 +632,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
+on a 1.8Ghz Intel Core i5 running macOS, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your
@@ -672,7 +682,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    that you choose (see :ref:`profile-calibration`).  For most machines, a timer
    that returns a lone integer value will provide the best results in terms of
    low overhead during profiling.  (:func:`os.times` is *pretty* bad, as it
-   returns a tuple of floating point values).  If you want to substitute a
+   returns a tuple of floating-point values).  If you want to substitute a
    better timer in the cleanest fashion, derive a class and hardwire a
    replacement dispatch method that best handles your timer call, along with the
    appropriate calibration constant.
@@ -689,7 +699,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
    As the :class:`cProfile.Profile` class cannot be calibrated, custom timer
    functions should be used with care and should be as fast as possible.  For
    the best results with a custom timer, it might be necessary to hard-code it
-   in the C source of the internal :mod:`_lsprof` module.
+   in the C source of the internal :mod:`!_lsprof` module.
 
 Python 3.3 adds several new functions in :mod:`time` that can be used to make
 precise measurements of process or wall-clock time. For example, see

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+        
+        <PropertyRef Id="DetectTargetDir" />
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <Component Id="AppendPath_CU" Directory="InstallDirectory" Guid="*">
+                <Condition>NOT ALLUSERS=1</Condition>
+                <RegistryKey Root="HKCU" Key="[REGISTRYKEY]">
+                    <RegistryValue KeyPath="yes" Key="InstalledFeatures" Name="$(var.OptionalFeatureName)" Value="$(var.Version)" Type="string" />
+                </RegistryKey>
+                
+                <CreateFolder Directory="Scripts" />
+                <RemoveFolder Id="Remove_Scripts_CU" Directory="Scripts" On="uninstall" />
+                
+                <Environment Id="PATH_CU" Action="set" Name="PATH" Part="last" Value="[InstallDirectory]" />
+                <Environment Id="SCRIPTS_PATH_CU" Action="set" Name="PATH" Part="last" Value="[Scripts]" />
+            </Component>
+            <Component Id="AppendPath_LM" Directory="InstallDirectory" Guid="*">
+                <Condition>ALLUSERS=1</Condition>
+                <RegistryKey Root="HKLM" Key="[REGISTRYKEY]">
+                    <RegistryValue KeyPath="yes" Key="InstalledFeatures" Name="$(var.OptionalFeatureName)" Value="$(var.Version)" Type="string" />
+                </RegistryKey>
+                
+                <CreateFolder Directory="Scripts" />
+                <RemoveFolder Id="Remove_Scripts_LM" Directory="Scripts" On="uninstall" />
+                
+                <Environment Id="PATH_LM" Action="set" Name="PATH" Part="last" Value="[InstallDirectory]" System="yes" />
+                <Environment Id="SCRIPTS_PATH_LM" Action="set" Name="PATH" Part="last" Value="[Scripts]" System="yes" />
+                <Environment Id="PY_PATHEXT_LM" Action="set" Name="PATHEXT" Part="last" Value=".PY" System="yes" />
+                <Environment Id="PYW_PATHEXT_LM" Action="set" Name="PATHEXT" Part="last" Value=".PYW" System="yes" />
+            </Component>
+        </Feature>
+    </Product>
+</Wix>
+
