@@ -807,7 +807,7 @@ static int
 library_to_dict(PyObject *dict, const char *key)
 {
 #ifdef Py_ENABLE_SHARED
-    static char path[MAXPATHLEN + 1] = {0};
+    char path[MAXPATHLEN + 1] = {0};
 
 #ifdef MS_WINDOWS
     extern HMODULE PyWin_DLLhModule;
