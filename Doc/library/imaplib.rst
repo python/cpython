@@ -355,7 +355,7 @@ An :class:`IMAP4` instance has the following methods:
       Example::
 
          >>> with M.idle() as idler:
-         ...     # get next response and any others following by < 0.1 seconds
+         ...     # get a response and any others following by < 0.1 seconds
          ...     batch = list(idler.burst())
          ...     print(f'processing {len(batch)} responses...')
          ...     print(batch)
