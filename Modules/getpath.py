@@ -363,10 +363,20 @@ if not home and not py_setpath:
         venv_prefix = None
         pyvenvcfg = []
 
+    # Search for the 'home' key in pyvenv.cfg. Currently, we don't consider the
+    # presence of a pyvenv.cfg file without a 'home' key to signify the
+    # existence of a virtual environment — we quietly ignore them.
+    # XXX: If we don't find a 'home' key, we don't look for another pyvenv.cfg!
     for line in pyvenvcfg:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
+            # Override executable_dir/real_executable_dir with the value from 'home'.
+            # These values may be later used to calculate prefix/base_prefix, if a more
+            # reliable source — like the runtime library (libpython) path — isn't available.
             executable_dir = real_executable_dir = value.strip()
+            # If base_executable — which points to the Python interpreted from
+            # the base installation — isn't set (eg. when embedded), try to find
+            # it in 'home'.
             if not base_executable:
                 # First try to resolve symlinked executables, since that may be
                 # more accurate than assuming the executable in 'home'.
@@ -400,6 +410,7 @@ if not home and not py_setpath:
                                 break
             break
     else:
+        # We didn't find a 'home' key in pyvenv.cfg (no break), reset venv_prefix.
         venv_prefix = None
 
 
