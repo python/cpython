@@ -807,7 +807,6 @@ static int
 library_to_dict(PyObject *dict, const char *key)
 {
 #ifdef Py_ENABLE_SHARED
-    char path[MAXPATHLEN + 1];
 
 #ifdef MS_WINDOWS
     extern HMODULE PyWin_DLLhModule;
@@ -817,6 +816,7 @@ library_to_dict(PyObject *dict, const char *key)
 #endif
 
 #if HAVE_DLADDR
+    char path[MAXPATHLEN + 1];
     Dl_info libpython_info;
     if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
         strncpy(path, libpython_info.dli_fname, MAXPATHLEN);
