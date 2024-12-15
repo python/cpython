@@ -1,0 +1,3 @@
+Updated documentation for :mod:`socketserver` to clarify the differences
+between :class:`socketserver.BaseServer` and
+:class:`socketserver.TCPServer`.
