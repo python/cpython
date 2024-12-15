@@ -385,7 +385,7 @@ caller(void)
 }
 
 static PyObject *
-typevartuple_unpack(PyObject *tvt)
+unpack(PyObject *self)
 {
     PyObject *typing = PyImport_ImportModule("typing");
     if (typing == NULL) {
@@ -396,7 +396,7 @@ typevartuple_unpack(PyObject *tvt)
         Py_DECREF(typing);
         return NULL;
     }
-    PyObject *unpacked = PyObject_GetItem(unpack, tvt);
+    PyObject *unpacked = PyObject_GetItem(unpack, self);
     Py_DECREF(typing);
     Py_DECREF(unpack);
     return unpacked;
@@ -431,7 +431,7 @@ unpack_typevartuples(PyObject *params)
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
             if (Py_IS_TYPE(param, tp)) {
-                PyObject *unpacked = typevartuple_unpack(param);
+                PyObject *unpacked = unpack(param);
                 if (unpacked == NULL) {
                     Py_DECREF(new_params);
                     return NULL;
@@ -1505,9 +1505,9 @@ typevartuple_dealloc(PyObject *self)
 }
 
 static PyObject *
-typevartuple_iter(PyObject *self)
+unpack_iter(PyObject *self)
 {
-    PyObject *unpacked = typevartuple_unpack(self);
+    PyObject *unpacked = unpack(self);
     if (unpacked == NULL) {
         return NULL;
     }
@@ -1760,7 +1760,7 @@ PyType_Slot typevartuple_slots[] = {
     {Py_tp_methods, typevartuple_methods},
     {Py_tp_getset, typevartuple_getset},
     {Py_tp_new, typevartuple},
-    {Py_tp_iter, typevartuple_iter},
+    {Py_tp_iter, unpack_iter},
     {Py_tp_repr, typevartuple_repr},
     {Py_tp_dealloc, typevartuple_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
@@ -2134,6 +2134,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_new = typealias_new,
     .tp_free = PyObject_GC_Del,
     .tp_traverse = (traverseproc)typealias_traverse,
+    .tp_iter = unpack_iter,
     .tp_clear = (inquiry)typealias_clear,
     .tp_repr = typealias_repr,
     .tp_as_number = &typealias_as_number,
