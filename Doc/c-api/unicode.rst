@@ -1035,11 +1035,11 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
-   .. note::
+   .. warning::
 
-      This function does not handle null bytes within the unicode object. As a result, the length of the
-      returned string (from ``strlen()``) could be smaller than the length of the
-      passed unicode object, if the string contained embedded null characters. When handling user input,
+      This function does not handle null bytes within the unicode object.
+      As a result, the length of the returned string could be interpreted as
+      smaller than the length of *unicode*. When handling user input,
       it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize` instead.
 
    .. versionadded:: 3.3
