@@ -28,6 +28,8 @@ from tkinter import _get_temp_root, _destroy_temp_root
 from tkinter import messagebox
 from tkinter.constants import ACTIVE, BOTH, END, LEFT, RIDGE, W, E
 
+__all__ = ["SimpleDialog", "Dialog", "askinteger", "askfloat", "askstring"]
+
 
 class SimpleDialog:
 
