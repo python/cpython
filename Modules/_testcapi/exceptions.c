@@ -4,8 +4,6 @@
 #include "parts.h"
 #include "util.h"
 
-#include "pycore_pyerrors.h"
-
 #include "clinic/exceptions.c.h"
 
 
@@ -156,7 +154,6 @@ _testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
     PyErr_SetString(exc, value);
     return NULL;
 }
-
 
 /*[clinic input]
 _testcapi.err_setfromerrnowithfilename
