@@ -5700,6 +5700,12 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
     // This pointer is invalidated by PyType_Modified (see the comment on
     // struct _specialization_cache):
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_HasDeferredRefcount(func)) {
+        ret = -1;
+        goto end;
+    }
+#endif
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
     if (!_PyFunction_IsVersionValid(version)) {
         ret = -1;
