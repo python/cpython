@@ -5701,7 +5701,7 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
     // struct _specialization_cache):
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
 #ifdef Py_GIL_DISABLED
-    if (!_PyObject_HasDeferredRefcount(func)) {
+    if (!_PyObject_HasDeferredRefcount(descriptor)) {
         ret = -1;
         goto end;
     }
