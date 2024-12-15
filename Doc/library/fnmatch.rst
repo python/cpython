@@ -91,7 +91,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
    It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
    but implemented more efficiently.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. function:: translate(pat)
