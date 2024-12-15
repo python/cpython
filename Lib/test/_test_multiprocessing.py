@@ -6044,6 +6044,21 @@ class TestResourceTracker(unittest.TestCase):
                 self._test_resource_tracker_leak_resources(
                     cleanup=cleanup,
                 )
+    @unittest.skipUnless(hasattr(signal, "pthread_sigmask"), "pthread_sigmask is not available")
+    def test_resource_tracker_blocked_signals(self):
+        #
+        # gh-127586: Check that resource_tracker does not override blocked signals of caller.
+        #
+        from multiprocessing.resource_tracker import ResourceTracker
+        signals = {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1}
+
+        for sig in signals:
+            signal.pthread_sigmask(signal.SIG_SETMASK, {sig})
+            self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+            tracker = ResourceTracker()
+            tracker.ensure_running()
+            self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+            tracker._stop()
 
 class TestSimpleQueue(unittest.TestCase):
 

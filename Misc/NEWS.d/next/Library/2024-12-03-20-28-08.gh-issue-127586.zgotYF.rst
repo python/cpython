@@ -1,0 +1,3 @@
+:class:`multiprocessing.pool.Pool` now properly restores blocked signal handlers
+of the parent thread when creating processes via either *spawn* or
+*forkserver*.
