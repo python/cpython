@@ -492,5 +492,14 @@ class TestModuleAll(unittest.TestCase):
         support.check__all__(self, util['Source'], extra=extra)
 
 
+class TestDeprecations(unittest.TestCase):
+    def test_machinery_deprecated_constants(self):
+        from importlib import machinery
+        for attr in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES'):
+            with self.subTest(attr=attr):
+                with self.assertWarns(DeprecationWarning):
+                    getattr(machinery, attr)
+
+
 if __name__ == '__main__':
     unittest.main()
