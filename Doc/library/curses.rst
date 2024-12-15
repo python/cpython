@@ -1,5 +1,5 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
@@ -20,6 +20,8 @@ While curses is most widely used in the Unix environment, versions are available
 for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. note::
 
@@ -107,7 +109,7 @@ The module :mod:`curses` defines the following functions:
    Return the attribute value for displaying text in the specified color pair.
    Only the first 256 color pairs are supported. This
    attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`A_\*` attributes.  :func:`pair_number` is the counterpart
+   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
    to this function.
 
 
@@ -223,7 +225,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getwin(file)
 
-   Read window related data stored in the file by an earlier :func:`putwin` call.
+   Read window related data stored in the file by an earlier :func:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
    the new window object.
 
@@ -641,7 +643,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: update_lines_cols()
 
-   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
 
    .. versionadded:: 3.5
 
@@ -921,7 +924,7 @@ the following methods and attributes:
 
 .. method:: window.getbegyx()
 
-   Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
 
 
 .. method:: window.getbkgd()
@@ -1323,9 +1326,9 @@ The :mod:`curses` module defines the following data members:
 
 
 .. data:: version
+.. data:: __version__
 
-   A bytes object representing the current version of the module.  Also available as
-   :const:`__version__`.
+   A bytes object representing the current version of the module.
 
 
 .. data:: ncurses_version
@@ -1339,51 +1342,72 @@ The :mod:`curses` module defines the following data members:
 
    .. versionadded:: 3.8
 
+.. data:: COLORS
+
+   The maximum number of colors the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLOR_PAIRS
+
+   The maximum number of color pairs the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLS
+
+   The width of the screen, i.e., the number of columns.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
+.. data:: LINES
+
+   The height of the screen, i.e., the number of lines.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
 
-+------------------+-------------------------------+
-| Attribute        | Meaning                       |
-+==================+===============================+
-| ``A_ALTCHARSET`` | Alternate character set mode  |
-+------------------+-------------------------------+
-| ``A_BLINK``      | Blink mode                    |
-+------------------+-------------------------------+
-| ``A_BOLD``       | Bold mode                     |
-+------------------+-------------------------------+
-| ``A_DIM``        | Dim mode                      |
-+------------------+-------------------------------+
-| ``A_INVIS``      | Invisible or blank mode       |
-+------------------+-------------------------------+
-| ``A_ITALIC``     | Italic mode                   |
-+------------------+-------------------------------+
-| ``A_NORMAL``     | Normal attribute              |
-+------------------+-------------------------------+
-| ``A_PROTECT``    | Protected mode                |
-+------------------+-------------------------------+
-| ``A_REVERSE``    | Reverse background and        |
-|                  | foreground colors             |
-+------------------+-------------------------------+
-| ``A_STANDOUT``   | Standout mode                 |
-+------------------+-------------------------------+
-| ``A_UNDERLINE``  | Underline mode                |
-+------------------+-------------------------------+
-| ``A_HORIZONTAL`` | Horizontal highlight          |
-+------------------+-------------------------------+
-| ``A_LEFT``       | Left highlight                |
-+------------------+-------------------------------+
-| ``A_LOW``        | Low highlight                 |
-+------------------+-------------------------------+
-| ``A_RIGHT``      | Right highlight               |
-+------------------+-------------------------------+
-| ``A_TOP``        | Top highlight                 |
-+------------------+-------------------------------+
-| ``A_VERTICAL``   | Vertical highlight            |
-+------------------+-------------------------------+
-| ``A_CHARTEXT``   | Bit-mask to extract a         |
-|                  | character                     |
-+------------------+-------------------------------+
++------------------------+-------------------------------+
+| Attribute              | Meaning                       |
++========================+===============================+
+| .. data:: A_ALTCHARSET | Alternate character set mode  |
++------------------------+-------------------------------+
+| .. data:: A_BLINK      | Blink mode                    |
++------------------------+-------------------------------+
+| .. data:: A_BOLD       | Bold mode                     |
++------------------------+-------------------------------+
+| .. data:: A_DIM        | Dim mode                      |
++------------------------+-------------------------------+
+| .. data:: A_INVIS      | Invisible or blank mode       |
++------------------------+-------------------------------+
+| .. data:: A_ITALIC     | Italic mode                   |
++------------------------+-------------------------------+
+| .. data:: A_NORMAL     | Normal attribute              |
++------------------------+-------------------------------+
+| .. data:: A_PROTECT    | Protected mode                |
++------------------------+-------------------------------+
+| .. data:: A_REVERSE    | Reverse background and        |
+|                        | foreground colors             |
++------------------------+-------------------------------+
+| .. data:: A_STANDOUT   | Standout mode                 |
++------------------------+-------------------------------+
+| .. data:: A_UNDERLINE  | Underline mode                |
++------------------------+-------------------------------+
+| .. data:: A_HORIZONTAL | Horizontal highlight          |
++------------------------+-------------------------------+
+| .. data:: A_LEFT       | Left highlight                |
++------------------------+-------------------------------+
+| .. data:: A_LOW        | Low highlight                 |
++------------------------+-------------------------------+
+| .. data:: A_RIGHT      | Right highlight               |
++------------------------+-------------------------------+
+| .. data:: A_TOP        | Top highlight                 |
++------------------------+-------------------------------+
+| .. data:: A_VERTICAL   | Vertical highlight            |
++------------------------+-------------------------------+
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
@@ -1391,220 +1415,220 @@ The exact constants available are system dependent.
 Several constants are available to extract corresponding attributes returned
 by some methods.
 
-+------------------+-------------------------------+
-| Bit-mask         | Meaning                       |
-+==================+===============================+
-| ``A_ATTRIBUTES`` | Bit-mask to extract           |
-|                  | attributes                    |
-+------------------+-------------------------------+
-| ``A_CHARTEXT``   | Bit-mask to extract a         |
-|                  | character                     |
-+------------------+-------------------------------+
-| ``A_COLOR``      | Bit-mask to extract           |
-|                  | color-pair field information  |
-+------------------+-------------------------------+
++-------------------------+-------------------------------+
+| Bit-mask                | Meaning                       |
++=========================+===============================+
+|  .. data:: A_ATTRIBUTES | Bit-mask to extract           |
+|                         | attributes                    |
++-------------------------+-------------------------------+
+|  .. data:: A_CHARTEXT   | Bit-mask to extract a         |
+|                         | character                     |
++-------------------------+-------------------------------+
+|  .. data:: A_COLOR      | Bit-mask to extract           |
+|                         | color-pair field information  |
++-------------------------+-------------------------------+
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
 
 .. XXX this table is far too large! should it be alphabetized?
 
-+-------------------+--------------------------------------------+
-| Key constant      | Key                                        |
-+===================+============================================+
-| ``KEY_MIN``       | Minimum key value                          |
-+-------------------+--------------------------------------------+
-| ``KEY_BREAK``     | Break key (unreliable)                     |
-+-------------------+--------------------------------------------+
-| ``KEY_DOWN``      | Down-arrow                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_UP``        | Up-arrow                                   |
-+-------------------+--------------------------------------------+
-| ``KEY_LEFT``      | Left-arrow                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_RIGHT``     | Right-arrow                                |
-+-------------------+--------------------------------------------+
-| ``KEY_HOME``      | Home key (upward+left arrow)               |
-+-------------------+--------------------------------------------+
-| ``KEY_BACKSPACE`` | Backspace (unreliable)                     |
-+-------------------+--------------------------------------------+
-| ``KEY_F0``        | Function keys.  Up to 64 function keys are |
-|                   | supported.                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_Fn``        | Value of function key *n*                  |
-+-------------------+--------------------------------------------+
-| ``KEY_DL``        | Delete line                                |
-+-------------------+--------------------------------------------+
-| ``KEY_IL``        | Insert line                                |
-+-------------------+--------------------------------------------+
-| ``KEY_DC``        | Delete character                           |
-+-------------------+--------------------------------------------+
-| ``KEY_IC``        | Insert char or enter insert mode           |
-+-------------------+--------------------------------------------+
-| ``KEY_EIC``       | Exit insert char mode                      |
-+-------------------+--------------------------------------------+
-| ``KEY_CLEAR``     | Clear screen                               |
-+-------------------+--------------------------------------------+
-| ``KEY_EOS``       | Clear to end of screen                     |
-+-------------------+--------------------------------------------+
-| ``KEY_EOL``       | Clear to end of line                       |
-+-------------------+--------------------------------------------+
-| ``KEY_SF``        | Scroll 1 line forward                      |
-+-------------------+--------------------------------------------+
-| ``KEY_SR``        | Scroll 1 line backward (reverse)           |
-+-------------------+--------------------------------------------+
-| ``KEY_NPAGE``     | Next page                                  |
-+-------------------+--------------------------------------------+
-| ``KEY_PPAGE``     | Previous page                              |
-+-------------------+--------------------------------------------+
-| ``KEY_STAB``      | Set tab                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_CTAB``      | Clear tab                                  |
-+-------------------+--------------------------------------------+
-| ``KEY_CATAB``     | Clear all tabs                             |
-+-------------------+--------------------------------------------+
-| ``KEY_ENTER``     | Enter or send (unreliable)                 |
-+-------------------+--------------------------------------------+
-| ``KEY_SRESET``    | Soft (partial) reset (unreliable)          |
-+-------------------+--------------------------------------------+
-| ``KEY_RESET``     | Reset or hard reset (unreliable)           |
-+-------------------+--------------------------------------------+
-| ``KEY_PRINT``     | Print                                      |
-+-------------------+--------------------------------------------+
-| ``KEY_LL``        | Home down or bottom (lower left)           |
-+-------------------+--------------------------------------------+
-| ``KEY_A1``        | Upper left of keypad                       |
-+-------------------+--------------------------------------------+
-| ``KEY_A3``        | Upper right of keypad                      |
-+-------------------+--------------------------------------------+
-| ``KEY_B2``        | Center of keypad                           |
-+-------------------+--------------------------------------------+
-| ``KEY_C1``        | Lower left of keypad                       |
-+-------------------+--------------------------------------------+
-| ``KEY_C3``        | Lower right of keypad                      |
-+-------------------+--------------------------------------------+
-| ``KEY_BTAB``      | Back tab                                   |
-+-------------------+--------------------------------------------+
-| ``KEY_BEG``       | Beg (beginning)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_CANCEL``    | Cancel                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_CLOSE``     | Close                                      |
-+-------------------+--------------------------------------------+
-| ``KEY_COMMAND``   | Cmd (command)                              |
-+-------------------+--------------------------------------------+
-| ``KEY_COPY``      | Copy                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_CREATE``    | Create                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_END``       | End                                        |
-+-------------------+--------------------------------------------+
-| ``KEY_EXIT``      | Exit                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_FIND``      | Find                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_HELP``      | Help                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MARK``      | Mark                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MESSAGE``   | Message                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_MOVE``      | Move                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_NEXT``      | Next                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_OPEN``      | Open                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_OPTIONS``   | Options                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_PREVIOUS``  | Prev (previous)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_REDO``      | Redo                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_REFERENCE`` | Ref (reference)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_REFRESH``   | Refresh                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_REPLACE``   | Replace                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_RESTART``   | Restart                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_RESUME``    | Resume                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_SAVE``      | Save                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_SBEG``      | Shifted Beg (beginning)                    |
-+-------------------+--------------------------------------------+
-| ``KEY_SCANCEL``   | Shifted Cancel                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SCOMMAND``  | Shifted Command                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SCOPY``     | Shifted Copy                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SCREATE``   | Shifted Create                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SDC``       | Shifted Delete char                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SDL``       | Shifted Delete line                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SELECT``    | Select                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_SEND``      | Shifted End                                |
-+-------------------+--------------------------------------------+
-| ``KEY_SEOL``      | Shifted Clear line                         |
-+-------------------+--------------------------------------------+
-| ``KEY_SEXIT``     | Shifted Exit                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SFIND``     | Shifted Find                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SHELP``     | Shifted Help                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SHOME``     | Shifted Home                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SIC``       | Shifted Input                              |
-+-------------------+--------------------------------------------+
-| ``KEY_SLEFT``     | Shifted Left arrow                         |
-+-------------------+--------------------------------------------+
-| ``KEY_SMESSAGE``  | Shifted Message                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SMOVE``     | Shifted Move                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SNEXT``     | Shifted Next                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SOPTIONS``  | Shifted Options                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SPREVIOUS`` | Shifted Prev                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SPRINT``    | Shifted Print                              |
-+-------------------+--------------------------------------------+
-| ``KEY_SREDO``     | Shifted Redo                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SREPLACE``  | Shifted Replace                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SRIGHT``    | Shifted Right arrow                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SRSUME``    | Shifted Resume                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SSAVE``     | Shifted Save                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SSUSPEND``  | Shifted Suspend                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SUNDO``     | Shifted Undo                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SUSPEND``   | Suspend                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_UNDO``      | Undo                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MOUSE``     | Mouse event has occurred                   |
-+-------------------+--------------------------------------------+
-| ``KEY_RESIZE``    | Terminal resize event                      |
-+-------------------+--------------------------------------------+
-| ``KEY_MAX``       | Maximum key value                          |
-+-------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| Key constant            | Key                                        |
++=========================+============================================+
+| .. data:: KEY_MIN       | Minimum key value                          |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BREAK     | Break key (unreliable)                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DOWN      | Down-arrow                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_UP        | Up-arrow                                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_LEFT      | Left-arrow                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RIGHT     | Right-arrow                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_HOME      | Home key (upward+left arrow)               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BACKSPACE | Backspace (unreliable)                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_F0        | Function keys.  Up to 64 function keys are |
+|                         | supported.                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_Fn        | Value of function key *n*                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DL        | Delete line                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_IL        | Insert line                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DC        | Delete character                           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_IC        | Insert char or enter insert mode           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EIC       | Exit insert char mode                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CLEAR     | Clear screen                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EOS       | Clear to end of screen                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EOL       | Clear to end of line                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SF        | Scroll 1 line forward                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SR        | Scroll 1 line backward (reverse)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_NPAGE     | Next page                                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PPAGE     | Previous page                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_STAB      | Set tab                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CTAB      | Clear tab                                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CATAB     | Clear all tabs                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_ENTER     | Enter or send (unreliable)                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRESET    | Soft (partial) reset (unreliable)          |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESET     | Reset or hard reset (unreliable)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PRINT     | Print                                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_LL        | Home down or bottom (lower left)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_A1        | Upper left of keypad                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_A3        | Upper right of keypad                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_B2        | Center of keypad                           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_C1        | Lower left of keypad                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_C3        | Lower right of keypad                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BTAB      | Back tab                                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BEG       | Beg (beginning)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CANCEL    | Cancel                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CLOSE     | Close                                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_COMMAND   | Cmd (command)                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_COPY      | Copy                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CREATE    | Create                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_END       | End                                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EXIT      | Exit                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_FIND      | Find                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_HELP      | Help                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MARK      | Mark                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MESSAGE   | Message                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MOVE      | Move                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_NEXT      | Next                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_OPEN      | Open                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_OPTIONS   | Options                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PREVIOUS  | Prev (previous)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REDO      | Redo                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REFERENCE | Ref (reference)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REFRESH   | Refresh                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REPLACE   | Replace                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESTART   | Restart                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESUME    | Resume                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SAVE      | Save                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SBEG      | Shifted Beg (beginning)                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCANCEL   | Shifted Cancel                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCOMMAND  | Shifted Command                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCOPY     | Shifted Copy                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCREATE   | Shifted Create                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SDC       | Shifted Delete char                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SDL       | Shifted Delete line                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SELECT    | Select                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEND      | Shifted End                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEOL      | Shifted Clear line                         |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEXIT     | Shifted Exit                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SFIND     | Shifted Find                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SHELP     | Shifted Help                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SHOME     | Shifted Home                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SIC       | Shifted Input                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SLEFT     | Shifted Left arrow                         |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SMESSAGE  | Shifted Message                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SMOVE     | Shifted Move                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SNEXT     | Shifted Next                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SOPTIONS  | Shifted Options                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SPREVIOUS | Shifted Prev                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SPRINT    | Shifted Print                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SREDO     | Shifted Redo                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SREPLACE  | Shifted Replace                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRIGHT    | Shifted Right arrow                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRSUME    | Shifted Resume                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SSAVE     | Shifted Save                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SSUSPEND  | Shifted Suspend                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SUNDO     | Shifted Undo                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SUSPEND   | Suspend                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_UNDO      | Undo                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MOUSE     | Mouse event has occurred                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESIZE    | Terminal resize event                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MAX       | Maximum key value                          |
++-------------------------+--------------------------------------------+
 
 On VT100s and their software emulations, such as X terminal emulators, there are
-normally at least four function keys (:const:`KEY_F1`, :const:`KEY_F2`,
-:const:`KEY_F3`, :const:`KEY_F4`) available, and the arrow keys mapped to
+normally at least four function keys (:const:`KEY_F1 <KEY_Fn>`, :const:`KEY_F2 <KEY_Fn>`,
+:const:`KEY_F3 <KEY_Fn>`, :const:`KEY_F4 <KEY_Fn>`) available, and the arrow keys mapped to
 :const:`KEY_UP`, :const:`KEY_DOWN`, :const:`KEY_LEFT` and :const:`KEY_RIGHT` in
 the obvious way.  If your machine has a PC keyboard, it is safe to expect arrow
 keys and twelve function keys (older PC keyboards may have only ten function
@@ -1626,6 +1650,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
@@ -1635,117 +1661,143 @@ falls back on a crude printable ASCII approximation.
 
    These are available only after :func:`initscr` has  been called.
 
-+------------------+------------------------------------------+
-| ACS code         | Meaning                                  |
-+==================+==========================================+
-| ``ACS_BBSS``     | alternate name for upper right corner    |
-+------------------+------------------------------------------+
-| ``ACS_BLOCK``    | solid square block                       |
-+------------------+------------------------------------------+
-| ``ACS_BOARD``    | board of squares                         |
-+------------------+------------------------------------------+
-| ``ACS_BSBS``     | alternate name for horizontal line       |
-+------------------+------------------------------------------+
-| ``ACS_BSSB``     | alternate name for upper left corner     |
-+------------------+------------------------------------------+
-| ``ACS_BSSS``     | alternate name for top tee               |
-+------------------+------------------------------------------+
-| ``ACS_BTEE``     | bottom tee                               |
-+------------------+------------------------------------------+
-| ``ACS_BULLET``   | bullet                                   |
-+------------------+------------------------------------------+
-| ``ACS_CKBOARD``  | checker board (stipple)                  |
-+------------------+------------------------------------------+
-| ``ACS_DARROW``   | arrow pointing down                      |
-+------------------+------------------------------------------+
-| ``ACS_DEGREE``   | degree symbol                            |
-+------------------+------------------------------------------+
-| ``ACS_DIAMOND``  | diamond                                  |
-+------------------+------------------------------------------+
-| ``ACS_GEQUAL``   | greater-than-or-equal-to                 |
-+------------------+------------------------------------------+
-| ``ACS_HLINE``    | horizontal line                          |
-+------------------+------------------------------------------+
-| ``ACS_LANTERN``  | lantern symbol                           |
-+------------------+------------------------------------------+
-| ``ACS_LARROW``   | left arrow                               |
-+------------------+------------------------------------------+
-| ``ACS_LEQUAL``   | less-than-or-equal-to                    |
-+------------------+------------------------------------------+
-| ``ACS_LLCORNER`` | lower left-hand corner                   |
-+------------------+------------------------------------------+
-| ``ACS_LRCORNER`` | lower right-hand corner                  |
-+------------------+------------------------------------------+
-| ``ACS_LTEE``     | left tee                                 |
-+------------------+------------------------------------------+
-| ``ACS_NEQUAL``   | not-equal sign                           |
-+------------------+------------------------------------------+
-| ``ACS_PI``       | letter pi                                |
-+------------------+------------------------------------------+
-| ``ACS_PLMINUS``  | plus-or-minus sign                       |
-+------------------+------------------------------------------+
-| ``ACS_PLUS``     | big plus sign                            |
-+------------------+------------------------------------------+
-| ``ACS_RARROW``   | right arrow                              |
-+------------------+------------------------------------------+
-| ``ACS_RTEE``     | right tee                                |
-+------------------+------------------------------------------+
-| ``ACS_S1``       | scan line 1                              |
-+------------------+------------------------------------------+
-| ``ACS_S3``       | scan line 3                              |
-+------------------+------------------------------------------+
-| ``ACS_S7``       | scan line 7                              |
-+------------------+------------------------------------------+
-| ``ACS_S9``       | scan line 9                              |
-+------------------+------------------------------------------+
-| ``ACS_SBBS``     | alternate name for lower right corner    |
-+------------------+------------------------------------------+
-| ``ACS_SBSB``     | alternate name for vertical line         |
-+------------------+------------------------------------------+
-| ``ACS_SBSS``     | alternate name for right tee             |
-+------------------+------------------------------------------+
-| ``ACS_SSBB``     | alternate name for lower left corner     |
-+------------------+------------------------------------------+
-| ``ACS_SSBS``     | alternate name for bottom tee            |
-+------------------+------------------------------------------+
-| ``ACS_SSSB``     | alternate name for left tee              |
-+------------------+------------------------------------------+
-| ``ACS_SSSS``     | alternate name for crossover or big plus |
-+------------------+------------------------------------------+
-| ``ACS_STERLING`` | pound sterling                           |
-+------------------+------------------------------------------+
-| ``ACS_TTEE``     | top tee                                  |
-+------------------+------------------------------------------+
-| ``ACS_UARROW``   | up arrow                                 |
-+------------------+------------------------------------------+
-| ``ACS_ULCORNER`` | upper left corner                        |
-+------------------+------------------------------------------+
-| ``ACS_URCORNER`` | upper right corner                       |
-+------------------+------------------------------------------+
-| ``ACS_VLINE``    | vertical line                            |
-+------------------+------------------------------------------+
++------------------------+------------------------------------------+
+| ACS code               | Meaning                                  |
++========================+==========================================+
+| .. data:: ACS_BBSS     | alternate name for upper right corner    |
++------------------------+------------------------------------------+
+| .. data:: ACS_BLOCK    | solid square block                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_BOARD    | board of squares                         |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSBS     | alternate name for horizontal line       |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSSB     | alternate name for upper left corner     |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSSS     | alternate name for top tee               |
++------------------------+------------------------------------------+
+| .. data:: ACS_BTEE     | bottom tee                               |
++------------------------+------------------------------------------+
+| .. data:: ACS_BULLET   | bullet                                   |
++------------------------+------------------------------------------+
+| .. data:: ACS_CKBOARD  | checker board (stipple)                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_DARROW   | arrow pointing down                      |
++------------------------+------------------------------------------+
+| .. data:: ACS_DEGREE   | degree symbol                            |
++------------------------+------------------------------------------+
+| .. data:: ACS_DIAMOND  | diamond                                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_GEQUAL   | greater-than-or-equal-to                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_HLINE    | horizontal line                          |
++------------------------+------------------------------------------+
+| .. data:: ACS_LANTERN  | lantern symbol                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_LARROW   | left arrow                               |
++------------------------+------------------------------------------+
+| .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
++------------------------+------------------------------------------+
+| .. data:: ACS_LLCORNER | lower left-hand corner                   |
++------------------------+------------------------------------------+
+| .. data:: ACS_LRCORNER | lower right-hand corner                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_LTEE     | left tee                                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_NEQUAL   | not-equal sign                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_PI       | letter pi                                |
++------------------------+------------------------------------------+
+| .. data:: ACS_PLMINUS  | plus-or-minus sign                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_PLUS     | big plus sign                            |
++------------------------+------------------------------------------+
+| .. data:: ACS_RARROW   | right arrow                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_RTEE     | right tee                                |
++------------------------+------------------------------------------+
+| .. data:: ACS_S1       | scan line 1                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S3       | scan line 3                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S7       | scan line 7                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S9       | scan line 9                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBBS     | alternate name for lower right corner    |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBSB     | alternate name for vertical line         |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBSS     | alternate name for right tee             |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSBB     | alternate name for lower left corner     |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSBS     | alternate name for bottom tee            |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSSB     | alternate name for left tee              |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSSS     | alternate name for crossover or big plus |
++------------------------+------------------------------------------+
+| .. data:: ACS_STERLING | pound sterling                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_TTEE     | top tee                                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_UARROW   | up arrow                                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_ULCORNER | upper left corner                        |
++------------------------+------------------------------------------+
+| .. data:: ACS_URCORNER | upper right corner                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_VLINE    | vertical line                            |
++------------------------+------------------------------------------+
+
+The following table lists mouse button constants used by :meth:`getmouse`:
+
++----------------------------------+---------------------------------------------+
+| Mouse button constant            | Meaning                                     |
++==================================+=============================================+
+| .. data:: BUTTONn_PRESSED        | Mouse button *n* pressed                    |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_RELEASED       | Mouse button *n* released                   |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_CLICKED        | Mouse button *n* clicked                    |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_DOUBLE_CLICKED | Mouse button *n* double clicked             |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_TRIPLE_CLICKED | Mouse button *n* triple clicked             |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_SHIFT           | Shift was down during button state change   |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_CTRL            | Control was down during button state change |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_ALT             | Control was down during button state change |
++----------------------------------+---------------------------------------------+
+
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 
-+-------------------+----------------------------+
-| Constant          | Color                      |
-+===================+============================+
-| ``COLOR_BLACK``   | Black                      |
-+-------------------+----------------------------+
-| ``COLOR_BLUE``    | Blue                       |
-+-------------------+----------------------------+
-| ``COLOR_CYAN``    | Cyan (light greenish blue) |
-+-------------------+----------------------------+
-| ``COLOR_GREEN``   | Green                      |
-+-------------------+----------------------------+
-| ``COLOR_MAGENTA`` | Magenta (purplish red)     |
-+-------------------+----------------------------+
-| ``COLOR_RED``     | Red                        |
-+-------------------+----------------------------+
-| ``COLOR_WHITE``   | White                      |
-+-------------------+----------------------------+
-| ``COLOR_YELLOW``  | Yellow                     |
-+-------------------+----------------------------+
++-------------------------+----------------------------+
+| Constant                | Color                      |
++=========================+============================+
+| .. data:: COLOR_BLACK   | Black                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_BLUE    | Blue                       |
++-------------------------+----------------------------+
+| .. data:: COLOR_CYAN    | Cyan (light greenish blue) |
++-------------------------+----------------------------+
+| .. data:: COLOR_GREEN   | Green                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_MAGENTA | Magenta (purplish red)     |
++-------------------------+----------------------------+
+| .. data:: COLOR_RED     | Red                        |
++-------------------------+----------------------------+
+| .. data:: COLOR_WHITE   | White                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_YELLOW  | Yellow                     |
++-------------------------+----------------------------+
 
 
 :mod:`curses.textpad` --- Text input widget for curses programs
@@ -1851,19 +1903,19 @@ You can instantiate a :class:`Textbox` object as follows:
       Move operations do nothing if the cursor is at an edge where the movement
       is not possible.  The following synonyms are supported where possible:
 
-      +------------------------+------------------+
-      | Constant               | Keystroke        |
-      +========================+==================+
-      | :const:`KEY_LEFT`      | :kbd:`Control-B` |
-      +------------------------+------------------+
-      | :const:`KEY_RIGHT`     | :kbd:`Control-F` |
-      +------------------------+------------------+
-      | :const:`KEY_UP`        | :kbd:`Control-P` |
-      +------------------------+------------------+
-      | :const:`KEY_DOWN`      | :kbd:`Control-N` |
-      +------------------------+------------------+
-      | :const:`KEY_BACKSPACE` | :kbd:`Control-h` |
-      +------------------------+------------------+
+      +--------------------------------+------------------+
+      | Constant                       | Keystroke        |
+      +================================+==================+
+      | :const:`~curses.KEY_LEFT`      | :kbd:`Control-B` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_RIGHT`     | :kbd:`Control-F` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_UP`        | :kbd:`Control-P` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_DOWN`      | :kbd:`Control-N` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_BACKSPACE` | :kbd:`Control-h` |
+      +--------------------------------+------------------+
 
       All other keystrokes are treated as a command to insert the given
       character and move right (with line wrapping).

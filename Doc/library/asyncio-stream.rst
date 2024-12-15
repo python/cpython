@@ -77,8 +77,8 @@ and work with streams:
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.8
-      Added *happy_eyeballs_delay* and *interleave* parameters.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -92,7 +92,8 @@ and work with streams:
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
-                          reuse_port=None, ssl_handshake_timeout=None, \
+                          reuse_port=None, keep_alive=None, \
+                          ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, start_serving=True)
 
    Start a socket server.
@@ -128,6 +129,9 @@ and work with streams:
    .. versionchanged:: 3.11
       Added the *ssl_shutdown_timeout* parameter.
 
+   .. versionchanged:: 3.13
+      Added the *keep_alive* parameter.
+
 
 .. rubric:: Unix Sockets
 
@@ -157,8 +161,8 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
-  .. versionchanged:: 3.11
-     Added the *ssl_shutdown_timeout* parameter.
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -204,13 +208,25 @@ StreamReader
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
+
    .. coroutinemethod:: read(n=-1)
 
-      Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
-      read until EOF and return all read bytes.
+      Read up to *n* bytes from the stream.
 
+      If *n* is not provided or set to ``-1``,
+      read until EOF, then return all read :class:`bytes`.
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
+
+      If *n* is ``0``, return an empty ``bytes`` object immediately.
+
+      If *n* is positive, return at most *n* available ``bytes``
+      as soon as at least 1 byte is available in the internal buffer.
+      If EOF is received before any byte is read, return an empty
+      ``bytes`` object.
 
    .. coroutinemethod:: readline()
 
@@ -248,7 +264,18 @@ StreamReader
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
+      The *separator* may also be a tuple of separators. In this
+      case the return value will be the shortest possible that has any
+      separator as the suffix. For the purposes of :exc:`LimitOverrunError`,
+      the shortest possible separator is considered to be the one that
+      matched.
+
       .. versionadded:: 3.5.2
+
+      .. versionchanged:: 3.13
+
+         The *separator* parameter may now be a :class:`tuple` of
+         separators.
 
    .. method:: at_eof()
 
@@ -335,7 +362,7 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
-   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                           ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.

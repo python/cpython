@@ -179,6 +179,15 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+#ifdef __APPLE__
+    int use_system_logger;
+#endif
+
+    int cpu_count;
+#ifdef Py_GIL_DISABLED
+    int enable_gil;
+    int tlbc_enabled;
+#endif
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -204,6 +213,9 @@ typedef struct PyConfig {
     wchar_t *run_module;
     wchar_t *run_filename;
 
+    /* --- Set by Py_Main() -------------------------- */
+    wchar_t *sys_path_0;
+
     /* --- Private fields ---------------------------- */
 
     // Install importlib? If equals to 0, importlib is not initialized at all.
@@ -215,6 +227,17 @@ typedef struct PyConfig {
 
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
+
+#ifdef Py_STATS
+    // If non-zero, turns on statistics gathering.
+    int _pystats;
+#endif
+
+#ifdef Py_DEBUG
+    // If not empty, import a non-__main__ module before site.py is executed.
+    // PYTHON_PRESITE=package.module or -X presite=package.module
+    wchar_t *run_presite;
+#endif
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -241,30 +264,13 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 
-/* --- PyInterpreterConfig ------------------------------------ */
+/* --- PyConfig_Get() ----------------------------------------- */
 
-typedef struct {
-    int allow_fork;
-    int allow_exec;
-    int allow_threads;
-    int allow_daemon_threads;
-} _PyInterpreterConfig;
+PyAPI_FUNC(PyObject*) PyConfig_Get(const char *name);
+PyAPI_FUNC(int) PyConfig_GetInt(const char *name, int *value);
+PyAPI_FUNC(PyObject*) PyConfig_Names(void);
+PyAPI_FUNC(int) PyConfig_Set(const char *name, PyObject *value);
 
-#define _PyInterpreterConfig_INIT \
-    { \
-        .allow_fork = 0, \
-        .allow_exec = 0, \
-        .allow_threads = 1, \
-        .allow_daemon_threads = 0, \
-    }
-
-#define _PyInterpreterConfig_LEGACY_INIT \
-    { \
-        .allow_fork = 1, \
-        .allow_exec = 1, \
-        .allow_threads = 1, \
-        .allow_daemon_threads = 1, \
-    }
 
 /* --- Helper functions --------------------------------------- */
 
@@ -272,6 +278,51 @@ typedef struct {
 
    See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
+
+
+// --- PyInitConfig ---------------------------------------------------------
+
+typedef struct PyInitConfig PyInitConfig;
+
+PyAPI_FUNC(PyInitConfig*) PyInitConfig_Create(void);
+PyAPI_FUNC(void) PyInitConfig_Free(PyInitConfig *config);
+
+PyAPI_FUNC(int) PyInitConfig_GetError(PyInitConfig* config,
+    const char **err_msg);
+PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config,
+    int *exitcode);
+
+PyAPI_FUNC(int) PyInitConfig_HasOption(PyInitConfig *config,
+    const char *name);
+PyAPI_FUNC(int) PyInitConfig_GetInt(PyInitConfig *config,
+    const char *name,
+    int64_t *value);
+PyAPI_FUNC(int) PyInitConfig_GetStr(PyInitConfig *config,
+    const char *name,
+    char **value);
+PyAPI_FUNC(int) PyInitConfig_GetStrList(PyInitConfig *config,
+    const char *name,
+    size_t *length,
+    char ***items);
+PyAPI_FUNC(void) PyInitConfig_FreeStrList(size_t length, char **items);
+
+PyAPI_FUNC(int) PyInitConfig_SetInt(PyInitConfig *config,
+    const char *name,
+    int64_t value);
+PyAPI_FUNC(int) PyInitConfig_SetStr(PyInitConfig *config,
+    const char *name,
+    const char *value);
+PyAPI_FUNC(int) PyInitConfig_SetStrList(PyInitConfig *config,
+    const char *name,
+    size_t length,
+    char * const *items);
+
+PyAPI_FUNC(int) PyInitConfig_AddModule(PyInitConfig *config,
+    const char *name,
+    PyObject* (*initfunc)(void));
+
+PyAPI_FUNC(int) Py_InitializeFromInitConfig(PyInitConfig *config);
+
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,7 @@ support.requires(
         'test requires loads of disk-space bytes and a long time to run'
     )
 
-import zipfile, os, unittest
+import zipfile, unittest
 import time
 import sys
 

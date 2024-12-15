@@ -1,10 +1,17 @@
-
 /* UNIX group file access module */
+
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <errno.h>                // ERANGE
+#include <grp.h>                  // getgrgid_r()
+#include <string.h>               // memcpy()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
@@ -65,8 +72,14 @@ mkgrent(PyObject *module, struct group *p)
         Py_DECREF(v);
         return NULL;
     }
-    for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyUnicode_DecodeFSDefault(*member);
+    for (member = p->gr_mem; ; member++) {
+        char *group_member;
+        // member can be misaligned
+        memcpy(&group_member, member, sizeof(group_member));
+        if (group_member == NULL) {
+            break;
+        }
+        PyObject *x = PyUnicode_DecodeFSDefault(group_member);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
@@ -76,7 +89,7 @@ mkgrent(PyObject *module, struct group *p)
         Py_DECREF(x);
     }
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
+#define SET(i,val) PyStructSequence_SetItem(v, i, val)
     SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_name));
     if (p->gr_passwd)
             SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_passwd));
@@ -267,23 +280,33 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
-    PyObject *d;
-    struct group *p;
-
-    if ((d = PyList_New(0)) == NULL)
+    PyObject *d = PyList_New(0);
+    if (d == NULL) {
         return NULL;
+    }
+
+    static PyMutex getgrall_mutex = {0};
+    PyMutex_Lock(&getgrall_mutex);
     setgrent();
+
+    struct group *p;
     while ((p = getgrent()) != NULL) {
+        // gh-126316: Don't release the mutex around mkgrent() since
+        // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
+        // is unlikely since mkgrent() should not be able to call arbitrary
+        // Python code.
         PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
-            Py_DECREF(d);
-            endgrent();
-            return NULL;
+            Py_CLEAR(d);
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endgrent();
+    PyMutex_Unlock(&getgrall_mutex);
     return d;
 }
 
@@ -327,6 +350,8 @@ grpmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot grpmodule_slots[] = {
     {Py_mod_exec, grpmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

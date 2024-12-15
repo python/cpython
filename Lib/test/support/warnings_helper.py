@@ -44,7 +44,7 @@ def check_syntax_warning(testcase, statement, errtext='',
 
 
 def ignore_warnings(*, category):
-    """Decorator to suppress deprecation warnings.
+    """Decorator to suppress warnings.
 
     Use of context managers to hide warnings make diffs
     more noisy and tools like 'git blame' less useful.

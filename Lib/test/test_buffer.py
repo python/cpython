@@ -17,12 +17,14 @@ import contextlib
 import unittest
 from test import support
 from test.support import os_helper
+import inspect
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
+from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -128,10 +130,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
-# Format codes suppported by the memoryview object
+# Format codes supported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
 
-# Format codes suppported by array.array
+# Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -166,7 +168,7 @@ def randrange_fmt(mode, char, obj):
     if char == 'c':
         x = bytes([x])
         if obj == 'numpy' and x == b'\x00':
-            # http://projects.scipy.org/numpy/ticket/1925
+            # https://github.com/numpy/numpy/issues/2518
             x = b'\x01'
     if char == '?':
         x = bool(x)
@@ -965,8 +967,10 @@ class TestBufferProtocol(unittest.TestCase):
                     self.assertEqual(m.strides, tuple(strides))
                 self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-                n = 1 if ndim == 0 else len(lst)
-                self.assertEqual(len(m), n)
+                if ndim == 0:
+                    self.assertRaises(TypeError, len, m)
+                else:
+                    self.assertEqual(len(m), len(lst))
 
                 rep = result.tolist() if fmt else result.tobytes()
                 self.assertEqual(rep, lst)
@@ -1025,6 +1029,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -1913,7 +1918,7 @@ class TestBufferProtocol(unittest.TestCase):
                 if numpy_array:
                     shape = t[3]
                     if 0 in shape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
                     z = numpy_array_from_structure(items, fmt, t)
                     self.verify(x, obj=None,
                                 itemsize=z.itemsize, fmt=fmt, readonly=False,
@@ -1945,7 +1950,7 @@ class TestBufferProtocol(unittest.TestCase):
                     except Exception as e:
                         numpy_err = e.__class__
 
-                    if 0: # http://projects.scipy.org/numpy/ticket/1910
+                    if 0: # https://github.com/numpy/numpy/issues/2503
                         self.assertTrue(numpy_err)
 
     def test_ndarray_random_slice_assign(self):
@@ -1991,7 +1996,7 @@ class TestBufferProtocol(unittest.TestCase):
 
                 if numpy_array:
                     if 0 in lshape or 0 in rshape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
 
                     zl = numpy_array_from_structure(litems, fmt, tl)
                     zr = numpy_array_from_structure(ritems, fmt, tr)
@@ -2756,6 +2761,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.
@@ -3214,12 +3220,6 @@ class TestBufferProtocol(unittest.TestCase):
         nd[0] = (-1, float('nan'))
         self.assertNotEqual(memoryview(nd), nd)
 
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
-
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
@@ -3232,6 +3232,15 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
+    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
+
+        # Depends on issue #15625: the struct module does not understand 'u'.
+        a = array.array('u', 'xyz')
+        v = memoryview(a)
+        self.assertNotEqual(a, v)
+        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
@@ -3901,6 +3910,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
@@ -4428,12 +4439,386 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
+    def test_bytearray_release_buffer_read_flag(self):
+        # See https://github.com/python/cpython/issues/126980
+        obj = bytearray(b'abc')
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.READ)
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.WRITE)
+
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
+
+
+class TestPythonBufferProtocol(unittest.TestCase):
+    def test_basic(self):
+        class MyBuffer:
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        mv = memoryview(MyBuffer())
+        self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(bytes(MyBuffer()), b"hello")
+
+    def test_bad_buffer_method(self):
+        class MustReturnMV:
+            def __buffer__(self, flags):
+                return 42
+
+        self.assertRaises(TypeError, memoryview, MustReturnMV())
+
+        class NoBytesEither:
+            def __buffer__(self, flags):
+                return b"hello"
+
+        self.assertRaises(TypeError, memoryview, NoBytesEither())
+
+        class WrongArity:
+            def __buffer__(self):
+                return memoryview(b"hello")
+
+        self.assertRaises(TypeError, memoryview, WrongArity())
+
+    def test_release_buffer(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                return memoryview(self.ba)
+
+            def __release_buffer__(self, buffer):
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_same_buffer_returned(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+                self.created_mv = None
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                self.created_mv = memoryview(self.ba)
+                return self.created_mv
+
+            def __release_buffer__(self, buffer):
+                assert buffer is self.created_mv
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_buffer_flags(self):
+        class PossiblyMutable:
+            def __init__(self, data, mutable) -> None:
+                self._data = bytearray(data)
+                self._mutable = mutable
+
+            def __buffer__(self, flags):
+                if flags & inspect.BufferFlags.WRITABLE:
+                    if not self._mutable:
+                        raise RuntimeError("not mutable")
+                    return memoryview(self._data)
+                else:
+                    return memoryview(bytes(self._data))
+
+        mutable = PossiblyMutable(b"hello", True)
+        immutable = PossiblyMutable(b"hello", False)
+        with memoryview._from_flags(mutable, inspect.BufferFlags.WRITABLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(mutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"xello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'h')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(immutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        with self.assertRaises(RuntimeError):
+            memoryview._from_flags(immutable, inspect.BufferFlags.WRITABLE)
+        with memoryview(immutable) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_call_builtins(self):
+        ba = bytearray(b"hello")
+        mv = ba.__buffer__(0)
+        self.assertEqual(mv.tobytes(), b"hello")
+        ba.__release_buffer__(mv)
+        with self.assertRaises(OverflowError):
+            ba.__buffer__(sys.maxsize + 1)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer(self):
+        buf = _testcapi.testBuf()
+        self.assertEqual(buf.references, 0)
+        mv = buf.__buffer__(0)
+        self.assertIsInstance(mv, memoryview)
+        self.assertEqual(mv.tobytes(), b"test")
+        self.assertEqual(buf.references, 1)
+        buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+        with self.assertRaises(ValueError):
+            mv.tobytes()
+        # Calling it again doesn't cause issues
+        with self.assertRaises(ValueError):
+            buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer_invalid_flags(self):
+        buf = _testcapi.testBuf()
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_invalid_flags(self):
+        # PyBuffer_FillInfo
+        source = b"abc"
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_READ)
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_readonly_and_writable(self):
+        source = b"abc"
+        with _testcapi.buffer_fill_info(source, 1, PyBUF_SIMPLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertTrue(m.readonly)
+        with _testcapi.buffer_fill_info(source, 0, PyBUF_WRITABLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertFalse(m.readonly)
+        self.assertRaises(BufferError, _testcapi.buffer_fill_info,
+                          source, 1, PyBUF_WRITABLE)
+
+    def test_inheritance(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        a = A(b"hello")
+        mv = memoryview(a)
+        self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_inheritance_releasebuffer(self):
+        rb_call_count = 0
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                super().__release_buffer__(view)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+
+    def test_inherit_but_return_something_else(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        a = A(b"hello")
+        with memoryview(a) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        rb_call_count = 0
+        rb_raised = False
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                try:
+                    super().__release_buffer__(view)
+                except ValueError:
+                    nonlocal rb_raised
+                    rb_raised = True
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+        self.assertIs(rb_raised, True)
+
+    def test_override_only_release(self):
+        class C(bytearray):
+            def __release_buffer__(self, buffer):
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_release_saves_reference(self):
+        smuggled_buffer = None
+
+        class C(bytearray):
+            def __release_buffer__(s, buffer: memoryview):
+                with self.assertRaises(ValueError):
+                    memoryview(buffer)
+                with self.assertRaises(ValueError):
+                    buffer.cast("b")
+                with self.assertRaises(ValueError):
+                    buffer.toreadonly()
+                with self.assertRaises(ValueError):
+                    buffer[:1]
+                with self.assertRaises(ValueError):
+                    buffer.__buffer__(0)
+                nonlocal smuggled_buffer
+                smuggled_buffer = buffer
+                self.assertEqual(buffer.tobytes(), b"hello")
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        c.clear()
+        with self.assertRaises(ValueError):
+            smuggled_buffer.tobytes()
+
+    def test_release_saves_reference_no_subclassing(self):
+        ba = bytearray(b"hello")
+
+        class C:
+            def __buffer__(self, flags):
+                return memoryview(ba)
+
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        c = C()
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(c.buffer.tobytes(), b"hello")
+
+        with self.assertRaises(BufferError):
+            ba.clear()
+        c.buffer.release()
+        ba.clear()
+
+    def test_multiple_inheritance_buffer_last(self):
+        class A:
+            def __buffer__(self, flags):
+                return memoryview(b"hello A")
+
+        class B(A, bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello A")
+
+        class Releaser:
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        class C(Releaser, bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        c = C(b"hello C")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello C")
+        c.clear()
+        with self.assertRaises(ValueError):
+            c.buffer.tobytes()
+
+    def test_multiple_inheritance_buffer_last_raising(self):
+        class A:
+            def __buffer__(self, flags):
+                raise RuntimeError("should not be called")
+
+            def __release_buffer__(self, buffer):
+                raise RuntimeError("should not be called")
+
+        class B(bytearray, A):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        class Releaser:
+            buffer = None
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        class C(bytearray, Releaser):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        c.clear()
+        self.assertIs(c.buffer, None)
+
+    def test_release_buffer_with_exception_set(self):
+        class A:
+            def __buffer__(self, flags):
+                return memoryview(bytes(8))
+            def __release_buffer__(self, view):
+                pass
+
+        b = bytearray(8)
+        with memoryview(b):
+            # now b.extend will raise an exception due to exports
+            with self.assertRaises(BufferError):
+                b.extend(A())
 
 
 if __name__ == "__main__":

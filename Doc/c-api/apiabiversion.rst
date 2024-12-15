@@ -60,7 +60,7 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
 
    Use this for numeric comparisons, e.g. ``#if PY_VERSION_HEX >= ...``.
 
-   This version is also available via the symbol :data:`Py_Version`.
+   This version is also available via the symbol :c:var:`Py_Version`.
 
 .. c:var:: const unsigned long Py_Version
 

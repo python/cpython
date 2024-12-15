@@ -4,17 +4,17 @@ from ._common import (
     as_file,
     files,
     Package,
+    Anchor,
 )
 
-from ._legacy import (
+from ._functional import (
     contents,
-    open_binary,
-    read_binary,
-    open_text,
-    read_text,
     is_resource,
+    open_binary,
+    open_text,
     path,
-    Resource,
+    read_binary,
+    read_text,
 )
 
 from .abc import ResourceReader
@@ -22,11 +22,11 @@ from .abc import ResourceReader
 
 __all__ = [
     'Package',
-    'Resource',
+    'Anchor',
     'ResourceReader',
     'as_file',
-    'contents',
     'files',
+    'contents',
     'is_resource',
     'open_binary',
     'open_text',

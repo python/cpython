@@ -351,4 +351,4 @@ if __name__ == '__main__':
     main('idlelib.idle_test.test_config_key', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(GetKeysDialog)
+    run(GetKeysWindow)
