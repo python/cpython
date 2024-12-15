@@ -1248,9 +1248,9 @@ code, or when embedding the Python interpreter:
 
    Set the :term:`current thread state` to *tstate*, and return
    the old value.
-   
+
    If there is an :term:`attached thread state` for the current
-   thread, it will be detached. Upon returning from this function, 
+   thread, it will be detached. Upon returning from this function,
    *tstate* will become :term:`attached <attached thread state>` instead
    if it's not ``NULL``. If it is ``NULL``, then the :term:`current thread state`
    will be ``NULL``.

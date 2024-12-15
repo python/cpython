@@ -145,7 +145,7 @@ Glossary
       block, and then re-attached when :c:macro:`Py_END_ALLOW_THREADS` is reached.
 
       On most builds of Python, having an attached thread state means that the
-      caller holds the :term:`GIL` for the current interpreter.    
+      caller holds the :term:`GIL` for the current interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -353,7 +353,7 @@ Glossary
       A per-thread :c:data:`PyThreadState` pointer for the current thread.
       The pointer might be ``NULL``, in which case Python code should not
       get executed.
-      
+
       If the current thread state is non-``NULL``, then the :term:`thread state`
       that it points to is considered to be :term:`attached <attached thread state>`.
 
