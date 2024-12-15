@@ -684,7 +684,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             try:
-                self.copyfile(f, self.wfile, range=self.range)
+                self.copyfile(f, self.wfile, range=self._range)
             finally:
                 f.close()
 
@@ -707,7 +707,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
-        self.range = self.parse_range()
+        self._range = self.parse_range()
         if os.path.isdir(path):
             parts = urllib.parse.urlsplit(self.path)
             if not parts.path.endswith('/'):
@@ -772,14 +772,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             f.close()
                             return None
 
-            if self.range:
-                start, end = self.range
+            if self._range:
+                start, end = self._range
                 if start is None:
                     # `end` here means suffix length
                     start = max(0, fs.st_size - end)
                     end = fs.st_size - 1
                 if start >= fs.st_size:
-                    # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that none of the range values overlap the extent of the resource
+                    # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that
+                    # none of the range values overlap the extent of
+                    # the resource
                     f.close()
                     self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
                     return None
@@ -790,11 +792,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(end - start + 1))
 
                 # Update range to be sent to be used later in copyfile
-                self.range = (start, end)
+                self._range = (start, end)
             else:
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Accept-Ranges", "bytes")
-                self.send_header("Content-Length", str(fs[6]))
+                self.send_header("Content-Length", str(fs.st_size))
             self.send_header("Content-type", ctype)
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
@@ -956,10 +958,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         range_header = self.headers.get('range')
-        if not range_header:
+        if range_header is None:
             return None
         m = RANGE_REGEX_PATTERN.match(range_header)
-        if not m:
+        if m is None:
             return None
 
         start = int(m.group(1)) if m.group(1) else None
