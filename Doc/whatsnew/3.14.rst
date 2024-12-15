@@ -67,6 +67,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 
 
 New features
@@ -1108,6 +1109,8 @@ Build changes
 
 * GNU Autoconf 2.72 is now required to generate :file:`!configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
+
+.. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
 ------------------------------------------
