@@ -1408,8 +1408,8 @@ class Idler:
         self._deadline = None
         self._imap = imap
         self._tag = None
-        self._sock_timeout = None
-        self._old_state = None
+        self._saved_timeout = None
+        self._saved_state = None
 
     def __enter__(self):
         imap = self._imap
@@ -1442,14 +1442,14 @@ class Idler:
             imap._idle_capture = False
             raise
 
-        self._sock_timeout = imap.sock.gettimeout() if imap.sock else None
-        if self._sock_timeout is not None:
+        self._saved_timeout = imap.sock.gettimeout() if imap.sock else None
+        if self._saved_timeout is not None:
             imap.sock.settimeout(None)  # Socket timeout would break IDLE
 
         if self._duration is not None:
             self._deadline = time.monotonic() + self._duration
 
-        self._old_state = imap.state
+        self._saved_state = imap.state
         imap.state = 'IDLING'
 
         return self
@@ -1578,11 +1578,11 @@ class Idler:
 
         if __debug__ and imap.debug >= 4:
             imap._mesg('idle done')
-        imap.state = self._old_state
+        imap.state = self._saved_state
 
-        if self._sock_timeout is not None:
-            imap.sock.settimeout(self._sock_timeout)
-            self._sock_timeout = None
+        if self._saved_timeout is not None:
+            imap.sock.settimeout(self._saved_timeout)
+            self._saved_timeout = None
 
         # Stop intercepting untagged responses before sending DONE,
         # since we can no longer deliver them via iteration.
