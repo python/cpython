@@ -229,6 +229,7 @@ typedef struct {
     PyObject* *children;
 
     PyObject* _children[STATIC_CHILDREN];
+
 } ElementObjectExtra;
 
 typedef struct {
