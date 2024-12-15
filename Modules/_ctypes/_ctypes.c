@@ -861,8 +861,13 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = CDataType_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     PyErr_Format(PyExc_TypeError,
@@ -1730,8 +1735,13 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_wchar_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1794,8 +1804,13 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_char_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1929,8 +1944,13 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_void_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -2289,9 +2309,9 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
-        _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         Py_XDECREF(exc);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     if (exc) {
