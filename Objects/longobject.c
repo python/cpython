@@ -6,6 +6,7 @@
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE, _Py_FREELIST_POP
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -42,7 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
 }
 
 static inline int
@@ -220,15 +221,18 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
     if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        _PyObject_Init((PyObject*)v, &PyLong_Type);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
-    _PyObject_Init((PyObject*)v, &PyLong_Type);
     v->long_value.ob_digit[0] = abs_x;
     return (PyObject*)v;
 }
@@ -782,6 +786,39 @@ PyLong_AsUnsignedLongMask(PyObject *op)
     val = _PyLong_AsUnsignedLongMask((PyObject *)lo);
     Py_DECREF(lo);
     return val;
+}
+
+int
+PyLong_IsPositive(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsPositive((PyLongObject *)obj);
+}
+
+int
+PyLong_IsNegative(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsNegative((PyLongObject *)obj);
+}
+
+int
+PyLong_IsZero(PyObject *obj)
+{
+    assert(obj != NULL);
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected int, got %T", obj);
+        return -1;
+    }
+    return _PyLong_IsZero((PyLongObject *)obj);
 }
 
 int
@@ -3578,24 +3615,60 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static inline int
+compact_int_is_small(PyObject *self)
+{
+    PyLongObject *pylong = (PyLongObject *)self;
+    assert(_PyLong_IsCompact(pylong));
+    stwodigits ival = medium_value(pylong);
+    if (IS_SMALL_INT(ival)) {
+        PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+        if (pylong == small_pylong) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void
+_PyLong_ExactDealloc(PyObject *self)
+{
+    assert(PyLong_CheckExact(self));
+    if (_PyLong_IsCompact((PyLongObject *)self)) {
+        #ifndef Py_GIL_DISABLED
+        if (compact_int_is_small(self)) {
+            // See PEP 683, section Accidental De-Immortalizing for details
+            _Py_SetImmortal(self);
+            return;
+        }
+        #endif
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
+    }
+    PyObject_Free(self);
+}
+
 static void
 long_dealloc(PyObject *self)
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref small Ints out of existence. Instead,
-     * since small Ints are immortal, re-set the reference count.
-     */
-    PyLongObject *pylong = (PyLongObject*)self;
-    if (pylong && _PyLong_IsCompact(pylong)) {
-        stwodigits ival = medium_value(pylong);
-        if (IS_SMALL_INT(ival)) {
-            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
-            if (pylong == small_pylong) {
-                _Py_SetImmortal(self);
-                return;
-            }
+    assert(self);
+    if (_PyLong_IsCompact((PyLongObject *)self)) {
+        if (compact_int_is_small(self)) {
+            /* This should never get called, but we also don't want to SEGV if
+             * we accidentally decref small Ints out of existence. Instead,
+             * since small Ints are immortal, re-set the reference count.
+             *
+             *  See PEP 683, section Accidental De-Immortalizing for details
+             */
+            _Py_SetImmortal(self);
+            return;
+        }
+        if (PyLong_CheckExact(self)) {
+            _Py_FREELIST_FREE(ints, self, PyObject_Free);
+            return;
         }
     }
+
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -6584,6 +6657,7 @@ PyTypeObject PyLong_Type = {
     long_new,                                   /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_INT,
 };
 
 static PyTypeObject Int_InfoType;
@@ -6676,6 +6750,7 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
     return _PyLong_CompactValue((PyLongObject*)op);
 }
 
+
 PyObject* PyLong_FromInt32(int32_t value)
 { return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
 
@@ -6740,4 +6815,123 @@ int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
 int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
 {
     LONG_TO_UINT(obj, value, "C uint64_t");
+}
+
+
+static const PyLongLayout PyLong_LAYOUT = {
+    .bits_per_digit = PyLong_SHIFT,
+    .digits_order = -1,  // least significant first
+    .digit_endianness = PY_LITTLE_ENDIAN ? -1 : 1,
+    .digit_size = sizeof(digit),
+};
+
+
+const PyLongLayout*
+PyLong_GetNativeLayout(void)
+{
+    return &PyLong_LAYOUT;
+}
+
+
+int
+PyLong_Export(PyObject *obj, PyLongExport *export_long)
+{
+    if (!PyLong_Check(obj)) {
+        memset(export_long, 0, sizeof(*export_long));
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
+        return -1;
+    }
+
+    // Fast-path: try to convert to a int64_t
+    int overflow;
+#if SIZEOF_LONG == 8
+    long value = PyLong_AsLongAndOverflow(obj, &overflow);
+#else
+    // Windows has 32-bit long, so use 64-bit long long instead
+    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
+#endif
+    Py_BUILD_ASSERT(sizeof(value) == sizeof(int64_t));
+    // the function cannot fail since obj is a PyLongObject
+    assert(!(value == -1 && PyErr_Occurred()));
+
+    if (!overflow) {
+        export_long->value = value;
+        export_long->negative = 0;
+        export_long->ndigits = 0;
+        export_long->digits = NULL;
+        export_long->_reserved = 0;
+    }
+    else {
+        PyLongObject *self = (PyLongObject*)obj;
+        export_long->value = 0;
+        export_long->negative = _PyLong_IsNegative(self);
+        export_long->ndigits = _PyLong_DigitCount(self);
+        if (export_long->ndigits == 0) {
+            export_long->ndigits = 1;
+        }
+        export_long->digits = self->long_value.ob_digit;
+        export_long->_reserved = (Py_uintptr_t)Py_NewRef(obj);
+    }
+    return 0;
+}
+
+
+void
+PyLong_FreeExport(PyLongExport *export_long)
+{
+    PyObject *obj = (PyObject*)export_long->_reserved;
+    if (obj) {
+        export_long->_reserved = 0;
+        Py_DECREF(obj);
+    }
+}
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+PyLongWriter*
+PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
+{
+    if (ndigits <= 0) {
+        PyErr_SetString(PyExc_ValueError, "ndigits must be positive");
+        goto error;
+    }
+    assert(digits != NULL);
+
+    PyLongObject *obj = _PyLong_New(ndigits);
+    if (obj == NULL) {
+        goto error;
+    }
+    if (negative) {
+        _PyLong_FlipSign(obj);
+    }
+
+    *digits = obj->long_value.ob_digit;
+    return (PyLongWriter*)obj;
+
+error:
+    *digits = NULL;
+    return NULL;
+}
+
+
+void
+PyLongWriter_Discard(PyLongWriter *writer)
+{
+    PyLongObject *obj = (PyLongObject *)writer;
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+}
+
+
+PyObject*
+PyLongWriter_Finish(PyLongWriter *writer)
+{
+    PyLongObject *obj = (PyLongObject *)writer;
+    assert(Py_REFCNT(obj) == 1);
+
+    // Normalize and get singleton if possible
+    obj = maybe_small_long(long_normalize(obj));
+
+    return (PyObject*)obj;
 }
