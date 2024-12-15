@@ -328,7 +328,7 @@ An :class:`IMAP4` instance has the following methods:
    Requires a socket connection; *duration* must be ``None`` on
    :class:`IMAP4_stream` connections.
 
-   Example::
+   .. code-block:: pycon
 
       >>> with M.idle(duration=29 * 60) as idler:
       ...     for typ, data in idler:
@@ -352,7 +352,7 @@ An :class:`IMAP4` instance has the following methods:
       Requires a socket connection; does not work on :class:`IMAP4_stream`
       connections.
 
-      Example::
+      .. code-block:: pycon
 
          >>> with M.idle() as idler:
          ...     # get a response and any others following by < 0.1 seconds
