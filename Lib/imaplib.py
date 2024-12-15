@@ -26,10 +26,8 @@ __version__ = "2.59"
 import binascii
 import calendar
 import errno
-import platform
 import random
 import re
-import selectors
 import socket
 import subprocess
 import sys
@@ -330,13 +328,12 @@ class IMAP4:
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        # Read from an unbuffered input, so our select() calls will not be
-        # defeated by a hidden library buffer.  Use our own buffer instead,
-        # which can be examined before calling select().
-        if isinstance(self, IMAP4_stream):
-            read = self.readfile.read
-        else:
-            read = self.sock.recv
+        # We need buffered read() to continue working after socket timeouts,
+        # since we use them during IDLE. Unfortunately, the standard library's
+        # SocketIO implementation makes this impossible, by setting a permanent
+        # error condition instead of letting the caller decide how to handle a
+        # timeout. We therefore implement our own buffered read().
+        # https://github.com/python/cpython/issues/51571
 
         parts = []
         while True:
@@ -346,7 +343,7 @@ class IMAP4:
                 break
             parts.append(self._readbuf)
             size -= len(self._readbuf)
-            self._readbuf = read(DEFAULT_BUFFER_SIZE)
+            self._readbuf = self.sock.recv(DEFAULT_BUFFER_SIZE)
             if not self._readbuf:
                 break
         return b''.join(parts)
@@ -354,13 +351,7 @@ class IMAP4:
 
     def readline(self):
         """Read line from remote."""
-        # Read from an unbuffered input, so our select() calls will not be
-        # defeated by a hidden library buffer.  Use our own buffer instead,
-        # which can be examined before calling select().
-        if isinstance(self, IMAP4_stream):
-            read = self.readfile.read
-        else:
-            read = self.sock.recv
+        # The comment in read() explains why we implement our own readline().
 
         LF = b'\n'
         parts = []
@@ -374,7 +365,7 @@ class IMAP4:
                 break
             parts.append(self._readbuf)
             length += len(parts[-1])
-            self._readbuf = read(DEFAULT_BUFFER_SIZE)
+            self._readbuf = self.sock.recv(DEFAULT_BUFFER_SIZE)
             if not self._readbuf:
                 break
 
@@ -653,7 +644,7 @@ class IMAP4:
                           or None for no time limit.  To avoid inactivity
                           timeouts on servers that impose them, callers are
                           advised to keep this at most 29 minutes.
-                          See the note below regarding IMAP4_stream on Windows.
+                          Requires a socket connection (not IMAP4_stream).
         :type duration:   int|float|None
 
         The returned object sends the IDLE command when activated by the
@@ -671,15 +662,6 @@ class IMAP4:
         ...
         EXISTS [b'1']
         RECENT [b'1']
-
-        Warning:  On Windows, IMAP4_stream connections have no way to
-        accurately respect 'duration', since Windows select() only works on
-        sockets. However, if the server regularly sends status messages during
-        IDLE, they will wake our selector and keep iteration from blocking for
-        long.  Dovecot's imap_idle_notify_interval is two minutes by default.
-        Assuming that's typical of IMAP servers, subtracting it from the 29
-        minutes needed to avoid server inactivity timeouts would make 27
-        minutes a sensible value for 'duration' in this situation.
 
         Note:  The Idler class name and structure are internal interfaces,
         subject to change.  Calling code can rely on its context management,
@@ -1418,6 +1400,10 @@ class Idler:
     def __init__(self, imap, duration=None):
         if 'IDLE' not in imap.capabilities:
             raise imap.error("Server does not support IMAP4 IDLE")
+        if (duration is not None and
+            not isinstance(imap.sock, socket.socket)):
+            # IMAP4_stream pipes don't support timeouts
+            raise imap.error('duration requires a socket connection')
         self._duration = duration
         self._deadline = None
         self._imap = imap
@@ -1471,48 +1457,23 @@ class Idler:
     def __iter__(self):
         return self
 
-    def _wait(self, timeout=None):
-        # Block until the next read operation should be attempted, either
-        # because data becomes availalable within 'timeout' seconds or
-        # because the OS cannot determine whether data is available.
-        # Return True when a blocking read() is worth trying
-        # Return False if the timeout expires while waiting
-
-        imap = self._imap
-        if timeout is None:
-            return True
-        if imap._readbuf:
-            return True
-        if timeout <= 0:
-            return False
-
-        if imap.sock:
-            fileobj = imap.sock
-        elif platform.system() == 'Windows':
-            return True  # Cannot select(); allow a possibly-blocking read
-        else:
-            fileobj = imap.readfile
-
-        if __debug__ and imap.debug >= 4:
-            imap._mesg(f'idle _wait select({timeout})')
-
-        with selectors.DefaultSelector() as sel:
-            sel.register(fileobj, selectors.EVENT_READ)
-            readables = sel.select(timeout)
-            return bool(readables)
-
     def _pop(self, timeout, default=('', None)):
-        # Get the next response, or a default value on timeout
-        #
-        # :param timeout:   Time limit (in seconds) to wait for response
-        # :type timeout:    int|float|None
-        # :param default:   Value to return on timeout
-        #
-        # Note: This method ignores 'duration' in favor of the timeout argument.
-        #
-        # Note: Windows IMAP4_stream connections will ignore the timeout
-        # argument and block until the next response arrives, because
-        # Windows select() only works on sockets.
+        # Get the next response, or a default value on timeout.
+        # The timeout arg can be an int or float, or None for no timeout.
+        # Timeouts require a socket connection (not IMAP4_stream).
+        # This method ignores self._duration.
+
+        # Historical Note:
+        # The timeout was originally implemented using select() after
+        # checking for the presence of already-buffered data.
+        # That allowed timeouts on pipe connetions like IMAP4_stream.
+        # However, it seemed possible that SSL data arriving without any
+        # IMAP data afterward could cause select() to indicate available
+        # application data when there was none, leading to a read() call
+        # that would block with no timeout. It was unclear under what
+        # conditions this would happen in practice. Our implementation was
+        # changed to use socket timeouts instead of select(), just to be
+        # safe.
 
         imap = self._imap
         if imap.state != 'IDLING':
@@ -1526,16 +1487,23 @@ class Idler:
             return resp
 
         if __debug__ and imap.debug >= 4:
-            imap._mesg(f'idle _pop({timeout})')
+            imap._mesg(f'idle _pop({timeout}) reading')
 
-        if not self._wait(timeout):
+        if timeout is not None:
+            assert isinstance(imap.sock, socket.socket)
+            if timeout <= 0:
+                return default
+            imap.sock.settimeout(float(timeout))
+        try:
+            imap._get_response()  # Reads line, calls _append_untagged()
+        except TimeoutError:
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle _pop({timeout}) done')
             return default
+        finally:
+            if timeout is not None:
+                imap.sock.settimeout(None)
 
-        if __debug__ and imap.debug >= 4:
-            imap._mesg(f'idle _pop({timeout}) reading')
-        imap._get_response()  # Reads line, calls _append_untagged()
         resp = imap._idle_responses.pop(0)
 
         if __debug__ and imap.debug >= 4:
@@ -1576,13 +1544,11 @@ class Idler:
         immediately without producing anything.  Callers should consider
         this if using it in a loop.
 
-        Warning:  On Windows, IMAP4_stream connections have no way to
-        accurately respect the 'interval' argument, since Windows select()
-        only works on sockets.  This will cause the generator to yield
-        endless responses and block indefinitely for each one.  It is
-        therefore advised not to use burst() with an IMAP4_stream
-        connection on Windows.
+        Note: This generator does not work on IMAP4_stream connections.
         """
+        if not isinstance(self._imap.sock, socket.socket):
+            raise self._imap.error('burst() requires a socket connection')
+
         try:
             yield next(self)
         except StopIteration:
@@ -1719,20 +1685,26 @@ class IMAP4_stream(IMAP4):
         self.sock = None
         self.file = None
         self.process = subprocess.Popen(self.command,
-            bufsize=0,  # Unbuffered stdin/stdout, for select() compatibility
+            bufsize=DEFAULT_BUFFER_SIZE,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             shell=True, close_fds=True)
         self.writefile = self.process.stdin
         self.readfile = self.process.stdout
 
+    def read(self, size):
+        """Read 'size' bytes from remote."""
+        return self.readfile.read(size)
+
+
+    def readline(self):
+        """Read line from remote."""
+        return self.readfile.readline()
+
 
     def send(self, data):
         """Send data to remote."""
-        # Write with buffered semantics to the unbuffered output, avoiding
-        # partial writes.
-        sent = 0
-        while sent < len(data):
-            sent += self.writefile.write(data[sent:])
+        self.writefile.write(data)
+        self.writefile.flush()
 
 
     def shutdown(self):

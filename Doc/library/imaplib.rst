@@ -321,12 +321,12 @@ An :class:`IMAP4` instance has the following methods:
    in :ref:`IMAP4 Objects <imap4-objects>`.
 
    The *duration* argument sets a maximum duration (in seconds) to keep idling,
-   after which any ongoing iteration will stop.  It defaults to ``None``,
-   meaning no time limit, but can also be an :class:`int` or :class:`float`.
+   after which any ongoing iteration will stop. It can be an :class:`int` or
+   :class:`float`, or ``None`` for no time limit.
    Callers wishing to avoid inactivity timeouts on servers that impose them
    should keep this at most 29 minutes (1740 seconds).
-   See the :ref:`warning below <windows-pipe-timeout-warning>` if using
-   :class:`IMAP4_stream` on Windows.
+   Requires a socket connection; *duration* must be ``None`` on
+   :class:`IMAP4_stream` connections.
 
    Example::
 
@@ -349,6 +349,9 @@ An :class:`IMAP4` instance has the following methods:
       (For example, a rapid series of ``EXPUNGE`` responses after a bulk
       delete.)
 
+      Requires a socket connection; does not work on :class:`IMAP4_stream`
+      connections.
+
       Example::
 
          >>> with M.idle() as idler:
@@ -368,28 +371,6 @@ An :class:`IMAP4` instance has the following methods:
          generator to return immediately without producing anything.  Callers
          should consider this if using it in a loop.
 
-
-   .. _windows-pipe-timeout-warning:
-
-   .. warning::
-
-      On Windows, :class:`IMAP4_stream` connections have no way to accurately
-      respect the *duration* or *interval* arguments, since Windows'
-      ``select()`` only works on sockets.
-
-      If the server regularly sends status messages during ``IDLE``, they will
-      wake our iterator anyway and allow *duration* to behave roughly as
-      intended, although usually late.  Dovecot's ``imap_idle_notify_interval``
-      default setting does this every 2 minutes.  Assuming that's typical of
-      IMAP servers, subtracting it from the 29 minutes needed to avoid server
-      inactivity timeouts would make 27 minutes a sensible value for *duration*
-      in this situation.
-
-      There is no such fallback for
-      :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`, which will yield
-      endless responses and block indefinitely for each one.  It is therefore
-      advised not to use :meth:`Idler.burst() <imaplib.IMAP4.Idler.burst>`
-      with an :class:`IMAP4_stream` connection on Windows.
 
    .. note::
 
