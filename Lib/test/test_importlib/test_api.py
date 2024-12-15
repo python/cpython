@@ -493,9 +493,14 @@ class TestModuleAll(unittest.TestCase):
 
 
 class TestDeprecations(unittest.TestCase):
-    def test_machinery_deprecated_constants(self):
+    def test_machinery_deprecated_members(self):
         from importlib import machinery
-        for attr in ('DEBUG_BYTECODE_SUFFIXES', 'OPTIMIZED_BYTECODE_SUFFIXES'):
+        attributes = (
+            'DEBUG_BYTECODE_SUFFIXES',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+            'WindowsRegistryFinder',
+        )
+        for attr in attributes:
             with self.subTest(attr=attr):
                 with self.assertWarns(DeprecationWarning):
                     getattr(machinery, attr)

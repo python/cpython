@@ -33,6 +33,7 @@ __all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
 
 def __getattr__(name):
     import warnings
+
     if name == 'DEBUG_BYTECODE_SUFFIXES':
         warnings.warn("importlib.machinery.DEBUG_BYTECODE_SUFFIXES is "
                       "deprecated. Use importlib.machinery.BYTECODE_SUFFIXES "
