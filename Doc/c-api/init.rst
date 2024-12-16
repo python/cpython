@@ -1247,13 +1247,13 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
-   Set the :term:`current thread state` to *tstate*, and return
+   Set the :term:`current thread state` to *tstate* (which may be ``NULL``), and return
    the old value.
 
    If there is an :term:`attached thread state` for the current
    thread, it will be detached. Upon returning from this function,
    *tstate* will become :term:`attached <attached thread state>` instead
-   if it's not ``NULL``. If it is ``NULL``, then the :term:`current thread state`
+   (if it's not ``NULL``). If it is ``NULL``, then the :term:`current thread state`
    will be ``NULL``.
 
 
