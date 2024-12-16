@@ -651,8 +651,8 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
 static int
 element_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(op));
     ElementObject *self = _Element_CAST(op);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->tag);
     Py_VISIT(JOIN_OBJ(self->text));
     Py_VISIT(JOIN_OBJ(self->tail));
@@ -685,12 +685,12 @@ element_gc_clear(PyObject *op)
 static void
 element_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
+    ElementObject *self = _Element_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, element_dealloc)
-    ElementObject *self = _Element_CAST(op);
+    PyObject_GC_UnTrack(self);
+    Py_TRASHCAN_BEGIN(self, element_dealloc)
 
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs(op);
@@ -699,7 +699,7 @@ element_dealloc(PyObject *op)
     */
     (void)element_gc_clear(op);
 
-    tp->tp_free(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
     Py_TRASHCAN_END
 }
@@ -2138,7 +2138,7 @@ elementiter_dealloc(PyObject *op)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    tp->tp_free(op);
+    tp->tp_free(it);
     Py_DECREF(tp);
 }
 
@@ -2152,7 +2152,7 @@ elementiter_traverse(PyObject *op, visitproc visit, void *arg)
 
     Py_VISIT(it->root_element);
     Py_VISIT(it->sought_tag);
-    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(Py_TYPE(it));
     return 0;
 }
 
@@ -2466,8 +2466,8 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(op));
     TreeBuilderObject *self = _TreeBuilder_CAST(op);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pi_event_obj);
     Py_VISIT(self->comment_event_obj);
     Py_VISIT(self->end_ns_event_obj);
@@ -2513,11 +2513,11 @@ treebuilder_gc_clear(PyObject *op)
 static void
 treebuilder_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
     TreeBuilderObject *self = _TreeBuilder_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)treebuilder_gc_clear(op);
-    tp->tp_free(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -3779,8 +3779,8 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 static int
 xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(op));
     XMLParserObject *self = _XMLParser_CAST(op);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
     Py_VISIT(self->handle_comment);
