@@ -107,7 +107,7 @@ atexit_callfuncs(struct atexit_state *state)
     assert(PyList_CheckExact(state->callbacks));
 
     // Create a copy of the list for thread safety
-    PyObject *copy = PyList_GetSlice(state->callbacks, 0, Py_SIZE(state->callbacks));
+    PyObject *copy = PyList_GetSlice(state->callbacks, 0, PyList_GET_SIZE(state->callbacks));
     if (copy == NULL)
     {
         PyErr_WriteUnraisable(NULL);
