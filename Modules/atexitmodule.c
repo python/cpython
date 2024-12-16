@@ -180,7 +180,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
                 "the first argument must be callable");
         return NULL;
     }
-    PyObject *rest_of_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    PyObject *func_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
 
     if (kwargs == NULL)
     {
