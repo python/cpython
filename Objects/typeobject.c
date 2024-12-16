@@ -5705,7 +5705,7 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
     // struct _specialization_cache):
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-    can_cache = _PyFunction_IsVersionValid(version);
+    can_cache = can_cache && _PyFunction_IsVersionValid(version);
 #ifdef Py_GIL_DISABLED
     can_cache = can_cache && _PyObject_HasDeferredRefcount(descriptor);
 #endif
