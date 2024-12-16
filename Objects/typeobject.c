@@ -5693,17 +5693,19 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
 }
 
 int
-_PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t version)
+_PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version)
 {
-    if (!descriptor || !version) {
+    if (!descriptor || !tp_version) {
         return 0;
     }
     int can_cache;
     BEGIN_TYPE_LOCK();
+    can_cache = ((PyTypeObject*)ht)->tp_version_tag == tp_version;
     // This pointer is invalidated by PyType_Modified (see the comment on
     // struct _specialization_cache):
     PyFunctionObject *func = (PyFunctionObject *)descriptor;
-    can_cache = _PyFunction_GetVersionForCurrentState(func) == version;
+    uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+    can_cache = _PyFunction_IsVersionValid(version);
 #ifdef Py_GIL_DISABLED
     can_cache = can_cache && _PyObject_HasDeferredRefcount(descriptor);
 #endif

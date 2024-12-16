@@ -1797,8 +1797,8 @@ _Py_Specialize_BinarySubscr(
             Py_DECREF(descriptor);
             goto success;
         }
-        Py_DECREF(descriptor);
     }
+    Py_XDECREF(descriptor);
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
                         binary_subscr_fail_kind(container_type, sub));
 fail:
