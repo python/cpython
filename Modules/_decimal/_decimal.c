@@ -2335,24 +2335,18 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
         return NULL;
     }
     if (export_long.digits) {
-        const PyLongLayout *layout = PyLong_GetNativeLayout();
-        const uint8_t bpd = layout->bits_per_digit;
         const uint8_t sign = export_long.negative ? MPD_NEG :  MPD_POS;
         const Py_ssize_t len = export_long.ndigits;
 
-        if (bpd == 30) {
-            mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
-                            1 << bpd, ctx, status);
-        }
-        else if (bpd == 15) {
-            mpd_qimport_u16(MPD(dec), export_long.digits, len, sign,
-                            1 << bpd, ctx, status);
-        }
-        else {
-            PyLong_FreeExport(&export_long);
-            Py_DECREF(dec);
-            return NULL;
-        }
+#if PYLONG_BITS_IN_DIGIT == 30
+        mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
+                        PyLong_BASE, ctx, status);
+#elif PYLONG_BITS_IN_DIGIT == 15
+        mpd_qimport_u16(MPD(dec), export_long.digits, len, sign,
+                        PyLong_BASE, ctx, status);
+#else
+  #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
+#endif
         PyLong_FreeExport(&export_long);
     }
     else {
@@ -3648,7 +3642,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     mpd_t *x;
     mpd_context_t workctx;
     uint32_t status = 0;
-    const PyLongLayout *layout = PyLong_GetNativeLayout();
 
     if (mpd_isspecial(MPD(dec))) {
         if (mpd_isnan(MPD(dec))) {
@@ -3683,8 +3676,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return PyLong_FromInt64(val);
     }
 
-    const uint8_t bpd = layout->bits_per_digit;
-    n = (mpd_sizeinbase(x, 2) + bpd - 1) / bpd;
+    n = (mpd_sizeinbase(x, 2) + PyLong_SHIFT - 1)/PyLong_SHIFT;
     PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n,
                                                (void**)&ob_digit);
     /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
