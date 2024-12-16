@@ -600,6 +600,8 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
+        if buffersize is not None and not isinstance(buffersize, int):
+            raise TypeError("buffersize must be an integer or None")
         if buffersize is not None and buffersize < 1:
             raise ValueError("buffersize must be None or > 0")
 
