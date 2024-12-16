@@ -134,10 +134,9 @@ Glossary
 
    attached thread state
 
-      A :term:`thread state` that is :term:`active <current thread state>`
-      for the current thread. If no thread state is attached, then the
-      :term:`current thread state` is ``NULL``. Attempting to call Python
-      without an attached thread state will result in a fatal error.
+      A :term:`thread state` that is stored in the :term:`current thread state`.
+      If no thread state is attached, then the :term:`current thread state` is ``NULL``.
+      Attempting to call Python without an attached thread state will result in a fatal error.
 
       A thread state can be attached and detached explicitly by the user, or
       implicitly by the interpreter in between calls. For example, an attached
