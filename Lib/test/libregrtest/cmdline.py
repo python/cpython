@@ -320,7 +320,7 @@ def _create_parser():
     group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
                        type=int,
                        help='run copies of each test in PARALLEL_THREADS at '
-                             'once')
+                            'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
