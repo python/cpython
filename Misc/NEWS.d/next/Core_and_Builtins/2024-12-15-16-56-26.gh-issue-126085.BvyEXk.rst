@@ -1,2 +1,1 @@
-Add the ``tp_iter`` slot to :class:`typing.TypeAliasType` to allow star
-unpacking.
+:class:`typing.TypeAliasType` now supports star unpacking.
