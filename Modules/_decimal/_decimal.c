@@ -3685,10 +3685,10 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     status = 0;
     /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
 #if PYLONG_BITS_IN_DIGIT == 30
-    memset(digits + sizeof(uint32_t)*(n - 1), 0, sizeof(uint32_t));
+    memset((char *)digits + sizeof(uint32_t)*(n - 1), 0, sizeof(uint32_t));
     n = mpd_qexport_u32((uint32_t **)&digits, n, PyLong_BASE, x, &status);
 #elif PYLONG_BITS_IN_DIGIT == 15
-    memset(digits + sizeof(unit16_t)*(n - 1), 0, sizeof(uint16_t));
+    memset((char *)digits + sizeof(uint16_t)*(n - 1), 0, sizeof(uint16_t));
     n = mpd_qexport_u16((uint16_t **)&digits, n, PyLong_BASE, x, &status);
 #else
     #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
