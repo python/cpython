@@ -43,7 +43,7 @@
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
     <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
-    <_PyStatsPreprocessorDefinition Condition="$(Py_STATS) == ''">Py_STATS;</_PyStatsPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition Condition="$(Py_STATS) != ''">Py_STATS;</_PyStatsPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
