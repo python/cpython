@@ -937,9 +937,13 @@ class ResourceLoaderDeprecationWarningsTests(unittest.TestCase):
     """Tests ResourceLoader deprecation warnings."""
 
     def test_deprecated_resource_loader(self):
-        with self.assertWarns(DeprecationWarning):
-            from importlib.abc import ResourceLoader
+        from importlib.abc import ResourceLoader
+        class DummyLoader(ResourceLoader):
+            def get_data(self, path):
+                return b''
 
+        with self.assertWarns(DeprecationWarning):
+            DummyLoader()
 
 if __name__ == '__main__':
     unittest.main()
