@@ -263,7 +263,7 @@ atexit_unregister_locked(PyObject *callbacks, PyObject *func)
         {
             return -1;
         }
-        else if (cmp == 1) {
+        if (cmp == 1) {
             // We found a callback!
             if (PyList_SetSlice(callbacks, i, i + 1, NULL) < 0) {
                 return -1;
