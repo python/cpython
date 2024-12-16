@@ -85,14 +85,14 @@ class ExecutorTest:
         for buffersize in (1, 2, len(ints), len(ints) * 2):
             with self.subTest(buffersize=buffersize):
                 res = self.executor.map(str, ints, buffersize=buffersize)
-                self.assertEqual(list(res), ["0", "1", "2", "3"])
+                self.assertListEqual(list(res), ["0", "1", "2", "3"])
 
     def test_map_buffersize_on_multiple_iterables(self):
         ints = range(4)
         for buffersize in (1, 2, len(ints), len(ints) * 2):
             with self.subTest(buffersize=buffersize):
                 res = self.executor.map(add, ints, ints, buffersize=buffersize)
-                self.assertEqual(list(res), [0, 2, 4, 6])
+                self.assertListEqual(list(res), [0, 2, 4, 6])
 
     def test_map_buffersize_on_infinite_iterable(self):
         res = self.executor.map(str, itertools.count(), buffersize=2)
