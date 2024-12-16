@@ -155,14 +155,13 @@ class ResourceTracker(object):
                 # that can make the child die before it registers signal handlers
                 # for SIGINT and SIGTERM. The mask is unregistered after spawning
                 # the child.
-                prev_sigmask = None
                 try:
                     if _HAVE_SIGMASK:
-                        prev_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
+                        signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 finally:
-                    if prev_sigmask is not None:
-                        signal.pthread_sigmask(signal.SIG_SETMASK, prev_sigmask)
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
             except:
                 os.close(w)
                 raise
