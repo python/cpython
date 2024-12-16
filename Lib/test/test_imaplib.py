@@ -208,6 +208,28 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
 
 
+class IdleCmdHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        self._send_textline('+ idling')
+        # simple response
+        self._send_line(b'* 2 EXISTS')
+        # complex response: fragmented data due to literal string
+        self._send_line(b'* 1 FETCH (BODY[HEADER.FIELDS (DATE)] {41}')
+        self._send(b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n')
+        self._send_line(b')')
+        # simple response following a fragmented one
+        self._send_line(b'* 3 EXISTS')
+        # response arriving later
+        time.sleep(1)
+        self._send_line(b'* 1 RECENT')
+        r = yield
+        if r == b'DONE\r\n':
+            self._send_tagged(tag, 'OK', 'Idle completed')
+        else:
+            self._send_tagged(tag, 'BAD', 'Expected DONE')
+
+
 class NewIMAPTestsMixin():
     client = None
 
@@ -504,29 +526,8 @@ class NewIMAPTestsMixin():
             with client.idle():
                 pass
 
-    class IdleCmdHandler(SimpleIMAPHandler):
-        capabilities = 'IDLE'
-        def cmd_IDLE(self, tag, args):
-            self._send_textline('+ idling')
-            # simple response
-            self._send_line(b'* 2 EXISTS')
-            # complex response: fragmented data due to literal string
-            self._send_line(b'* 1 FETCH (BODY[HEADER.FIELDS (DATE)] {41}')
-            self._send(b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n')
-            self._send_line(b')')
-            # simple response following a fragmented one
-            self._send_line(b'* 3 EXISTS')
-            # response arriving later
-            time.sleep(1)
-            self._send_line(b'* 1 RECENT')
-            r = yield
-            if r == b'DONE\r\n':
-                self._send_tagged(tag, 'OK', 'Idle completed')
-            else:
-                self._send_tagged(tag, 'BAD', 'Expected DONE')
-
     def test_idle_iter(self):
-        client, _ = self._setup(self.IdleCmdHandler)
+        client, _ = self._setup(IdleCmdHandler)
         client.login('user', 'pass')
         with client.idle() as idler:
             # iteration should produce responses
@@ -551,7 +552,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(data, [b'1'])
 
     def test_idle_burst(self):
-        client, _ = self._setup(self.IdleCmdHandler)
+        client, _ = self._setup(IdleCmdHandler)
         client.login('user', 'pass')
         # burst() should yield immediately available responses
         with client.idle() as idler:
