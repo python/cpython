@@ -3636,7 +3636,7 @@ finish:
 static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
-    digit *ob_digit;
+    void *digits;
     size_t n;
     mpd_t *x;
     mpd_context_t workctx;
@@ -3676,20 +3676,20 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     n = (mpd_sizeinbase(x, 2) + PyLong_SHIFT - 1)/PyLong_SHIFT;
-    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n,
-                                               (void**)&ob_digit);
-    /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
-    ob_digit[n-1] = 0;
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n, &digits);
     if (writer == NULL) {
         mpd_del(x);
         return NULL;
     }
 
     status = 0;
+    /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
 #if PYLONG_BITS_IN_DIGIT == 30
-    n = mpd_qexport_u32(&ob_digit, n, PyLong_BASE, x, &status);
+    memset(digits + sizeof(uint32_t)*(n - 1), 0, sizeof(uint32_t));
+    n = mpd_qexport_u32((uint32_t **)&digits, n, PyLong_BASE, x, &status);
 #elif PYLONG_BITS_IN_DIGIT == 15
-    n = mpd_qexport_u16(&ob_digit, n, PyLong_BASE, x, &status);
+    memset(digits + sizeof(unit16_t)*(n - 1), 0, sizeof(uint16_t));
+    n = mpd_qexport_u16((uint16_t **)&digits, n, PyLong_BASE, x, &status);
 #else
     #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
