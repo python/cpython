@@ -1204,15 +1204,16 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Detach the :term:`current thread state` (if it has been created) and
-   return it.
+   Detach the :term:`thread state <attached thread state>` and
+   return it. The :term:`current thread state` will be ``NULL`` upon
+   returning.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
    Set the :term:`current thread state` to *tstate*, which must not be ``NULL``.
    The passed :term:`thread state` **should not** be :term:`attached <attached thread state>`,
-   otherwise deadlock ensues.
+   otherwise deadlock ensues. *tstate* will be attached upon returning.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing will
