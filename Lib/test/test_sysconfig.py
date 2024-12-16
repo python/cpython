@@ -14,6 +14,7 @@ from test.support import (
     is_android,
     is_apple_mobile,
     is_wasi,
+    is_emscripten,
     PythonSymlink,
     requires_subprocess,
 )
@@ -651,9 +652,13 @@ class TestSysConfig(unittest.TestCase):
         system_config_vars = get_config_vars()
 
         # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+        ignore_keys = ('projectbase', 'srcdir')
+        if is_emscripten:
+            ignore_keys += ("exec_prefix", "installed_base", "installed_platbase", "prefix", "platbase", "userbase")
+
+        for key in ignore_keys:
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 
