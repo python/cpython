@@ -74,11 +74,13 @@ class ExecutorTest:
         self.assertEqual([None, None], results)
 
     def test_map_buffersize_validation(self):
-        with self.assertRaisesRegex(
-            ValueError,
-            "buffersize must be None or > 0",
-        ):
-            self.executor.map(str, range(4), buffersize=0)
+        for buffersize in (0, -1):
+            with self.subTest(buffersize=buffersize):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "buffersize must be None or > 0",
+                ):
+                    self.executor.map(str, range(4), buffersize=buffersize)
 
     def test_map_buffersize(self):
         ints = range(4)
