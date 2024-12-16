@@ -1,4 +1,4 @@
-:method:`socketserver.BaseServer.get_request` now raises ``NotImplementedError``.
+:meth:`socketserver.BaseServer.get_request` now raises ``NotImplementedError``.
 It was previously absent and attempting to use it would generate an
 ``AttributeError``. :class:`socketserver.BaseServer` no longer assumes that
 all subclasses will add a ``socket`` attribute. Updated documentation to
