@@ -1389,12 +1389,12 @@ class Idler:
         if __debug__ and imap.debug >= 4:
             imap._mesg(f'idle start duration={self._duration}')
 
-        try:
-            # Start capturing untagged responses before sending IDLE,
-            # so we can deliver via iteration any that arrive while
-            # the IDLE command continuation request is still pending.
-            imap._idle_capture = True
+        # Start capturing untagged responses before sending IDLE,
+        # so we can deliver via iteration any that arrive while
+        # the IDLE command continuation request is still pending.
+        imap._idle_capture = True
 
+        try:
             self._tag = imap._command('IDLE')
             # As with any command, the server is allowed to send us unrelated,
             # untagged responses before acting on IDLE.  These lines will be
