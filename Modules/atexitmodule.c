@@ -181,10 +181,11 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *func_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    PyObject *func_kwargs = kwargs;
 
-    if (kwargs == NULL)
+    if (func_kwargs == NULL)
     {
-        kwargs = Py_None;
+        func_kwargs = Py_None;
     }
     PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
     if (tuple == NULL)
