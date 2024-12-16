@@ -2372,6 +2372,8 @@ typedef struct {
     elementtreestate *state;
 } TreeBuilderObject;
 
+
+#define _TreeBuilder_CAST(PTR) ((TreeBuilderObject *)(PTR))
 #define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
@@ -2462,9 +2464,10 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 }
 
 static int
-treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
+treebuilder_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(op));
+    TreeBuilderObject *self = _TreeBuilder_CAST(op);
     Py_VISIT(self->pi_event_obj);
     Py_VISIT(self->comment_event_obj);
     Py_VISIT(self->end_ns_event_obj);
@@ -2485,8 +2488,9 @@ treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 }
 
 static int
-treebuilder_gc_clear(TreeBuilderObject *self)
+treebuilder_gc_clear(PyObject *op)
 {
+    TreeBuilderObject *self = _TreeBuilder_CAST(op);
     Py_CLEAR(self->pi_event_obj);
     Py_CLEAR(self->comment_event_obj);
     Py_CLEAR(self->end_ns_event_obj);
@@ -2507,12 +2511,13 @@ treebuilder_gc_clear(TreeBuilderObject *self)
 }
 
 static void
-treebuilder_dealloc(TreeBuilderObject *self)
+treebuilder_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(op);
+    TreeBuilderObject *self = _TreeBuilder_CAST(op);
     PyObject_GC_UnTrack(self);
-    treebuilder_gc_clear(self);
-    tp->tp_free(self);
+    (void)treebuilder_gc_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
