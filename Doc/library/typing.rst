@@ -2486,14 +2486,14 @@ types.
 
    .. warning::
 
-      Runtime-checkable protocols are known to be unsafe in several ways.
+      Runtime-checkable protocols are known to be unsound in several ways.
       You should only use them for simple protocols, and even then only use
       them with care.
 
       One issue is that an :func:`isinstance` or :func:`issubclass` check
-      against a runtime-checkable protocol will only check for the presence of
-      the protocol's methods or attributes on the object at runtime, paying no
-      attention to a method's type signature or an attribute's type. This is
+      against a runtime-checkable protocol will only check for the *presence*
+      of the protocol's methods or attributes on the object at runtime, paying
+      no attention to a method's type signature or an attribute's type. This is
       problematic given how type checkers often apply type narrowing when they
       see these checks:
 
@@ -2510,13 +2510,14 @@ types.
 
          def f(obj: object) -> None:
              if isinstance(obj, HasX):
-                 # type checker assumes that `obj.x` is an `int`
-                 # because the `isinstance()` check passed
+                 # a type checker may assume that `obj` has an `x` attribute of
+                 # type `int` in this branch, because the `isinstance()` check
+                 # passed
                  print(f"obj.x + 2 is {obj.x + 2}")
              else:
                  print("obj doesn't have an `x` attribute")
 
-         # raises an exception that may not be caught by a type checker because
+         # this raises an exception that may not be caught by a type checker because
          # the `x` attribute on `Foo` objects is a `str`, not an `int`,
          # but the `isinstance()` check against the runtime-checkable protocol
          # will still pass:
