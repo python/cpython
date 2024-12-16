@@ -270,16 +270,20 @@ class BaseServer:
     # - finish_request() instantiates the request handler class; this
     #   constructor will handle the request all by itself
 
-    def _get_timeout(self):
-        """Hook so child classes can support other sources of timeout."""
-        return self.timeout
-
     def handle_request(self):
         """Handle one request, possibly blocking.
 
         Respects self.timeout.
         """
-        timeout = self._get_timeout()
+        # Support people who used socket.settimeout() to escape
+        # handle_request before self.timeout was available.
+        timeout = None
+        if hasattr(self, "socket"):
+            timeout = self.socket.gettimeout()
+        if timeout is None:
+            timeout = self.timeout
+        elif self.timeout is not None:
+            timeout = min(timeout, self.timeout)
         if timeout is not None:
             deadline = time() + timeout
 
@@ -490,16 +494,6 @@ class TCPServer(BaseServer):
 
         """
         self.socket.close()
-
-    def _get_timeout(self):
-        # Support people who used socket.settimeout() to escape
-        # handle_request before self.timeout was available.
-        timeout = self.socket.gettimeout()
-        if timeout is None:
-            timeout = self.timeout
-        elif self.timeout is not None:
-            timeout = min(timeout, self.timeout)
-        return timeout
 
     def fileno(self):
         """Return socket file number.
