@@ -3724,6 +3724,9 @@ module_clear(PyObject *mod)
 
     Py_CLEAR(state->context_kwname);
 
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    Py_CLEAR(ts->asyncio_running_loop);
+
     return 0;
 }
 
