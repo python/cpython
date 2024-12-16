@@ -3084,6 +3084,9 @@ typedef struct {
     PyObject *elementtree_module;
 } XMLParserObject;
 
+
+#define _XMLParser_CAST(PTR) ((XMLParserObject *)(PTR))
+
 /* helpers */
 
 LOCAL(PyObject*)
@@ -3774,9 +3777,10 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 }
 
 static int
-xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
+xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(op));
+    XMLParserObject *self = _XMLParser_CAST(op);
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
     Py_VISIT(self->handle_comment);
@@ -3795,8 +3799,9 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 }
 
 static int
-xmlparser_gc_clear(XMLParserObject *self)
+xmlparser_gc_clear(PyObject *op)
 {
+    XMLParserObject *self = _XMLParser_CAST(op);
     elementtreestate *st = self->state;
     if (self->parser != NULL) {
         XML_Parser parser = self->parser;
@@ -3823,11 +3828,11 @@ xmlparser_gc_clear(XMLParserObject *self)
 }
 
 static void
-xmlparser_dealloc(XMLParserObject* self)
+xmlparser_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    xmlparser_gc_clear(self);
+    (void)xmlparser_gc_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -4195,7 +4200,7 @@ static PyMemberDef xmlparser_members[] = {
 };
 
 static PyObject*
-xmlparser_version_getter(XMLParserObject *self, void *closure)
+xmlparser_version_getter(PyObject *op, void *closure)
 {
     return PyUnicode_FromFormat(
         "Expat %d.%d.%d", XML_MAJOR_VERSION,
@@ -4203,7 +4208,7 @@ xmlparser_version_getter(XMLParserObject *self, void *closure)
 }
 
 static PyGetSetDef xmlparser_getsetlist[] = {
-    {"version", (getter)xmlparser_version_getter, NULL, NULL},
+    {"version", xmlparser_version_getter, NULL, NULL},
     {NULL},
 };
 
