@@ -257,6 +257,7 @@ typedef struct {
 } ElementObject;
 
 
+#define _Element_CAST(PTR) ((ElementObject *)(PTR))
 #define Element_CheckExact(st, op) Py_IS_TYPE(op, (st)->Element_Type)
 #define Element_Check(st, op) PyObject_TypeCheck(op, (st)->Element_Type)
 
@@ -648,9 +649,10 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
+element_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(op));
+    ElementObject *self = _Element_CAST(op);
     Py_VISIT(self->tag);
     Py_VISIT(JOIN_OBJ(self->text));
     Py_VISIT(JOIN_OBJ(self->tail));
@@ -666,8 +668,9 @@ element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
 }
 
 static int
-element_gc_clear(ElementObject *self)
+element_gc_clear(PyObject *op)
 {
+    ElementObject *self = _Element_CAST(op);
     Py_CLEAR(self->tag);
     _clear_joined_ptr(&self->text);
     _clear_joined_ptr(&self->tail);
@@ -680,22 +683,23 @@ element_gc_clear(ElementObject *self)
 }
 
 static void
-element_dealloc(ElementObject* self)
+element_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(op);
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, element_dealloc)
+    PyObject_GC_UnTrack(op);
+    Py_TRASHCAN_BEGIN(op, element_dealloc)
+    ElementObject *self = _Element_CAST(op);
 
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
 
     /* element_gc_clear clears all references and deallocates extra
     */
-    element_gc_clear(self);
+    (void)element_gc_clear(op);
 
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(op);
     Py_DECREF(tp);
     Py_TRASHCAN_END
 }
@@ -1478,9 +1482,9 @@ _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls)
 
 
 static PyObject*
-element_getitem(PyObject* self_, Py_ssize_t index)
+element_getitem(PyObject *op, Py_ssize_t index)
 {
-    ElementObject* self = (ElementObject*) self_;
+    ElementObject *self = _Element_CAST(op);
 
     if (!self->extra || index < 0 || index >= self->extra->length) {
         PyErr_SetString(
@@ -1494,9 +1498,9 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 }
 
 static int
-element_bool(PyObject* self_)
+element_bool(PyObject *op)
 {
-    ElementObject* self = (ElementObject*) self_;
+    ElementObject *self = _Element_CAST(op);
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "Testing an element's truth value will always return True "
                      "in future versions.  Use specific 'len(elem)' or "
@@ -1583,8 +1587,9 @@ _elementtree_Element_keys_impl(ElementObject *self)
 }
 
 static Py_ssize_t
-element_length(ElementObject* self)
+element_length(PyObject *op)
 {
+    ElementObject *self = _Element_CAST(op);
     if (!self->extra)
         return 0;
 
@@ -1675,10 +1680,10 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 }
 
 static PyObject*
-element_repr(ElementObject* self)
+element_repr(PyObject *op)
 {
     int status;
-
+    ElementObject *self = _Element_CAST(op);
     if (self->tag == NULL)
         return PyUnicode_FromFormat("<Element at %p>", self);
 
@@ -1728,9 +1733,9 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
 }
 
 static int
-element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
+element_setitem(PyObject *op, Py_ssize_t index, PyObject* item)
 {
-    ElementObject* self = (ElementObject*) self_;
+    ElementObject *self = _Element_CAST(op);
     Py_ssize_t i;
     PyObject* old;
 
@@ -1762,10 +1767,10 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     return 0;
 }
 
-static PyObject*
-element_subscr(PyObject* self_, PyObject* item)
+static PyObject *
+element_subscr(PyObject *op, PyObject *item)
 {
-    ElementObject* self = (ElementObject*) self_;
+    ElementObject *self = _Element_CAST(op);
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -1775,7 +1780,7 @@ element_subscr(PyObject* self_, PyObject* item)
         }
         if (i < 0 && self->extra)
             i += self->extra->length;
-        return element_getitem(self_, i);
+        return element_getitem(op, i);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, i;
@@ -1815,9 +1820,9 @@ element_subscr(PyObject* self_, PyObject* item)
 }
 
 static int
-element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
+element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 {
-    ElementObject* self = (ElementObject*) self_;
+    ElementObject *self = _Element_CAST(op);
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -1827,7 +1832,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         }
         if (i < 0 && self->extra)
             i += self->extra->length;
-        return element_setitem(self_, i, value);
+        return element_setitem(op, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, newlen, i;
@@ -1998,30 +2003,34 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 }
 
 static PyObject*
-element_tag_getter(ElementObject *self, void *closure)
+element_tag_getter(PyObject *op, void *closure)
 {
+    ElementObject *self = _Element_CAST(op);
     PyObject *res = self->tag;
     return Py_NewRef(res);
 }
 
 static PyObject*
-element_text_getter(ElementObject *self, void *closure)
+element_text_getter(PyObject *op, void *closure)
 {
+    ElementObject *self = _Element_CAST(op);
     PyObject *res = element_get_text(self);
     return Py_XNewRef(res);
 }
 
 static PyObject*
-element_tail_getter(ElementObject *self, void *closure)
+element_tail_getter(PyObject *op, void *closure)
 {
+    ElementObject *self = _Element_CAST(op);
     PyObject *res = element_get_tail(self);
     return Py_XNewRef(res);
 }
 
 static PyObject*
-element_attrib_getter(ElementObject *self, void *closure)
+element_attrib_getter(PyObject *op, void *closure)
 {
     PyObject *res;
+    ElementObject *self = _Element_CAST(op);
     if (!self->extra) {
         if (create_extra(self, NULL) < 0)
             return NULL;
@@ -2040,31 +2049,34 @@ element_attrib_getter(ElementObject *self, void *closure)
     }
 
 static int
-element_tag_setter(ElementObject *self, PyObject *value, void *closure)
+element_tag_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
+    ElementObject *self = _Element_CAST(op);
     Py_SETREF(self->tag, Py_NewRef(value));
     return 0;
 }
 
 static int
-element_text_setter(ElementObject *self, PyObject *value, void *closure)
+element_text_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
+    ElementObject *self = _Element_CAST(op);
     _set_joined_ptr(&self->text, Py_NewRef(value));
     return 0;
 }
 
 static int
-element_tail_setter(ElementObject *self, PyObject *value, void *closure)
+element_tail_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
+    ElementObject *self = _Element_CAST(op);
     _set_joined_ptr(&self->tail, Py_NewRef(value));
     return 0;
 }
 
 static int
-element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
+element_attrib_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     if (!PyDict_Check(value)) {
@@ -2073,6 +2085,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
                      Py_TYPE(value)->tp_name);
         return -1;
     }
+    ElementObject *self = _Element_CAST(op);
     if (!self->extra) {
         if (create_extra(self, NULL) < 0)
             return -1;
@@ -4229,20 +4242,20 @@ static struct PyMemberDef element_members[] = {
 
 static PyGetSetDef element_getsetlist[] = {
     {"tag",
-        (getter)element_tag_getter,
-        (setter)element_tag_setter,
+        element_tag_getter,
+        element_tag_setter,
         "A string identifying what kind of data this element represents"},
     {"text",
-        (getter)element_text_getter,
-        (setter)element_text_setter,
+        element_text_getter,
+        element_text_setter,
         "A string of text directly after the start tag, or None"},
     {"tail",
-        (getter)element_tail_getter,
-        (setter)element_tail_setter,
+        element_tail_getter,
+        element_tail_setter,
         "A string of text directly after the end tag, or None"},
     {"attrib",
-        (getter)element_attrib_getter,
-        (setter)element_attrib_setter,
+        element_attrib_getter,
+        element_attrib_setter,
         "A dictionary containing the element's attributes"},
     {NULL},
 };
