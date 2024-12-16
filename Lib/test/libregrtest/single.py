@@ -60,7 +60,7 @@ def _parallelize_tests(suite, parallel_threads: int):
         return (getattr(test_method, "__unittest_thread_unsafe__", False) or
                 getattr(instance, "__unittest_thread_unsafe__", False))
 
-    newtests = []
+    newtests: list[object] = []
     for test in suite._tests:
         if isinstance(test, unittest.TestSuite):
             _parallelize_tests(test, parallel_threads)

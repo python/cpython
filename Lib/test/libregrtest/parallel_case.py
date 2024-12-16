@@ -18,7 +18,7 @@ class ParallelTestCase(TestCase):
     def __str__(self):
         return f"{str(self.test_case)} [threads={self.num_threads}]"
 
-    def run_worker(self, test_case: TestCase, result: unittest.Result,
+    def run_worker(self, test_case: TestCase, result: unittest.TestResult,
                    barrier: threading.Barrier):
         barrier.wait()
         test_case.run(result)
