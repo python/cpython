@@ -1667,6 +1667,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->threading_local_key);
     Py_CLEAR(tstate->threading_local_sentinel);
 
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
