@@ -107,7 +107,11 @@ Sequence Protocol
 
 .. c:function:: int PySequence_In(PyObject *o, PyObject *value)
 
-   Deprecated alias for :c:func:`PySequence_Contains`.
+   Alias for :c:func:`PySequence_Contains`.
+
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code.
 
 
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)
