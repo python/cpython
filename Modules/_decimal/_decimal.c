@@ -3636,7 +3636,6 @@ finish:
 static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
-    PyObject *pylong;
     digit *ob_digit;
     size_t n;
     mpd_t *x;
@@ -3682,7 +3681,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
     ob_digit[n-1] = 0;
     if (writer == NULL) {
-        PyLongWriter_Discard(writer);
         mpd_del(x);
         return NULL;
     }
@@ -3704,9 +3702,8 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     assert(n > 0);
-    pylong = PyLongWriter_Finish(writer);
     mpd_del(x);
-    return pylong;
+    return PyLongWriter_Finish(writer);
 }
 
 /* Convert a Decimal to its exact integer ratio representation. */
