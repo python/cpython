@@ -2335,7 +2335,7 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
         return NULL;
     }
     if (export_long.digits) {
-        const uint8_t sign = export_long.negative ? MPD_NEG :  MPD_POS;
+        const uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
         const Py_ssize_t len = export_long.ndigits;
 
 #if PYLONG_BITS_IN_DIGIT == 30
