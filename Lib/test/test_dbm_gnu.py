@@ -206,7 +206,7 @@ class TestGdbm(unittest.TestCase):
                 self.assertNotIn(k, db)
             self.assertEqual(len(db), 0)
 
-    @support.run_with_locale(
+    @support.run_with_locales(
         'LC_ALL',
         'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
         'fr_FR.utf8', 'en_US.utf8',
