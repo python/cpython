@@ -1480,8 +1480,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current interpreter.
 
-   Issue a fatal error if there no :term:`attached thread state` or no current
-   interpreter. It cannot return NULL.
+   Issue a fatal error if there no :term:`attached thread state`.
+   It cannot return NULL.
 
    .. versionadded:: 3.9
 
