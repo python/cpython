@@ -1214,8 +1214,9 @@ _PyType_GetVersionForCurrentState(PyTypeObject *tp)
 
 
 #define MAX_VERSIONS_PER_CLASS 1000
-static_assert(MAX_VERSIONS_PER_CLASS < _Py_ATTR_CACHE_UNUSED,
-              "_Py_ATTR_CACHE_UNUSED must be bigger than max");
+#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+#endif
 
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
