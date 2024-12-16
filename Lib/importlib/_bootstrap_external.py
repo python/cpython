@@ -694,10 +694,10 @@ class WindowsRegistryFinder:
 
     def __init__(self):
         import warnings
-        warnings.warn("importlib.machinery.WindowsRegistryFinder is "
-                      "deprecated. Use site configuration instead. "
-                      "Future versions of Python may not enable this "
-                      "finder by default.",
+        warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                      'deprecated. Use site configuration instead. '
+                      'Future versions of Python may not enable this '
+                      'finder by default.',
                       DeprecationWarning, stacklevel=2)
 
     @staticmethod

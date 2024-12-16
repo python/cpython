@@ -35,16 +35,16 @@ def __getattr__(name):
     import warnings
 
     if name == 'DEBUG_BYTECODE_SUFFIXES':
-        warnings.warn("importlib.machinery.DEBUG_BYTECODE_SUFFIXES is "
-                      "deprecated. Use importlib.machinery.BYTECODE_SUFFIXES "
-                      "instead.",
+        warnings.warn('importlib.machinery.DEBUG_BYTECODE_SUFFIXES is '
+                      'deprecated. Use importlib.machinery.BYTECODE_SUFFIXES '
+                      'instead.',
                       DeprecationWarning, stacklevel=2)
         return _DEBUG_BYTECODE_SUFFIXES
     elif name == 'OPTIMIZED_BYTECODE_SUFFIXES':
-        warnings.warn("importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES is "
-                      "deprecated. Use importlib.machinery.BYTECODE_SUFFIXES "
-                      "instead.",
+        warnings.warn('importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES is '
+                      'deprecated. Use importlib.machinery.BYTECODE_SUFFIXES '
+                      'instead.',
                       DeprecationWarning, stacklevel=2)
         return _OPTIMIZED_BYTECODE_SUFFIXES
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

@@ -72,9 +72,9 @@ class ResourceLoader(Loader):
 
     def __init__(self):
         import warnings
-        warnings.warn("importlib.abc.ResourceLoader is deprecated in "
-                      "favour of supporting resource loading through "
-                      "importlib.resources.abc.ResourceReader.",
+        warnings.warn('importlib.abc.ResourceLoader is deprecated in '
+                      'favour of supporting resource loading through '
+                      'importlib.resources.abc.ResourceReader.',
                       DeprecationWarning, stacklevel=2)
         super().__init__()
 
@@ -209,8 +209,8 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
         import warnings
-        warnings.warn("SourceLoader.path_mtime is deprecated in favour of "
-                      "SourceLoader.path_stats().",
+        warnings.warn('SourceLoader.path_mtime is deprecated in favour of '
+                      'SourceLoader.path_stats().',
                       DeprecationWarning,
                       stacklevel=2)
         if self.path_stats.__func__ is SourceLoader.path_stats:
