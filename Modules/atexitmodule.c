@@ -72,7 +72,6 @@ _PyAtExit_Init(PyInterpreterState *interp)
 
     state->callbacks = PyList_New(0);
     if (state->callbacks == NULL) {
-        PyErr_WriteUnraisable(NULL);
         return _PyStatus_NO_MEMORY();
     }
     return _PyStatus_OK();
