@@ -52,11 +52,11 @@ struct atexit_state {
 };
 
 #ifdef Py_GIL_DISABLED
-#define _PyAtExit_LockCallbacks(state) PyMutex_Lock(&state->ll_callbacks_lock);
-#define _PyAtExit_UnlockCallbacks(state) PyMutex_Unlock(&state->ll_callbacks_lock);
+#  define _PyAtExit_LockCallbacks(state) PyMutex_Lock(&state->ll_callbacks_lock);
+#  define _PyAtExit_UnlockCallbacks(state) PyMutex_Unlock(&state->ll_callbacks_lock);
 #else
-#define _PyAtExit_LockCallbacks(state)
-#define _PyAtExit_UnlockCallbacks(state)
+#  define _PyAtExit_LockCallbacks(state)
+#  define _PyAtExit_UnlockCallbacks(state)
 #endif
 
 // Export for '_interpchannels' shared extension

@@ -121,9 +121,9 @@ atexit_callfuncs(struct atexit_state *state)
         PyObject *tuple = PyList_GET_ITEM(copy, i);
         assert(PyTuple_CheckExact(tuple));
 
-        PyObject *the_func = PyTuple_GET_ITEM(tuple, 0);
+        PyObject *func = PyTuple_GET_ITEM(tuple, 0);
         PyObject *kwargs = PyTuple_GET_ITEM(tuple, 2);
-        PyObject *res = PyObject_Call(the_func,
+        PyObject *res = PyObject_Call(func,
                                       PyTuple_GET_ITEM(tuple, 1),
                                       kwargs == Py_None ? NULL : kwargs);
         if (res == NULL) {
@@ -187,7 +187,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     {
         kwargs = Py_None;
     }
-    PyObject *tuple = _PyTuple_FromArray((PyObject *[]){ func, rest_of_args, kwargs }, 3);
+    PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
     if (tuple == NULL)
     {
         return NULL;
@@ -246,13 +246,13 @@ atexit_ncallbacks(PyObject *module, PyObject *unused)
     struct atexit_state *state = get_atexit_state();
     assert(state->callbacks != NULL);
     assert(PyList_CheckExact(state->callbacks));
-    return PyLong_FromSsize_t(Py_SIZE(state->callbacks));
+    return PyLong_FromSsize_t(PyList_GET_SIZE(state->callbacks));
 }
 
 static int
 atexit_unregister_locked(PyObject *callbacks, PyObject *func)
 {
-    for (Py_ssize_t i = 0; i < Py_SIZE(callbacks); ++i) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(callbacks); ++i) {
         PyObject *tuple = PyList_GET_ITEM(callbacks, i);
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
