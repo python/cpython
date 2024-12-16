@@ -240,6 +240,11 @@ Operating System Utilities
 
    Closes files that were opened by :c:func:`Py_fopen`.
 
+   On success, return ``0``.
+   On error, return ``EOF`` and ``errno`` is set to indicate the error.
+   In either case, any further access (including another call to
+   :c:func:`Py_fclose`) to the stream results in undefined behavior.
+
    .. versionadded:: next
 
 
