@@ -1033,11 +1033,11 @@ to be released to attach their thread state, allowing true multi-core parallelis
 
 .. note::
    Calling system I/O functions is the most common use case for detaching
-   the :term:`thread state`, but it can also be useful before calling
+   the :term:`thread state <attached thread state>`, but it can also be useful before calling
    long-running computations which don't need access to Python objects, such
    as compression or cryptographic functions operating over memory buffers.
    For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
-   :term:`attached thread state` when compressing or hashing data.
+   :term:`thread state <attached thread state>` when compressing or hashing data.
 
 
 .. _gilstate:
@@ -2394,7 +2394,7 @@ The C-API provides a basic mutual exclusion lock.
 
    Lock mutex *m*.  If another thread has already locked it, the calling
    thread will block until the mutex is unlocked.  While blocked, the thread
-   will temporarily detach the :term:`attached thread state` if one exists.
+   will temporarily detach the :term:`thread state <attached thread state>` if one exists.
 
    .. versionadded:: 3.13
 

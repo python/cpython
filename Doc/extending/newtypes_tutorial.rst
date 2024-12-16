@@ -404,7 +404,7 @@ But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
 ``first`` member; or that destructor could detach the
-:term:`attached thread state` and let arbitrary code run in other
+:term:`thread state <attached thread state>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost
@@ -414,7 +414,7 @@ don't we have to do this?
 * when we absolutely know that the reference count is greater than 1;
 
 * when we know that deallocation of the object [#]_ will neither detach
-  the :term:`attached thread state` nor cause any calls back into our type's code;
+  the :term:`thread state <attached thread state>` nor cause any calls back into our type's code;
 
 * when decrementing a reference count in a :c:member:`~PyTypeObject.tp_dealloc`
   handler on a type which doesn't support cyclic garbage collection [#]_.
