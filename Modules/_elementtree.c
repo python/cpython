@@ -257,7 +257,7 @@ typedef struct {
 } ElementObject;
 
 
-#define _Element_CAST(PTR) ((ElementObject *)(PTR))
+#define _Element_CAST(op) ((ElementObject *)(op))
 #define Element_CheckExact(st, op) Py_IS_TYPE(op, (st)->Element_Type)
 #define Element_Check(st, op) PyObject_TypeCheck(op, (st)->Element_Type)
 
@@ -2119,7 +2119,7 @@ typedef struct {
     int gettext;
 } ElementIterObject;
 
-#define _ElementIter_CAST(PTR) ((ElementIterObject *)(PTR))
+#define _ElementIter_CAST(op) ((ElementIterObject *)(op))
 
 
 static void
@@ -2373,7 +2373,7 @@ typedef struct {
 } TreeBuilderObject;
 
 
-#define _TreeBuilder_CAST(PTR) ((TreeBuilderObject *)(PTR))
+#define _TreeBuilder_CAST(op) ((TreeBuilderObject *)(op))
 #define TreeBuilder_CheckExact(st, op) Py_IS_TYPE((op), (st)->TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
@@ -3085,7 +3085,7 @@ typedef struct {
 } XMLParserObject;
 
 
-#define _XMLParser_CAST(PTR) ((XMLParserObject *)(PTR))
+#define _XMLParser_CAST(op) ((XMLParserObject *)(op))
 
 /* helpers */
 
