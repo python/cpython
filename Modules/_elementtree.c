@@ -2119,11 +2119,14 @@ typedef struct {
     int gettext;
 } ElementIterObject;
 
+#define _ElementIter_CAST(PTR) ((ElementIterObject *)(PTR))
+
 
 static void
-elementiter_dealloc(ElementIterObject *it)
+elementiter_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(it);
+    PyTypeObject *tp = Py_TYPE(op);
+    ElementIterObject *it = _ElementIter_CAST(op);
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
@@ -2135,20 +2138,21 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    tp->tp_free(it);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
 static int
-elementiter_traverse(ElementIterObject *it, visitproc visit, void *arg)
+elementiter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ElementIterObject *it = _ElementIter_CAST(op);
     Py_ssize_t i = it->parent_stack_used;
     while (i--)
         Py_VISIT(it->parent_stack[i].parent);
 
     Py_VISIT(it->root_element);
     Py_VISIT(it->sought_tag);
-    Py_VISIT(Py_TYPE(it));
+    Py_VISIT(Py_TYPE(op));
     return 0;
 }
 
@@ -2175,8 +2179,9 @@ parent_stack_push_new(ElementIterObject *it, ElementObject *parent)
 }
 
 static PyObject *
-elementiter_next(ElementIterObject *it)
+elementiter_next(PyObject *op)
 {
+    ElementIterObject *it = _ElementIter_CAST(op);
     /* Sub-element iterator.
      *
      * A short note on gettext: this function serves both the iter() and
