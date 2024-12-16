@@ -1383,7 +1383,8 @@ class Idler:
 
     def __enter__(self):
         imap = self._imap
-        assert not (imap._idle_responses or imap._idle_capture)
+        assert not imap._idle_responses
+        assert not imap._idle_capture
 
         if __debug__ and imap.debug >= 4:
             imap._mesg(f'idle start duration={self._duration}')
