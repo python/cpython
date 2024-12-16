@@ -1763,8 +1763,8 @@ _Py_Specialize_BinarySubscr(
         specialized_op = BINARY_SUBSCR_DICT;
         goto success;
     }
-    unsigned int version;
-    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &version);
+    unsigned int tp_version;
+    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
@@ -1792,7 +1792,7 @@ _Py_Specialize_BinarySubscr(
             Py_DECREF(descriptor);
             goto fail;
         }
-        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)version)) {
+        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version)) {
             specialized_op = BINARY_SUBSCR_GETITEM;
             Py_DECREF(descriptor);
             goto success;
