@@ -114,7 +114,7 @@ atexit_callfuncs(struct atexit_state *state)
         return;
     }
 
-    for (Py_ssize_t i = 0; i < Py_SIZE(copy); ++i) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(copy); ++i) {
         // We don't have to worry about evil borrowed references, because
         // no other threads can access this list.
         PyObject *tuple = PyList_GET_ITEM(copy, i);
