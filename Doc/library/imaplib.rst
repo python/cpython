@@ -344,7 +344,7 @@ An :class:`IMAP4` instance has the following methods:
       (expressed as an :class:`int` or :class:`float`).
 
       This :term:`generator` is an alternative to iterating one response at a
-      time, intended to aid in efficient batch processing.  It retrieves the
+      time, intended to aid in efficient batch processing. It retrieves the
       next response along with any immediately available subsequent responses.
       (For example, a rapid series of ``EXPUNGE`` responses after a bulk
       delete.)
@@ -368,20 +368,20 @@ An :class:`IMAP4` instance has the following methods:
          The ``IDLE`` context's maximum duration, as passed to
          :meth:`IMAP4.idle`, is respected when waiting for the first response
          in a burst. Therefore, an expired :class:`!Idler` will cause this
-         generator to return immediately without producing anything.  Callers
+         generator to return immediately without producing anything. Callers
          should consider this if using it in a loop.
 
 
    .. note::
 
       The :class:`!Idler` object returned by :meth:`IMAP4.idle` is usable only
-      within a :keyword:`with` statement.  To retrieve unsolicited IMAP
+      within a :keyword:`with` statement. To retrieve unsolicited IMAP
       responses outside that context, see :meth:`IMAP4.response`.
 
    .. note::
 
       The :class:`!Idler` class name and structure are internal interfaces,
-      subject to change.  Calling code can rely on its context management,
+      subject to change. Calling code can rely on its context management,
       iteration, and public method to remain stable, but should not subclass,
       instantiate, compare, or otherwise directly reference the class.
 
