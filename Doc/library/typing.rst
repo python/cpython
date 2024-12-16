@@ -2295,7 +2295,7 @@ without the dedicated syntax, as documented below.
    .. rubric:: Unpacking
 
       Type aliases support star unpacking using the ``*Alias`` syntax.
-      This is equivalent to using the ``Unpack[Alias]`` directly:
+      This is equivalent to using ``Unpack[Alias]`` directly:
 
       .. doctest::
 
