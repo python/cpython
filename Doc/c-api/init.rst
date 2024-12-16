@@ -1027,8 +1027,8 @@ thus allowing the old :term:`thread state <attached thread state>` to get re-att
 C API can be called again.
 
 For :term:`free-threaded <free threading>` builds, the :term:`GIL` is normally
-out of the question, but detaching the thread state is still required for blocking I/O
-and long operations. The difference is that threads don't have to wait for the :term:`GIL`
+out of the question, but detaching the :term:`thread state <attached thread state>` is still required
+for blocking I/O and long operations. The difference is that threads don't have to wait for the :term:`GIL`
 to be released to attach their thread state, allowing true multi-core parallelism.
 
 .. note::
