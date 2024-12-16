@@ -1763,10 +1763,12 @@ _Py_Specialize_BinarySubscr(
         specialized_op = BINARY_SUBSCR_DICT;
         goto success;
     }
-    PyObject *descriptor = _PyType_Lookup(container_type, &_Py_ID(__getitem__));
+    unsigned int version;
+    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &version);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
+            Py_DECREF(descriptor);
             goto fail;
         }
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
@@ -1774,25 +1776,28 @@ _Py_Specialize_BinarySubscr(
         int kind = function_kind(fcode);
         if (kind != SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
+            Py_DECREF(descriptor);
             goto fail;
         }
         if (fcode->co_argcount != 2) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+            Py_DECREF(descriptor);
             goto fail;
         }
 
         PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        if (_PyType_CacheGetItemForSpecialization(ht, descriptor) < 0) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-        }
         /* Don't specialize if PEP 523 is active */
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
+            Py_DECREF(descriptor);
             goto fail;
         }
-        specialized_op = BINARY_SUBSCR_GETITEM;
-        goto success;
+        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)version)) {
+            specialized_op = BINARY_SUBSCR_GETITEM;
+            Py_DECREF(descriptor);
+            goto success;
+        }
+        Py_DECREF(descriptor);
     }
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
                         binary_subscr_fail_kind(container_type, sub));
