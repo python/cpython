@@ -108,9 +108,11 @@ class TestNullDlsym(unittest.TestCase):
             self.assertEqual(os.read(pipe_r, 2), b'OK')
 
             # Case #3: Test 'py_dl_sym' from Modules/_ctypes/callproc.c
-            L = _ctypes.dlopen(dstname)
+            dlopen = test.support.get_attribute(_ctypes, 'dlopen')
+            dlsym = test.support.get_attribute(_ctypes, 'dlsym')
+            L = dlopen(dstname)
             with self.assertRaisesRegex(OSError, "symbol 'foo' not found"):
-                _ctypes.dlsym(L, "foo")
+                dlsym(L, "foo")
 
             # Assert that the IFUNC was called
             self.assertEqual(os.read(pipe_r, 2), b'OK')
@@ -130,25 +132,25 @@ class TestLocalization(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.libc_file = find_library("c")
+        cls.libc_filename = find_library("c")
 
     @configure_locales
     def test_localized_error_from_dll(self):
-        dll = CDLL(self.libc_file)
+        dll = CDLL(self.libc_filename)
         with self.assertRaises(AttributeError) as cm:
-            dll.foo
+            dll.this_name_does_not_exist
         if sys.platform.startswith('linux'):
             # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_file, str(cm.exception))
+            self.assertIn(self.libc_filename, str(cm.exception))
 
     @configure_locales
     def test_localized_error_in_dll(self):
-        dll = CDLL(self.libc_file)
+        dll = CDLL(self.libc_filename)
         with self.assertRaises(ValueError) as cm:
-            c_int.in_dll(dll, 'foo')
+            c_int.in_dll(dll, 'this_name_does_not_exist')
         if sys.platform.startswith('linux'):
             # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_file, str(cm.exception))
+            self.assertIn(self.libc_filename, str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
                          'test requires _ctypes.dlopen()')
@@ -169,12 +171,12 @@ class TestLocalization(unittest.TestCase):
                          'test requires _ctypes.dlsym()')
     @configure_locales
     def test_localized_error_dlsym(self):
-        dll = _ctypes.dlopen(self.libc_file)
+        dll = _ctypes.dlopen(self.libc_filename)
         with self.assertRaises(OSError) as cm:
-            _ctypes.dlsym(dll, 'foo')
+            _ctypes.dlsym(dll, 'this_name_does_not_exist')
         if sys.platform.startswith('linux'):
             # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_file, str(cm.exception))
+            self.assertIn(self.libc_filename, str(cm.exception))
 
 
 if __name__ == "__main__":
