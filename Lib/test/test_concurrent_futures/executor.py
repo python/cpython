@@ -73,52 +73,48 @@ class ExecutorTest:
 
         self.assertEqual([None, None], results)
 
-    def test_map_buffersize(self):
-        integers = range(8)
-
+    def test_map_buffersize_validation(self):
         with self.assertRaisesRegex(
             ValueError,
             "buffersize must be None or > 0",
-            msg="`Executor.map` should raise if `buffersize` is not positive.",
         ):
-            self.executor.map(str, integers, buffersize=0)
+            self.executor.map(str, range(4), buffersize=0)
 
-        for buffersize in (1, 2, len(integers), len(integers) * 2):
-            self.assertEqual(
-                list(self.executor.map(str, integers, buffersize=buffersize)),
-                list(map(str, integers)),
-                msg="`Executor.map` with `buffersize` should behave the same as `map`.",
-            )
+    def test_map_buffersize(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(str, ints, buffersize=buffersize)
+                self.assertEqual(list(res), ["0", "1", "2", "3"])
 
-            self.assertEqual(
-                list(self.executor.map(add, integers, integers, buffersize=buffersize)),
-                list(map(sum, zip(integers, integers))),
-                msg="`Executor.map` with `buffersize` should work correctly on multiple input iterables",
-            )
+    def test_map_buffersize_on_multiple_iterables(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(add, ints, ints, buffersize=buffersize)
+                self.assertEqual(list(res), [0, 2, 4, 6])
 
-            self.assertEqual(
-                next(self.executor.map(str, itertools.count(), buffersize=buffersize)),
-                next(map(str, integers)),
-                msg="`Executor.map` with `buffersize` should work correctly on an infinite input iterator.",
-            )
+    def test_map_buffersize_on_infinite_iterable(self):
+        res = self.executor.map(str, itertools.count(), buffersize=2)
+        self.assertEqual(next(res, None), "0")
 
-            self.assertFalse(
-                list(self.executor.map(str, [], buffersize=buffersize)),
-                msg="`Executor.map` with `buffersize` should return an empty iterator if the input iterable is empty.",
-            )
+    def test_map_buffersize_on_empty_iterable(self):
+        res = self.executor.map(str, [], buffersize=2)
+        self.assertIsNone(next(res, None))
 
-            self.assertFalse(
-                list(self.executor.map(str, buffersize=buffersize)),
-                msg="`Executor.map` with `buffersize` should return an empty iterator if no input iterable is provided.",
-            )
+    def test_map_buffersize_without_iterable(self):
+        res = self.executor.map(str, buffersize=2)
+        self.assertIsNone(next(res, None))
 
-        integers_iter = iter(integers)
-        self.executor.map(str, integers_iter, buffersize=buffersize)
-        self.executor.shutdown(wait=True)  # wait for pending tasks to complete
+    def test_map_buffersize_when_buffer_is_full(self):
+        ints = iter(range(4))
+        buffersize = 2
+        self.executor.map(str, ints, buffersize=buffersize)
+        self.executor.shutdown(wait=True)  # wait for tasks to complete
         self.assertEqual(
-            next(integers_iter),
+            next(ints),
             buffersize,
-            msg="`Executor.map` should pull only the first `buffersize` elements from the input iterable.",
+            msg="should have fetched only `buffersize` elements from `ints`.",
         )
 
     def test_shutdown_race_issue12456(self):
