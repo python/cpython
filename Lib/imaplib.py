@@ -638,35 +638,14 @@ class IMAP4:
 
 
     def idle(self, duration=None):
-        """Return an Idler: an iterable context manager for the IDLE command.
+        """Return an iterable IDLE context manager producing untagged responses.
+        If the argument is not None, limit iteration to 'duration' seconds.
 
-        :param duration:  Maximum duration (in seconds) to keep idling,
-                          or None for no time limit.  To avoid inactivity
-                          timeouts on servers that impose them, callers are
-                          advised to keep this at most 29 minutes.
-                          Requires a socket connection (not IMAP4_stream).
-        :type duration:   int|float|None
+        with M.idle(duration=29 * 60) as idler:
+            for typ, data in idler:
+                print(typ, data)
 
-        The returned object sends the IDLE command when activated by the
-        'with' statement, produces IMAP untagged responses via the iterator
-        protocol, and sends DONE upon context exit.
-
-        Responses are represented as (type, [data, ...]) tuples, as described
-        in the IMAP4 class documentation.
-
-        Example:
-
-        >>> with M.idle(duration=29 * 60) as idler:
-        ...     for typ, data in idler:
-        ...         print(typ, data)
-        ...
-        EXISTS [b'1']
-        RECENT [b'1']
-
-        Note:  The Idler class name and structure are internal interfaces,
-        subject to change.  Calling code can rely on its context management,
-        iteration, and public method to remain stable, but should not subclass,
-        instantiate, compare, or otherwise directly reference the class.
+        Note: 'duration' requires a socket connection (not IMAP4_stream).
         """
         return Idler(self, duration)
 
@@ -1381,20 +1360,11 @@ class IMAP4:
 
 
 class Idler:
-    """Iterable context manager: start IDLE & produce untagged responses.
+    """Iterable IDLE context manager: start IDLE & produce untagged responses.
 
     An object of this type is returned by the IMAP4.idle() method.
-    It sends the IDLE command when activated by the 'with' statement, produces
-    IMAP untagged responses via the iterator protocol, and sends DONE upon
-    context exit.
 
-    Iteration produces (type, [data, ...]) tuples, as described in the IMAP4
-    class documentation.
-
-    Note:  The name and structure of this class are internal interfaces,
-    subject to change.  Calling code can rely on its context management,
-    iteration, and public method to remain stable, but should not
-    subclass, instantiate, or otherwise directly reference the class.
+    Note: The name and structure of this class are subject to change.
     """
 
     def __init__(self, imap, duration=None):
@@ -1511,40 +1481,15 @@ class Idler:
         return resp
 
     def burst(self, interval=0.1):
-        """Yield a burst of responses no more than 'interval' seconds apart
+        """Yield a burst of responses no more than 'interval' seconds apart.
 
-        :param interval:    Time limit for each response after the first
-                            (The IDLE context's maximum duration is
-                            respected when waiting for the first response.)
-        :type interval:     int|float
+        with M.idle() as idler:
+            # get a response and any others following by < 0.1 seconds
+            batch = list(idler.burst())
+            print(f'processing {len(batch)} responses...')
+            print(batch)
 
-        This generator is an alternative to iterating one response at a
-        time, intended to aid in efficient batch processing.  It retrieves
-        the next response along with any immediately available subsequent
-        responses.  (For example, a rapid series of EXPUNGE responses after
-        a bulk delete.)
-
-        Responses are represented as (type, [data, ...]) tuples, as described
-        in the IMAP4 class documentation.
-
-        Example:
-
-        >>> with M.idle() as idler:
-        ...     # get a response and any others following by < 0.1 seconds
-        ...     batch = list(idler.burst())
-        ...     print(f'processing {len(batch)} responses...')
-        ...     print(batch)
-        ...
-        processing 3 responses...
-        [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
-
-        Tip:  The IDLE context's maximum duration, as passed to IMAP4.idle(),
-        is respected when waiting for the first response in a burst.
-        Therefore, an expired Idler will cause this generator to return
-        immediately without producing anything.  Callers should consider
-        this if using it in a loop.
-
-        Note: This generator does not work on IMAP4_stream connections.
+        Note: This generator requires a socket connection (not IMAP4_stream).
         """
         if not isinstance(self._imap.sock, socket.socket):
             raise self._imap.error('burst() requires a socket connection')
