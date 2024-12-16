@@ -1,1 +1,2 @@
-Add an optional ``buffersize`` parameter to :meth:`concurrent.futures.Executor.map`.
+Add the optional ``buffersize`` parameter to :meth:`concurrent.futures.Executor.map`
+to specify the number of results that can be buffered before being yielded.
