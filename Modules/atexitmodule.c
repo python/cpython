@@ -257,15 +257,16 @@ atexit_unregister_locked(PyObject *callbacks, PyObject *func)
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
         int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
-
-        if (cmp == 1) {
+        if (cmp < 0)
+        {
+            return -1;
+        }
+        else if (cmp == 1) {
+            // We found a callback!
             if (PyList_SetSlice(callbacks, i, i + 1, NULL) < 0) {
                 return -1;
             }
             --i;
-        }
-        else if (cmp < 0) {
-            return -1;
         }
     }
 
