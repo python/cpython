@@ -1,13 +1,11 @@
 import _ctypes
 import os
 import platform
-import subprocess
 import sys
-import tempfile
 import test.support
 import unittest
 from ctypes import CDLL, c_int
-from test.support.os_helper import create_empty_file, temp_dir
+from ctypes.util import find_library
 
 
 FOO_C = r"""
@@ -30,12 +28,6 @@ void *foo(void)
     return NULL;
 }
 """
-
-
-def has_gcc():
-    return subprocess.call(["gcc", "--version"],
-                           stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL) == 0
 
 
 @unittest.skipUnless(sys.platform.startswith('linux'),
@@ -63,7 +55,13 @@ class TestNullDlsym(unittest.TestCase):
     """
 
     def test_null_dlsym(self):
-        if not has_gcc():
+        import subprocess
+        import tempfile
+
+        retcode = subprocess.call(["gcc", "--version"],
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL)
+        if retcode != 0:
             self.skipTest("gcc is missing")
 
         pipe_r, pipe_w = os.pipe()
@@ -132,39 +130,25 @@ class TestLocalization(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not has_gcc():
-            raise unittest.SkipTest("gcc is missing")
-
-    def make_empty_lib(self, outdir, so_libname):
-        srcname = os.path.join(outdir, 'empty.c')
-        dstname = os.path.join(outdir, so_libname)
-        create_empty_file(srcname)
-        args = ['gcc', '-shared', '-o', dstname, srcname]
-        p = subprocess.run(args, capture_output=True)
-        p.check_returncode()
-        return dstname
+        cls.libc_file = find_library("c")
 
     @configure_locales
     def test_localized_error_from_dll(self):
-        with temp_dir() as outdir:
-            dstname = self.make_empty_lib(outdir, 'test_from_dll.so')
-            dll = CDLL(dstname)
-            with self.assertRaises(AttributeError) as cm:
-                dll.foo
-            if sys.platform.startswith('linux'):
-                # On macOS, the filename is not reported by dlerror().
-                self.assertIn('test_from_dll.so', str(cm.exception))
+        dll = CDLL(self.libc_file)
+        with self.assertRaises(AttributeError) as cm:
+            dll.foo
+        if sys.platform.startswith('linux'):
+            # On macOS, the filename is not reported by dlerror().
+            self.assertIn(self.libc_file, str(cm.exception))
 
     @configure_locales
     def test_localized_error_in_dll(self):
-        with temp_dir() as outdir:
-            dstname = self.make_empty_lib(outdir, 'test_in_dll.so')
-            dll = CDLL(dstname)
-            with self.assertRaises(ValueError) as cm:
-                c_int.in_dll(dll, 'foo')
-            if sys.platform.startswith('linux'):
-                # On macOS, the filename is not reported by dlerror().
-                self.assertIn('test_in_dll.so', str(cm.exception))
+        dll = CDLL(self.libc_file)
+        with self.assertRaises(ValueError) as cm:
+            c_int.in_dll(dll, 'foo')
+        if sys.platform.startswith('linux'):
+            # On macOS, the filename is not reported by dlerror().
+            self.assertIn(self.libc_file, str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
                          'test requires _ctypes.dlopen()')
@@ -185,14 +169,12 @@ class TestLocalization(unittest.TestCase):
                          'test requires _ctypes.dlsym()')
     @configure_locales
     def test_localized_error_dlsym(self):
-        with temp_dir() as outdir:
-            dstname = self.make_empty_lib(outdir, 'test_dlsym.so')
-            dll = _ctypes.dlopen(dstname)
-            with self.assertRaises(OSError) as cm:
-                _ctypes.dlsym(dll, 'foo')
-            if sys.platform.startswith('linux'):
-                # On macOS, the filename is not reported by dlerror().
-                self.assertIn('test_dlsym.so', str(cm.exception))
+        dll = _ctypes.dlopen(self.libc_file)
+        with self.assertRaises(OSError) as cm:
+            _ctypes.dlsym(dll, 'foo')
+        if sys.platform.startswith('linux'):
+            # On macOS, the filename is not reported by dlerror().
+            self.assertIn(self.libc_file, str(cm.exception))
 
 
 if __name__ == "__main__":
