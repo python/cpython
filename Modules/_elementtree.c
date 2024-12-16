@@ -184,7 +184,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
 static void
 elementtree_free(void *m)
 {
-    elementtree_clear((PyObject *)m);
+    (void)elementtree_clear((PyObject *)m);
 }
 
 /* helpers */
