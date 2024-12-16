@@ -1523,6 +1523,22 @@ class Idler:
             imap._mesg(f'idle _pop({timeout}) read {resp[0]}')
         return resp
 
+    def __next__(self):
+        imap = self._imap
+
+        if self._duration is None:
+            timeout = None
+        else:
+            timeout = self._deadline - time.monotonic()
+        typ, data = self._pop(timeout)
+
+        if not typ:
+            if __debug__ and imap.debug >= 4:
+                imap._mesg('idle iterator exhausted')
+            raise StopIteration
+
+        return typ, data
+
     def burst(self, interval=0.1):
         """Yield a burst of responses no more than 'interval' seconds apart.
 
@@ -1544,22 +1560,6 @@ class Idler:
 
         while response := self._pop(interval, None):
             yield response
-
-    def __next__(self):
-        imap = self._imap
-
-        if self._duration is None:
-            timeout = None
-        else:
-            timeout = self._deadline - time.monotonic()
-        typ, data = self._pop(timeout)
-
-        if not typ:
-            if __debug__ and imap.debug >= 4:
-                imap._mesg('idle iterator exhausted')
-            raise StopIteration
-
-        return typ, data
 
 
 if HAVE_SSL:
