@@ -1,0 +1,2 @@
+:c:function:`!PySequence_In` function is :term:`soft deprecated`.
+Use :c:function:`PySequence_Contains` instead.
