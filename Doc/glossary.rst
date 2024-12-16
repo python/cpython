@@ -350,15 +350,16 @@ Glossary
 
    current thread state
 
-      A per-thread :c:data:`PyThreadState` pointer for the current thread.
+      A per-thread :c:data:`PyThreadState` pointer.
+
       The pointer might be ``NULL``, in which case Python code should not
       get executed.
 
       If the current thread state is non-``NULL``, then the :term:`thread state`
       that it points to is considered to be :term:`attached <attached thread state>`.
 
-      The per-thread pointer can be acquired via :c:func:`PyThreadState_Get` or
-      :c:func:`PyThreadState_GetUnchecked` if it might be ``NULL``.
+      The pointer for the calling thread can be acquired via :c:func:`PyThreadState_Get` or
+      :c:func:`PyThreadState_GetUnchecked`, if it might be ``NULL``.
 
    decorator
       A function returning another function, usually applied as a function
@@ -1314,9 +1315,9 @@ Glossary
 
    thread state
       In Python's C API, a thread state is a structure that holds
-      information about the current thread. A thread state can be
-      attached or detached. An :term:`attached thread state` is required
-      to call most of the C API, unless a function explicitly documents
+      information about the current thread, typically in the :term:`current thread state`
+      pointer. A thread state can be attached or detached. An :term:`attached thread state`
+      is required to call most of the C API, unless a function explicitly documents
       otherwise.
 
       See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
