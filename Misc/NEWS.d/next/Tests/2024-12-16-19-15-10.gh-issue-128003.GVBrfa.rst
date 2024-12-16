@@ -1,0 +1,3 @@
+Add an option ``--parallel-threads=N`` to the regression test runner that
+runs individual tests in multiple threads in parallel in order to find
+concurrency bugs.
