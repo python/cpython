@@ -121,9 +121,11 @@ atexit_callfuncs(struct atexit_state *state)
         assert(PyTuple_CheckExact(tuple));
 
         PyObject *func = PyTuple_GET_ITEM(tuple, 0);
+        PyObject *args = PyTuple_GET_ITEM(tuple, 1);
         PyObject *kwargs = PyTuple_GET_ITEM(tuple, 2);
+
         PyObject *res = PyObject_Call(func,
-                                      PyTuple_GET_ITEM(tuple, 1),
+                                      args,
                                       kwargs == Py_None ? NULL : kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
