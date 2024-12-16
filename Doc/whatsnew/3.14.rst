@@ -1073,8 +1073,8 @@ Deprecated
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
-+ :c:function:`!PySequence_In` function is :term:`soft deprecated`.
-  Use :c:function:`PySequence_Contains` instead.
++ :c:func:`!PySequence_In` function is :term:`soft deprecated`.
+  Use :c:func:`PySequence_Contains` instead.
   (Contributed by Yuki Kobayashi in :gh:`127896`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
