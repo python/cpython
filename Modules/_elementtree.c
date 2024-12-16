@@ -2511,12 +2511,11 @@ treebuilder_gc_clear(PyObject *op)
 }
 
 static void
-treebuilder_dealloc(PyObject *op)
+treebuilder_dealloc(PyObject *self)
 {
-    TreeBuilderObject *self = _TreeBuilder_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    (void)treebuilder_gc_clear(op);
+    (void)treebuilder_gc_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
