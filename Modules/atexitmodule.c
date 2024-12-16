@@ -129,7 +129,7 @@ atexit_callfuncs(struct atexit_state *state)
                                       kwargs == Py_None ? NULL : kwargs);
         if (res == NULL) {
             PyErr_FormatUnraisable(
-                "Exception ignored in atexit callback %R", the_func);
+                "Exception ignored in atexit callback %R", func);
         }
         else {
             Py_DECREF(res);
@@ -190,19 +190,19 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         func_kwargs = Py_None;
     }
     PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
-    if (tuple == NULL)
+    if (callback == NULL)
     {
         return NULL;
     }
 
     struct atexit_state *state = get_atexit_state();
     // atexit callbacks go in a LIFO order
-    if (PyList_Insert(state->callbacks, 0, tuple) < 0)
+    if (PyList_Insert(state->callbacks, 0, callback) < 0)
     {
-        Py_DECREF(tuple);
+        Py_DECREF(callback);
         return NULL;
     }
-    Py_DECREF(tuple);
+    Py_DECREF(callback);
 
     return Py_NewRef(func);
 }
