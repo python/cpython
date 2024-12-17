@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -239,27 +240,28 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             executor.terminate_workers()
 
-            try:
-                q.get(timeout=1)
-                raise RuntimeError("Queue should not have gotten a second value")
-            except queue.Empty:
-                pass
+            self.assertRaises(queue.Empty, q.get, timeout=1)
+
 
     def test_process_pool_executor_terminate_workers_dead_workers(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            try:
-                executor.submit(os._exit, 1).result()
-            except BrokenProcessPool:
-                # BrokenProcessPool will be raised by our call to .result() since the worker will die
-                pass
+            future = executor.submit(os._exit, 1)
+            self.assertRaises(BrokenProcessPool, future.result)
 
-            # The worker has been killed already, terminate_workers should basically no-op
-            executor.terminate_workers()
+            # Patching in here instead of at the function level since we only want
+            # to patch it for this function call, not other parts of the flow.
+            with unittest.mock.patch('concurrent.futures.process.os.kill') as mock_kill:
+                executor.terminate_workers()
 
-    def test_process_pool_executor_terminate_workers_not_started_yet(self):
+            mock_kill.assert_not_called()
+
+    @unittest.mock.patch('concurrent.futures.process.os.kill')
+    def test_process_pool_executor_terminate_workers_not_started_yet(self, mock_kill):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             # The worker has not been started yet, terminate_workers should basically no-op
             executor.terminate_workers()
+
+        mock_kill.assert_not_called()
 
     def test_process_pool_executor_terminate_workers_stops_pool(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
@@ -267,19 +269,27 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             executor.terminate_workers()
 
-            try:
-                executor.submit(time.sleep, 0).result()
-                raise RuntimeError("Should have raised BrokenProcessPool")
-            except BrokenProcessPool:
-                pass
+            future = executor.submit(time.sleep, 0)
+            self.assertRaises(BrokenProcessPool, future.result)
 
     @unittest.mock.patch('concurrent.futures.process.os.kill')
     def test_process_pool_executor_terminate_workers_passes_signal(self, mock_kill):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            executor.submit(time.sleep, 0).result()
+            future = executor.submit(time.sleep, 0)
+            future.result()
 
-            executor.terminate_workers(9)
-            mock_kill.assert_called_once_with(list(executor._processes.values())[0].pid, 9)
+            executor.terminate_workers(signal.SIGKILL)
+
+            worker_process = list(executor._processes.values())[0]
+            mock_kill.assert_called_once_with(worker_process.pid, signal.SIGKILL)
+
+    def test_process_pool_executor_terminate_workers_passes_even_bad_signals(self):
+        with futures.ProcessPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(time.sleep, 0)
+            future.result()
+
+            # 'potatoes' isn't a valid signal, so os.kill will raise a TypeError
+            self.assertRaises(TypeError, executor.terminate_workers, 'potatoes')
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,

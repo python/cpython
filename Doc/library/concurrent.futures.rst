@@ -417,15 +417,15 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    .. method:: terminate_workers(signal=signal.SIGTERM)
 
-      Attempt to terminate all living worker processes immediately by sending each
-      of them the given signal. If the signal is not specified, the default signal
-      :data:`signal.SIGTERM` is used.
+      Attempt to terminate all living worker processes immediately by sending
+      each of them the given signal. If the signal is not specified, the default
+      signal :data:`signal.SIGTERM` is used.
 
-      After calling this, the caller should no longer submit tasks to the executor.
-      It is also recommended to still call :meth:`Executor.shutdown` to ensure that all
-      other resources associated with the executor are freed.
+      After calling this method the caller should no longer submit tasks to the
+      executor. It is also recommended to still call :meth:`Executor.shutdown`
+      to ensure that all other resources associated with the executor are freed.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
 .. _processpoolexecutor-example:
 
