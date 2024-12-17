@@ -739,7 +739,10 @@ class OtherTest(unittest.TestCase):
 class RacingTest(unittest.TestCase):
     def test_racing_getbuf_and_releasebuf(self):
         """Repeatly access the memoryview for racing."""
-        from multiprocessing.managers import SharedMemoryManager
+        try:
+            from multiprocessing.managers import SharedMemoryManager
+        except ImportError:
+            self.skipTest("Test requires multiprocessing")
         from threading import Thread
 
         n = 100
