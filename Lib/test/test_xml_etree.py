@@ -2642,6 +2642,11 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.is_c = ET is not pyET
+
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2680,54 +2685,90 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_clear_child(self):
-        class X(ET.Element):
-            def __eq__(self, o):
-                del e[:]
-                return False
-
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
-
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
-
-    def test_remove_with_clear_children(self):
+    def test_remove_with_clear(self):
         # See: https://github.com/python/cpython/issues/126033
 
-        class X(ET.Element):
+        # Until the discrepency between "del root[:]" and "root.clear()" is
+        # resolved, we need to keep two tests. Previously, using "del root[:]"
+        # did not crash with the reproducer of gh-126033 while "root.clear()"
+        # did.
+
+        E = ET.Element
+
+        class X1(E):
+            def __eq__(self, o):
+                del root[:]
+                return False
+
+        class X2(E):
             def __eq__(self, o):
                 root.clear()
                 return False
 
-        for foo_type, rem_type in [(X, ET.Element), (ET.Element, X)]:
-            with self.subTest(foo_type=foo_type, rem_type=rem_type):
-                root = ET.Element('.')
-                root.extend([foo_type('foo'), rem_type('bar')])
-                self.assertRaises(ValueError, root.remove, rem_type('baz'))
+        class Y1(E):
+            def __eq__(self, o):
+                del root[:]
+                return True
+
+        class Y2(E):
+            def __eq__(self, o):
+                root.clear()
+                return True
+
+        def test_remove(root, target, raises):
+            if raises:
+                self.assertRaises(ValueError, root.remove, target)
+            else:
+                root.remove(target)
+                self.assertNotIn(target, root)
+
+        for etype, rem_type, raises in [
+            (E, X1, True), (E, X2, True),
+            (X1, E, True), (X2, E, True),
+            (Y1, E, self.is_c), (Y2, E, self.is_c),
+            (E, Y1, self.is_c), (E, Y2, self.is_c),
+        ]:
+            with self.subTest(etype=etype, rem_type=rem_type, raises=raises):
+                with self.subTest("single child"):
+                    root = E('.')
+                    root.append(etype('one'))
+                    test_remove(root, rem_type('baz'), raises)
+
+                with self.subTest("with children"):
+                    root = E('.')
+                    root.extend([etype('one'), rem_type('two')])
+                    test_remove(root, rem_type('baz'), raises)
 
     def test_remove_with_mutate_root(self):
         # See: https://github.com/python/cpython/issues/126033
 
-        first_element = ET.Element('foo')
+        E = ET.Element
 
         class X(ET.Element):
             def __eq__(self, o):
-                # Remove the first element so that the list size changes.
-                # This causes an infinite recursion error in the Python
-                # implementation, but we do not really care about it.
-                #
-                # Depending on whether the first element is or is not
-                root.remove(first_element)
+                del root[0]
                 return False
 
-        for bar_type, rem_type in [(X, ET.Element), (ET.Element, X), (X, X)]:
-            with self.subTest(bar_type=bar_type, rem_type=rem_type):
-                root = ET.Element('.')
-                root.extend([first_element, bar_type('bar')])
-                self.assertRaises(ValueError, root.remove, rem_type('baz'))
+        class Y(ET.Element):
+            def __eq__(self, o):
+                del root[0]
+                return True
+
+        for bar_type, rem_type, raises in [
+            (E, X, True),
+            (X, E, True),
+            (Y, E, True),
+            (E, Y, False),
+        ]:
+            with self.subTest(bar_type=bar_type, rem_type=rem_type, raises=raises):
+                root = E('.')
+                root.extend([E('first'), rem_type('bar')])
+                to_remove = rem_type('baz')
+                if raises:
+                    self.assertRaises(ValueError, root.remove, to_remove)
+                else:
+                    root.remove(to_remove)
+                    self.assertNotIn(to_remove, root)
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
