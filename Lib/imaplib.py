@@ -34,6 +34,7 @@ import sys
 import time
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
+import warnings
 
 try:
     import ssl
@@ -323,7 +324,22 @@ class IMAP4:
         self.host = host
         self.port = port
         self.sock = self._create_socket(timeout)
-        self.file = self.sock.makefile('rb')
+        self._file = self.sock.makefile('rb')
+
+
+    @property
+    def file(self):
+        # The old 'file' attribute is no longer used now that we do our own
+        # read() and readline() buffering, with which it conflicts.
+        # As an undocumented interface, it should never have been accessed by
+        # external code, and therefore does not warrant deprecation.
+        # Nevertheless, we provide this property for now, to avoid suddenly
+        # breaking any code in the wild that might have been using it in a
+        # harmless way.
+        warnings.warn(
+            'IMAP4.file is unsupported, can cause errors, and may be removed.',
+            RuntimeWarning)
+        return self._file
 
 
     def read(self, size):
@@ -383,7 +399,7 @@ class IMAP4:
 
     def shutdown(self):
         """Close I/O established in "open"."""
-        self.file.close()
+        self._file.close()
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
         except OSError as exc:
@@ -883,7 +899,7 @@ class IMAP4:
         if typ == 'OK':
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
-            self.file = self.sock.makefile('rb')
+            self._file = self.sock.makefile('rb')
             self._tls_established = True
             self._get_capabilities()
         else:
@@ -1629,7 +1645,7 @@ class IMAP4_stream(IMAP4):
         self.host = None        # For compatibility with parent class
         self.port = None
         self.sock = None
-        self.file = None
+        self._file = None
         self.process = subprocess.Popen(self.command,
             bufsize=DEFAULT_BUFFER_SIZE,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
