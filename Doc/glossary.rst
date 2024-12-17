@@ -352,7 +352,7 @@ Glossary
 
       A per-thread :c:data:`PyThreadState` pointer.
 
-      The pointer might be ``NULL``, in which case Python code should not
+      The pointer might be ``NULL``, in which case Python code must not
       get executed.
 
       If the current thread state is non-``NULL``, then the :term:`thread state`
