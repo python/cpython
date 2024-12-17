@@ -743,11 +743,11 @@ class TestMessageAPI(TestEmailBase):
                     Message().add_header(name, value)
                 self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
 
-        invalid_headers = [
+        invalid_ascii_headers = [
             ('Header\x7F', 'Non-ASCII character'),
-            ('Header\x1F', 'control character'),
+            ('Header\x80', 'Extended ASCII'),
         ]
-        for name, value in invalid_headers:
+        for name, value in invalid_ascii_headers:
             with self.subTest(name=name, problem=value):
                 with self.assertRaises(ValueError) as cm:
                     Message().add_header(name, value)
@@ -760,7 +760,7 @@ class TestMessageAPI(TestEmailBase):
                     m[name] = value
                 self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
 
-        for name, value in invalid_headers:
+        for name, value in invalid_ascii_headers:
             with self.subTest(name=name, problem=value):
                 with self.assertRaises(ValueError) as cm:
                     m = Message()
