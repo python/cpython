@@ -330,7 +330,8 @@ class IMAP4:
         import warnings
         warnings.warn(
             'IMAP4.file is unsupported, can cause errors, and may be removed.',
-            RuntimeWarning)
+            RuntimeWarning,
+            stacklevel=2)
         return self._file
 
 
