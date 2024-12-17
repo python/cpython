@@ -400,6 +400,7 @@ For simple text calendars this module provides the following functions.
 The :mod:`calendar` module exports the following data attributes:
 
 .. data:: firstweekday
+   :no-index:
 
    An :class:`int` (0-6) representing the current setting for the first weekday.
    The default is 0, which corresponds to Monday.
