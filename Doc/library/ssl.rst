@@ -936,7 +936,7 @@ Constants
 
 .. data:: HAS_PHA
 
-   Whether the OpenSSL library has built-in support for TLS post-handshake auth (PHA).
+   Whether the OpenSSL library has built-in support for TLS-PHA.
 
    .. versionadded:: next
 
