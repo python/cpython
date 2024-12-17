@@ -266,7 +266,7 @@ detect_cpuid_features(py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
     flags->pclmulqdq = CPUID_CHECK_REG(ecx, ECX_L1_PCLMULQDQ);
 
     flags->xsave = CPUID_CHECK_REG(ecx, ECX_L1_XSAVE);
-    flags->os_xsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
+    flags->osxsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
 #endif
 }
 
@@ -379,7 +379,7 @@ detect_cpuid_xsave_state(py_cpuid_features *flags)
 {
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef HAS_XGETBV_SUPPORT
-    uint64_t xcr0 = flags->os_xsave ? get_xgetbv(0) : 0;
+    uint64_t xcr0 = flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = CPUID_CHECK_REG(xcr0, XCR0_SSE);
     flags->xcr0_avx = CPUID_CHECK_REG(xcr0, XCR0_AVX);
     flags->xcr0_avx512_opmask = CPUID_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
@@ -487,7 +487,7 @@ _Py_cpuid_check_features(const py_cpuid_features *flags)
         MACRO(pclmulqdq);               \
                                         \
         MACRO(xsave);                   \
-        MACRO(os_xsave);                \
+        MACRO(osxsave);                 \
                                         \
         MACRO(xcr0_sse);                \
         MACRO(xcr0_avx);                \
@@ -560,7 +560,7 @@ _Py_cpuid_detect_features(py_cpuid_features *flags)
         eax = 0, ebx = 0, ecx = 0, edx = 0;
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
         detect_cpuid_features(flags, ecx, edx);
-        if (flags->os_xsave) {
+        if (flags->osxsave) {
             detect_cpuid_xsave_state(flags);
         }
     }

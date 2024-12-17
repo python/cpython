@@ -91,7 +91,7 @@ typedef struct py_cpuid_features {
     _Py_CPUID_DECL_FLAG(pclmulqdq);
 
     _Py_CPUID_DECL_FLAG(xsave);     // XSAVE/XRSTOR/XSETBV/XGETBV
-    _Py_CPUID_DECL_FLAG(os_xsave);  // XSAVE is enabled by the OS
+    _Py_CPUID_DECL_FLAG(osxsave);   // XSAVE is enabled by the OS
 
     // --- XCR0 register bits -------------------------------------------------
     _Py_CPUID_DECL_FLAG(xcr0_sse);
