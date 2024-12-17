@@ -9,7 +9,7 @@ from email._policybase import (
     Compat32,
     compat32,
     Policy,
-    validate_header
+    validate_header_name
 )
 from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
@@ -146,7 +146,7 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        validate_header(name)
+        validate_header_name(name)
         if isinstance(value, str) and len(value.splitlines())>1:
             # XXX this error message isn't quite right when we use splitlines
             # (see issue 22233), but I'm not sure what should happen here.
