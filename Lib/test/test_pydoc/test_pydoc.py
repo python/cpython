@@ -1224,7 +1224,6 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(err.getvalue(), '')
 
     @os_helper.skip_unless_working_chmod
-    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)

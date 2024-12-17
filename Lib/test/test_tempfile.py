@@ -328,10 +328,6 @@ def _mock_candidate_names(*names):
 
 
 class TestBadTempdir:
-
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot remove write bits."
-    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -1240,9 +1236,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
@@ -1468,9 +1461,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)

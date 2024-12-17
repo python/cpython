@@ -549,7 +549,6 @@ class TestSupport(unittest.TestCase):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
     @unittest.skipIf(support.is_apple_mobile, "Unstable on Apple Mobile")
-    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux kernel
