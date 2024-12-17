@@ -209,11 +209,11 @@ and more informative help and error messages by using the :mod:`optparse` module
    import optparse
 
    if __name__ == '__main__':
-         parser = optparse.OptionParser()
-         parser.add_option('-o', '--output')
-         parser.add_option('-v', dest='verbose', action='store_true')
-         opts, args = parser.parse_args()
-         process(args, output=opts.output, verbose=opts.verbose)
+       parser = optparse.OptionParser()
+       parser.add_option('-o', '--output')
+       parser.add_option('-v', dest='verbose', action='store_true')
+       opts, args = parser.parse_args()
+       process(args, output=opts.output, verbose=opts.verbose)
 
 A roughly equivalent command line interface for this case can also be
 produced by using the :mod:`argparse` module:
@@ -223,12 +223,12 @@ produced by using the :mod:`argparse` module:
    import argparse
 
    if __name__ == '__main__':
-         parser = argparse.ArgumentParser()
-         parser.add_argument('-o', '--output')
-         parser.add_argument('-v', dest='verbose', action='store_true')
-         parser.add_argument('rest', nargs='*')
-         args = parser.parse_args()
-         process(args.rest, output=args.output, verbose=args.verbose)
+       parser = argparse.ArgumentParser()
+       parser.add_argument('-o', '--output')
+       parser.add_argument('-v', dest='verbose', action='store_true')
+       parser.add_argument('rest', nargs='*')
+       args = parser.parse_args()
+       process(args.rest, output=args.output, verbose=args.verbose)
 
 See :ref:`choosing-an-argument-parser` for details on how the ``argparse``
 version of this code differs in behaviour from the ``optparse`` (and

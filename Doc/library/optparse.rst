@@ -68,23 +68,23 @@ using ``argparse``:
    import optparse
 
    if __name__ == '__main__':
-         parser = optparse.OptionParser()
-         parser.add_option('-o', '--output')
-         parser.add_option('-v', dest='verbose', action='store_true')
-         opts, args = parser.parse_args()
-         process(args, output=opts.output, verbose=opts.verbose)
+       parser = optparse.OptionParser()
+       parser.add_option('-o', '--output')
+       parser.add_option('-v', dest='verbose', action='store_true')
+       opts, args = parser.parse_args()
+       process(args, output=opts.output, verbose=opts.verbose)
 
 .. testcode::
 
    import argparse
 
    if __name__ == '__main__':
-         parser = argparse.ArgumentParser()
-         parser.add_argument('-o', '--output')
-         parser.add_argument('-v', dest='verbose', action='store_true')
-         parser.add_argument('rest', nargs='*')
-         args = parser.parse_args()
-         process(args.rest, output=args.output, verbose=args.verbose)
+       parser = argparse.ArgumentParser()
+       parser.add_argument('-o', '--output')
+       parser.add_argument('-v', dest='verbose', action='store_true')
+       parser.add_argument('rest', nargs='*')
+       args = parser.parse_args()
+       process(args.rest, output=args.output, verbose=args.verbose)
 
 The most obvious difference is that in the ``optparse`` version, the non-option
 arguments are processed separately by the application after the option processing
