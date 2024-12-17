@@ -171,7 +171,7 @@ class Untokenizer:
         self.prev_type = None
         self.encoding = None
 
-    def add_whitespace(self, start):
+    def add_whitespace(self, start, line):
         row, col = start
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
@@ -182,7 +182,7 @@ class Untokenizer:
             self.prev_col = 0
         col_offset = col - self.prev_col
         if col_offset:
-            self.tokens.append(" " * col_offset)
+            self.tokens.append(line[self.prev_col:col])
 
     def escape_brackets(self, token):
         characters = []
@@ -246,7 +246,7 @@ class Untokenizer:
             elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
                 self.tokens.append(" ")
 
-            self.add_whitespace(start)
+            self.add_whitespace(start, line)
             self.tokens.append(token)
             self.prev_row, self.prev_col = end
             if tok_type in (NEWLINE, NL):
