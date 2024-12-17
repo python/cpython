@@ -728,7 +728,7 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
-    def test_invalid_headers(self):
+    def test_invalid_header_names(self):
         invalid_headers = [
             ('Invalid Header', 'contains space'),
             ('Tab\tHeader', 'contains tab'),
@@ -738,18 +738,20 @@ class TestMessageAPI(TestEmailBase):
             ('TrailingSpace ', 'ends with space'),
         ]
         for name, value in invalid_headers:
-            with self.assertRaises(ValueError) as cm:
-               Message().add_header(name, value)
-            self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    Message().add_header(name, value)
+                    self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
 
         invalid_headers = [
             ('Header\x7F', 'Non-ASCII character'),
             ('Header\x1F', 'control character'),
         ]
         for name, value in invalid_headers:
-            with self.assertRaises(ValueError) as cm:
-               Message().add_header(name, value)
-            self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    Message().add_header(name, value)
+                    self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
 
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
