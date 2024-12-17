@@ -1176,10 +1176,9 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
         return NULL;
     }
 
-    memcpy(key, str1_data, str1_len);
+    strncpy(key, str1_data, str1_len);
     key[str1_len] = sep;
-    memcpy(key + str1_len + 1, str2_data, str2_len);
-    key[size - 1] = '\0';
+    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
     assert(strlen(key) == size - 1);
     return key;
 }
