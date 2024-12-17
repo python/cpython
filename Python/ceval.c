@@ -2863,13 +2863,15 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (origin == NULL) {
         // Fall back to __file__ for diagnostics if we don't have
         // an origin that is a location
-        origin = PyModule_GetFilenameObject(v);
-        if (origin == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                goto done;
+        if (PyModule_Check(v)) {
+            origin = PyModule_GetFilenameObject(v);
+            if (origin == NULL) {
+                if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                    goto done;
+                }
+                // PyModule_GetFilenameObject raised "module filename missing"
+                _PyErr_Clear(tstate);
             }
-            // PyModule_GetFilenameObject raised "module filename missing"
-            _PyErr_Clear(tstate);
         }
         assert(origin == NULL || PyUnicode_Check(origin));
     }
