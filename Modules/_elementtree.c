@@ -1633,11 +1633,6 @@ static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 /*[clinic end generated code: output=38fe6c07d6d87d1f input=6133e1d05597d5ee]*/
 {
-    if (self->extra == NULL) {
-        /* element has no children, so raise exception */
-        goto error;
-    }
-
     Py_ssize_t i;
     // When iterating over the list of children, we need to check that the
     // list is not cleared (self->extra != NULL) and that we are still within
@@ -1645,12 +1640,14 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     //
     // We deliberately avoid protecting against children lists that grow
     // faster than the index since list objects do not protect against it.
+    int rc = 0;
     for (i = 0; self->extra && i < self->extra->length; i++) {
         if (self->extra->children[i] == subelement) {
+            rc = 1;
             break;
         }
         PyObject *child = Py_NewRef(self->extra->children[i]);
-        int rc = PyObject_RichCompareBool(child, subelement, Py_EQ);
+        rc = PyObject_RichCompareBool(child, subelement, Py_EQ);
         Py_DECREF(child);
         if (rc < 0) {
             return NULL;
@@ -1660,11 +1657,16 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
         }
     }
 
+    if (rc == 0) {
+        PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+        return NULL;
+    }
+
     // An extra check must be done if the mutation occurs at the very last
     // step and removes or clears the 'extra' list (the condition on the
     // length would not be satisfied any more).
     if (self->extra == NULL || i >= self->extra->length) {
-        goto error;
+        Py_RETURN_NONE;
     }
 
     PyObject *found = self->extra->children[i];
@@ -1676,10 +1678,6 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 
     Py_DECREF(found);
     Py_RETURN_NONE;
-
-error:
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
-    return NULL;
 }
 
 static PyObject*
