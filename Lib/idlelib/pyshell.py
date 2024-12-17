@@ -424,7 +424,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
+        # gh-127060: Disable traceback colors
+        env = dict(os.environ, TERM='dumb')
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist, env=env)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -1595,9 +1597,6 @@ def main():
                                     'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
-
-    # gh-127060: Disable traceback colors
-    os.environ['TERM'] = 'dumb'
 
     # Setup root.  Don't break user code run in IDLE process.
     # Don't change environment when testing.
