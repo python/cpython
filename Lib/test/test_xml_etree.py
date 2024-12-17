@@ -2717,14 +2717,17 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                     with self.subTest('single child'):
                         root = E('.')
                         root.append(etype('one'))
-                        test_remove(root, rem_type('baz'), raises)
+                        test_remove(root, rem_type('missing'), raises)
 
                     with self.subTest('with children'):
                         root = E('.')
                         root.extend([etype('one'), rem_type('two')])
-                        test_remove(root, rem_type('baz'), raises)
+                        test_remove(root, rem_type('missing'), raises)
 
-    def test_remove_with_mutate_root_1(self):
+    def test_remove_with_mutate_root_assume_missing(self):
+        # Check that a concurrent mutation for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        #
         # See: https://github.com/python/cpython/issues/126033
 
         E = ET.Element
@@ -2738,8 +2741,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
             with self.subTest('missing', etype=etype, rem_type=rem_type):
                 root = E('.')
                 root.extend([E('one'), etype('two')])
-                to_remove = rem_type('baz')
-                self.assertRaises(ValueError, root.remove, to_remove)
+                self.assertRaises(ValueError, root.remove, rem_type('missing'))
 
         for rem_type, raises in [(X, True), (E, False)]:
             with self.subTest('existing', rem_type=rem_type):
@@ -2750,7 +2752,10 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 else:
                     root.remove(same)
 
-    def test_remove_with_mutate_root_2(self):
+    def test_remove_with_mutate_root_assume_existing(self):
+        # Check that a concurrent mutation for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        #
         # See: https://github.com/python/cpython/issues/126033
 
         E = ET.Element
@@ -2764,8 +2769,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
             with self.subTest('missing', etype=etype, rem_type=rem_type):
                 root = E('.')
                 root.extend([E('one'), etype('two')])
-                to_remove = rem_type('baz')
-                root.remove(to_remove)
+                root.remove(rem_type('missing'))
 
         for rem_type in [E, X]:
             with self.subTest('existing', rem_type=rem_type):
