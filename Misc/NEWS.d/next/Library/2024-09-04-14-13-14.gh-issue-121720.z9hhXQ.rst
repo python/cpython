@@ -1,0 +1,2 @@
+:class:`enum.EnumDict` can now be used on its own, without resorting to
+private API.
