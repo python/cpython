@@ -26,7 +26,6 @@ __version__ = "2.59"
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
-import warnings
 
 try:
     import ssl
@@ -328,6 +327,7 @@ class IMAP4:
         # Nevertheless, we provide this property for now, to avoid suddenly
         # breaking any code in the wild that might have been using it in a
         # harmless way.
+        import warnings
         warnings.warn(
             'IMAP4.file is unsupported, can cause errors, and may be removed.',
             RuntimeWarning)
