@@ -938,7 +938,7 @@ Constants
 
    Whether the OpenSSL library has built-in support for TLS post-handshake auth (PHA).
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. data:: CHANNEL_BINDING_TYPES
 
