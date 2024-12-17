@@ -1245,7 +1245,7 @@ class TestInstanceDict(unittest.TestCase):
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
 
-# gh-115999: BINARY_SUBSCR_GETITEM will only cache __getitem__ methods that
+# gh-127274: BINARY_SUBSCR_GETITEM will only cache __getitem__ methods that
 # are deferred. We only defer functions defined at the top-level.
 class CGetItem:
     def __init__(self, val):

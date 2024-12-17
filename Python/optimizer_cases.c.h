@@ -592,6 +592,11 @@
         }
 
         case _BINARY_SUBSCR_CHECK_FUNC: {
+            _Py_UopsSymbol *getitem;
+            getitem = sym_new_not_null(ctx);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

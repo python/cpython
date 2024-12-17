@@ -89,7 +89,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_DICT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SUBSCR_CHECK_FUNC] = HAS_DEOPT_FLAG,
-    [_BINARY_SUBSCR_INIT_CALL] = HAS_DEOPT_FLAG,
+    [_BINARY_SUBSCR_INIT_CALL] = 0,
     [_LIST_APPEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_SET_ADD] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -720,7 +720,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_SUBSCR_CHECK_FUNC:
             return 0;
         case _BINARY_SUBSCR_INIT_CALL:
-            return 2;
+            return 3;
         case _LIST_APPEND:
             return 1;
         case _SET_ADD:

@@ -994,7 +994,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BINARY_SUBSCR: {
-            *effect = 0;
+            *effect = 1;
             return 0;
         }
         case BINARY_SUBSCR_DICT: {
@@ -1002,7 +1002,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BINARY_SUBSCR_GETITEM: {
-            *effect = 0;
+            *effect = 1;
             return 0;
         }
         case BINARY_SUBSCR_LIST_INT: {
