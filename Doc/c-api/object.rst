@@ -85,7 +85,7 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
    This is equivalent to the Python expression ``hasattr(o, attr_name)``.
@@ -509,6 +509,12 @@ Object Protocol
    iterated.
 
 
+.. c:function:: PyObject* PyObject_SelfIter(PyObject *obj)
+
+   This is equivalent to the Python ``__iter__(self): return self`` method.
+   It is intended for :term:`iterator` types, to be used in the :c:member:`PyTypeObject.tp_iter` slot.
+
+
 .. c:function:: PyObject* PyObject_GetAIter(PyObject *o)
 
    This is the equivalent to the Python expression ``aiter(o)``. Takes an
@@ -597,5 +603,5 @@ Object Protocol
    This function is intended to be used soon after *obj* is created,
    by the code that creates it.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 

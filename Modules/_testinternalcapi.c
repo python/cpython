@@ -1236,39 +1236,6 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
-
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-
-    struct atexit_data data = {0};
-    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
-    }
-
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
@@ -2076,6 +2043,20 @@ has_deferred_refcount(PyObject *self, PyObject *op)
     return PyBool_FromLong(_PyObject_HasDeferredRefcount(op));
 }
 
+static PyObject *
+get_tracked_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromInt64(PyInterpreterState_Get()->gc.heap_size);
+}
+
+static PyObject *
+is_static_immortal(PyObject *self, PyObject *op)
+{
+    if (_Py_IsStaticImmortal(op)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2123,7 +2104,6 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
-    {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -2174,6 +2154,8 @@ static PyMethodDef module_functions[] = {
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
+    {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
+    {"is_static_immortal", is_static_immortal, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2222,7 +2204,7 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
         return 1;
     }
 

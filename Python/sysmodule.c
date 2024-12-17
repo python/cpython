@@ -2344,6 +2344,30 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+sys._dump_tracelets
+
+    outpath: object
+
+Dump the graph of tracelets in graphviz format
+[clinic start generated code]*/
+
+static PyObject *
+sys__dump_tracelets_impl(PyObject *module, PyObject *outpath)
+/*[clinic end generated code: output=a7fe265e2bc3b674 input=5bff6880cd28ffd1]*/
+{
+    FILE *out = _Py_fopen_obj(outpath, "wb");
+    if (out == NULL) {
+        return NULL;
+    }
+    int err = _PyDumpExecutors(out);
+    fclose(out);
+    if (err) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 
 /*[clinic input]
 sys._getframemodulename
@@ -2603,6 +2627,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
+    SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel
 };
 
@@ -4104,7 +4129,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
 {
     if (maxdigits != 0 && maxdigits < _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            PyExc_ValueError, "maxdigits must be >= %d or 0 for unlimited",
             _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
         return -1;
     }

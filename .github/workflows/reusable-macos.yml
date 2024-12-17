@@ -29,6 +29,8 @@ jobs:
     runs-on: ${{ inputs.os }}
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
@@ -37,7 +39,10 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ inputs.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk make
+      run: |
+        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@8 make
+        # Because alternate versions are not symlinked into place by default:
+        brew link tcl-tk@8
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
