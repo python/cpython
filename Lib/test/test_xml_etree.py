@@ -2643,10 +2643,6 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.is_c = ET is not pyET
-
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2695,26 +2691,6 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
         E = ET.Element
 
-        class X1(E):
-            def __eq__(self, o):
-                del root[:]
-                return False
-
-        class X2(E):
-            def __eq__(self, o):
-                root.clear()
-                return False
-
-        class Y1(E):
-            def __eq__(self, o):
-                del root[:]
-                return True
-
-        class Y2(E):
-            def __eq__(self, o):
-                root.clear()
-                return True
-
         def test_remove(root, target, raises):
             if raises:
                 self.assertRaises(ValueError, root.remove, target)
@@ -2722,53 +2698,77 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 root.remove(target)
                 self.assertNotIn(target, root)
 
-        for etype, rem_type, raises in [
-            (E, X1, True), (E, X2, True),
-            (X1, E, True), (X2, E, True),
-            (Y1, E, self.is_c), (Y2, E, self.is_c),
-            (E, Y1, self.is_c), (E, Y2, self.is_c),
-        ]:
-            with self.subTest(etype=etype, rem_type=rem_type, raises=raises):
-                with self.subTest("single child"):
-                    root = E('.')
-                    root.append(etype('one'))
-                    test_remove(root, rem_type('baz'), raises)
+        for raises in [True, False]:
 
-                with self.subTest("with children"):
-                    root = E('.')
-                    root.extend([etype('one'), rem_type('two')])
-                    test_remove(root, rem_type('baz'), raises)
+            class X(E):
+                def __eq__(self, o):
+                    del root[:]
+                    return not raises
 
-    def test_remove_with_mutate_root(self):
+            class Y(E):
+                def __eq__(self, o):
+                    root.clear()
+                    return not raises
+
+            for etype, rem_type in [(E, X), (X, E), (E, Y), (Y, E)]:
+                with self.subTest(
+                    etype=etype, rem_type=rem_type, raises=raises,
+                ):
+                    with self.subTest("single child"):
+                        root = E('.')
+                        root.append(etype('one'))
+                        test_remove(root, rem_type('baz'), raises)
+
+                    with self.subTest("with children"):
+                        root = E('.')
+                        root.extend([etype('one'), rem_type('two')])
+                        test_remove(root, rem_type('baz'), raises)
+
+    def test_remove_with_mutate_root_1(self):
         # See: https://github.com/python/cpython/issues/126033
 
         E = ET.Element
 
-        class X(ET.Element):
+        class X(E):
             def __eq__(self, o):
                 del root[0]
                 return False
 
-        class Y(ET.Element):
+        for etype, rem_type in [(E, X), (X, E)]:
+            with self.subTest('missing', etype=etype, rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), etype('two')])
+                to_remove = rem_type('baz')
+                self.assertRaises(ValueError, root.remove, to_remove)
+
+            with self.subTest('existing', etype=etype, rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), etype('same')])
+                to_remove = rem_type('same')
+                self.assertRaises(ValueError, root.remove, to_remove)
+
+    def test_remove_with_mutate_root_2(self):
+        # See: https://github.com/python/cpython/issues/126033
+
+        E = ET.Element
+
+        class X(E):
             def __eq__(self, o):
                 del root[0]
                 return True
 
-        for bar_type, rem_type, raises in [
-            (E, X, True),
-            (X, E, True),
-            (Y, E, True),
-            (E, Y, False),
-        ]:
-            with self.subTest(bar_type=bar_type, rem_type=rem_type, raises=raises):
+        for etype, rem_type in [(E, X), (X, E)]:
+            with self.subTest('missing', etype=etype, rem_type=rem_type):
                 root = E('.')
-                root.extend([E('first'), rem_type('bar')])
+                root.extend([E('one'), etype('two')])
                 to_remove = rem_type('baz')
-                if raises:
-                    self.assertRaises(ValueError, root.remove, to_remove)
-                else:
-                    root.remove(to_remove)
-                    self.assertNotIn(to_remove, root)
+                root.remove(to_remove)
+
+            with self.subTest('existing', etype=etype, rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), etype('same')])
+                to_remove = rem_type('same')
+                root.remove(to_remove)
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
