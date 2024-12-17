@@ -2714,12 +2714,12 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 with self.subTest(
                     etype=etype, rem_type=rem_type, raises=raises,
                 ):
-                    with self.subTest("single child"):
+                    with self.subTest('single child'):
                         root = E('.')
                         root.append(etype('one'))
                         test_remove(root, rem_type('baz'), raises)
 
-                    with self.subTest("with children"):
+                    with self.subTest('with children'):
                         root = E('.')
                         root.extend([etype('one'), rem_type('two')])
                         test_remove(root, rem_type('baz'), raises)
@@ -2741,11 +2741,14 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 to_remove = rem_type('baz')
                 self.assertRaises(ValueError, root.remove, to_remove)
 
-            with self.subTest('existing', etype=etype, rem_type=rem_type):
+        for rem_type, raises in [(X, True), (E, False)]:
+            with self.subTest('existing', rem_type=rem_type):
                 root = E('.')
-                root.extend([E('one'), etype('same')])
-                to_remove = rem_type('same')
-                self.assertRaises(ValueError, root.remove, to_remove)
+                root.extend([E('one'), same := rem_type('same')])
+                if raises:
+                    self.assertRaises(ValueError, root.remove, same)
+                else:
+                    root.remove(same)
 
     def test_remove_with_mutate_root_2(self):
         # See: https://github.com/python/cpython/issues/126033
@@ -2764,11 +2767,11 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 to_remove = rem_type('baz')
                 root.remove(to_remove)
 
-            with self.subTest('existing', etype=etype, rem_type=rem_type):
+        for rem_type in [E, X]:
+            with self.subTest('existing', rem_type=rem_type):
                 root = E('.')
-                root.extend([E('one'), etype('same')])
-                to_remove = rem_type('same')
-                root.remove(to_remove)
+                root.extend([E('one'), same := rem_type('same')])
+                root.remove(same)
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
