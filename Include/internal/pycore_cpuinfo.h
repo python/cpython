@@ -21,7 +21,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdint.h>         // uint8_t
+#include "Python.h"
+
 
 typedef struct py_cpuid_features {
     /* Macro to declare a member flag of 'py_cpuid_features' as a uint8_t. */
@@ -118,7 +119,7 @@ typedef struct py_cpuid_features {
  *
  * Note: This function does not set any exception and thus never fails.
  */
-extern void
+PyAPI_FUNC(void)
 _Py_cpuid_disable_features(py_cpuid_features *flags);
 
 /*
@@ -130,7 +131,7 @@ _Py_cpuid_disable_features(py_cpuid_features *flags);
  *
  * Note: This function does not set any exception and thus never fails.
  */
-extern int
+PyAPI_FUNC(int)
 _Py_cpuid_check_features(const py_cpuid_features *flags);
 
 /*
@@ -140,7 +141,7 @@ _Py_cpuid_check_features(const py_cpuid_features *flags);
  *
  * Note: This function does not set any exception and thus never fails.
  */
-extern int
+PyAPI_FUNC(int)
 _Py_cpuid_has_features(const py_cpuid_features *actual,
                        const py_cpuid_features *expect);
 
@@ -151,7 +152,7 @@ _Py_cpuid_has_features(const py_cpuid_features *actual,
  *
  * Note: This function does not set any exception and thus never fails.
  */
-extern int
+PyAPI_FUNC(int)
 _Py_cpuid_match_features(const py_cpuid_features *actual,
                          const py_cpuid_features *expect);
 
@@ -160,7 +161,7 @@ _Py_cpuid_match_features(const py_cpuid_features *actual,
  *
  * Note: This function does not set any exception and thus never fails.
  */
-extern void
+PyAPI_FUNC(void)
 _Py_cpuid_detect_features(py_cpuid_features *flags);
 
 #ifdef __cplusplus

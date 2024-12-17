@@ -1,4 +1,3 @@
-#include "Python.h"
 #include "pycore_cpuinfo.h"
 
 #include <stdint.h>     // UINT32_C()
