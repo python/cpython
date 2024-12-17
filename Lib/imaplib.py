@@ -23,15 +23,7 @@ Public functions:       Internaldate2tuple
 
 __version__ = "2.59"
 
-import binascii
-import calendar
-import errno
-import random
-import re
-import socket
-import subprocess
-import sys
-import time
+import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
 import warnings
