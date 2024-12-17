@@ -21,7 +21,6 @@ try:
     import ssl
 except ImportError:
     ssl = None
-import warnings
 
 support.requires_working_socket(module=True)
 
@@ -605,14 +604,11 @@ class NewIMAPTestsMixin():
 
     # property tests
 
-    def test_file_property(self):
+    def test_file_property_should_not_be_accessed(self):
         client, _ = self._setup(SimpleIMAPHandler)
-        # 'file' attribute access should trigger a warning
-        with warnings.catch_warnings(record=True) as warned:
-            warnings.simplefilter('always')
+        # the 'file' property replaced a private attribute that is now unsafe
+        with self.assertWarns(RuntimeWarning):
             client.file
-            self.assertEqual(len(warned), 1)
-            self.assertTrue(issubclass(warned[-1].category, RuntimeWarning))
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
