@@ -1,1 +1,1 @@
-Add a `terminate_workers` method to `ProcessPoolExecutor` to allow a way to attempt to force kill the worker processes.
+Add a ``terminate_workers`` method to ``ProcessPoolExecutor`` to allow a way to attempt to force kill the worker processes.
