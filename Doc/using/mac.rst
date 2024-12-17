@@ -116,10 +116,9 @@ A default install will include:
 
 * A |usemac_applications_folder_name| folder in your :file:`Applications` folder;
 
-* Within the |usemac_applications_folder_name| folder: :program:`IDLE`, the development environment that is a standard part of official Python distributions;
+  * Within the |usemac_applications_folder_name| folder: :program:`IDLE`, the development environment that is a standard part of official Python distributions;
 
-* Also within the |usemac_applications_folder_name| folder: :program:`Python Launcher`, which handles double-clicking
-  Python scripts from the macOS `Finder <https://support.apple.com/en-us/HT201732>`_;
+  * Also within the |usemac_applications_folder_name| folder: :program:`Python Launcher`, which handles double-clicking Python scripts from the macOS `Finder <https://support.apple.com/en-us/HT201732>`_;
 
 * A :file:`3.13` folder (under the "framework" :file:`/Library/Frameworks/Python.framework`), which includes the
   Python executable and libraries (the installer adds this location to your shell
@@ -127,7 +126,11 @@ A default install will include:
 
 * Symlinks to the above Python executable, placed in :file:`/usr/local/bin/`.
 
-To uninstall Python, you can remove the above five things.
+If you selected the Free-threaded Python option (:ref:`install-freethreaded-macos`), the installation will also include:
+
+* A :file:`3.13` folder under :file:`/Library/Frameworks/PythonT.framework`.
+
+To uninstall Python, you can remove the above things.
 
 .. note::
 
