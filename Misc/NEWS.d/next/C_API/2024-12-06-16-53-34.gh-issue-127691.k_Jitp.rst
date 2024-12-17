@@ -1,3 +1,0 @@
-The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
-now raises a :exc:`TypeError` if its exception argument is not
-a :exc:`UnicodeError` object. Patch by Bénédikt Tran.

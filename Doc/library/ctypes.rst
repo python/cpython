@@ -1964,7 +1964,7 @@ Utility functions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: cast(obj, type)
@@ -2825,4 +2825,4 @@ Exceptions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14

@@ -657,7 +657,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 Export API
 ^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:struct:: PyLongLayout
 
@@ -769,7 +769,7 @@ PyLongWriter API
 
 The :c:type:`PyLongWriter` API can be used to import an integer.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:struct:: PyLongWriter
 

@@ -617,7 +617,7 @@ defined by the module.  The specific list of defined symbols is available as
 
    Memory page has hardware error.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. data:: EALREADY
