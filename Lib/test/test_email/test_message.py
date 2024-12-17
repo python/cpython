@@ -1004,6 +1004,45 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
+    def test_invalid_header_names(self):
+        invalid_headers = [
+            ('Invalid Header', 'contains space'),
+            ('Tab\tHeader', 'contains tab'),
+            ('Colon:Header', 'contains colon'),
+            ('', 'Empty name'),
+            (' LeadingSpace', 'starts with space'),
+            ('TrailingSpace ', 'ends with space'),
+        ]
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    EmailMessage().add_header(name, value)
+                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+
+        invalid_headers = [
+            ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x1F', 'control character'),
+        ]
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    EmailMessage().add_header(name, value)
+                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    m = EmailMessage()
+                    m[name] = value
+                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    m = EmailMessage()
+                    m[name] = value
+                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+
     def test_get_body_malformed(self):
         """test for bpo-42892"""
         msg = textwrap.dedent("""\
