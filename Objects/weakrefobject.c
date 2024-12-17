@@ -940,7 +940,7 @@ PyWeakref_IsDead(PyObject *ref)
         return -1;
     }
     if (!PyWeakref_Check(ref)) {
-        PyErr_SetString(PyExc_TypeError, "expected a weakref");
+        PyErr_Format(PyExc_TypeError, "expected a weakref, got %T", ref);
         return -1;
     }
     return _PyWeakref_IS_DEAD(ref);

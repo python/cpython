@@ -90,7 +90,7 @@ as much as it can.
 
 .. c:function:: int PyWeakref_IsDead(PyObject *ref)
 
-   Test if a weak reference, *ref*, is dead. Returns 1 if the reference is
+   Test if the weak reference *ref* is dead. Returns 1 if the reference is
    dead, 0 if it is alive, and -1 with an error set if *ref* is not a weak
    reference object.
 
