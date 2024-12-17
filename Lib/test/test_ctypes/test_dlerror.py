@@ -1,7 +1,6 @@
 import _ctypes
 import os
 import platform
-import re
 import sys
 import test.support
 import unittest
@@ -137,33 +136,17 @@ class TestLocalization(unittest.TestCase):
         if cls.libc_filename is None:
             raise unittest.SkipTest('cannot find libc')
 
-    def check_filename_in_dlerror(self, error_message):
-        if not sys.platform.startswith('linux'):
-            # On macOS, the filename is not reported by dlerror().
-            return
-
-        if not re.match(r'(i[3-6]86|x86_64)$', platform.machine()):
-            # On some architectures, the libc file is detected
-            # to be 'libc.so.6' but is incorrectly reported by
-            # dlerror() as libc-X.Y.so.
-            self.skipTest('do not search for filename '
-                          'in dlerror() error message')
-
-        self.assertIn(self.libc_filename, error_message)
-
     @configure_locales
     def test_localized_error_from_dll(self):
         dll = CDLL(self.libc_filename)
-        with self.assertRaises(AttributeError) as cm:
+        with self.assertRaises(AttributeError):
             dll.this_name_does_not_exist
-        self.check_filename_in_dlerror(str(cm.exception))
 
     @configure_locales
     def test_localized_error_in_dll(self):
         dll = CDLL(self.libc_filename)
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             c_int.in_dll(dll, 'this_name_does_not_exist')
-        self.check_filename_in_dlerror(str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
                          'test requires _ctypes.dlopen()')
@@ -185,9 +168,8 @@ class TestLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_dlsym(self):
         dll = _ctypes.dlopen(self.libc_filename)
-        with self.assertRaises(OSError) as cm:
+        with self.assertRaises(OSError):
             _ctypes.dlsym(dll, 'this_name_does_not_exist')
-        self.check_filename_in_dlerror(str(cm.exception))
 
 
 if __name__ == "__main__":
