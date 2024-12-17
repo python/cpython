@@ -278,10 +278,10 @@ class ProcessPoolExecutorTest(ExecutorTest):
             future = executor.submit(time.sleep, 0)
             future.result()
 
-            executor.terminate_workers(signal.SIGKILL)
+            executor.terminate_workers(signal.SIGABRT)
 
             worker_process = list(executor._processes.values())[0]
-            mock_kill.assert_called_once_with(worker_process.pid, signal.SIGKILL)
+            mock_kill.assert_called_once_with(worker_process.pid, signal.SIGABRT)
 
     def test_process_pool_executor_terminate_workers_passes_even_bad_signals(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
