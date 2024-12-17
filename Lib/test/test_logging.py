@@ -680,9 +680,6 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat unlinked files."
-    )
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')
     def test_race(self):
@@ -4877,7 +4874,7 @@ class ExceptionTest(BaseTest):
         r.addHandler(h)
         try:
             raise RuntimeError('deliberate mistake')
-        except:
+        except RuntimeError:
             logging.exception('failed', stack_info=True)
         r.removeHandler(h)
         h.close()

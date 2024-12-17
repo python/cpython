@@ -253,22 +253,16 @@ def _is_gui_available():
         # process not running under the same user id as the current console
         # user.  To avoid that, raise an exception if the window manager
         # connection is not available.
-        from ctypes import cdll, c_int, pointer, Structure
-        from ctypes.util import find_library
-
-        app_services = cdll.LoadLibrary(find_library("ApplicationServices"))
-
-        if app_services.CGMainDisplayID() == 0:
-            reason = "gui tests cannot run without OS X window manager"
+        import subprocess
+        try:
+            rc = subprocess.run(["launchctl", "managername"],
+                                capture_output=True, check=True)
+            managername = rc.stdout.decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            reason = "unable to detect macOS launchd job manager"
         else:
-            class ProcessSerialNumber(Structure):
-                _fields_ = [("highLongOfPSN", c_int),
-                            ("lowLongOfPSN", c_int)]
-            psn = ProcessSerialNumber()
-            psn_p = pointer(psn)
-            if (  (app_services.GetCurrentProcess(psn_p) < 0) or
-                  (app_services.SetFrontProcess(psn_p) < 0) ):
-                reason = "cannot run without OS X gui process"
+            if managername != "Aqua":
+                reason = f"{managername=} -- can only run in a macOS GUI session"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
@@ -518,33 +512,6 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-@contextlib.contextmanager
-def suppress_immortalization(suppress=True):
-    """Suppress immortalization of deferred objects."""
-    try:
-        import _testinternalcapi
-    except ImportError:
-        yield
-        return
-
-    if not suppress:
-        yield
-        return
-
-    _testinternalcapi.suppress_immortalization(True)
-    try:
-        yield
-    finally:
-        _testinternalcapi.suppress_immortalization(False)
-
-def skip_if_suppress_immortalization():
-    try:
-        import _testinternalcapi
-    except ImportError:
-        return
-    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
-                                "requires immortalization of deferred objects")
-
 
 MS_WINDOWS = (sys.platform == 'win32')
 
@@ -552,6 +519,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 is_jython = sys.platform.startswith('java')
 
 is_android = sys.platform == "android"
+
+def skip_android_selinux(name):
+    return unittest.skipIf(
+        sys.platform == "android", f"Android blocks {name} with SELinux"
+    )
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -562,6 +534,9 @@ else:
 # have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
+
+def skip_emscripten_stack_overflow():
+    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
 
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
@@ -1300,6 +1275,11 @@ TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'y
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+
+
+def requires_specialization_ft(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
 
 
 #=======================================================================
@@ -2631,9 +2611,9 @@ def exceeds_recursion_limit():
     return get_c_recursion_limit() * 3
 
 
-#Windows doesn't have os.uname() but it doesn't support s390x.
-skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
-                                'skipped on s390x')
+# Windows doesn't have os.uname() but it doesn't support s390x.
+is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
+skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 

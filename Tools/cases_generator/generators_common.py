@@ -9,9 +9,9 @@ from analyzer import (
     analysis_error,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Iterable
+from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local, Storage, StackError
+from stack import Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -116,8 +116,11 @@ class Emitter:
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
+            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            "DISPATCH": self.dispatch
+            "DISPATCH": self.dispatch,
+            "INSTRUCTION_SIZE": self.instruction_size,
+            "POP_DEAD_INPUTS": self.pop_dead_inputs,
         }
         self.out = out
 
@@ -164,16 +167,24 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
-        self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "COMMA")
+        unconditional = always_true(first_tkn)
+        if unconditional:
+            next(tkn_iter)
+            comma = next(tkn_iter)
+            if comma.kind != "COMMA":
+                raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
+            self.out.start_line()
+        else:
+            self.out.emit_at("if ", tkn)
+            self.emit(lparen)
+            emit_to(self.out, tkn_iter, "COMMA")
+            self.out.emit(") ")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit(") ")
         storage.clear_inputs("at ERROR_IF")
         c_offset = storage.stack.peek_offset()
         try:
@@ -195,7 +206,7 @@ class Emitter:
             self.out.emit(label)
             self.out.emit(";\n")
             self.out.emit("}\n")
-        return not always_true(first_tkn)
+        return not unconditional
 
     def error_no_pop(
         self,
@@ -338,6 +349,20 @@ class Emitter:
         self.emit_save(storage)
         return True
 
+    def pop_dead_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        storage.pop_dead_inputs(self.out)
+        return True
+
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
         self._print_storage(storage)
@@ -354,6 +379,19 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.emit_reload(storage)
+        return True
+
+    def instruction_size(self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
+        if uop.instruction_size is None:
+            raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
+        self.out.emit(f" {uop.instruction_size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:

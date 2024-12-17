@@ -173,6 +173,8 @@ class Uop:
     implicitly_created: bool = False
     replicated = 0
     replicates: "Uop | None" = None
+    # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
+    instruction_size: int | None = None
 
     def dump(self, indent: str) -> None:
         print(
@@ -198,7 +200,7 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
@@ -540,12 +542,16 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE",
+    "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectImmortal",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
-    "PyStackRef_Is",
+    "PyStackRef_IsExactly",
+    "PyStackRef_IsNone",
+    "PyStackRef_IsTrue",
+    "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
     "PyStackRef_None",
     "PyStackRef_TYPE",
@@ -574,6 +580,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
     "_PyEval_FrameClearAndPop",
+    "_PyFloat_FromDouble_ConsumeInputs",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
@@ -619,6 +626,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_NewRef",
     "_Py_SINGLETON",
     "_Py_STR",
+    "_Py_TryIncrefCompare",
+    "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
     "advance_backoff_counter",
@@ -633,7 +643,7 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
             break
         idx -= 1
         assert idx > 0
@@ -742,7 +752,7 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
                 next(tkn_iter)  # '('
                 t = next(tkn_iter)
-                if t.text == "true":
+                if t.text in ("true", "1"):
                     return True
     return False
 
@@ -1077,6 +1087,35 @@ def assign_opcodes(
     return instmap, len(no_arg), min_instrumented
 
 
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int | None:
+    """Return the size of the instruction that contains the given uop or
+    `None` if the uop does not contains the `INSTRUCTION_SIZE` macro.
+
+    If there is more than one instruction that contains the uop,
+    ensure that they all have the same size.
+    """
+    for tkn in uop.body:
+          if tkn.text == "INSTRUCTION_SIZE":
+               break
+    else:
+        return None
+
+    size = None
+    for inst in instructions.values():
+        if uop in inst.parts:
+            if size is None:
+                size = inst.size
+            if size != inst.size:
+                raise analysis_error(
+                    "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                    f"must have the same size: {size} != {inst.size}",
+                    tkn
+                )
+    if size is None:
+        raise analysis_error(f"No instruction containing the uop '{uop.name}' was found", tkn)
+    return size
+
+
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
@@ -1120,6 +1159,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
+    for uop in uops.values():
+        uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
     # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
     # as it is the wrong size, but we need it to maintain an

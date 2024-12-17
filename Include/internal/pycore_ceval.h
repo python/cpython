@@ -83,9 +83,6 @@ extern void _PyEval_Fini(void);
 
 
 extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
-extern PyObject* _PyEval_BuiltinsFromGlobals(
-    PyThreadState *tstate,
-    PyObject *globals);
 
 // Trampoline API
 
@@ -177,6 +174,18 @@ _PyEval_IsGILEnabled(PyThreadState *tstate)
 extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
 extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
 extern int _PyEval_DisableGIL(PyThreadState *state);
+
+
+static inline _Py_CODEUNIT *
+_PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
+{
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(tstate, co);
+    if (bc != NULL) {
+        return bc;
+    }
+    return _PyCode_GetTLBC(co);
+}
+
 #endif
 
 extern void _PyEval_DeactivateOpCache(void);
@@ -315,6 +324,8 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 // threads in the given interpreter.
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+
+PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
 
 #ifdef __cplusplus

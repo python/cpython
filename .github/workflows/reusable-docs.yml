@@ -22,12 +22,14 @@ jobs:
     env:
       branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
       branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
+      commits: ${{ github.event.pull_request.commits }}
       refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
       uses: actions/checkout@v4
       with:
+        persist-credentials: false
         ref: >-
           ${{
             github.event_name == 'pull_request'
@@ -39,15 +41,15 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         # Fetch enough history to find a common ancestor commit (aka merge-base):
-        git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
+        git fetch origin "${refspec_pr}" --depth=$(( commits + 1 )) \
           --no-tags --prune --no-recurse-submodules
 
         # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):
-        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 ${{ env.branch_pr }} )
+        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 "${branch_pr}" )
         DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
 
         # Get all commits since that commit date from the base branch (eg: master or main):
-        git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
+        git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
       uses: actions/setup-python@v5
@@ -69,7 +71,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         python Doc/tools/check-warnings.py \
-          --annotate-diff '${{ env.branch_base }}' '${{ env.branch_pr }}' \
+          --annotate-diff "${branch_base}" "${branch_pr}" \
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
@@ -81,10 +83,12 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'  # known to work with Sphinx 6.2.1
+        python-version: '3.13'  # known to work with Sphinx 7.2.6
         cache: 'pip'
         cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
     - name: 'Install build dependencies'
@@ -99,6 +103,8 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pip

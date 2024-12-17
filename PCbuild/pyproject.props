@@ -217,11 +217,6 @@ public override bool Execute() {
 
 
   <Target Name="FindVCRedistDir">
-    <!-- Hard coded path for VS 2015 -->
-    <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
-      <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
-    </PropertyGroup>
-
     <!-- Search for version number in some broken Build Tools installs -->
     <ItemGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
       <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />

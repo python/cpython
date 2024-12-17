@@ -134,6 +134,41 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
+#ifdef Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyStackRef_CLOSE(left);
+    PyStackRef_CLOSE(right);
+    return PyFloat_FromDouble(value);
+}
+
+#else // Py_GIL_DISABLED
+
+PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+{
+    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+    if (Py_REFCNT(left_o) == 1) {
+        ((PyFloatObject *)left_o)->ob_fval = value;
+        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
+        return left_o;
+    }
+    else if (Py_REFCNT(right_o) == 1)  {
+        ((PyFloatObject *)right_o)->ob_fval = value;
+        _Py_DECREF_NO_DEALLOC(left_o);
+        return right_o;
+    }
+    else {
+        PyObject *result = PyFloat_FromDouble(value);
+        _Py_DECREF_NO_DEALLOC(left_o);
+        _Py_DECREF_NO_DEALLOC(right_o);
+        return result;
+    }
+}
+
+#endif // Py_GIL_DISABLED
+
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
@@ -306,16 +341,16 @@ PyFloat_AsDouble(PyObject *op)
    obj is not of float or int type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
 */
-#define CONVERT_TO_DOUBLE(obj, dbl)                     \
-    if (PyFloat_Check(obj))                             \
-        dbl = PyFloat_AS_DOUBLE(obj);                   \
-    else if (convert_to_double(&(obj), &(dbl)) < 0)     \
+#define CONVERT_TO_DOUBLE(obj, dbl)                         \
+    if (PyFloat_Check(obj))                                 \
+        dbl = PyFloat_AS_DOUBLE(obj);                       \
+    else if (_Py_convert_int_to_double(&(obj), &(dbl)) < 0) \
         return obj;
 
 /* Methods */
 
-static int
-convert_to_double(PyObject **v, double *dbl)
+int
+_Py_convert_int_to_double(PyObject **v, double *dbl)
 {
     PyObject *obj = *v;
 
@@ -1881,6 +1916,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 
 static void
@@ -2355,7 +2391,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+            return sign ? -Py_INFINITY : Py_INFINITY;
         }
         else {
             /* NaN */

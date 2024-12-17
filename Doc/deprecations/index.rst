@@ -7,7 +7,7 @@ Deprecations
 
 .. include:: pending-removal-in-future.rst
 
-C API Deprecations
+C API deprecations
 ------------------
 
 .. include:: c-api-pending-removal-in-3.15.rst

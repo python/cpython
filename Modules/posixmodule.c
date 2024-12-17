@@ -24,6 +24,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
+#include "pycore_typeobject.h"    // _PyType_AddMethod()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
@@ -72,6 +73,9 @@
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>           // futimes()
 #endif
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // PIDFD_NONBLOCK
+#endif
 
 
 // SGI apparently needs this forward declaration
@@ -80,6 +84,9 @@
    extern char * _getpty(int *, int, mode_t, int);
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h" // emscripten_debugger()
+#endif
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -677,6 +684,7 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
+    _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
@@ -1549,6 +1557,19 @@ dir_fd_and_follow_symlinks_invalid(const char *function_name, int dir_fd,
     }
     return 0;
 }
+
+#if defined(HAVE_WAITID)
+static int
+idtype_t_converter(PyObject *arg, void *addr)
+{
+    int value = PyLong_AsInt(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return 0;
+    }
+    *((idtype_t *)addr) = (idtype_t)(value);
+    return 1;
+}
+#endif
 
 #ifdef MS_WINDOWS
     typedef long long Py_off_t;
@@ -3054,16 +3075,41 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-class idtype_t_converter(int_converter):
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
+
+class idtype_t_converter(CConverter):
     type = 'idtype_t'
+    converter = 'idtype_t_converter'
 
 class id_t_converter(CConverter):
     type = 'id_t'
     format_unit = '" _Py_PARSE_PID "'
 
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = (id_t)PyLong_AsPid({argname});
+            if ({paramname} == (id_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
+
 class intptr_t_converter(CConverter):
     type = 'intptr_t'
     format_unit = '" _Py_PARSE_INTPTR "'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = (intptr_t)PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
 
 class Py_off_t_converter(CConverter):
     type = 'Py_off_t'
@@ -3073,18 +3119,22 @@ class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
 
-class path_confname_converter(CConverter):
+class confname_converter(CConverter):
     type="int"
-    converter="conv_path_confname"
+    converter="conv_confname"
 
-class confstr_confname_converter(path_confname_converter):
-    converter='conv_confstr_confname'
+    def converter_init(self, *, table):
+        self.table = table
 
-class sysconf_confname_converter(path_confname_converter):
-    converter="conv_sysconf_confname"
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            if (!{converter}(module, {argname}, &{paramname}, "{table}")) {{{{
+                goto exit;
+            }}}}
+        """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=577cb476e5d64960]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=8189d5ae78244626]*/
 
 /*[clinic input]
 
@@ -5391,7 +5441,6 @@ _testFileType(path_t *path, int testedType)
 os._path_exists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns False for broken symbolic links.
 
@@ -5399,7 +5448,7 @@ Test whether a path exists.  Returns False for broken symbolic links.
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=8da13acf666e16ba input=29198507a6082a57]*/
+/*[clinic end generated code: output=8da13acf666e16ba input=142beabfc66783eb]*/
 {
     return _testFileExists(path, TRUE);
 }
@@ -5409,7 +5458,6 @@ os__path_exists_impl(PyObject *module, path_t *path)
 os._path_lexists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns True for broken symbolic links.
 
@@ -5417,7 +5465,7 @@ Test whether a path exists.  Returns True for broken symbolic links.
 
 static int
 os__path_lexists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=e7240ed5fc45bff3 input=03d9fed8bc6ce96f]*/
+/*[clinic end generated code: output=e7240ed5fc45bff3 input=208205112a3cc1ed]*/
 {
     return _testFileExists(path, FALSE);
 }
@@ -8173,6 +8221,16 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
     PyStructSequence_SET_ITEM(res, 0, Py_NewRef(sched_priority));
     return res;
 }
+
+static PyObject *
+os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+}
+
+static PyMethodDef os_sched_param_reduce_method = {
+    "__reduce__", (PyCFunction)os_sched_param_reduce, METH_NOARGS|METH_COEXIST, NULL,
+};
 
 PyDoc_VAR(os_sched_param__doc__);
 
@@ -13499,46 +13557,38 @@ struct constdef {
 };
 
 static int
-conv_confname(PyObject *arg, int *valuep, struct constdef *table,
-              size_t tablesize)
+conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablename)
 {
-    if (PyLong_Check(arg)) {
+    if (PyUnicode_Check(arg)) {
+        PyObject *table = PyObject_GetAttrString(module, tablename);
+        if (table == NULL) {
+            return 0;
+        }
+
+        arg = PyObject_GetItem(table, arg);
+        Py_DECREF(table);
+        if (arg == NULL) {
+            PyErr_SetString(
+                PyExc_ValueError, "unrecognized configuration name");
+            return 0;
+        }
+    } else {
+        Py_INCREF(arg);  // Match the Py_DECREF below.
+    }
+
+    int success = 0;
+    if (!PyLong_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+            "configuration names must be strings or integers");
+    } else {
         int value = PyLong_AsInt(arg);
-        if (value == -1 && PyErr_Occurred())
-            return 0;
-        *valuep = value;
-        return 1;
-    }
-    else {
-        /* look up the value in the table using a binary search */
-        size_t lo = 0;
-        size_t mid;
-        size_t hi = tablesize;
-        int cmp;
-        const char *confname;
-        if (!PyUnicode_Check(arg)) {
-            PyErr_SetString(PyExc_TypeError,
-                "configuration names must be strings or integers");
-            return 0;
+        if (!(value == -1 && PyErr_Occurred())) {
+            *valuep = value;
+            success = 1;
         }
-        confname = PyUnicode_AsUTF8(arg);
-        if (confname == NULL)
-            return 0;
-        while (lo < hi) {
-            mid = (lo + hi) / 2;
-            cmp = strcmp(confname, table[mid].name);
-            if (cmp < 0)
-                hi = mid;
-            else if (cmp > 0)
-                lo = mid + 1;
-            else {
-                *valuep = table[mid].value;
-                return 1;
-            }
-        }
-        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
-        return 0;
     }
+    Py_DECREF(arg);
+    return success;
 }
 
 
@@ -13629,14 +13679,6 @@ static struct constdef  posix_constants_pathconf[] = {
     {"PC_TIMESTAMP_RESOLUTION", _PC_TIMESTAMP_RESOLUTION},
 #endif
 };
-
-static int
-conv_path_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_pathconf,
-                         sizeof(posix_constants_pathconf)
-                           / sizeof(struct constdef));
-}
 #endif
 
 
@@ -13645,7 +13687,7 @@ conv_path_confname(PyObject *arg, int *valuep)
 os.fpathconf -> long
 
     fd: fildes
-    name: path_confname
+    name: confname(table="pathconf_names")
     /
 
 Return the configuration limit name for the file descriptor fd.
@@ -13655,7 +13697,7 @@ If there is no limit, return -1.
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name)
-/*[clinic end generated code: output=d5b7042425fc3e21 input=5b8d2471cfaae186]*/
+/*[clinic end generated code: output=d5b7042425fc3e21 input=023d44589c9ed6aa]*/
 {
     long limit;
 
@@ -13673,7 +13715,7 @@ os_fpathconf_impl(PyObject *module, int fd, int name)
 /*[clinic input]
 os.pathconf -> long
     path: path_t(allow_fd='PATH_HAVE_FPATHCONF')
-    name: path_confname
+    name: confname(table="pathconf_names")
 
 Return the configuration limit name for the file or directory path.
 
@@ -13684,7 +13726,7 @@ On some platforms, path may also be specified as an open file descriptor.
 
 static long
 os_pathconf_impl(PyObject *module, path_t *path, int name)
-/*[clinic end generated code: output=5bedee35b293a089 input=bc3e2a985af27e5e]*/
+/*[clinic end generated code: output=5bedee35b293a089 input=6f6072f57b10c787]*/
 {
     long limit;
 
@@ -13861,19 +13903,11 @@ static struct constdef posix_constants_confstr[] = {
 #endif
 };
 
-static int
-conv_confstr_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_confstr,
-                         sizeof(posix_constants_confstr)
-                           / sizeof(struct constdef));
-}
-
 
 /*[clinic input]
 os.confstr
 
-    name: confstr_confname
+    name: confname(table="confstr_names")
     /
 
 Return a string-valued system configuration variable.
@@ -13881,7 +13915,7 @@ Return a string-valued system configuration variable.
 
 static PyObject *
 os_confstr_impl(PyObject *module, int name)
-/*[clinic end generated code: output=bfb0b1b1e49b9383 input=18fb4d0567242e65]*/
+/*[clinic end generated code: output=bfb0b1b1e49b9383 input=4c6ffca2837ec959]*/
 {
     PyObject *result = NULL;
     char buffer[255];
@@ -14418,18 +14452,10 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 };
 
-static int
-conv_sysconf_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_sysconf,
-                         sizeof(posix_constants_sysconf)
-                           / sizeof(struct constdef));
-}
-
 
 /*[clinic input]
 os.sysconf -> long
-    name: sysconf_confname
+    name: confname(table="sysconf_names")
     /
 
 Return an integer-valued system configuration variable.
@@ -14437,7 +14463,7 @@ Return an integer-valued system configuration variable.
 
 static long
 os_sysconf_impl(PyObject *module, int name)
-/*[clinic end generated code: output=3662f945fc0cc756 input=279e3430a33f29e4]*/
+/*[clinic end generated code: output=3662f945fc0cc756 input=930b8f23b5d15086]*/
 {
     long value;
 
@@ -14450,40 +14476,15 @@ os_sysconf_impl(PyObject *module, int name)
 #endif /* HAVE_SYSCONF */
 
 
-/* This code is used to ensure that the tables of configuration value names
- * are in sorted order as required by conv_confname(), and also to build
- * the exported dictionaries that are used to publish information about the
- * names available on the host platform.
- *
- * Sorting the table at runtime ensures that the table is properly ordered
- * when used, even for platforms we're not able to test on.  It also makes
- * it easier to add additional entries to the tables.
- */
-
-static int
-cmp_constdefs(const void *v1,  const void *v2)
-{
-    const struct constdef *c1 =
-    (const struct constdef *) v1;
-    const struct constdef *c2 =
-    (const struct constdef *) v2;
-
-    return strcmp(c1->name, c2->name);
-}
-
 static int
 setup_confname_table(struct constdef *table, size_t tablesize,
                      const char *tablename, PyObject *module)
 {
-    PyObject *d = NULL;
-    size_t i;
-
-    qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
-    d = PyDict_New();
+    PyObject *d = PyDict_New();
     if (d == NULL)
         return -1;
 
-    for (i=0; i < tablesize; ++i) {
+    for (size_t i=0; i < tablesize; ++i) {
         PyObject *o = PyLong_FromLong(table[i].value);
         if (o == NULL || PyDict_SetItemString(d, table[i].name, o) == -1) {
             Py_XDECREF(o);
@@ -16847,8 +16848,24 @@ os__create_environ_impl(PyObject *module)
 }
 
 
-static PyMethodDef posix_methods[] = {
+#ifdef __EMSCRIPTEN__
+/*[clinic input]
+os._emscripten_debugger
 
+Create a breakpoint for the JavaScript debugger. Emscripten only.
+[clinic start generated code]*/
+
+static PyObject *
+os__emscripten_debugger_impl(PyObject *module)
+/*[clinic end generated code: output=ad47dc3bf0661343 input=d814b1877fb6083a]*/
+{
+    emscripten_debugger();
+    Py_RETURN_NONE;
+}
+#endif /* __EMSCRIPTEN__ */
+
+
+static PyMethodDef posix_methods[] = {
     OS_STAT_METHODDEF
     OS_ACCESS_METHODDEF
     OS_TTYNAME_METHODDEF
@@ -17062,6 +17079,7 @@ static PyMethodDef posix_methods[] = {
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
+    OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -17997,6 +18015,12 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     ((PyTypeObject *)state->SchedParamType)->tp_new = os_sched_param;
+    if (_PyType_AddMethod((PyTypeObject *)state->SchedParamType,
+                          &os_sched_param_reduce_method) < 0)
+    {
+        return -1;
+    }
+    PyType_Modified((PyTypeObject *)state->SchedParamType);
 #endif
 
     /* initialize TerminalSize_info */

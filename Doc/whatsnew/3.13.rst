@@ -252,15 +252,6 @@ Improved error messages
   the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment variables.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
-.. Apparently this how you hack together a formatted link:
-   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
-
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
   display a more helpful error message:
@@ -274,7 +265,7 @@ Improved error messages
        File "/home/me/random.py", line 3, in <module>
          print(random.randint(5))
                ^^^^^^^^^^^^^^
-     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+     AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and prevents importing that standard library module)
 
   Similarly, if a script has the same name as a third-party
   module that it attempts to import and this results in errors,
@@ -289,7 +280,7 @@ Improved error messages
        File "/home/me/numpy.py", line 3, in <module>
          np.array([1, 2, 3])
          ^^^^^^^^
-     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a third-party module you intended to import)
+     AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a library you intended to import)
 
   (Contributed by Shantanu Jain in :gh:`95754`.)
 
@@ -1568,6 +1559,8 @@ and are now removed:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
   Use the :mod:`subprocess` module instead.
+  Use :func:`shlex.quote` to replace the undocumented ``pipes.quote``
+  function.
 * :mod:`!sndhdr`:
   The :pypi:`filetype`, :pypi:`puremagic`, or :pypi:`python-magic` libraries
   should be used as replacements.
@@ -2495,9 +2488,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.5 are now required to regenerate
   the :file:`configure` script.
-  (Contributed by Christian Heimes in :gh:`89886`.)
+  (Contributed by Christian Heimes in :gh:`89886` and by Victor Stinner in :gh:`112090`.)
 
 * SQLite 3.15.2 or newer is required to build
   the :mod:`sqlite3` extension module.

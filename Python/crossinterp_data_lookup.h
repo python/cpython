@@ -1,39 +1,87 @@
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
-static crossinterpdatafunc _lookup_getdata_from_registry(
-                                            PyInterpreterState *, PyObject *);
 
-static crossinterpdatafunc
-lookup_getdata(PyInterpreterState *interp, PyObject *obj)
+typedef _PyXIData_lookup_context_t dlcontext_t;
+typedef _PyXIData_registry_t dlregistry_t;
+typedef _PyXIData_regitem_t dlregitem_t;
+
+
+// forward
+static void _xidregistry_init(dlregistry_t *);
+static void _xidregistry_fini(dlregistry_t *);
+static xidatafunc _lookup_getdata_from_registry(dlcontext_t *, PyObject *);
+
+
+/* used in crossinterp.c */
+
+static void
+xid_lookup_init(_PyXIData_lookup_t *state)
+{
+    _xidregistry_init(&state->registry);
+}
+
+static void
+xid_lookup_fini(_PyXIData_lookup_t *state)
+{
+    _xidregistry_fini(&state->registry);
+}
+
+static xidatafunc
+lookup_getdata(dlcontext_t *ctx, PyObject *obj)
 {
    /* Cross-interpreter objects are looked up by exact match on the class.
       We can reassess this policy when we move from a global registry to a
       tp_* slot. */
-    return _lookup_getdata_from_registry(interp, obj);
+    return _lookup_getdata_from_registry(ctx, obj);
 }
 
-crossinterpdatafunc
-_PyCrossInterpreterData_Lookup(PyObject *obj)
+
+/* exported API */
+
+int
+_PyXIData_GetLookupContext(PyInterpreterState *interp,
+                           _PyXIData_lookup_context_t *res)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return lookup_getdata(interp, obj);
+    _PyXI_global_state_t *global = _PyXI_GET_GLOBAL_STATE(interp);
+    if (global == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    _PyXI_state_t *local = _PyXI_GET_STATE(interp);
+    if (local == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    *res = (dlcontext_t){
+        .global = &global->data_lookup,
+        .local = &local->data_lookup,
+        .PyExc_NotShareableError = local->exceptions.PyExc_NotShareableError,
+    };
+    return 0;
+}
+
+xidatafunc
+_PyXIData_Lookup(_PyXIData_lookup_context_t *ctx, PyObject *obj)
+{
+    return lookup_getdata(ctx, obj);
 }
 
 
 /***********************************************/
-/* a registry of {type -> crossinterpdatafunc} */
+/* a registry of {type -> xidatafunc} */
 /***********************************************/
 
 /* For now we use a global registry of shareable classes.  An
    alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient.  */
+   xidatafunc. It would be simpler and more efficient.  */
 
 
 /* registry lifecycle */
 
-static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *);
+static void _register_builtins_for_crossinterpreter_data(dlregistry_t *);
 
 static void
-_xidregistry_init(struct _xidregistry *registry)
+_xidregistry_init(dlregistry_t *registry)
 {
     if (registry->initialized) {
         return;
@@ -47,10 +95,10 @@ _xidregistry_init(struct _xidregistry *registry)
     }
 }
 
-static void _xidregistry_clear(struct _xidregistry *);
+static void _xidregistry_clear(dlregistry_t *);
 
 static void
-_xidregistry_fini(struct _xidregistry *registry)
+_xidregistry_fini(dlregistry_t *registry)
 {
     if (!registry->initialized) {
         return;
@@ -60,32 +108,11 @@ _xidregistry_fini(struct _xidregistry *registry)
     _xidregistry_clear(registry);
 }
 
-static inline struct _xidregistry * _get_global_xidregistry(_PyRuntimeState *);
-static inline struct _xidregistry * _get_xidregistry(PyInterpreterState *);
-
-static void
-xid_lookup_init(PyInterpreterState *interp)
-{
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_init(_get_global_xidregistry(interp->runtime));
-    }
-    _xidregistry_init(_get_xidregistry(interp));
-}
-
-static void
-xid_lookup_fini(PyInterpreterState *interp)
-{
-    _xidregistry_fini(_get_xidregistry(interp));
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_fini(_get_global_xidregistry(interp->runtime));
-    }
-}
-
 
 /* registry thread safety */
 
 static void
-_xidregistry_lock(struct _xidregistry *registry)
+_xidregistry_lock(dlregistry_t *registry)
 {
     if (registry->global) {
         PyMutex_Lock(&registry->mutex);
@@ -94,7 +121,7 @@ _xidregistry_lock(struct _xidregistry *registry)
 }
 
 static void
-_xidregistry_unlock(struct _xidregistry *registry)
+_xidregistry_unlock(dlregistry_t *registry)
 {
     if (registry->global) {
         PyMutex_Unlock(&registry->mutex);
@@ -104,35 +131,21 @@ _xidregistry_unlock(struct _xidregistry *registry)
 
 /* accessing the registry */
 
-static inline struct _xidregistry *
-_get_global_xidregistry(_PyRuntimeState *runtime)
+static inline dlregistry_t *
+_get_xidregistry_for_type(dlcontext_t *ctx, PyTypeObject *cls)
 {
-    return &runtime->xi.registry;
-}
-
-static inline struct _xidregistry *
-_get_xidregistry(PyInterpreterState *interp)
-{
-    return &interp->xi.registry;
-}
-
-static inline struct _xidregistry *
-_get_xidregistry_for_type(PyInterpreterState *interp, PyTypeObject *cls)
-{
-    struct _xidregistry *registry = _get_global_xidregistry(interp->runtime);
     if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        registry = _get_xidregistry(interp);
+        return &ctx->local->registry;
     }
-    return registry;
+    return &ctx->global->registry;
 }
 
-static struct _xidregitem * _xidregistry_remove_entry(
-        struct _xidregistry *, struct _xidregitem *);
+static dlregitem_t* _xidregistry_remove_entry(dlregistry_t *, dlregitem_t *);
 
-static struct _xidregitem *
-_xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
+static dlregitem_t *
+_xidregistry_find_type(dlregistry_t *xidregistry, PyTypeObject *cls)
 {
-    struct _xidregitem *cur = xidregistry->head;
+    dlregitem_t *cur = xidregistry->head;
     while (cur != NULL) {
         if (cur->weakref != NULL) {
             // cur is/was a heap type.
@@ -155,16 +168,16 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
     return NULL;
 }
 
-static crossinterpdatafunc
-_lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
+static xidatafunc
+_lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
 
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
-    crossinterpdatafunc func = matched != NULL ? matched->getdata : NULL;
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
+    xidatafunc func = matched != NULL ? matched->getdata : NULL;
 
     _xidregistry_unlock(xidregistry);
     return func;
@@ -174,14 +187,14 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 /* updating the registry */
 
 static int
-_xidregistry_add_type(struct _xidregistry *xidregistry,
-                      PyTypeObject *cls, crossinterpdatafunc getdata)
+_xidregistry_add_type(dlregistry_t *xidregistry,
+                      PyTypeObject *cls, xidatafunc getdata)
 {
-    struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
+    dlregitem_t *newhead = PyMem_RawMalloc(sizeof(dlregitem_t));
     if (newhead == NULL) {
         return -1;
     }
-    *newhead = (struct _xidregitem){
+    *newhead = (dlregitem_t){
         // We do not keep a reference, to avoid keeping the class alive.
         .cls = cls,
         .refcount = 1,
@@ -203,11 +216,10 @@ _xidregistry_add_type(struct _xidregistry *xidregistry,
     return 0;
 }
 
-static struct _xidregitem *
-_xidregistry_remove_entry(struct _xidregistry *xidregistry,
-                          struct _xidregitem *entry)
+static dlregitem_t *
+_xidregistry_remove_entry(dlregistry_t *xidregistry, dlregitem_t *entry)
 {
-    struct _xidregitem *next = entry->next;
+    dlregitem_t *next = entry->next;
     if (entry->prev != NULL) {
         assert(entry->prev->next == entry);
         entry->prev->next = next;
@@ -225,12 +237,12 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
 }
 
 static void
-_xidregistry_clear(struct _xidregistry *xidregistry)
+_xidregistry_clear(dlregistry_t *xidregistry)
 {
-    struct _xidregitem *cur = xidregistry->head;
+    dlregitem_t *cur = xidregistry->head;
     xidregistry->head = NULL;
     while (cur != NULL) {
-        struct _xidregitem *next = cur->next;
+        dlregitem_t *next = cur->next;
         Py_XDECREF(cur->weakref);
         PyMem_RawFree(cur);
         cur = next;
@@ -238,8 +250,8 @@ _xidregistry_clear(struct _xidregistry *xidregistry)
 }
 
 int
-_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
-                                      crossinterpdatafunc getdata)
+_PyXIData_RegisterClass(_PyXIData_lookup_context_t *ctx,
+                        PyTypeObject *cls, xidatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
@@ -251,11 +263,10 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
     }
 
     int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
         assert(matched->getdata == getdata);
         matched->refcount += 1;
@@ -270,14 +281,13 @@ finally:
 }
 
 int
-_PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
+_PyXIData_UnregisterClass(_PyXIData_lookup_context_t *ctx, PyTypeObject *cls)
 {
     int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
         assert(matched->refcount > 0);
         matched->refcount -= 1;
@@ -304,17 +314,16 @@ struct _shared_bytes_data {
 };
 
 static PyObject *
-_new_bytes_object(_PyCrossInterpreterData *data)
+_new_bytes_object(_PyXIData_t *data)
 {
     struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
     return PyBytes_FromStringAndSize(shared->bytes, shared->len);
 }
 
 static int
-_bytes_shared(PyThreadState *tstate, PyObject *obj,
-              _PyCrossInterpreterData *data)
+_bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
             _new_bytes_object
             ) < 0)
@@ -323,7 +332,7 @@ _bytes_shared(PyThreadState *tstate, PyObject *obj,
     }
     struct _shared_bytes_data *shared = (struct _shared_bytes_data *)data->data;
     if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
-        _PyCrossInterpreterData_Clear(tstate->interp, data);
+        _PyXIData_Clear(tstate->interp, data);
         return -1;
     }
     return 0;
@@ -338,17 +347,16 @@ struct _shared_str_data {
 };
 
 static PyObject *
-_new_str_object(_PyCrossInterpreterData *data)
+_new_str_object(_PyXIData_t *data)
 {
     struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
     return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
 }
 
 static int
-_str_shared(PyThreadState *tstate, PyObject *obj,
-            _PyCrossInterpreterData *data)
+_str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_str_data), obj,
             _new_str_object
             ) < 0)
@@ -365,14 +373,13 @@ _str_shared(PyThreadState *tstate, PyObject *obj,
 // int
 
 static PyObject *
-_new_long_object(_PyCrossInterpreterData *data)
+_new_long_object(_PyXIData_t *data)
 {
     return PyLong_FromSsize_t((Py_ssize_t)(data->data));
 }
 
 static int
-_long_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     /* Note that this means the size of shareable ints is bounded by
      * sys.maxsize.  Hence on 32-bit architectures that is half the
@@ -385,8 +392,7 @@ _long_shared(PyThreadState *tstate, PyObject *obj,
         }
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, (void *)value, NULL,
-            _new_long_object);
+    _PyXIData_Init(data, tstate->interp, (void *)value, NULL, _new_long_object);
     // data->obj and data->free remain NULL
     return 0;
 }
@@ -394,17 +400,16 @@ _long_shared(PyThreadState *tstate, PyObject *obj,
 // float
 
 static PyObject *
-_new_float_object(_PyCrossInterpreterData *data)
+_new_float_object(_PyXIData_t *data)
 {
     double * value_ptr = data->data;
     return PyFloat_FromDouble(*value_ptr);
 }
 
 static int
-_float_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    if (_PyCrossInterpreterData_InitWithSize(
+    if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(double), NULL,
             _new_float_object
             ) < 0)
@@ -419,18 +424,16 @@ _float_shared(PyThreadState *tstate, PyObject *obj,
 // None
 
 static PyObject *
-_new_none_object(_PyCrossInterpreterData *data)
+_new_none_object(_PyXIData_t *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
     return Py_NewRef(Py_None);
 }
 
 static int
-_none_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
-            _new_none_object);
+    _PyXIData_Init(data, tstate->interp, NULL, NULL, _new_none_object);
     // data->data, data->obj and data->free remain NULL
     return 0;
 }
@@ -438,7 +441,7 @@ _none_shared(PyThreadState *tstate, PyObject *obj,
 // bool
 
 static PyObject *
-_new_bool_object(_PyCrossInterpreterData *data)
+_new_bool_object(_PyXIData_t *data)
 {
     if (data->data){
         Py_RETURN_TRUE;
@@ -447,10 +450,9 @@ _new_bool_object(_PyCrossInterpreterData *data)
 }
 
 static int
-_bool_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    _PyCrossInterpreterData_Init(data, tstate->interp,
+    _PyXIData_Init(data, tstate->interp,
             (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
             _new_bool_object);
     // data->obj and data->free remain NULL
@@ -461,11 +463,11 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
 
 struct _shared_tuple_data {
     Py_ssize_t len;
-    _PyCrossInterpreterData **data;
+    _PyXIData_t **data;
 };
 
 static PyObject *
-_new_tuple_object(_PyCrossInterpreterData *data)
+_new_tuple_object(_PyXIData_t *data)
 {
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
     PyObject *tuple = PyTuple_New(shared->len);
@@ -474,7 +476,7 @@ _new_tuple_object(_PyCrossInterpreterData *data)
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        PyObject *item = _PyXIData_NewObject(shared->data[i]);
         if (item == NULL){
             Py_DECREF(tuple);
             return NULL;
@@ -493,8 +495,8 @@ _tuple_shared_free(void* data)
 #endif
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         if (shared->data[i] != NULL) {
-            assert(_PyCrossInterpreterData_INTERPID(shared->data[i]) == interpid);
-            _PyCrossInterpreterData_Release(shared->data[i]);
+            assert(_PyXIData_INTERPID(shared->data[i]) == interpid);
+            _PyXIData_Release(shared->data[i]);
             PyMem_RawFree(shared->data[i]);
             shared->data[i] = NULL;
         }
@@ -504,9 +506,13 @@ _tuple_shared_free(void* data)
 }
 
 static int
-_tuple_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
+_tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
+    dlcontext_t ctx;
+    if (_PyXIData_GetLookupContext(tstate->interp, &ctx) < 0) {
+        return -1;
+    }
+
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
         return -1;
@@ -518,14 +524,14 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     }
 
     shared->len = len;
-    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    shared->data = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
     if (shared->data == NULL) {
         PyErr_NoMemory();
         return -1;
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        _PyXIData_t *data = _PyXIData_New();
         if (data == NULL) {
             goto error;  // PyErr_NoMemory already set
         }
@@ -533,7 +539,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetCrossInterpreterData(item, data);
+            res = _PyObject_GetXIData(&ctx, item, data);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {
@@ -542,8 +548,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
         }
         shared->data[i] = data;
     }
-    _PyCrossInterpreterData_Init(
-            data, tstate->interp, shared, obj, _new_tuple_object);
+    _PyXIData_Init(data, tstate->interp, shared, obj, _new_tuple_object);
     data->free = _tuple_shared_free;
     return 0;
 
@@ -555,7 +560,7 @@ error:
 // registration
 
 static void
-_register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
+_register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
 {
     // None
     if (_xidregistry_add_type(xidregistry, (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
