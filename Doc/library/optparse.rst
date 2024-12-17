@@ -22,7 +22,7 @@ The standard library includes three argument parsing libraries:
   Included in the standard library since before the initial Python 1.0 release.
 * :mod:`optparse`: a declarative replacement for ``getopt`` that
   provides equivalent functionality without requiring each application
-  to implement its own procedural option parsing logic. First included
+  to implement its own procedural option parsing logic. Included
   in the standard library since the Python 2.3 release.
 * :mod:`argparse`: a more opinionated alternative to ``optparse`` that
   provides more functionality by default, at the expense of reduced application
