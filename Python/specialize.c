@@ -967,7 +967,7 @@ specialize_dict_access_inline(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     assert(PyUnicode_CheckExact(name));
-    Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+    Py_ssize_t index = _PyDictKeys_StringLookupSplit(keys, name);
     assert (index != DKIX_ERROR);
     if (index == DKIX_EMPTY) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_IN_KEYS);
