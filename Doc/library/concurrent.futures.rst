@@ -421,10 +421,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       of them the given signal. If the signal is not specified, the default signal
       :data:`signal.SIGTERM` is used.
 
-      After calling :meth:`ProcessPoolExecutor.terminate_workers`, the caller, should
-      no longer submit tasks to the executor. It is also recommended to still call
-      :meth:`ProcessPoolExecutor.shutdown` to ensure that all other resources
-      associated with the executor are freed.
+      After calling this, the caller, should no longer submit tasks to the executor.
+      It is also recommended to still call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
 
       .. versionadded:: 3.14
 
