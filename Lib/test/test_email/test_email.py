@@ -741,7 +741,7 @@ class TestMessageAPI(TestEmailBase):
             with self.subTest(name=name, problem=value):
                 with self.assertRaises(ValueError) as cm:
                     Message().add_header(name, value)
-                    self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
 
         invalid_headers = [
             ('Header\x7F', 'Non-ASCII character'),
@@ -751,7 +751,22 @@ class TestMessageAPI(TestEmailBase):
             with self.subTest(name=name, problem=value):
                 with self.assertRaises(ValueError) as cm:
                     Message().add_header(name, value)
-                    self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    m = Message()
+                    m[name] = value
+                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
+
+        for name, value in invalid_headers:
+            with self.subTest(name=name, problem=value):
+                with self.assertRaises(ValueError) as cm:
+                    m = Message()
+                    m[name] = value
+                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+
 
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
