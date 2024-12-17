@@ -862,7 +862,9 @@ class ProcessPoolExecutor(_base.Executor):
         Iterates through all of the current processes and sends the given signal if
         the process is still alive.
 
-        After terminating workers, the pool will be in a broken state and no longer usable.
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
 
         Args:
             signal: The signal to send to each worker process. Defaults to
