@@ -66,130 +66,21 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _PathStatusBase:
-    __slots__ = ('_path', '_repr')
-
-    def __init__(self, path):
-        self._path = str(path)
-        self._repr = f"<{type(path).__name__}.status>"
-
-    def __fspath__(self):
-        return self._path
+class _StatusBase:
+    __slots__ = ()
 
     def __repr__(self):
-        return self._repr
+        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
+        return f"<{path_type}.status>"
 
 
-class _WindowsPathStatus(_PathStatusBase):
-    """Implementation of pathlib.types.Status that provides file status
-    information for Windows paths. Don't try to construct it yourself."""
-    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks and self.is_symlink():
-            return True
-        try:
-            return self._exists
-        except AttributeError:
-            if os.path.exists(self):
-                self._exists = True
-                return True
-            else:
-                self._exists = self._is_dir = self._is_file = False
-                return False
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_dir
-        except AttributeError:
-            if os.path.isdir(self):
-                self._is_dir = self._exists = True
-                return True
-            else:
-                self._is_dir = False
-                return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_file
-        except AttributeError:
-            if os.path.isfile(self):
-                self._is_file = self._exists = True
-                return True
-            else:
-                self._is_file = False
-                return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._is_symlink
-        except AttributeError:
-            self._is_symlink = os.path.islink(self)
-            return self._is_symlink
-
-
-class _PosixPathStatus(_PathStatusBase):
-    """Implementation of pathlib.types.Status that provides file status
-    information for POSIX paths. Don't try to construct it yourself."""
-    __slots__ = ('_mode',)
-
-    def __init__(self, path):
-        super().__init__(path)
-        self._mode = [None, None]
-
-    def _get_mode(self, *, follow_symlinks=True):
-        idx = int(follow_symlinks)
-        mode = self._mode[idx]
-        if mode is None:
-            try:
-                st = os.stat(self, follow_symlinks=follow_symlinks)
-            except (OSError, ValueError):
-                mode = 0
-            else:
-                mode = st.st_mode
-            if follow_symlinks or S_ISLNK(mode):
-                self._mode[idx] = mode
-            else:
-                # Not a symlink, so stat() will give the same result
-                self._mode = [mode, mode]
-        return mode
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        return self._get_mode(follow_symlinks=follow_symlinks) > 0
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        return S_ISDIR(self._get_mode(follow_symlinks=follow_symlinks))
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        return S_ISREG(self._get_mode(follow_symlinks=follow_symlinks))
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        return S_ISLNK(self._get_mode(follow_symlinks=False))
-
-
-_PathStatus = _WindowsPathStatus if os.name == 'nt' else _PosixPathStatus
-
-
-class _DirEntryStatus(_PathStatusBase):
+class _DirEntryStatus(_StatusBase):
     """Implementation of pathlib.types.Status that provides file status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
     __slots__ = ('_entry', '_exists')
 
-    def __init__(self, path, entry):
-        super().__init__(path)
+    def __init__(self, entry):
         self._entry = entry
 
     def exists(self, *, follow_symlinks=True):
@@ -227,6 +118,111 @@ class _DirEntryStatus(_PathStatusBase):
             return self._entry.is_symlink()
         except OSError:
             return False
+
+
+class _WindowsPathStatus(_StatusBase):
+    """Implementation of pathlib.types.Status that provides file status
+    information for Windows paths. Don't try to construct it yourself."""
+    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
+
+    def __init__(self, path):
+        self._path = str(path)
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if not follow_symlinks and self.is_symlink():
+            return True
+        try:
+            return self._exists
+        except AttributeError:
+            if os.path.exists(self._path):
+                self._exists = True
+                return True
+            else:
+                self._exists = self._is_dir = self._is_file = False
+                return False
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_dir
+        except AttributeError:
+            if os.path.isdir(self._path):
+                self._is_dir = self._exists = True
+                return True
+            else:
+                self._is_dir = False
+                return False
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_file
+        except AttributeError:
+            if os.path.isfile(self._path):
+                self._is_file = self._exists = True
+                return True
+            else:
+                self._is_file = False
+                return False
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        try:
+            return self._is_symlink
+        except AttributeError:
+            self._is_symlink = os.path.islink(self._path)
+            return self._is_symlink
+
+
+class _PosixPathStatus(_StatusBase):
+    """Implementation of pathlib.types.Status that provides file status
+    information for POSIX paths. Don't try to construct it yourself."""
+    __slots__ = ('_path', '_mode')
+
+    def __init__(self, path):
+        self._path = str(path)
+        self._mode = [None, None]
+
+    def _get_mode(self, *, follow_symlinks=True):
+        idx = int(follow_symlinks)
+        mode = self._mode[idx]
+        if mode is None:
+            try:
+                st = os.stat(self._path, follow_symlinks=follow_symlinks)
+            except (OSError, ValueError):
+                mode = 0
+            else:
+                mode = st.st_mode
+            if follow_symlinks or S_ISLNK(mode):
+                self._mode[idx] = mode
+            else:
+                # Not a symlink, so stat() will give the same result
+                self._mode = [mode, mode]
+        return mode
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        return self._get_mode(follow_symlinks=follow_symlinks) > 0
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        return S_ISDIR(self._get_mode(follow_symlinks=follow_symlinks))
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        return S_ISREG(self._get_mode(follow_symlinks=follow_symlinks))
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        return S_ISLNK(self._get_mode(follow_symlinks=False))
+
+
+_PathStatus = _WindowsPathStatus if os.name == 'nt' else _PosixPathStatus
 
 
 class PurePath(PurePathBase):
@@ -878,7 +874,7 @@ class Path(PathBase, PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._status = _DirEntryStatus(path, dir_entry)
+        path._status = _DirEntryStatus(dir_entry)
         return path
 
     def iterdir(self):
