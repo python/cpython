@@ -85,7 +85,7 @@ class _PathStatus:
         if mode is None:
             try:
                 st = os.stat(self._path, follow_symlinks=follow_symlinks)
-            except (FileNotFoundError, ValueError):
+            except (OSError, ValueError):
                 mode = 0
             else:
                 mode = st.st_mode
@@ -141,7 +141,7 @@ class _DirEntryStatus:
         if follow_symlinks:
             try:
                 self._entry.stat()
-            except FileNotFoundError:
+            except OSError:
                 return False
         return True
 
@@ -149,19 +149,28 @@ class _DirEntryStatus:
         """
         Whether this path is a directory.
         """
-        return self._entry.is_dir(follow_symlinks=follow_symlinks)
+        try:
+            return self._entry.is_dir(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
 
     def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file.
         """
-        return self._entry.is_file(follow_symlinks=follow_symlinks)
+        try:
+            return self._entry.is_file(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
 
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
-        return self._entry.is_symlink()
+        try:
+            return self._entry.is_symlink()
+        except OSError:
+            return False
 
 
 class PurePath(PurePathBase):

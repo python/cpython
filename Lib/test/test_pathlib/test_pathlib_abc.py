@@ -1858,25 +1858,15 @@ class DummyPathTest(DummyPurePathTest):
         for child in p.iterdir():
             entry = child.status
             self.assertIsInstance(entry, Status)
+            self.assertEqual(entry.exists(), child.exists())
+            self.assertEqual(entry.is_dir(), child.is_dir())
+            self.assertEqual(entry.is_file(), child.is_file())
+            self.assertEqual(entry.is_symlink(), child.is_symlink())
             self.assertTrue(entry.exists(follow_symlinks=False))
             self.assertEqual(entry.is_dir(follow_symlinks=False),
                              child.is_dir(follow_symlinks=False))
             self.assertEqual(entry.is_file(follow_symlinks=False),
                              child.is_file(follow_symlinks=False))
-            self.assertEqual(entry.is_symlink(),
-                             child.is_symlink())
-            if child.name == 'brokenLink':
-                self.assertFalse(entry.exists())
-                self.assertFalse(entry.is_dir())
-                self.assertFalse(entry.is_file())
-            elif child.name == 'brokenLinkLoop':
-                self.assertRaises(OSError, entry.exists)
-                self.assertRaises(OSError, entry.is_dir)
-                self.assertRaises(OSError, entry.is_file)
-            else:
-                self.assertTrue(entry.exists())
-                self.assertEqual(entry.is_dir(), child.is_dir())
-                self.assertEqual(entry.is_file(), child.is_file())
 
     def test_glob_common(self):
         def _check(glob, expected):
@@ -2018,7 +2008,7 @@ class DummyPathTest(DummyPurePathTest):
             self.assertTrue((p / 'linkB').status.exists(follow_symlinks=True))
             self.assertFalse((p / 'brokenLink').status.exists())
             self.assertTrue((p / 'brokenLink').status.exists(follow_symlinks=False))
-            self.assertRaises(OSError, (p / 'brokenLinkLoop').status.exists)
+            self.assertFalse((p / 'brokenLinkLoop').status.exists())
             self.assertTrue((p / 'brokenLinkLoop').status.exists(follow_symlinks=False))
         self.assertFalse((p / 'fileA\udfff').status.exists())
         self.assertFalse((p / 'fileA\udfff').status.exists(follow_symlinks=False))
@@ -2040,7 +2030,7 @@ class DummyPathTest(DummyPurePathTest):
             self.assertFalse((p / 'linkB').status.is_dir(follow_symlinks=False))
             self.assertFalse((p / 'brokenLink').status.is_dir())
             self.assertFalse((p / 'brokenLink').status.is_dir(follow_symlinks=False))
-            self.assertRaises(OSError, (p / 'brokenLinkLoop').status.is_dir)
+            self.assertFalse((p / 'brokenLinkLoop').status.is_dir())
             self.assertFalse((p / 'brokenLinkLoop').status.is_dir(follow_symlinks=False))
         self.assertFalse((p / 'dirA\udfff').status.is_dir())
         self.assertFalse((p / 'dirA\udfff').status.is_dir(follow_symlinks=False))
@@ -2062,7 +2052,7 @@ class DummyPathTest(DummyPurePathTest):
             self.assertFalse((p / 'linkB').status.is_file(follow_symlinks=False))
             self.assertFalse((p / 'brokenLink').status.is_file())
             self.assertFalse((p / 'brokenLink').status.is_file(follow_symlinks=False))
-            self.assertRaises(OSError, (p / 'brokenLinkLoop').status.is_file)
+            self.assertFalse((p / 'brokenLinkLoop').status.is_file())
             self.assertFalse((p / 'brokenLinkLoop').status.is_file(follow_symlinks=False))
         self.assertFalse((p / 'fileA\udfff').status.is_file())
         self.assertFalse((p / 'fileA\udfff').status.is_file(follow_symlinks=False))
