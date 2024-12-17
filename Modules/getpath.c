@@ -808,7 +808,7 @@ library_to_dict(PyObject *dict, const char *key)
 {
 /* macOS framework builds do not link against a libpython dynamic library, but
    instead link against a macOS Framework. */
-#ifdef Py_ENABLE_SHARED || WITH_NEXT_FRAMEWORK
+#if defined(Py_ENABLE_SHARED) || defined(WITH_NEXT_FRAMEWORK)
 
 #ifdef MS_WINDOWS
     extern HMODULE PyWin_DLLhModule;
