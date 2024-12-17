@@ -125,6 +125,7 @@ bytes(cdata)
 #include "ctypes.h"
 
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 
 ctypes_state global_state;
 
@@ -803,15 +804,8 @@ CDataType_in_dll(PyObject *type, PyObject *args)
     #ifdef USE_DLERROR
     const char *dlerr = dlerror();
     if (dlerr) {
-        PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
-        if (message) {
-            PyErr_SetObject(PyExc_ValueError, message);
-            Py_DECREF(message);
-            return NULL;
-        }
-        // Ignore errors from PyUnicode_DecodeLocale,
-        // fall back to the generic error below.
-        PyErr_Clear();
+        _PyErr_SetLocaleString(PyExc_ValueError, dlerr);
+        return NULL;
     }
     #endif
 #undef USE_DLERROR
@@ -3646,21 +3640,14 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     #endif
     address = (PPROC)dlsym(handle, name);
     if (!address) {
-	#ifdef USE_DLERROR
+    #ifdef USE_DLERROR
         const char *dlerr = dlerror();
         if (dlerr) {
-            PyObject *message = PyUnicode_DecodeLocale(dlerr, "surrogateescape");
-            if (message) {
-                PyErr_SetObject(PyExc_AttributeError, message);
-                Py_DECREF(ftuple);
-                Py_DECREF(message);
-                return NULL;
-            }
-            // Ignore errors from PyUnicode_DecodeLocale,
-            // fall back to the generic error below.
-            PyErr_Clear();
+            _PyErr_SetLocaleString(PyExc_AttributeError, dlerr);
+            Py_DECREF(ftuple);
+            return NULL;
         }
-	#endif
+    #endif
         PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;
