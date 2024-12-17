@@ -58,7 +58,7 @@ class ParallelTestCase(TestCase):
             result.addSuccess(self)
 
         # Note: We can't call result.addError, result.addFailure, etc. because
-        # we no longer the original exception, just the string format.
+        # we no longer have the original exception, just the string format.
         for r in results:
             if len(r.errors) > 0 or len(r.failures) > 0:
                 result._mirrorOutput = True
