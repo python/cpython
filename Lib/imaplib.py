@@ -379,7 +379,7 @@ class IMAP4:
 
         line = b''.join(parts)
         if len(line) > _MAXLINE:
-            raise self.error(f'got more than {_MAXLINE} bytes')
+            raise self.error("got more than %d bytes" % _MAXLINE)
         return line
 
 
