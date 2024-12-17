@@ -96,6 +96,7 @@
 #define DONT_USE_SEH
 #endif
 
+#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
 #include "pycore_runtime.h"         // _PyRuntime
 #include "pycore_global_objects.h"  // _Py_ID()
 

@@ -3,6 +3,11 @@
 /* Author: Anthony Baxter, after dbmmodule.c */
 /* Doc strings: Mitch Chapman */
 
+// required for pycore_pyerrors.h
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()

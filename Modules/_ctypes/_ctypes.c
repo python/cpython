@@ -125,6 +125,7 @@ bytes(cdata)
 #include "ctypes.h"
 
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 
 ctypes_state global_state;
 
