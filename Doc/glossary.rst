@@ -136,7 +136,8 @@ Glossary
 
       A :term:`thread state` that is stored in the :term:`current thread state`.
       If no thread state is attached, then the :term:`current thread state` is ``NULL``.
-      Attempting to call Python's C API without an attached thread state will result in a fatal error.
+      Attempting to call Python's C API without an attached thread state will result
+      in a fatal error or an undefined behavior.
 
       A thread state can be attached and detached explicitly by the user, or
       implicitly by the interpreter in between calls. For example, an attached
