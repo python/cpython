@@ -1596,6 +1596,9 @@ def main():
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
 
+    # gh-127060: Disable traceback colors
+    os.environ['TERM'] = 'dumb'
+
     # Setup root.  Don't break user code run in IDLE process.
     # Don't change environment when testing.
     if use_subprocess and not testing:
