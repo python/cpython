@@ -2352,9 +2352,9 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
     else {
         const int64_t value = export_long.value;
 
-        if (INT32_MIN <= value && value <= INT32_MAX) {
+        if (-UINT32_MAX <= value && value <= UINT32_MAX) {
             _dec_settriple(dec, value < 0 ? MPD_NEG : MPD_POS,
-                           Py_ABS(value), 0);
+                           (uint32_t)Py_ABS(value), 0);
             mpd_qfinalize(MPD(dec), ctx, status);
         }
         else {
