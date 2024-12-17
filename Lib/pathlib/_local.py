@@ -92,8 +92,12 @@ class _WindowsPathStatus(_PathStatusBase):
         try:
             return self._exists
         except AttributeError:
-            self._exists = os.path.exists(self)
-            return self._exists
+            if os.path.exists(self):
+                self._exists = True
+                return True
+            else:
+                self._exists = self._is_dir = self._is_file = False
+                return False
 
     def is_dir(self, *, follow_symlinks=True):
         """Whether this path is a directory."""
@@ -102,8 +106,12 @@ class _WindowsPathStatus(_PathStatusBase):
         try:
             return self._is_dir
         except AttributeError:
-            self._is_dir = os.path.isdir(self)
-            return self._is_dir
+            if os.path.isdir(self):
+                self._is_dir = self._exists = True
+                return True
+            else:
+                self._is_dir = False
+                return False
 
     def is_file(self, *, follow_symlinks=True):
         """Whether this path is a regular file."""
@@ -112,8 +120,12 @@ class _WindowsPathStatus(_PathStatusBase):
         try:
             return self._is_file
         except AttributeError:
-            self._is_file = os.path.isfile(self)
-            return self._is_file
+            if os.path.isfile(self):
+                self._is_file = self._exists = True
+                return True
+            else:
+                self._is_file = False
+                return False
 
     def is_symlink(self):
         """Whether this path is a symbolic link."""
