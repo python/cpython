@@ -21,6 +21,7 @@ try:
     import ssl
 except ImportError:
     ssl = None
+import warnings
 
 support.requires_working_socket(module=True)
 
@@ -601,6 +602,17 @@ class NewIMAPTestsMixin():
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
+
+    # property tests
+
+    def test_file_property(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        # 'file' attribute access should trigger a warning
+        with warnings.catch_warnings(record=True) as warned:
+            warnings.simplefilter('always')
+            client.file
+            self.assertEqual(len(warned), 1)
+            self.assertTrue(issubclass(warned[-1].category, RuntimeWarning))
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
