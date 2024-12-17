@@ -138,27 +138,27 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
-   .. method:: formatday(theday, weekday, width=2)
+   .. method:: formatday(theday, weekday, width)
 
-      Return a :class:`str` representing a single day formatted with the given width
-      which defaults to ``2``. If *theday* is ``0``, return a :class:`str` of spaces of
+      Return a :class:`str` representing a single day formatted with the given width.
+      If *theday* is ``0``, return a :class:`str` of spaces of
       the specified width, representing an empty day. The *weekday* parameter
       represents the day of the week, where ``0`` is Monday and ``6`` is Sunday.
 
-   .. method:: formatweek(theweek, width=2)
+   .. method:: formatweek(theweek, width)
 
       Return a :class:`str` representing an entire week formatted with the given width for each day.
       The *theweek* parameter is a list of tuples, where each tuple contains a day of
       the month or ``0`` for padding, and the corresponding weekday where ``0`` is
       Monday and ``6`` is Sunday. Each day is padded to the specified width.
 
-   .. method:: formatweekday(weekday, width=2)
+   .. method:: formatweekday(weekday, width)
 
       Return a :class:`str` representing the name of a single weekday formatted to
       the specified width. The *weekday* parameter is an integer representing
       the day of the week, where ``0`` is Monday and ``6`` is Sunday.
 
-   .. method:: formatweekheader(width=2)
+   .. method:: formatweekheader(width)
 
       Return a :class:`str` containing the header row of weekday names, formatted
       with the given width for each column. The names depend on the locale
