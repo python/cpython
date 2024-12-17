@@ -46,7 +46,7 @@ for the current process:
 
    If *policy* is set to ``None``, the default policy is restored.
 
-   .. deprecated:: 3.14
+   .. deprecated:: next
       The :func:`set_event_loop_policy` function is deprecated and
       will be removed in Python 3.16.
 
