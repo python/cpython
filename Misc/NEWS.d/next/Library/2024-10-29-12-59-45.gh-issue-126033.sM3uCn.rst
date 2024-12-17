@@ -1,4 +1,2 @@
 Fix a crash in :meth:`Element.remove <xml.etree.ElementTree.Element.remove>`
-when either the element to remove or one of the children implements an
-:meth:`~object.__eq__` method mutating its container node.
-Patch by Bénédikt Tran.
+when the element is concurrently mutated. Patch by Bénédikt Tran.
