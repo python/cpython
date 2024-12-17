@@ -857,7 +857,7 @@ class ProcessPoolExecutor(_base.Executor):
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
-    def terminate_workers(self, signal=signal.SIGINT):
+    def terminate_workers(self, signal=signal.SIGTERM):
         """Attempts to terminate the executor's workers using the given signal.
         Iterates through all of the current processes and sends the given signal if
         the process is still alive.
@@ -866,19 +866,21 @@ class ProcessPoolExecutor(_base.Executor):
 
         Args:
             signal: The signal to send to each worker process. Defaults to
-                signal.SIGINT.
+                signal.SIGTERM.
         """
-        if self._processes:
-            for pid, proc in self._processes.items():
-                try:
-                    is_alive = proc.is_alive()
-                except ValueError:
-                    # The process is already exited/closed out.
-                    is_alive = False
+        if not self._processes:
+            return
 
-                if is_alive:
-                    try:
-                        os.kill(pid, signal)
-                    except ProcessLookupError:
-                        # The process just ended before our signal
-                        pass
+        for pid, proc in self._processes.items():
+            try:
+                is_alive = proc.is_alive()
+            except ValueError:
+                # The process is already exited/closed out.
+                is_alive = False
+
+            if is_alive:
+                try:
+                    os.kill(pid, signal)
+                except ProcessLookupError:
+                    # The process just ended before our signal
+                    pass
