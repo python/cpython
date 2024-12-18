@@ -79,23 +79,22 @@ class FieldsTestBase:
     def test_max_field_size_gh126937(self):
         # Classes for big structs should be created successfully.
         # (But they most likely can't be instantiated.)
-        # Here we test the exact limit: the number of *bits* must fit
-        # in Py_ssize_t.
+        # The size must fit in Py_ssize_t.
 
-        class X(self.cls):
+        class X(Structure):
             _fields_ = [('char', c_char),]
-        max_field_size = sys.maxsize // 8
+        max_field_size = sys.maxsize
 
-        class Y(self.cls):
+        class Y(Structure):
             _fields_ = [('largeField', X * max_field_size)]
-        class Z(self.cls):
+        class Z(Structure):
             _fields_ = [('largeField', c_char * max_field_size)]
 
-        with self.assertRaises(ValueError):
-            class TooBig(self.cls):
+        with self.assertRaises(OverflowError):
+            class TooBig(Structure):
                 _fields_ = [('largeField', X * (max_field_size + 1))]
-        with self.assertRaises(ValueError):
-            class TooBig(self.cls):
+        with self.assertRaises(OverflowError):
+            class TooBig(Structure):
                 _fields_ = [('largeField', c_char * (max_field_size + 1))]
 
     # __set__ and __get__ should raise a TypeError in case their self
