@@ -930,7 +930,7 @@ class PydocDocTest(unittest.TestCase):
             ('"Single double quotes"',
             "Single double quotes")
 
-            ('Single single quotes',
+            ("'Single single quotes'",
             'Single single quotes')
 
             ("""Concatenated""" "string" 'literals',
