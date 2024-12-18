@@ -793,6 +793,9 @@ if test "$cross_compiling" = yes; then
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
+	*-*-emscripten)
+		_host_ident=$(emcc -dumpversion)-$host_cpu
+		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
 		;;
