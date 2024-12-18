@@ -1185,11 +1185,13 @@ class _SelectorSocketTransport(_SelectorTransport):
         return True
 
     def _call_connection_lost(self, exc):
-        super()._call_connection_lost(exc)
-        self._write_ready = None
-        if self._empty_waiter is not None:
-            self._empty_waiter.set_exception(
-                ConnectionError("Connection is closed by peer"))
+        try:
+            super()._call_connection_lost(exc)
+        finally:
+            self._write_ready = None
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(
+                    ConnectionError("Connection is closed by peer"))
 
     def _make_empty_waiter(self):
         if self._empty_waiter is not None:
