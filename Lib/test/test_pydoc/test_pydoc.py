@@ -923,6 +923,18 @@ class PydocDocTest(unittest.TestCase):
 
             ('"""Café and résumé."""',
             "Café and résumé."),
+
+            ('''Triple single quotes''',
+            "Triple single quotes"),
+
+            ("Single double quotes",
+            "Single double quotes")
+
+            ('Single single quotes',
+            'Single single quotes')
+
+            ("""Concatenated""" "string" 'literals',
+            "Concatenated string literals")
         ]
 
         for source, expected in test_cases:
