@@ -1,11 +1,11 @@
 #include "pycore_cpuinfo.h"
 
-#include <stdint.h>     // UINT32_C()
-
 /* CPUID input and output registers are 32-bit unsigned integers */
 #define CPUID_REG                   uint32_t
 /* Check one or more CPUID register bits. */
-#define CPUID_CHECK_REG(REG, MASK)  ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
+#define CHECK_REG(REG, MASK)        ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
+#define CPUID_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (Py_CPUID_MASK_ ## FEAT))
+#define XSAVE_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (Py_XSAVE_MASK_ ## FEAT))
 
 // For now, we only try to enable SIMD instructions for x86-64 Intel CPUs.
 // In the future, we should carefully enable support for ARM NEON and POWER
@@ -114,67 +114,6 @@
 #endif
 
 /*
- * The macros below describe masks to apply on CPUID output registers.
- *
- * Each macro is of the form <REGISTER>_L<LEAF>[S<SUBLEAF>]_<FEATURE>,
- * where <> (resp. []) denotes a required (resp. optional) group and:
- *
- * - REGISTER is EAX, EBX, ECX or EDX,
- * - LEAF is the initial value of the EAX register (1 or 7),
- * - SUBLEAF is the initial value of the ECX register (omitted if 0), and
- * - FEATURE is a SIMD feature (with one or more specialized instructions).
- *
- * For maintainability, the flags are ordered by registers, leafs, subleafs,
- * and bits. See https://en.wikipedia.org/wiki/CPUID for the values.
- *
- * Note 1: The LEAF is also called the 'page' or the 'level'.
- * Note 2: The SUBLEAF is also referred to as the 'count'.
- */
-
-/* CPUID (LEAF=1, SUBLEAF=0) [ECX] */
-#define ECX_L1_SSE3                 (UINT32_C(1) << 0)  // 0x00000001
-#define ECX_L1_PCLMULQDQ            (UINT32_C(1) << 1)  // 0x00000002
-#define ECX_L1_SSSE3                (UINT32_C(1) << 9)  // 0x00000200
-#define ECX_L1_FMA                  (UINT32_C(1) << 12) // 0x00001000
-#define ECX_L1_SSE4_1               (UINT32_C(1) << 19) // 0x00080000
-#define ECX_L1_SSE4_2               (UINT32_C(1) << 20) // 0x00100000
-#define ECX_L1_POPCNT               (UINT32_C(1) << 23) // 0x00800000
-#define ECX_L1_XSAVE                (UINT32_C(1) << 26) // 0x04000000
-#define ECX_L1_OSXSAVE              (UINT32_C(1) << 27) // 0x08000000
-#define ECX_L1_AVX                  (UINT32_C(1) << 28) // 0x10000000
-/* CPUID (LEAF=1, SUBLEAF=0) [EDX] */
-#define EDX_L1_CMOV                 (UINT32_C(1) << 15) // 0x00008000
-#define EDX_L1_SSE                  (UINT32_C(1) << 25) // 0x02000000
-#define EDX_L1_SSE2                 (UINT32_C(1) << 26) // 0x04000000
-/* CPUID (LEAF=7, SUBLEAF=0) [EBX] */
-#define EBX_L7_AVX2                 (UINT32_C(1) << 5)  // 0x00000020
-#define EBX_L7_AVX512_F             (UINT32_C(1) << 16) // 0x00010000
-#define EBX_L7_AVX512_DQ            (UINT32_C(1) << 17) // 0x00020000
-#define EBX_L7_AVX512_IFMA          (UINT32_C(1) << 21) // 0x00200000
-#define EBX_L7_AVX512_PF            (UINT32_C(1) << 26) // 0x04000000
-#define EBX_L7_AVX512_ER            (UINT32_C(1) << 27) // 0x08000000
-#define EBX_L7_AVX512_CD            (UINT32_C(1) << 28) // 0x10000000
-#define EBX_L7_AVX512_BW            (UINT32_C(1) << 30) // 0x40000000
-#define EBX_L7_AVX512_VL            (UINT32_C(1) << 31) // 0x80000000
-/* CPUID (LEAF=7, SUBLEAF=0) [ECX] */
-#define ECX_L7_AVX512_VBMI          (UINT32_C(1) << 1)  // 0x00000002
-#define ECX_L7_AVX512_VBMI2         (UINT32_C(1) << 6)  // 0x00000040
-#define ECX_L7_AVX512_VNNI          (UINT32_C(1) << 11) // 0x00000800
-#define ECX_L7_AVX512_BITALG        (UINT32_C(1) << 12) // 0x00001000
-#define ECX_L7_AVX512_VPOPCNTDQ     (UINT32_C(1) << 14) // 0x00004000
-/* CPUID (LEAF=7, SUBLEAF=0) [EDX] */
-#define EDX_L7_AVX512_4VNNIW        (UINT32_C(1) << 2)  // 0x00000004
-#define EDX_L7_AVX512_4FMAPS        (UINT32_C(1) << 3)  // 0x00000008
-#define EDX_L7_AVX512_VP2INTERSECT  (UINT32_C(1) << 8)  // 0x00000100
-/* CPUID (LEAF=7, SUBLEAF=1) [EAX] */
-#define EAX_L7S1_AVX_VNNI           (UINT32_C(1) << 4)  // 0x00000010
-#define EAX_L7S1_AVX_IFMA           (UINT32_C(1) << 23) // 0x00800000
-/* CPUID (LEAF=7, SUBLEAF=1) [EDX] */
-#define EDX_L7S1_AVX_VNNI_INT8      (UINT32_C(1) << 4)  // 0x00000010
-#define EDX_L7S1_AVX_NE_CONVERT     (UINT32_C(1) << 5)  // 0x00000020
-#define EDX_L7S1_AVX_VNNI_INT16     (UINT32_C(1) << 10) // 0x00000400
-
-/*
  * Call __cpuid_count() or equivalent and get
  * its EAX, EBX, ECX and EDX output registers.
  *
@@ -194,13 +133,6 @@ get_cpuid_info(uint32_t level /* input eax */,
     *eax = info[0], *ebx = info[1], *ecx = info[2], *edx = info[3];
 #endif
 }
-
-/* XSAVE state components (XCR0 control register) */
-#define XCR0_SSE                    (UINT32_C(1) << 1)  // 0x00000002
-#define XCR0_AVX                    (UINT32_C(1) << 2)  // 0x00000004
-#define XCR0_AVX512_OPMASK          (UINT32_C(1) << 5)  // 0x00000020
-#define XCR0_AVX512_ZMM_HI256       (UINT32_C(1) << 6)  // 0x00000040
-#define XCR0_AVX512_HI16_ZMM        (UINT32_C(1) << 7)  // 0x00000080
 
 static inline uint64_t
 get_xgetbv(uint32_t index)
@@ -380,11 +312,11 @@ detect_cpuid_xsave_state(py_cpuid_features *flags)
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->osxsave ? get_xgetbv(0) : 0;
-    flags->xcr0_sse = CPUID_CHECK_REG(xcr0, XCR0_SSE);
-    flags->xcr0_avx = CPUID_CHECK_REG(xcr0, XCR0_AVX);
-    flags->xcr0_avx512_opmask = CPUID_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
-    flags->xcr0_avx512_zmm_hi256 = CPUID_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
-    flags->xcr0_avx512_hi16_zmm = CPUID_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
+    flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
+    flags->xcr0_avx = XSAVE_CHECK_REG(xcr0, XCR0_AVX);
+    flags->xcr0_avx512_opmask = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
+    flags->xcr0_avx512_zmm_hi256 = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
+    flags->xcr0_avx512_hi16_zmm = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
 #endif
 }
 
