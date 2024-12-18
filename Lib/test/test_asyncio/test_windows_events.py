@@ -19,7 +19,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -334,11 +334,11 @@ class WinPolicyTests(WindowsEventsTestCase):
 
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
+            asyncio._set_event_loop_policy(
                 asyncio.WindowsSelectorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            asyncio._set_event_loop_policy(old_policy)
 
     def test_proactor_win_policy(self):
         async def main():
@@ -348,11 +348,11 @@ class WinPolicyTests(WindowsEventsTestCase):
 
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
+            asyncio._set_event_loop_policy(
                 asyncio.WindowsProactorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            asyncio._set_event_loop_policy(old_policy)
 
 
 if __name__ == '__main__':

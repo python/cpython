@@ -75,7 +75,7 @@ git = mod.StupidGit()
 
 def tearDownModule():
     if support.has_socket_support:
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():

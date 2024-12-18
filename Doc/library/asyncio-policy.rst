@@ -46,6 +46,10 @@ for the current process:
 
    If *policy* is set to ``None``, the default policy is restored.
 
+   .. deprecated:: next
+      The :func:`set_event_loop_policy` function is deprecated and
+      will be removed in Python 3.16.
+
 
 .. _asyncio-policy-objects:
 
