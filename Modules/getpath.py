@@ -236,6 +236,7 @@ stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
 platstdlib_dir = None
+pyvenvcfg_home = None
 
 # ******************************************************************************
 # CALCULATE program_name
@@ -366,7 +367,7 @@ if not home and not py_setpath:
     for line in pyvenvcfg:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
-            executable_dir = real_executable_dir = value.strip()
+            pyvenvcfg_home = executable_dir = real_executable_dir = value.strip()
             if not base_executable:
                 # First try to resolve symlinked executables, since that may be
                 # more accurate than assuming the executable in 'home'.
@@ -593,17 +594,16 @@ else:
         if prefix and not stdlib_dir:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
 
+    if PREFIX and STDLIB_LANDMARKS and not prefix and any(isfile(joinpath(PREFIX, f)) for f in STDLIB_LANDMARKS):
+        prefix = PREFIX
+
     # Note: the `home` variable in pyvenv.cfg is not always accurate.
     # Detect prefix by searching from *real* executable location for the stdlib_dir.
-    if STDLIB_SUBDIR and STDLIB_LANDMARKS and base_executable and not prefix:
+    # See details: https://github.com/python/cpython/issues/127440
+    if pyvenvcfg_home and STDLIB_SUBDIR and STDLIB_LANDMARKS and base_executable and not prefix:
         prefix = search_up(base_executable, *STDLIB_LANDMARKS)
         if prefix and not stdlib_dir:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
-
-    if PREFIX and not prefix:
-        prefix = PREFIX
-        if not any(isfile(joinpath(prefix, f)) for f in STDLIB_LANDMARKS):
-            warn('Could not find platform independent libraries <prefix>')
 
     if not prefix:
         prefix = abspath('')
@@ -619,9 +619,12 @@ else:
             exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
-        if not exec_prefix and base_executable:
+        
+        # See details: https://github.com/python/cpython/issues/127440
+        if pyvenvcfg_home and not exec_prefix and base_executable:
             base_executable_dir = dirname(base_executable)
             exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
