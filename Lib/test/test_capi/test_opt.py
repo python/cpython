@@ -36,7 +36,8 @@ def clear_executors(func):
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer") and
+                     hasattr(_testinternalcapi, "new_counter_optimizer"),
                      "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
 
@@ -140,7 +141,8 @@ def get_opnames(ex):
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer") and
+                     hasattr(_testinternalcapi, "new_counter_optimizer"),
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
