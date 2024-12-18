@@ -582,7 +582,7 @@ class CustomExceptionGroupSplitTest(ExceptionGroupTestBase):
         class Evil(BaseExceptionGroup):
             def split(self, types):
                 return "NOT A TUPLE"
-        
+
         with self.assertRaises(TypeError):
             try:
                 raise Evil("message here", [Exception()])
