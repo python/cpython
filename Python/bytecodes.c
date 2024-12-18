@@ -874,9 +874,9 @@ dummy_func(
             uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
             DEOPT_IF(((PyFunctionObject *)getitem_o)->func_version != cached_version);
             PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
-            getitem = PyStackRef_FromPyObjectNew(getitem_o);
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
+            getitem = PyStackRef_FromPyObjectNew(getitem_o);
             STAT_INC(BINARY_SUBSCR, hit);
         }
 

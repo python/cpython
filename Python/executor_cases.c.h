@@ -1145,12 +1145,12 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
-            getitem = PyStackRef_FromPyObjectNew(getitem_o);
             assert(code->co_argcount == 2);
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            getitem = PyStackRef_FromPyObjectNew(getitem_o);
             STAT_INC(BINARY_SUBSCR, hit);
             stack_pointer[0] = getitem;
             stack_pointer += 1;
