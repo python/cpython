@@ -554,6 +554,24 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
 
+    def test_wm_iconbitmap(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.wm_iconbitmap(), '')
+        t.wm_iconbitmap('hourglass')
+        self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+        self.assertEqual(self.root.wm_iconbitmap(), '')
+        t.wm_iconbitmap('')
+        self.assertEqual(t.wm_iconbitmap(), '')
+
+        if t._windowingsystem == 'win32':
+            t.wm_iconbitmap(default='hourglass')
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+            self.assertEqual(self.root.wm_iconbitmap(), '')
+            t.wm_iconbitmap(default='')
+            self.assertEqual(t.wm_iconbitmap(), '')
+
+        t.destroy()
+
 
 class EventTest(AbstractTkTest, unittest.TestCase):
 
