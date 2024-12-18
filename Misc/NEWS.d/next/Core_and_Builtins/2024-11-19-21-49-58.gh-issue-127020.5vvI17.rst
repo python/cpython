@@ -1,4 +1,0 @@
-Fix a crash in the free threading build when :c:func:`PyCode_GetCode`,
-:c:func:`PyCode_GetVarnames`, :c:func:`PyCode_GetCellvars`, or
-:c:func:`PyCode_GetFreevars` were called from multiple threads at the same
-time.

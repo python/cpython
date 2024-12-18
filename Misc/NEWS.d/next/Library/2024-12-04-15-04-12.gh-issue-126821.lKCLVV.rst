@@ -1,2 +1,0 @@
-macOS and iOS apps can now choose to redirect stdout and stderr to the
-system log during interpreter configuration.
