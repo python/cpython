@@ -1492,7 +1492,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_MODULE: {
-            *effect = Py_MAX(0, (oparg & 1));
+            *effect = Py_MAX(1, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
@@ -2073,7 +2073,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
     [LOAD_BUILD_CLASS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_COMMON_CONSTANT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [LOAD_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_ESCAPES_FLAG | HAS_PURE_FLAG },
+    [LOAD_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_PURE_FLAG },
     [LOAD_CONST_IMMORTAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [LOAD_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG },
@@ -2271,7 +2271,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_ATTR_METHOD_LAZY_DICT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_METHOD_LAZY_DICT, 1, 3 }, { _LOAD_ATTR_METHOD_LAZY_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_METHOD_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
-    [LOAD_ATTR_MODULE] = { .nuops = 2, .uops = { { _CHECK_ATTR_MODULE, 2, 1 }, { _LOAD_ATTR_MODULE, 1, 3 } } },
+    [LOAD_ATTR_MODULE] = { .nuops = 2, .uops = { { _CHECK_ATTR_MODULE_PUSH_KEYS, 2, 1 }, { _LOAD_ATTR_MODULE_FROM_KEYS, 1, 3 } } },
     [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_NONDESCRIPTOR_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, 4, 5 } } },
     [LOAD_ATTR_PROPERTY] = { .nuops = 5, .uops = { { _CHECK_PEP_523, 0, 0 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_PROPERTY_FRAME, 4, 5 }, { _SAVE_RETURN_OFFSET, 7, 9 }, { _PUSH_FRAME, 0, 0 } } },

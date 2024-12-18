@@ -1501,9 +1501,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    for (Py_ssize_t i = 0; i < argcount; i++) {
-        PyStackRef_CheckValid(args[i]);
-    }
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
@@ -1518,7 +1515,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         assert(PyStackRef_IsNull(localsplus[i]));
         localsplus[i] = PyStackRef_FromPyObjectSteal(kwdict);
-        PyStackRef_CheckValid(localsplus[i]);
     }
     else {
         kwdict = NULL;
@@ -1535,7 +1531,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     for (j = 0; j < n; j++) {
         assert(PyStackRef_IsNull(localsplus[j]));
         localsplus[j] = args[j];
-        PyStackRef_CheckValid(localsplus[j]);
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -1659,7 +1654,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
             localsplus[j] = value_stackref;
-            PyStackRef_CheckValid(localsplus[j]);
         }
     }
 
@@ -1695,7 +1689,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 if (PyStackRef_AsPyObjectBorrow(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
                     localsplus[m+i] = PyStackRef_FromPyObjectNew(def);
-                    PyStackRef_CheckValid(localsplus[m+i]);
                 }
             }
         }
@@ -1715,7 +1708,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 }
                 if (def) {
                     localsplus[i] = PyStackRef_FromPyObjectSteal(def);
-                    PyStackRef_CheckValid(localsplus[i]);
                     continue;
                 }
             }
@@ -1913,12 +1905,12 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
     for (size_t i = 0; i < argcount; i++) {
-        arguments[i] = _PyStackRef_FromPyObjectNew(args[i]);
+        arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            arguments[i+argcount] = _PyStackRef_FromPyObjectNew(args[i+argcount]);
+            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(

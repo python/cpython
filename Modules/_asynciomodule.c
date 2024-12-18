@@ -3773,7 +3773,7 @@ module_init(asyncio_state *state)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "get_event_loop_policy")
+    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "_get_event_loop_policy")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")

@@ -152,6 +152,9 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     dest->f_locals = src->f_locals;
     dest->frame_obj = src->frame_obj;
     dest->instr_ptr = src->instr_ptr;
+#ifdef Py_GIL_DISABLED
+    dest->tlbc_index = src->tlbc_index;
+#endif
     assert(src->stackpointer != NULL);
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);

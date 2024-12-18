@@ -109,6 +109,17 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
+
+static inline _PyStackRef
+PyStackRef_FromPyObjectStealMortal(PyObject *obj)
+{
+    assert(obj != NULL);
+    assert(!_Py_IsImmortal(obj));
+    // Make sure we don't take an already tagged value.
+    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
+    return (_PyStackRef){ .bits = (uintptr_t)obj };
+}
+
 static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {
@@ -143,6 +154,13 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
                 Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
             }                                                           \
         } while (0)
+
+static inline void
+PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+{
+    (void)destruct;
+    PyStackRef_CLOSE(ref);
+}
 
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
@@ -379,7 +397,8 @@ PyStackRef_CLOSE(_PyStackRef ref)
     }
 }
 
-static inline void PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+static inline void
+PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
 {
     assert(!PyStackRef_IsNull(ref));
     if (!PyStackRef_HasCount(ref)) {

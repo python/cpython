@@ -780,6 +780,96 @@ asyncio
   It now raises a :exc:`RuntimeError` if there is no current event loop.
   (Contributed by Kumar Aditya in :gh:`126353`.)
 
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`.
+
+  Before::
+
+    async def main():
+        ...
+
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()
+
+  After::
+
+    async def main():
+        ...
+
+    asyncio.run(main())
+
+  If you need to start something, e.g. a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`.
+
+  Before::
+
+    def start_server(loop):
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        start_server(loop)
+        loop.run_forever()
+    finally:
+        loop.close()
+
+  After::
+
+    def start_server(loop):
+        ...
+
+    async def main():
+        start_server(asyncio.get_running_loop())
+        await asyncio.Event().wait()
+
+    asyncio.run(main())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`.
+
+  Before::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(operation_one())
+        blocking_code()
+        loop.run_until_complete(operation_two())
+    finally:
+        loop.close()
+
+  After::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    with asyncio.Runner() as runner:
+        runner.run(operation_one())
+        blocking_code()
+        runner.run(operation_two())
+
+
 
 collections.abc
 ---------------
@@ -1018,6 +1108,17 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
+
+  * :c:func:`PyLong_GetNativeLayout`;
+  * :c:func:`PyLong_Export`;
+  * :c:func:`PyLong_FreeExport`;
+  * :c:func:`PyLongWriter_Create`;
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
+
+  (Contributed by Victor Stinner in :gh:`102471`.)
+
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
@@ -1033,6 +1134,12 @@ New features
 
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
 
 Porting to Python 3.14
 ----------------------
@@ -1055,6 +1162,10 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
+  Use :c:func:`PySequence_Contains` instead.
+  (Contributed by Yuki Kobayashi in :gh:`127896`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
