@@ -3725,7 +3725,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->context_kwname);
     // Clear the ref to running loop so that finalizers can run early.
     // If there are other running loops in different threads,
-    // those get cleared in PyThreadState_Clear later.
+    // those get cleared in PyThreadState_Clear.
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     Py_CLEAR(ts->asyncio_running_loop);
 
