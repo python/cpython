@@ -401,7 +401,10 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
                 return NULL;                                                  \
             }                                                                 \
         }                                                                     \
-        *(CTYPE*)ptr = SET(CTYPE, *(CTYPE*)ptr, val, size_arg);               \
+        CTYPE prev;                                                           \
+        memcpy(&prev, ptr, (NBITS) / 8);                                      \
+        val = SET(CTYPE, prev, val, size_arg);                                \
+        memcpy(ptr, &val, (NBITS) / 8);                                       \
         _RET(value);                                                          \
     }                                                                         \
                                                                               \
