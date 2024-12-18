@@ -20,7 +20,7 @@ RGX_REPR = re.compile(STR_RGX_REPR)
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):
