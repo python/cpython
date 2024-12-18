@@ -8,7 +8,9 @@ __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
     'Handle', 'TimerHandle',
-    'get_event_loop_policy', 'set_event_loop_policy',
+    'get_event_loop_policy',
+    '_set_event_loop_policy',
+    'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     '_set_running_loop', 'get_running_loop',
     '_get_running_loop',
@@ -21,6 +23,7 @@ import socket
 import subprocess
 import sys
 import threading
+import warnings
 
 from . import format_helpers
 
@@ -765,7 +768,7 @@ def get_event_loop_policy():
     return _event_loop_policy
 
 
-def set_event_loop_policy(policy):
+def _set_event_loop_policy(policy):
     """Set the current event loop policy.
 
     If policy is None, the default policy is restored."""
@@ -774,6 +777,9 @@ def set_event_loop_policy(policy):
         raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
+def set_event_loop_policy(policy):
+    warnings._deprecated('set_event_loop_policy', remove=(3,16))
+    _set_event_loop_policy(policy)
 
 def get_event_loop():
     """Return an asyncio event loop.
