@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
+    cpython_only, swap_attr, gc_collect, is_wasi,
     infinite_recursion, strace_helper
 )
 from test.support.os_helper import (
@@ -364,8 +364,7 @@ class AutoFileTests:
 
     @strace_helper.requires_strace()
     def test_syscalls_read(self):
-        """Check that the set of system calls produced by the I/O stack is what
-        is expected for various read cases.
+        """Check set of system calls during common I/O patterns
 
         It's expected as bits of the I/O implementation change, this will need
         to change. The goal is to catch changes that unintentionally add
@@ -382,6 +381,11 @@ class AutoFileTests:
                 syscalls = strace_helper.get_events(code, _strace_flags,
                                                       prelude=prelude,
                                                       cleanup=cleanup)
+
+                # Some system calls (ex. mmap) can be used for both File I/O and
+                # memory allocation. Filter out the ones used for memory
+                # allocation.
+                syscalls = strace_helper.filter_memory(syscalls)
 
                 # The first call should be an open that returns a
                 # file descriptor (fd). Afer that calls may vary. Once the file
@@ -527,7 +531,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32" and not is_emscripten:
+            if sys.platform != "win32":
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:

@@ -793,6 +793,9 @@ if test "$cross_compiling" = yes; then
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
+	*-*-emscripten)
+		_host_ident=$(emcc -dumpversion)-$host_cpu
+		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
 		;;
@@ -1282,30 +1285,6 @@ AS_CASE([$ac_sys_system/$ac_sys_release],
  ]
 )
 
-AC_MSG_CHECKING([for --with-emscripten-target])
-AC_ARG_WITH([emscripten-target],
-  [AS_HELP_STRING([--with-emscripten-target=@<:@browser|node@:>@], [Emscripten platform])],
-[
-	AS_VAR_IF([ac_sys_system], [Emscripten], [
-    AS_CASE([$with_emscripten_target],
-      [browser], [ac_sys_emscripten_target=browser],
-      [node], [ac_sys_emscripten_target=node],
-dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
-dnl run out of stack space. Detached sybmols and map prohibit some
-dnl optimizations and increase file size. Options are undocumented so we
-dnl are free to remove them in the future.
-      [browser-debug], [ac_sys_emscripten_target=browser-debug],
-      [node-debug], [ac_sys_emscripten_target=node-debug],
-      [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
-    )
-  ], [
-    AC_MSG_ERROR([--with-emscripten-target only applies to Emscripten])
-  ])
-], [
-  AS_VAR_IF([ac_sys_system], [Emscripten], [ac_sys_emscripten_target=browser])
-])
-AC_MSG_RESULT([$ac_sys_emscripten_target])
-
 dnl On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
 dnl disables dead code elimination and increases the size of the WASM module
 dnl by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
@@ -1350,10 +1329,9 @@ AC_ARG_WITH([suffix],
     [EXEEXT=$with_suffix]
   )
 ], [
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.js],
-    [Emscripten/node*], [EXEEXT=.js],
-    [WASI/*], [EXEEXT=.wasm],
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [EXEEXT=.mjs],
+    [WASI], [EXEEXT=.wasm],
     [EXEEXT=]
   )
 ])
@@ -1634,12 +1612,12 @@ if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+# HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
-AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
 if test -z "$HOSTRUNNER"
 then
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/node*], [
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [
       AC_PATH_TOOL([NODE], [node], [node])
       HOSTRUNNER="$NODE"
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
@@ -1647,7 +1625,7 @@ then
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
   )
 fi
@@ -1660,10 +1638,8 @@ if test -n "$HOSTRUNNER"; then
 fi
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
-  [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
-)
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
 if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
@@ -1881,9 +1857,13 @@ if test "$Py_OPT" = 'true' ; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
       ], [], [-Werror])
   ])
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-  dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Build "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+  dnl Build "python.wasm", "pybuilddir.txt", and "platform" files.
   DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
@@ -2348,13 +2328,16 @@ AS_CASE([$ac_sys_system],
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
 
     dnl Start with 20 MB and allow to grow
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
     dnl map int64_t and uint64_t to JS bigint
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2365,24 +2348,9 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-
-    AS_CASE([$ac_sys_emscripten_target],
-      [browser*], [
-        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
-        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
-        WASM_ASSETS_DIR=".\$(prefix)"
-        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
-      ],
-      [node*], [
-        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
-        AS_VAR_APPEND([LDFLAGS_NODIST], [" --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"])
-        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
-        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
-        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
-      ]
-    )
+    dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXIT_RUNTIME"])
+    WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
     AS_VAR_IF([wasm_debug], [yes], [
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
@@ -2967,7 +2935,7 @@ AC_CHECK_HEADERS([ \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
-  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -5145,8 +5113,10 @@ AC_CHECK_FUNCS([ \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
-  pread preadv preadv2 process_vm_readv pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  pread preadv preadv2 process_vm_readv \
+  pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
+  pthread_kill pthread_getname_np pthread_setname_np \
+  ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
@@ -5918,9 +5888,6 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
                      AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
                                [Define if C doubles are 64-bit IEEE 754 binary format,
                                 stored in ARM mixed-endian order (byte order 45670123)])],
-           [wasm*], [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
-                               [Define if C doubles are 64-bit IEEE 754 binary format,
-                                stored with the least significant byte first])],
            [AC_MSG_ERROR([m4_normalize([
              Unknown float word ordering. You need to manually
              preset ax_cv_c_float_words_bigendian=no (or yes)
@@ -7466,12 +7433,7 @@ AC_MSG_CHECKING([for --disable-test-modules])
 AC_ARG_ENABLE([test-modules],
   [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
   AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
-], [
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [TEST_MODULES=no],
-    [TEST_MODULES=yes]
-  )
-])
+], [TEST_MODULES=yes])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
@@ -7539,6 +7501,22 @@ AS_VAR_IF([ac_cv_libatomic_needed], [yes],
           [LIBS="${LIBS} -latomic"
            LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
+
+
+# gh-59705: Maximum length in bytes of a thread name
+case "$ac_sys_system" in
+  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) PYTHREAD_NAME_MAXLEN=63;;
+  iOS) PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
+  *) PYTHREAD_NAME_MAXLEN=;;
+esac
+if test -n "$PYTHREAD_NAME_MAXLEN"; then
+    AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
+                       [Maximum length in bytes of a thread name])
+fi
+AC_SUBST([PYTHREAD_NAME_MAXLEN])
 
 
 # stdlib

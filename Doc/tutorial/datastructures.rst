@@ -142,8 +142,8 @@ Using Lists as Stacks
 
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
-item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
-top of the stack, use :meth:`~list.pop` without an explicit index.  For example::
+item to the top of the stack, use :meth:`!append`.  To retrieve an item from the
+top of the stack, use :meth:`!pop` without an explicit index.  For example::
 
    >>> stack = [3, 4, 5]
    >>> stack.append(6)
@@ -340,7 +340,7 @@ The :keyword:`!del` statement
 =============================
 
 There is a way to remove an item from a list given its index instead of its
-value: the :keyword:`del` statement.  This differs from the :meth:`~list.pop` method
+value: the :keyword:`del` statement.  This differs from the :meth:`!pop` method
 which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
@@ -500,8 +500,8 @@ any immutable type; strings and numbers can always be keys.  Tuples can be used
 as keys if they contain only strings, numbers, or tuples; if a tuple contains
 any mutable object either directly or indirectly, it cannot be used as a key.
 You can't use lists as keys, since lists can be modified in place using index
-assignments, slice assignments, or methods like :meth:`~list.append` and
-:meth:`~list.extend`.
+assignments, slice assignments, or methods like :meth:`!append` and
+:meth:`!extend`.
 
 It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of

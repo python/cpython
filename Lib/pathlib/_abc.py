@@ -14,77 +14,15 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 import operator
 import posixpath
-from errno import EINVAL, EXDEV
+from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
-from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
-
-
-__all__ = ["UnsupportedOperation"]
-
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is attempted.
-    """
-    pass
 
 
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
-
-
-
-class ParserBase:
-    """Base class for path parsers, which do low-level path manipulation.
-
-    Path parsers provide a subset of the os.path API, specifically those
-    functions needed to provide PurePathBase functionality. Each PurePathBase
-    subclass references its path parser via a 'parser' class attribute.
-
-    Every method in this base class raises an UnsupportedOperation exception.
-    """
-
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported"
-
-    @property
-    def sep(self):
-        """The character used to separate path components."""
-        raise UnsupportedOperation(self._unsupported_msg('sep'))
-
-    def join(self, path, *paths):
-        """Join path segments."""
-        raise UnsupportedOperation(self._unsupported_msg('join()'))
-
-    def split(self, path):
-        """Split the path into a pair (head, tail), where *head* is everything
-        before the final path separator, and *tail* is everything after.
-        Either part may be empty.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('split()'))
-
-    def splitdrive(self, path):
-        """Split the path into a 2-item tuple (drive, tail), where *drive* is
-        a device name or mount point, and *tail* is everything after the
-        drive. Either part may be empty."""
-        raise UnsupportedOperation(self._unsupported_msg('splitdrive()'))
-
-    def splitext(self, path):
-        """Split the path into a pair (root, ext), where *ext* is empty or
-        begins with a period and contains at most one period,
-        and *root* is everything before the extension."""
-        raise UnsupportedOperation(self._unsupported_msg('splitext()'))
-
-    def normcase(self, path):
-        """Normalize the case of the path."""
-        raise UnsupportedOperation(self._unsupported_msg('normcase()'))
-
-    def isabs(self, path):
-        """Returns whether the path is absolute, i.e. unaffected by the
-        current directory or drive."""
-        raise UnsupportedOperation(self._unsupported_msg('isabs()'))
 
 
 class PathGlobber(_GlobberBase):
@@ -94,7 +32,7 @@ class PathGlobber(_GlobberBase):
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('scandir')
+    scandir = operator.methodcaller('_scandir')
 
     @staticmethod
     def concat_path(path, text):
@@ -115,13 +53,8 @@ class PurePathBase:
         # The `_raw_paths` slot stores unjoined string paths. This is set in
         # the `__init__()` method.
         '_raw_paths',
-
-        # The '_resolving' slot stores a boolean indicating whether the path
-        # is being processed by `PathBase.resolve()`. This prevents duplicate
-        # work from occurring when `resolve()` calls `stat()` or `readlink()`.
-        '_resolving',
     )
-    parser = ParserBase()
+    parser = posixpath
     _globber = PathGlobber
 
     def __init__(self, *args):
@@ -130,7 +63,6 @@ class PurePathBase:
                 raise TypeError(
                     f"argument should be a str, not {type(arg).__name__!r}")
         self._raw_paths = list(args)
-        self._resolving = False
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -339,9 +271,7 @@ class PurePathBase:
         path = str(self)
         parent = self.parser.split(path)[0]
         if path != parent:
-            parent = self.with_segments(parent)
-            parent._resolving = self._resolving
-            return parent
+            return self.with_segments(parent)
         return self
 
     @property
@@ -414,8 +344,8 @@ class PathBase(PurePathBase):
 
     This class provides dummy implementations for many methods that derived
     classes can override selectively; the default implementations raise
-    UnsupportedOperation. The most basic methods, such as stat() and open(),
-    directly raise UnsupportedOperation; these basic methods are called by
+    NotImplementedError. The most basic methods, such as stat() and open(),
+    directly raise NotImplementedError; these basic methods are called by
     other methods such as is_dir() and read_text().
 
     The Path class derives this class to implement local filesystem paths.
@@ -424,27 +354,12 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
-    # Maximum number of symlinks to follow in resolve()
-    _max_symlinks = 40
-
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported"
-
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('stat()'))
-
-    def lstat(self):
-        """
-        Like stat(), except if the path points to a symlink, the symlink's
-        status information is returned, rather than its target's.
-        """
-        return self.stat(follow_symlinks=False)
-
+        raise NotImplementedError
 
     # Convenience functions for querying the stat results
 
@@ -480,105 +395,20 @@ class PathBase(PurePathBase):
         except (OSError, ValueError):
             return False
 
-    def is_mount(self):
-        """
-        Check if this path is a mount point
-        """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
-
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
         try:
-            return S_ISLNK(self.lstat().st_mode)
+            return S_ISLNK(self.stat(follow_symlinks=False).st_mode)
         except (OSError, ValueError):
             return False
-
-    def is_junction(self):
-        """
-        Whether this path is a junction.
-        """
-        # Junctions are a Windows-only feature, not present in POSIX nor the
-        # majority of virtual filesystems. There is no cross-platform idiom
-        # to check for junctions (using stat().st_mode).
-        return False
-
-    def is_block_device(self):
-        """
-        Whether this path is a block device.
-        """
-        try:
-            return S_ISBLK(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_char_device(self):
-        """
-        Whether this path is a character device.
-        """
-        try:
-            return S_ISCHR(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_fifo(self):
-        """
-        Whether this path is a FIFO.
-        """
-        try:
-            return S_ISFIFO(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def is_socket(self):
-        """
-        Whether this path is a socket.
-        """
-        try:
-            return S_ISSOCK(self.stat().st_mode)
-        except (OSError, ValueError):
-            return False
-
-    def samefile(self, other_path):
-        """Return whether other_path is the same or not as this file
-        (as returned by os.path.samefile()).
-        """
-        st = self.stat()
-        try:
-            other_st = other_path.stat()
-        except AttributeError:
-            other_st = self.with_segments(other_path).stat()
-        return (st.st_ino == other_st.st_ino and
-                st.st_dev == other_st.st_dev)
 
     def _ensure_different_file(self, other_path):
         """
         Raise OSError(EINVAL) if both paths refer to the same file.
         """
-        try:
-            if not self.samefile(other_path):
-                return
-        except (OSError, ValueError):
-            return
-        err = OSError(EINVAL, "Source and target are the same file")
-        err.filename = str(self)
-        err.filename2 = str(other_path)
-        raise err
+        pass
 
     def _ensure_distinct_path(self, other_path):
         """
@@ -605,7 +435,7 @@ class PathBase(PurePathBase):
         Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('open()'))
+        raise NotImplementedError
 
     def read_bytes(self):
         """
@@ -640,13 +470,14 @@ class PathBase(PurePathBase):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def scandir(self):
-        """Yield os.DirEntry objects of the directory contents.
+    def _scandir(self):
+        """Yield os.DirEntry-like objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('scandir()'))
+        import contextlib
+        return contextlib.nullcontext(self.iterdir())
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -654,9 +485,7 @@ class PathBase(PurePathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        with self.scandir() as entries:
-            names = [entry.name for entry in entries]
-        return map(self.joinpath, names)
+        raise NotImplementedError
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
@@ -706,7 +535,7 @@ class PathBase(PurePathBase):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path.scandir() as entries:
+                with path._scandir() as entries:
                     for entry in entries:
                         name = entry.name
                         try:
@@ -729,89 +558,18 @@ class PathBase(PurePathBase):
                 yield path, dirnames, filenames
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
-    def absolute(self):
-        """Return an absolute version of this path
-        No normalization or symlink resolution is performed.
-
-        Use resolve() to resolve symlinks and remove '..' segments.
-        """
-        if self.is_absolute():
-            return self
-        elif self.parser is not posixpath:
-            raise UnsupportedOperation(self._unsupported_msg('absolute()'))
-        else:
-            # Treat the root directory as the current working directory.
-            return self.with_segments('/', *self._raw_paths)
-
-    @classmethod
-    def cwd(cls):
-        """Return a new path pointing to the current working directory."""
-        # We call 'absolute()' rather than using 'os.getcwd()' directly to
-        # enable users to replace the implementation of 'absolute()' in a
-        # subclass and benefit from the new behaviour here. This works because
-        # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
-
-    def expanduser(self):
-        """ Return a new path with expanded ~ and ~user constructs
-        (as returned by os.path.expanduser)
-        """
-        raise UnsupportedOperation(self._unsupported_msg('expanduser()'))
-
-    @classmethod
-    def home(cls):
-        """Return a new path pointing to expanduser('~').
-        """
-        return cls("~").expanduser()
-
     def readlink(self):
         """
         Return the path to which the symbolic link points.
         """
-        raise UnsupportedOperation(self._unsupported_msg('readlink()'))
-    readlink._supported = False
-
-    def resolve(self, strict=False):
-        """
-        Make the path absolute, resolving all symlinks on the way and also
-        normalizing it.
-        """
-        if self._resolving:
-            return self
-        elif self.parser is not posixpath:
-            raise UnsupportedOperation(self._unsupported_msg('resolve()'))
-
-        def raise_error(*args):
-            raise OSError("Unsupported operation.")
-
-        getcwd = raise_error
-        if strict or getattr(self.readlink, '_supported', True):
-            def lstat(path_str):
-                path = self.with_segments(path_str)
-                path._resolving = True
-                return path.lstat()
-
-            def readlink(path_str):
-                path = self.with_segments(path_str)
-                path._resolving = True
-                return str(path.readlink())
-        else:
-            # If the user has *not* overridden the `readlink()` method, then
-            # symlinks are unsupported and (in non-strict mode) we can improve
-            # performance by not calling `path.lstat()`.
-            lstat = readlink = raise_error
-
-        return self.with_segments(posixpath._realpath(
-            str(self.absolute()), strict, self.parser.sep,
-            getcwd=getcwd, lstat=lstat, readlink=readlink,
-            maxlinks=self._max_symlinks))
+        raise NotImplementedError
 
     def symlink_to(self, target, target_is_directory=False):
         """
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        raise UnsupportedOperation(self._unsupported_msg('symlink_to()'))
+        raise NotImplementedError
 
     def _symlink_to_target_of(self, link):
         """
@@ -820,25 +578,11 @@ class PathBase(PurePathBase):
         """
         self.symlink_to(link.readlink())
 
-    def hardlink_to(self, target):
-        """
-        Make this path a hard link pointing to the same file as *target*.
-
-        Note the order of arguments (self, target) is the reverse of os.link's.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('hardlink_to()'))
-
-    def touch(self, mode=0o666, exist_ok=True):
-        """
-        Create this file with the given access mode, if it doesn't exist.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('touch()'))
-
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.
         """
-        raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+        raise NotImplementedError
 
     # Metadata keys supported by this path type.
     _readable_metadata = _writable_metadata = frozenset()
@@ -847,13 +591,13 @@ class PathBase(PurePathBase):
         """
         Returns path metadata as a dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
+        raise NotImplementedError
 
     def _write_metadata(self, metadata, *, follow_symlinks=True):
         """
         Sets path metadata from the given dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
+        raise NotImplementedError
 
     def _copy_metadata(self, target, *, follow_symlinks=True):
         """
@@ -926,45 +670,16 @@ class PathBase(PurePathBase):
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
-    def rename(self, target):
+    def _delete(self):
         """
-        Rename this path to the target path.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
+        Delete this file or directory (including all sub-directories).
         """
-        raise UnsupportedOperation(self._unsupported_msg('rename()'))
-
-    def replace(self, target):
-        """
-        Rename this path to the target path, overwriting if that path exists.
-
-        The target path may be absolute or relative. Relative paths are
-        interpreted relative to the current working directory, *not* the
-        directory of the Path object.
-
-        Returns the new Path instance pointing to the target path.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('replace()'))
+        raise NotImplementedError
 
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        self._ensure_different_file(target)
-        try:
-            return self.replace(target)
-        except UnsupportedOperation:
-            pass
-        except TypeError:
-            if not isinstance(target, PathBase):
-                raise
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
         return target
@@ -981,74 +696,3 @@ class PathBase(PurePathBase):
         else:
             target = self.with_segments(target_dir, name)
         return self.move(target)
-
-    def chmod(self, mode, *, follow_symlinks=True):
-        """
-        Change the permissions of the path, like os.chmod().
-        """
-        raise UnsupportedOperation(self._unsupported_msg('chmod()'))
-
-    def lchmod(self, mode):
-        """
-        Like chmod(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chmod(mode, follow_symlinks=False)
-
-    def unlink(self, missing_ok=False):
-        """
-        Remove this file or link.
-        If the path is a directory, use rmdir() instead.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('unlink()'))
-
-    def rmdir(self):
-        """
-        Remove this directory.  The directory must be empty.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
-
-    def _delete(self):
-        """
-        Delete this file or directory (including all sub-directories).
-        """
-        if self.is_symlink() or self.is_junction():
-            self.unlink()
-        elif self.is_dir():
-            self._rmtree()
-        else:
-            self.unlink()
-
-    def _rmtree(self):
-        def on_error(err):
-            raise err
-        results = self.walk(
-            on_error=on_error,
-            top_down=False,  # So we rmdir() empty directories.
-            follow_symlinks=False)
-        for dirpath, _, filenames in results:
-            for filename in filenames:
-                filepath = dirpath / filename
-                filepath.unlink()
-            dirpath.rmdir()
-
-    def owner(self, *, follow_symlinks=True):
-        """
-        Return the login name of the file owner.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('owner()'))
-
-    def group(self, *, follow_symlinks=True):
-        """
-        Return the group name of the file gid.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('group()'))
-
-    @classmethod
-    def from_uri(cls, uri):
-        """Return a new path from the given 'file' URI."""
-        raise UnsupportedOperation(cls._unsupported_msg('from_uri()'))
-
-    def as_uri(self):
-        """Return the path as a URI."""
-        raise UnsupportedOperation(self._unsupported_msg('as_uri()'))
