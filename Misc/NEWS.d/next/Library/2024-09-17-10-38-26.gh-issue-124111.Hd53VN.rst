@@ -1,0 +1,4 @@
+The tkinter module can now be built to use either the new version 9.0.0 of
+Tcl/Tk or the latest release 8.6.15 of Tcl/Tk 8.  Tcl/Tk 9 includes many
+improvements, both to the Tcl language and to the appearance and utility of
+the graphical user interface provided by Tk.
