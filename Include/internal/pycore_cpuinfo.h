@@ -25,6 +25,7 @@ extern "C" {
 
 
 typedef struct py_cpuid_features {
+    uint32_t maxleaf;
     /* Macro to declare a member flag of 'py_cpuid_features' as a uint8_t. */
 #define _Py_CPUID_DECL_FLAG(MEMBER_NAME)    uint8_t MEMBER_NAME:1
     // --- Streaming SIMD Extensions ------------------------------------------

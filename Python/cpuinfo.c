@@ -222,9 +222,9 @@ get_xgetbv(uint32_t index)
 static inline uint32_t
 detect_cpuid_maxleaf(void)
 {
-    CPUID_REG maxlevel = 0, ebx = 0, ecx = 0, edx = 0;
-    get_cpuid_info(0, 0, &maxlevel, &ebx, &ecx, &edx);
-    return maxlevel;
+    CPUID_REG maxleaf = 0, ebx = 0, ecx = 0, edx = 0;
+    get_cpuid_info(0, 0, &maxleaf, &ebx, &ecx, &edx);
+    return maxleaf;
 }
 
 /* Processor Info and Feature Bits (LEAF=1, SUBLEAF=0). */
@@ -392,6 +392,7 @@ static inline void
 cpuid_features_finalize(py_cpuid_features *flags)
 {
     assert(flags->ready == 0);
+    assert(flags->maxleaf >= 0);
 
     // Here, any flag that may depend on others should be correctly set
     // at runtime to avoid illegal instruction errors.
@@ -499,6 +500,7 @@ _Py_cpuid_check_features(const py_cpuid_features *flags)
 void
 _Py_cpuid_disable_features(py_cpuid_features *flags)
 {
+    flags->maxleaf = 0;
 #define CPUID_DISABLE(FLAG)    flags->FLAG = 0
     CPUID_APPLY_MACRO(CPUID_DISABLE);
 #undef CPUID_DISABLE
@@ -509,6 +511,9 @@ _Py_cpuid_has_features(const py_cpuid_features *actual,
                        const py_cpuid_features *expect)
 {
     if (!actual->ready || !expect->ready) {
+        return 0;
+    }
+    if (actual->maxleaf < expect->maxleaf) {
         return 0;
     }
 #define CPUID_CHECK_FEATURE(FLAG)               \
@@ -529,6 +534,9 @@ _Py_cpuid_match_features(const py_cpuid_features *actual,
     if (!actual->ready || !expect->ready) {
         return 0;
     }
+    if (actual->maxleaf != expect->maxleaf) {
+        return 0;
+    }
 #define CPUID_MATCH_FEATURE(FLAG)           \
     do {                                    \
         if (expect->FLAG != actual->FLAG) { \
@@ -542,6 +550,60 @@ _Py_cpuid_match_features(const py_cpuid_features *actual,
 
 #undef CPUID_APPLY_MACRO
 
+#ifdef SHOULD_PARSE_CPUID_L1
+static inline void
+cpuid_detect_l1_features(py_cpuid_features *flags)
+{
+    if (flags->maxleaf >= 1) {
+        CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+        get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
+        detect_cpuid_features(flags, ecx, edx);
+        if (flags->osxsave) {
+            detect_cpuid_xsave_state(flags);
+        }
+    }
+}
+#else
+#define cpuid_detect_l1_features(FLAGS)
+#endif
+
+#ifdef SHOULD_PARSE_CPUID_L7S0
+static inline void
+cpuid_detect_l7s0_features(py_cpuid_features *flags)
+{
+    CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+    get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
+    detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
+}
+#else
+#define cpuid_detect_l7s0_features(FLAGS)
+#endif
+
+#ifdef SHOULD_PARSE_CPUID_L7S1
+static inline void
+cpuid_detect_l7s1_features(py_cpuid_features *flags)
+{
+    CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+    get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
+    detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);
+}
+#else
+#define cpuid_detect_l7s1_features(FLAGS)
+#endif
+
+#ifdef SHOULD_PARSE_CPUID_L7
+static inline void
+cpuid_detect_l7_features(py_cpuid_features *flags)
+{
+    if (flags->maxleaf >= 7) {
+        cpuid_detect_l7s0_features(flags);
+        cpuid_detect_l7s1_features(flags);
+    }
+}
+#else
+#define cpuid_detect_l7_features(FLAGS)
+#endif
+
 void
 _Py_cpuid_detect_features(py_cpuid_features *flags)
 {
@@ -549,42 +611,15 @@ _Py_cpuid_detect_features(py_cpuid_features *flags)
         return;
     }
     _Py_cpuid_disable_features(flags);
-#ifdef HAS_CPUID_SUPPORT
-    uint32_t maxleaf = detect_cpuid_maxleaf();
-    (void)maxleaf;                              // to suppress unused warnings
-    CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
-    (void)eax, (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
-
-#ifdef SHOULD_PARSE_CPUID_L1
-    if (maxleaf >= 1) {
-        eax = 0, ebx = 0, ecx = 0, edx = 0;
-        get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
-        detect_cpuid_features(flags, ecx, edx);
-        if (flags->osxsave) {
-            detect_cpuid_xsave_state(flags);
-        }
-    }
-#endif // SHOULD_PARSE_CPUID_L1
-
-#ifdef SHOULD_PARSE_CPUID_L7
-    if (maxleaf >= 7) {
-#ifdef SHOULD_PARSE_CPUID_L7S0
-        eax = 0, ebx = 0, ecx = 0, edx = 0;
-        get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
-        detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
-#endif
-#ifdef SHOULD_PARSE_CPUID_L7S1
-        eax = 0, ebx = 0, ecx = 0, edx = 0;
-        get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
-        detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);
-#endif
-    }
-#endif // SHOULD_PARSE_CPUID_L7
+#ifndef HAS_CPUID_SUPPORT
+    flags->ready = 1;
+#else
+    flags->maxleaf = detect_cpuid_maxleaf();
+    cpuid_detect_l1_features(flags);
+    cpuid_detect_l7_features(flags);
     cpuid_features_finalize(flags);
     if (cpuid_features_validate(flags) < 0) {
         _Py_cpuid_disable_features(flags);
     }
-#else
-    flags->ready = 1;
-#endif // HAS_CPUID_SUPPORT
+#endif // !HAS_CPUID_SUPPORT
 }
