@@ -129,7 +129,6 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r'"\z" is an invalid escape sequence. '
-                         r'Such sequences will not work in the future. '
                          r'Did you mean "\\z"? A raw string is also an option.')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
@@ -170,7 +169,6 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r'"\407" is an invalid octal escape sequence. '
-                                 r'Such sequences will not work in the future. '
                                  r'Did you mean "\\407"? A raw string is also an option.')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
@@ -226,7 +224,6 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r'"\z" is an invalid escape sequence. '
-                         r'Such sequences will not work in the future. '
                          r'Did you mean "\\z"? A raw string is also an option.')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
@@ -253,7 +250,6 @@ class TestLiterals(unittest.TestCase):
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r'"\407" is an invalid octal escape sequence. '
-                         r'Such sequences will not work in the future. '
                          r'Did you mean "\\407"? A raw string is also an option.')
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)

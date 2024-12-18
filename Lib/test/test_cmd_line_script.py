@@ -660,7 +660,6 @@ class CmdLineTest(unittest.TestCase):
                 [   b'    foo = """\\q"""',
                     b'          ^^^^^^^^',
                     b'SyntaxError: "\\q" is an invalid escape sequence. '
-                    b'Such sequences will not work in the future. '
                     b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )

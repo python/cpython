@@ -62,14 +62,12 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
             if (octal) {
                 RAISE_SYNTAX_ERROR(
                     "\"\\%.3s\" is an invalid octal escape sequence. "
-                    "Such sequences will not work in the future. "
                     "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
                     first_invalid_escape, first_invalid_escape);
             }
             else {
                 RAISE_SYNTAX_ERROR(
                     "\"\\%c\" is an invalid escape sequence. "
-                    "Such sequences will not work in the future. "
                     "Did you mean \"\\\\%c\"? A raw string is also an option.",
                     c, c);
             }
