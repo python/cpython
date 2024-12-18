@@ -1,0 +1,2 @@
+When passing ``default=''`` to tkinter's widget.wm_iconbitmap, treat ``''`` as
+an icon path instead of as ``None``.
