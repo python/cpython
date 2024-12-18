@@ -1,0 +1,2 @@
+Set TERM environment variable to "dumb" to disable traceback colors in IDLE,
+since IDLE doesn't understand ANSI escape sequences. Patch by Victor Stinner.
