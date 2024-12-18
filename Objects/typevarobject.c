@@ -1,4 +1,4 @@
-// TypeVar, TypeVarTuple, TypeAlias and ParamSpec
+// TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
