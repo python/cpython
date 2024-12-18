@@ -752,7 +752,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_getattribute_overridden(self):
         def get_items():
             class C:
@@ -778,6 +778,7 @@ class TestRacesDoNotCrash(TestBase):
                 except AttributeError:
                     pass
                 type(item).__getattribute__ = lambda self, name: None
+
 
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
@@ -806,7 +807,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_lazy_dict(self):
         def get_items():
             class C(Exception):
@@ -836,7 +837,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_no_dict(self):
         def get_items():
             class C:
@@ -867,7 +868,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_with_values(self):
         def get_items():
             class C:
@@ -922,7 +923,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_MODULE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_property(self):
         def get_items():
             class C:
