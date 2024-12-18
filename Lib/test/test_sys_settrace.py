@@ -2070,7 +2070,7 @@ class JumpTestCase(unittest.TestCase):
             asyncio.run(func(output))
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):

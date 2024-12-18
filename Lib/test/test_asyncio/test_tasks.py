@@ -24,7 +24,7 @@ from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 async def coroutine_function():

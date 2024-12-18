@@ -2132,7 +2132,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     loop = asyncio.new_event_loop()
         ...     loop.run_until_complete(test_main())
         ...     loop.close()
-        ...     asyncio.set_event_loop_policy(None)
+        ...     asyncio._set_event_loop_policy(None)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2253,7 +2253,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     loop = asyncio.new_event_loop()
         ...     loop.run_until_complete(test_main())
         ...     loop.close()
-        ...     asyncio.set_event_loop_policy(None)
+        ...     asyncio._set_event_loop_policy(None)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2353,7 +2353,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     loop = asyncio.new_event_loop()
         ...     loop.run_until_complete(test_main())
         ...     loop.close()
-        ...     asyncio.set_event_loop_policy(None)
+        ...     asyncio._set_event_loop_policy(None)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
