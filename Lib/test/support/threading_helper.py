@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import unittest
+import signal
 
 from test import support
 
@@ -27,6 +28,8 @@ def threading_setup():
 
 def threading_cleanup(*original_values):
     orig_count, orig_ndangling = original_values
+
+    signal.stop_signal_thread()
 
     timeout = 1.0
     for _ in support.sleeping_retry(timeout, error=False):

@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 def interrupt_self():

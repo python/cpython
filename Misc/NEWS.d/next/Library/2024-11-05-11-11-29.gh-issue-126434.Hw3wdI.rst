@@ -1,0 +1,1 @@
+All of :mod:`multiprocessing` ``Event`` is now reentrant and thread safe, and can thus be used from signal handlers.

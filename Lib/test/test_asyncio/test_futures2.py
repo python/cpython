@@ -3,11 +3,13 @@ import asyncio
 import contextvars
 import traceback
 import unittest
+import signal
 from asyncio import tasks
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 class FutureTests:

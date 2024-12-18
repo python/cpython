@@ -1,5 +1,6 @@
 import asyncio
 import os
+import signal
 import socket
 import time
 import threading
@@ -12,6 +13,7 @@ from test.test_asyncio import functional as func_tests
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+    signal.stop_signal_thread()
 
 
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
