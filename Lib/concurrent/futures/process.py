@@ -875,14 +875,14 @@ class ProcessPoolExecutor(_base.Executor):
 
         for pid, proc in self._processes.items():
             try:
-                is_alive = proc.is_alive()
+                if not proc.is_alive():
+                    continue
             except ValueError:
                 # The process is already exited/closed out.
-                is_alive = False
+                continue
 
-            if is_alive:
-                try:
-                    os.kill(pid, signal)
-                except ProcessLookupError:
-                    # The process just ended before our signal
-                    pass
+             try:
+                 os.kill(pid, signal)
+             except ProcessLookupError:
+                 # The process just ended before our signal
+                 pass
