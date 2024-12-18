@@ -1,2 +1,2 @@
-Fix :meth:`test.test_sysconfig.test_sysconfigdata_json` when running outside
+Fix ``test.test_sysconfig.test_sysconfigdata_json`` when running outside
 the build directory (eg. after installing).
