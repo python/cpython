@@ -1152,9 +1152,6 @@ unicodekeys_lookup_split(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
         ix = unicodekeys_lookup_unicode(dk, key, hash);
         UNLOCK_KEYS(dk);
     }
-    else {
-        ix = unicodekeys_lookup_unicode(dk, key, hash);
-    }
 #else
     ix = unicodekeys_lookup_unicode(dk, key, hash);
 #endif
@@ -7002,12 +6999,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
-    Py_ssize_t ix;
-    if (keys->dk_kind == DICT_KEYS_SPLIT) {
-        ix = _PyDictKeys_StringLookupSplit(keys, name);
-    } else {
-        ix = _PyDictKeys_StringLookup(keys, name);
-    }
+    Py_ssize_t ix = _PyDictKeys_StringLookupSplit(keys, name);
     if (ix == DKIX_EMPTY) {
         *attr = NULL;
         return true;
