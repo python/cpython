@@ -389,27 +389,18 @@ def source_synopsis(file):
 
     if hasattr(file, 'buffer'):
         file = file.buffer
-    if isinstance(file, io.TextIOBase):
-        try:
-            source = file.read()
-        except UnicodeDecodeError:
-            return None
-    else:
-        # Binary file
-        try:
-            source = tokenize.untokenize(tokenize.tokenize(file.readline))
-        except (tokenize.TokenError, UnicodeDecodeError):
-            return None
 
     try:
+        source = file.read()
         tree = ast.parse(source)
+
         if (tree.body and isinstance(tree.body[0], ast.Expr) and
                 isinstance(tree.body[0].value, ast.Constant) and
                 isinstance(tree.body[0].value.value, str)):
             docstring = tree.body[0].value.value
             return docstring.strip().split('\n')[0].strip()
         return None
-    except (SyntaxError, ValueError) as e:
+    except (UnicodeDecodeError, SyntaxError, ValueError) as e:
         return None
 
 def synopsis(filename, cache={}):
