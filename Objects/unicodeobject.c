@@ -117,7 +117,8 @@ static inline char* _PyUnicode_UTF8(PyObject *op)
     return (_PyCompactUnicodeObject_CAST(op)->utf8);
 }
 
-static inline char* PyUnicode_UTF8(PyObject *op) {
+static inline char* PyUnicode_UTF8(PyObject *op)
+{
     assert(_PyUnicode_CHECK(op));
     if (PyUnicode_IS_COMPACT_ASCII(op)) {
         return ((char*)(_PyASCIIObject_CAST(op) + 1));
@@ -132,7 +133,8 @@ static inline void PyUnicode_SET_UTF8(PyObject *op, char *utf8)
     _PyCompactUnicodeObject_CAST(op)->utf8 = utf8;
 }
 
-static inline Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op) {
+static inline Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op)
+{
     assert(_PyUnicode_CHECK(op));
     if (PyUnicode_IS_COMPACT_ASCII(op)) {
          return _PyASCIIObject_CAST(op)->length;
@@ -142,7 +144,8 @@ static inline Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op) {
     }
 }
 
-static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length) {
+static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length)
+{
     _PyCompactUnicodeObject_CAST(op)->utf8_length = length;
 }
 
@@ -153,19 +156,22 @@ static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length) {
 #define _PyUnicode_HASH(op)                             \
     (_PyASCIIObject_CAST(op)->hash)
 
-static inline Py_hash_t PyUnicode_HASH(PyObject *op) {
+static inline Py_hash_t PyUnicode_HASH(PyObject *op)
+{
     assert(_PyUnicode_CHECK(op));
     return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash);
 }
 
-static inline void PyUnicode_SET_HASH(PyObject *op, Py_hash_t hash) {
+static inline void PyUnicode_SET_HASH(PyObject *op, Py_hash_t hash)
+{
     FT_ATOMIC_STORE_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash, hash);
 }
 
 #define _PyUnicode_DATA_ANY(op)                         \
     (_PyUnicodeObject_CAST(op)->data.any)
 
-static inline int _PyUnicode_SHARE_UTF8(PyObject *op) {
+static inline int _PyUnicode_SHARE_UTF8(PyObject *op)
+{
     assert(_PyUnicode_CHECK(op));
     assert(!PyUnicode_IS_COMPACT_ASCII(op));
     return (_PyUnicode_UTF8(op) == PyUnicode_DATA(op));
@@ -173,7 +179,8 @@ static inline int _PyUnicode_SHARE_UTF8(PyObject *op) {
 
 /* true if the Unicode object has an allocated UTF-8 memory block
    (not shared with other data) */
-static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op) {
+static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
+{
     return (!PyUnicode_IS_COMPACT_ASCII(op)
             && _PyUnicode_UTF8(op) != NULL
             && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
