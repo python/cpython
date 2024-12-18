@@ -776,18 +776,19 @@ asyncio
 
   If you're running an async function, simply use :func:`asyncio.run`.
 
-  before::
+  Before::
 
     async def main():
         ...
 
+
     loop = asyncio.get_event_loop()
     try:
-       loop.run_until_complete(amain())
+        loop.run_until_complete(main())
     finally:
-       loop.close()
+        loop.close()
 
-  after::
+  After::
 
     async def main():
         ...
@@ -798,7 +799,7 @@ asyncio
   and then run forever, use :func:`asyncio.run` and an
   :class:`asyncio.Event`.
 
-  before::
+  Before::
 
     def start_server(loop):
         ...
@@ -810,7 +811,7 @@ asyncio
     finally:
         loop.close()
 
-  after::
+  After::
 
     def start_server(loop):
         ...
@@ -824,7 +825,7 @@ asyncio
   If you need to run something in an event loop, then run some blocking
   code around it, use :class:`asyncio.Runner`.
 
-   before::
+  Before::
 
     async def operation_one():
         ...
@@ -837,13 +838,13 @@ asyncio
 
     loop = asyncio.get_event_loop()
     try:
-       loop.run_until_complete(operation_one())
-       blocking_code()
-       loop.run_until_complete(operation_two())
+        loop.run_until_complete(operation_one())
+        blocking_code()
+        loop.run_until_complete(operation_two())
     finally:
-       loop.close()
+        loop.close()
 
-  after::
+  After::
 
     async def operation_one():
         ...
@@ -855,9 +856,9 @@ asyncio
         ...
 
     with asyncio.Runner() as runner:
-       runner.run(operation_one())
-       blocking_code()
-       runner.run(operation_two())
+        runner.run(operation_one())
+        blocking_code()
+        runner.run(operation_two())
 
 
 
