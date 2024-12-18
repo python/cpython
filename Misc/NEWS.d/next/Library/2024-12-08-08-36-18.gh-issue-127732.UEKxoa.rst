@@ -1,1 +1,0 @@
-The :mod:`platform` module now correctly detects Windows Server 2025.
