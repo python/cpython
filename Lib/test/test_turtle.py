@@ -61,7 +61,7 @@ def patch_screen():
     """Patch turtle._Screen for testing without a display.
 
     We must patch the _Screen class itself instead of the _Screen
-    instance because instatiating it requires a display.
+    instance because instantiating it requires a display.
     """
     m = unittest.mock.MagicMock()
     m.__class__ = turtle._Screen
