@@ -1,2 +1,0 @@
-Added ``posix._emscripten_debugger()`` to help with debugging the test suite on
-the Emscripten target.
