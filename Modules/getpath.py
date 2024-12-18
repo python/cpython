@@ -634,12 +634,12 @@ else:
             exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
-        
+
         # See details: https://github.com/python/cpython/issues/127440
         if pyvenvcfg_home and not exec_prefix and base_executable:
             base_executable_dir = dirname(base_executable)
             exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
-        
+
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
