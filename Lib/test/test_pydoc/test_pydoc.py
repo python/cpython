@@ -933,7 +933,7 @@ class PydocDocTest(unittest.TestCase):
             ("'Single single quotes'",
             'Single single quotes')
 
-            ("""Concatenated""" "string" 'literals',
+            ('"""Concatenated""" \\\n"string" \'literals\'',
             "Concatenatedstringliterals")
         ]
 
