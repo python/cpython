@@ -398,11 +398,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         return NULL;
     }
 
-    /* Total sizes */
-    Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
-    Py_ssize_t tot_nkwds;
-    Py_ssize_t tot_nargskw;
-
     PyObject **pto_args = _PyTuple_ITEMS(pto->args);
 
     /* Special cases */
@@ -437,16 +432,17 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         }
     }
 
-    tot_nkwds = pto_nkwds + nkwds;
-    tot_nargskw = tot_nargs + tot_nkwds;
+    /* Total sizes */
+    Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
+    Py_ssize_t tot_nkwds = pto_nkwds + nkwds;
+    Py_ssize_t tot_nargskw = tot_nargs + tot_nkwds;
+
     PyObject **stack, *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject *tot_kwnames = kwnames;
 
     /* Initialize stack & copy keywords to stack */
     if (!pto_nkwds) {
         /* Allocate Stack */
-        tot_nkwds = pto_nkwds + nkwds;
-        tot_nargskw = tot_nargs + tot_nkwds;
         ALLOCATE_STACK(sizeof(PyObject *), tot_nargskw, small_stack, stack);
 
         if (nkwds) {
