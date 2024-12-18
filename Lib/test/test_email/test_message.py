@@ -1020,7 +1020,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                 for name, value in invalid_headers:
                     with self.subTest(
                             name=name,
-                            problem=name,
+                            description=value,
                             policy=thispolicy.__class__.__name__,
                             method=method,
                             ):
