@@ -1,7 +1,7 @@
 import unittest
 import sys
 from test import support
-from test.support import import_helper
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -1004,6 +1004,24 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, b'abc', 0)
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
+
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @threading_helper.requires_working_threading()
+    def test_asutf8_race(self):
+        """Test that there's no race condition in PyUnicode_AsUTF8()"""
+        unicode_asutf8 = _testcapi.unicode_asutf8
+        from threading import Thread
+
+        data = "😊"
+
+        def worker():
+            for _ in range(1000):
+                self.assertEqual(unicode_asutf8(data, 5), b'\xf0\x9f\x98\x8a\0')
+
+        threads = [Thread(target=worker) for _ in range(10)]
+        with threading_helper.start_threads(threads):
+            pass
+
 
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
