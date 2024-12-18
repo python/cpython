@@ -1,1 +1,1 @@
-Improve the menu bar of ``turtledemo``.
+Improve the menu bar of :mod:`turtledemo`.
