@@ -1184,10 +1184,9 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "\"\\%.3s\" is an invalid octal escape sequence. "
-                                 "Such sequences will not work in the future. "
-                                 "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
-                                 first_invalid_escape, first_invalid_escape) < 0)
+                                 "b\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
+                                 first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -1195,10 +1194,9 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "\"\\%c\" is an invalid escape sequence. "
-                                 "Such sequences will not work in the future. "
-                                 "Did you mean \"\\\\%c\"? A raw string is also an option.",
-                                 c, c) < 0)
+                                 "b\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
+                                 c) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
