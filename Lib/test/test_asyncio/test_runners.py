@@ -64,7 +64,7 @@ class BaseTest(unittest.TestCase):
         asyncio._set_event_loop_policy(policy)
 
     def tearDown(self):
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio._get_event_loop_policy()
         if policy.loop is not None:
             self.assertTrue(policy.loop.is_closed())
             self.assertTrue(policy.loop.shutdown_ag_run)
@@ -208,7 +208,7 @@ class RunTests(BaseTest):
             await asyncio.sleep(0)
             return 42
 
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio._get_event_loop_policy()
         policy.set_event_loop = mock.Mock()
         asyncio.run(main())
         self.assertTrue(policy.set_event_loop.called)
@@ -495,7 +495,7 @@ class RunnerTests(BaseTest):
         async def coro():
             pass
 
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio._get_event_loop_policy()
         policy.set_event_loop = mock.Mock()
         runner = asyncio.Runner()
         runner.run(coro())
