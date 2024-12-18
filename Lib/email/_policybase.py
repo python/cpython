@@ -15,11 +15,11 @@ __all__ = [
     'compat32',
     ]
 
-header_ascii_re = re.compile("[\041-\071\073-\176]+$")
+valid_header_name_re = re.compile("[\041-\071\073-\176]+$")
 
 def validate_header_name(name):
     # Validate header name according to RFC 5322
-    if not header_ascii_re.match(name):
+    if not valid_header_name_re.match(name):
         raise ValueError(f"Header field name contains invalid characters: {name!r}")
 
 class _PolicyBase:
