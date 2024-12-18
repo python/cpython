@@ -1211,9 +1211,6 @@ class Enum(metaclass=EnumType):
             exc = None
             ve_exc = None
 
-    def __init__(self, *args, **kwds):
-        pass
-
     def _add_alias_(self, name):
         self.__class__._add_member_(name, self)
 
