@@ -1012,36 +1012,23 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
             ('', 'Empty name'),
             (' LeadingSpace', 'starts with space'),
             ('TrailingSpace ', 'ends with space'),
-        ]
-        for name, value in invalid_headers:
-            with self.subTest(name=name, problem=value):
-                with self.assertRaises(ValueError) as cm:
-                    EmailMessage().add_header(name, value)
-                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
-
-        invalid_ascii_headers = [
             ('Header\x7F', 'Non-ASCII character'),
             ('Header\x80', 'Extended ASCII'),
         ]
-        for name, value in invalid_ascii_headers:
-            with self.subTest(name=name, problem=value):
-                with self.assertRaises(ValueError) as cm:
-                    EmailMessage().add_header(name, value)
-                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
-
-        for name, value in invalid_headers:
-            with self.subTest(name=name, problem=value):
-                with self.assertRaises(ValueError) as cm:
-                    m = EmailMessage()
-                    m[name] = value
-                self.assertIn(f"Invalid header field name {name!r}", str(cm.exception))
-
-        for name, value in invalid_ascii_headers:
-            with self.subTest(name=name, problem=value):
-                with self.assertRaises(ValueError) as cm:
-                    m = EmailMessage()
-                    m[name] = value
-                self.assertIn(f"Header field name contains invalid characters: {name!r}", str(cm.exception))
+        for thispolicy in (policy.default, policy.compat32):
+            for method in ('__setitem__', 'add_header'):
+                for name, value in invalid_headers:
+                    with self.subTest(
+                            name=name,
+                            problem=name,
+                            policy=thispolicy.__class__.__name__,
+                            method=method,
+                            ):
+                        with self.assertRaises(ValueError) as cm:
+                            getattr(EmailMessage(policy=thispolicy), method(name, value))
+                        msg = str(cm.exception)
+                        self.assertRegex( msg, '(?i)(?=.*invalid)(?=.*header)(?=.*name)')
+                        self.assertIn(f"{name!r}", msg)
 
     def test_get_body_malformed(self):
         """test for bpo-42892"""
