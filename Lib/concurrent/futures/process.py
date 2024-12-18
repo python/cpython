@@ -881,8 +881,8 @@ class ProcessPoolExecutor(_base.Executor):
                 # The process is already exited/closed out.
                 continue
 
-             try:
-                 os.kill(pid, signal)
-             except ProcessLookupError:
-                 # The process just ended before our signal
-                 pass
+            try:
+                os.kill(pid, signal)
+            except ProcessLookupError:
+                # The process just ended before our signal
+                continue
