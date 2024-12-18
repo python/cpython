@@ -1025,7 +1025,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                             method=method,
                             ):
                         with self.assertRaises(ValueError) as cm:
-                            getattr(EmailMessage(policy=thispolicy), method(name, value))
+                            getattr(EmailMessage(policy=thispolicy), method)(name, value)
                         msg = str(cm.exception)
                         self.assertRegex( msg, '(?i)(?=.*invalid)(?=.*header)(?=.*name)')
                         self.assertIn(f"{name!r}", msg)
