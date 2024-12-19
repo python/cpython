@@ -5468,7 +5468,7 @@ All resources are now allowed when tests are not run by regrtest.py.
 .. section: Tests
 
 Fix pystone micro-benchmark: use floor division instead of true division to
-benchmark integers instead of floating point numbers. Set pystone version to
+benchmark integers instead of floating-point numbers. Set pystone version to
 1.2. Patch written by Lennart Regebro.
 
 ..

@@ -5,6 +5,7 @@ import pathlib
 import pickle
 import stat
 import sys
+import time
 import unittest
 import zipfile
 import zipfile._path
@@ -101,7 +102,7 @@ class TestPath(unittest.TestCase):
     def test_iterdir_and_types(self, alpharep):
         root = zipfile.Path(alpharep)
         assert root.is_dir()
-        a, k, b, g, j = root.iterdir()
+        a, n, b, g, j = root.iterdir()
         assert a.is_file()
         assert b.is_dir()
         assert g.is_dir()
@@ -121,7 +122,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_iterdir_on_file(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, k, b, g, j = root.iterdir()
+        a, n, b, g, j = root.iterdir()
         with self.assertRaises(ValueError):
             a.iterdir()
 
@@ -136,7 +137,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_open(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, k, b, g, j = root.iterdir()
+        a, n, b, g, j = root.iterdir()
         with a.open(encoding="utf-8") as strm:
             data = strm.read()
         self.assertEqual(data, "content of a")
@@ -240,7 +241,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_read(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, k, b, g, j = root.iterdir()
+        a, n, b, g, j = root.iterdir()
         assert a.read_text(encoding="utf-8") == "content of a"
         # Also check positional encoding arg (gh-101144).
         assert a.read_text("utf-8") == "content of a"
@@ -306,7 +307,7 @@ class TestPath(unittest.TestCase):
         reflect that change.
         """
         root = zipfile.Path(alpharep)
-        a, k, b, g, j = root.iterdir()
+        a, n, b, g, j = root.iterdir()
         alpharep.writestr('foo.txt', 'foo')
         alpharep.writestr('bar/baz.txt', 'baz')
         assert any(child.name == 'foo.txt' for child in root.iterdir())
@@ -476,6 +477,18 @@ class TestPath(unittest.TestCase):
         assert list(root.glob("**/*.txt")) == list(root.rglob("*.txt"))
 
     @pass_alpharep
+    def test_glob_dirs(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('b')) == [zipfile.Path(alpharep, "b/")]
+        assert list(root.glob('b*')) == [zipfile.Path(alpharep, "b/")]
+
+    @pass_alpharep
+    def test_glob_subdir(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('g/h')) == [zipfile.Path(alpharep, "g/h/")]
+        assert list(root.glob('g*/h*')) == [zipfile.Path(alpharep, "g/h/")]
+
+    @pass_alpharep
     def test_glob_subdirs(self, alpharep):
         root = zipfile.Path(alpharep)
 
@@ -577,3 +590,87 @@ class TestPath(unittest.TestCase):
         zipfile.Path(alpharep)
         with self.assertRaises(KeyError):
             alpharep.getinfo('does-not-exist')
+
+    def test_malformed_paths(self):
+        """
+        Path should handle malformed paths gracefully.
+
+        Paths with leading slashes are not visible.
+
+        Paths with dots are treated like regular files.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("/one-slash.txt", b"content")
+        zf.writestr("//two-slash.txt", b"content")
+        zf.writestr("../parent.txt", b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        assert list(map(str, root.iterdir())) == ['../']
+        assert root.joinpath('..').joinpath('parent.txt').read_bytes() == b'content'
+
+    def test_unsupported_names(self):
+        """
+        Path segments with special characters are readable.
+
+        On some platforms or file systems, characters like
+        ``:`` and ``?`` are not allowed, but they are valid
+        in the zip file.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("path?", b"content")
+        zf.writestr("V: NMS.flac", b"fLaC...")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        contents = root.iterdir()
+        assert next(contents).name == 'path?'
+        assert next(contents).name == 'V: NMS.flac'
+        assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
+
+    def test_backslash_not_separator(self):
+        """
+        In a zip file, backslashes are not separators.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr(DirtyZipInfo.for_name("foo\\bar", zf), b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        (first,) = root.iterdir()
+        assert not first.is_dir()
+        assert first.name == 'foo\\bar'
+
+    @pass_alpharep
+    def test_interface(self, alpharep):
+        from importlib.resources.abc import Traversable
+
+        zf = zipfile.Path(alpharep)
+        assert isinstance(zf, Traversable)
+
+
+class DirtyZipInfo(zipfile.ZipInfo):
+    """
+    Bypass name sanitization.
+    """
+
+    def __init__(self, filename, *args, **kwargs):
+        super().__init__(filename, *args, **kwargs)
+        self.filename = filename
+
+    @classmethod
+    def for_name(cls, name, archive):
+        """
+        Construct the same way that ZipFile.writestr does.
+
+        TODO: extract this functionality and re-use
+        """
+        self = cls(filename=name, date_time=time.localtime(time.time())[:6])
+        self.compress_type = archive.compression
+        self.compress_level = archive.compresslevel
+        if self.filename.endswith('/'):  # pragma: no cover
+            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            self.external_attr = 0o600 << 16  # ?rw-------
+        return self

@@ -1665,7 +1665,7 @@ class StrTest(string_tests.StringLikeTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1735,8 +1735,6 @@ class StrTest(string_tests.StringLikeTest,
             ),
             'character buffers are decoded to unicode'
         )
-
-        self.assertRaises(TypeError, str, 42, 42, 42)
 
     def test_constructor_keyword_args(self):
         """Pass various keyword argument combinations to the constructor."""
@@ -2432,8 +2430,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(repr(s1()), '\\n')
 
     def test_printable_repr(self):
-        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,)) # printable
-        self.assertEqual(repr('\U00014000'), "'\\U00014000'")     # nonprintable
+        # printable
+        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,))
+        # nonprintable (private use area)
+        self.assertEqual(repr('\U00100001'), "'\\U00100001'")
 
     # This test only affects 32-bit platforms because expandtabs can only take
     # an int as the max value, not a 64-bit C long.  If expandtabs is changed
@@ -2652,22 +2652,45 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(proc.rc, 10, proc)
 
     def test_str_invalid_call(self):
-        check = lambda *a, **kw: self.assertRaises(TypeError, str, *a, **kw)
-
         # too many args
-        check(1, "", "", 1)
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str("too", "many", "argu", "ments")
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str(1, "", "", 1)
 
         # no such kw arg
-        check(test=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) got an unexpected keyword argument 'test'"):
+            str(test=1)
 
         # 'encoding' must be str
-        check(1, encoding=1)
-        check(1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, encoding=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", b"ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", encoding=b"ascii")
 
         # 'errors' must be str
-        check(1, errors=1)
-        check(1, "", errors=1)
-        check(1, 1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, "", errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", b"strict")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", errors=b"strict")
+
+        # both positional and kwarg
+        with self.assertRaisesRegex(TypeError, r"argument for str\(\) given by name \('encoding'\) and position \(2\)"):
+            str(b"x", "utf-8", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "ignore", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "strict", errors="ignore")
 
 
 class StringModuleTest(unittest.TestCase):

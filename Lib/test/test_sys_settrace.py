@@ -2070,7 +2070,7 @@ class JumpTestCase(unittest.TestCase):
             asyncio.run(func(output))
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
@@ -2857,7 +2857,7 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(3, 2, [2, 5], event='return')
+    @jump_test(3, 2, [2, 2, 5], event='return')
     def test_jump_from_yield(output):
         def gen():
             output.append(2)

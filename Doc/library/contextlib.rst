@@ -151,9 +151,9 @@ Functions and classes provided:
    created by :func:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
-  .. versionchanged:: 3.10
-     Async context managers created with :func:`asynccontextmanager` can
-     be used as decorators.
+   .. versionchanged:: 3.10
+      Async context managers created with :func:`asynccontextmanager` can
+      be used as decorators.
 
 
 .. function:: closing(thing)
@@ -322,7 +322,7 @@ Functions and classes provided:
 
    .. versionchanged:: 3.12
       ``suppress`` now supports suppressing exceptions raised as
-      part of an :exc:`BaseExceptionGroup`.
+      part of a :exc:`BaseExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
 

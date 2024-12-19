@@ -8,7 +8,10 @@ __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
     'Handle', 'TimerHandle',
-    'get_event_loop_policy', 'set_event_loop_policy',
+    '_get_event_loop_policy',
+    'get_event_loop_policy',
+    '_set_event_loop_policy',
+    'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
     '_set_running_loop', 'get_running_loop',
     '_get_running_loop',
@@ -21,6 +24,7 @@ import socket
 import subprocess
 import sys
 import threading
+import warnings
 
 from . import format_helpers
 
@@ -668,7 +672,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     class _Local(threading.local):
         _loop = None
-        _set_called = False
 
     def __init__(self):
         self._local = self._Local()
@@ -678,28 +681,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
         Returns an instance of EventLoop or raises an exception.
         """
-        if (self._local._loop is None and
-                not self._local._set_called and
-                threading.current_thread() is threading.main_thread()):
-            stacklevel = 2
-            try:
-                f = sys._getframe(1)
-            except AttributeError:
-                pass
-            else:
-                # Move up the call stack so that the warning is attached
-                # to the line outside asyncio itself.
-                while f:
-                    module = f.f_globals.get('__name__')
-                    if not (module == 'asyncio' or module.startswith('asyncio.')):
-                        break
-                    f = f.f_back
-                    stacklevel += 1
-            import warnings
-            warnings.warn('There is no current event loop',
-                          DeprecationWarning, stacklevel=stacklevel)
-            self.set_event_loop(self.new_event_loop())
-
         if self._local._loop is None:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
@@ -708,7 +689,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     def set_event_loop(self, loop):
         """Set the event loop."""
-        self._local._set_called = True
         if loop is not None and not isinstance(loop, AbstractEventLoop):
             raise TypeError(f"loop must be an instance of AbstractEventLoop or None, not '{type(loop).__name__}'")
         self._local._loop = loop
@@ -782,14 +762,17 @@ def _init_event_loop_policy():
             _event_loop_policy = DefaultEventLoopPolicy()
 
 
-def get_event_loop_policy():
+def _get_event_loop_policy():
     """Get the current event loop policy."""
     if _event_loop_policy is None:
         _init_event_loop_policy()
     return _event_loop_policy
 
+def get_event_loop_policy():
+    warnings._deprecated('asyncio.get_event_loop_policy', remove=(3, 16))
+    return _get_event_loop_policy()
 
-def set_event_loop_policy(policy):
+def _set_event_loop_policy(policy):
     """Set the current event loop policy.
 
     If policy is None, the default policy is restored."""
@@ -798,6 +781,9 @@ def set_event_loop_policy(policy):
         raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
+def set_event_loop_policy(policy):
+    warnings._deprecated('asyncio.set_event_loop_policy', remove=(3,16))
+    _set_event_loop_policy(policy)
 
 def get_event_loop():
     """Return an asyncio event loop.
@@ -812,17 +798,17 @@ def get_event_loop():
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    return get_event_loop_policy().get_event_loop()
+    return _get_event_loop_policy().get_event_loop()
 
 
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
-    get_event_loop_policy().set_event_loop(loop)
+    _get_event_loop_policy().set_event_loop(loop)
 
 
 def new_event_loop():
     """Equivalent to calling get_event_loop_policy().new_event_loop()."""
-    return get_event_loop_policy().new_event_loop()
+    return _get_event_loop_policy().new_event_loop()
 
 
 # Alias pure-Python implementations for testing purposes.

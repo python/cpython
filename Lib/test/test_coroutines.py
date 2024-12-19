@@ -1185,7 +1185,7 @@ class CoroutineTest(unittest.TestCase):
         async def g():
             try:
                 raise KeyError
-            except:
+            except KeyError:
                 return await f()
 
         _, result = run_async(g())
@@ -2294,7 +2294,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 

@@ -44,7 +44,7 @@ using function-call syntax::
    ...     BLUE = 3
 
    >>> # functional syntax
-   >>> Color = Enum('Color', ['RED', 'GREEN', 'BLUE'])
+   >>> Color = Enum('Color', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
 
 Even though we can use :keyword:`class` syntax to create Enums, Enums
 are not normal Python classes.  See
@@ -575,6 +575,8 @@ Data Types
          >>> len(white)
          3
 
+      .. versionadded:: 3.11
+
    .. method:: __bool__(self):
 
       Returns *True* if any members in flag, *False* otherwise::
@@ -666,7 +668,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr()` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now:
 
       >>> Color(0)
       <Color: 0>

@@ -305,7 +305,7 @@ These functions are used to retrieve resource usage information:
    elements.
 
    The fields :attr:`ru_utime` and :attr:`ru_stime` of the return value are
-   floating point values representing the amount of time spent executing in user
+   floating-point values representing the amount of time spent executing in user
    mode and the amount of time spent executing in system mode, respectively. The
    remaining values are integers. Consult the :manpage:`getrusage(2)` man page for
    detailed information about these values. A brief summary is presented here:

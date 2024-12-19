@@ -140,7 +140,8 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *r = NULL;
     PyObject *i = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -160,4 +161,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=295ecfd71389d7fe input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(complex_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert number to a complex floating-point number.");
+
+#define COMPLEX_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
+/*[clinic end generated code: output=8c49a41c5a7f0aee input=a9049054013a1b77]*/

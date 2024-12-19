@@ -1,8 +1,8 @@
-:mod:`!uuid` --- UUID objects according to :rfc:`4122`
+:mod:`!uuid` --- UUID objects according to :rfc:`9562`
 ======================================================
 
 .. module:: uuid
-   :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
+   :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
@@ -11,8 +11,9 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`4122`.
+and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
+and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, and 8 UUIDs as
+specified in :rfc:`9562` (which supersedes :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -65,7 +66,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to :rfc:`4122`, overriding bits in the
+   variant and version number set according to :rfc:`9562`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
    Comparison of UUID objects are made by way of comparing their
@@ -137,7 +138,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in :rfc:`4122`.
+   The UUID as a URN as specified in :rfc:`9562`.
 
 
 .. attribute:: UUID.variant
@@ -149,8 +150,12 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.version
 
-   The UUID version number (1 through 5, meaningful only when the variant is
+   The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
+
+   .. versionchanged:: 3.14
+      Added UUID version 8.
+
 
 .. attribute:: UUID.is_safe
 
@@ -216,6 +221,23 @@ The :mod:`uuid` module defines the following functions:
 
 .. index:: single: uuid5
 
+
+.. function:: uuid8(a=None, b=None, c=None)
+
+   Generate a pseudo-random UUID according to
+   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
+
+   When specified, the parameters *a*, *b* and *c* are expected to be
+   positive integers of 48, 12 and 62 bits respectively. If they exceed
+   their expected bit count, only their least significant bits are kept;
+   non-specified arguments are substituted for a pseudo-random integer of
+   appropriate size.
+
+   .. versionadded:: 3.14
+
+.. index:: single: uuid8
+
+
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
 
@@ -252,7 +274,9 @@ of the :attr:`~UUID.variant` attribute:
 
 .. data:: RFC_4122
 
-   Specifies the UUID layout given in :rfc:`4122`.
+   Specifies the UUID layout given in :rfc:`4122`. This constant is kept
+   for backward compatibility even though :rfc:`4122` has been superseded
+   by :rfc:`9562`.
 
 
 .. data:: RESERVED_MICROSOFT
@@ -267,7 +291,7 @@ of the :attr:`~UUID.variant` attribute:
 
 .. seealso::
 
-   :rfc:`4122` - A Universally Unique IDentifier (UUID) URN Namespace
+   :rfc:`9562` - A Universally Unique IDentifier (UUID) URN Namespace
       This specification defines a Uniform Resource Name namespace for UUIDs, the
       internal format of UUIDs, and methods of generating UUIDs.
 
@@ -283,7 +307,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
@@ -298,6 +322,9 @@ The following options are accepted:
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
+
+   .. versionadded:: 3.14
+      Allow generating UUID version 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>

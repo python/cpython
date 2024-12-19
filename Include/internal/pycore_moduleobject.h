@@ -11,6 +11,8 @@ extern "C" {
 extern void _PyModule_Clear(PyObject *);
 extern void _PyModule_ClearDict(PyObject *);
 extern int _PyModuleSpec_IsInitializing(PyObject *);
+extern int _PyModuleSpec_GetFileOrigin(PyObject *, PyObject **);
+extern int _PyModule_IsPossiblyShadowing(PyObject *);
 
 extern int _PyModule_IsExtension(PyObject *obj);
 
@@ -46,7 +48,7 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
 }
 
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);
-PyObject* _Py_module_getattro(PyModuleObject *m, PyObject *name);
+PyObject* _Py_module_getattro(PyObject *m, PyObject *name);
 
 #ifdef __cplusplus
 }

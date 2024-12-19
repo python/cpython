@@ -4,6 +4,7 @@
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
+#include "pycore_typevarobject.h" // _Py_typing_type_repr
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 
 
@@ -51,69 +52,6 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-ga_repr_item(PyUnicodeWriter *writer, PyObject *p)
-{
-    PyObject *qualname = NULL;
-    PyObject *module = NULL;
-    int rc;
-
-    if (p == Py_Ellipsis) {
-        // The Ellipsis object
-        rc = PyUnicodeWriter_WriteUTF8(writer, "...", 3);
-        goto done;
-    }
-
-    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
-        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
-    {
-        // It looks like a GenericAlias
-        goto use_repr;
-    }
-    if (rc < 0) {
-        goto error;
-    }
-
-    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
-        goto error;
-    }
-    if (qualname == NULL) {
-        goto use_repr;
-    }
-    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
-        goto error;
-    }
-    if (module == NULL || module == Py_None) {
-        goto use_repr;
-    }
-
-    // Looks like a class
-    if (PyUnicode_Check(module) &&
-        _PyUnicode_EqualToASCIIString(module, "builtins"))
-    {
-        // builtins don't need a module name
-        rc = PyUnicodeWriter_WriteStr(writer, qualname);
-        goto done;
-    }
-    else {
-        rc = PyUnicodeWriter_Format(writer, "%S.%S", module, qualname);
-        goto done;
-    }
-
-error:
-    rc = -1;
-    goto done;
-
-use_repr:
-    rc = PyUnicodeWriter_WriteRepr(writer, p);
-    goto done;
-
-done:
-    Py_XDECREF(qualname);
-    Py_XDECREF(module);
-    return rc;
-}
-
-static int
 ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 {
     assert(PyList_CheckExact(p));
@@ -131,7 +69,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
             }
         }
         PyObject *item = PyList_GET_ITEM(p, i);
-        if (ga_repr_item(writer, item) < 0) {
+        if (_Py_typing_type_repr(writer, item) < 0) {
             return -1;
         }
     }
@@ -162,7 +100,7 @@ ga_repr(PyObject *self)
             goto error;
         }
     }
-    if (ga_repr_item(writer, alias->origin) < 0) {
+    if (_Py_typing_type_repr(writer, alias->origin) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
@@ -181,7 +119,7 @@ ga_repr(PyObject *self)
                 goto error;
             }
         }
-        else if (ga_repr_item(writer, p) < 0) {
+        else if (_Py_typing_type_repr(writer, p) < 0) {
             goto error;
         }
     }
@@ -563,6 +501,10 @@ ga_getitem(PyObject *self, PyObject *item)
     }
 
     PyObject *res = Py_GenericAlias(alias->origin, newargs);
+    if (res == NULL) {
+        Py_DECREF(newargs);
+        return NULL;
+    }
     ((gaobject *)res)->starred = alias->starred;
 
     Py_DECREF(newargs);
