@@ -1,0 +1,4 @@
+Enhance REPL history navigation with partial text support
+
+The REPL now correctly navigates history based on partial text
+in the buffer when using the up arrow.
