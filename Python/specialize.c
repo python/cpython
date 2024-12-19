@@ -1096,6 +1096,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 return -1;
             }
+            /* Don't specialize if PEP 523 is active */
             if (_PyInterpreterState_GET()->eval_frame) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
@@ -1165,6 +1166,7 @@ specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* na
             if (version == 0) {
                 return -1;
             }
+            /* Don't specialize if PEP 523 is active */
             if (_PyInterpreterState_GET()->eval_frame) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
@@ -1781,12 +1783,12 @@ _Py_Specialize_BinarySubscr(
         specialized_op = BINARY_SUBSCR_DICT;
         goto success;
     }
-#ifndef Py_GIL_DISABLED
-    PyTypeObject *cls = Py_TYPE(container);
-    PyObject *descriptor = _PyType_Lookup(cls, &_Py_ID(__getitem__));
+    unsigned int tp_version;
+    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
+            Py_DECREF(descriptor);
             goto fail;
         }
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
@@ -1794,30 +1796,29 @@ _Py_Specialize_BinarySubscr(
         int kind = function_kind(fcode);
         if (kind != SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
+            Py_DECREF(descriptor);
             goto fail;
         }
         if (fcode->co_argcount != 2) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+            Py_DECREF(descriptor);
             goto fail;
         }
-        uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-        if (!_PyFunction_IsVersionValid(version)) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-        }
+
+        PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
+        /* Don't specialize if PEP 523 is active */
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
+            Py_DECREF(descriptor);
             goto fail;
         }
-        PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        // This pointer is invalidated by PyType_Modified (see the comment on
-        // struct _specialization_cache):
-        ht->_spec_cache.getitem = descriptor;
-        ht->_spec_cache.getitem_version = version;
-        specialized_op = BINARY_SUBSCR_GETITEM;
-        goto success;
+        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version)) {
+            specialized_op = BINARY_SUBSCR_GETITEM;
+            Py_DECREF(descriptor);
+            goto success;
+        }
     }
-#endif   // Py_GIL_DISABLED
+    Py_XDECREF(descriptor);
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
                         binary_subscr_fail_kind(container_type, sub));
 fail:
@@ -2617,6 +2618,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
         assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
             instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
         );
+        /* Don't specialize if PEP 523 is active */
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(FOR_ITER, SPEC_FAIL_OTHER);
             goto failure;
@@ -2645,6 +2647,7 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
     assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
     PyTypeObject *tp = Py_TYPE(receiver);
     if (tp == &PyGen_Type || tp == &PyCoro_Type) {
+        /* Don't specialize if PEP 523 is active */
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(SEND, SPEC_FAIL_OTHER);
             goto failure;
