@@ -5744,12 +5744,11 @@ wstring_at(const wchar_t *ptr, int size)
 static PyObject *
 memoryview_at(void *ptr, Py_ssize_t size, int readonly)
 {
-    Py_ssize_t ssize = size;
     if (PySys_Audit("ctypes.memoryview_at", "nni",
-                    (Py_ssize_t)ptr, ssize, readonly) < 0) {
+                    (Py_ssize_t)ptr, size, readonly) < 0) {
         return NULL;
     }
-    if (ssize < 0) {
+    if (size < 0) {
         PyErr_Format(PyExc_ValueError,
                      "memoryview_at: size is negative (or overflowed): %zd",
                      size);
