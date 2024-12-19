@@ -30681,6 +30681,1423 @@ fi
 printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
+
+
+# Detection of supported SIMD instruction sets for CPython. Since
+# we do not necessarily know which instruction sets will be used,
+# we disable SIMD support on some older Android platforms.
+#
+# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations for
+# AVX-512 instructions.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+    # SSE
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse" >&5
+printf %s "checking whether C compiler accepts -msse... " >&6; }
+if test ${ax_cv_check_cflags___msse+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msse"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___msse=yes
+else $as_nop
+  ax_cv_check_cflags___msse=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse" >&5
+printf "%s\n" "$ax_cv_check_cflags___msse" >&6; }
+if test "x$ax_cv_check_cflags___msse" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse2" >&5
+printf %s "checking whether C compiler accepts -msse2... " >&6; }
+if test ${ax_cv_check_cflags___msse2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msse2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___msse2=yes
+else $as_nop
+  ax_cv_check_cflags___msse2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse2" >&5
+printf "%s\n" "$ax_cv_check_cflags___msse2" >&6; }
+if test "x$ax_cv_check_cflags___msse2" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse3" >&5
+printf %s "checking whether C compiler accepts -msse3... " >&6; }
+if test ${ax_cv_check_cflags___msse3+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msse3"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___msse3=yes
+else $as_nop
+  ax_cv_check_cflags___msse3=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse3" >&5
+printf "%s\n" "$ax_cv_check_cflags___msse3" >&6; }
+if test "x$ax_cv_check_cflags___msse3" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mssse3" >&5
+printf %s "checking whether C compiler accepts -mssse3... " >&6; }
+if test ${ax_cv_check_cflags___mssse3+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mssse3"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mssse3=yes
+else $as_nop
+  ax_cv_check_cflags___mssse3=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mssse3" >&5
+printf "%s\n" "$ax_cv_check_cflags___mssse3" >&6; }
+if test "x$ax_cv_check_cflags___mssse3" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse4.1" >&5
+printf %s "checking whether C compiler accepts -msse4.1... " >&6; }
+if test ${ax_cv_check_cflags___msse4_1+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msse4.1"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___msse4_1=yes
+else $as_nop
+  ax_cv_check_cflags___msse4_1=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse4_1" >&5
+printf "%s\n" "$ax_cv_check_cflags___msse4_1" >&6; }
+if test "x$ax_cv_check_cflags___msse4_1" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse4.2" >&5
+printf %s "checking whether C compiler accepts -msse4.2... " >&6; }
+if test ${ax_cv_check_cflags___msse4_2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -msse4.2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___msse4_2=yes
+else $as_nop
+  ax_cv_check_cflags___msse4_2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse4_2" >&5
+printf "%s\n" "$ax_cv_check_cflags___msse4_2" >&6; }
+if test "x$ax_cv_check_cflags___msse4_2" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    # AVX
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
+printf %s "checking whether C compiler accepts -mavx... " >&6; }
+if test ${ax_cv_check_cflags___mavx+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx=yes
+else $as_nop
+  ax_cv_check_cflags___mavx=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx" >&6; }
+if test "x$ax_cv_check_cflags___mavx" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxifma" >&5
+printf %s "checking whether C compiler accepts -mavxifma... " >&6; }
+if test ${ax_cv_check_cflags___mavxifma+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavxifma"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavxifma=yes
+else $as_nop
+  ax_cv_check_cflags___mavxifma=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxifma" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavxifma" >&6; }
+if test "x$ax_cv_check_cflags___mavxifma" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxneconvert" >&5
+printf %s "checking whether C compiler accepts -mavxneconvert... " >&6; }
+if test ${ax_cv_check_cflags___mavxneconvert+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavxneconvert"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavxneconvert=yes
+else $as_nop
+  ax_cv_check_cflags___mavxneconvert=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxneconvert" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavxneconvert" >&6; }
+if test "x$ax_cv_check_cflags___mavxneconvert" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnni" >&5
+printf %s "checking whether C compiler accepts -mavxvnni... " >&6; }
+if test ${ax_cv_check_cflags___mavxvnni+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavxvnni"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavxvnni=yes
+else $as_nop
+  ax_cv_check_cflags___mavxvnni=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnni" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavxvnni" >&6; }
+if test "x$ax_cv_check_cflags___mavxvnni" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnniint8" >&5
+printf %s "checking whether C compiler accepts -mavxvnniint8... " >&6; }
+if test ${ax_cv_check_cflags___mavxvnniint8+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavxvnniint8"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavxvnniint8=yes
+else $as_nop
+  ax_cv_check_cflags___mavxvnniint8=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnniint8" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavxvnniint8" >&6; }
+if test "x$ax_cv_check_cflags___mavxvnniint8" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnniint16" >&5
+printf %s "checking whether C compiler accepts -mavxvnniint16... " >&6; }
+if test ${ax_cv_check_cflags___mavxvnniint16+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavxvnniint16"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavxvnniint16=yes
+else $as_nop
+  ax_cv_check_cflags___mavxvnniint16=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnniint16" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavxvnniint16" >&6; }
+if test "x$ax_cv_check_cflags___mavxvnniint16" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    # AVX-2
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+printf %s "checking whether C compiler accepts -mavx2... " >&6; }
+if test ${ax_cv_check_cflags___mavx2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx2=yes
+else $as_nop
+  ax_cv_check_cflags___mavx2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx2" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx2" >&6; }
+if test "x$ax_cv_check_cflags___mavx2" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    # AVX-512
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512f" >&5
+printf %s "checking whether C compiler accepts -mavx512f... " >&6; }
+if test ${ax_cv_check_cflags___mavx512f+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512f"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512f=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512f=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512f" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512f" >&6; }
+if test "x$ax_cv_check_cflags___mavx512f" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512cd" >&5
+printf %s "checking whether C compiler accepts -mavx512cd... " >&6; }
+if test ${ax_cv_check_cflags___mavx512cd+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512cd"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512cd=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512cd=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512cd" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512cd" >&6; }
+if test "x$ax_cv_check_cflags___mavx512cd" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512er" >&5
+printf %s "checking whether C compiler accepts -mavx512er... " >&6; }
+if test ${ax_cv_check_cflags___mavx512er+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512er"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512er=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512er=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512er" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512er" >&6; }
+if test "x$ax_cv_check_cflags___mavx512er" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512pf" >&5
+printf %s "checking whether C compiler accepts -mavx512pf... " >&6; }
+if test ${ax_cv_check_cflags___mavx512pf+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512pf"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512pf=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512pf=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512pf" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512pf" >&6; }
+if test "x$ax_cv_check_cflags___mavx512pf" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx5124fmaps" >&5
+printf %s "checking whether C compiler accepts -mavx5124fmaps... " >&6; }
+if test ${ax_cv_check_cflags___mavx5124fmaps+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx5124fmaps"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx5124fmaps=yes
+else $as_nop
+  ax_cv_check_cflags___mavx5124fmaps=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx5124fmaps" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx5124fmaps" >&6; }
+if test "x$ax_cv_check_cflags___mavx5124fmaps" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx5124vnniw" >&5
+printf %s "checking whether C compiler accepts -mavx5124vnniw... " >&6; }
+if test ${ax_cv_check_cflags___mavx5124vnniw+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx5124vnniw"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx5124vnniw=yes
+else $as_nop
+  ax_cv_check_cflags___mavx5124vnniw=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx5124vnniw" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx5124vnniw" >&6; }
+if test "x$ax_cv_check_cflags___mavx5124vnniw" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vpopcntdq" >&5
+printf %s "checking whether C compiler accepts -mavx512vpopcntdq... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vpopcntdq+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vpopcntdq"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vpopcntdq=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vpopcntdq=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vpopcntdq" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vpopcntdq" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vpopcntdq" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vl" >&5
+printf %s "checking whether C compiler accepts -mavx512vl... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vl+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vl"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vl=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vl=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vl" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vl" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vl" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512dq" >&5
+printf %s "checking whether C compiler accepts -mavx512dq... " >&6; }
+if test ${ax_cv_check_cflags___mavx512dq+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512dq"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512dq=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512dq=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512dq" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512dq" >&6; }
+if test "x$ax_cv_check_cflags___mavx512dq" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512bw" >&5
+printf %s "checking whether C compiler accepts -mavx512bw... " >&6; }
+if test ${ax_cv_check_cflags___mavx512bw+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512bw"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512bw=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512bw=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512bw" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512bw" >&6; }
+if test "x$ax_cv_check_cflags___mavx512bw" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512ifma" >&5
+printf %s "checking whether C compiler accepts -mavx512ifma... " >&6; }
+if test ${ax_cv_check_cflags___mavx512ifma+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512ifma"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512ifma=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512ifma=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512ifma" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512ifma" >&6; }
+if test "x$ax_cv_check_cflags___mavx512ifma" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vbmi" >&5
+printf %s "checking whether C compiler accepts -mavx512vbmi... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vbmi+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vbmi"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vbmi=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vbmi=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vbmi" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vbmi" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vnni" >&5
+printf %s "checking whether C compiler accepts -mavx512vnni... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vnni+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vnni"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vnni=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vnni=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vnni" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vnni" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vnni" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vbmi2" >&5
+printf %s "checking whether C compiler accepts -mavx512vbmi2... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vbmi2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vbmi2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vbmi2=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vbmi2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vbmi2" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi2" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vbmi2" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512bitalg" >&5
+printf %s "checking whether C compiler accepts -mavx512bitalg... " >&6; }
+if test ${ax_cv_check_cflags___mavx512bitalg+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512bitalg"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512bitalg=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512bitalg=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512bitalg" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512bitalg" >&6; }
+if test "x$ax_cv_check_cflags___mavx512bitalg" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+    #
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking checking SIMD instruction set" >&5
+printf %s "checking checking SIMD instruction set... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vp2intersect" >&5
+printf %s "checking whether C compiler accepts -mavx512vp2intersect... " >&6; }
+if test ${ax_cv_check_cflags___mavx512vp2intersect+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mavx512vp2intersect"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___mavx512vp2intersect=yes
+else $as_nop
+  ax_cv_check_cflags___mavx512vp2intersect=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vp2intersect" >&5
+printf "%s\n" "$ax_cv_check_cflags___mavx512vp2intersect" >&6; }
+if test "x$ax_cv_check_cflags___mavx512vp2intersect" = xyes
+then :
+
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS 1" >>confdefs.h
+
+else $as_nop
+  :
+fi
+
+
+
+
+fi
+
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in
   Linux*)
