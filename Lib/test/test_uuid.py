@@ -726,9 +726,9 @@ class BaseTestUUID:
         # the node ID nor the clock sequence is specified.
         uuids = {self.uuid.uuid6() for _ in range(1000)}
         self.assertEqual(len(uuids), 1000)
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {6})
 
-        # Within the same 60-bit timestamp, and for identical node IDs,
-        # it is likely to have collision on the 14-bit clock sequence.
         timestamp = 0x1ec9414c_232a_b00
         fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
 
@@ -737,14 +737,14 @@ class BaseTestUUID:
                 with mock.patch.object(self.uuid, '_last_timestamp_v6', None):
                     return self.uuid.uuid6(node=0, clock_seq=None)
 
-            # By the birthday paradox, sampling N = 1024 UUIDs with the same
-            # node ID and timestamp results in duplicates with probabillity
-            # very close to 1 (the probability of not having a duplicate is
-            # of order 1E-15).
+            # By the birthday paradox, sampling N = 1024 UUIDs with identical
+            # node IDs and timestamps results in duplicates with probability
+            # close to 1 (not having a duplicate happens with probability of
+            # order 1E-15) since only the 14-bit clock sequence is randomized.
             N = 1024
             uuids = {gen() for _ in range(N)}
-            self.assertTrue(all(u.node == 0 for u in uuids))
-            self.assertTrue(all(u.time == timestamp for u in uuids))
+            self.assertSetEqual({u.node for u in uuids}, {0})
+            self.assertSetEqual({u.time for u in uuids}, {timestamp})
             self.assertLess(len(uuids), N, 'collision property does not hold')
 
     def test_uuid6_node(self):
@@ -767,7 +767,7 @@ class BaseTestUUID:
                 random.getrandbits(72),  # node with > 48 bits is truncated
             ):
                 with self.subTest(node):
-                    u = self.uuid.uuid6(node)
+                    u = self.uuid.uuid6(node=node)
                     equal(u.node, node & 0xffff_ffff_ffff)
 
     def test_uuid6_clock_seq(self):
@@ -790,7 +790,7 @@ class BaseTestUUID:
             ):
                 node = random.getrandbits(48)
                 with self.subTest(node=node, clock_seq=clock_seq):
-                    u = self.uuid.uuid6(node, clock_seq)
+                    u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
                     self.assertEqual(get_clock_seq(u), clock_seq & 0x3fff)
 
     def test_uuid6_test_vectors(self):
