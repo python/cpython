@@ -260,7 +260,7 @@ class HTMLParser(_markupbase.ParserBase):
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
-        elif rawdata[i:i+3] == '<![':
+        elif rawdata[i:i+9] == '<![CDATA[':
             return self.parse_marked_section(i)
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
@@ -277,7 +277,7 @@ class HTMLParser(_markupbase.ParserBase):
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
         assert rawdata[i:i+2] in ('<!', '</'), ('unexpected call to '
-                                                'parse_comment()')
+                                                'parse_bogus_comment()')
         pos = rawdata.find('>', i+2)
         if pos == -1:
             return -1
