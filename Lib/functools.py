@@ -433,6 +433,9 @@ class partial:
         self._phcount = phcount
         self._merger = merger
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 try:
     from _functools import partial, Placeholder, _PlaceholderType
 except ImportError:
