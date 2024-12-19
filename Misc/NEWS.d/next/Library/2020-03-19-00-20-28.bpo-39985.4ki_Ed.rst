@@ -1,0 +1,1 @@
+Make string.Formatter behave like str.format with anonymous subscripts.
