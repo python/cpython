@@ -4,7 +4,13 @@ code that adds all the email6 features.
 
 import re
 import sys
-from email._policybase import Policy, Compat32, compat32, _extend_docstrings
+from email._policybase import (
+    _extend_docstrings,
+    Compat32,
+    compat32,
+    Policy,
+    validate_header_name
+)
 from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
 from email.contentmanager import raw_data_manager
@@ -140,6 +146,7 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
+        validate_header_name(name)
         if isinstance(value, str) and len(value.splitlines())>1:
             # XXX this error message isn't quite right when we use splitlines
             # (see issue 22233), but I'm not sure what should happen here.
