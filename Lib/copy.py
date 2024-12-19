@@ -116,7 +116,7 @@ d[bytearray] = bytearray.copy
 
 del d, t
 
-def deepcopy(x, memo=None, _nil=[]):
+def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
 
     See the module's __doc__ string for more info.
@@ -130,9 +130,10 @@ def deepcopy(x, memo=None, _nil=[]):
     d = id(x)
     if memo is None:
         memo = {}
+        memo[id(memo)] = []
     else:
-        y = memo.get(d, _nil)
-        if y is not _nil:
+        y = memo.get(d, None)
+        if y is not None:
             return y
 
     copier = _deepcopy_dispatch.get(cls)
@@ -168,7 +169,7 @@ def deepcopy(x, memo=None, _nil=[]):
     # If is its own copy, don't memoize.
     if y is not x:
         memo[d] = y
-        _keep_alive(x, memo) # Make sure x lives at least as long as d
+        memo[id(memo)].append(x) # Make sure x lives at least as long as d
     return y
 
 _atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
@@ -217,22 +218,6 @@ def _deepcopy_method(x, memo): # Copy instance methods
 d[types.MethodType] = _deepcopy_method
 
 del d
-
-def _keep_alive(x, memo):
-    """Keeps a reference to the object x in the memo.
-
-    Because we remember objects by their id, we have
-    to assure that possibly temporary objects are kept
-    alive by referencing them.
-    We store a reference at the id of the memo, which should
-    normally not be used unless someone tries to deepcopy
-    the memo itself...
-    """
-    try:
-        memo[id(memo)].append(x)
-    except KeyError:
-        # aha, this is the first one :-)
-        memo[id(memo)]=[x]
 
 def _reconstruct(x, memo, func, args,
                  state=None, listiter=None, dictiter=None,
