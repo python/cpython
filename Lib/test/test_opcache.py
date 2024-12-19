@@ -1066,7 +1066,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_unpack_sequence_list(self):
         def get_items():
             items = []
@@ -1242,6 +1242,14 @@ class TestInstanceDict(unittest.TestCase):
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
 
+# gh-127274: BINARY_SUBSCR_GETITEM will only cache __getitem__ methods that
+# are deferred. We only defer functions defined at the top-level.
+class CGetItem:
+    def __init__(self, val):
+        self.val = val
+    def __getitem__(self, item):
+        return self.val
+
 
 class TestSpecializer(TestBase):
 
@@ -1371,6 +1379,72 @@ class TestSpecializer(TestBase):
 
         self.assert_specialized(send_yield_from, "SEND_GEN")
         self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_slot(self):
+        class C:
+            __slots__ = ['x']
+
+        def set_slot():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_slot()
+
+        self.assert_specialized(set_slot, "STORE_ATTR_SLOT")
+        self.assert_no_opcode(set_slot, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_slot()
+        self.assert_no_opcode(set_slot, "STORE_ATTR_SLOT")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_instance_value(self):
+        class C:
+            pass
+
+        def set_value():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_INSTANCE_VALUE")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_INSTANCE_VALUE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_WITH_HINT")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_WITH_HINT")
 
     @cpython_only
     @requires_specialization_ft
@@ -1516,6 +1590,15 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
+        def binary_subscr_getitems():
+            items = [CGetItem(i) for i in range(100)]
+            for i in range(100):
+                self.assertEqual(items[i][i], i)
+
+        binary_subscr_getitems()
+        self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
 
 if __name__ == "__main__":

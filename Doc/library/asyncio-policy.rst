@@ -40,11 +40,19 @@ for the current process:
 
    Return the current process-wide policy.
 
+   .. deprecated:: next
+      The :func:`get_event_loop_policy` function is deprecated and
+      will be removed in Python 3.16.
+
 .. function:: set_event_loop_policy(policy)
 
    Set the current process-wide policy to *policy*.
 
    If *policy* is set to ``None``, the default policy is restored.
+
+   .. deprecated:: next
+      The :func:`set_event_loop_policy` function is deprecated and
+      will be removed in Python 3.16.
 
 
 .. _asyncio-policy-objects:
