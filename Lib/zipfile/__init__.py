@@ -819,7 +819,10 @@ class _SharedFile:
                 raise ValueError("Can't reposition in the ZIP file while "
                         "there is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
-            self._file.seek(offset, whence)
+            if whence == os.SEEK_CUR:
+                self._file.seek(self._pos + offset)
+            else:
+                self._file.seek(offset, whence)
             self._pos = self._file.tell()
             return self._pos
 

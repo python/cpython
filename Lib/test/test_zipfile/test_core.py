@@ -2333,6 +2333,18 @@ class OtherTests(unittest.TestCase):
                 fp.seek(1, os.SEEK_CUR)
                 self.assertEqual(fp.read(-1), b'men!')
 
+    def test_uncompressed_interleaved_seek_read(self):
+        # gh-127847: Make sure the position in the archive is correct
+        # in the special case of seeking in a ZIP_STORED entry.
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("a.txt", "123")
+            zipf.writestr("b.txt", "456")
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            with zipf.open("a.txt", "r") as a, zipf.open("b.txt", "r") as b:
+                self.assertEqual(a.read(1), b"1")
+                self.assertEqual(b.seek(1), 1)
+                self.assertEqual(b.read(1), b"5")
+
     @requires_bz2()
     def test_decompress_without_3rd_party_library(self):
         data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
