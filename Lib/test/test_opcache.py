@@ -1069,7 +1069,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_unpack_sequence_list(self):
         def get_items():
             items = []
@@ -1244,6 +1244,14 @@ class TestInstanceDict(unittest.TestCase):
         #This should set x.b = 0
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
+
+# gh-127274: BINARY_SUBSCR_GETITEM will only cache __getitem__ methods that
+# are deferred. We only defer functions defined at the top-level.
+class CGetItem:
+    def __init__(self, val):
+        self.val = val
+    def __getitem__(self, item):
+        return self.val
 
 
 class TestSpecializer(TestBase):
@@ -1519,6 +1527,15 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
+        def binary_subscr_getitems():
+            items = [CGetItem(i) for i in range(100)]
+            for i in range(100):
+                self.assertEqual(items[i][i], i)
+
+        binary_subscr_getitems()
+        self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
 
 if __name__ == "__main__":

@@ -722,7 +722,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_SUBSCR_CHECK_FUNC:
             return 0;
         case _BINARY_SUBSCR_INIT_CALL:
-            return 2;
+            return 3;
         case _LIST_APPEND:
             return 1;
         case _SET_ADD:
