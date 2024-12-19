@@ -704,7 +704,7 @@ class BaseTestUUID:
             random_bits = counter << 32 | tail
 
             # set all remaining MSB of fake random bits to 1 to ensure that
-            # the implementation correctly remove them
+            # the implementation correctly removes them
             random_bits = (((1 << 7) - 1) << 73) | random_bits
             random_data = random_bits.to_bytes(10)
 
@@ -754,7 +754,7 @@ class BaseTestUUID:
         with mock.patch.multiple(
             self.uuid,
             _last_timestamp_v7=0,
-            _last_counter_v7=0
+            _last_counter_v7=0,
         ):
             # 1 Jan 2023 12:34:56.123_456_789
             timestamp_ns = 1672533296_123_456_789  # ns precision
@@ -764,6 +764,7 @@ class BaseTestUUID:
             counter_hi = random.getrandbits(11)
             counter_lo = random.getrandbits(29)
             counter = (counter_hi << 30) | counter_lo
+            self.assertLess(counter + 1, 0x3ff_ffff_ffff)
 
             tail = random.getrandbits(32)
             random_bits = counter << 32 | tail
@@ -816,6 +817,7 @@ class BaseTestUUID:
         counter_hi = random.getrandbits(11)
         counter_lo = random.getrandbits(29)
         counter = (counter_hi << 30) | counter_lo
+        self.assertLess(counter + 1, 0x3ff_ffff_ffff)
 
         tail_bytes = os.urandom(4)
         tail = int.from_bytes(tail_bytes)
@@ -854,7 +856,7 @@ class BaseTestUUID:
         new_counter = (new_counter_hi << 30) | new_counter_lo
 
         tail = random.getrandbits(32)
-        random_bits = new_counter << 32 | tail
+        random_bits = (new_counter << 32) | tail
         random_data = random_bits.to_bytes(10)
 
         with (
