@@ -12,7 +12,7 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
-:func:`uuid6`, and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, 6,
+:func:`uuid6`, and :func:`uuid8` for generating version 1, 3, 4, 5, 6,
 and 8 UUIDs as specified in :rfc:`9562` (which supersedes :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
@@ -153,8 +153,8 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: 3.14
-      Added UUID version 8.
+   .. versionchanged:: next
+      Added UUID versions 6 and 8.
 
 
 .. attribute:: UUID.is_safe
