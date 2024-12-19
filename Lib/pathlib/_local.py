@@ -304,6 +304,11 @@ class PurePath(PurePathBase):
             parts.append('')
         return parts
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        return str(self).replace(self.parser.sep, '/')
+
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
