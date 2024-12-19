@@ -208,6 +208,9 @@ PyDoc_STRVAR(_io__TextIOBase_encoding__doc__,
 "Encoding of the text stream.\n"
 "\n"
 "Subclasses should override.");
+#if defined(_io__TextIOBase_encoding_DOCSTR)
+#   undef _io__TextIOBase_encoding_DOCSTR
+#endif
 #define _io__TextIOBase_encoding_DOCSTR _io__TextIOBase_encoding__doc__
 
 #if !defined(_io__TextIOBase_encoding_DOCSTR)
@@ -235,6 +238,9 @@ PyDoc_STRVAR(_io__TextIOBase_newlines__doc__,
 "Only line endings translated during reading are considered.\n"
 "\n"
 "Subclasses should override.");
+#if defined(_io__TextIOBase_newlines_DOCSTR)
+#   undef _io__TextIOBase_newlines_DOCSTR
+#endif
 #define _io__TextIOBase_newlines_DOCSTR _io__TextIOBase_newlines__doc__
 
 #if !defined(_io__TextIOBase_newlines_DOCSTR)
@@ -260,6 +266,9 @@ PyDoc_STRVAR(_io__TextIOBase_errors__doc__,
 "The error setting of the decoder or encoder.\n"
 "\n"
 "Subclasses should override.");
+#if defined(_io__TextIOBase_errors_DOCSTR)
+#   undef _io__TextIOBase_errors_DOCSTR
+#endif
 #define _io__TextIOBase_errors_DOCSTR _io__TextIOBase_errors__doc__
 
 #if !defined(_io__TextIOBase_errors_DOCSTR)
@@ -1281,4 +1290,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=1172c500a022c65d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=423a320f087792b9 input=a9049054013a1b77]*/
