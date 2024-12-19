@@ -149,9 +149,14 @@ Module Contents
 
       Return a list of all power-of-two integers contained in a flag.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.14  ``EnumDict``
 
 ---------------
 
@@ -821,7 +826,17 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
+   .. attribute:: EnumDict.member_names
+
+      Return list of member names.
+
+   .. versionadded:: 3.14
 
 ---------------
 
