@@ -505,6 +505,7 @@
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             _PyStackRef container;
+            _PyStackRef getitem;
             _PyStackRef sub;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
@@ -518,23 +519,21 @@
                 PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
                 DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-                PyObject *getitem = ht->_spec_cache.getitem;
-                DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
-                assert(PyFunction_Check(getitem));
-                uint32_t cached_version = ht->_spec_cache.getitem_version;
-                DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version, BINARY_SUBSCR);
-                PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
+                PyObject *getitem_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(ht->_spec_cache.getitem);
+                DEOPT_IF(getitem_o == NULL, BINARY_SUBSCR);
+                assert(PyFunction_Check(getitem_o));
+                uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
+                DEOPT_IF(((PyFunctionObject *)getitem_o)->func_version != cached_version, BINARY_SUBSCR);
+                PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
                 assert(code->co_argcount == 2);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
+                getitem = PyStackRef_FromPyObjectNew(getitem_o);
                 STAT_INC(BINARY_SUBSCR, hit);
             }
             // _BINARY_SUBSCR_INIT_CALL
             {
                 sub = stack_pointer[-1];
-                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
-                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-                PyObject *getitem = ht->_spec_cache.getitem;
-                new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(getitem), 2, frame);
+                new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
                 new_frame->localsplus[0] = container;
                 new_frame->localsplus[1] = sub;
                 frame->return_offset = 2 ;
