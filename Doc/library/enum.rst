@@ -64,10 +64,6 @@ are not normal Python classes.  See
 Module Contents
 ---------------
 
-   :class:`EnumDict`
-
-      A subclass of :class:`dict` that tracks order and enforces unique member names.
-
    :class:`EnumType`
 
       The ``type`` for Enum and its subclasses.
@@ -153,31 +149,20 @@ Module Contents
 
       Return a list of all power-of-two integers contained in a flag.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.14  ``EnumDict``
 
 ---------------
 
 Data Types
 ----------
 
-
-.. class:: EnumDict
-
-   *EnumDict* is a subclass of :class:`dict` that keeps track of the order of enum members and prevents reusing member names. Use *EnumDict* when member names must be unique and their order needs to be preserved.
-
-   .. attribute:: EnumDict.member_names
-
-      Return list of member names.
-
-   .. method:: EnumDict.__setitem__(self, key, value)
-
-      Set any item as an enum member that is not dundered and not a descriptor.
-
-   .. method:: EnumDict.update(self, members, **more_members)
-
-      Update the dictionary from the given iterable or dictionary members and more_members.
 
 .. class:: EnumType
 
@@ -839,7 +824,17 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
+   .. attribute:: EnumDict.member_names
+
+      Return list of member names.
+
+   .. versionadded:: 3.14
 
 ---------------
 

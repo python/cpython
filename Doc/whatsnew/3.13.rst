@@ -745,7 +745,8 @@ email
 enum
 ----
 
-* :class:`~enum.EnumDict` has been made public in :mod:`enum`.
+* :class:`~enum.EnumDict` has been made public in :mod:`enum` to better support
+  subclassing :class:`~enum.EnumType`.
 
 fractions
 ---------
