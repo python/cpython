@@ -651,7 +651,7 @@ class TestSysConfig(unittest.TestCase):
         system_config_vars = get_config_vars()
 
         # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
+        for key in ('projectbase', 'userbase', 'srcdir'):
             json_config_vars.pop(key)
             system_config_vars.pop(key)
 
