@@ -617,6 +617,14 @@ tkinter
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
 
+typing
+------
+
+* Add protocols :class:`typing.Reader` and :class:`typing.Writer` as a simpler
+  alternatives to the pseudo-protocols :class:`typing.IO`,
+  :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
+
+
 unicodedata
 -----------
 
