@@ -161,14 +161,15 @@ class BaseServer:
     - __init__(server_address, RequestHandlerClass)
     - serve_forever(poll_interval=0.5)
     - shutdown()
-    - handle_request()  # if you do not use serve_forever()
-    - fileno() -> int   # for selector
+    - handle_request()  # if you don't use serve_forever()
+
+    Methods that must be overridden:
+
+    - get_request() -> request, client_address
 
     Methods that may be overridden:
 
-    - server_bind()
     - server_activate()
-    - get_request() -> request, client_address
     - handle_timeout()
     - verify_request(request, client_address)
     - server_close()
@@ -186,15 +187,11 @@ class BaseServer:
     instances:
 
     - timeout
-    - address_family
-    - socket_type
-    - allow_reuse_address
-    - allow_reuse_port
 
     Instance variables:
 
+    - server_address
     - RequestHandlerClass
-    - socket
 
     """
 
@@ -280,7 +277,9 @@ class BaseServer:
         """
         # Support people who used socket.settimeout() to escape
         # handle_request before self.timeout was available.
-        timeout = self.socket.gettimeout()
+        timeout = None
+        if hasattr(self, "socket"):
+            timeout = self.socket.gettimeout()
         if timeout is None:
             timeout = self.timeout
         elif self.timeout is not None:
@@ -324,6 +323,13 @@ class BaseServer:
                 raise
         else:
             self.shutdown_request(request)
+
+    def get_request(self):
+        """Get the request and client address from the socket.
+
+        Must be overridden by subclasses.
+        """
+        raise NotImplementedError
 
     def handle_timeout(self):
         """Called if no new request arrives within self.timeout.
