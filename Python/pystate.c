@@ -497,7 +497,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 /* This function is called from PyOS_AfterFork_Child to ensure that
    newly created child processes do not share locks with the parent. */
 PyStatus
-_PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
+_PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime,
+                              PyThread_ident_t parent)
 {
     // This was initially set in _PyRuntimeState_Init().
     runtime->main_thread = PyThread_get_thread_ident();
@@ -515,6 +516,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
+        _PyImport_ReInitLock(interp, parent);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
