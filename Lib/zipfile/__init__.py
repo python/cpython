@@ -272,8 +272,7 @@ def _EndRecData64(fpin, offset, endrec):
     if diskno != 0 or disks > 1:
         raise BadZipFile("zipfiles that span multiple disks are not supported")
 
-    # Assume no 'zip64 extensible data'
-    fpin.seek(offset - sizeEndCentDir64Locator - sizeEndCentDir64, 2)
+    fpin.seek(reloff, os.SEEK_SET)
     data = fpin.read(sizeEndCentDir64)
     if len(data) != sizeEndCentDir64:
         return endrec
@@ -283,6 +282,8 @@ def _EndRecData64(fpin, offset, endrec):
     if sig != stringEndArchive64:
         return endrec
 
+    size_zip64_tail_records = sz + 12 + sizeEndCentDir64Locator
+
     # Update the original endrec using data from the ZIP64 record
     endrec[_ECD_SIGNATURE] = sig
     endrec[_ECD_DISK_NUMBER] = disk_num
@@ -291,6 +292,8 @@ def _EndRecData64(fpin, offset, endrec):
     endrec[_ECD_ENTRIES_TOTAL] = dircount2
     endrec[_ECD_SIZE] = dirsize
     endrec[_ECD_OFFSET] = diroffset
+    # Adjust location for Zip64 extension structures
+    endrec[_ECD_LOCATION] -= size_zip64_tail_records
     return endrec
 
 
@@ -1455,9 +1458,6 @@ class ZipFile:
 
         # "concat" is zero, unless zip was concatenated to another file
         concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
-        if endrec[_ECD_SIGNATURE] == stringEndArchive64:
-            # If Zip64 extension structures are present, account for them
-            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
         if self.debug > 2:
             inferred = concat + offset_cd
