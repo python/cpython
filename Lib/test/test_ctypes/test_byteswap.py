@@ -10,7 +10,7 @@ from ctypes import (Structure, Union, LittleEndianUnion, BigEndianUnion,
                     c_byte, c_ubyte, c_char, c_wchar, c_void_p,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
-                    c_uint32, c_float, c_double)
+                    c_uint32, c_float, c_double, c_bool)
 
 
 def bin(s):
@@ -172,6 +172,9 @@ class Test(unittest.TestCase):
 
         self.assertIs(c_char.__ctype_le__, c_char)
         self.assertIs(c_char.__ctype_be__, c_char)
+
+        self.assertIs(c_bool.__ctype_le__, c_bool)
+        self.assertIs(c_bool.__ctype_be__, c_bool)
 
     def test_struct_fields_unsupported_byte_order(self):
 
@@ -373,13 +376,13 @@ class Test(unittest.TestCase):
             _Union = LittleEndianUnion
 
         class S1(_Structure):
-            _fields_ = [("a", c_byte), ("b", c_byte)]
+            _fields_ = [("a", c_byte), ("b", c_byte), ("c", c_bool)]
 
         class U1(_Union):
-            _fields_ = [("s1", S1), ("ab", c_short)]
+            _fields_ = [("s1", S1), ("ab", c_short), ("ac", c_bool)]
 
         class S2(_Structure):
-            _fields_ = [("u1", U1), ("c", c_byte)]
+            _fields_ = [("u1", U1), ("c", c_byte), ("d", c_bool)]
 
 
 if __name__ == "__main__":
