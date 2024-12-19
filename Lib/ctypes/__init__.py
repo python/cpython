@@ -553,9 +553,9 @@ def string_at(ptr, size=-1):
 _memoryview_at = PYFUNCTYPE(
     py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
 def memoryview_at(ptr, size, readonly=False):
-    """memoryview_at(ptr[, size]) -> memoryview
+    """memoryview_at(ptr, size[, readonly]) -> memoryview
 
-    Return a memoryview representing the memory at addr."""
+    Return a memoryview representing the memory at void *ptr."""
     return _memoryview_at(ptr, size, bool(readonly))
 
 try:

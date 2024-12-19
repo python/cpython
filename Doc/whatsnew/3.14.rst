@@ -328,10 +328,11 @@ ctypes
 
 * :func:`ctypes.memoryview_at` now exists to create a
   :class:`memoryview` object that refers to the supplied pointer and
-  length. Works just like :func:`ctypes.string_at` except it avoids a
-  buffer copy. Useful when implementing callback functions in Python
-  that are passed dynamically-sized buffers.
+  length. This works like :func:`ctypes.string_at` except it avoids a
+  buffer copy, and is typically useful when implementing pure Python
+  callback functions that are passed dynamically-sized buffers.
   (Contributed by Rian Hunter in :gh:`112018`.)
+
 
 datetime
 --------
