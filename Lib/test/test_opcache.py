@@ -1385,6 +1385,72 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization_ft
+    def test_store_attr_slot(self):
+        class C:
+            __slots__ = ['x']
+
+        def set_slot():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_slot()
+
+        self.assert_specialized(set_slot, "STORE_ATTR_SLOT")
+        self.assert_no_opcode(set_slot, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_slot()
+        self.assert_no_opcode(set_slot, "STORE_ATTR_SLOT")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_instance_value(self):
+        class C:
+            pass
+
+        def set_value():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_INSTANCE_VALUE")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_INSTANCE_VALUE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_WITH_HINT")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_WITH_HINT")
+
+    @cpython_only
+    @requires_specialization_ft
     def test_to_bool(self):
         def to_bool_bool():
             true_cnt, false_cnt = 0, 0
