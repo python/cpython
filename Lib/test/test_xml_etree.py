@@ -2715,12 +2715,12 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                     etype=etype, rem_type=rem_type, raises=raises,
                 ):
                     with self.subTest('single child'):
-                        root = E('.')
+                        root = E('top')
                         root.append(etype('one'))
                         test_remove(root, rem_type('missing'), raises)
 
                     with self.subTest('with children'):
-                        root = E('.')
+                        root = E('top')
                         root.extend([etype('one'), rem_type('two')])
                         test_remove(root, rem_type('missing'), raises)
 
@@ -2739,13 +2739,13 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
         for etype, rem_type in [(E, X), (X, E)]:
             with self.subTest('missing', etype=etype, rem_type=rem_type):
-                root = E('.')
+                root = E('top')
                 root.extend([E('one'), etype('two')])
                 self.assertRaises(ValueError, root.remove, rem_type('missing'))
 
         for rem_type, raises in [(X, True), (E, False)]:
             with self.subTest('existing', rem_type=rem_type):
-                root = E('.')
+                root = E('top')
                 root.extend([E('one'), same := rem_type('same')])
                 if raises:
                     self.assertRaises(ValueError, root.remove, same)
@@ -2767,13 +2767,13 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
         for etype, rem_type in [(E, X), (X, E)]:
             with self.subTest('missing', etype=etype, rem_type=rem_type):
-                root = E('.')
+                root = E('top')
                 root.extend([E('one'), etype('two')])
                 root.remove(rem_type('missing'))
 
         for rem_type in [E, X]:
             with self.subTest('existing', rem_type=rem_type):
-                root = E('.')
+                root = E('top')
                 root.extend([E('one'), same := rem_type('same')])
                 root.remove(same)
 
