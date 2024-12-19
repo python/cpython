@@ -525,6 +525,10 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.SCHED_DEADLINE` and :data:`~os.SCHED_NORMAL` constants
+  to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127688`.)
+
 
 pathlib
 -------
@@ -784,6 +788,96 @@ asyncio
 * Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
   It now raises a :exc:`RuntimeError` if there is no current event loop.
   (Contributed by Kumar Aditya in :gh:`126353`.)
+
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`.
+
+  Before::
+
+    async def main():
+        ...
+
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()
+
+  After::
+
+    async def main():
+        ...
+
+    asyncio.run(main())
+
+  If you need to start something, e.g. a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`.
+
+  Before::
+
+    def start_server(loop):
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        start_server(loop)
+        loop.run_forever()
+    finally:
+        loop.close()
+
+  After::
+
+    def start_server(loop):
+        ...
+
+    async def main():
+        start_server(asyncio.get_running_loop())
+        await asyncio.Event().wait()
+
+    asyncio.run(main())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`.
+
+  Before::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(operation_one())
+        blocking_code()
+        loop.run_until_complete(operation_two())
+    finally:
+        loop.close()
+
+  After::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    with asyncio.Runner() as runner:
+        runner.run(operation_one())
+        blocking_code()
+        runner.run(operation_two())
+
 
 
 collections.abc
@@ -1082,6 +1176,10 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
+  Use :c:func:`PySequence_Contains` instead.
+  (Contributed by Yuki Kobayashi in :gh:`127896`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
