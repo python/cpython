@@ -1,0 +1,3 @@
+Bump the PYC magic number for an internal change in annotate functions. The
+magic number should have been increased in release 3.14a3. Users running
+3.14a3 with PYC files generated using earlier alphas may run into problems.
