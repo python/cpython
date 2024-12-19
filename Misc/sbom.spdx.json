@@ -296,6 +296,34 @@
       "fileName": "Modules/expat/xmltok_ns.c"
     },
     {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "c314722e89fefe2c00fb35b89f6eec7e03c336e6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a3166efac8b34ea03fb61e7ce3a06cfab52adcccdac765c59eb3b0b848678ebf"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_HMAC.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "397e27ce27de4f18a209033ed7f576a005a0c8c8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b584dc409211857210c3444973cf84dc5efba7d29ca4ebdbe1305170ac5dfb73"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_HMAC.h"
+    },
+    {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.c",
       "checksums": [
         {
@@ -660,6 +688,20 @@
       "fileName": "Modules/_hacl/include/krml/types.h"
     },
     {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-HMAC.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "aef7c96186f1f5b5058b4ddffd3ccdd5d6e33669"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4d2ea32f3384513de59df04820bc09c4a3dd9b83aa8cd8e292981b5c19ac55c3"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_HMAC.h"
+    },
+    {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2b.h",
       "checksums": [
         {
@@ -818,11 +860,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "37e3eb63c5c6f8ae671748bfde642c180b96d2de"
+          "checksumValue": "d707a40ab54dabab9958205005be3cb91b73a3da"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0b5c7892cc25a2b3467936c1f346a6186d9d0a257d1bd5671beda253b66e0f68"
+          "checksumValue": "775bf3c0303b1228d404a864e20e3e283971a33ddd22c3e4592085b03f5ac460"
         }
       ],
       "fileName": "Modules/_hacl/python_hacl_namespaces.h"
@@ -1809,6 +1851,16 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.c",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
@@ -1935,6 +1987,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-include-krml-types.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-HMAC.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },

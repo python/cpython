@@ -302,6 +302,7 @@ Modules/cmathmodule.c	-	sqrt_special_values	-
 Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
+Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
 Modules/getnameinfo.c	-	gni_afdl	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-

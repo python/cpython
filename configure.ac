@@ -7354,6 +7354,29 @@ WITH_SAVE_ENV([
   ])
 ])
 
+WITH_SAVE_ENV([
+  LIBS="$LIBS $LIBCRYPTO_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+  AC_CACHE_CHECK([whether OpenSSL provides required hmac module APIs], [ac_cv_working_openssl_hmac], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      #include <openssl/evp.h>
+      #include <openssl/objects.h>
+      #if OPENSSL_VERSION_NUMBER < 0x10101000L
+        #error "OpenSSL >= 1.1.1 is required"
+      #endif
+    ], [
+      OBJ_nid2sn(NID_md5);
+      OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha224);
+      OBJ_nid2sn(NID_sha256);
+      OBJ_nid2sn(NID_sha384);
+      OBJ_nid2sn(NID_sha512);
+    ])], [ac_cv_working_openssl_hmac=yes], [ac_cv_working_openssl_hmac=no])
+  ])
+])
+
 # ssl module default cipher suite string
 AH_TEMPLATE([PY_SSL_DEFAULT_CIPHERS],
   [Default cipher suites list for ssl module.
@@ -7894,6 +7917,9 @@ PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
+PY_STDLIB_MOD([_hmac], [], [test "$ac_cv_working_openssl_hmac" = yes],
+  [$LIBHACL_CFLAGS $OPENSSL_INCLUDES],
+  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],
