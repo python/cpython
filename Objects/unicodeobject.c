@@ -707,9 +707,10 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 CHECK(_PyUnicode_UTF8(op) != data);
             }
         }
-
+#ifndef Py_GIL_DISABLED
         if (_PyUnicode_UTF8(op) == NULL)
             CHECK(compact->utf8_length == 0);
+#endif
     }
 
     /* check that the best kind is used: O(n) operation */
