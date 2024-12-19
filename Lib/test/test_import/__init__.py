@@ -27,18 +27,30 @@ import unittest
 from unittest import mock
 import _imp
 
-from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
-    requires_gil_enabled, Py_GIL_DISABLED, no_rerun)
+    STDLIB_DIR,
+    Py_GIL_DISABLED,
+    Py_TRACE_REFS,
+    cpython_only,
+    force_not_colorized_test_class,
+    is_apple_mobile,
+    is_emscripten,
+    is_wasi,
+    no_rerun,
+    os_helper,
+    requires_gil_enabled,
+    run_in_subinterp,
+    run_in_subinterp_with_config,
+    script_helper,
+    swap_attr,
+    swap_item,
+    threading_helper,
+)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
 from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
-from test.support import script_helper
-from test.support import threading_helper
 from test.test_importlib.util import uncache
 from types import ModuleType
 try:
@@ -333,6 +345,7 @@ class ModuleSnapshot(types.SimpleNamespace):
         return cls.parse(text.decode())
 
 
+@force_not_colorized_test_class
 class ImportTests(unittest.TestCase):
 
     def setUp(self):
