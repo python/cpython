@@ -26,7 +26,17 @@ static PyObject *
 test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     for (int i = -5; i <= 256; i++) {
-        assert(verify_immortality(PyLong_FromLong(i)));
+        PyObject *obj = PyLong_FromLong(i);
+        assert(verify_immortality(obj));
+        int has_int_immortal_bit = ((PyLongObject *)obj)->long_value.lv_tag & (1 << 2);
+        assert(has_int_immortal_bit);
+    }
+    for (int i = 257; i <= 260; i++) {
+        PyObject *obj = PyLong_FromLong(i);
+        assert(obj);
+        int has_int_immortal_bit = ((PyLongObject *)obj)->long_value.lv_tag & (1 << 2);
+        assert(!has_int_immortal_bit);
+        Py_DECREF(obj);
     }
     Py_RETURN_NONE;
 }
