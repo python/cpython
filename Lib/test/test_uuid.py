@@ -741,9 +741,13 @@ class BaseTestUUID:
         # uses os.urandom() as a PRNG which features better randomness.
         #
         # Until reaching UNIX_EPOCH + 10'000 years, the probability for
-        # generating two identical UUIDs is negligilbe.
-        uuids = {self.uuid.uuid7() for _ in range(1000)}
-        self.assertEqual(len(uuids), 1000)
+        # generating two identical UUIDs is negligible.
+        N = 1000
+        uuids = {self.uuid.uuid7() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {7})
 
     def test_uuid7_monotonicity(self):
         equal = self.assertEqual
