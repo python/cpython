@@ -1,2 +1,0 @@
-Allow to force color output on Windows using environment variables. Patch by
-Andrey Efremov.
