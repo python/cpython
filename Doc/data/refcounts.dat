@@ -9,27 +9,26 @@
 # function's return value.  Successive lines with the same function name
 # correspond to the function's parameter list and appear in the order the
 # parameters appear in the function's prototype.
+#
+# Whenever possible, the parameter names are as they appear in the API manual,
+# not the source code.
 
 # For readability, each function's lines are surrounded by a blank line.
-# The blocks are sorted alphabetically by function name.
+# The blocks should be sorted alphabetically by function name.
 
-# Refcount behavior is given for all PyObject* types: 0 (no change), +1
-# (increment) and -1 (decrement).  A blank refcount field indicates the
-# parameter or function value is not a PyObject* and is therefore not
-# subject to reference counting.  A special case for the value "null"
-# (without quotes) is used for functions which return a PyObject* type but
-# always return NULL.  This is used by some of the PyErr_*() functions, in
-# particular.
-
-# XXX NOTE: the 0/+1/-1 refcount information for arguments is
-# confusing!  Much more useful would be to indicate whether the
-# function "steals" a reference to the argument or not.  Take for
-# example PyList_SetItem(list, i, item).  This lists as a 0 change for
-# both the list and the item arguments.  However, in fact it steals a
-# reference to the item argument!
-
-# The parameter names are as they appear in the API manual, not the source
-# code.
+# Refcount behavior is given for all PyObject* types:
+#
+#   0   (no change)
+#   +1  (increment)
+#   -1  (decrement)
+#   $   (stolen reference)
+#
+# A blank refcount field indicates the parameter or function value is not
+# a PyObject* object and is therefore not subject to reference counting.
+#
+# A special case for the value "null" (without quotes) is used for functions
+# which return a PyObject* type but always return NULL. For instance, this is
+# used by the PyErr_*() functions.
 
 PyAnySet_Check:int:::
 PyAnySet_Check:PyObject*:p:0:
@@ -622,7 +621,7 @@ PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 PyErr_GetRaisedException:PyObject*::+1:
 
 PyErr_SetRaisedException:void:::
-PyErr_SetRaisedException:PyObject *:exc:0:stolen
+PyErr_SetRaisedException:PyObject *:exc:$:stolen
 
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
@@ -1190,12 +1189,12 @@ PyList_Reverse:PyObject*:list:0:
 PyList_SET_ITEM:void:::
 PyList_SET_ITEM:PyObject*:list:0:
 PyList_SET_ITEM:Py_ssize_t:i::
-PyList_SET_ITEM:PyObject*:o:0:
+PyList_SET_ITEM:PyObject*:o:$:stolen
 
 PyList_SetItem:int:::
 PyList_SetItem:PyObject*:list:0:
 PyList_SetItem:Py_ssize_t:index::
-PyList_SetItem:PyObject*:item:0:
+PyList_SetItem:PyObject*:item:$:stolen
 
 PyList_SetSlice:int:::
 PyList_SetSlice:PyObject*:list:0:
@@ -1424,7 +1423,7 @@ PyModule_AddIntMacro::macro::
 PyModule_AddObject:int:::
 PyModule_AddObject:PyObject*:module:0:
 PyModule_AddObject:const char*:name::
-PyModule_AddObject:PyObject*:value:+1:
+PyModule_AddObject:PyObject*:value:$:steals on success, +1 on failure
 
 PyModule_AddStringConstant:int:::
 PyModule_AddStringConstant:PyObject*:module:0:
@@ -2200,7 +2199,7 @@ PyStructSequence_SET_ITEM:PyObject*:o:0:
 PyStructSequence_SetItem:void:::
 PyStructSequence_SetItem:PyObject*:p:0:
 PyStructSequence_SetItem:Py_ssize_t:pos::
-PyStructSequence_SetItem:PyObject*:o:0:
+PyStructSequence_SetItem:PyObject*:o:$:stolen
 
 PySys_AddWarnOption:void:::
 PySys_AddWarnOption:const wchar_t*:s::
@@ -2348,12 +2347,12 @@ PyTuple_Pack:PyObject*:...:0:
 PyTuple_SET_ITEM:void:::
 PyTuple_SET_ITEM:PyObject*:p:0:
 PyTuple_SET_ITEM:Py_ssize_t:pos::
-PyTuple_SET_ITEM:PyObject*:o:0:
+PyTuple_SET_ITEM:PyObject*:o:$:stolen
 
 PyTuple_SetItem:int:::
 PyTuple_SetItem:PyObject*:p:0:
 PyTuple_SetItem:Py_ssize_t:pos::
-PyTuple_SetItem:PyObject*:o:0:
+PyTuple_SetItem:PyObject*:o:$:stolen
 
 PyTuple_Size:Py_ssize_t:::
 PyTuple_Size:PyObject*:p:0:
