@@ -2197,6 +2197,12 @@ code_linesiterator(PyObject *self, PyObject *Py_UNUSED(args))
     return (PyObject *)new_linesiterator(code);
 }
 
+static PyObject *
+code_branchesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
+{
+    return _PyInstrumentation_BranchesIterator(code);
+}
+
 /*[clinic input]
 @text_signature "($self, /, **changes)"
 code.replace
@@ -2337,6 +2343,7 @@ code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", code_sizeof, METH_NOARGS},
     {"co_lines", code_linesiterator, METH_NOARGS},
+    {"co_branches", (PyCFunction)code_branchesiterator, METH_NOARGS},
     {"co_positions", code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF

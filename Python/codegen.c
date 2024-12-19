@@ -406,7 +406,13 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
+    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
+        return ERROR;
+    }
+    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
+        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
+    }
+    return SUCCESS;
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -682,7 +688,6 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
-
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);

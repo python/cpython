@@ -1971,7 +1971,7 @@ New Features
   * :c:func:`PyMonitoring_FireCallEvent`
   * :c:func:`PyMonitoring_FireLineEvent`
   * :c:func:`PyMonitoring_FireJumpEvent`
-  * :c:func:`PyMonitoring_FireBranchEvent`
+  * ``PyMonitoring_FireBranchEvent``
   * :c:func:`PyMonitoring_FireCReturnEvent`
   * :c:func:`PyMonitoring_FirePyThrowEvent`
   * :c:func:`PyMonitoring_FireRaiseEvent`
