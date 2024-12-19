@@ -138,23 +138,54 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: formatday(theday, weekday, width)
+
+      Return a :class:`str` representing a single day formatted with the given width.
+      If *theday* is ``0``, return a :class:`str` of spaces of
+      the specified width, representing an empty day. The *weekday* parameter
+      represents the day of the week, where ``0`` is Monday and ``6`` is Sunday.
+
+   .. method:: formatweek(theweek, width)
+
+      Return a :class:`str` representing an entire week formatted with the given width for each day.
+      The *theweek* parameter is a list of tuples, where each tuple contains a day of
+      the month or ``0`` for padding, and the corresponding weekday where ``0`` is
+      Monday and ``6`` is Sunday. Each day is padded to the specified width.
+
+   .. method:: formatweekday(weekday, width)
+
+      Return a :class:`str` representing the name of a single weekday formatted to
+      the specified width. The *weekday* parameter is an integer representing
+      the day of the week, where ``0`` is Monday and ``6`` is Sunday.
+
+   .. method:: formatweekheader(width)
+
+      Return a :class:`str` containing the header row of weekday names, formatted
+      with the given width for each column. The names depend on the locale
+      settings and are padded to the specified width.
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
-      Return a month's calendar in a multi-line string. If *w* is provided, it
+      Return a month's calendar in a multi-line :class:`str`. If *w* is provided, it
       specifies the width of the date columns, which are centered. If *l* is
       given, it specifies the number of lines that each week will use. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
+   .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
+
+      Return a :class:`str` representing the month's name centered within the
+      specified width. If *withyear* is ``True``, include the year in the
+      output. The *theyear* and *themonth* parameters specify the year
+      and month for the name to be formatted.
 
    .. method:: prmonth(theyear, themonth, w=0, l=0)
 
       Print a month's calendar as returned by :meth:`formatmonth`.
 
-
    .. method:: formatyear(theyear, w=2, l=1, c=6, m=3)
 
-      Return a *m*-column calendar for an entire year as a multi-line string.
+      Return a *m*-column calendar for an entire year as a multi-line :class:`str`.
       Optional parameters *w*, *l*, and *c* are for date column width, lines per
       week, and number of spaces between month columns, respectively. Depends on
       the first weekday as specified in the constructor or set by the
@@ -365,7 +396,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: month(theyear, themonth, w=0, l=0)
 
-   Returns a month's calendar in a multi-line string using the :meth:`~TextCalendar.formatmonth`
+   Returns a month's calendar in a multi-line :class:`str` using the :meth:`~TextCalendar.formatmonth`
    of the :class:`TextCalendar` class.
 
 
@@ -376,7 +407,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: calendar(year, w=2, l=1, c=6, m=3)
 
-   Returns a 3-column calendar for an entire year as a multi-line string using
+   Returns a 3-column calendar for an entire year as a multi-line :class:`str` using
    the :meth:`~TextCalendar.formatyear` of the :class:`TextCalendar` class.
 
 
@@ -437,7 +468,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty string.
+   13 and ``month_name[0]`` is the empty :class:`str`.
 
        >>> import calendar
        >>> list(calendar.month_name)
@@ -448,7 +479,7 @@ The :mod:`calendar` module exports the following data attributes:
 
    A sequence that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
-   has a length of 13 and  ``month_abbr[0]`` is the empty string.
+   has a length of 13 and  ``month_abbr[0]`` is the empty :class:`str`.
 
        >>> import calendar
        >>> list(calendar.month_abbr)
