@@ -9,6 +9,7 @@ from textwrap import dedent
 from test import support
 from test.support import (
     cpython_only,
+    force_not_colorized_test_class,
     has_subprocess_support,
     os_helper,
     SuppressCrashReport,
@@ -70,6 +71,7 @@ def run_on_interactive_mode(source):
     return output
 
 
+@force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
@@ -273,6 +275,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
+
+@force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):

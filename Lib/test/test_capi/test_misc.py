@@ -20,13 +20,16 @@ import unittest
 import weakref
 import operator
 from test import support
-from test.support import MISSING_C_DOCSTRINGS
-from test.support import import_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-from test.support import requires_limited_api
-from test.support import expected_failure_if_gil_disabled
-from test.support import Py_GIL_DISABLED
+from test.support import (
+    MISSING_C_DOCSTRINGS,
+    Py_GIL_DISABLED,
+    expected_failure_if_gil_disabled,
+    force_not_colorized_test_class,
+    import_helper,
+    requires_limited_api,
+    threading_helper,
+    warnings_helper,
+)
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -75,6 +78,8 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
+@force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
