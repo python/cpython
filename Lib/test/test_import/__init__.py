@@ -851,6 +851,29 @@ from os import this_will_never_exist
                 stdout, stderr = popen.communicate()
                 self.assertIn(expected_error, stdout)
 
+    def test_non_module_from_import_error(self):
+        prefix = """
+import sys
+class NotAModule: ...
+nm = NotAModule()
+nm.symbol = 123
+sys.modules["not_a_module"] = nm
+from not_a_module import symbol
+"""
+        scripts = [
+            prefix + "from not_a_module import missing_symbol",
+            prefix + "nm.__spec__ = []\nfrom not_a_module import missing_symbol",
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"ImportError: cannot import name 'missing_symbol' from "
+                    b"'<unknown module name>' (unknown location)"
+                )
+            popen = script_helper.spawn_python("-c", script)
+            stdout, stderr = popen.communicate()
+            self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
