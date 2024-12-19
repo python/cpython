@@ -406,7 +406,18 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
+    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
+        return ERROR;
+    }
+    switch (opcode) {
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_IF_TRUE:
+        case POP_JUMP_IF_NONE:
+        case POP_JUMP_IF_NOT_NONE:
+        case FOR_ITER:
+            return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
+    }
+    return SUCCESS;
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -682,7 +693,6 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
-    ADDOP(c, NO_LOCATION, NOT_TAKEN);
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
@@ -1826,13 +1836,11 @@ codegen_jump_if(compiler *c, location loc,
                 ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP(c, LOC(e), TO_BOOL);
                 ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
-                ADDOP(c, NO_LOCATION, NOT_TAKEN);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP(c, LOC(e), TO_BOOL);
             ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-            ADDOP(c, NO_LOCATION, NOT_TAKEN);
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
 
@@ -1857,7 +1865,6 @@ codegen_jump_if(compiler *c, location loc,
     VISIT(c, expr, e);
     ADDOP(c, LOC(e), TO_BOOL);
     ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-    ADDOP(c, NO_LOCATION, NOT_TAKEN);
     return SUCCESS;
 }
 
@@ -1971,7 +1978,6 @@ codegen_for(compiler *c, stmt_ty s)
 
     USE_LABEL(c, start);
     ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
-    ADDOP(c, NO_LOCATION, NOT_TAKEN);
 
     /* Add NOP to ensure correct line tracing of multiline for statements.
      * It will be removed later if redundant.
@@ -2353,7 +2359,6 @@ codegen_try_except(compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, loc, CHECK_EXC_MATCH);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, except);
-            ADDOP(c, NO_LOCATION, NOT_TAKEN);
         }
         if (handler->v.ExceptHandler.name) {
             NEW_JUMP_TARGET_LABEL(c, cleanup_end);
@@ -2548,7 +2553,6 @@ codegen_try_star_except(compiler *c, stmt_ty s)
             ADDOP(c, loc, CHECK_EG_MATCH);
             ADDOP_I(c, loc, COPY, 1);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, no_match);
-            ADDOP(c, NO_LOCATION, NOT_TAKEN);
         }
 
         NEW_JUMP_TARGET_LABEL(c, cleanup_end);
@@ -2634,7 +2638,6 @@ codegen_try_star_except(compiler *c, stmt_ty s)
     ADDOP_I(c, NO_LOCATION, CALL_INTRINSIC_2, INTRINSIC_PREP_RERAISE_STAR);
     ADDOP_I(c, NO_LOCATION, COPY, 1);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_NOT_NONE, reraise);
-    ADDOP(c, NO_LOCATION, NOT_TAKEN);
 
     /* Nothing to reraise */
     ADDOP(c, NO_LOCATION, POP_TOP);
@@ -3484,7 +3487,6 @@ codegen_compare(compiler *c, expr_ty e)
             ADDOP_I(c, loc, COPY, 1);
             ADDOP(c, loc, TO_BOOL);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, cleanup);
-            ADDOP(c, NO_LOCATION, NOT_TAKEN);
             ADDOP(c, loc, POP_TOP);
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
@@ -4197,7 +4199,6 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         ADDOP(c, LOC(gen->iter), GET_ITER);
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
-        ADDOP(c, NO_LOCATION, NOT_TAKEN);
     }
     VISIT(c, expr, gen->target);
 
@@ -4690,7 +4691,6 @@ codegen_with_except_finish(compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
-    ADDOP(c, NO_LOCATION, NOT_TAKEN);
     ADDOP_I(c, NO_LOCATION, RERAISE, 2);
 
     USE_LABEL(c, suppress);
@@ -5412,9 +5412,6 @@ jump_to_fail_pop(compiler *c, location loc,
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
     RETURN_IF_ERROR(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, loc, op, pc->fail_pop[pops]);
-    if (op != JUMP) {
-        ADDOP(c, NO_LOCATION, NOT_TAKEN);
-    }
     return SUCCESS;
 }
 
