@@ -3704,6 +3704,8 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         ((uint16_t *)digits)[len - 1] = 0;
         n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
     }
+    /* mpd_qexport_*() functions above used with assumption, that no
+       resizing occur, i.e. len was obtained by a call to mpd_sizeinbase. */
     assert(n == len || n == len - 1);
 
     if (n == SIZE_MAX) {
