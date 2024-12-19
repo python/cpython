@@ -1,0 +1,3 @@
+Fixed a type confusion bug where the caller of an :class:`ExceptionGroup`
+object's :meth:`~BaseExceptionGroup.split` function had improper checks
+implemented leading to any return value being interpreted as a tuple.

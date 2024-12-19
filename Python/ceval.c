@@ -2095,8 +2095,15 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
         if (pair == NULL) {
             return -1;
         }
-        assert(PyTuple_CheckExact(pair));
-        assert(PyTuple_GET_SIZE(pair) == 2);
+
+        if (!PyTuple_CheckExact(pair) || PyTuple_Size(pair) != 2) {
+            PyErr_Format(PyExc_TypeError,
+                        "%s.split must return a 2-tuple",
+                        Py_TYPE(exc_value)->tp_name);
+            Py_DECREF(pair);
+            return -1;
+        }
+
         *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
         *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
         Py_DECREF(pair);

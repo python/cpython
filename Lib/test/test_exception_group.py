@@ -576,6 +576,20 @@ class NestedExceptionGroupBasicsTest(ExceptionGroupTestBase):
                 expected_tbs[i])
 
 
+class CustomExceptionGroupSplitTest(ExceptionGroupTestBase):
+    # See https://github.com/python/cpython/issues/128049
+    def test_invalid_split_return_value(self):
+        class Evil(BaseExceptionGroup):
+            def split(self, types):
+                return "NOT A TUPLE"
+
+        with self.assertRaises(TypeError):
+            try:
+                raise Evil("message here", [Exception()])
+            except* Exception:
+                pass
+
+
 class ExceptionGroupSplitTestBase(ExceptionGroupTestBase):
 
     def split_exception_group(self, eg, types):
