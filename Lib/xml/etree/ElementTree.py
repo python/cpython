@@ -679,7 +679,7 @@ class ElementTree:
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
-              xml_declaration_definition='<?xml version="{version}" encoding="{encoding}"?>',
+              xml_declaration_definition="<?xml version='{version}' encoding='{encoding}'?>",
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
@@ -700,7 +700,7 @@ class ElementTree:
                                           singlequote where hardcoded here.
                                           to be rfc conform which allows doublequotes and
                                           singlequote for declaration. default value is
-                                          switched to doublquotes here to stay on one format.
+                                          untouched to pass tests.
                                           placeholders: {version}, {encoding}
 
           *default_namespace* -- sets the default XML namespace (for "xmlns")
@@ -731,7 +731,7 @@ class ElementTree:
                 # version configuration is'nt necessary, can be overwritten
                 # in declaration_definition at runtime
                 data = {'version':'1.0', 'encoding': declared_encoding}
-                write(xml_declaration_definition.format(**data)+"\n")                         
+                write(xml_declaration_definition.format(**data)+"\n")
             if method == "text":
                 _serialize_text(write, self._root)
             else:
