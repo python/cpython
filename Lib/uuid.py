@@ -751,6 +751,15 @@ def uuid6(node=None, clock_seq=None):
         timestamp = _last_timestamp_v6 + 1
     _last_timestamp_v6 = timestamp
     if clock_seq is None:
+        # If the caller does not specify a clock sequence, we may assume that
+        # sequentiality within the same 60-bit timestamp is less important
+        # than unpredictability. In particular, by using a randomized clock
+        # sequence, we indirectly slow down the next call, thereby allowing
+        # the next 60-bit timestamp to be distinct.
+        #
+        # Stated otherwise, it is unlikely that two UUIDs are generated within
+        # the same 100-ns interval since constructing a UUID object takes more
+        # than 100 ns.
         import random
         clock_seq = random.getrandbits(14)  # instead of stable storage
     time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
