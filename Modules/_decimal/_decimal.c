@@ -2336,7 +2336,7 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
     }
     if (export_long.digits) {
         const PyLongLayout *layout = PyLong_GetNativeLayout();
-        const uint32_t base = 1 << layout->bits_per_digit;
+        const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
         const uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
         const Py_ssize_t len = export_long.ndigits;
 
@@ -2353,7 +2353,7 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
     else {
         const int64_t value = export_long.value;
 
-        if (-UINT32_MAX <= value && value <= UINT32_MAX) {
+        if (-(int64_t)UINT32_MAX <= value && value <= (int64_t)UINT32_MAX) {
             _dec_settriple(dec, value < 0 ? MPD_NEG : MPD_POS,
                            (uint32_t)Py_ABS(value), 0);
             mpd_qfinalize(MPD(dec), ctx, status);
@@ -3686,7 +3686,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     const PyLongLayout *layout = PyLong_GetNativeLayout();
-    const uint32_t base = 1 << layout->bits_per_digit;
+    const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
     size_t len = mpd_sizeinbase(x, base);
     PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), len, &digits);
     if (writer == NULL) {
