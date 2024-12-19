@@ -199,6 +199,9 @@ struct PyCodeObject _PyCode_DEF(1);
 */
 #define CO_HAS_DOCSTRING 0x4000000
 
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
