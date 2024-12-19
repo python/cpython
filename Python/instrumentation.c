@@ -85,22 +85,24 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [INSTRUMENTED_YIELD_VALUE] = PY_MONITORING_EVENT_PY_YIELD,
     [JUMP_FORWARD] = PY_MONITORING_EVENT_JUMP,
     [JUMP_BACKWARD] = PY_MONITORING_EVENT_JUMP,
-    [POP_JUMP_IF_FALSE] = PY_MONITORING_EVENT_BRANCH,
-    [POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH,
-    [POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
-    [POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
+    [POP_JUMP_IF_FALSE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
     [INSTRUMENTED_JUMP_FORWARD] = PY_MONITORING_EVENT_JUMP,
     [INSTRUMENTED_JUMP_BACKWARD] = PY_MONITORING_EVENT_JUMP,
-    [INSTRUMENTED_POP_JUMP_IF_FALSE] = PY_MONITORING_EVENT_BRANCH,
-    [INSTRUMENTED_POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH,
-    [INSTRUMENTED_POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
-    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
-    [FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
-    [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
+    [INSTRUMENTED_POP_JUMP_IF_FALSE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [INSTRUMENTED_POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [INSTRUMENTED_POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [FOR_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
     [END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
     [INSTRUMENTED_END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
     [END_SEND] = PY_MONITORING_EVENT_STOP_ITERATION,
     [INSTRUMENTED_END_SEND] = PY_MONITORING_EVENT_STOP_ITERATION,
+    [NOT_TAKEN] = PY_MONITORING_EVENT_BRANCH_LEFT,
+    [INSTRUMENTED_NOT_TAKEN] = PY_MONITORING_EVENT_BRANCH_LEFT,
 };
 
 static const uint8_t DE_INSTRUMENT[256] = {
@@ -120,6 +122,7 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_END_FOR] = END_FOR,
     [INSTRUMENTED_END_SEND] = END_SEND,
     [INSTRUMENTED_LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
+    [INSTRUMENTED_NOT_TAKEN] = NOT_TAKEN,
 };
 
 static const uint8_t INSTRUMENTED_OPCODES[256] = {
@@ -155,6 +158,8 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_FOR_ITER] = INSTRUMENTED_FOR_ITER,
     [LOAD_SUPER_ATTR] = INSTRUMENTED_LOAD_SUPER_ATTR,
     [INSTRUMENTED_LOAD_SUPER_ATTR] = INSTRUMENTED_LOAD_SUPER_ATTR,
+    [NOT_TAKEN] = INSTRUMENTED_NOT_TAKEN,
+    [INSTRUMENTED_NOT_TAKEN] = INSTRUMENTED_NOT_TAKEN,
 
     [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
     [INSTRUMENTED_INSTRUCTION] = INSTRUMENTED_INSTRUCTION,
@@ -323,33 +328,8 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
-    int opcode =
-        FT_ATOMIC_LOAD_UINT8_RELAXED(_PyCode_CODE(code)[offset].op.code);
-    assert(opcode != 0);
-    assert(opcode != RESERVED);
-    if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
-    }
-    if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode = code->_co_monitoring->per_instruction_opcodes[offset];
-    }
-    int deinstrumented = DE_INSTRUMENT[opcode];
-    if (deinstrumented) {
-        opcode = deinstrumented;
-    }
-    else {
-        opcode = _PyOpcode_Deopt[opcode];
-    }
-    assert(opcode != 0);
-    if (opcode == ENTER_EXECUTOR) {
-        int exec_index = _PyCode_CODE(code)[offset].op.arg;
-        _PyExecutorObject *exec = code->co_executors->executors[exec_index];
-        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
-    }
-    assert(!is_instrumented(opcode));
-    assert(opcode != ENTER_EXECUTOR);
-    assert(opcode == _PyOpcode_Deopt[opcode]);
-    return 1 + _PyOpcode_Caches[opcode];
+    _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, offset);
+    return 1 + _PyOpcode_Caches[inst.op.code];
 }
 
 #ifdef INSTRUMENT_DEBUG
@@ -599,16 +579,15 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
     int opcode = inst.op.code;
     if (opcode < MIN_INSTRUMENTED_OPCODE) {
         inst.op.code = _PyOpcode_Deopt[opcode];
-        assert(inst.op.code <= RESUME);
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
         return inst;
     }
     if (opcode == ENTER_EXECUTOR) {
         _PyExecutorObject *exec = code->co_executors->executors[inst.op.arg];
         opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
         inst.op.code = opcode;
-        assert(opcode <= RESUME);
         inst.op.arg = exec->vm_data.oparg;
-        assert(inst.op.code <= RESUME);
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
         return inst;
     }
     if (opcode == INSTRUMENTED_LINE) {
@@ -1084,6 +1063,8 @@ static const char *const event_names [] = {
     [PY_MONITORING_EVENT_INSTRUCTION] = "INSTRUCTION",
     [PY_MONITORING_EVENT_JUMP] = "JUMP",
     [PY_MONITORING_EVENT_BRANCH] = "BRANCH",
+    [PY_MONITORING_EVENT_BRANCH_LEFT] = "BRANCH_LEFT",
+    [PY_MONITORING_EVENT_BRANCH_RIGHT] = "BRANCH_RIGHT",
     [PY_MONITORING_EVENT_C_RETURN] = "C_RETURN",
     [PY_MONITORING_EVENT_PY_THROW] = "PY_THROW",
     [PY_MONITORING_EVENT_RAISE] = "RAISE",
@@ -1111,6 +1092,10 @@ call_instrumentation_vector(
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
+    if (event == PY_MONITORING_EVENT_BRANCH_LEFT) {
+        assert(EVENT_FOR_OPCODE[_Py_GetBaseCodeUnit(code, offset-2).op.code] == PY_MONITORING_EVENT_BRANCH_RIGHT);
+        bytes_offset -= 4;
+    }
     PyObject *offset_obj = PyLong_FromLong(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
@@ -1191,7 +1176,8 @@ _Py_call_instrumentation_jump(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target)
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
-           event == PY_MONITORING_EVENT_BRANCH);
+           event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
+           event == PY_MONITORING_EVENT_BRANCH_LEFT);
     assert(frame->instr_ptr == instr);
     int to = (int)(target - _PyFrame_GetBytecode(frame));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
@@ -1425,19 +1411,6 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
     Py_DECREF(offset_obj);
     assert(next_opcode != 0);
     return next_opcode;
-}
-
-
-PyObject *
-_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
-{
-    PyInterpreterState *is = _PyInterpreterState_GET();
-    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
-    PyObject *callback = _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id],
-                                                 Py_XNewRef(obj));
-
-    return callback;
 }
 
 static void
@@ -2312,6 +2285,10 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
         return NULL;
     }
     event_set &= ~C_RETURN_EVENTS;
+    if (event_set & (1 << PY_MONITORING_EVENT_BRANCH)) {
+        event_set &= ~(1 << PY_MONITORING_EVENT_BRANCH);
+        event_set |= (1 << PY_MONITORING_EVENT_BRANCH_RIGHT) | (1 << PY_MONITORING_EVENT_BRANCH_LEFT);
+    }
     if (_PyMonitoring_SetEvents(tool_id, event_set)) {
         return NULL;
     }
@@ -2384,6 +2361,10 @@ monitoring_set_local_events_impl(PyObject *module, int tool_id,
         return NULL;
     }
     event_set &= ~C_RETURN_EVENTS;
+    if (event_set & (1 << PY_MONITORING_EVENT_BRANCH)) {
+        event_set &= ~(1 << PY_MONITORING_EVENT_BRANCH);
+        event_set |= (1 << PY_MONITORING_EVENT_BRANCH_RIGHT) | (1 << PY_MONITORING_EVENT_BRANCH_LEFT);
+    }
     if (event_set < 0 || event_set >= (1 << _PY_MONITORING_LOCAL_EVENTS)) {
         PyErr_Format(PyExc_ValueError, "invalid local event set 0x%x", event_set);
         return NULL;
@@ -2711,7 +2692,27 @@ _PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int3
     assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, target_offset };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_BRANCH);
+                                     PY_MONITORING_EVENT_BRANCH_RIGHT);
+}
+
+int
+_PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                              PyObject *target_offset)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_BRANCH_RIGHT);
+}
+
+int
+_PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                              PyObject *target_offset)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_BRANCH_LEFT);
 }
 
 int
@@ -2848,4 +2849,214 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
     int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
     Py_DECREF(exc);
     return exception_event_teardown(err, NULL);
+}
+
+
+
+/* Handle legacy BRANCH event */
+
+typedef struct _PyLegacyBranchEventHandler {
+    PyObject_HEAD
+    vectorcallfunc vectorcall;
+    PyObject *handler;
+    bool right;
+    int tool_id;
+} _PyLegacyBranchEventHandler;
+
+static void
+dealloc_branch_handler(_PyLegacyBranchEventHandler *self)
+{
+    Py_CLEAR(self->handler);
+    PyObject_Free((PyObject *)self);
+}
+
+static PyTypeObject _PyLegacyBranchEventHandler_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "sys.monitoring.branch_event_handler",
+    sizeof(_PyLegacyBranchEventHandler),
+    .tp_dealloc = (destructor)dealloc_branch_handler,
+    .tp_vectorcall_offset = offsetof(_PyLegacyBranchEventHandler, vectorcall),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_call = PyVectorcall_Call,
+};
+
+
+static PyObject *
+branch_handler(
+    _PyLegacyBranchEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    PyObject *res = PyObject_Vectorcall(self->handler, args, nargsf, kwnames);
+    if (res == &_PyInstrumentation_DISABLE) {
+        // Find the other instrumented instruction and remove tool
+        assert(PyVectorcall_NARGS(nargsf) >= 2);
+        PyObject *offset_obj = args[1];
+        int bytes_offset = PyLong_AsLong(offset_obj);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        PyCodeObject *code = (PyCodeObject *)args[0];
+        if (!PyCode_Check(code) || (bytes_offset & 1)) {
+            return res;
+        }
+        int offset = bytes_offset / 2;
+        /* We need FOR_ITER and POP_JUMP_ to be the same size */
+        assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1);
+        if (self->right) {
+            offset += 2;
+        }
+        if (offset >= Py_SIZE(code)) {
+            return res;
+        }
+        int other_event = self->right ?
+            PY_MONITORING_EVENT_BRANCH_LEFT :  PY_MONITORING_EVENT_BRANCH_RIGHT;
+        LOCK_CODE(code);
+        remove_tools(code, offset, other_event, 1 << self->tool_id);
+        UNLOCK_CODE();
+    }
+    return res;
+}
+
+static PyObject *make_branch_handler(int tool_id, PyObject *handler, bool right)
+{
+    _PyLegacyBranchEventHandler *callback =
+        PyObject_NEW(_PyLegacyBranchEventHandler, &_PyLegacyBranchEventHandler_Type);
+    if (callback == NULL) {
+        return NULL;
+    }
+    callback->vectorcall = (vectorcallfunc)branch_handler;
+    callback->handler = Py_NewRef(handler);
+    callback->right = right;
+    callback->tool_id = tool_id;
+    return (PyObject *)callback;
+}
+
+/* Consumes a reference to obj */
+static PyObject *exchange_callables(int tool_id, int event_id, PyObject *obj)
+{
+    PyInterpreterState *is = _PyInterpreterState_GET();
+    return _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id], obj);
+}
+
+PyObject *
+_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
+    PyObject *res;
+    if (event_id == PY_MONITORING_EVENT_BRANCH) {
+        PyObject *left, *right;
+        if (obj == NULL) {
+            left = NULL;
+            right = NULL;
+        }
+        else {
+            right = make_branch_handler(tool_id, obj, true);
+            if (right == NULL) {
+                return NULL;
+            }
+            left = make_branch_handler(tool_id, obj, false);
+            if (left == NULL) {
+                Py_DECREF(right);
+                return NULL;
+            }
+        }
+        Py_XDECREF(exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_RIGHT, right));
+        res = exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_LEFT, left);
+    }
+    else {
+        res = exchange_callables(tool_id, event_id, Py_XNewRef(obj));
+    }
+    if (res != NULL && Py_TYPE(res) == &_PyLegacyBranchEventHandler_Type) {
+        _PyLegacyBranchEventHandler *wrapper = (_PyLegacyBranchEventHandler *)res;
+        res = Py_NewRef(wrapper->handler);
+        Py_DECREF(wrapper);
+    }
+    return res;
+}
+
+/* Branch Iterator */
+
+typedef struct {
+    PyObject_HEAD
+    PyCodeObject *bi_code;
+    int bi_offset;
+} branchesiterator;
+
+static PyObject *
+int_triple(int a, int b, int c) {
+    PyObject *obja = PyLong_FromLong(a);
+    PyObject *objb = NULL;
+    PyObject *objc = NULL;
+    if (obja == NULL) {
+        goto error;
+    }
+    objb = PyLong_FromLong(b);
+    if (objb == NULL) {
+        goto error;
+    }
+    objc = PyLong_FromLong(c);
+    if (objc == NULL) {
+        goto error;
+    }
+    PyObject *array[3] = { obja, objb, objc };
+    return _PyTuple_FromArraySteal(array, 3);
+error:
+    Py_XDECREF(obja);
+    Py_XDECREF(objb);
+    Py_XDECREF(objc);
+    return NULL;
+}
+
+static PyObject *
+branchesiter_next(branchesiterator *bi)
+{
+    int offset = bi->bi_offset;
+    while (offset < Py_SIZE(bi->bi_code)) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(bi->bi_code, offset);
+        int next_offset = offset + _PyInstruction_GetLength(bi->bi_code, offset);
+        int event = EVENT_FOR_OPCODE[inst.op.code];
+        if (event == PY_MONITORING_EVENT_BRANCH_RIGHT) {
+            /* Skip NOT_TAKEN */
+            int not_taken = next_offset + 1;
+            bi->bi_offset = not_taken;
+            return int_triple(offset*2, not_taken*2, (next_offset + inst.op.arg)*2);
+        }
+        offset = next_offset;
+    }
+    return NULL;
+}
+
+static void
+branchesiter_dealloc(branchesiterator *bi)
+{
+    Py_DECREF(bi->bi_code);
+    PyObject_Free(bi);
+}
+
+static PyTypeObject _PyBranchesIterator = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "line_iterator",                    /* tp_name */
+    sizeof(branchesiterator),           /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    .tp_dealloc = (destructor)branchesiter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)branchesiter_next,
+    .tp_free = PyObject_Del,
+};
+
+PyObject *
+_PyInstrumentation_BranchesIterator(PyCodeObject *code)
+{
+
+    branchesiterator *bi = (branchesiterator *)PyType_GenericAlloc(&_PyBranchesIterator, 0);
+    if (bi == NULL) {
+        return NULL;
+    }
+    bi->bi_code = (PyCodeObject*)Py_NewRef(code);
+    bi->bi_offset = 0;
+    return (PyObject *)bi;
 }
