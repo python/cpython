@@ -2484,24 +2484,52 @@ types.
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
 
-   .. note::
+   .. warning::
 
-        :func:`!runtime_checkable` will check only the presence of the required
-        methods or attributes, not their type signatures or types.
-        For example, :class:`ssl.SSLObject`
-        is a class, therefore it passes an :func:`issubclass`
-        check against :ref:`Callable <annotating-callables>`. However, the
-        ``ssl.SSLObject.__init__`` method exists only to raise a
-        :exc:`TypeError` with a more informative message, therefore making
-        it impossible to call (instantiate) :class:`ssl.SSLObject`.
+      Runtime-checkable protocols are known to be unsound in several ways.
+      You should only use them for simple protocols, and even then only use
+      them with care.
 
-   .. note::
+      One issue is that an :func:`isinstance` or :func:`issubclass` check
+      against a runtime-checkable protocol will only check for the *presence*
+      of the protocol's methods or attributes on the object at runtime, paying
+      no attention to a method's type signature or an attribute's type. This is
+      problematic given how type checkers often apply type narrowing when they
+      see these checks:
 
-        An :func:`isinstance` check against a runtime-checkable protocol can be
-        surprisingly slow compared to an ``isinstance()`` check against
-        a non-protocol class. Consider using alternative idioms such as
-        :func:`hasattr` calls for structural checks in performance-sensitive
-        code.
+      .. code-block:: python
+
+         from typing import Protocol, runtime_checkable
+
+         class Foo:
+             x: str = "x"
+
+         @runtime_checkable
+         class HasX(Protocol):
+             x: int
+
+         def f(obj: object) -> None:
+             if isinstance(obj, HasX):
+                 # a type checker may assume that `obj` has an `x` attribute of
+                 # type `int` in this branch, because the `isinstance()` check
+                 # passed
+                 print(f"obj.x + 2 is {obj.x + 2}")
+             else:
+                 print("obj doesn't have an `x` attribute")
+
+         # this raises an exception that may not be caught by a type checker because
+         # the `x` attribute on `Foo` objects is a `str`, not an `int`,
+         # but the `isinstance()` check against the runtime-checkable protocol
+         # will still pass:
+         f(Foo())
+
+   .. caution::
+
+      An :func:`isinstance` check against a runtime-checkable protocol can be
+      surprisingly slow compared to an ``isinstance()`` check against
+      a non-protocol class. Consider using alternative idioms such as
+      :func:`hasattr` calls for structural checks in performance-sensitive
+      code.
 
    .. versionadded:: 3.8
 
