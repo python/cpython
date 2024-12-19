@@ -44,49 +44,25 @@ class PurePathBase:
     """Base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
-    its subclass PurePath. They are: __fspath__, __bytes__, __reduce__,
-    __hash__, __eq__, __lt__, __le__, __gt__, __ge__. Its initializer and path
-    joining methods accept only strings, not os.PathLike objects more broadly.
+    its subclass PurePath. They are: __init__, __fspath__, __bytes__,
+    __reduce__, __hash__, __eq__, __lt__, __le__, __gt__, __ge__.
     """
 
-    __slots__ = (
-        # The `_raw_paths` slot stores unjoined string paths. This is set in
-        # the `__init__()` method.
-        '_raw_paths',
-    )
+    __slots__ = ()
     parser = posixpath
     _globber = PathGlobber
-
-    def __init__(self, *args):
-        for arg in args:
-            if not isinstance(arg, str):
-                raise TypeError(
-                    f"argument should be a str, not {type(arg).__name__!r}")
-        self._raw_paths = list(args)
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
         """
-        return type(self)(*pathsegments)
+        raise NotImplementedError
 
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        paths = self._raw_paths
-        if len(paths) == 1:
-            return paths[0]
-        elif paths:
-            # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
-        else:
-            paths.append('')
-            return ''
+        raise NotImplementedError
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -234,17 +210,17 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(str(self), *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(*self._raw_paths, key)
+            return self.with_segments(str(self), key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, str(self))
         except TypeError:
             return NotImplemented
 
