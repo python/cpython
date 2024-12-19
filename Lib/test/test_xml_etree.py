@@ -2642,6 +2642,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
+
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2680,18 +2681,101 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
-        class X(ET.Element):
-            def __eq__(self, o):
-                del e[:]
-                return False
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+    def test_remove_with_clear(self):
+        # See: https://github.com/python/cpython/issues/126033
 
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+        # Until the discrepency between "del root[:]" and "root.clear()" is
+        # resolved, we need to keep two tests. Previously, using "del root[:]"
+        # did not crash with the reproducer of gh-126033 while "root.clear()"
+        # did.
+
+        E = ET.Element
+
+        def test_remove(root, target, raises):
+            if raises:
+                self.assertRaises(ValueError, root.remove, target)
+            else:
+                root.remove(target)
+                self.assertNotIn(target, root)
+
+        for raises in [True, False]:
+
+            class X(E):
+                def __eq__(self, o):
+                    del root[:]
+                    return not raises
+
+            class Y(E):
+                def __eq__(self, o):
+                    root.clear()
+                    return not raises
+
+            for etype, rem_type in [(E, X), (X, E), (E, Y), (Y, E)]:
+                with self.subTest(
+                    etype=etype, rem_type=rem_type, raises=raises,
+                ):
+                    with self.subTest('single child'):
+                        root = E('.')
+                        root.append(etype('one'))
+                        test_remove(root, rem_type('missing'), raises)
+
+                    with self.subTest('with children'):
+                        root = E('.')
+                        root.extend([etype('one'), rem_type('two')])
+                        test_remove(root, rem_type('missing'), raises)
+
+    def test_remove_with_mutate_root_assume_missing(self):
+        # Check that a concurrent mutation for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        #
+        # See: https://github.com/python/cpython/issues/126033
+
+        E = ET.Element
+
+        class X(E):
+            def __eq__(self, o):
+                del root[0]
+                return False
+
+        for etype, rem_type in [(E, X), (X, E)]:
+            with self.subTest('missing', etype=etype, rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), etype('two')])
+                self.assertRaises(ValueError, root.remove, rem_type('missing'))
+
+        for rem_type, raises in [(X, True), (E, False)]:
+            with self.subTest('existing', rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), same := rem_type('same')])
+                if raises:
+                    self.assertRaises(ValueError, root.remove, same)
+                else:
+                    root.remove(same)
+
+    def test_remove_with_mutate_root_assume_existing(self):
+        # Check that a concurrent mutation for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        #
+        # See: https://github.com/python/cpython/issues/126033
+
+        E = ET.Element
+
+        class X(E):
+            def __eq__(self, o):
+                del root[0]
+                return True
+
+        for etype, rem_type in [(E, X), (X, E)]:
+            with self.subTest('missing', etype=etype, rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), etype('two')])
+                root.remove(rem_type('missing'))
+
+        for rem_type in [E, X]:
+            with self.subTest('existing', rem_type=rem_type):
+                root = E('.')
+                root.extend([E('one'), same := rem_type('same')])
+                root.remove(same)
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
