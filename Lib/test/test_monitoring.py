@@ -850,12 +850,6 @@ class ReturnRecorder:
     def __call__(self, code, offset, val):
         self.events.append(("return", code.co_name, val))
 
-# gh-127274: CALL_ALLOC_AND_ENTER_INIT will only cache __init__ methods that
-# are deferred. We only defer functions defined at the top-level.
-class ValueErrorRaiser:
-    def __init__(self):
-        raise ValueError()
-
 
 class ExceptionMonitoringTest(CheckEvents):
 
@@ -1054,6 +1048,9 @@ class ExceptionMonitoringTest(CheckEvents):
 
     @requires_specialization_ft
     def test_no_unwind_for_shim_frame(self):
+        class ValueErrorRaiser:
+            def __init__(self):
+                raise ValueError()
 
         def f():
             try:

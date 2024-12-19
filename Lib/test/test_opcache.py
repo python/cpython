@@ -493,13 +493,6 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
-# gh-127274: CALL_ALLOC_AND_ENTER_INIT will only cache __init__ methods that
-# are deferred. We only defer functions defined at the top-level.
-class MyClass:
-    def __init__(self):
-        pass
-
-
 class InitTakesArg:
     def __init__(self, arg):
         self.arg = arg
@@ -536,6 +529,10 @@ class TestCallCache(TestBase):
     @disabling_optimizer
     @requires_specialization_ft
     def test_assign_init_code(self):
+        class MyClass:
+            def __init__(self):
+                pass
+
         def instantiate():
             return MyClass()
 
