@@ -679,6 +679,7 @@ class ElementTree:
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
+              xml_declaration_definition="<?xml version='{version}' encoding='{encoding}'?>",
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
@@ -693,6 +694,14 @@ class ElementTree:
                                added to the output. If None, an XML declaration
                                is added if encoding IS NOT either of:
                                US-ASCII, UTF-8, or Unicode
+
+          *xml_declaration_definition* -- string for customizing encoding declaration
+                                          as documentation always shows doublequotes but
+                                          singlequote where hardcoded here.
+                                          to be rfc conform which allows doublequotes and
+                                          singlequote for declaration. default value is
+                                          untouched to pass tests.
+                                          placeholders: {version}, {encoding}
 
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
@@ -719,8 +728,10 @@ class ElementTree:
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
-                write("<?xml version='1.0' encoding='%s'?>\n" % (
-                    declared_encoding,))
+                # version configuration is'nt necessary, can be overwritten
+                # in declaration_definition at runtime
+                data = {'version':'1.0', 'encoding': declared_encoding}
+                write(xml_declaration_definition.format(**data)+"\n")
             if method == "text":
                 _serialize_text(write, self._root)
             else:
