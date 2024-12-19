@@ -26,8 +26,13 @@ def url2pathname(url):
         # Skip past extra slash before UNC drive in URL path.
         url = url[1:]
     # Windows itself uses ":" even in URLs.
-    url = url.replace(':', '|')
-    if not '|' in url:
+    url = url.replace(':', '|', 1)
+    if not '|' in url or ('|' in url and not (
+        url.startswith('|') or 
+        '/|' in url or 
+        (len(url) > 2 and url[0] == '/' and url[2] == '|' and url[1].isalpha()))
+    ):
+        url = url.replace('|', ':', 1)
         # No drive specifier, just convert slashes
         # make sure not to convert quoted slashes :-)
         return urllib.parse.unquote(url.replace('/', '\\'))
