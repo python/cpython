@@ -35,6 +35,8 @@ although there is currently no date scheduled for their removal.
 * :c:member:`!PyBytesObject.ob_shash` member:
   call :c:func:`PyObject_Hash` instead.
 * :c:member:`!PyDictObject.ma_version_tag` member.
+* :c:func::c:func:`!_PyLong_FromDigits`
+  Use instead :c:struct:`PyLongWriter` API.
 * Thread Local Storage (TLS) API:
 
   * :c:func:`PyThread_create_key`:
