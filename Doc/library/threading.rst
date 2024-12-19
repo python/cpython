@@ -365,11 +365,10 @@ since it is impossible to detect the termination of alien threads.
 
    .. note::
 
-      Threads are non-daemon by default, meaning they block the program from
-      exiting until they complete. By setting *daemon* to ``True``, threads become
-      daemon and will be forcibly terminated when the main program exits. Use
-      an explicit call to ``.join()`` on a daemon thread to block
-      the main program until the thread completes.
+      In Python, daemon threads do not prevent the program from exiting; they
+      are forcibly terminated when the main program terminates. A thread can be
+      designated as a daemon thread by setting *daemon* to ``True``, and daemon
+      threads do not require an explicit ``.join()`` call.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
