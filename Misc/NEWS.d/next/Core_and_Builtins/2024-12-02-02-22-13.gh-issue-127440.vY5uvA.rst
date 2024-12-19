@@ -1,0 +1,1 @@
+Fix calculation of ``base_prefix``  and ``base_exec_prefix`` when the ``home`` in ``pyvenv.cfg`` is inaccurate and the installation directory (``PREFIX``) does not exist. Calculation will try to use ``base_executable`` now. Patch by Charlie Zhao.
