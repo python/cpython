@@ -113,8 +113,17 @@ extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
-typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
-typedef PyObject *(* SETFUNC)(void *, PyObject *value, Py_ssize_t size);
+
+// GETFUNC: convert the C value at *ptr* to Python object, return the object
+// SETFUNC: write content of the PyObject *value* to the location at *ptr*;
+//   return a new reference to either *value*, or None for simple types
+//   (see _CTYPES_DEBUG_KEEP).
+// Note that the *size* arg can have different meanings depending on context:
+//     for string-like arrays it's the size in bytes
+//     for int-style fields it's either the type size, or bitfiled info
+//         that can be unpacked using the LOW_BIT & NUM_BITS macros.
+typedef PyObject *(* GETFUNC)(void *ptr, Py_ssize_t size);
+typedef PyObject *(* SETFUNC)(void *ptr, PyObject *value, Py_ssize_t size);
 typedef PyCArgObject *(* PARAMFUNC)(ctypes_state *st, CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
@@ -239,9 +248,9 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
     char code;
+    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
-    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
