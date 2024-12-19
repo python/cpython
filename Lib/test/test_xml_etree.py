@@ -2746,11 +2746,11 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         for rem_type, raises in [(X, True), (E, False)]:
             with self.subTest('existing', rem_type=rem_type):
                 root = E('top')
-                root.extend([E('one'), same := rem_type('same')])
+                root.extend([E('one'), rem_type('same')])
                 if raises:
-                    self.assertRaises(ValueError, root.remove, same)
+                    self.assertRaises(ValueError, root.remove, root[1])
                 else:
-                    root.remove(same)
+                    root.remove(root[1])
 
     def test_remove_with_mutate_root_assume_existing(self):
         # Check that a concurrent mutation for an assumed-to-be
@@ -2774,8 +2774,8 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         for rem_type in [E, X]:
             with self.subTest('existing', rem_type=rem_type):
                 root = E('top')
-                root.extend([E('one'), same := rem_type('same')])
-                root.remove(same)
+                root.extend([E('one'), rem_type('same')])
+                root.remove(root[1])
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
