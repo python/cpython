@@ -1776,6 +1776,67 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    def test_status_exists_caching(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertFalse(q.status.exists())
+        self.assertFalse(q.status.exists(follow_symlinks=False))
+        q.write_text('hullo')
+        self.assertFalse(q.status.exists())
+        self.assertFalse(q.status.exists(follow_symlinks=False))
+
+        q = p / 'myfile'  # same path, new instance.
+        self.assertTrue(q.status.exists())
+        self.assertTrue(q.status.exists(follow_symlinks=False))
+        q.unlink()
+        self.assertTrue(q.status.exists())
+        self.assertTrue(q.status.exists(follow_symlinks=False))
+
+    def test_status_is_dir_caching(self):
+        p = self.cls(self.base)
+        q = p / 'mydir'
+        self.assertFalse(q.status.is_dir())
+        self.assertFalse(q.status.is_dir(follow_symlinks=False))
+        q.mkdir()
+        self.assertFalse(q.status.is_dir())
+        self.assertFalse(q.status.is_dir(follow_symlinks=False))
+
+        q = p / 'mydir'  # same path, new instance.
+        self.assertTrue(q.status.is_dir())
+        self.assertTrue(q.status.is_dir(follow_symlinks=False))
+        q.rmdir()
+        self.assertTrue(q.status.is_dir())
+        self.assertTrue(q.status.is_dir(follow_symlinks=False))
+
+    def test_status_is_file_caching(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertFalse(q.status.is_file())
+        self.assertFalse(q.status.is_file(follow_symlinks=False))
+        q.write_text('hullo')
+        self.assertFalse(q.status.is_file())
+        self.assertFalse(q.status.is_file(follow_symlinks=False))
+
+        q = p / 'myfile'  # same path, new instance.
+        self.assertTrue(q.status.is_file())
+        self.assertTrue(q.status.is_file(follow_symlinks=False))
+        q.unlink()
+        self.assertTrue(q.status.is_file())
+        self.assertTrue(q.status.is_file(follow_symlinks=False))
+
+    @needs_symlinks
+    def test_status_is_symlink_caching(self):
+        p = self.cls(self.base)
+        q = p / 'mylink'
+        self.assertFalse(q.status.is_symlink())
+        q.symlink_to('blah')
+        self.assertFalse(q.status.is_symlink())
+
+        q = p / 'mylink'  # same path, new instance.
+        self.assertTrue(q.status.is_symlink())
+        q.unlink()
+        self.assertTrue(q.status.is_symlink())
+
     @needs_symlinks
     def test_stat_no_follow_symlinks(self):
         p = self.cls(self.base) / 'linkA'
