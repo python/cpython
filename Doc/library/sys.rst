@@ -13,8 +13,8 @@ always available.
 
 .. data:: abiflags
 
-   On POSIX systems where Python was built with the standard ``configure``
-   script, this contains the ABI flags as specified by :pep:`3149`.
+   On POSIX and Windows systems where Python was built with the standard
+   ``configure`` script, this contains the ABI flags as specified by :pep:`3149`.
 
    .. versionadded:: 3.2
 
@@ -22,7 +22,10 @@ always available.
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
 
-   .. availability:: Unix.
+   .. versionchanged:: 3.14
+      The attribute was also added on Windows.
+
+   .. availability:: Unix, Windows.
 
 
 .. function:: addaudithook(hook)
