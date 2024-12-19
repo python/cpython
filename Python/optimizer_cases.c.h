@@ -2343,6 +2343,8 @@
 
         /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
+        /* _INSTRUMENTED_NOT_TAKEN is not a viable micro-op for tier 2 */
+
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
