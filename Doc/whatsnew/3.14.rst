@@ -525,6 +525,10 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.SCHED_DEADLINE` and :data:`~os.SCHED_NORMAL` constants
+  to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127688`.)
+
 
 pathlib
 -------
