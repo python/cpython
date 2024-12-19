@@ -2508,8 +2508,8 @@ thus several things you need to be aware of:
 .. seealso::
 
    The :mod:`asyncio` module supports :ref:`non-blocking SSL sockets
-   <ssl-nonblocking>` and provides a
-   higher level API. It polls for events using the :mod:`selectors` module and
+   <ssl-nonblocking>` and provides a higher level :ref:`Streams API <asyncio-streams>`.
+   It polls for events using the :mod:`selectors` module and
    handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
    :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
    as well.
