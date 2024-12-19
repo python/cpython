@@ -25,6 +25,23 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
+def _explode_path(path):
+    """
+    Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+    uppermost parent of the path (equivalent to path.parents[-1]), and
+    *parts* is a reversed list of parts following the anchor.
+    """
+    split = path.parser.split
+    path = str(path)
+    parent, name = split(path)
+    names = []
+    while path != parent:
+        names.append(name)
+        path = parent
+        parent, name = split(path)
+    return path, names
+
+
 class PathGlobber(_GlobberBase):
     """
     Class providing shell-style globbing for path objects.
@@ -55,7 +72,6 @@ class PurePathBase:
         '_raw_paths',
     )
     parser = posixpath
-    _globber = PathGlobber
 
     def __init__(self, *args):
         for arg in args:
@@ -106,7 +122,7 @@ class PurePathBase:
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return self._stack[0]
+        return _explode_path(self)[0]
 
     @property
     def name(self):
@@ -184,8 +200,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -207,8 +223,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             return False
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -223,7 +239,7 @@ class PurePathBase:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = self._stack
+        anchor, parts = _explode_path(self)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -247,23 +263,6 @@ class PurePathBase:
             return self.with_segments(key, *self._raw_paths)
         except TypeError:
             return NotImplemented
-
-    @property
-    def _stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        split = self.parser.split
-        path = str(self)
-        parent, name = split(path)
-        names = []
-        while path != parent:
-            names.append(name)
-            path = parent
-            parent, name = split(path)
-        return path, names
 
     @property
     def parent(self):
@@ -292,11 +291,6 @@ class PurePathBase:
         a drive)."""
         return self.parser.isabs(str(self))
 
-    @property
-    def _pattern_str(self):
-        """The path expressed as a string, for use in pattern-matching."""
-        return str(self)
-
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern. If the pattern is
@@ -317,7 +311,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(sep, case_sensitive)
+        globber = PathGlobber(sep, case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -333,9 +327,9 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(pattern._pattern_str)
-        return match(self._pattern_str) is not None
+        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
+        match = globber.compile(str(pattern))
+        return match(str(self)) is not None
 
 
 
@@ -487,29 +481,25 @@ class PathBase(PurePathBase):
         """
         raise NotImplementedError
 
-    def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-            case_pedantic = False
-        else:
-            # The user has expressed a case sensitivity choice, but we don't
-            # know the case sensitivity of the underlying filesystem, so we
-            # must use scandir() for everything, including non-wildcard parts.
-            case_pedantic = True
-        recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
-        return globber.selector(parts)
-
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
-        anchor, parts = pattern._stack
+        anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.parser)
+            case_pedantic = False
+        elif case_sensitive == _is_case_sensitive(self.parser):
+            case_pedantic = False
+        else:
+            case_pedantic = True
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
+        globber = PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        select = globber.selector(parts)
         return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
