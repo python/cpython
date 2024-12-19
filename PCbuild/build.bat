@@ -188,7 +188,7 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  /p:UseJIT=%UseJIT%^
  /p:UseTIER2=%UseTIER2%^
- /p:Py_Stats=%Py_Stats%^
+ /p:PyStats=%PyStats%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
