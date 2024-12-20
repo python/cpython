@@ -879,6 +879,11 @@ email
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the :cve:`2023-27043` fix.)
 
+enum
+----
+
+* :class:`~enum.EnumDict` has been made public in :mod:`enum` to better support
+  subclassing :class:`~enum.EnumType`.
 
 fractions
 ---------
@@ -1971,7 +1976,7 @@ New Features
   * :c:func:`PyMonitoring_FireCallEvent`
   * :c:func:`PyMonitoring_FireLineEvent`
   * :c:func:`PyMonitoring_FireJumpEvent`
-  * :c:func:`PyMonitoring_FireBranchEvent`
+  * ``PyMonitoring_FireBranchEvent``
   * :c:func:`PyMonitoring_FireCReturnEvent`
   * :c:func:`PyMonitoring_FirePyThrowEvent`
   * :c:func:`PyMonitoring_FireRaiseEvent`
