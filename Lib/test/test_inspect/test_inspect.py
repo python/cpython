@@ -75,7 +75,7 @@ git = mod.StupidGit()
 
 def tearDownModule():
     if support.has_socket_support:
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -2991,6 +2991,17 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
+
+        second_args = args.replace(name="second_args")
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
+            S((args, second_args))
+
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
+            S((args, ko, second_args))
+
+        second_kwargs = kwargs.replace(name="second_kwargs")
+        with self.assertRaisesRegex(ValueError, 'more than one variadic keyword parameter'):
+            S((kwargs, second_kwargs))
 
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
