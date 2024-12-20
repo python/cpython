@@ -1810,17 +1810,20 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
 {
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
-    PyObject *const *newargs;
-    PyObject *stack_array[8];
+    _PyStackRef *newargs;
+    PyObject *const *object_array;
+    _PyStackRef stack_array[8];
     if (has_dict) {
-        newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
-        if (newargs == NULL) {
+        object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
+        if (object_array == NULL) {
             PyStackRef_CLOSE(func);
             goto error;
         }
         size_t total_args = nargs + PyDict_GET_SIZE(kwargs);
+        assert(sizeof(PyObject *) == sizeof(_PyStackRef));
+        newargs = (_PyStackRef *)object_array;
         for (size_t i = 0; i < total_args; i++) {
-            ((_PyStackRef *)newargs)[i] = PyStackRef_FromPyObjectSteal(newargs[i]);
+            newargs[i] = PyStackRef_FromPyObjectSteal(object_array[i]);
         }
     }
     else {
@@ -1828,7 +1831,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
             newargs = stack_array;
         }
         else {
-            newargs = PyMem_Malloc(sizeof(PyObject *) *nargs);
+            newargs = PyMem_Malloc(sizeof(_PyStackRef) *nargs);
             if (newargs == NULL) {
                 PyErr_NoMemory();
                 PyStackRef_CLOSE(func);
@@ -1837,15 +1840,15 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
         }
         /* We need to create a new reference for all our args since the new frame steals them. */
         for (Py_ssize_t i = 0; i < nargs; i++) {
-            ((_PyStackRef *)newargs)[i] = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(callargs, i));
+            newargs[i] = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(callargs, i));
         }
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, func, locals,
-        (_PyStackRef const *)newargs, nargs, kwnames, previous
+        newargs, nargs, kwnames, previous
     );
     if (has_dict) {
-        _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+        _PyStack_UnpackDict_FreeNoDecRef(object_array, kwnames);
     }
     else if (nargs > 8) {
        PyMem_Free((void *)newargs);
