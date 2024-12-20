@@ -717,13 +717,10 @@ class TestRacesDoNotCrash(TestBase):
     @requires_specialization_ft
     def test_load_attr_class(self):
         def get_items():
-            class B:
-                pass
-
             class C:
                 # a must be set to an instance that uses deferred reference
-                # counting
-                a = B
+                # counting in free-threaded builds
+                a = type("Foo", (object,), {})
 
             items = []
             for _ in range(self.ITEMS):
@@ -744,9 +741,44 @@ class TestRacesDoNotCrash(TestBase):
                     del item.a
                 except AttributeError:
                     pass
-                item.a = object()
+                item.a = type("Foo", (object,), {})
 
         opname = "LOAD_ATTR_CLASS"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
+    def test_load_attr_class_with_metaclass_check(self):
+        def get_items():
+            class Meta(type):
+                pass
+
+            class C(metaclass=Meta):
+                # a must be set to an instance that uses deferred reference
+                # counting in free-threaded builds
+                a = type("Foo", (object,), {})
+
+            items = []
+            for _ in range(self.ITEMS):
+                item = C
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                try:
+                    item.a
+                except AttributeError:
+                    pass
+
+        def write(items):
+            for item in items:
+                try:
+                    del item.a
+                except AttributeError:
+                    pass
+                item.a = type("Foo", (object,), {})
+
+        opname = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
