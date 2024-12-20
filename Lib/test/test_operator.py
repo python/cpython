@@ -666,6 +666,7 @@ class COperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = c_operator
 
 
+@support.thread_unsafe("swaps global operator module")
 class OperatorPickleTestCase:
     def copy(self, obj, proto):
         with support.swap_item(sys.modules, 'operator', self.module):
