@@ -300,7 +300,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 // avoid any potentially escaping calls (like PyStackRef_CLOSE) while the
 // object is locked.
 #ifdef Py_GIL_DISABLED
-#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex._bits)
+#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
 #  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
 #else
 #  define LOCK_OBJECT(op) (1)
@@ -459,8 +459,4 @@ do { \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
-#ifdef Py_GIL_DISABLED
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
-#else
-#define CONVERSION_FAILED(NAME) (0)
-#endif
