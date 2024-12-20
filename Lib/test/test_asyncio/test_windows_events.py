@@ -332,7 +332,7 @@ class WinPolicyTests(WindowsEventsTestCase):
                 asyncio.get_running_loop(),
                 asyncio.SelectorEventLoop)
 
-        old_policy = asyncio.get_event_loop_policy()
+        old_policy = asyncio._get_event_loop_policy()
         try:
             asyncio._set_event_loop_policy(
                 asyncio.WindowsSelectorEventLoopPolicy())
@@ -346,7 +346,7 @@ class WinPolicyTests(WindowsEventsTestCase):
                 asyncio.get_running_loop(),
                 asyncio.ProactorEventLoop)
 
-        old_policy = asyncio.get_event_loop_policy()
+        old_policy = asyncio._get_event_loop_policy()
         try:
             asyncio._set_event_loop_policy(
                 asyncio.WindowsProactorEventLoopPolicy())

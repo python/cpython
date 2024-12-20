@@ -106,6 +106,8 @@ Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
 Python/instruction_sequence.c	-	_PyInstructionSequence_Type	-
+Python/instrumentation.c	-	_PyLegacyBranchEventHandler_Type	-
+Python/instrumentation.c	-	_PyBranchesIterator	-
 Python/traceback.c	-	PyTraceBack_Type	-
 
 ##-----------------------

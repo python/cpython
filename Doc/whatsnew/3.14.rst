@@ -525,6 +525,10 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.SCHED_DEADLINE` and :data:`~os.SCHED_NORMAL` constants
+  to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127688`.)
+
 
 pathlib
 -------
@@ -599,6 +603,11 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+sys.monitoring
+--------------
+
+Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+:monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 tkinter
 -------
@@ -1140,6 +1149,11 @@ New features
   a :exc:`UnicodeError` object.
   (Contributed by Bénédikt Tran in :gh:`127691`.)
 
+* Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
+  :c:func:`PyMonitoring_FireBranchRightEvent` for generating
+  :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+  events, respectively.
+
 
 Porting to Python 3.14
 ----------------------
@@ -1172,6 +1186,10 @@ Deprecated
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
+* The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
+  be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
+  and :c:func:`PyMonitoring_FireBranchRightEvent`.
 
 Removed
 -------
