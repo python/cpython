@@ -128,8 +128,9 @@ bytes(cdata)
 
 /*[clinic input]
 module _ctypes
+class _ctypes.CFuncPtr "PyCFuncPtrObject *" "&PyCFuncPtr_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=58e8c99474bc631e]*/
 
 #define clinic_state() (get_module_state_by_class(cls))
 #define clinic_state_sub() (get_module_state_by_class(cls->tp_base))
@@ -3422,21 +3423,37 @@ generic_pycdata_new(ctypes_state *st,
   PyCFuncPtr_Type
 */
 
+/*[clinic input]
+@critical_section
+@setter
+_ctypes.CFuncPtr.errcheck
+[clinic start generated code]*/
+
 static int
-PyCFuncPtr_set_errcheck(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_errcheck_set_impl(PyCFuncPtrObject *self, PyObject *value)
+/*[clinic end generated code: output=6580cf1ffdf3b9fb input=84930bb16c490b33]*/
 {
-    if (ob && !PyCallable_Check(ob)) {
+    if (value && !PyCallable_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "the errcheck attribute must be callable");
         return -1;
     }
-    Py_XINCREF(ob);
-    Py_XSETREF(self->errcheck, ob);
+    Py_XINCREF(value);
+    Py_XSETREF(self->errcheck, value);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ctypes.CFuncPtr.errcheck
+
+a function to check for errors
+[clinic start generated code]*/
+
 static PyObject *
-PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_errcheck_get_impl(PyCFuncPtrObject *self)
+/*[clinic end generated code: output=dfa6fb5c6f90fd14 input=4672135fef37819f]*/
 {
     if (self->errcheck) {
         return Py_NewRef(self->errcheck);
@@ -3444,11 +3461,18 @@ PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@setter
+@critical_section
+_ctypes.CFuncPtr.restype
+[clinic start generated code]*/
+
 static int
-PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_restype_set_impl(PyCFuncPtrObject *self, PyObject *value)
+/*[clinic end generated code: output=0be0a086abbabf18 input=683c3bef4562ccc6]*/
 {
     PyObject *checker, *oldchecker;
-    if (ob == NULL) {
+    if (value == NULL) {
         oldchecker = self->checker;
         self->checker = NULL;
         Py_CLEAR(self->restype);
@@ -3457,27 +3481,36 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ign
     }
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromType(st, ob, &info) < 0) {
+    if (PyStgInfo_FromType(st, value, &info) < 0) {
         return -1;
     }
-    if (ob != Py_None && !info && !PyCallable_Check(ob)) {
+    if (value != Py_None && !info && !PyCallable_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "restype must be a type, a callable, or None");
         return -1;
     }
-    if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_), &checker) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_check_retval_), &checker) < 0) {
         return -1;
     }
     oldchecker = self->checker;
     self->checker = checker;
-    Py_INCREF(ob);
-    Py_XSETREF(self->restype, ob);
+    Py_INCREF(value);
+    Py_XSETREF(self->restype, value);
     Py_XDECREF(oldchecker);
     return 0;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+_ctypes.CFuncPtr.restype
+
+specify the result type
+[clinic start generated code]*/
+
 static PyObject *
-PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_restype_get_impl(PyCFuncPtrObject *self)
+/*[clinic end generated code: output=c8f44cd16f1dee5e input=5e3ed95116204fd2]*/
 {
     if (self->restype) {
         return Py_NewRef(self->restype);
@@ -3495,28 +3528,44 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
     }
 }
 
+/*[clinic input]
+@setter
+@critical_section
+_ctypes.CFuncPtr.argtypes
+[clinic start generated code]*/
+
 static int
-PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value)
+/*[clinic end generated code: output=596a36e2ae89d7d1 input=c4627573e980aa8b]*/
 {
     PyObject *converters;
 
-    if (ob == NULL || ob == Py_None) {
+    if (value == NULL || value == Py_None) {
         Py_CLEAR(self->converters);
         Py_CLEAR(self->argtypes);
     } else {
         ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
-        converters = converters_from_argtypes(st, ob);
+        converters = converters_from_argtypes(st, value);
         if (!converters)
             return -1;
         Py_XSETREF(self->converters, converters);
-        Py_INCREF(ob);
-        Py_XSETREF(self->argtypes, ob);
+        Py_INCREF(value);
+        Py_XSETREF(self->argtypes, value);
     }
     return 0;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+_ctypes.CFuncPtr.argtypes
+
+specify the argument types
+[clinic start generated code]*/
+
 static PyObject *
-PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
+_ctypes_CFuncPtr_argtypes_get_impl(PyCFuncPtrObject *self)
+/*[clinic end generated code: output=c46b05a1b0f99172 input=37a8a545a56f8ae2]*/
 {
     if (self->argtypes) {
         return Py_NewRef(self->argtypes);
@@ -3535,13 +3584,9 @@ PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef PyCFuncPtr_getsets[] = {
-    { "errcheck", (getter)PyCFuncPtr_get_errcheck, (setter)PyCFuncPtr_set_errcheck,
-      "a function to check for errors", NULL },
-    { "restype", (getter)PyCFuncPtr_get_restype, (setter)PyCFuncPtr_set_restype,
-      "specify the result type", NULL },
-    { "argtypes", (getter)PyCFuncPtr_get_argtypes,
-      (setter)PyCFuncPtr_set_argtypes,
-      "specify the argument types", NULL },
+    _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
+    _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF
+    _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF
     { NULL, NULL }
 };
 
@@ -5053,7 +5098,6 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 class _ctypes.Simple "PyObject *" "clinic_state()->Simple_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=016c476c7aa8b8a8]*/
-
 
 static int
 Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
