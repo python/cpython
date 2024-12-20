@@ -834,7 +834,7 @@ typedef enum {
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
     GETSET_OVERRIDDEN, /* __getattribute__ or __setattr__ has been overridden */
-    GETATTRIBUTE_IS_PYTHON_FUNCTION,  /* Descriptor requires calling a Python __getattribute__ */
+    GETATTRIBUTE_IS_PYTHON_FUNCTION  /* Descriptor requires calling a Python __getattribute__ */
 } DescriptorClassification;
 
 
