@@ -951,6 +951,53 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertExceptionIsLike(exc, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
+    
+    def test_bad_exception_group_subclass_split_func(self):
+        # See https://github.com/python/cpython/issues/128049
+        # tuples that return less than 2 values should
+        # result in a type error with the original eg chained to it
+        class BadEG1(ExceptionGroup):
+            def split(self, *args):
+                return "NOT A 2-TUPLE!"
+
+        class BadEG2(ExceptionGroup):
+            def split(self, *args):
+                return ("NOT A 2-TUPLE!",)
+
+        eg_list = [
+            (BadEG1("eg", [OSError(123), ValueError(456)]),
+             r"split must return a tuple, not str"),
+            (BadEG2("eg", [OSError(123), ValueError(456)]),
+             r"split must return a 2-tuple, got tuple of size 1")
+        ]
+
+        for EG, MSG in eg_list:
+            with self.assertRaisesRegex(TypeError, MSG) as m:
+                try:
+                    raise EG
+                except* ValueError:
+                    pass
+                except* OSError:
+                    pass
+
+            self.assertExceptionIsLike(m.exception.__context__, EG)
+
+        # although it isn't expected, still allow tuples of length > 2
+        # all tuple items past the second one will be ignored
+        # this quirk may be deprecated in the future
+        class WeirdEG(ExceptionGroup):
+            def split(self, *args):
+                return super().split(*args) + ("anything", 123456, None)
+
+        try:
+            raise WeirdEG("eg", [OSError(123), ValueError(456)])
+        except* OSError as e:
+            oeg = e
+        except* ValueError as e:
+            veg = e
+
+        self.assertExceptionIsLike(oeg, WeirdEG("eg", [OSError(123)]))
+        self.assertExceptionIsLike(veg, WeirdEG("eg", [ValueError(456)]))
 
 
 class TestExceptStarCleanup(ExceptStarTest):
