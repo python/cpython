@@ -951,7 +951,7 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertExceptionIsLike(exc, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
-    
+
     def test_bad_exception_group_subclass_split_func(self):
         # See https://github.com/python/cpython/issues/128049
         # tuples that return less than 2 values should
