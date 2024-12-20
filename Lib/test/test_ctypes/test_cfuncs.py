@@ -203,8 +203,11 @@ class CFunctions(unittest.TestCase):
                 self._dll.tf_b.restype = c_byte
                 self._dll.tf_b.argtypes = (c_byte,)
 
-        with threading_helper.start_threads((Thread(target=concurrent) for _ in range(10))):
-            pass
+        with threading_helper.catch_threading_exception() as exc:
+            with threading_helper.start_threads((Thread(target=concurrent) for _ in range(10))):
+                pass
+
+            self.assertIsNone(exc.exc_value)
 
 
 # The following repeats the above tests with stdcall functions (where
