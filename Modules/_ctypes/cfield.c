@@ -1501,26 +1501,38 @@ for nbytes in 8, 16, 32, 64:
             f'{sgn}{nbytes}_set_sw',
             f'{sgn}{nbytes}_get_sw',
         ]
+        flags = ['TYPEFLAG_IS_INTEGER']
+        if is_signed:
+            flags.append('TYPEFLAG_IS_SIGNED')
         print(f'    formattable.fmt_{sgn}{nbytes} = (struct fielddesc){{')
-        print(f'            {", ".join(parts)} }};')
+        print(f'            {", ".join(parts)},')
+        print(f'            .flags = {" | ".join(flags)} }};')
 [python start generated code]*/
     formattable.fmt_i8 = (struct fielddesc){
-            0, &ffi_type_sint8, i8_set, i8_get, i8_set_sw, i8_get_sw };
+            0, &ffi_type_sint8, i8_set, i8_get, i8_set_sw, i8_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED };
     formattable.fmt_u8 = (struct fielddesc){
-            0, &ffi_type_uint8, u8_set, u8_get, u8_set_sw, u8_get_sw };
+            0, &ffi_type_uint8, u8_set, u8_get, u8_set_sw, u8_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER };
     formattable.fmt_i16 = (struct fielddesc){
-            0, &ffi_type_sint16, i16_set, i16_get, i16_set_sw, i16_get_sw };
+            0, &ffi_type_sint16, i16_set, i16_get, i16_set_sw, i16_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED };
     formattable.fmt_u16 = (struct fielddesc){
-            0, &ffi_type_uint16, u16_set, u16_get, u16_set_sw, u16_get_sw };
+            0, &ffi_type_uint16, u16_set, u16_get, u16_set_sw, u16_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER };
     formattable.fmt_i32 = (struct fielddesc){
-            0, &ffi_type_sint32, i32_set, i32_get, i32_set_sw, i32_get_sw };
+            0, &ffi_type_sint32, i32_set, i32_get, i32_set_sw, i32_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED };
     formattable.fmt_u32 = (struct fielddesc){
-            0, &ffi_type_uint32, u32_set, u32_get, u32_set_sw, u32_get_sw };
+            0, &ffi_type_uint32, u32_set, u32_get, u32_set_sw, u32_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER };
     formattable.fmt_i64 = (struct fielddesc){
-            0, &ffi_type_sint64, i64_set, i64_get, i64_set_sw, i64_get_sw };
+            0, &ffi_type_sint64, i64_set, i64_get, i64_set_sw, i64_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED };
     formattable.fmt_u64 = (struct fielddesc){
-            0, &ffi_type_uint64, u64_set, u64_get, u64_set_sw, u64_get_sw };
-/*[python end generated code: output=16806fe0ca3a9c4c input=96348a06e575f801]*/
+            0, &ffi_type_uint64, u64_set, u64_get, u64_set_sw, u64_get_sw,
+            .flags = TYPEFLAG_IS_INTEGER };
+/*[python end generated code: output=f4a64738bd0af9ee input=b050aa3aa6871a68]*/
 
 
     /* Native C integers.
@@ -1598,6 +1610,11 @@ for base_code, base_c_type in [
         SYMBOL ## _get, SYMBOL ## _set_sw, SYMBOL ## _get_sw)                 \
     ///////////////////////////////////////////////////////////////////////////
 
+#define POINTER_ENTRY(SYMBOL, FFI_TYPE)                                       \
+    _TABLE_ENTRY(SYMBOL, FFI_TYPE, SYMBOL ## _set, SYMBOL ## _get,            \
+                 .flags = TYPEFLAG_ISPOINTER)                                 \
+    ///////////////////////////////////////////////////////////////////////////
+
     TABLE_ENTRY_SW(d, &ffi_type_double);
 #if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
@@ -1615,16 +1632,17 @@ for base_code, base_c_type in [
     // ctypes.c_wchar is signed for FFI, even where C wchar_t is unsigned.
     TABLE_ENTRY(u, _ctypes_fixint_fielddesc(sizeof(wchar_t), true)->pffi_type);
 
-    TABLE_ENTRY(s, &ffi_type_pointer);
-    TABLE_ENTRY(P, &ffi_type_pointer);
-    TABLE_ENTRY(z, &ffi_type_pointer);
+    POINTER_ENTRY(s, &ffi_type_pointer);
+    POINTER_ENTRY(P, &ffi_type_pointer);
+    POINTER_ENTRY(z, &ffi_type_pointer);
     TABLE_ENTRY(U, &ffi_type_pointer);
-    TABLE_ENTRY(Z, &ffi_type_pointer);
+    POINTER_ENTRY(Z, &ffi_type_pointer);
 #ifdef MS_WIN32
-    TABLE_ENTRY(X, &ffi_type_pointer);
+    POINTER_ENTRY(X, &ffi_type_pointer);
 #endif
-    TABLE_ENTRY(O, &ffi_type_pointer);
+    POINTER_ENTRY(O, &ffi_type_pointer);
 
+#undef POINTER_ENTRY
 #undef TABLE_ENTRY_SW
 #undef TABLE_ENTRY
 #undef _TABLE_ENTRY
