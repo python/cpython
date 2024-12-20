@@ -5446,7 +5446,7 @@ class TestEnumDict(unittest.TestCase):
         class Meta(type):
             @classmethod
             def __prepare__(metacls, cls, bases, **kwds):
-                return EnumDict()
+                return EnumDict(cls)
 
         class MyClass(metaclass=Meta):
             a = 1
@@ -5459,14 +5459,14 @@ class TestEnumDict(unittest.TestCase):
 
     def test_enum_dict_standalone(self):
         """Test that EnumDict is usable on its own"""
-        enumdict = EnumDict()
+        enumdict = EnumDict('test')
         enumdict['a'] = 1
 
         with self.assertRaises(TypeError):
             enumdict['a'] = 'other value'
 
         # Only MutableMapping interface is overridden for now.
-        # If this starts passing, update the documentation.
+        # If this stops passing, update the documentation.
         enumdict |= {'a': 'other value'}
         self.assertEqual(enumdict['a'], 'other value')
 

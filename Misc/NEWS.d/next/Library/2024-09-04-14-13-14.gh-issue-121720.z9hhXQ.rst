@@ -1,2 +1,1 @@
-:class:`enum.EnumDict` can now be used on its own, without resorting to
-private API.
+:class:`enum.EnumDict` can now be used without resorting to private API.

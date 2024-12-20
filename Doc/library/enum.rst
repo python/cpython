@@ -112,8 +112,7 @@ Module Contents
 
    :class:`EnumDict`
 
-      A subclass of :class:`dict` that tracks order and enforces unique
-      member names.
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
 
    :class:`auto`
 
@@ -154,14 +153,10 @@ Module Contents
 
       Return a list of all power-of-two integers contained in a flag.
 
-   :class:`EnumDict`
-
-      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
-
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
-.. versionadded:: 3.14  ``EnumDict``
+.. versionadded:: 3.13  ``EnumDict``
 
 ---------------
 
