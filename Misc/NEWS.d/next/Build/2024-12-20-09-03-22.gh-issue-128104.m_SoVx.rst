@@ -1,0 +1,2 @@
+Remove ``Py_STRFTIME_C99_SUPPORT`` and require C99-compliant ``strftime``
+datetime specifier support at build time when not cross-compiling.
