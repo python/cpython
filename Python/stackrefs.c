@@ -54,14 +54,15 @@ _Py_stackref_get_object(_PyStackRef ref)
     return entry->obj;
 }
 
-PyObject *_Py_stackref_close(_PyStackRef ref)
+PyObject *
+_Py_stackref_close(_PyStackRef ref)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (ref.index >= interp->next_stackref) {
         _Py_FatalErrorFormat(__func__, "Garbled stack ref with ID %" PRIu64 "\n", ref.index);
     }
     PyObject *obj;
-    if (ref.index <= 3) {
+    if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
         // Pre-allocated reference to None, False or True -- Do not clear
         TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
         obj = entry->obj;
@@ -98,7 +99,7 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
 void
 _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber)
 {
-    if (ref.index <= 3) {
+    if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
         return;
     }
     PyInterpreterState *interp = PyInterpreterState_Get();

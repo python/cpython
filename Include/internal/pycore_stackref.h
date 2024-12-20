@@ -75,6 +75,8 @@ static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 #define PyStackRef_False ((_PyStackRef){ .index = 2 })
 #define PyStackRef_True ((_PyStackRef){ .index = 3 })
 
+#define LAST_PREDEFINED_STACKREF_INDEX 3
+
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
 {
