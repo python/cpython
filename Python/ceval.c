@@ -2096,23 +2096,20 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
             return -1;
         }
 
-        if (!PyTuple_CheckExact(pair))
-        {
+        if (!PyTuple_CheckExact(pair)) {
             PyErr_Format(PyExc_TypeError,
-                        "%.200s.split must return a tuple, not %.200s",
-                        Py_TYPE(exc_value)->tp_name, Py_TYPE(pair)->tp_name);
+                         "%.200s.split must return a tuple, not %.200s",
+                         Py_TYPE(exc_value)->tp_name, Py_TYPE(pair)->tp_name);
             Py_DECREF(pair);
             return -1;
         }
 
-        // NOTE due to a previous bug which allowed tuples of length > 2 to
-        // work without problem, we are still allowing them to work even
-        // though the error says otherwise
+        // allow tuples of length > 2 for backwards compatibility
         if (PyTuple_GET_SIZE(pair) < 2) {
             PyErr_Format(PyExc_TypeError,
-                        "%.200s.split must return a 2-tuple, "
-                        "got tuple of size %zd",
-                        Py_TYPE(exc_value)->tp_name, PyTuple_GET_SIZE(pair));
+                         "%.200s.split must return a 2-tuple, "
+                         "got tuple of size %zd",
+                         Py_TYPE(exc_value)->tp_name, PyTuple_GET_SIZE(pair));
             Py_DECREF(pair);
             return -1;
         }

@@ -952,10 +952,8 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
 
-    def test_bad_exception_group_subclass_split_func(self):
-        # See https://github.com/python/cpython/issues/128049
-        # tuples that return less than 2 values should
-        # result in a type error with the original eg chained to it
+    def test_exception_group_subclass_with_bad_split_func(self):
+        # see gh-128049.
         class BadEG1(ExceptionGroup):
             def split(self, *args):
                 return "NOT A 2-TUPLE!"
@@ -971,20 +969,18 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
              r"split must return a 2-tuple, got tuple of size 1")
         ]
 
-        for EG, MSG in eg_list:
-            with self.assertRaisesRegex(TypeError, MSG) as m:
+        for eg_class, msg in eg_list:
+            with self.assertRaisesRegex(TypeError, msg) as m:
                 try:
-                    raise EG
+                    raise eg_class
                 except* ValueError:
                     pass
                 except* OSError:
                     pass
 
-            self.assertExceptionIsLike(m.exception.__context__, EG)
+            self.assertExceptionIsLike(m.exception.__context__, eg_class)
 
-        # although it isn't expected, still allow tuples of length > 2
-        # all tuple items past the second one will be ignored
-        # this quirk may be deprecated in the future
+        # we allow tuples of length > 2 for backwards compatibility
         class WeirdEG(ExceptionGroup):
             def split(self, *args):
                 return super().split(*args) + ("anything", 123456, None)
