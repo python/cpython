@@ -58,6 +58,7 @@ def prepare_reader(console: Console, **kwargs):
     reader = ReadlineAlikeReader(console=console, config=config)
     reader.more_lines = partial(more_lines, namespace=None)
     reader.paste_mode = True  # Avoid extra indents
+    reader.help_mode = False
 
     def get_prompt(lineno, cursor_on_line) -> str:
         return ""
