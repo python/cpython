@@ -13,7 +13,7 @@ PyAPI_FUNC(PyObject *) PyMarshal_ReadObjectFromString(const char *,
                                                       Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyMarshal_WriteObjectToString(PyObject *, int);
 
-#define Py_MARSHAL_VERSION 4
+#define Py_MARSHAL_VERSION 5
 
 PyAPI_FUNC(long) PyMarshal_ReadLongFromFile(FILE *);
 PyAPI_FUNC(int) PyMarshal_ReadShortFromFile(FILE *);

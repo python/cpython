@@ -40,11 +40,19 @@ for the current process:
 
    Return the current process-wide policy.
 
+   .. deprecated:: next
+      The :func:`get_event_loop_policy` function is deprecated and
+      will be removed in Python 3.16.
+
 .. function:: set_event_loop_policy(policy)
 
    Set the current process-wide policy to *policy*.
 
    If *policy* is set to ``None``, the default policy is restored.
+
+   .. deprecated:: next
+      The :func:`set_event_loop_policy` function is deprecated and
+      will be removed in Python 3.16.
 
 
 .. _asyncio-policy-objects:
@@ -97,11 +105,9 @@ asyncio ships with the following built-in policies:
 
       On Windows, :class:`ProactorEventLoop` is now used by default.
 
-   .. deprecated:: 3.12
-      The :meth:`get_event_loop` method of the default asyncio policy now emits
-      a :exc:`DeprecationWarning` if there is no current event loop set and it
-      decides to create one.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      The :meth:`get_event_loop` method of the default asyncio policy now
+      raises a :exc:`RuntimeError` if there is no set event loop.
 
 
 .. class:: WindowsSelectorEventLoopPolicy

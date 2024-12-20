@@ -58,7 +58,12 @@ jit_alloc(size_t size)
     int failed = memory == NULL;
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    int prot = PROT_READ | PROT_WRITE;
+# ifdef MAP_JIT
+    flags |= MAP_JIT;
+    prot |= PROT_EXEC;
+# endif
+    unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -102,8 +107,11 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
+    int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-    int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#ifndef MAP_JIT
+    failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#endif
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
@@ -470,7 +478,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     size_t code_size = 0;
     size_t data_size = 0;
     jit_state state = {0};
-    group = &trampoline;
+    group = &shim;
     code_size += group->code_size;
     data_size += group->data_size;
     combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
@@ -499,6 +507,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     if (memory == NULL) {
         return -1;
     }
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(0);
+#endif
     // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
         state.instruction_starts[i] += (uintptr_t)memory;
@@ -507,12 +518,10 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
     state.trampolines.mem = memory + code_size + data_size;
-    // Compile the trampoline, which handles converting between the native
+    // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons). On platforms where
-    // we don't change calling conventions, the trampoline is empty and
-    // nothing is emitted here:
-    group = &trampoline;
+    // (which may be different for efficiency reasons).
+    group = &shim;
     group->emit(code, data, executor, NULL, &state);
     code += group->code_size;
     data += group->data_size;
@@ -531,12 +540,15 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     data += group->data_size;
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(1);
+#endif
     if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + trampoline.code_size;
+    executor->jit_side_entry = memory + shim.code_size;
     executor->jit_size = total_size;
     return 0;
 }

@@ -1,6 +1,13 @@
 Pending removal in Python 3.16
 ------------------------------
 
+* The import system:
+
+  * Setting :attr:`~module.__loader__` on a module while
+    failing to set :attr:`__spec__.loader <importlib.machinery.ModuleSpec.loader>`
+    is deprecated. In Python 3.16, :attr:`!__loader__` will cease to be set or
+    taken into consideration by the import system or the standard library.
+
 * :mod:`array`:
 
   * The ``'u'`` format code (:c:type:`wchar_t`)

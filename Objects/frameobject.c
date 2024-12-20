@@ -8,6 +8,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 
 
@@ -187,11 +188,8 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             }
         }
         if (cell != NULL) {
-            PyObject *oldvalue_o = PyCell_GET(cell);
-            if (value != oldvalue_o) {
-                PyCell_SET(cell, Py_XNewRef(value));
-                Py_XDECREF(oldvalue_o);
-            }
+            Py_XINCREF(value);
+            PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
             PyStackRef_XCLOSE(fast[i]);
             fast[i] = PyStackRef_FromPyObjectNew(value);
@@ -1651,7 +1649,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->instr_ptr = _PyCode_CODE(code) + best_addr;
+    f->f_frame->instr_ptr = _PyFrame_GetBytecode(f->f_frame) + best_addr;
     return 0;
 }
 
@@ -1867,10 +1865,11 @@ PyTypeObject PyFrame_Type = {
 };
 
 static void
-init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
+init_frame(PyThreadState *tstate, _PyInterpreterFrame *frame,
+           PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_Initialize(frame, PyStackRef_FromPyObjectNew(func),
+    _PyFrame_Initialize(tstate, frame, PyStackRef_FromPyObjectNew(func),
                         Py_XNewRef(locals), code, 0, NULL);
 }
 
@@ -1922,7 +1921,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
-    init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
+    init_frame(tstate, (_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     // This frame needs to be "complete", so pretend that the first RESUME ran:
@@ -1941,7 +1940,8 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     // here:
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
+    if (!(lasti < 0
+          && _PyFrame_GetBytecode(frame)->op.code == COPY_FREE_VARS
           && PyStackRef_FunctionCheck(frame->f_funcobj)))
     {
         /* Free vars are initialized */
@@ -1957,7 +1957,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
         frame->localsplus[offset + i] = PyStackRef_FromPyObjectNew(o);
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
+    frame->instr_ptr = _PyFrame_GetBytecode(frame);
 }
 
 
@@ -1985,18 +1985,24 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
             assert(value != NULL && PyCell_Check(value));
-            value = PyCell_GET(value);
+            value = PyCell_GetRef((PyCellObject *)value);
         }
         else if (kind & CO_FAST_CELL) {
             if (value != NULL) {
                 if (PyCell_Check(value)) {
                     assert(!_PyFrame_IsIncomplete(frame));
-                    value = PyCell_GET(value);
+                    value = PyCell_GetRef((PyCellObject *)value);
                 }
-                // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
-                // with the initial value set when the frame was created...
-                // (unlikely) ...or it was set via the f_locals proxy.
+                else {
+                    // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
+                    // with the initial value set when the frame was created...
+                    // (unlikely) ...or it was set via the f_locals proxy.
+                    Py_INCREF(value);
+                }
             }
+        }
+        else {
+            Py_XINCREF(value);
         }
     }
     *pvalue = value;
@@ -2074,14 +2080,14 @@ PyFrame_GetVar(PyFrameObject *frame_obj, PyObject *name)
             continue;
         }
 
-        PyObject *value;  // borrowed reference
+        PyObject *value;
         if (!frame_get_var(frame, co, i, &value)) {
             break;
         }
         if (value == NULL) {
             break;
         }
-        return Py_NewRef(value);
+        return value;
     }
 
     PyErr_Format(PyExc_NameError, "variable %R does not exist", name);
