@@ -66,6 +66,7 @@ typedef union _PyStackRef {
 PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
 PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref);
 PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, const char *filename, int linenumber);
+PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
@@ -99,10 +100,13 @@ PyStackRef_IsNone(_PyStackRef ref)
 }
 
 static inline PyObject *
-PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
+_PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
 }
+
+#define PyStackRef_AsPyObjectBorrow(REF) _PyStackRef_AsPyObjectBorrow((REF), __FILE__, __LINE__)
 
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef ref)

@@ -17,6 +17,8 @@ typedef struct _table_entry {
     const char *classname;
     const char *filename;
     int linenumber;
+    const char *filename_borrow;
+    int linenumber_borrow;
 } TableEntry;
 
 TableEntry *
@@ -30,6 +32,7 @@ make_table_entry(PyObject *obj, const char *filename, int linenumber)
     result->classname = Py_TYPE(obj)->tp_name;
     result->filename = filename;
     result->linenumber = linenumber;
+    result->filename_borrow = NULL;
     return result;
 }
 
@@ -93,6 +96,22 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
 }
 
 void
+_Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber)
+{
+    if (ref.index <= 3) {
+        return;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
+    if (entry == NULL) {
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", (void *)ref.index);
+    }
+    entry->filename_borrow = filename;
+    entry->linenumber_borrow = linenumber;
+}
+
+
+void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
     assert(interp->next_stackref >= ref.index);
@@ -108,12 +127,17 @@ _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef re
 
 
 static int
-report_leak(_Py_hashtable_t *ht, const void *key, const void *value, void *user_data)
+report_leak(_Py_hashtable_t *ht, const void *key, const void *value, void *leak)
 {
     TableEntry *entry = (TableEntry *)value;
     if (!_Py_IsStaticImmortal(entry->obj)) {
-        printf("Stackref leak. Refers to instance of %s at %p. Created at %s:%d\n",
+        *(int *)leak = 1;
+        printf("Stackref leak. Refers to instance of %s at %p. Created at %s:%d",
                entry->classname, entry->obj, entry->filename, entry->linenumber);
+        if (entry->filename_borrow != NULL) {
+            printf(". Last borrow at %s:%d",entry->filename_borrow, entry->linenumber_borrow);
+        }
+        printf("\n");
     }
     return 0;
 }
@@ -121,7 +145,11 @@ report_leak(_Py_hashtable_t *ht, const void *key, const void *value, void *user_
 void
 _Py_stackref_report_leaks(PyInterpreterState *interp)
 {
-    _Py_hashtable_foreach(interp->stackref_debug_table, report_leak, NULL);
+    int leak = 0;
+    _Py_hashtable_foreach(interp->stackref_debug_table, report_leak, &leak);
+    if (leak) {
+        Py_FatalError("Stackrefs leaked.");
+    }
 }
 
 #endif
