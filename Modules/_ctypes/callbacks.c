@@ -264,7 +264,7 @@ static void _CallPythonObject(ctypes_state *st,
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        PyObject *keep = setfunc(mem, result, 0);
+        PyObject *keep = setfunc(mem, result, restype->size);
 
         if (keep == NULL) {
             /* Could not convert callback result. */
