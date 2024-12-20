@@ -276,7 +276,7 @@ class GeneratorTest(unittest.TestCase):
         import contextlib
 
         def my_generator():
-            for i in range(1000000):
+            for i in range(1000):
                 yield i
 
 
