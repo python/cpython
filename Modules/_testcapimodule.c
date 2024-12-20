@@ -3144,6 +3144,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyObject *ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
+    assert(!PyWeakref_IsDead(weakref));
     assert(Py_REFCNT(obj) == (refcnt + 1));
     Py_DECREF(ref);
 
@@ -3158,6 +3159,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
+
+    assert(PyWeakref_IsDead(weakref));
 
     // test PyWeakref_GET_OBJECT(), reference is dead
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
@@ -3181,6 +3184,12 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyErr_Clear();
     assert(ref == NULL);
 
+    // test PyWeakRef_IsDead(), invalid type
+    assert(!PyErr_Occurred());
+    assert(PyWeakref_IsDead(invalid_weakref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
     // test PyWeakref_GetObject(), invalid type
     assert(PyWeakref_GetObject(invalid_weakref) == NULL);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -3191,6 +3200,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GetRef(NULL, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_IsDead(NULL)
+    assert(PyWeakref_IsDead(NULL) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
 
     // test PyWeakref_GetObject(NULL)
@@ -3353,6 +3367,53 @@ type_freeze(PyObject *module, PyObject *args)
     Py_RETURN_NONE;
 }
 
+struct atexit_data {
+    int called;
+    PyThreadState *tstate;
+    PyInterpreterState *interp;
+};
+
+static void
+atexit_callback(void *data)
+{
+    struct atexit_data *at_data = (struct atexit_data *)data;
+    // Ensure that the callback is from the same interpreter
+    assert(PyThreadState_Get() == at_data->tstate);
+    assert(PyInterpreterState_Get() == at_data->interp);
+    ++at_data->called;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    data.tstate = PyThreadState_Get();
+    data.interp = PyInterpreterState_Get();
+
+    int amount = 10;
+    for (int i = 0; i < amount; ++i)
+    {
+        int res = PyUnstable_AtExit(tstate->interp, atexit_callback, (void *)&data);
+        if (res < 0) {
+            Py_EndInterpreter(tstate);
+            PyThreadState_Swap(oldts);
+            PyErr_SetString(PyExc_RuntimeError, "atexit callback failed");
+            return NULL;
+        }
+    }
+
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+
+    if (data.called != amount) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -3495,6 +3556,7 @@ static PyMethodDef TestMethods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"type_freeze", type_freeze, METH_VARARGS},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
