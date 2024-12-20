@@ -493,13 +493,6 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
-# gh-127274: CALL_ALLOC_AND_ENTER_INIT will only cache __init__ methods that
-# are deferred. We only defer functions defined at the top-level.
-class MyClass:
-    def __init__(self):
-        pass
-
-
 class InitTakesArg:
     def __init__(self, arg):
         self.arg = arg
@@ -536,6 +529,10 @@ class TestCallCache(TestBase):
     @disabling_optimizer
     @requires_specialization_ft
     def test_assign_init_code(self):
+        class MyClass:
+            def __init__(self):
+                pass
+
         def instantiate():
             return MyClass()
 
@@ -1382,6 +1379,72 @@ class TestSpecializer(TestBase):
 
         self.assert_specialized(send_yield_from, "SEND_GEN")
         self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_slot(self):
+        class C:
+            __slots__ = ['x']
+
+        def set_slot():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_slot()
+
+        self.assert_specialized(set_slot, "STORE_ATTR_SLOT")
+        self.assert_no_opcode(set_slot, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_slot()
+        self.assert_no_opcode(set_slot, "STORE_ATTR_SLOT")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_instance_value(self):
+        class C:
+            pass
+
+        def set_value():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_INSTANCE_VALUE")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_INSTANCE_VALUE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_WITH_HINT")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_WITH_HINT")
 
     @cpython_only
     @requires_specialization_ft
