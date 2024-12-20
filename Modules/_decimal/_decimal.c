@@ -3684,6 +3684,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         mpd_del(x);
         return PyLong_FromInt64(val);
     }
+    assert(!mpd_iszero(x));
 
     const PyLongLayout *layout = PyLong_GetNativeLayout();
     const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
@@ -3695,7 +3696,9 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     status = 0;
-    /* mpd_sizeinbase can overestimate size by 1 digit, set it first to zero. */
+    /* mpd_qexport_*() functions used here with assumption, that no resizing
+       occur, i.e. len was obtained by a call to mpd_sizeinbase.  Note that
+       it can overestimate size by 1 digit, so set it first to zero. */
     if (base > UINT16_MAX) {
         ((uint32_t *)digits)[len - 1] = 0;
         n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
@@ -3704,9 +3707,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         ((uint16_t *)digits)[len - 1] = 0;
         n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
     }
-    /* mpd_qexport_*() functions above used with assumption, that no
-       resizing occur, i.e. len was obtained by a call to mpd_sizeinbase. */
-    assert(n == len || n == len - 1);
 
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
@@ -3715,7 +3715,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return NULL;
     }
 
-    assert(n > 0);
+    assert(n == len || n == len - 1);
     mpd_del(x);
     return PyLongWriter_Finish(writer);
 }
