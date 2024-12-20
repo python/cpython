@@ -102,6 +102,8 @@ def decode_header(header):
     for n, w in enumerate(words):
         if n>1 and w[1] and words[n-2][1] and words[n-1][0].isspace():
             droplist.append(n-1)
+            if n < len(words):
+                words[n] = (words[n][0].lstrip(), words[n][1], words[n][2])
     for d in reversed(droplist):
         del words[d]
 

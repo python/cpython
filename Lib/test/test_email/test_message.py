@@ -1055,5 +1055,80 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         self.assertEqual(list(attachments), [])
 
 
+class TestHeaderDecoding(unittest.TestCase):
+    def test_encoded_word_splitting(self):
+        # Test case with accented characters that forces line splitting
+        address = "Bérénice-Amélie Rosemonde Dûbois-Bénard <rose@example.com>"
+        message = EmailMessage()
+        message["From"] = address
+        message_bytes = message.as_bytes()
+
+        # Test with default policy
+        parsed = message_from_bytes(message_bytes, policy=policy.default)
+        self.assertEqual(str(parsed["From"].addresses[0]), address)
+        self.assertEqual(parsed["From"].addresses[0].display_name,
+                        "Bérénice-Amélie Rosemonde Dûbois-Bénard")
+
+    def test_multiple_encoded_words(self):
+        # Test multiple encoded-words in sequence
+        headers = [
+            ("From", "André von Müller <andre@example.com>"),
+            ("To", "José García López <jose@example.com>"),
+            ("Subject", "Re: études à l'université"),
+        ]
+
+        message = EmailMessage()
+        for header, value in headers:
+            message[header] = value
+        message_bytes = message.as_bytes()
+
+        parsed = message_from_bytes(message_bytes, policy=policy.default)
+        for header, value in headers:
+            with self.subTest(header=header):
+                self.assertEqual(str(parsed[header]), value)
+
+    def test_long_encoded_words(self):
+        # Test very long names that force multiple encoded-word splits
+        long_name = "Maximilian-Friedrich von Württemberg-Höchstadt III"
+        address = f"{long_name} <max@example.com>"
+
+        message = EmailMessage()
+        message["From"] = address
+        message_bytes = message.as_bytes()
+
+        parsed = message_from_bytes(message_bytes, policy=policy.default)
+        self.assertEqual(str(parsed["From"].addresses[0]), address)
+        self.assertEqual(parsed["From"].addresses[0].display_name, long_name)
+
+    def test_mixed_ascii_and_encoded(self):
+        # Test mixing ASCII and encoded-words
+        address = 'ACME Corp (アクメ) <info@example.com>'
+        message = EmailMessage()
+        message["From"] = address
+        message_bytes = message.as_bytes()
+
+        parsed = message_from_bytes(message_bytes, policy=policy.default)
+        self.assertEqual(str(parsed["From"].addresses[0]), address)
+        self.assertEqual(parsed["From"].addresses[0].display_name, 'ACME Corp (アクメ)')
+
+    def test_whitespace_handling(self):
+        # Test various whitespace scenarios between encoded-words
+        headers = [
+            ("From", "María  José <maria.jose@example.com>"),  # Double space
+            ("To", "André\tvon\tMüller <andre@example.com>"),  # Tabs
+            ("Cc", "José\n García <jose@example.com>"),  # Newline
+        ]
+
+        message = EmailMessage()
+        for header, value in headers:
+            message[header] = value
+        message_bytes = message.as_bytes()
+
+        parsed = message_from_bytes(message_bytes, policy=policy.default)
+        for header, value in headers:
+            with self.subTest(header=header):
+                self.assertEqual(str(parsed[header]), value)
+
+
 if __name__ == '__main__':
     unittest.main()
