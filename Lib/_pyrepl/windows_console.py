@@ -128,6 +128,7 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
+        self.key_repeat_queue: deque[Event] = deque()
         try:
             self.out = io._WindowsConsoleIO(self.output_fd, "w")  # type: ignore[attr-defined]
         except ValueError:
@@ -390,6 +391,9 @@ class WindowsConsole(Console):
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
+        if self.key_repeat_queue:
+            return self.key_repeat_queue.pop()
+
         if self.event_queue:
             return self.event_queue.pop()
 
@@ -407,31 +411,41 @@ class WindowsConsole(Console):
                     continue
                 return None
 
-            key = rec.Event.KeyEvent.uChar.UnicodeChar
+            event = self._event_from_keyevent(rec.Event.KeyEvent)
+            if event is None and block:
+                continue
 
-            if rec.Event.KeyEvent.uChar.UnicodeChar == "\r":
-                # Make enter make unix-like
-                return Event(evt="key", data="\n", raw=b"\n")
-            elif rec.Event.KeyEvent.wVirtualKeyCode == 8:
-                # Turn backspace directly into the command
+            if event is not None:
+                # Queue this key event to be repeated if wRepeatCount > 1, such as when a 'dead key' is pressed twice
+                for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
+                    self.key_repeat_queue.appendleft(event)
+
+            return event
+
+    def _event_from_keyevent(self, keyevent: KeyEvent) -> Event | None:
+        key = keyevent.uChar.UnicodeChar
+
+        if keyevent.uChar.UnicodeChar == "\r":
+            # Make enter make unix-like
+            return Event(evt="key", data="\n", raw=b"\n")
+        elif keyevent.wVirtualKeyCode == 8:
+            # Turn backspace directly into the command
+            return Event(
+                evt="key",
+                data="backspace",
+                raw=keyevent.uChar.UnicodeChar,
+            )
+        elif keyevent.uChar.UnicodeChar == "\x00":
+            # Handle special keys like arrow keys and translate them into the appropriate command
+            code = VK_MAP.get(keyevent.wVirtualKeyCode)
+            if code:
                 return Event(
-                    evt="key",
-                    data="backspace",
-                    raw=rec.Event.KeyEvent.uChar.UnicodeChar,
+                    evt="key", data=code, raw=keyevent.uChar.UnicodeChar
                 )
-            elif rec.Event.KeyEvent.uChar.UnicodeChar == "\x00":
-                # Handle special keys like arrow keys and translate them into the appropriate command
-                code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
-                if code:
-                    return Event(
-                        evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar
-                    )
-                if block:
-                    continue
 
-                return None
+            return None
 
-            return Event(evt="key", data=key, raw=rec.Event.KeyEvent.uChar.UnicodeChar)
+        return Event(evt="key", data=key, raw=keyevent.uChar.UnicodeChar)
 
     def push_char(self, char: int | bytes) -> None:
         """
@@ -479,7 +493,7 @@ class WindowsConsole(Console):
         # Poor man's Windows select loop
         start_time = time.time()
         while True:
-            if msvcrt.kbhit(): # type: ignore[attr-defined]
+            if msvcrt.kbhit() or self.key_repeat_queue: # type: ignore[attr-defined]
                 return True
             if timeout and time.time() - start_time > timeout / 1000:
                 return False

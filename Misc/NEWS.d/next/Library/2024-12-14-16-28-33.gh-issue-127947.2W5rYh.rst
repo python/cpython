@@ -1,0 +1,1 @@
+Repeat PyREPL key events on Windows when wRepeatCount > 1. This fixes double dead key presses from only being typed once in the Windows Terminal.
