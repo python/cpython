@@ -1529,7 +1529,6 @@ class DSLParser:
         lines = f.docstring.split('\n')
         if len(lines) >= 2:
             if lines[1]:
-                print(lines[1])
                 fail(f"Docstring for {f.full_name!r} does not have a summary line!\n"
                      "Every non-blank function docstring must start with "
                      "a single line summary followed by an empty line.")
