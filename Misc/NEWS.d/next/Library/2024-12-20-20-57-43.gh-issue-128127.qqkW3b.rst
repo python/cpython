@@ -1,0 +1,4 @@
+Change behaviour of NodeVisitor's generic_visit to return list of return
+values of calls to visit_x method instead of None. For new functionailty to
+work derived classes need to call NodeVisitors constructor otherwise, it
+behaves same as before(returns None).
