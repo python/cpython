@@ -262,7 +262,8 @@ Known values:
     Python 3.14a1 3607 (Add pseudo instructions JUMP_IF_TRUE/FALSE)
     Python 3.14a1 3608 (Add support for slices)
     Python 3.14a2 3609 (Add LOAD_SMALL_INT and LOAD_CONST_IMMORTAL instructions, remove RETURN_CONST)
-    Python 3.14a3 3610 (Add NOT_TAKEN instruction)
+                       (3610 accidentally omitted)
+    Python 3.14a4 3611 (Add NOT_TAKEN instruction)
 
     Python 3.15 will start with 3650
 
