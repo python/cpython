@@ -116,7 +116,6 @@ class MemFunctionsTest(unittest.TestCase):
     def test_memoryview_at_readonly(self):
         b = (c_byte * 10)()
 
-        foreign_ptr = cast(b, c_void_p)
         size = len(b)
         for foreign_ptr in (
             b,
