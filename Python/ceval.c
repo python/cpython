@@ -1811,7 +1811,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
     _PyStackRef *newargs;
-    PyObject *const *object_array;
+    PyObject *const *object_array = NULL;
     _PyStackRef stack_array[8];
     if (has_dict) {
         object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
