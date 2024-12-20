@@ -450,7 +450,7 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
@@ -461,7 +461,7 @@ do { \
     assert(NAME != NULL);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
@@ -470,7 +470,7 @@ do { \
     (void)(NAME);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 #else
 #define CONVERSION_FAILED(NAME) (0)

@@ -179,9 +179,9 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
             // the function's closure.
-            assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+            assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
             cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-        } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
+        } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
             PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
             if (PyCell_Check(as_obj)) {
                 cell = as_obj;

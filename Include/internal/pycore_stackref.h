@@ -4,6 +4,9 @@
 extern "C" {
 #endif
 
+// Define this to get precise tracking of stackrefs.
+// #define Py_STACKREF_DEBUG 1
+
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -48,6 +51,113 @@ extern "C" {
    Note that it is unsafe to borrow a _PyStackRef and then do normal
    CPython refcounting operations on it!
 */
+
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+
+
+
+typedef union _PyStackRef {
+    uint64_t index;
+} _PyStackRef;
+
+#define Py_TAG_BITS 0
+
+PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
+PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref);
+PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, const char *filename, int linenumber);
+PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
+extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
+
+static const _PyStackRef PyStackRef_NULL = { .index = 0 };
+
+#define PyStackRef_None ((_PyStackRef){ .index = 1 } )
+#define PyStackRef_False ((_PyStackRef){ .index = 2 })
+#define PyStackRef_True ((_PyStackRef){ .index = 3 })
+
+#define LAST_PREDEFINED_STACKREF_INDEX 3
+
+static inline int
+PyStackRef_IsNull(_PyStackRef ref)
+{
+    return ref.index == 0;
+}
+
+static inline int
+PyStackRef_IsTrue(_PyStackRef ref)
+{
+    return _Py_stackref_get_object(ref) == Py_True;
+}
+
+static inline int
+PyStackRef_IsFalse(_PyStackRef ref)
+{
+    return _Py_stackref_get_object(ref) == Py_False;
+}
+
+static inline int
+PyStackRef_IsNone(_PyStackRef ref)
+{
+    return _Py_stackref_get_object(ref) == Py_None;
+}
+
+static inline PyObject *
+_PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
+{
+    _Py_stackref_record_borrow(ref, filename, linenumber);
+    return _Py_stackref_get_object(ref);
+}
+
+#define PyStackRef_AsPyObjectBorrow(REF) _PyStackRef_AsPyObjectBorrow((REF), __FILE__, __LINE__)
+
+static inline PyObject *
+PyStackRef_AsPyObjectSteal(_PyStackRef ref)
+{
+    return _Py_stackref_close(ref);
+}
+
+static inline _PyStackRef
+_PyStackRef_FromPyObjectNew(PyObject *obj, const char *filename, int linenumber)
+{
+    Py_INCREF(obj);
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectNew(obj) _PyStackRef_FromPyObjectNew(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+static inline _PyStackRef
+_PyStackRef_FromPyObjectSteal(PyObject *obj, const char *filename, int linenumber)
+{
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+static inline _PyStackRef
+_PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenumber)
+{
+    assert(_Py_IsImmortal(obj));
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+static inline void
+PyStackRef_CLOSE(_PyStackRef ref)
+{
+    PyObject *obj = _Py_stackref_close(ref);
+    Py_DECREF(obj);
+}
+
+static inline _PyStackRef
+_PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
+{
+    PyObject *obj = _Py_stackref_get_object(ref);
+    Py_INCREF(obj);
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
+
+#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
+
+#else
 
 typedef union _PyStackRef {
     uintptr_t bits;
@@ -200,11 +310,14 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 #define PyStackRef_IsTrue(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_True)
 #define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
 
+#endif
+
 // Converts a PyStackRef back to a PyObject *, converting the
 // stackref to a new reference.
 #define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
 
 #define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
+
 
 #define PyStackRef_CLEAR(op) \
     do { \

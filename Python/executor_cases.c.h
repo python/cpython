@@ -850,7 +850,7 @@
              */
             assert(Py_REFCNT(left_o) >= 2);
             PyStackRef_CLOSE(left);
-            PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
+            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
             PyUnicode_Append(&temp, right_o);
             *target_local = PyStackRef_FromPyObjectSteal(temp);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
