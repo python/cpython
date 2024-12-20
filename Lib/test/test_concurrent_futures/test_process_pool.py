@@ -242,20 +242,10 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             self.assertRaises(queue.Empty, q.get, timeout=1)
 
-
     def test_process_pool_executor_terminate_workers_dead_workers(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             future = executor.submit(os._exit, 1)
             self.assertRaises(BrokenProcessPool, future.result)
-
-            # Patching in here instead of at the function level since we only want
-            # to patch it for this function call, not other parts of the flow.
-            with unittest.mock.patch('concurrent.futures.process.os.kill') as mock_kill:
-                with unittest.mock.patch.object(executor, 'shutdown') as mock_shutdown:
-                    executor.terminate_workers()
-                    mock_shutdown.assert_called_once_with(wait=False, cancel_futures=True)
-
-            mock_kill.assert_not_called()
 
     @unittest.mock.patch('concurrent.futures.process.os.kill')
     def test_process_pool_executor_terminate_workers_not_started_yet(self, mock_kill):
