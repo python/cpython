@@ -55,6 +55,8 @@ extern "C" {
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
+
+
 typedef union _PyStackRef {
     uint64_t index;
 } _PyStackRef;
@@ -147,9 +149,19 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
+static inline _PyStackRef
+_PyStackRef_Transfer(_PyStackRef ref, const char *filename, int linenumber)
+{
+    PyObject *obj = _Py_stackref_close(ref);
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_Transfer(REF) _PyStackRef_Transfer(REF, __FILE__, __LINE__)
+
 #define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
 
 #else
+
+#define PyStackRef_Transfer(REF) (REF)
 
 typedef union _PyStackRef {
     uintptr_t bits;
