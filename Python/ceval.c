@@ -1811,6 +1811,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
     PyObject *const *newargs;
+    PyObject *stack_array[8];
     if (has_dict) {
         newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (newargs == NULL) {
@@ -1824,7 +1825,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     }
     else {
         if (nargs <= 8) {
-            PyObject *stack_array[8];
             newargs = stack_array;
         }
         else {
