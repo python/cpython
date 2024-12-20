@@ -808,7 +808,6 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).__getattribute__ = lambda self, name: None
 
-
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 

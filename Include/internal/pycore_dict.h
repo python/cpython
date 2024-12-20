@@ -113,7 +113,6 @@ extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
-
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 
 /* Look up a string key in an all unicode dict keys, assign the keys object a version, and

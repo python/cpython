@@ -2275,7 +2275,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-
             null = PyStackRef_NULL;
             DECREF_INPUTS();
         }

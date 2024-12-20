@@ -1022,6 +1022,7 @@ specialize_dict_access_hint(
     return 1;
 }
 
+
 static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
