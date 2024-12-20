@@ -501,18 +501,26 @@ class NodeVisitor(object):
     class name of the node.  So a `TryFinally` node visit function would
     be `visit_TryFinally`.  This behavior can be changed by overriding
     the `visit` method.  If no visitor function exists for a node
-    (return value `None`) the `generic_visit` visitor is used instead.
+    (return value `list` | `None`) the `generic_visit` visitor is used instead.
+    The `generic_visit` visitor iterates the nodes, calls appropriate `visit_` method
+    and returns a list of all return values of ``'visit_'`` method calls.
 
     Don't use the `NodeVisitor` if you want to apply changes to nodes during
     traversing.  For this a special visitor exists (`NodeTransformer`) that
     allows modifications.
     """
+    def __init__(self):
+        self.visited_items = []
 
     def visit(self, node):
         """Visit a node."""
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
-        return visitor(node)
+        visited = visitor(node)
+        if (visitor != self.generic_visit) and not isinstance(visited, list):
+            if hasattr(self, 'visited_items'):
+                self.visited_items.append(visited)
+        return visited
 
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
@@ -523,6 +531,10 @@ class NodeVisitor(object):
                         self.visit(item)
             elif isinstance(value, AST):
                 self.visit(value)
+        try:
+            return self.visited_items
+        except AttributeError:
+            return None
 
 
 class NodeTransformer(NodeVisitor):
