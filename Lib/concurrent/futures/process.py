@@ -870,10 +870,18 @@ class ProcessPoolExecutor(_base.Executor):
             signal: The signal to send to each worker process. Defaults to
                 signal.SIGTERM.
         """
-        if not self._processes:
+        processes = {}
+        if self._processes:
+            processes = self._processes.copy()
+
+        # shutdown will invalidate ._processes, so we copy it right before calling.
+        # If we waited here, we would deadlock if a process decides not to exit.
+        self.shutdown(wait=False, cancel_futures=True)
+
+        if not processes:
             return
 
-        for pid, proc in self._processes.items():
+        for pid, proc in processes.items():
             try:
                 if not proc.is_alive():
                     continue

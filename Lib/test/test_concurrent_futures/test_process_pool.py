@@ -251,7 +251,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
             # Patching in here instead of at the function level since we only want
             # to patch it for this function call, not other parts of the flow.
             with unittest.mock.patch('concurrent.futures.process.os.kill') as mock_kill:
-                executor.terminate_workers()
+                with unittest.mock.patch.object(executor, 'shutdown') as mock_shutdown:
+                    executor.terminate_workers()
+                    mock_shutdown.assert_called_once_with(wait=False, cancel_futures=True)
 
             mock_kill.assert_not_called()
 
@@ -269,8 +271,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             executor.terminate_workers()
 
-            future = executor.submit(time.sleep, 0)
-            self.assertRaises(BrokenProcessPool, future.result)
+            self.assertRaises(RuntimeError, executor.submit, time.sleep, 0)
 
     @unittest.mock.patch('concurrent.futures.process.os.kill')
     def test_process_pool_executor_terminate_workers_passes_signal(self, mock_kill):
@@ -278,9 +279,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
             future = executor.submit(time.sleep, 0)
             future.result()
 
+            worker_process = list(executor._processes.values())[0]
             executor.terminate_workers(signal.SIGABRT)
 
-            worker_process = list(executor._processes.values())[0]
             mock_kill.assert_called_once_with(worker_process.pid, signal.SIGABRT)
 
     def test_process_pool_executor_terminate_workers_passes_even_bad_signals(self):
