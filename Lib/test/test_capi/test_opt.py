@@ -1544,11 +1544,11 @@ class TestUopsOptimization(unittest.TestCase):
         interesting = [
             (1, 1),  # int ** int -> int
             (1, -1),  # int ** int -> float
-            (1, 1.0),  # int ** float -> float
-            (-1, 0.1),  # int ** float -> complex
             (1.0, 1),  # float ** int -> float
+            (1, 1.0),  # int ** float -> float
+            (-1, 0.5),  # int ** float -> complex
             (1.0, 1.0),  # float ** float -> float
-            (-1.0, 0.1),  # float ** float -> complex
+            (-1.0, 0.5),  # float ** float -> complex
         ]
         for (l, r), (x, y) in itertools.product(interesting, repeat=2):
             s = template.format(l=l, r=r, x=x, y=y)

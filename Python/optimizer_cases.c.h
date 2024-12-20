@@ -2280,83 +2280,65 @@
             bool rhs_int = sym_matches_type(right, &PyLong_Type);
             bool lhs_float = sym_matches_type(left, &PyFloat_Type);
             bool rhs_float = sym_matches_type(right, &PyFloat_Type);
-            if ((!lhs_int && !lhs_float) || (!rhs_int && !rhs_float)) {
-                res = sym_new_unknown(ctx);
-                goto binary_op_done;
-            }
-            if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
-                // This one's fun: the *type* of the result depends on the *values*
-                // being exponentiated. But exponents with one constant part are
-                // reasonably common, so it's probably worth trying to be precise:
-                PyObject *lhs_const = sym_get_const(left);
-                PyObject *rhs_const = sym_get_const(right);
-                if (lhs_int && rhs_int) {
-                    if (rhs_const == NULL) {
-                        // Unknown RHS means either int or float:
-                        res = sym_new_unknown(ctx);
-                        goto binary_op_done;
-                    }
-                    if (!_PyLong_IsNegative((PyLongObject *)rhs_const)) {
-                        // Non-negative RHS means int:
-                        res = sym_new_type(ctx, &PyLong_Type);
-                        goto binary_op_done;
-                    }
-                    // Negative RHS uses float_pow...
-                }
-                // Negative LHS *and* non-integral RHS means complex. So we need to
-                // disprove at least one to prove a float result:
-                if (rhs_int) {
-                    // Integral RHS means float:
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                    goto binary_op_done;
-                }
-                if (rhs_const) {
-                    double rhs_double = PyFloat_AS_DOUBLE(rhs_const);
-                    if (rhs_double == floor(rhs_double)) {
-                        // Integral RHS means float:
-                        res = sym_new_type(ctx, &PyFloat_Type);
-                        goto binary_op_done;
-                    }
-                }
-                if (lhs_const) {
-                    if (lhs_int) {
-                        if (!_PyLong_IsNegative((PyLongObject *)lhs_const)) {
-                            // Non-negative LHS means float:
-                            res = sym_new_type(ctx, &PyFloat_Type);
-                            goto binary_op_done;
-                        }
-                    }
-                    else {
-                        if (0.0 <= PyFloat_AS_DOUBLE(lhs_const)) {
-                            // Non-negative LHS means float:
-                            res = sym_new_type(ctx, &PyFloat_Type);
-                            goto binary_op_done;
-                        }
-                    }
-                    if (rhs_const) {
-                        // If we have two constants and failed to disprove that it's
-                        // complex, then it's complex:
-                        res = sym_new_type(ctx, &PyComplex_Type);
-                        goto binary_op_done;
-                    }
-                }
-                // Couldn't prove anything. It's either float or complex:
+            if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+                // There's something other than an int or float involved:
                 res = sym_new_unknown(ctx);
             }
             else {
-                if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                }
-                else {
-                    if (lhs_int && rhs_int) {
-                        res = sym_new_type(ctx, &PyLong_Type);
+                if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+                    // This one's fun... the *type* of the result depends on the
+                    // *values* being exponentiated. However, exponents with one
+                    // constant part are reasonably common, so it's probably worth
+                    // trying to infer some simple cases:
+                    // - A: 1 ** 1 -> 1 (int ** int -> int)
+                    // - B: 1 ** -1 -> 1.0 (int ** int -> float)
+                    // - C: 1.0 ** 1 -> 1.0 (float ** int -> float)
+                    // - D: 1 ** 1.0 -> 1.0 (int ** float -> float)
+                    // - E: -1 ** 0.5 ~> 1j (int ** float -> complex)
+                    // - F: 1.0 ** 1.0 -> 1.0 (float ** float -> float)
+                    // - G: -1.0 ** 0.5 ~> 1j (float ** float -> complex)
+                    if (rhs_float) {
+                        // Case D, E, F, or G... can't know without the sign of the LHS
+                        // or whether the RHS is whole, which isn't worth the effort:
+                        res = sym_new_unknown(ctx);
                     }
                     else {
+                        if (lhs_float) {
+                            // Case C:
+                            res = sym_new_type(ctx, &PyFloat_Type);
+                        }
+                        else {
+                            if (!sym_is_const(right)) {
+                                // Case A or B... can't know without the sign of the RHS:
+                                res = sym_new_unknown(ctx);
+                            }
+                            else {
+                                if (_PyLong_IsNegative((PyLongObject *)sym_get_const(right))) {
+                                    // Case B:
+                                    res = sym_new_type(ctx, &PyFloat_Type);
+                                }
+                                else {
+                                    // Case A:
+                                    res = sym_new_type(ctx, &PyLong_Type);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
                         res = sym_new_type(ctx, &PyFloat_Type);
+                    }
+                    else {
+                        if (lhs_int && rhs_int) {
+                            res = sym_new_type(ctx, &PyLong_Type);
+                        }
+                        else {
+                            res = sym_new_type(ctx, &PyFloat_Type);
+                        }
                     }
                 }
             }
-            binary_op_done:
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
