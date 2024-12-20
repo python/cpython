@@ -1127,6 +1127,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
+    uint8_t oparg = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.arg);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -1136,7 +1137,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if (shadow) {
                 goto try_instance;
             }
-            int oparg = instr->op.arg;
             if (oparg & 1) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
                                                   tp_version, kind, true,
@@ -1166,7 +1166,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if (!function_check_args(fget, 1, LOAD_ATTR)) {
                 return -1;
             }
-            if (instr->op.arg & 1) {
+            if (oparg & 1) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 return -1;
             }
@@ -1243,7 +1243,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 return -1;
             }
-            if (instr->op.arg & 1) {
+            if (oparg & 1) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 return -1;
             }
@@ -1280,7 +1280,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             if (shadow) {
                 goto try_instance;
             }
-            if ((instr->op.arg & 1) == 0) {
+            if ((oparg & 1) == 0) {
                 if (specialize_attr_loadclassattr(owner, instr, name, descr,
                                                   tp_version, kind, false,
                                                   shared_keys_version)) {
