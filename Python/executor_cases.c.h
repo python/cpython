@@ -2776,6 +2776,15 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            if (dict != _PyObject_GetManagedDict(owner_o)) {
+                UNLOCK_OBJECT(dict);
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            #endif
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
                 if (true) {

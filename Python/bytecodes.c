@@ -2228,6 +2228,12 @@ dummy_func(
 
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
             DEOPT_IF(!LOCK_OBJECT(dict));
+            #ifdef Py_GIL_DISABLED
+            if (dict != _PyObject_GetManagedDict(owner_o)) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
+            #endif
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
                 DEOPT_IF(true);
