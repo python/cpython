@@ -659,7 +659,8 @@ class CmdLineTest(unittest.TestCase):
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
                     b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \'\\q\''
+                    b'SyntaxError: "\\q" is an invalid escape sequence. '
+                    b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )
 
