@@ -1,0 +1,2 @@
+Adds stackref debugging when ``Py_STACKREF_DEBUG`` is set. Finds all
+double-closes and leaks, logging the origin and last borrow.
