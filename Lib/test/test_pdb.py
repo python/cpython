@@ -4308,7 +4308,13 @@ class PdbTestReadline(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
-    tests.addTest(doctest.DocTestSuite(test_pdb))
+    def setUpPdbBackend(backend):
+        def setUp(test):
+            import pdb
+            pdb.Pdb.DEFAULT_BACKEND = backend
+        return setUp
+    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('monitoring')))
+    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('settrace')))
     return tests
 
 
