@@ -17495,6 +17495,9 @@ all_ins(PyObject *m)
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
 #endif
+#ifdef RWF_ATOMIC
+    if (PyModule_AddIntConstant(m, "RWF_ATOMIC", RWF_ATOMIC)) return -1;
+#endif
 
 /* constants for splice */
 #if defined(HAVE_SPLICE) && defined(__linux__)
