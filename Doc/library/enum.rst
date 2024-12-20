@@ -834,8 +834,8 @@ Data Types
    for defining enum classes (see :ref:`prepare`).
    It is exposed to allow subclasses of :class:`EnumType` with advanced
    behavior like having multiple values per member.
-   It prevents reusing member names, with special behavior for names that
-   start with an underscore.
+   It should be called with the name of the enum class being created, otherwise
+   private names and internal classes will not be handled correctly.
 
    Note that only the :class:`~collections.abc.MutableMapping` interface
    (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.

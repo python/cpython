@@ -5459,7 +5459,7 @@ class TestEnumDict(unittest.TestCase):
 
     def test_enum_dict_standalone(self):
         """Test that EnumDict is usable on its own"""
-        enumdict = EnumDict('test')
+        enumdict = EnumDict()
         enumdict['a'] = 1
 
         with self.assertRaises(TypeError):
