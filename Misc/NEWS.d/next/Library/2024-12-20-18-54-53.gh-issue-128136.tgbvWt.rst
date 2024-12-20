@@ -1,0 +1,13 @@
+New parameter added to the write function that allows you to customize the xml declaration, which was previously hard-coded.
+
+The standard functionality is retained; if you don't specify the xml_declaration_definition parameter, the previous standard declaration is used. "<?xml version='1.0' encoding='{encoding}'?>
+
+When specifying the parameter, the following options are available.
+E.g.:
+- tee.write(file, encoding="utf-8", xml_declaration=True, xml_declaration_definition='''<?xml version="{version}" encoding="{encoding}"?>''')
+
+- tee.write(file, encoding="utf-8", xml_declaration=True, xml_declaration_definition='''<?xml version="1.1" encoding="{encoding}"?>''')
+
+- tee.write(file, encoding="utf-8", xml_declaration=True, xml_declaration_definition='''<?xml version="1.1"?>''')
+
+The placeholders {version} and {encoding} are replaced, version is always 1.0 and enconding depends on the code as before.
