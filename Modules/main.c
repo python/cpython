@@ -100,8 +100,7 @@ pymain_err_print(int *exitcode_p)
 {
     int exitcode;
     if (_Py_HandleSystemExit(&exitcode)) {
-        *exitcode_p = exitcode;
-        return 1;
+        Py_Exit(exitcode);
     }
 
     PyErr_Print();
