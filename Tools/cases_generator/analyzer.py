@@ -635,7 +635,6 @@ NON_ESCAPING_FUNCTIONS = (
     "advance_backoff_counter",
     "assert",
     "backoff_counter_triggers",
-    "floor",
     "initial_temperature_backoff_counter",
     "maybe_lltrace_resume_frame",
     "restart_backoff_counter",
