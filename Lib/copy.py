@@ -100,12 +100,12 @@ def copy(x):
     return _reconstruct(x, None, *rv)
 
 
-_copy_atomic_types = (types.NoneType, int, float, bool, complex, str, tuple,
+_copy_atomic_types = {types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref, super)
-_copy_builtin_containers = (list, dict, set, bytearray)
+          weakref.ref, super}
+_copy_builtin_containers = {list, dict, set, bytearray}
 
 def deepcopy(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.
