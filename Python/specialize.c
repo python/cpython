@@ -1583,19 +1583,19 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
 
-#ifdef Py_GIL_DISABLED
+    #ifdef Py_GIL_DISABLED
     if (!_PyObject_HasDeferredRefcount(descr)) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
         return 0;
     }
-#endif
+    #endif
 
     unsigned long tp_flags = PyType_GetFlags(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-#ifndef Py_GIL_DISABLED
+        #ifndef Py_GIL_DISABLED
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         assert(_PyDictKeys_StringLookup(keys, name) < 0);
-#endif
+        #endif
         if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
