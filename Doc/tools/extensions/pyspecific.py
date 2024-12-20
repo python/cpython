@@ -338,7 +338,7 @@ class PyAbstractMethod(PyMethod):
 def expand_version_arg(argument, release):
     """Expand "next" to the current version"""
     if argument == 'next':
-        return sphinx_gettext('{} (unreleased)').format(release)
+        return translators['sphinx'].gettext('{} (unreleased)').format(release)
     return argument
 
 
