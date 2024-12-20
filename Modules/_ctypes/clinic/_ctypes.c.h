@@ -629,6 +629,9 @@ _ctypes_CFuncPtr_errcheck_set(PyCFuncPtrObject *self, PyObject *value, void *Py_
 
 PyDoc_STRVAR(_ctypes_CFuncPtr_errcheck__doc__,
 "a function to check for errors");
+#if defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
+#   undef _ctypes_CFuncPtr_errcheck_DOCSTR
+#endif
 #define _ctypes_CFuncPtr_errcheck_DOCSTR _ctypes_CFuncPtr_errcheck__doc__
 
 #if !defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
@@ -683,6 +686,9 @@ _ctypes_CFuncPtr_restype_set(PyCFuncPtrObject *self, PyObject *value, void *Py_U
 
 PyDoc_STRVAR(_ctypes_CFuncPtr_restype__doc__,
 "specify the result type");
+#if defined(_ctypes_CFuncPtr_restype_DOCSTR)
+#   undef _ctypes_CFuncPtr_restype_DOCSTR
+#endif
 #define _ctypes_CFuncPtr_restype_DOCSTR _ctypes_CFuncPtr_restype__doc__
 
 #if !defined(_ctypes_CFuncPtr_restype_DOCSTR)
@@ -737,6 +743,9 @@ _ctypes_CFuncPtr_argtypes_set(PyCFuncPtrObject *self, PyObject *value, void *Py_
 
 PyDoc_STRVAR(_ctypes_CFuncPtr_argtypes__doc__,
 "specify the argument types");
+#if defined(_ctypes_CFuncPtr_argtypes_DOCSTR)
+#   undef _ctypes_CFuncPtr_argtypes_DOCSTR
+#endif
 #define _ctypes_CFuncPtr_argtypes_DOCSTR _ctypes_CFuncPtr_argtypes__doc__
 
 #if !defined(_ctypes_CFuncPtr_argtypes_DOCSTR)
@@ -784,4 +793,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=67e66bba915fe5b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb3583522a2c5ce5 input=a9049054013a1b77]*/
