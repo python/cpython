@@ -35,6 +35,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         import __main__
         namespace = __main__.__dict__
         namespace.pop("__pyrepl_interactive_console", None)
+        namespace.pop("__file__", None)
 
     # sys._baserepl() above does this internally, we do it here
     startup_path = os.getenv("PYTHONSTARTUP")
