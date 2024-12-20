@@ -2691,7 +2691,10 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = 7 << 28
+        if support.Py_GIL_DISABLED:
+            IMMORTAL_REFCOUNT = 5 << 28
+        else:
+            IMMORTAL_REFCOUNT = 7 << 28
     else:
         IMMORTAL_REFCOUNT = 3 << 30
 
