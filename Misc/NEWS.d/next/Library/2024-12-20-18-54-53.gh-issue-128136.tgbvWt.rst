@@ -9,4 +9,5 @@ E.g.:
 - tree.write(file, encoding="utf-8", xml_declaration=True, xml_declaration_definition='''<?xml version="1.1" encoding="{encoding}"?>''')
 - tree.write(file, encoding="utf-8", xml_declaration=True, xml_declaration_definition='''<?xml version="1.1"?>''')
 
+
 The placeholders {version} and {encoding} are replaced, version is always 1.0 and enconding depends on the code as before.
