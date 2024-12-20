@@ -4068,7 +4068,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(raw.getvalue(),
                 '''<?xml version="1.0"?>\n'''
                 '''<site />'''.encode("utf-16"))
-        r
+
     def test_tostringlist_invariant(self):
         root = ET.fromstring('<tag>foo</tag>')
         self.assertEqual(
