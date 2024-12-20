@@ -109,18 +109,8 @@ _PyCriticalSection_IsActive(uintptr_t tag)
 static inline void
 _PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
 {
-    // As an optimisation for locking the same object recursively, skip
-    // locking if the mutex is currently locked and the topmost, active,
-    // single critical section.
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->critical_section &&
-        !(tstate->critical_section & _Py_CRITICAL_SECTION_MASK) &&
-        ((PyCriticalSection *)tstate->critical_section)->_cs_mutex == m) {
-        c->_cs_mutex = NULL;
-        c->_cs_prev = 0;
-        return;
-    }
     if (PyMutex_LockFast(m)) {
+        PyThreadState *tstate = _PyThreadState_GET();
         c->_cs_mutex = m;
         c->_cs_prev = tstate->critical_section;
         tstate->critical_section = (uintptr_t)c;
@@ -156,7 +146,7 @@ static inline void
 _PyCriticalSection_End(PyCriticalSection *c)
 {
     // If the mutex is NULL, we used the fast path in
-    // _PyCriticalSection_BeginMutex for locks already held in the top-most
+    // _PyCriticalSection_BeginSlow for locks already held in the top-most
     // critical section, and we shouldn't unlock or pop this critical section.
     if (c->_cs_mutex == NULL) {
         return;
@@ -216,7 +206,7 @@ static inline void
 _PyCriticalSection2_End(PyCriticalSection2 *c)
 {
     // if mutex1 is NULL, we used the fast path in
-    // _PyCriticalSection_BeginMutex for mutexes that are already held,
+    // _PyCriticalSection_BeginSlow for mutexes that are already held,
     // which should only happen when mutex1 and mutex2 were the same mutex,
     // and mutex2 should also be NULL.
     if (c->_cs_base._cs_mutex == NULL) {
