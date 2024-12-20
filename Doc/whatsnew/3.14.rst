@@ -641,10 +641,13 @@ unittest
 uuid
 ----
 
-* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+* Add support for UUID version 7 via :func:`uuid.uuid7` as specified
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
+* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+  in :rfc:`9562`.
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
