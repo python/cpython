@@ -921,6 +921,7 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr, un
                Too complicated */
             Py_DECREF(getattribute);
             *descr = NULL;
+            *tp_version = ga_version;
             return GETSET_OVERRIDDEN;
         }
         /* Potentially has __getattr__ but no custom __getattribute__.
@@ -934,6 +935,7 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr, un
     }
     else {
         *descr = NULL;
+        *tp_version = FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag);
         return GETSET_OVERRIDDEN;
     }
     unsigned int descr_version;
