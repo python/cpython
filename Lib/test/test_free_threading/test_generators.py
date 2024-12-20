@@ -10,7 +10,7 @@ class TestGen(TestCase):
         import threading
 
         def gen():
-            for _ in range(5000):
+            for _ in range(5_000):
                 yield
 
 
