@@ -15,6 +15,7 @@ from test.support import requires_specialization_ft, script_helper
 from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
+_testinternalcapi = test.support.import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
@@ -2003,10 +2004,11 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, 0)
 
 
+@unittest.skipUnless(hasattr(_testinternalcapi, "new_counter_optimizer"),
+                     "Requires counter optimizer")
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
-        _testinternalcapi = import_module("_testinternalcapi")
         if hasattr(_testinternalcapi, "get_optimizer"):
             self.old_opt = _testinternalcapi.get_optimizer()
             opt = _testinternalcapi.new_counter_optimizer()
