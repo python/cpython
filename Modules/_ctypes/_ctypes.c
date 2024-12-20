@@ -1979,7 +1979,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
             return NULL;
         parg->pffi_type = &ffi_type_pointer;
         parg->tag = 'P';
-        parg->obj = fd->setfunc(&parg->value, value, 0);
+        parg->obj = fd->setfunc(&parg->value, value, sizeof(void*));
         if (parg->obj == NULL) {
             Py_DECREF(parg);
             return NULL;
@@ -2444,7 +2444,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
 
     parg->tag = fmt[0];
     parg->pffi_type = fd->pffi_type;
-    parg->obj = fd->setfunc(&parg->value, value, 0);
+    parg->obj = fd->setfunc(&parg->value, value, info->size);
     if (parg->obj)
         return (PyObject *)parg;
     PyObject *exc = PyErr_GetRaisedException();
