@@ -1121,6 +1121,10 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION_AND_LOCK: {
+            break;
+        }
+
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
             break;
         }
@@ -2342,6 +2346,8 @@
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
         /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+
+        /* _INSTRUMENTED_NOT_TAKEN is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 

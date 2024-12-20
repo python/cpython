@@ -148,6 +148,8 @@ dummy_func(
             RESUME_CHECK,
         };
 
+        macro(NOT_TAKEN) = NOP;
+
         op(_CHECK_PERIODIC, (--)) {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
@@ -1465,7 +1467,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr = this_instr;
@@ -1474,7 +1476,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(STORE_ATTR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_STORE_ATTR, (v, owner --)) {
@@ -2127,7 +2129,18 @@ dummy_func(
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
             assert(type_version != 0);
-            EXIT_IF(tp->tp_version_tag != type_version);
+            EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version);
+        }
+
+        op(_GUARD_TYPE_VERSION_AND_LOCK, (type_version/2, owner -- owner)) {
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+            assert(type_version != 0);
+            EXIT_IF(!LOCK_OBJECT(owner_o));
+            PyTypeObject *tp = Py_TYPE(owner_o);
+            if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
+                UNLOCK_OBJECT(owner_o);
+                EXIT_IF(true);
+            }
         }
 
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
@@ -2334,8 +2347,11 @@ dummy_func(
 
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            EXIT_IF(_PyObject_GetManagedDict(owner_o));
-            EXIT_IF(_PyObject_InlineValues(owner_o)->valid == 0);
+            if (_PyObject_GetManagedDict(owner_o) ||
+                    !FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                UNLOCK_OBJECT(owner_o);
+                EXIT_IF(true);
+            }
         }
 
         op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner --)) {
@@ -2345,21 +2361,20 @@ dummy_func(
             assert(_PyObject_GetManagedDict(owner_o) == NULL);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *old_value = *value_ptr;
-            *value_ptr = PyStackRef_AsPyObjectSteal(value);
+            FT_ATOMIC_STORE_PTR_RELEASE(*value_ptr, PyStackRef_AsPyObjectSteal(value));
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
                 Py_ssize_t index = value_ptr - values->values;
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
-            else {
-                Py_DECREF(old_value);
-            }
+            UNLOCK_OBJECT(owner_o);
+            Py_XDECREF(old_value);
             PyStackRef_CLOSE(owner);
         }
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
-            _GUARD_TYPE_VERSION +
+            _GUARD_TYPE_VERSION_AND_LOCK +
             _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
@@ -2368,16 +2383,34 @@ dummy_func(
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
             DEOPT_IF(dict == NULL);
+            DEOPT_IF(!LOCK_OBJECT(dict));
+            #ifdef Py_GIL_DISABLED
+            if (dict != _PyObject_GetManagedDict(owner_o)) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
+            #endif
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
-            DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys));
+            if (hint >= (size_t)dict->ma_keys->dk_nentries ||
+                    !DK_IS_UNICODE(dict->ma_keys)) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name);
+            if (ep->me_key != name) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             PyObject *old_value = ep->me_value;
-            DEOPT_IF(old_value == NULL);
+            if (old_value == NULL) {
+                UNLOCK_OBJECT(dict);
+                DEOPT_IF(true);
+            }
             _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-            ep->me_value = PyStackRef_AsPyObjectSteal(value);
+            FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
+            UNLOCK_OBJECT(dict);
+
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
             Py_XDECREF(old_value);
@@ -2393,10 +2426,12 @@ dummy_func(
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
+            DEOPT_IF(!LOCK_OBJECT(owner_o));
             char *addr = (char *)owner_o + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
-            *(PyObject **)addr = PyStackRef_AsPyObjectSteal(value);
+            FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
+            UNLOCK_OBJECT(owner_o);
             Py_XDECREF(old_value);
             PyStackRef_CLOSE(owner);
         }
@@ -2723,7 +2758,7 @@ dummy_func(
             int flag = PyStackRef_IsFalse(cond);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
@@ -2731,7 +2766,7 @@ dummy_func(
             int flag = PyStackRef_IsTrue(cond);
             DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(oparg * flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
         op(_IS_NONE, (value -- b)) {
@@ -2923,13 +2958,11 @@ dummy_func(
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
-            _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
-                target = next_instr;
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
@@ -2946,9 +2979,9 @@ dummy_func(
                 STACK_SHRINK(1);
                 PyStackRef_CLOSE(iter_stackref);
                 /* Skip END_FOR and POP_TOP */
-                target = next_instr + oparg + 2;
+                _Py_CODEUNIT *target = next_instr + oparg + 2;
+                INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
-            INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
         }
 
         op(_ITER_CHECK_LIST, (iter -- iter)) {
@@ -4736,6 +4769,10 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
         }
 
+        inst(INSTRUMENTED_NOT_TAKEN, ( -- )) {
+            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+        }
+
         macro(INSTRUMENTED_JUMP_BACKWARD) =
             unused/1 +
             _CHECK_PERIODIC +
@@ -4744,51 +4781,43 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsTrue(cond);
-            int offset = flag * oparg;
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            int jump = PyStackRef_IsTrue(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsFalse(cond);
-            int offset = flag * oparg;
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            int jump = PyStackRef_IsFalse(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_IsNone(value_stackref);
-            int offset;
-            if (flag) {
-                offset = oparg;
+            int jump = PyStackRef_IsNone(value_stackref);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             else {
                 PyStackRef_CLOSE(value_stackref);
-                offset = 0;
             }
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int offset;
-            int nflag = PyStackRef_IsNone(value_stackref);
-            if (nflag) {
-                offset = 0;
-            }
-            else {
+            int jump = !PyStackRef_IsNone(value_stackref);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
+            if (jump) {
                 PyStackRef_CLOSE(value_stackref);
-                offset = oparg;
+                INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
-            #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | !nflag;
-            #endif
-            INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         tier1 inst(EXTENDED_ARG, ( -- )) {
