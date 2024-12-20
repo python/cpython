@@ -4021,6 +4021,54 @@ class IOTest(unittest.TestCase):
                 '''<?xml version='1.0' encoding='utf-16'?>\n'''
                 '''<site />'''.encode("utf-16"))
 
+    def test_custom_declaration_to_user_binary_writer_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        writer.seekable = lambda: True
+        writer.tell = raw.tell
+        tree.write(writer, encoding="utf-16", xml_declaration_definition='<?xml version="{version}" encoding="{encoding}"?>')
+        self.assertEqual(raw.getvalue(),
+                '''<?xml version="1.0" encoding="utf-16"?>\n'''
+                '''<site />'''.encode("utf-16"))
+
+    def test_custom_declaration2_to_user_binary_writer_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        writer.seekable = lambda: True
+        writer.tell = raw.tell
+        tree.write(writer, encoding="utf-16", xml_declaration_definition='<?xml version="1.1" encoding="{encoding}"?>')
+        self.assertEqual(raw.getvalue(),
+                '''<?xml version="1.1" encoding="utf-16"?>\n'''
+                '''<site />'''.encode("utf-16"))
+
+    def test_custom_declaration3_to_user_binary_writer_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        writer.seekable = lambda: True
+        writer.tell = raw.tell
+        tree.write(writer, encoding="utf-16", xml_declaration_definition='<?xml version="1.1" encoding="UTF-8"?>')
+        self.assertEqual(raw.getvalue(),
+                '''<?xml version="1.1" encoding="UTF-8"?>\n'''
+                '''<site />'''.encode("utf-16"))
+
+    def test_custom_declaration4_to_user_binary_writer_with_bom(self):
+        tree = ET.ElementTree(ET.XML('''<site />'''))
+        raw = io.BytesIO()
+        writer = self.dummy()
+        writer.write = raw.write
+        writer.seekable = lambda: True
+        writer.tell = raw.tell
+        tree.write(writer, encoding="utf-16", xml_declaration_definition='<?xml version="1.0"?>')
+        self.assertEqual(raw.getvalue(),
+                '''<?xml version="1.0"?>\n'''
+                '''<site />'''.encode("utf-16"))
+        r
     def test_tostringlist_invariant(self):
         root = ET.fromstring('<tag>foo</tag>')
         self.assertEqual(
