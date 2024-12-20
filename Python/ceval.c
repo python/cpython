@@ -2781,7 +2781,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
     }
 
-    if (origin == NULL) {
+    if (origin == NULL && PyModule_Check(v)) {
         // Fall back to __file__ for diagnostics if we don't have
         // an origin that is a location
         origin = PyModule_GetFilenameObject(v);
