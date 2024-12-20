@@ -5772,9 +5772,7 @@
                 int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
                 DEOPT_IF(!increfed, LOAD_ATTR);
                 #else
-                // XXX - Bug in cases generator
-                Py_INCREF(attr_o);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
                 null = PyStackRef_NULL;

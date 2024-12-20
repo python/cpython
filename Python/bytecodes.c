@@ -2272,9 +2272,7 @@ dummy_func(
             int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
             DEOPT_IF(!increfed);
             #else
-            // XXX - Bug in cases generator
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
 

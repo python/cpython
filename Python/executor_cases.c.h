@@ -2841,9 +2841,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #else
-            // XXX - Bug in cases generator
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
@@ -2873,9 +2871,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #else
-            // XXX - Bug in cases generator
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
