@@ -663,7 +663,8 @@ io
 uuid
 ----
 
-* Improve generations of UUID objects via their dedicated functions:
+* Improve generation of :class:`~uuid.UUID` objects via their dedicated
+  functions:
 
   * For a given 48-bit hardware address *node* and a given 14-bit
     clock sequence *clock_seq*, :func:`uuid1(node=node) <uuid.uuid1>`
