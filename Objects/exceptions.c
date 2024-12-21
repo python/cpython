@@ -2367,14 +2367,21 @@ MiddlingExtendsException(PyExc_NameError, UnboundLocalError, NameError,
  *    AttributeError extends Exception
  */
 
+static inline PyAttributeErrorObject *
+_PyAttributeError_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_AttributeError));
+    return (PyAttributeErrorObject *)self;
+}
+
 static int
-AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds)
+AttributeError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "obj", NULL};
     PyObject *name = NULL;
     PyObject *obj = NULL;
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+    if (BaseException_init(op, args, NULL) == -1) {
         return -1;
     }
 
@@ -2389,6 +2396,7 @@ AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds
     }
     Py_DECREF(empty_tuple);
 
+    PyAttributeErrorObject *self = _PyAttributeError_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->obj, Py_XNewRef(obj));
 
@@ -2396,34 +2404,37 @@ AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds
 }
 
 static int
-AttributeError_clear(PyAttributeErrorObject *self)
+AttributeError_clear(PyObject *op)
 {
+    PyAttributeErrorObject *self = _PyAttributeError_CAST(op);
     Py_CLEAR(self->obj);
     Py_CLEAR(self->name);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-AttributeError_dealloc(PyAttributeErrorObject *self)
+AttributeError_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    AttributeError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)AttributeError_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg)
+AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyAttributeErrorObject *self = _PyAttributeError_CAST(op);
     Py_VISIT(self->obj);
     Py_VISIT(self->name);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 /* Pickling support */
 static PyObject *
-AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+AttributeError_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
+    PyAttributeErrorObject *self = _PyAttributeError_CAST(op);
+    PyObject *dict = self->dict;
     if (self->name || self->args) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL) {
@@ -2449,13 +2460,14 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
 }
 
 static PyObject *
-AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+AttributeError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *state = AttributeError_getstate(self, NULL);
+    PyObject *state = AttributeError_getstate(op, NULL);
     if (state == NULL) {
         return NULL;
     }
 
+    PyAttributeErrorObject *self = _PyAttributeError_CAST(op);
     PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
     Py_DECREF(state);
     return return_value;
@@ -2468,8 +2480,8 @@ static PyMemberDef AttributeError_members[] = {
 };
 
 static PyMethodDef AttributeError_methods[] = {
-    {"__getstate__", (PyCFunction)AttributeError_getstate, METH_NOARGS},
-    {"__reduce__", (PyCFunction)AttributeError_reduce, METH_NOARGS },
+    {"__getstate__", AttributeError_getstate, METH_NOARGS},
+    {"__reduce__", AttributeError_reduce, METH_NOARGS },
     {NULL}
 };
 
