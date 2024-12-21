@@ -340,7 +340,7 @@ faulthandler_dump_c_stack_py(PyObject *self,
     PyObject *file = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Op:dump_c_stack", kwlist,
+        "|p:dump_c_stack", kwlist,
         &file))
         return NULL;
 
@@ -607,7 +607,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Op:enable", kwlist, &file, &all_threads, &c_stack))
+        "|Opp:enable", kwlist, &file, &all_threads, &c_stack))
         return NULL;
 
     fd = faulthandler_get_fileno(&file);
