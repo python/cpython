@@ -227,11 +227,10 @@ faulthandler_stack_dump_impl(int fd)
     char **strings = backtrace_symbols(callstack, SIZE);
     if (strings == NULL)
     {
-        // XXX Handle with perror?
-        PUTS(fd, "<failed to get stack trace>");
+        PUTS(fd, "  <failed to get stack trace>");
     }
     else {
-        for (int i = frames; i >= 0; --i)
+        for (int i = 0; i < frames; ++i)
         {
             char entry_str[ENTRY_SIZE];
             snprintf(entry_str, ENTRY_SIZE, "  %s\n", strings[i]);
