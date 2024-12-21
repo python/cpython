@@ -698,13 +698,12 @@ def uuid1(node=None, clock_seq=None):
     if clock_seq is None:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
-    else:
-        clock_seq = clock_seq & 0x3fff
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
     time_hi_version = (timestamp >> 48) & 0x0fff
     if node is None:
         node = getnode()
+    clock_seq = clock_seq & 0x3fff
     int_uuid_1 = ((time_low << 96) | (time_mid << 80) |
                   (time_hi_version << 64) | (clock_seq << 48) | node)
     # by construction, the variant and version bits are already cleared
