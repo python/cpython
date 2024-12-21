@@ -412,6 +412,11 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     except OverflowError:
                         pass
 
+        # Check that complex numbers with special components
+        # are correctly handled.
+        self.assertComplexesAreIdentical(complex(1, +0.0)**2, complex(1, +0.0))
+        self.assertComplexesAreIdentical(complex(1, -0.0)**2, complex(1, -0.0))
+
         # gh-113841: possible undefined division by 0 in _Py_c_pow()
         x, y = 9j, 33j**3
         with self.assertRaises(OverflowError):
