@@ -11,7 +11,7 @@ from test.test_contextlib import TestBaseExitStack
 support.requires_working_socket(module=True)
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestAbstractAsyncContextManager(unittest.IsolatedAsyncioTestCase):
@@ -496,7 +496,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.IsolatedAsyncioTestCase):
     class SyncAsyncExitStack(AsyncExitStack):
         @staticmethod
         def run_coroutine(coro):
-            loop = asyncio.get_event_loop_policy().get_event_loop()
+            loop = asyncio.new_event_loop()
             t = loop.create_task(coro)
             t.add_done_callback(lambda f: loop.stop())
             loop.run_forever()

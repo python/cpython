@@ -349,9 +349,10 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = res;
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
+        (void)getitem;
         new_frame = NULL;
         ctx->done = true;
     }
@@ -492,8 +493,9 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
+    op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys)) {
         (void)dict_version;
+        mod_keys = sym_new_not_null(ctx);
         if (sym_is_const(owner)) {
             PyObject *cnst = sym_get_const(owner);
             if (PyModule_CheckExact(cnst)) {
@@ -515,12 +517,12 @@ dummy_func(void) {
         self_or_null = sym_new_unknown(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
-            // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+            // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
             assert(PyModule_CheckExact(mod));
@@ -529,6 +531,9 @@ dummy_func(void) {
             if (res != NULL) {
                 this_instr[-1].opcode = _POP_TOP;
                 attr = sym_new_const(ctx, res);
+            }
+            else {
+                this_instr->opcode = _LOAD_ATTR_MODULE;
             }
         }
         if (attr == NULL) {

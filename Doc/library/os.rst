@@ -5420,9 +5420,21 @@ operating system.
    Scheduling policy for CPU-intensive processes that tries to preserve
    interactivity on the rest of the computer.
 
+.. data:: SCHED_DEADLINE
+
+   Scheduling policy for tasks with deadline constraints.
+
+   .. versionadded:: next
+
 .. data:: SCHED_IDLE
 
    Scheduling policy for extremely low priority background tasks.
+
+.. data:: SCHED_NORMAL
+
+   Alias for :data:`SCHED_OTHER`.
+
+   .. versionadded:: next
 
 .. data:: SCHED_SPORADIC
 
