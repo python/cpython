@@ -220,18 +220,16 @@ faulthandler_dump_traceback(int fd, int all_threads,
 static void
 faulthandler_stack_dump_impl(int fd)
 {
-#define SIZE 128
-#define ENTRY_SIZE 256
+#define BACKTRACE_SIZE 128
+#define TRACEBACK_ENTRY_MAX_SIZE 256
     void *callstack[SIZE];
     int frames = backtrace(callstack, SIZE);
     char **strings = backtrace_symbols(callstack, SIZE);
-    if (strings == NULL)
-    {
+    if (strings == NULL) {
         PUTS(fd, "  <failed to get stack trace>");
     }
     else {
-        for (int i = 0; i < frames; ++i)
-        {
+        for (int i = 0; i < frames; ++i) {
             char entry_str[ENTRY_SIZE];
             snprintf(entry_str, ENTRY_SIZE, "  %s\n", strings[i]);
             size_t length = strlen(entry_str) + 1;
@@ -249,8 +247,7 @@ faulthandler_stack_dump_impl(int fd)
             _Py_write_noraise(fd, entry_str, length);
         }
 
-        if (frames == SIZE)
-        {
+        if (frames == SIZE) {
             PUTS(fd, "  <truncated rest of calls>");
         }
     }
@@ -282,8 +279,7 @@ faulthandler_dump_c_stack(int fd)
 
     reentrant = 1;
 
-    if (fatal_error.c_stack)
-    {
+    if (fatal_error.c_stack) {
         PUTS(fd, "\n");
         faulthandler_dump_c_stack_nocheck(fd);
     }
