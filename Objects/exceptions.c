@@ -2719,8 +2719,9 @@ SimpleExtendsException(PyExc_LookupError, IndexError,
 /*
  *    KeyError extends LookupError
  */
+
 static PyObject *
-KeyError_str(PyBaseExceptionObject *self)
+KeyError_str(PyObject *op)
 {
     /* If args is a tuple of exactly one item, apply repr to args[0].
        This is done so that e.g. the exception raised by {}[''] prints
@@ -2731,10 +2732,11 @@ KeyError_str(PyBaseExceptionObject *self)
        string, that string will be displayed in quotes.  Too bad.
        If args is anything else, use the default BaseException__str__().
     */
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (PyTuple_GET_SIZE(self->args) == 1) {
         return PyObject_Repr(PyTuple_GET_ITEM(self->args, 0));
     }
-    return BaseException_str(self);
+    return BaseException_str(op);
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
