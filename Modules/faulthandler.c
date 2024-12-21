@@ -10,6 +10,10 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
+#ifdef HAVE_EXECINFO_H
+#  include <execinfo.h>           // backtrace(), backtrace_symbols()
+#endif
+
 #include <signal.h>               // sigaction()
 #include <stdlib.h>               // abort()
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
@@ -212,8 +216,58 @@ faulthandler_dump_traceback(int fd, int all_threads,
     reentrant = 0;
 }
 
+#ifdef HAVE_EXECINFO_H
 static void
-faulthandler_dump_c_stack(int fd, PyInterpreterState *interp)
+faulthandler_stack_dump_impl(int fd)
+{
+#define SIZE 128
+#define ENTRY_SIZE 256
+    void *callstack[SIZE];
+    int frames = backtrace(callstack, SIZE);
+    char **strings = backtrace_symbols(callstack, SIZE);
+    if (strings == NULL)
+    {
+        // XXX Handle with perror?
+        PUTS(fd, "<failed to get stack trace>");
+    }
+    else {
+        for (int i = frames; i >= 0; --i)
+        {
+            char entry_str[ENTRY_SIZE];
+            snprintf(entry_str, ENTRY_SIZE, "  %s\n", strings[i]);
+            size_t length = strlen(entry_str) + 1;
+            if (length == ENTRY_SIZE)
+            {
+                /* We exceeded the size, make it look prettier */
+
+                // Add ellipsis to last 3 characters (but before the newline and null terminator)
+                for (int x = 0; x < 3; ++x)
+                    entry_str[ENTRY_SIZE - (x + 3)] = '.';
+
+                entry_str[ENTRY_SIZE - 2] = '\n';
+                entry_str[ENTRY_SIZE - 1] = '\0';
+            }
+            _Py_write_noraise(fd, entry_str, length);
+        }
+
+        if (frames == SIZE)
+        {
+            PUTS(fd, "  <truncated rest of calls>");
+        }
+    }
+#undef ENTRY_SIZE
+#undef SIZE
+}
+#else
+static void
+faulthandler_stack_dump_impl(int fd)
+{
+    PUTS(fd, "  <cannot get C stack on this system>\n");
+}
+#endif
+
+static void
+faulthandler_dump_c_stack(int fd)
 {
     static volatile int reentrant = 0;
 
@@ -222,29 +276,8 @@ faulthandler_dump_c_stack(int fd, PyInterpreterState *interp)
 
     reentrant = 1;
 
-    #include <execinfo.h>
-#define SIZE 128
-    void *callstack[128];
-    int frames = backtrace(callstack, SIZE);
-    char **strings = backtrace_symbols(callstack, SIZE);
-    FILE *fp = fdopen(fd, "w");
-    if (strings == NULL)
-    {
-        fputs("<failed to get current C stack>", fp);
-    }
-    else {
-        fputs("\nCurrent thread's C stack trace:\n", fp);
-        for (int i = frames; i >= 0; --i)
-        {
-            fprintf(fp, "  %s\n", strings[i]);
-        }
-
-        if (frames == SIZE)
-        {
-            fprintf(fp, "<truncated rest of calls>\n");
-        }
-    }
-#undef SIZE
+    PUTS(fd, "\nCurrent thread's C stack trace (most recent call first):\n");
+    faulthandler_stack_dump_impl(fd);
 
     reentrant = 0;
 }
@@ -359,7 +392,7 @@ faulthandler_fatal_error(int signum)
 
     faulthandler_dump_traceback(fd, fatal_error.all_threads,
                                 fatal_error.interp);
-    faulthandler_dump_c_stack(fd, fatal_error.interp);
+    faulthandler_dump_c_stack(fd);
 
     _Py_DumpExtensionModules(fd, fatal_error.interp);
 
