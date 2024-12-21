@@ -47,7 +47,8 @@ class LZMAFile(_compression.BaseStream):
     """
 
     def __init__(self, filename=None, mode="r", *,
-                 format=None, check=-1, preset=None, filters=None):
+                 format=None, check=-1, preset=None, filters=None,
+                 threads=1):
         """Open an LZMA-compressed file in binary mode.
 
         filename can be either an actual file name (given as a str,
@@ -72,7 +73,8 @@ class LZMAFile(_compression.BaseStream):
         When opening a file for reading, the *preset* argument is not
         meaningful, and should be omitted. The *filters* argument should
         also be omitted, except when format is FORMAT_RAW (in which case
-        it is required).
+        it is required). The *threads* argument is only useful when writing
+        using FORMAT_XZ.
 
         When opening a file for writing, the settings used by the
         compressor can be specified either as a preset compression
@@ -89,6 +91,11 @@ class LZMAFile(_compression.BaseStream):
         filters (if provided) should be a sequence of dicts. Each dict
         should have an entry for "id" indicating ID of the filter, plus
         additional entries for options to the filter.
+
+        threads (if provided) should be a non-negative integer indicating how
+        many background threads to create for the compressor (only when using
+        FORMAT_XZ, otherwise the compression will be single-threaded).
+        If 0, the number of threads is set to the number of CPU cores.
         """
         self._fp = None
         self._closefp = False
@@ -109,7 +116,8 @@ class LZMAFile(_compression.BaseStream):
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
             self._compressor = LZMACompressor(format=format, check=check,
-                                              preset=preset, filters=filters)
+                                              preset=preset, filters=filters,
+                                              threads=threads)
             self._pos = 0
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
@@ -324,7 +332,7 @@ def open(filename, mode="rb", *,
         return binary_file
 
 
-def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None):
+def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None, threads=1):
     """Compress a block of data.
 
     Refer to LZMACompressor's docstring for a description of the
@@ -332,7 +340,7 @@ def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None):
 
     For incremental compression, use an LZMACompressor instead.
     """
-    comp = LZMACompressor(format, check, preset, filters)
+    comp = LZMACompressor(format, check, preset, filters, threads)
     return comp.compress(data) + comp.flush()
 
 
