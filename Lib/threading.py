@@ -4,6 +4,8 @@ import os as _os
 import sys as _sys
 import _thread
 import warnings
+import contextvars as _contextvars
+
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -871,7 +873,7 @@ class Thread:
     _initialized = False
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None):
+                 args=(), kwargs=None, *, daemon=None, context='inherit'):
         """This constructor should always be called with keyword arguments. Arguments are:
 
         *group* should be None; reserved for future extension when a ThreadGroup
@@ -887,6 +889,10 @@ class Thread:
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.
+
+        *context* is the contextvars.Context value to use for the thread.  The default
+        is to inherit the context of the caller.  Set to None to start with an empty
+        context.
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -917,6 +923,7 @@ class Thread:
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
+        self._context = context
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
@@ -972,9 +979,15 @@ class Thread:
 
         with _active_limbo_lock:
             _limbo[self] = self
+
+        if self._context == 'inherit':
+            # No context provided, inherit the context of the caller.
+            self._context = _contextvars.copy_context()
+
         try:
             # Start joinable thread
-            _start_joinable_thread(self._bootstrap, handle=self._handle,
+            _start_joinable_thread(self._bootstrap,
+                                   handle=self._handle,
                                    daemon=self.daemon)
         except Exception:
             with _active_limbo_lock:
@@ -1050,8 +1063,17 @@ class Thread:
             if _profile_hook:
                 _sys.setprofile(_profile_hook)
 
+            if self._context is None:
+                # Run with empty context, matching behaviour of
+                # threading.local and older versions of Python.
+                run = self.run
+            else:
+                # Run with the provided or the inherited context.
+                def run():
+                    self._context.run(self.run)
+
             try:
-                self.run()
+                run()
             except:
                 self._invoke_excepthook(self)
         finally:

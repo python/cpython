@@ -383,6 +383,49 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
+    @isolated_context
+    @threading_helper.requires_working_threading()
+    def test_context_thread_inherit(self):
+        import threading
+
+        cvar = contextvars.ContextVar('cvar')
+
+        # By default, the context of the caller is inheritied
+        def run_inherit():
+            self.assertEqual(cvar.get(), 1)
+
+        cvar.set(1)
+        thread = threading.Thread(target=run_inherit)
+        thread.start()
+        thread.join()
+
+        # If context=None is passed, the thread has an empty context
+        def run_empty():
+            with self.assertRaises(LookupError):
+                cvar.get()
+
+        thread = threading.Thread(target=run_empty, context=None)
+        thread.start()
+        thread.join()
+
+        # An explicit Context value can also be passed
+        custom_ctx = contextvars.Context()
+        custom_var = None
+
+        def setup_context():
+            nonlocal custom_var
+            custom_var = contextvars.ContextVar('custom')
+            custom_var.set(2)
+
+        custom_ctx.run(setup_context)
+
+        def run_custom():
+            self.assertEqual(custom_var.get(), 2)
+
+        thread = threading.Thread(target=run_custom, context=custom_ctx)
+        thread.start()
+        thread.join()
+
 
 # HAMT Tests
 
