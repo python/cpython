@@ -1,0 +1,2 @@
+Improve generations of UUID objects via their dedicated functions by 20%.
+Patch by Bénédikt Tran.
