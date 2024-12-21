@@ -66,10 +66,24 @@ Dumping the traceback
       Added support for passing file descriptor to this function.
 
 
+Dumping the C stack
+-------------------
+
+.. versionadded:: next
+
+.. function:: dump_c_stack(file=sys.stderr)
+
+   Dump the C stack trace of the current thread into *file*.
+
+   This is done with `GNU backtraces <https://www.gnu.org/software/libc/manual/html_node/Backtraces.html>`_.
+
+   If the system doesn't support the C-level :c:expr:`backtrace()` or :c:expr:`backtrace_symbols()` functions,
+   then an error message is displayed instead of the C stack.
+
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=True)
+.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True)
 
    Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
    :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
@@ -81,6 +95,10 @@ Fault handler state
    The *file* must be kept open until the fault handler is disabled: see
    :ref:`issue with file descriptors <faulthandler-fd>`.
 
+   If *c_stack* is ``True``, then the C stack trace is printed after the Python
+   traceback, unless the system doesn't support it. See :func:`dump_c_stack` for
+   more information on compatibility.
+
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
 
@@ -90,6 +108,9 @@ Fault handler state
    .. versionchanged:: 3.10
       The dump now mentions if a garbage collector collection is running
       if *all_threads* is true.
+
+   .. versionchanged:: next
+      The dump now displays the C stack trace if *c_stack* is true.
 
 .. function:: disable()
 
