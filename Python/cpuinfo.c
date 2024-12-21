@@ -324,7 +324,6 @@ static inline void
 cpuid_features_finalize(py_cpuid_features *flags)
 {
     assert(flags->ready == 0);
-    assert(flags->maxleaf >= 0);
 
     // Here, any flag that may depend on others should be correctly set
     // at runtime to avoid illegal instruction errors.
