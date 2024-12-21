@@ -691,14 +691,22 @@ SimpleExtendsException(PyExc_BaseException, GeneratorExit,
  *    SystemExit extends BaseException
  */
 
+static inline PySystemExitObject *
+_PySystemExit_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_SystemExit));
+    return (PySystemExitObject *)self;
+}
+
 static int
-SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
+SystemExit_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t size = PyTuple_GET_SIZE(args);
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init(op, args, kwds) == -1)
         return -1;
 
+    PySystemExitObject *self = _PySystemExit_CAST(op);
     if (size == 0)
         return 0;
     if (size == 1) {
@@ -711,25 +719,27 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-SystemExit_clear(PySystemExitObject *self)
+SystemExit_clear(PyObject *op)
 {
+    PySystemExitObject *self = _PySystemExit_CAST(op);
     Py_CLEAR(self->code);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-SystemExit_dealloc(PySystemExitObject *self)
+SystemExit_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    SystemExit_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)SystemExit_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
+SystemExit_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySystemExitObject *self = _PySystemExit_CAST(op);
     Py_VISIT(self->code);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 static PyMemberDef SystemExit_members[] = {
