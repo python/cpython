@@ -4,7 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
-from test.support import os_helper, requires_resource
+from test.support import os_helper, requires_resource, Py_DEBUG
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
 if sys.platform != "win32":
@@ -114,6 +114,50 @@ class TestOther(unittest.TestCase):
             msvcrt.heapmin()
         except OSError:
             pass
+
+    def test_GetErrorMode(self):
+        msvcrt.GetErrorMode()
+
+    def test_SetErrorMode(self):
+        old = msvcrt.GetErrorMode()
+        self.addCleanup(msvcrt.SetErrorMode, old)
+
+        returned = msvcrt.SetErrorMode(0)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_set_error_mode(self):
+        old = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
+        self.addCleanup(msvcrt.set_error_mode, old)
+
+        returned = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
+        self.assertIs(type(returned), int)
+        self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_CrtSetReportMode(self):
+        old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                      msvcrt.CRTDBG_REPORT_MODE)
+        self.addCleanup(msvcrt.CrtSetReportMode, msvcrt.CRT_WARN, old)
+
+        returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_MODE_DEBUG)
+        self.assertIs(type(returned), int)
+        self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_CrtSetReportFile(self):
+        old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                      msvcrt.CRTDBG_REPORT_FILE)
+        self.addCleanup(msvcrt.CrtSetReportFile, msvcrt.CRT_WARN, old)
+
+        returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_FILE_STDOUT)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old, returned)
 
 
 if __name__ == "__main__":
