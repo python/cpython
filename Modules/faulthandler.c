@@ -220,13 +220,13 @@ faulthandler_dump_traceback(int fd, int all_threads,
 static void
 faulthandler_stack_dump_impl(int fd)
 {
-#define BACKTRACE_SIZE 128
+#define BACKTRACE_SIZE 16
 #define TRACEBACK_ENTRY_MAX_SIZE 256
     void *callstack[BACKTRACE_SIZE];
     int frames = backtrace(callstack, BACKTRACE_SIZE);
     char **strings = backtrace_symbols(callstack, BACKTRACE_SIZE);
     if (strings == NULL) {
-        PUTS(fd, "  <failed to get stack trace>");
+        PUTS(fd, "  <failed to get stack trace>\n");
     }
     else {
         for (int i = 0; i < frames; ++i) {
@@ -251,7 +251,7 @@ faulthandler_stack_dump_impl(int fd)
         }
 
         if (frames == BACKTRACE_SIZE) {
-            PUTS(fd, "  <truncated rest of calls>");
+            PUTS(fd, "  <truncated rest of calls>\n");
         }
     }
 #undef BACKTRACE_SIZE
