@@ -324,6 +324,7 @@ m_sinpi(double x)
    information in e*g/y.
 */
 
+
 #define LANCZOS_N 13
 static const double lanczos_g = 6.024680040776729583740234375;
 static const double lanczos_g_minus_half = 5.524680040776729583740234375;

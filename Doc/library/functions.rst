@@ -38,6 +38,7 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
 | |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
+| |                       | |  :func:`isPnz`      | |                     | |                       |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
@@ -1129,6 +1130,45 @@ are always available.  They are listed here in alphabetical order.
       with open('mydata.db', 'rb') as f:
           for block in iter(partial(f.read, 64), b''):
               process_block(block)
+
+
+
+.. function:: isPnz(x)
+
+   Determine if a number is positive, negative, or zero.
+
+   Returns:
+     * ``True`` if *x* is positive (non-zero)
+     * ``False`` if *x* is negative (non-zero) or negative zero (-0.0)
+     * ``None`` if *x* is positive zero (+0.0)
+
+   This function uses ``copysign`` to detect signed zeros,
+   ensuring compatibility with IEEE 754 floating-point standards.
+
+   :param x: A number (integer or float)
+   :type x: int or float
+   :return: ``True``, ``False``, or ``None`` based on the sign of the number
+   :rtype: bool or None
+   :raises TypeError: If the input is not a number
+   :raises OverflowError: If the input is too large or too small
+   :raises ValueError: If the input is NaN
+
+   Example::
+
+      >>> isPnz(10)
+      True
+      >>> isPnz(-5)
+      False
+      >>> isPnz(0.0)
+      None
+      >>> isPnz(-0.0)
+      False
+
+   .. note::
+      This function is intended for use with numbers following the IEEE 754 standard for floating-point arithmetic.
+
+   .. versionadded:: 3.12
+
 
 
 .. function:: len(s)

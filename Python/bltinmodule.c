@@ -14,7 +14,8 @@
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_cell.h"          // PyCell_GetRef()
-
+#include "math.h"
+#include "float.h"
 #include "clinic/bltinmodule.c.h"
 
 #ifdef HAVE_UNISTD_H
@@ -2902,6 +2903,96 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*
+    Function: isPnz
+    ---------------------
+    Determines if a number is positive, negative, or zero.
+
+    - Returns True if the number is positive (non-zero).
+    - Returns False if the number is negative (non-zero).
+    - Returns None if the number is positive zero (+0.0).
+    - Returns False if the number is negative zero (-0.0).
+
+    The function checks for:
+    - **NaN (Not a Number)** and raises a `ValueError` if the input is NaN.
+    - **Infinity (positive or negative)**, returning True for positive infinity and False for negative infinity.
+    - **Signed zero** using `copysign`, which ensures accurate detection of positive and negative zeros, in line with IEEE 754 floating-point standards.
+
+    The function accepts both integers and floating-point numbers:
+    - Integers are converted to floating-point numbers before comparison.
+    - If the number exceeds the maximum or minimum allowed double values (`DBL_MAX`), an `OverflowError` is raised.
+
+    References:
+    - IEEE 754 Standard for Floating-Point Arithmetic.
+    - Python's handling of `NaN`, `Infinity`, and `zero` values.
+
+*/
+
+#include <Python.h>
+#include <math.h>
+#include <float.h> // For DBL_MAX and DBL_MIN
+
+#define ASSIGN_NUMBER(x, arg, error)              \
+    if (PyFloat_Check(arg)) {                    \
+        x = PyFloat_AsDouble(arg);               \
+        if (x > DBL_MAX || x < -DBL_MAX) {       \
+            PyErr_SetString(PyExc_OverflowError, "The value is too large or too small."); \
+            goto error;                          \
+        }                                        \
+    } else if (PyLong_Check(arg)) {               \
+        /* Convert Python long to double (can handle very large integers) */ \
+        x = PyLong_AsDouble(arg);                 \
+        if (x > DBL_MAX || x < -DBL_MAX) {       \
+            PyErr_SetString(PyExc_OverflowError, "The value is too large or too small."); \
+            goto error;                          \
+        }                                        \
+    } else {                                     \
+        PyErr_SetString(PyExc_TypeError, "Argument must be an int or float"); \
+        goto error;                              \
+    }
+
+
+static PyObject *
+isPnz(PyObject *self, PyObject *arg)
+{
+    double x;
+
+    // Fast conversion for both int and float types with overflow check
+    ASSIGN_NUMBER(x, arg, error);
+
+    // Check for NaN (Not a Number)
+    if (isnan(x)) {
+        PyErr_SetString(PyExc_ValueError, "The value is NaN.");
+        return NULL;
+    }
+
+    // Check for infinity (positive or negative)
+    if (isinf(x)) {
+        if (x > 0.0)
+            Py_RETURN_TRUE;  // Positive infinity
+        else
+            Py_RETURN_FALSE; // Negative infinity
+    }
+
+    // Check for negative zero explicitly using copysign
+    if (x == 0.0) {
+        if (copysign(1.0, x) > 0.0) {
+            Py_RETURN_NONE;  // Positive zero
+        } else {
+            Py_RETURN_FALSE; // Negative zero
+        }
+    }
+
+    if (x > 0.0)
+        Py_RETURN_TRUE;  // Positive non-zero
+    else
+        Py_RETURN_FALSE; // Negative non-zero
+
+error:
+    return NULL;  // Invalid input, propagate the error
+}
+
+
 /*[clinic input]
 isinstance as builtin_isinstance
 
@@ -3273,6 +3364,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
     {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    {"isPnz", isPnz, METH_O, PyDoc_STR("Determine if a number is positive, negative, or zero.")},
     {NULL,              NULL},
 };
 
