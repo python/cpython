@@ -2837,11 +2837,10 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     return end;
 }
 
-#define _PyUnicodeError_CAST(PTR)   ((PyUnicodeErrorObject *)(PTR))
 #define PyUnicodeError_Check(PTR)   \
     PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
-#define PyUnicodeError_CAST(PTR)    \
-    (assert(PyUnicodeError_Check(PTR)), _PyUnicodeError_CAST(PTR))
+#define _PyUnicodeError_CAST(op)    \
+    (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
 
 
 static inline int
@@ -2860,7 +2859,7 @@ static inline PyUnicodeErrorObject *
 as_unicode_error(PyObject *self, const char *expect_type)
 {
     int rc = check_unicode_error_type(self, expect_type);
-    return rc < 0 ? NULL : _PyUnicodeError_CAST(self);
+    return rc < 0 ? NULL : (PyUnicodeErrorObject *)self;
 }
 
 PyObject *
@@ -3123,11 +3122,11 @@ PyUnicodeTranslateError_SetReason(PyObject *self, const char *reason)
 static int
 UnicodeError_clear(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     Py_CLEAR(exc->encoding);
     Py_CLEAR(exc->object);
     Py_CLEAR(exc->reason);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(self);
 }
 
 static void
@@ -3142,11 +3141,11 @@ UnicodeError_dealloc(PyObject *self)
 static int
 UnicodeError_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     Py_VISIT(exc->encoding);
     Py_VISIT(exc->object);
     Py_VISIT(exc->reason);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(self, visit, arg);
 }
 
 static PyMemberDef UnicodeError_members[] = {
@@ -3171,7 +3170,7 @@ static PyMemberDef UnicodeError_members[] = {
 static int
 UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
+    if (BaseException_init(self, args, kwds) == -1) {
         return -1;
     }
 
@@ -3184,7 +3183,7 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     Py_XSETREF(exc->encoding, Py_NewRef(encoding));
     Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
@@ -3196,7 +3195,7 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeEncodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
@@ -3257,13 +3256,13 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
+    UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    UnicodeEncodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode encoding error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode encoding error."), UnicodeError_traverse,
+    UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeEncodeError_init, 0, BaseException_new,
+    UnicodeEncodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
 
@@ -3275,7 +3274,7 @@ PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
 static int
 UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
+    if (BaseException_init(self, args, kwds) == -1) {
         return -1;
     }
 
@@ -3304,7 +3303,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     Py_XSETREF(exc->encoding, Py_NewRef(encoding));
     Py_XSETREF(exc->object, object /* already a strong reference */);
     exc->start = start;
@@ -3316,7 +3315,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
@@ -3367,13 +3366,13 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeDecodeError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
+    UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    UnicodeDecodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode decoding error."), UnicodeError_traverse,
+    UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeDecodeError_init, 0, BaseException_new,
+    UnicodeDecodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeDecodeError = (PyObject *)&_PyExc_UnicodeDecodeError;
 
@@ -3394,7 +3393,7 @@ PyUnicodeDecodeError_Create(
 static int
 UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
+    if (BaseException_init(self, args, kwds) == -1) {
         return -1;
     }
 
@@ -3405,7 +3404,7 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
     exc->end = end;
@@ -3417,7 +3416,7 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeTranslateError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
+    PyUnicodeErrorObject *exc = _PyUnicodeError_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
 
@@ -3470,13 +3469,13 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeTranslateError",
     sizeof(PyUnicodeErrorObject), 0,
-    (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    (reprfunc)UnicodeTranslateError_str, 0, 0, 0,
+    UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    UnicodeTranslateError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode translation error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode translation error."), UnicodeError_traverse,
+    UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeTranslateError_init, 0, BaseException_new,
+    UnicodeTranslateError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeTranslateError = (PyObject *)&_PyExc_UnicodeTranslateError;
 
