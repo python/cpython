@@ -222,37 +222,40 @@ faulthandler_stack_dump_impl(int fd)
 {
 #define BACKTRACE_SIZE 128
 #define TRACEBACK_ENTRY_MAX_SIZE 256
-    void *callstack[SIZE];
-    int frames = backtrace(callstack, SIZE);
-    char **strings = backtrace_symbols(callstack, SIZE);
+    void *callstack[BACKTRACE_SIZE];
+    int frames = backtrace(callstack, BACKTRACE_SIZE);
+    char **strings = backtrace_symbols(callstack, BACKTRACE_SIZE);
     if (strings == NULL) {
         PUTS(fd, "  <failed to get stack trace>");
     }
     else {
         for (int i = 0; i < frames; ++i) {
-            char entry_str[ENTRY_SIZE];
-            snprintf(entry_str, ENTRY_SIZE, "  %s\n", strings[i]);
+            char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
+            snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", strings[i]);
             size_t length = strlen(entry_str) + 1;
-            if (length == ENTRY_SIZE)
-            {
+            if (length == TRACEBACK_ENTRY_MAX_SIZE) {
                 /* We exceeded the size, make it look prettier */
 
-                // Add ellipsis to last 3 characters (but before the newline and null terminator)
-                for (int x = 0; x < 3; ++x)
-                    entry_str[ENTRY_SIZE - (x + 3)] = '.';
+                // Add ellipsis to last 3 characters
+                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
+                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
+                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
 
-                entry_str[ENTRY_SIZE - 2] = '\n';
-                entry_str[ENTRY_SIZE - 1] = '\0';
+                // Ensure trailing newline
+                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
+
+                // Ensure that it's null-terminated
+                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
             }
             _Py_write_noraise(fd, entry_str, length);
         }
 
-        if (frames == SIZE) {
+        if (frames == BACKTRACE_SIZE) {
             PUTS(fd, "  <truncated rest of calls>");
         }
     }
-#undef ENTRY_SIZE
-#undef SIZE
+#undef BACKTRACE_SIZE
+#undef TRACEBACK_ENTRY_MAX_SIZE
 }
 #else
 static void
