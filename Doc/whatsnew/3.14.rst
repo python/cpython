@@ -675,18 +675,14 @@ uuid
 * Improve generation of :class:`~uuid.UUID` objects via their dedicated
   functions:
 
-  * For a given 48-bit hardware address *node* and a given 14-bit
-    clock sequence *clock_seq*, :func:`uuid1(node=node) <uuid.uuid1>`
-    and :func:`uuid1(clock_seq=clock_seq) <uuid.uuid1>` are 35% faster.
-    Performances for :func:`~uuid.uuid1` remain unchanged when neither
-    the hardware address nor the clock sequence is specified.
-  * :func:`~uuid.uuid3` is 27% faster for 16-byte names and 8% faster
+  * :func:`~uuid.uuid3` is 40% faster for 16-byte names and 10% faster
     for 1024-byte names. Performances for longer names remain unchanged.
-  * :func:`~uuid.uuid5` is 24% faster for 16-byte names and 11% faster
+  * :func:`~uuid.uuid5` is 38% faster for 16-byte names and 21% faster
     for 1024-byte names. Performances for longer names remain unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 20% faster.
+  * :func:`~uuid.uuid4` is 31% faster and :func:`~uuid.uuid8` is 37% faster.
 
-  Overall, dedicated generation of UUID objects is 20% faster.
+  Overall, dedicated generation of UUID objects version 3, 4, 5, and 8 is
+  roughly 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 

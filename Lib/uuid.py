@@ -710,14 +710,12 @@ def uuid1(node=None, clock_seq=None):
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
     time_hi_version = (timestamp >> 48) & 0x0fff
+    clock_seq_low = clock_seq & 0xff
+    clock_seq_hi_variant = (clock_seq >> 8) & 0x3f
     if node is None:
         node = getnode()
-    clock_seq = clock_seq & 0x3fff
-    int_uuid_1 = ((time_low << 96) | (time_mid << 80) |
-                  (time_hi_version << 64) | (clock_seq << 48) | node)
-    # by construction, the variant and version bits are already cleared
-    int_uuid_1 |= _RFC_4122_VERSION_1_FLAGS
-    return UUID(int=int_uuid_1, version=None)
+    return UUID(fields=(time_low, time_mid, time_hi_version,
+                        clock_seq_hi_variant, clock_seq_low, node), version=1)
 
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
