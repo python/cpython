@@ -1589,8 +1589,15 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
  *    ImportError extends Exception
  */
 
+static inline PyImportErrorObject *
+_PyImportError_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_ImportError));
+    return (PyImportErrorObject *)self;
+}
+
 static int
-ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
+ImportError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "path", "name_from", 0};
     PyObject *empty_tuple;
@@ -1599,9 +1606,10 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     PyObject *path = NULL;
     PyObject *name_from = NULL;
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
+    if (BaseException_init(op, args, NULL) == -1)
         return -1;
 
+    PyImportErrorObject *self = _PyImportError_CAST(op);
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple)
         return -1;
@@ -1625,48 +1633,50 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-ImportError_clear(PyImportErrorObject *self)
+ImportError_clear(PyObject *op)
 {
+    PyImportErrorObject *self = _PyImportError_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->name);
     Py_CLEAR(self->path);
     Py_CLEAR(self->name_from);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-ImportError_dealloc(PyImportErrorObject *self)
+ImportError_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    ImportError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)ImportError_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-ImportError_traverse(PyImportErrorObject *self, visitproc visit, void *arg)
+ImportError_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyImportErrorObject *self = _PyImportError_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->name);
     Py_VISIT(self->path);
     Py_VISIT(self->name_from);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 static PyObject *
-ImportError_str(PyImportErrorObject *self)
+ImportError_str(PyObject *op)
 {
+    PyImportErrorObject *self = _PyImportError_CAST(op);
     if (self->msg && PyUnicode_CheckExact(self->msg)) {
         return Py_NewRef(self->msg);
     }
-    else {
-        return BaseException_str((PyBaseExceptionObject *)self);
-    }
+    return BaseException_str(op);
 }
 
 static PyObject *
-ImportError_getstate(PyImportErrorObject *self)
+ImportError_getstate(PyObject *op)
 {
-    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    PyImportErrorObject *self = _PyImportError_CAST(op);
+    PyObject *dict = self->dict;
     if (self->name || self->path || self->name_from) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
@@ -1695,18 +1705,17 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
+ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(igno+red))
 {
     PyObject *res;
-    PyObject *args;
     PyObject *state = ImportError_getstate(self);
     if (state == NULL)
         return NULL;
-    args = ((PyBaseExceptionObject *)self)->args;
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
     if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
+        res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
     else
-        res = PyTuple_Pack(3, Py_TYPE(self), args, state);
+        res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
     Py_DECREF(state);
     return res;
 }
@@ -1724,7 +1733,7 @@ static PyMemberDef ImportError_members[] = {
 };
 
 static PyMethodDef ImportError_methods[] = {
-    {"__reduce__", (PyCFunction)ImportError_reduce, METH_NOARGS},
+    {"__reduce__", ImportError_reduce, METH_NOARGS},
     {NULL}
 };
 
