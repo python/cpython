@@ -495,6 +495,7 @@ future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
     if (future_ensure_alive(fut)) {
         return NULL;
     }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     if (fut->fut_state != STATE_PENDING) {
         PyErr_SetString(state->asyncio_InvalidStateError, "invalid state");
@@ -3254,9 +3255,9 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (enter_task(state, task->task_loop, (PyObject*)task) < 0) {
         return NULL;
     }
-
+    Py_BEGIN_CRITICAL_SECTION(task);
     res = task_step_impl(state, task, exc);
-
+    Py_END_CRITICAL_SECTION();
     if (res == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         leave_task(state, task->task_loop, (PyObject*)task);
@@ -3295,7 +3296,10 @@ task_eager_start(asyncio_state *state, TaskObj *task)
 
     int retval = 0;
 
-    PyObject *stepres = task_step_impl(state, task, NULL);
+    PyObject *stepres;
+    Py_BEGIN_CRITICAL_SECTION(task);
+    stepres = task_step_impl(state, task, NULL);
+    Py_END_CRITICAL_SECTION();
     if (stepres == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         _PyErr_ChainExceptions1(exc);

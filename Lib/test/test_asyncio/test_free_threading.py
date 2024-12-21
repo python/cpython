@@ -1,3 +1,6 @@
+import sys
+sys.modules["_asyncio"] = None
+
 import asyncio
 from test.support import threading_helper
 from unittest import TestCase
