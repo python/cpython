@@ -37,6 +37,13 @@ get_exc_state(void)
  * Lib/test/exception_hierarchy.txt
  */
 
+static inline PyBaseExceptionObject *
+_PyBaseExceptionObject_CAST(PyObject *exc)
+{
+    assert(PyExceptionInstance_Check(exc));
+    return (PyBaseExceptionObject *)exc;
+}
+
 /*
  *    BaseException
  */
@@ -69,8 +76,9 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
+BaseException_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
@@ -113,8 +121,9 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
 
 
 static int
-BaseException_clear(PyBaseExceptionObject *self)
+BaseException_clear(PyObject *op)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
     Py_CLEAR(self->notes);
@@ -125,21 +134,23 @@ BaseException_clear(PyBaseExceptionObject *self)
 }
 
 static void
-BaseException_dealloc(PyBaseExceptionObject *self)
+BaseException_dealloc(PyObject *op)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     PyObject_GC_UnTrack(self);
     // bpo-44348: The trashcan mechanism prevents stack overflow when deleting
     // long chains of exceptions. For example, exceptions can be chained
     // through the __context__ attributes or the __traceback__ attribute.
     Py_TRASHCAN_BEGIN(self, BaseException_dealloc)
-    BaseException_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)BaseException_clear(op);
+    Py_TYPE(self)->tp_free(self);
     Py_TRASHCAN_END
 }
 
 static int
-BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
+BaseException_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
     Py_VISIT(self->notes);
@@ -150,8 +161,9 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-BaseException_str(PyBaseExceptionObject *self)
+BaseException_str(PyObject *op)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
@@ -163,8 +175,9 @@ BaseException_str(PyBaseExceptionObject *self)
 }
 
 static PyObject *
-BaseException_repr(PyBaseExceptionObject *self)
+BaseException_repr(PyObject *op)
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     const char *name = _PyType_Name(Py_TYPE(self));
     if (PyTuple_GET_SIZE(self->args) == 1)
         return PyUnicode_FromFormat("%s(%R)", name,
@@ -175,8 +188,9 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
+BaseException_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
     else
@@ -225,13 +239,6 @@ PyDoc_STRVAR(with_traceback_doc,
 "Exception.with_traceback(tb) --\n\
     set self.__traceback__ to tb and return self.");
 
-static inline PyBaseExceptionObject*
-_PyBaseExceptionObject_cast(PyObject *exc)
-{
-    assert(PyExceptionInstance_Check(exc));
-    return (PyBaseExceptionObject *)exc;
-}
-
 static PyObject *
 BaseException_add_note(PyObject *self, PyObject *note)
 {
@@ -274,18 +281,18 @@ PyDoc_STRVAR(add_note_doc,
     add a note to the exception");
 
 static PyMethodDef BaseException_methods[] = {
-   {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
-   {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
+   {"__reduce__", BaseException_reduce, METH_NOARGS},
+   {"__setstate__", BaseException_setstate, METH_O},
+   {"with_traceback", BaseException_with_traceback, METH_O,
     with_traceback_doc},
-   {"add_note", (PyCFunction)BaseException_add_note, METH_O,
-    add_note_doc},
+   {"add_note", BaseException_add_note, METH_O, add_note_doc},
    {NULL, NULL, 0, NULL},
 };
 
 static PyObject *
-BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException_get_args(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (self->args == NULL) {
         Py_RETURN_NONE;
     }
@@ -293,7 +300,7 @@ BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 }
 
 static int
-BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored))
+BaseException_set_args(PyObject *op, PyObject *val, void *Py_UNUSED(ignored))
 {
     PyObject *seq;
     if (val == NULL) {
@@ -303,13 +310,15 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
     seq = PySequence_Tuple(val);
     if (!seq)
         return -1;
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     Py_XSETREF(self->args, seq);
     return 0;
 }
 
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException_get_tb(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
     }
@@ -317,8 +326,9 @@ BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 }
 
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
+BaseException_set_tb(PyObject *op, PyObject *tb, void *Py_UNUSED(ignored))
 {
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (tb == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
         return -1;
@@ -398,8 +408,8 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
+    {"args", BaseException_get_args, BaseException_set_args},
+    {"__traceback__", BaseException_get_tb, BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
     {"__cause__", BaseException_get_cause,
@@ -411,59 +421,61 @@ static PyGetSetDef BaseException_getset[] = {
 PyObject *
 PyException_GetTraceback(PyObject *self)
 {
-    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
-    return Py_XNewRef(base_self->traceback);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    return Py_XNewRef(exc->traceback);
 }
 
 
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb)
 {
-    return BaseException_set_tb(_PyBaseExceptionObject_cast(self), tb, NULL);
+    return BaseException_set_tb(self, tb, NULL);
 }
 
 PyObject *
 PyException_GetCause(PyObject *self)
 {
-    PyObject *cause = _PyBaseExceptionObject_cast(self)->cause;
-    return Py_XNewRef(cause);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    return Py_XNewRef(exc->cause);
 }
 
 /* Steals a reference to cause */
 void
 PyException_SetCause(PyObject *self, PyObject *cause)
 {
-    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
-    base_self->suppress_context = 1;
-    Py_XSETREF(base_self->cause, cause);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    exc->suppress_context = 1;
+    Py_XSETREF(exc->cause, cause);
 }
 
 PyObject *
 PyException_GetContext(PyObject *self)
 {
-    PyObject *context = _PyBaseExceptionObject_cast(self)->context;
-    return Py_XNewRef(context);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    return Py_XNewRef(exc->context);
 }
 
 /* Steals a reference to context */
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
-    Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    Py_XSETREF(exc->context, context);
 }
 
 PyObject *
 PyException_GetArgs(PyObject *self)
 {
-    PyObject *args = _PyBaseExceptionObject_cast(self)->args;
-    return Py_NewRef(args);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    return Py_NewRef(exc->args);
 }
 
 void
 PyException_SetArgs(PyObject *self, PyObject *args)
 {
     Py_INCREF(args);
-    Py_XSETREF(_PyBaseExceptionObject_cast(self)->args, args);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
+    Py_XSETREF(exc->args, args);
 }
 
 const char *
@@ -485,26 +497,26 @@ static PyTypeObject _PyExc_BaseException = {
     "BaseException", /*tp_name*/
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
-    (destructor)BaseException_dealloc, /*tp_dealloc*/
+    BaseException_dealloc,      /*tp_dealloc*/
     0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
     0,                          /*tp_as_async*/
-    (reprfunc)BaseException_repr, /*tp_repr*/
+    BaseException_repr,         /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
     0,                          /*tp_hash */
     0,                          /*tp_call*/
-    (reprfunc)BaseException_str,  /*tp_str*/
+    BaseException_str,          /*tp_str*/
     PyObject_GenericGetAttr,    /*tp_getattro*/
     PyObject_GenericSetAttr,    /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASE_EXC_SUBCLASS,  /*tp_flags*/
     PyDoc_STR("Common base class for all exceptions"), /* tp_doc */
-    (traverseproc)BaseException_traverse, /* tp_traverse */
-    (inquiry)BaseException_clear, /* tp_clear */
+    BaseException_traverse,     /* tp_traverse */
+    BaseException_clear,        /* tp_clear */
     0,                          /* tp_richcompare */
     0,                          /* tp_weaklistoffset */
     0,                          /* tp_iter */
@@ -517,7 +529,7 @@ static PyTypeObject _PyExc_BaseException = {
     0,                          /* tp_descr_get */
     0,                          /* tp_descr_set */
     offsetof(PyBaseExceptionObject, dict), /* tp_dictoffset */
-    (initproc)BaseException_init, /* tp_init */
+    BaseException_init,         /* tp_init */
     0,                          /* tp_alloc */
     BaseException_new,          /* tp_new */
     .tp_vectorcall = BaseException_vectorcall,
@@ -535,13 +547,13 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(PyBaseExceptionObject), \
-    0, (destructor)BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, \
+    0, BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
-    PyDoc_STR(EXCDOC), (traverseproc)BaseException_traverse, \
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
+    PyDoc_STR(EXCDOC), BaseException_traverse, \
+    BaseException_clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(PyBaseExceptionObject, dict), \
-    (initproc)BaseException_init, 0, BaseException_new,\
+    BaseException_init, 0, BaseException_new,\
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
@@ -1378,7 +1390,7 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
 {
     /* orig must be a raised & caught exception, so it has a traceback */
     assert(PyExceptionInstance_Check(orig));
-    assert(_PyBaseExceptionObject_cast(orig)->traceback != NULL);
+    assert(_PyBaseExceptionObject_CAST(orig)->traceback != NULL);
 
     assert(PyList_Check(excs));
 
