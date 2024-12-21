@@ -679,10 +679,10 @@ class ElementTree:
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
-              xml_declaration_definition="<?xml version='{version}' encoding='{encoding}'?>",
               default_namespace=None,
               method=None, *,
-              short_empty_elements=True):
+              short_empty_elements=True,
+              xml_declaration_definition="<?xml version='{version}' encoding='{encoding}'?>"):
         """Write element tree to a file as XML.
 
         Arguments:
