@@ -1666,7 +1666,7 @@ FutureIter_dealloc(futureiterobject *it)
 }
 
 static PySendResult
-FutureIter_am_send(futureiterobject *it,
+FutureIter_am_send_lock_held(futureiterobject *it,
                    PyObject *Py_UNUSED(arg),
                    PyObject **result)
 {
@@ -1702,6 +1702,19 @@ FutureIter_am_send(futureiterobject *it,
     Py_DECREF(fut);
     return PYGEN_ERROR;
 }
+
+static PySendResult
+FutureIter_am_send(futureiterobject *it,
+                   PyObject *Py_UNUSED(arg),
+                   PyObject **result)
+{
+    PySendResult res;
+    Py_BEGIN_CRITICAL_SECTION2(it, it->future);
+    res = FutureIter_am_send_lock_held(it, Py_None, result);
+    Py_END_CRITICAL_SECTION2();
+    return res;
+}
+
 
 static PyObject *
 FutureIter_iternext(futureiterobject *it)
@@ -1923,7 +1936,11 @@ TaskStepMethWrapper_call(TaskStepMethWrapper *o,
         return NULL;
     }
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)o);
-    return task_step(state, o->sw_task, o->sw_arg);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o->sw_task);
+    res = task_step(state, o->sw_task, o->sw_arg);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static int
@@ -2909,6 +2926,8 @@ gen_status_from_result(PyObject **result)
 static PyObject *
 task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(task);
+
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
@@ -3068,8 +3087,10 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (wrapper == NULL) {
             goto fail;
         }
+        Py_BEGIN_CRITICAL_SECTION(result);
         tmp = future_add_done_callback(state,
             (FutureObj*)result, wrapper, task->task_context);
+        Py_END_CRITICAL_SECTION();
         Py_DECREF(wrapper);
         if (tmp == NULL) {
             goto fail;
@@ -3270,9 +3291,9 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (enter_task(state, task->task_loop, (PyObject*)task) < 0) {
         return NULL;
     }
-    Py_BEGIN_CRITICAL_SECTION(task);
+
     res = task_step_impl(state, task, exc);
-    Py_END_CRITICAL_SECTION();
+
     if (res == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         leave_task(state, task->task_loop, (PyObject*)task);
@@ -3351,16 +3372,20 @@ task_eager_start(asyncio_state *state, TaskObj *task)
 }
 
 static PyObject *
-task_wakeup(TaskObj *task, PyObject *o)
+task_wakeup_lock_held(TaskObj *task, PyObject *o)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(task);
+
     PyObject *result;
     assert(o);
 
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
     if (Future_CheckExact(state, o) || Task_CheckExact(state, o)) {
         PyObject *fut_result = NULL;
-        int res = future_get_result(state, (FutureObj*)o, &fut_result);
-
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = future_get_result(state, (FutureObj*)o, &fut_result);
+        Py_END_CRITICAL_SECTION();
         switch(res) {
         case -1:
             assert(fut_result == NULL);
@@ -3392,6 +3417,16 @@ task_wakeup(TaskObj *task, PyObject *o)
     Py_DECREF(exc);
 
     return result;
+}
+
+static PyObject *
+task_wakeup(TaskObj *task, PyObject *o)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(task);
+    res = task_wakeup_lock_held(task, o);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
