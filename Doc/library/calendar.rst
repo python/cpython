@@ -516,7 +516,7 @@ The :mod:`calendar` module defines the following exceptions:
 
 .. _calendar-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 2.5
@@ -654,6 +654,9 @@ The following options are accepted:
    The number of months printed per row.
    Defaults to 3.
 
+.. versionchanged:: 3.14
+   By default, today's date is highlighted in color and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 *HTML-mode options:*
 
