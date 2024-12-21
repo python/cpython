@@ -227,6 +227,7 @@ class IdleCmdHandler(SimpleIMAPHandler):
         self._send_line(b'* 1 RECENT')
         r = yield
         if r == b'DONE\r\n':
+            self._send_line(b'* 9 RECENT')
             self._send_tagged(tag, 'OK', 'Idle completed')
         else:
             self._send_tagged(tag, 'BAD', 'Expected DONE')
@@ -552,9 +553,11 @@ class NewIMAPTestsMixin():
         # iteration should have consumed untagged responses
         _, data = client.response('EXISTS')
         self.assertEqual(data, [None])
-        # responses not iterated should remain after idle
+        # responses not iterated should be available after idle
         _, data = client.response('RECENT')
-        self.assertEqual(data, [b'1'])
+        self.assertEqual(data[0], b'1')
+        # responses received after 'DONE' should be available after idle
+        self.assertEqual(data[1], b'9')
 
     def test_idle_burst(self):
         client, _ = self._setup(IdleCmdHandler)
@@ -565,7 +568,7 @@ class NewIMAPTestsMixin():
             self.assertEqual(len(batch), 4)
         # burst() should not have consumed later responses
         _, data = client.response('RECENT')
-        self.assertEqual(data, [b'1'])
+        self.assertEqual(data, [b'1', b'9'])
 
     def test_login(self):
         client, _ = self._setup(SimpleIMAPHandler)
