@@ -469,6 +469,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 
     faulthandler_dump_traceback(fd, fatal_error.all_threads,
                                 fatal_error.interp);
+    faulthandler_dump_c_stack(fd);
 
     /* call the next exception handler */
     return EXCEPTION_CONTINUE_SEARCH;
