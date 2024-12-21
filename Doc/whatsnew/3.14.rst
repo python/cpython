@@ -678,7 +678,7 @@ uuid
 
   Overall, dedicated generation of UUID objects is 20% faster.
 
-  (Contributed by Bénédikt Tran in :gh:`XXX`.)
+  (Contributed by Bénédikt Tran in :gh:`128150`.)
 
 
 Deprecated
