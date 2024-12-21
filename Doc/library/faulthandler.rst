@@ -75,8 +75,9 @@ Dumping the C stack
 
    Dump the C stack trace of the current thread into *file*.
 
-   If the system doesn't support the C-level :manpage:`backtrace` or :manpage:`backtrace_symbols` functions,
-   then an error message is displayed instead of the C stack.
+   If the system does not support the C-level :manpage:`backtrace(3)`
+   or :manpage:`backtrace_symbols(3)` functions, then an error message
+   is displayed instead of the C stack.
 
 Fault handler state
 -------------------
@@ -94,7 +95,7 @@ Fault handler state
    :ref:`issue with file descriptors <faulthandler-fd>`.
 
    If *c_stack* is ``True``, then the C stack trace is printed after the Python
-   traceback, unless the system doesn't support it. See :func:`dump_c_stack` for
+   traceback, unless the system does not support it. See :func:`dump_c_stack` for
    more information on compatibility.
 
    .. versionchanged:: 3.5
