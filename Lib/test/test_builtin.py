@@ -493,7 +493,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     asyncio.run(eval(co, globals_))
                     self.assertEqual(globals_['a'], 1)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            asyncio._set_event_loop_policy(policy)
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
@@ -530,7 +530,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                              mode,
                              flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            asyncio._set_event_loop_policy(policy)
 
 
     def test_compile_async_generator(self):
@@ -2691,7 +2691,10 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = 7 << 28
+        if support.Py_GIL_DISABLED:
+            IMMORTAL_REFCOUNT = 5 << 28
+        else:
+            IMMORTAL_REFCOUNT = 7 << 28
     else:
         IMMORTAL_REFCOUNT = 3 << 30
 

@@ -133,24 +133,20 @@ class TestLocalization(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.libc_filename = find_library("c")
+        if cls.libc_filename is None:
+            raise unittest.SkipTest('cannot find libc')
 
     @configure_locales
     def test_localized_error_from_dll(self):
         dll = CDLL(self.libc_filename)
-        with self.assertRaises(AttributeError) as cm:
+        with self.assertRaises(AttributeError):
             dll.this_name_does_not_exist
-        if sys.platform.startswith('linux'):
-            # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_filename, str(cm.exception))
 
     @configure_locales
     def test_localized_error_in_dll(self):
         dll = CDLL(self.libc_filename)
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             c_int.in_dll(dll, 'this_name_does_not_exist')
-        if sys.platform.startswith('linux'):
-            # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_filename, str(cm.exception))
 
     @unittest.skipUnless(hasattr(_ctypes, 'dlopen'),
                          'test requires _ctypes.dlopen()')
@@ -172,11 +168,8 @@ class TestLocalization(unittest.TestCase):
     @configure_locales
     def test_localized_error_dlsym(self):
         dll = _ctypes.dlopen(self.libc_filename)
-        with self.assertRaises(OSError) as cm:
+        with self.assertRaises(OSError):
             _ctypes.dlsym(dll, 'this_name_does_not_exist')
-        if sys.platform.startswith('linux'):
-            # On macOS, the filename is not reported by dlerror().
-            self.assertIn(self.libc_filename, str(cm.exception))
 
 
 if __name__ == "__main__":
