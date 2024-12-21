@@ -367,6 +367,12 @@ errno
   (Contributed by James Roy in :gh:`126585`.)
 
 
+faulthandler
+------------
+
+* Add support for printing the C stack trace on systems that support it.
+
+
 fractions
 ---------
 
