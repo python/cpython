@@ -23,8 +23,8 @@ class Parser(Protocol):
 
 
 @runtime_checkable
-class Status(Protocol):
-    """Protocol for path statuses, which support querying the file type.
+class PathInfo(Protocol):
+    """Protocol for path info objects, which support querying the file type.
     Methods may return cached results.
     """
     def exists(self, *, follow_symlinks: bool = True) -> bool: ...

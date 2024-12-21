@@ -552,7 +552,7 @@ class _PathGlobber(_GlobberBase):
 
     @staticmethod
     def scandir(path):
-        return ((child.status, child.name, child) for child in path.iterdir())
+        return ((child.info, child.name, child) for child in path.iterdir())
 
     @staticmethod
     def concat_path(path, text):

@@ -1177,19 +1177,19 @@ Querying file type and status
    .. versionadded:: 3.5
 
 
-.. attribute:: Path.status
+.. attribute:: Path.info
 
-   A :class:`~pathlib.types.Status` object that supports querying file type
+   A :class:`~pathlib.types.PathInfo` object that supports querying file type
    information. The object exposes methods that cache their results, which can
    help reduce the number of system calls needed when switching on file type.
    For example::
 
       >>> p = Path('src')
-      >>> if p.status.is_symlink():
+      >>> if p.info.is_symlink():
       ...     print('symlink')
-      ... elif p.status.is_dir():
+      ... elif p.info.is_dir():
       ...     print('directory')
-      ... elif p.status.exists():
+      ... elif p.info.exists():
       ...     print('something else')
       ... else:
       ...     print('not found')
@@ -1198,13 +1198,13 @@ Querying file type and status
 
    If the path was generated from :meth:`Path.iterdir` then this attribute is
    initialized with some information about the file type gleaned from scanning
-   the parent directory. Merely accessing :attr:`Path.status` does not perform
+   the parent directory. Merely accessing :attr:`Path.info` does not perform
    any filesystem queries.
 
    To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
    :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
    this attribute. There is no way to reset the cache; instead you can create
-   a new path object with an empty status cache via ``p = Path(p)``.
+   a new path object with an empty info cache via ``p = Path(p)``.
 
    .. versionadded:: 3.14
 
@@ -1949,10 +1949,10 @@ The :mod:`pathlib.types` module provides types for static type checking.
 .. versionadded:: 3.14
 
 
-.. class:: Status()
+.. class:: PathInfo()
 
    A :class:`typing.Protocol` describing the
-   :attr:`Path.status <pathlib.Path.status>` attribute. Implementations may
+   :attr:`Path.info <pathlib.Path.info>` attribute. Implementations may
    return cached results from their methods.
 
    .. method:: exists(*, follow_symlinks=True)

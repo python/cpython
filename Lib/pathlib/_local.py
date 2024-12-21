@@ -66,16 +66,16 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _StatusBase:
+class _PathInfoBase:
     __slots__ = ()
 
     def __repr__(self):
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
-        return f"<{path_type}.status>"
+        return f"<{path_type}.info>"
 
 
-class _DirEntryStatus(_StatusBase):
-    """Implementation of pathlib.types.Status that provides file status
+class _DirEntryInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
     __slots__ = ('_entry', '_exists')
@@ -120,8 +120,8 @@ class _DirEntryStatus(_StatusBase):
             return False
 
 
-class _WindowsPathStatus(_StatusBase):
-    """Implementation of pathlib.types.Status that provides file status
+class _WindowsPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
     information for Windows paths. Don't try to construct it yourself."""
     __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
 
@@ -179,8 +179,8 @@ class _WindowsPathStatus(_StatusBase):
             return self._is_symlink
 
 
-class _PosixPathStatus(_StatusBase):
-    """Implementation of pathlib.types.Status that provides file status
+class _PosixPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
     information for POSIX paths. Don't try to construct it yourself."""
     __slots__ = ('_path', '_mode')
 
@@ -222,7 +222,7 @@ class _PosixPathStatus(_StatusBase):
         return S_ISLNK(self._get_mode(follow_symlinks=False))
 
 
-_PathStatus = _WindowsPathStatus if os.name == 'nt' else _PosixPathStatus
+_PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
 
 
 class PurePath(PurePathBase):
@@ -691,7 +691,7 @@ class Path(PathBase, PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = ('_status',)
+    __slots__ = ('_info',)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
@@ -699,16 +699,16 @@ class Path(PathBase, PurePath):
         return object.__new__(cls)
 
     @property
-    def status(self):
+    def info(self):
         """
-        A Status object that exposes the file type and other file attributes
+        A PathInfo object that exposes the file type and other file attributes
         of this path.
         """
         try:
-            return self._status
+            return self._info
         except AttributeError:
-            self._status = _PathStatus(self)
-            return self._status
+            self._info = _PathInfo(self)
+            return self._info
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -874,7 +874,7 @@ class Path(PathBase, PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._status = _DirEntryStatus(dir_entry)
+        path._info = _DirEntryInfo(dir_entry)
         return path
 
     def iterdir(self):

@@ -339,9 +339,9 @@ class PathBase(PurePathBase):
     __slots__ = ()
 
     @property
-    def status(self):
+    def info(self):
         """
-        A Status object that exposes the file type and other file attributes
+        A PathInfo object that exposes the file type and other file attributes
         of this path.
         """
         # TODO: make this abstract, delete PathBase.stat().
@@ -521,7 +521,7 @@ class PathBase(PurePathBase):
             try:
                 for child in path.iterdir():
                     try:
-                        if child.status.is_dir(follow_symlinks=follow_symlinks):
+                        if child.info.is_dir(follow_symlinks=follow_symlinks):
                             if not top_down:
                                 paths.append(child)
                             dirnames.append(child.name)
