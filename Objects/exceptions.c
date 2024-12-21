@@ -759,7 +759,7 @@ ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
 
 
 static inline PyBaseExceptionGroupObject*
-_PyBaseExceptionGroupObject_cast(PyObject *exc)
+_PyBaseExceptionGroup_CAST(PyObject *exc)
 {
     assert(_PyBaseExceptionGroup_Check(exc));
     return (PyBaseExceptionGroupObject *)exc;
@@ -865,7 +865,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
     PyBaseExceptionGroupObject *self =
-        _PyBaseExceptionGroupObject_cast(BaseException_new(cls, args, kwds));
+        _PyBaseExceptionGroup_CAST(BaseException_new(cls, args, kwds));
     if (!self) {
         goto error;
     }
@@ -896,46 +896,47 @@ _PyExc_CreateExceptionGroup(const char *msg_str, PyObject *excs)
 }
 
 static int
-BaseExceptionGroup_init(PyBaseExceptionGroupObject *self,
-    PyObject *args, PyObject *kwds)
+BaseExceptionGroup_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds)) {
         return -1;
     }
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
+    if (BaseException_init(self, args, kwds) == -1) {
         return -1;
     }
     return 0;
 }
 
 static int
-BaseExceptionGroup_clear(PyBaseExceptionGroupObject *self)
+BaseExceptionGroup_clear(PyObject *op)
 {
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroup_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-BaseExceptionGroup_dealloc(PyBaseExceptionGroupObject *self)
+BaseExceptionGroup_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    BaseExceptionGroup_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)BaseExceptionGroup_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-BaseExceptionGroup_traverse(PyBaseExceptionGroupObject *self,
-     visitproc visit, void *arg)
+BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroup_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 static PyObject *
-BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
+BaseExceptionGroup_str(PyObject *op)
 {
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroup_CAST(op);
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
 
@@ -949,7 +950,7 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 static PyObject *
 BaseExceptionGroup_derive(PyObject *self_, PyObject *excs)
 {
-    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroup_CAST(self_);
     PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
     if (!init_args) {
         return NULL;
@@ -1162,7 +1163,7 @@ exceptiongroup_split_recursive(PyObject *exc,
 
     /* Partial match */
 
-    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
+    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroup_CAST(exc);
     assert(PyTuple_CheckExact(eg->excs));
     Py_ssize_t num_excs = PyTuple_Size(eg->excs);
     if (num_excs < 0) {
@@ -1313,7 +1314,7 @@ collect_exception_group_leaf_ids(PyObject *exc, PyObject *leaf_ids)
         Py_DECREF(exc_id);
         return res;
     }
-    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
+    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroup_CAST(exc);
     Py_ssize_t num_excs = PyTuple_GET_SIZE(eg->excs);
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
@@ -1545,9 +1546,9 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", (PyCFunction)Py_GenericAlias,
       METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
-    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_O},
-    {"split", (PyCFunction)BaseExceptionGroup_split, METH_O},
-    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_O},
+    {"derive", BaseExceptionGroup_derive, METH_O},
+    {"split", BaseExceptionGroup_split, METH_O},
+    {"subgroup", BaseExceptionGroup_subgroup, METH_O},
     {NULL}
 };
 
