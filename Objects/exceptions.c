@@ -626,14 +626,22 @@ static PyMemberDef StopIteration_members[] = {
     {NULL}  /* Sentinel */
 };
 
+static inline PyStopIterationObject *
+_PyStopIteration_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_StopIteration));
+    return (PyStopIterationObject *)self;
+}
+
 static int
-StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
+StopIteration_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t size = PyTuple_GET_SIZE(args);
     PyObject *value;
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init(op, args, kwds) == -1)
         return -1;
+    PyStopIterationObject *self = _PyStopIteration_CAST(op);
     Py_CLEAR(self->value);
     if (size > 0)
         value = PyTuple_GET_ITEM(args, 0);
@@ -644,25 +652,27 @@ StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-StopIteration_clear(PyStopIterationObject *self)
+StopIteration_clear(PyObject *op)
 {
+    PyStopIterationObject *self = _PyStopIteration_CAST(op);
     Py_CLEAR(self->value);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-StopIteration_dealloc(PyStopIterationObject *self)
+StopIteration_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
-    StopIteration_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)StopIteration_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-StopIteration_traverse(PyStopIterationObject *self, visitproc visit, void *arg)
+StopIteration_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyStopIterationObject *self = _PyStopIteration_CAST(op);
     Py_VISIT(self->value);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
