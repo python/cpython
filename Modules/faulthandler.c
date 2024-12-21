@@ -212,6 +212,43 @@ faulthandler_dump_traceback(int fd, int all_threads,
     reentrant = 0;
 }
 
+static void
+faulthandler_dump_c_stack(int fd, PyInterpreterState *interp)
+{
+    static volatile int reentrant = 0;
+
+    if (reentrant)
+        return;
+
+    reentrant = 1;
+
+    #include <execinfo.h>
+#define SIZE 128
+    void *callstack[128];
+    int frames = backtrace(callstack, SIZE);
+    char **strings = backtrace_symbols(callstack, SIZE);
+    FILE *fp = fdopen(fd, "w");
+    if (strings == NULL)
+    {
+        fputs("<failed to get current C stack>", fp);
+    }
+    else {
+        fputs("\nCurrent thread's C stack trace:\n", fp);
+        for (int i = frames; i >= 0; --i)
+        {
+            fprintf(fp, "  %s\n", strings[i]);
+        }
+
+        if (frames == SIZE)
+        {
+            fprintf(fp, "<truncated rest of calls>\n");
+        }
+    }
+#undef SIZE
+
+    reentrant = 0;
+}
+
 static PyObject*
 faulthandler_dump_traceback_py(PyObject *self,
                                PyObject *args, PyObject *kwargs)
@@ -322,6 +359,7 @@ faulthandler_fatal_error(int signum)
 
     faulthandler_dump_traceback(fd, fatal_error.all_threads,
                                 fatal_error.interp);
+    faulthandler_dump_c_stack(fd, fatal_error.interp);
 
     _Py_DumpExtensionModules(fd, fatal_error.interp);
 
