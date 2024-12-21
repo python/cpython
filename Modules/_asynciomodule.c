@@ -3748,6 +3748,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
+    Py_DECREF(eager_tasks);
     PyObject *eager_iter = PyObject_GetIter(eager_tasks);
     if (eager_iter == NULL) {
         Py_DECREF(tasks);
