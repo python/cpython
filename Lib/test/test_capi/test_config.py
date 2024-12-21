@@ -55,6 +55,7 @@ class CAPITests(unittest.TestCase):
             ("filesystem_errors", str, None),
             ("hash_seed", int, None),
             ("home", str | None, None),
+            ("inherit_context", int, None),
             ("import_time", bool, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
@@ -98,7 +99,7 @@ class CAPITests(unittest.TestCase):
         ]
         if support.Py_DEBUG:
             options.append(("run_presite", str | None, None))
-        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if support.Py_GIL_DISABLED:
             options.append(("enable_gil", int, None))
             options.append(("tlbc_enabled", int, None))
         if support.MS_WINDOWS:
@@ -170,7 +171,7 @@ class CAPITests(unittest.TestCase):
             ("warn_default_encoding", "warn_default_encoding", False),
             ("safe_path", "safe_path", False),
             ("int_max_str_digits", "int_max_str_digits", False),
-            # "gil" is tested below
+            # "gil" and "inherit_context" are tested below
         ):
             with self.subTest(flag=flag, name=name, negate=negate):
                 value = config_get(name)
@@ -182,10 +183,13 @@ class CAPITests(unittest.TestCase):
                          config_get('use_hash_seed') == 0
                          or config_get('hash_seed') != 0)
 
-        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if support.Py_GIL_DISABLED:
             value = config_get('enable_gil')
             expected = (value if value != -1 else None)
             self.assertEqual(sys.flags.gil, expected)
+
+        expected_inherit_context = 1 if support.Py_GIL_DISABLED else 0
+        self.assertEqual(sys.flags.inherit_context, expected_inherit_context)
 
     def test_config_get_non_existent(self):
         # Test PyConfig_Get() on non-existent option name
