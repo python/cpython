@@ -2494,15 +2494,23 @@ ComplexExtendsException(PyExc_Exception, AttributeError,
  *    SyntaxError extends Exception
  */
 
+static inline PySyntaxErrorObject *
+_PySyntaxError_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_SyntaxError));
+    return (PySyntaxErrorObject *)self;
+}
+
 static int
-SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
+SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     PyObject *info = NULL;
     Py_ssize_t lenargs = PyTuple_GET_SIZE(args);
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+    if (BaseException_init(op, args, kwds) == -1)
         return -1;
 
+    PySyntaxErrorObject *self = _PySyntaxError_CAST(op);
     if (lenargs >= 1) {
         Py_XSETREF(self->msg, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
     }
@@ -2540,8 +2548,9 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-SyntaxError_clear(PySyntaxErrorObject *self)
+SyntaxError_clear(PyObject *op)
 {
+    PySyntaxErrorObject *self = _PySyntaxError_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->filename);
     Py_CLEAR(self->lineno);
@@ -2550,20 +2559,21 @@ SyntaxError_clear(PySyntaxErrorObject *self)
     Py_CLEAR(self->end_offset);
     Py_CLEAR(self->text);
     Py_CLEAR(self->print_file_and_line);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-SyntaxError_dealloc(PySyntaxErrorObject *self)
+SyntaxError_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    SyntaxError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)SyntaxError_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
+SyntaxError_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySyntaxErrorObject *self = _PySyntaxError_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->filename);
     Py_VISIT(self->lineno);
@@ -2572,7 +2582,7 @@ SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
     Py_VISIT(self->end_offset);
     Py_VISIT(self->text);
     Py_VISIT(self->print_file_and_line);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 /* This is called "my_basename" instead of just "basename" to avoid name
@@ -2604,8 +2614,9 @@ my_basename(PyObject *name)
 
 
 static PyObject *
-SyntaxError_str(PySyntaxErrorObject *self)
+SyntaxError_str(PyObject *op)
 {
+    PySyntaxErrorObject *self = _PySyntaxError_CAST(op);
     int have_lineno = 0;
     PyObject *filename;
     PyObject *result;
