@@ -360,7 +360,8 @@ class _OrderedChainMap(collections.ChainMap):
 
 
 class TestCase(object):
-    """A class whose instances are single test cases.
+    """
+    A class whose instances are single test cases.
 
     By default, the test code itself should be placed in a method named
     'runTest'.
@@ -381,15 +382,10 @@ class TestCase(object):
     in order to be run.
 
     When subclassing TestCase, you can set these attributes:
-    * failureException: determines which exception will be raised when
-        the instance's assertion methods fail; test methods raising this
-        exception will be deemed to have 'failed' rather than 'errored'.
-    * longMessage: determines whether long messages (including repr of
-        objects used in assert methods) will be printed on failure in *addition*
-        to any explicit message passed.
-    * maxDiff: sets the maximum length of a diff in failure messages
-        by assert methods using difflib. It is looked up as an instance
-        attribute so can be configured by individual tests if required.
+    
+    * failureException: determines which exception will be raised when the instance's assertion methods fail; test methods raising this exception will be deemed to have 'failed' rather than 'errored'.
+    * longMessage: determines whether long messages (including repr of objects used in assert methods) will be printed on failure in *addition* to any explicit message passed.
+    * maxDiff: sets the maximum length of a diff in failure messages by assert methods using difflib. It is looked up as an instance attribute so can be configured by individual tests if required.
     """
 
     failureException = AssertionError
