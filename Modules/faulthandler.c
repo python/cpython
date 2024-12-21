@@ -235,15 +235,12 @@ faulthandler_stack_dump_impl(int fd)
             size_t length = strlen(entry_str) + 1;
             if (length == TRACEBACK_ENTRY_MAX_SIZE) {
                 /* We exceeded the size, make it look prettier */
-
                 // Add ellipsis to last 3 characters
                 entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
                 entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
                 entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
-
                 // Ensure trailing newline
                 entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
-
                 // Ensure that it's null-terminated
                 entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
             }
@@ -253,6 +250,8 @@ faulthandler_stack_dump_impl(int fd)
         if (frames == BACKTRACE_SIZE) {
             PUTS(fd, "  <truncated rest of calls>\n");
         }
+
+        free(strings);
     }
 #undef BACKTRACE_SIZE
 #undef TRACEBACK_ENTRY_MAX_SIZE
