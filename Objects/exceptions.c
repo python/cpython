@@ -1705,7 +1705,7 @@ ImportError_getstate(PyObject *op)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(igno+red))
+ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res;
     PyObject *state = ImportError_getstate(self);
@@ -1754,6 +1754,13 @@ MiddlingExtendsException(PyExc_ImportError, ModuleNotFoundError, ImportError,
 /*
  *    OSError extends Exception
  */
+
+static inline PyOSErrorObject *
+_PyOSError_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_OSError));
+    return (PyOSErrorObject *)self;
+}
 
 #ifdef MS_WINDOWS
 #include "errmap.h"
@@ -1891,7 +1898,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 static PyObject *
 OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int
-OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds);
+OSError_init(PyObject *self, PyObject *args, PyObject *kwds);
 
 static int
 oserror_use_init(PyTypeObject *type)
@@ -1983,8 +1990,9 @@ error:
 }
 
 static int
-OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds)
+OSError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     PyObject *myerrno = NULL, *strerror = NULL;
     PyObject *filename = NULL, *filename2 = NULL;
 #ifdef MS_WINDOWS
@@ -2021,8 +2029,9 @@ error:
 }
 
 static int
-OSError_clear(PyOSErrorObject *self)
+OSError_clear(PyObject *op)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     Py_CLEAR(self->myerrno);
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
@@ -2030,21 +2039,21 @@ OSError_clear(PyOSErrorObject *self)
 #ifdef MS_WINDOWS
     Py_CLEAR(self->winerror);
 #endif
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-OSError_dealloc(PyOSErrorObject *self)
+OSError_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    OSError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)OSError_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-OSError_traverse(PyOSErrorObject *self, visitproc visit,
-        void *arg)
+OSError_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     Py_VISIT(self->myerrno);
     Py_VISIT(self->strerror);
     Py_VISIT(self->filename);
@@ -2052,12 +2061,13 @@ OSError_traverse(PyOSErrorObject *self, visitproc visit,
 #ifdef MS_WINDOWS
     Py_VISIT(self->winerror);
 #endif
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 static PyObject *
-OSError_str(PyOSErrorObject *self)
+OSError_str(PyObject *op)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
 #define OR_NONE(x) ((x)?(x):Py_None)
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
@@ -2097,12 +2107,13 @@ OSError_str(PyOSErrorObject *self)
     if (self->myerrno && self->strerror)
         return PyUnicode_FromFormat("[Errno %S] %S",
                                     self->myerrno, self->strerror);
-    return BaseException_str((PyBaseExceptionObject *)self);
+    return BaseException_str(op);
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
+OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     PyObject *args = self->args;
     PyObject *res = NULL;
 
@@ -2141,8 +2152,9 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-OSError_written_get(PyOSErrorObject *self, void *context)
+OSError_written_get(PyObject *op, void *context)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     if (self->written == -1) {
         PyErr_SetString(PyExc_AttributeError, "characters_written");
         return NULL;
@@ -2151,8 +2163,9 @@ OSError_written_get(PyOSErrorObject *self, void *context)
 }
 
 static int
-OSError_written_set(PyOSErrorObject *self, PyObject *arg, void *context)
+OSError_written_set(PyObject *op, PyObject *arg, void *context)
 {
+    PyOSErrorObject *self = _PyOSError_CAST(op);
     if (arg == NULL) {
         if (self->written == -1) {
             PyErr_SetString(PyExc_AttributeError, "characters_written");
@@ -2186,13 +2199,13 @@ static PyMemberDef OSError_members[] = {
 };
 
 static PyMethodDef OSError_methods[] = {
-    {"__reduce__", (PyCFunction)OSError_reduce, METH_NOARGS},
+    {"__reduce__", OSError_reduce, METH_NOARGS},
     {NULL}
 };
 
 static PyGetSetDef OSError_getset[] = {
-    {"characters_written", (getter) OSError_written_get,
-                           (setter) OSError_written_set, NULL},
+    {"characters_written", OSError_written_get,
+                           OSError_written_set, NULL},
     {NULL}
 };
 
