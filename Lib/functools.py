@@ -328,6 +328,8 @@ def _partial_new(cls, func, /, *args, **keywords):
                             "or a descriptor")
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
+    if keywords and Placeholder in keywords.values():
+        raise TypeError("keyword Placeholders are not allowed")
     if isinstance(func, base_cls):
         pto_phcount = func._phcount
         tot_args = func.args
