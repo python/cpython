@@ -3606,23 +3606,23 @@ _PyErr_NoMemory(PyThreadState *tstate)
 }
 
 static void
-MemoryError_dealloc(PyObject *obj)
+MemoryError_dealloc(PyObject *op)
 {
-    PyBaseExceptionObject *self = (PyBaseExceptionObject *)obj;
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     _PyObject_GC_UNTRACK(self);
 
-    BaseException_clear(self);
+    (void)BaseException_clear(op);
 
     /* If this is a subclass of MemoryError, we don't need to
      * do anything in the free-list*/
     if (!Py_IS_TYPE(self, (PyTypeObject *) PyExc_MemoryError)) {
-        Py_TYPE(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free(op);
         return;
     }
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {
-        Py_TYPE(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free(op);
     }
     else {
         self->dict = (PyObject *) state->memerrors_freelist;
@@ -3658,7 +3658,7 @@ free_preallocated_memerrors(struct _Py_exc_state *state)
     while (state->memerrors_freelist != NULL) {
         PyObject *self = (PyObject *) state->memerrors_freelist;
         state->memerrors_freelist = (PyBaseExceptionObject *)state->memerrors_freelist->dict;
-        Py_TYPE(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free(self);
     }
 }
 
@@ -3670,10 +3670,10 @@ PyTypeObject _PyExc_MemoryError = {
     0, MemoryError_dealloc, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Out of memory."), (traverseproc)BaseException_traverse,
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, 0, 0, &_PyExc_Exception,
+    PyDoc_STR("Out of memory."), BaseException_traverse,
+    BaseException_clear, 0, 0, 0, 0, 0, 0, 0, &_PyExc_Exception,
     0, 0, 0, offsetof(PyBaseExceptionObject, dict),
-    (initproc)BaseException_init, 0, MemoryError_new
+    BaseException_init, 0, MemoryError_new
 };
 PyObject *PyExc_MemoryError = (PyObject *) &_PyExc_MemoryError;
 
