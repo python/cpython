@@ -75,9 +75,7 @@ Dumping the C stack
 
    Dump the C stack trace of the current thread into *file*.
 
-   This is done with `GNU backtraces <https://www.gnu.org/software/libc/manual/html_node/Backtraces.html>`_.
-
-   If the system doesn't support the C-level ``backtrace()`` or ``backtrace_symbols`` functions,
+   If the system doesn't support the C-level :manpage:`backtrace` or :manpage:`backtrace_symbols` functions,
    then an error message is displayed instead of the C stack.
 
 Fault handler state
