@@ -2284,13 +2284,20 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
  *    NameError extends Exception
  */
 
+static inline PyNameErrorObject *
+_PyNameError_CAST(PyObject *self)
+{
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_NameError));
+    return (PyNameErrorObject *)self;
+}
+
 static int
-NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
+NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", NULL};
     PyObject *name = NULL;
 
-    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+    if (BaseException_init(op, args, NULL) == -1) {
         return -1;
     }
 
@@ -2305,31 +2312,34 @@ NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
+    PyNameErrorObject *self = _PyNameError_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
 
     return 0;
 }
 
 static int
-NameError_clear(PyNameErrorObject *self)
+NameError_clear(PyObject *op)
 {
+    PyNameErrorObject *self = _PyNameError_CAST(op);
     Py_CLEAR(self->name);
-    return BaseException_clear((PyBaseExceptionObject *)self);
+    return BaseException_clear(op);
 }
 
 static void
-NameError_dealloc(PyNameErrorObject *self)
+NameError_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-    NameError_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)NameError_clear(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-NameError_traverse(PyNameErrorObject *self, visitproc visit, void *arg)
+NameError_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyNameErrorObject *self = _PyNameError_CAST(op);
     Py_VISIT(self->name);
-    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+    return BaseException_traverse(op, visit, arg);
 }
 
 static PyMemberDef NameError_members[] = {
