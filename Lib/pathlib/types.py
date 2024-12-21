@@ -5,7 +5,7 @@ from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
-class Parser(Protocol):
+class _PathParser(Protocol):
     """Protocol for path parsers, which do low-level path manipulation.
 
     Path parsers provide a subset of the os.path API, specifically those

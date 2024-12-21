@@ -6,7 +6,7 @@ import stat
 import unittest
 
 from pathlib._abc import PurePathBase, PathBase
-from pathlib.types import Parser, PathInfo
+from pathlib.types import _PathParser, PathInfo
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -85,7 +85,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.altsep = self.parser.altsep
 
     def test_parser(self):
-        self.assertIsInstance(self.cls.parser, Parser)
+        self.assertIsInstance(self.cls.parser, _PathParser)
 
     def test_constructor_common(self):
         P = self.cls
