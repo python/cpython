@@ -375,6 +375,8 @@ future_ensure_alive(FutureObj *fut)
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
@@ -492,10 +494,11 @@ future_init(FutureObj *fut, PyObject *loop)
 static PyObject *
 future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     if (future_ensure_alive(fut)) {
         return NULL;
     }
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     if (fut->fut_state != STATE_PENDING) {
         PyErr_SetString(state->asyncio_InvalidStateError, "invalid state");
@@ -515,6 +518,8 @@ future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
 static PyObject *
 future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     PyObject *exc_val = NULL;
 
     if (fut->fut_state != STATE_PENDING) {
@@ -581,6 +586,8 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
 static PyObject *
 create_cancelled_error(asyncio_state *state, FutureObj *fut)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     PyObject *exc;
     if (fut->fut_cancelled_exc != NULL) {
         /* transfer ownership */
@@ -600,6 +607,8 @@ create_cancelled_error(asyncio_state *state, FutureObj *fut)
 static void
 future_set_cancelled_error(asyncio_state *state, FutureObj *fut)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     PyObject *exc = create_cancelled_error(state, fut);
     if (exc == NULL) {
         return;
@@ -611,6 +620,8 @@ future_set_cancelled_error(asyncio_state *state, FutureObj *fut)
 static int
 future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     if (fut->fut_state == STATE_CANCELLED) {
         future_set_cancelled_error(state, fut);
         return -1;
@@ -644,6 +655,8 @@ static PyObject *
 future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
                          PyObject *ctx)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     if (!future_is_alive(fut)) {
         PyErr_SetString(PyExc_RuntimeError, "uninitialized Future object");
         return NULL;
@@ -718,6 +731,8 @@ future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
 static PyObject *
 future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
     fut->fut_log_tb = 0;
 
     if (fut->fut_state != STATE_PENDING) {
