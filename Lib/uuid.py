@@ -237,6 +237,15 @@ class UUID:
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
 
+    @classmethod
+    def _from_int(cls, int, *, is_safe=SafeUUID.unknown):
+        self = cls.__new__(cls)
+        if int < 0 or int > 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff:
+            raise ValueError('int is out of range (need a 128-bit value)')
+        object.__setattr__(self, 'int', int)
+        object.__setattr__(self, 'is_safe', is_safe)
+        return self
+
     def __getstate__(self):
         d = {'int': self.int}
         if self.is_safe != SafeUUID.unknown:
@@ -722,14 +731,14 @@ def uuid3(namespace, name):
     int_uuid_3 = int_.from_bytes(h.digest())
     int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
-    return UUID(int=int_uuid_3, version=None)
+    return UUID._from_int(int_uuid_3)
 
 def uuid4():
     """Generate a random UUID."""
     int_uuid_4 = int_.from_bytes(os.urandom(16))
     int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
-    return UUID(int=int_uuid_4, version=None)
+    return UUID._from_int(int_uuid_4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
@@ -742,7 +751,7 @@ def uuid5(namespace, name):
     int_uuid_5 = int_.from_bytes(h.digest()[:16])
     int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
-    return UUID(int=int_uuid_5, version=None)
+    return UUID._from_int(int_uuid_5)
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
@@ -767,7 +776,7 @@ def uuid8(a=None, b=None, c=None):
     int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
     # by construction, the variant and version bits are already cleared
     int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
-    return UUID(int=int_uuid_8, version=None)
+    return UUID._from_int(int_uuid_8)
 
 def main():
     """Run the uuid command line interface."""
