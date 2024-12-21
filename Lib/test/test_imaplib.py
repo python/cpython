@@ -211,6 +211,8 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
 class IdleCmdHandler(SimpleIMAPHandler):
     capabilities = 'IDLE'
     def cmd_IDLE(self, tag, args):
+        # pre-idle-continuation response
+        self._send_line(b'* 0 EXISTS')
         self._send_textline('+ idling')
         # simple response
         self._send_line(b'* 2 EXISTS')
@@ -530,6 +532,9 @@ class NewIMAPTestsMixin():
         client, _ = self._setup(IdleCmdHandler)
         client.login('user', 'pass')
         with client.idle() as idler:
+            # iteration should include response between 'IDLE' & '+ idling'
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'0']))
             # iteration should produce responses
             response = next(idler)
             self.assertEqual(response, ('EXISTS', [b'2']))
@@ -557,7 +562,7 @@ class NewIMAPTestsMixin():
         # burst() should yield immediately available responses
         with client.idle() as idler:
             batch = list(idler.burst())
-            self.assertEqual(len(batch), 3)
+            self.assertEqual(len(batch), 4)
         # burst() should not have consumed later responses
         _, data = client.response('RECENT')
         self.assertEqual(data, [b'1'])
