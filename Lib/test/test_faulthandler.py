@@ -93,6 +93,7 @@ class FaultHandlerTests(unittest.TestCase):
                     fd=None, know_current_thread=True,
                     py_fatal_error=False,
                     garbage_collecting=False,
+                    c_stack=True,
                     function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
@@ -100,11 +101,12 @@ class FaultHandlerTests(unittest.TestCase):
 
         Raise an error if the output doesn't match the expected format.
         """
+        address_expr = "0x[0-9a-f]+"
         if all_threads:
             if know_current_thread:
-                header = 'Current thread 0x[0-9a-f]+'
+                header = f'Current thread {address_expr}'
             else:
-                header = 'Thread 0x[0-9a-f]+'
+                header = f'Thread {address_expr}'
         else:
             header = 'Stack'
         regex = [f'^{fatal_error}']
@@ -115,6 +117,9 @@ class FaultHandlerTests(unittest.TestCase):
         if garbage_collecting:
             regex.append('  Garbage-collecting')
         regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.append("Current thread's C stack (most recent call first):")
+            regex.append(r"  (\/.+\(\+.+\) \[0x[0-9a-f]+\])|(<.+>)")
         regex = '\n'.join(regex)
 
         if other_regex:
