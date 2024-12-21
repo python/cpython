@@ -73,6 +73,9 @@
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>           // futimes()
 #endif
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // PIDFD_NONBLOCK
+#endif
 
 
 // SGI apparently needs this forward declaration
@@ -81,6 +84,9 @@
    extern char * _getpty(int *, int, mode_t, int);
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h" // emscripten_debugger()
+#endif
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -303,6 +309,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
+#endif
+
+#ifdef HAVE_LINUX_SCHED_H
+#  include <linux/sched.h>
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -16842,8 +16852,24 @@ os__create_environ_impl(PyObject *module)
 }
 
 
-static PyMethodDef posix_methods[] = {
+#ifdef __EMSCRIPTEN__
+/*[clinic input]
+os._emscripten_debugger
 
+Create a breakpoint for the JavaScript debugger. Emscripten only.
+[clinic start generated code]*/
+
+static PyObject *
+os__emscripten_debugger_impl(PyObject *module)
+/*[clinic end generated code: output=ad47dc3bf0661343 input=d814b1877fb6083a]*/
+{
+    emscripten_debugger();
+    Py_RETURN_NONE;
+}
+#endif /* __EMSCRIPTEN__ */
+
+
+static PyMethodDef posix_methods[] = {
     OS_STAT_METHODDEF
     OS_ACCESS_METHODDEF
     OS_TTYNAME_METHODDEF
@@ -17057,6 +17083,7 @@ static PyMethodDef posix_methods[] = {
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
+    OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -17500,8 +17527,14 @@ all_ins(PyObject *m)
 #ifdef SCHED_OTHER
     if (PyModule_AddIntMacro(m, SCHED_OTHER)) return -1;
 #endif
+#ifdef SCHED_DEADLINE
+    if (PyModule_AddIntMacro(m, SCHED_DEADLINE)) return -1;
+#endif
 #ifdef SCHED_FIFO
     if (PyModule_AddIntMacro(m, SCHED_FIFO)) return -1;
+#endif
+#ifdef SCHED_NORMAL
+    if (PyModule_AddIntMacro(m, SCHED_NORMAL)) return -1;
 #endif
 #ifdef SCHED_RR
     if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;

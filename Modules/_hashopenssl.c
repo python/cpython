@@ -304,6 +304,7 @@ format_openssl_error_code(PyObject *exc, unsigned long errcode)
 {
     assert(errcode != 0);
 
+    /* ERR_ERROR_STRING(3) ensures that the messages below are ASCII */
     const char *lib = ERR_lib_error_string(errcode);
     const char *func = ERR_func_error_string(errcode);
     const char *reason = ERR_reason_error_string(errcode);

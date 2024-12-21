@@ -595,16 +595,6 @@ Objects
 * [Exception Handling](exception_handling.md): Describes the exception table
 
 
-Specializing Adaptive Interpreter
-=================================
-
-Adding a specializing, adaptive interpreter to CPython will bring significant
-performance improvements. These documents provide more information:
-
-* [PEP 659: Specializing Adaptive Interpreter](https://peps.python.org/pep-0659/).
-* [Adding or extending a family of adaptive instructions](adaptive.md)
-
-
 References
 ==========
 
