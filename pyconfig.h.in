@@ -744,6 +744,9 @@
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H
 
+/* Define to 1 if you have the <linux/sched.h> header file. */
+#undef HAVE_LINUX_SCHED_H
+
 /* Define to 1 if you have the <linux/soundcard.h> header file. */
 #undef HAVE_LINUX_SOUNDCARD_H
 

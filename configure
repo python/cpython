@@ -4545,6 +4545,9 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
+	*-*-emscripten)
+		_host_ident=$(emcc -dumpversion)-$host_cpu
+		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
 		;;
@@ -10980,6 +10983,12 @@ ac_fn_c_check_header_compile "$LINENO" "linux/soundcard.h" "ac_cv_header_linux_s
 if test "x$ac_cv_header_linux_soundcard_h" = xyes
 then :
   printf "%s\n" "#define HAVE_LINUX_SOUNDCARD_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "linux/sched.h" "ac_cv_header_linux_sched_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_sched_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_SCHED_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "linux/tipc.h" "ac_cv_header_linux_tipc_h" "$ac_includes_default"
