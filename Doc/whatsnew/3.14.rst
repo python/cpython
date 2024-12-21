@@ -700,6 +700,12 @@ Deprecated
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
+* :mod:`pdb`:
+  The undocumented ``pdb.Pdb.curframe_locals`` is deprecated because with
+  PEP 667 we don't need to cache the locals anymore. Derived debuggers
+  should access ``pdb.Pdb.curframe.f_locals`` directly.
+  (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
+
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
