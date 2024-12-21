@@ -3442,6 +3442,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    MEMORYVIEW___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
@@ -3451,6 +3452,7 @@ static PyMethodDef memory_methods[] = {
 /**************************************************************************/
 
 PyTypeObject _PyMemoryIter_Type;
+PyTypeObject _PyMemoryRevIter_Type;
 
 typedef struct {
     PyObject_HEAD
@@ -3460,10 +3462,50 @@ typedef struct {
     const char *it_fmt;
 } memoryiterobject;
 
+#define _PyMemoryViewIter_CAST(PTR) ((memoryiterobject *)(PTR))
+
+static PyObject *
+memoryiter_new(PyObject *self, int reversed)
+{
+    assert(reversed == 0 || reversed == 1);
+    assert(PyMemoryView_Check(self));
+
+    CHECK_RELEASED(self);
+    PyMemoryViewObject *sequence = _PyMemoryView_CAST(self);
+    const Py_buffer *view = &sequence->view;
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
+        return NULL;
+    }
+    else if (view->ndim != 1) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "multi-dimensional sub-views are not implemented");
+        return NULL;
+    }
+    const char *fmt = adjust_fmt(view);
+    if (fmt == NULL) {
+        return NULL;
+    }
+
+    PyTypeObject *itertype = reversed
+        ? &_PyMemoryRevIter_Type
+        : &_PyMemoryIter_Type;
+    memoryiterobject *it = PyObject_GC_New(memoryiterobject, itertype);
+    if (it == NULL) {
+        return NULL;
+    }
+    it->it_fmt = fmt;
+    it->it_length = memory_length(self);
+    it->it_index = reversed ? (it->it_length - 1) : 0;
+    it->it_seq = (PyMemoryViewObject *)Py_NewRef(self);
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
 static void
 memoryiter_dealloc(PyObject *self)
 {
-    memoryiterobject *it = (memoryiterobject *)self;
+    memoryiterobject *it = _PyMemoryViewIter_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
@@ -3472,89 +3514,109 @@ memoryiter_dealloc(PyObject *self)
 static int
 memoryiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    memoryiterobject *it = (memoryiterobject *)self;
+    memoryiterobject *it = _PyMemoryViewIter_CAST(self);
     Py_VISIT(it->it_seq);
     return 0;
+}
+
+static inline PyObject *
+memoryiter_iter_nth(PyMemoryViewObject *seq, Py_ssize_t nth, const char *fmt)
+{
+    CHECK_RELEASED(seq);
+    const Py_buffer *view = &seq->view;
+    const char *head = (const char *)seq->view.buf;
+    const char *ptr = head + view->strides[0] * nth;
+    ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
+    if (ptr == NULL) {
+        return NULL;
+    }
+    return unpack_single(seq, ptr, fmt);
 }
 
 static PyObject *
 memoryiter_next(PyObject *self)
 {
-    memoryiterobject *it = (memoryiterobject *)self;
-    PyMemoryViewObject *seq;
-    seq = it->it_seq;
+    memoryiterobject *it = _PyMemoryViewIter_CAST(self);
+    PyMemoryViewObject *seq = it->it_seq;
     if (seq == NULL) {
         return NULL;
     }
-
     if (it->it_index < it->it_length) {
-        CHECK_RELEASED(seq);
-        Py_buffer *view = &(seq->view);
-        char *ptr = (char *)seq->view.buf;
-
-        ptr += view->strides[0] * it->it_index++;
-        ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
-        if (ptr == NULL) {
-            return NULL;
-        }
-        return unpack_single(seq, ptr, it->it_fmt);
+        return memoryiter_iter_nth(seq, it->it_index++, it->it_fmt);
     }
-
-    it->it_seq = NULL;
-    Py_DECREF(seq);
+    Py_CLEAR(it->it_seq);
     return NULL;
 }
 
 static PyObject *
 memory_iter(PyObject *seq)
 {
-    if (!PyMemoryView_Check(seq)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    CHECK_RELEASED(seq);
-    PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
-    int ndims = obj->view.ndim;
-    if (ndims == 0) {
-        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
-        return NULL;
-    }
-    if (ndims != 1) {
-        PyErr_SetString(PyExc_NotImplementedError,
-            "multi-dimensional sub-views are not implemented");
-        return NULL;
-    }
-
-    const char *fmt = adjust_fmt(&obj->view);
-    if (fmt == NULL) {
-        return NULL;
-    }
-
-    memoryiterobject *it;
-    it = PyObject_GC_New(memoryiterobject, &_PyMemoryIter_Type);
-    if (it == NULL) {
-        return NULL;
-    }
-    it->it_fmt = fmt;
-    it->it_length = memory_length((PyObject *)obj);
-    it->it_index = 0;
-    it->it_seq = (PyMemoryViewObject*)Py_NewRef(obj);
-    _PyObject_GC_TRACK(it);
-    return (PyObject *)it;
+    return memoryiter_new(seq, 0);
 }
 
 PyTypeObject _PyMemoryIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
-    // methods
     .tp_dealloc = memoryiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = memoryiter_next,
 };
+
+/**************************************************************************/
+/*                      Memoryview Reversed Iterator                      */
+/**************************************************************************/
+
+static PyObject *
+memorview_reverse_iternext(PyObject *self)
+{
+    memoryiterobject *it = _PyMemoryViewIter_CAST(self);
+    PyMemoryViewObject *seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+    if (it->it_index >= 0 && it->it_index < it->it_length) {
+        // FEAT(picnixz): can we omit "it->it_index < it->it_length"?
+        return memoryiter_iter_nth(seq, it->it_index--, it->it_fmt);
+    }
+    Py_CLEAR(it->it_seq);
+    return NULL;
+}
+
+/*[clinic input]
+memoryview.__reversed__
+
+Return a reverse iterator over this memory view.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview___reversed___impl(PyMemoryViewObject *self)
+/*[clinic end generated code: output=25f9b4345f4720ad input=3c35e9267ad7fcc6]*/
+{
+    // NOTE(picnixz): generic implementation via reversed(...) is faster
+    // if the iterator is not used or if zero or few items are iterated.
+    //
+    // When the number of items is sufficiently large (>= 2^5), benchmarks
+    // show that this implementation improves for-loop performances. Note
+    // that materializing the specialized reversed iterator is likely to
+    // be slower than materializing a generic reversed object instance.
+    return memoryiter_new((PyObject *)self, 1);
+}
+
+
+PyTypeObject _PyMemoryRevIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "memory_reverseiterator",
+    .tp_basicsize = sizeof(memoryiterobject),
+    .tp_dealloc = memoryiter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = memoryiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = memorview_reverse_iternext,
+};
+
 
 PyTypeObject PyMemoryView_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

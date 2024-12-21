@@ -2284,6 +2284,7 @@ extern PyTypeObject _PyAnextAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
+extern PyTypeObject _PyMemoryRevIter_Type;
 extern PyTypeObject _PyPositionsIterator;
 extern PyTypeObject _Py_GenericAliasIterType;
 
@@ -2392,6 +2393,7 @@ static PyTypeObject* static_types[] = {
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
+    &_PyMemoryRevIter_Type,
     &_PyMethodWrapper_Type,
     &_PyNamespace_Type,
     &_PyNone_Type,
