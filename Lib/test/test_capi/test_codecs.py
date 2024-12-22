@@ -839,7 +839,8 @@ class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_replace_errors_handler(self):
         handler = _testcapi.codec_replace_errors
-        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors,
+                                          safe=True)
 
     def test_codec_xmlcharrefreplace_errors_handler(self):
         handler = _testcapi.codec_xmlcharrefreplace_errors
@@ -853,12 +854,12 @@ class CAPICodecErrors(unittest.TestCase):
         handler = _testlimitedcapi.codec_namereplace_errors
         self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
 
-    def do_test_codec_errors_handler(self, handler, exceptions):
+    def do_test_codec_errors_handler(self, handler, exceptions, *, safe=False):
         at_least_one = False
         for exc in exceptions:
             # See https://github.com/python/cpython/issues/123378 and related
             # discussion and issues for details.
-            if self._exception_may_crash(exc):
+            if not safe and self._exception_may_crash(exc):
                 continue
 
             at_least_one = True
