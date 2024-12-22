@@ -20,18 +20,26 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
 
 
-__all__ = ["UnsupportedOperation"]
-
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is attempted.
-    """
-    pass
-
-
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
+
+
+def _explode_path(path):
+    """
+    Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+    uppermost parent of the path (equivalent to path.parents[-1]), and
+    *parts* is a reversed list of parts following the anchor.
+    """
+    split = path.parser.split
+    path = str(path)
+    parent, name = split(path)
+    names = []
+    while path != parent:
+        names.append(name)
+        path = parent
+        parent, name = split(path)
+    return path, names
 
 
 class PathGlobber(_GlobberBase):
@@ -179,49 +187,24 @@ class PurePathBase:
     """Base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
-    its subclass PurePath. They are: __fspath__, __bytes__, __reduce__,
-    __hash__, __eq__, __lt__, __le__, __gt__, __ge__. Its initializer and path
-    joining methods accept only strings, not os.PathLike objects more broadly.
+    its subclass PurePath. They are: __init__, __fspath__, __bytes__,
+    __reduce__, __hash__, __eq__, __lt__, __le__, __gt__, __ge__.
     """
 
-    __slots__ = (
-        # The `_raw_paths` slot stores unjoined string paths. This is set in
-        # the `__init__()` method.
-        '_raw_paths',
-    )
+    __slots__ = ()
     parser = posixpath
-    _globber = PathGlobber
-
-    def __init__(self, *args):
-        for arg in args:
-            if not isinstance(arg, str):
-                raise TypeError(
-                    f"argument should be a str, not {type(arg).__name__!r}")
-        self._raw_paths = list(args)
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
         """
-        return type(self)(*pathsegments)
+        raise NotImplementedError
 
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        paths = self._raw_paths
-        if len(paths) == 1:
-            return paths[0]
-        elif paths:
-            # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
-        else:
-            paths.append('')
-            return ''
+        raise NotImplementedError
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -241,7 +224,7 @@ class PurePathBase:
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return self._stack[0]
+        return _explode_path(self)[0]
 
     @property
     def name(self):
@@ -319,8 +302,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -342,8 +325,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             return False
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -358,7 +341,7 @@ class PurePathBase:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = self._stack
+        anchor, parts = _explode_path(self)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -369,36 +352,19 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(str(self), *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(*self._raw_paths, key)
+            return self.with_segments(str(self), key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, str(self))
         except TypeError:
             return NotImplemented
-
-    @property
-    def _stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        split = self.parser.split
-        path = str(self)
-        parent, name = split(path)
-        names = []
-        while path != parent:
-            names.append(name)
-            path = parent
-            parent, name = split(path)
-        return path, names
 
     @property
     def parent(self):
@@ -427,11 +393,6 @@ class PurePathBase:
         a drive)."""
         return self.parser.isabs(str(self))
 
-    @property
-    def _pattern_str(self):
-        """The path expressed as a string, for use in pattern-matching."""
-        return str(self)
-
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern. If the pattern is
@@ -452,7 +413,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(sep, case_sensitive)
+        globber = PathGlobber(sep, case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -468,9 +429,9 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(pattern._pattern_str)
-        return match(self._pattern_str) is not None
+        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
+        match = globber.compile(str(pattern))
+        return match(str(self)) is not None
 
 
 
@@ -479,8 +440,8 @@ class PathBase(PurePathBase):
 
     This class provides dummy implementations for many methods that derived
     classes can override selectively; the default implementations raise
-    UnsupportedOperation. The most basic methods, such as stat() and open(),
-    directly raise UnsupportedOperation; these basic methods are called by
+    NotImplementedError. The most basic methods, such as stat() and open(),
+    directly raise NotImplementedError; these basic methods are called by
     other methods such as is_dir() and read_text().
 
     The Path class derives this class to implement local filesystem paths.
@@ -489,16 +450,12 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported"
-
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('stat()'))
+        raise NotImplementedError
 
     # Convenience functions for querying the stat results
 
@@ -549,7 +506,7 @@ class PathBase(PurePathBase):
         Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
-        raise UnsupportedOperation(self._unsupported_msg('open()'))
+        raise NotImplementedError
 
     def read_bytes(self):
         """
@@ -599,20 +556,7 @@ class PathBase(PurePathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
-
-    def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-            case_pedantic = False
-        else:
-            # The user has expressed a case sensitivity choice, but we don't
-            # know the case sensitivity of the underlying filesystem, so we
-            # must use scandir() for everything, including non-wildcard parts.
-            case_pedantic = True
-        recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
-        return globber.selector(parts)
+        raise NotImplementedError
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
@@ -620,10 +564,19 @@ class PathBase(PurePathBase):
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
-        anchor, parts = pattern._stack
+        anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.parser)
+            case_pedantic = False
+        elif case_sensitive == _is_case_sensitive(self.parser):
+            case_pedantic = False
+        else:
+            case_pedantic = True
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
+        globber = PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        select = globber.selector(parts)
         return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
@@ -672,44 +625,24 @@ class PathBase(PurePathBase):
                 yield path, dirnames, filenames
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
-    def expanduser(self):
-        """ Return a new path with expanded ~ and ~user constructs
-        (as returned by os.path.expanduser)
-        """
-        raise UnsupportedOperation(self._unsupported_msg('expanduser()'))
-
     def readlink(self):
         """
         Return the path to which the symbolic link points.
         """
-        raise UnsupportedOperation(self._unsupported_msg('readlink()'))
+        raise NotImplementedError
 
     def symlink_to(self, target, target_is_directory=False):
         """
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        raise UnsupportedOperation(self._unsupported_msg('symlink_to()'))
-
-    def hardlink_to(self, target):
-        """
-        Make this path a hard link pointing to the same file as *target*.
-
-        Note the order of arguments (self, target) is the reverse of os.link's.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('hardlink_to()'))
-
-    def touch(self, mode=0o666, exist_ok=True):
-        """
-        Create this file with the given access mode, if it doesn't exist.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('touch()'))
+        raise NotImplementedError
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.
         """
-        raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+        raise NotImplementedError
 
     copy = property(CopyWorker, doc=CopyWorker.__call__.__doc__)
 
@@ -733,7 +666,7 @@ class PathBase(PurePathBase):
         """
         Delete this file or directory (including all sub-directories).
         """
-        raise UnsupportedOperation(self._unsupported_msg('_delete()'))
+        raise NotImplementedError
 
     def move(self, target):
         """
@@ -755,37 +688,3 @@ class PathBase(PurePathBase):
         else:
             target = self.with_segments(target_dir, name)
         return self.move(target)
-
-    def chmod(self, mode, *, follow_symlinks=True):
-        """
-        Change the permissions of the path, like os.chmod().
-        """
-        raise UnsupportedOperation(self._unsupported_msg('chmod()'))
-
-    def lchmod(self, mode):
-        """
-        Like chmod(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chmod(mode, follow_symlinks=False)
-
-    def owner(self, *, follow_symlinks=True):
-        """
-        Return the login name of the file owner.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('owner()'))
-
-    def group(self, *, follow_symlinks=True):
-        """
-        Return the group name of the file gid.
-        """
-        raise UnsupportedOperation(self._unsupported_msg('group()'))
-
-    @classmethod
-    def from_uri(cls, uri):
-        """Return a new path from the given 'file' URI."""
-        raise UnsupportedOperation(cls._unsupported_msg('from_uri()'))
-
-    def as_uri(self):
-        """Return the path as a URI."""
-        raise UnsupportedOperation(self._unsupported_msg('as_uri()'))

@@ -62,7 +62,7 @@ typedef struct {
 union _PyStackRef;
 
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
-
+PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
 #ifdef __cplusplus
 }
