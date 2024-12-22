@@ -45,7 +45,7 @@ jobs:
         brew link --overwrite tcl-tk@8
     - name: Configure CPython
       run: |
-        MACOSX_DEPLOYMENT_TARGET=10.9 \
+        MACOSX_DEPLOYMENT_TARGET=10.13 \
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
         GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \
