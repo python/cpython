@@ -2993,8 +2993,8 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
 
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
 
-_multiprocessing-programming-spawn:
-_multiprocessing-programming-forkserver:
+.. _multiprocessing-programming-spawn:
+.. _multiprocessing-programming-forkserver:
 
 The *spawn* and *forkserver* start methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
