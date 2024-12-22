@@ -613,6 +613,13 @@ and "recursion level" in addition to the locked/unlocked state used by primitive
 locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
+.. note::
+
+  Reentrant locks are "owned" by the acquiring thread only throughout the
+  thread's life cycle. In particular, an RLock is silently and fully released
+  when the acquiring thread returns. This is different from Lock, which remains
+  locked after its acquiring thread returns.
+
 Threads call a lock's :meth:`~RLock.acquire` method to lock it,
 and its :meth:`~Lock.release` method to unlock it.
 
