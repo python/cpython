@@ -220,39 +220,44 @@ faulthandler_dump_traceback(int fd, int all_threads,
 static void
 faulthandler_stack_dump_impl(int fd)
 {
-#define BACKTRACE_SIZE 16
+#define BACKTRACE_SIZE 32
 #define TRACEBACK_ENTRY_MAX_SIZE 256
     void *callstack[BACKTRACE_SIZE];
     int frames = backtrace(callstack, BACKTRACE_SIZE);
+    if (frames == 0) {
+        // Some systems won't return anything for the stack trace
+        PUTS(fd, "  <system returned no stack trace>\n");
+        return;
+    }
+
     char **strings = backtrace_symbols(callstack, BACKTRACE_SIZE);
     if (strings == NULL) {
-        PUTS(fd, "  <failed to get stack trace>\n");
+        PUTS(fd, "  <not enough memory to get stack trace>\n");
+        return;
     }
-    else {
-        for (int i = 0; i < frames; ++i) {
-            char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
-            snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", strings[i]);
-            size_t length = strlen(entry_str) + 1;
-            if (length == TRACEBACK_ENTRY_MAX_SIZE) {
-                /* We exceeded the size, make it look prettier */
-                // Add ellipsis to last 3 characters
-                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
-                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
-                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
-                // Ensure trailing newline
-                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
-                // Ensure that it's null-terminated
-                entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
-            }
-            _Py_write_noraise(fd, entry_str, length);
+    for (int i = 0; i < frames; ++i) {
+        char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
+        snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", strings[i]);
+        size_t length = strlen(entry_str) + 1;
+        if (length == TRACEBACK_ENTRY_MAX_SIZE) {
+            /* We exceeded the size, make it look prettier */
+            // Add ellipsis to last 3 characters
+            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
+            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
+            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
+            // Ensure trailing newline
+            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
+            // Ensure that it's null-terminated
+            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
         }
-
-        if (frames == BACKTRACE_SIZE) {
-            PUTS(fd, "  <truncated rest of calls>\n");
-        }
-
-        free(strings);
+        _Py_write_noraise(fd, entry_str, length);
     }
+
+    if (frames == BACKTRACE_SIZE) {
+        PUTS(fd, "  <truncated rest of calls>\n");
+    }
+
+    free(strings);
 #undef BACKTRACE_SIZE
 #undef TRACEBACK_ENTRY_MAX_SIZE
 }
