@@ -263,6 +263,8 @@ _check_size(c_void_p)
 
 class c_bool(_SimpleCData):
     _type_ = "?"
+c_bool.__ctype_le__ = c_bool.__ctype_be__ = c_bool
+_check_size(c_bool)
 
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
