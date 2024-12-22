@@ -3447,8 +3447,8 @@ class StripExtraTests(unittest.TestCase):
         self.assertEqual(
             b"zzz", zipfile._Extra.strip(b"zzz", (self.ZIP64_EXTRA,)))
 
-class StoredZipExtFileRandomAccessTest(unittest.TestCase):
-    def test_random_access(self):
+class StoredZipExtFileRandomReadTest(unittest.TestCase):
+    def test_random_read(self):
         from _pyio import BytesIO
         class StatIO(BytesIO):
             def __init__(self):
@@ -3460,40 +3460,30 @@ class StoredZipExtFileRandomAccessTest(unittest.TestCase):
                 self.bytes_read += len(bs)
                 return bs
 
-            def get_bytes_read(self):
-                return self.bytes_read
-
         sio = StatIO()
-        # 100000 bytes
-        txt = b'0123456789'*10000
+        # 20000 bytes
+        txt = b'0123456789' * 2000
 
-        # Check seek on a file
         with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", txt)
 
+        # check random seek and read on a file
         with zipfile.ZipFile(sio, "r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
-                br = sio.get_bytes_read()
-                fp.seek(50000, os.SEEK_CUR)
-                self.assertEqual(sio.get_bytes_read() - br, 0, 'seek produces redundant read!')
-
-                b = fp.read(100)
-                self.assertEqual(b, txt[:100])
-
                 # seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
-                # backward seek
-                br = sio.get_bytes_read()
-                fp.seek(5000, os.SEEK_CUR)
-                b = fp.read(100)
-                self.assertEqual(b, txt[50000:50100])
-                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read redundant bytes during backward seek!')
-
                 # forward seek
-                br = sio.get_bytes_read()
-                fp.seek(-40000, os.SEEK_CUR)
-                b = fp.read(100)
-                self.assertEqual(b, txt[10100:10200])
-                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read redundant bytes during forward seek!')
+                old_count = sio.bytes_read
+                fp.seek(10002, os.SEEK_CUR)
+                arr = fp.read(100)
+                self.assertEqual(arr, txt[10002:10102])
+                self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during forward seek and read!')
+
+                # backward seek
+                old_count = sio.bytes_read
+                fp.seek(-5003, os.SEEK_CUR)
+                arr = fp.read(100)
+                self.assertEqual(arr, txt[5099:5199])
+                self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during backward seek and read!')
 
 if __name__ == "__main__":
     unittest.main()

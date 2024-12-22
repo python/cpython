@@ -1,1 +1,1 @@
-Support fast forward seek in uncompressed unencrypted :class:`!zipfile.ZipExtFile`.
+Completely support random access of uncompressed unencrypted :class:`!zipfile.ZipExtFile`.
