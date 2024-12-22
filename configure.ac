@@ -2929,7 +2929,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 
 # checks for header files
 AC_CHECK_HEADERS([ \
-  alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h execinfo.h fcntl.h grp.h \
+  alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
@@ -2943,6 +2943,10 @@ AC_CHECK_HEADERS([ \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
+
+# for faulthandler
+AC_CHECK_HEADERS([execinfo.h],
+                 [AC_CHECK_FUNCS(backtrace backtrace_symbols)])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294

@@ -216,7 +216,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     reentrant = 0;
 }
 
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS)
 static void
 faulthandler_stack_dump_impl(int fd)
 {
