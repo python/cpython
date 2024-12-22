@@ -2605,8 +2605,8 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 
         # Error on unguarded use of new symbols, which will fail at runtime for
         # users on older versions of macOS
-        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability-new],
-            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability-new"])],
+        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability],
+            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability"])],
             [],
             [-Werror])
 
