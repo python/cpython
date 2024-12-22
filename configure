@@ -10406,6 +10406,47 @@ printf %s "checking which compiler should be used... " >&6; }
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC" >&5
 printf "%s\n" "$CC" >&6; }
 
+        # Error on unguarded use of new symbols, which will fail at runtime for
+        # users on older versions of macOS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wunguarded-availability" >&5
+printf %s "checking whether C compiler accepts -Wunguarded-availability... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wunguarded_availability+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wunguarded-availability"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wunguarded_availability=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wunguarded_availability=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wunguarded_availability" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wunguarded_availability" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wunguarded_availability" = xyes
+then :
+  as_fn_append CFLAGS_NODIST " -Werror=unguarded-availability"
+else $as_nop
+  :
+fi
+
+
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
