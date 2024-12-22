@@ -675,14 +675,14 @@ uuid
 * Improve generation of :class:`~uuid.UUID` objects via their dedicated
   functions:
 
-  * :func:`~uuid.uuid3` is 40% faster for 16-byte names and 10% faster
+  * :func:`~uuid.uuid3` is 47% faster for 16-byte names and 13% faster
     for 1024-byte names. Performances for longer names remain unchanged.
-  * :func:`~uuid.uuid5` is 38% faster for 16-byte names and 21% faster
+  * :func:`~uuid.uuid5` is 35% faster for 16-byte names and 24% faster
     for 1024-byte names. Performances for longer names remain unchanged.
-  * :func:`~uuid.uuid4` is 31% faster and :func:`~uuid.uuid8` is 37% faster.
+  * :func:`~uuid.uuid4` is 33% faster and :func:`~uuid.uuid8` is 38% faster.
 
   Overall, dedicated generation of UUID objects version 3, 4, 5, and 8 is
-  roughly 30% faster.
+  roughly 20% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
