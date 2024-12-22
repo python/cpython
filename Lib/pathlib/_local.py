@@ -21,13 +21,20 @@ except ImportError:
 
 from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
                          write_file_metadata)
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._abc import PurePathBase, PathBase
 
 
 __all__ = [
+    "UnsupportedOperation",
     "PurePath", "PurePosixPath", "PureWindowsPath",
     "Path", "PosixPath", "WindowsPath",
     ]
+
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is attempted.
+    """
+    pass
 
 
 class _PathParents(Sequence):
@@ -70,6 +77,10 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
+        # The `_raw_paths` slot stores unjoined string paths. This is set in
+        # the `__init__()` method.
+        '_raw_paths',
+
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -132,8 +143,14 @@ class PurePath(PurePathBase):
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
                 paths.append(path)
-        # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
+
+    def with_segments(self, *pathsegments):
+        """Construct a new path object from any number of path-like objects.
+        Subclasses may override this method to customize how new path objects
+        are created from methods like `iterdir()`.
+        """
+        return type(self)(*pathsegments)
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
@@ -297,13 +314,28 @@ class PurePath(PurePathBase):
         return parts
 
     @property
+    def _raw_path(self):
+        paths = self._raw_paths
+        if len(paths) == 1:
+            return paths[0]
+        elif paths:
+            # Join path segments from the initializer.
+            path = self.parser.join(*paths)
+            # Cache the joined path.
+            paths.clear()
+            paths.append(path)
+            return path
+        else:
+            paths.append('')
+            return ''
+
+    @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._drv
 
     @property
@@ -312,8 +344,7 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._root
 
     @property
@@ -321,8 +352,7 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._tail_cached
 
     @property
@@ -534,11 +564,6 @@ class Path(PathBase, PurePath):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
-    as_uri = PurePath.as_uri
-
-    @classmethod
-    def _unsupported_msg(cls, attribute):
-        return f"{cls.__name__}.{attribute} is unsupported on this system"
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
@@ -831,6 +856,13 @@ class Path(PathBase, PurePath):
             """
             uid = self.stat(follow_symlinks=follow_symlinks).st_uid
             return pwd.getpwuid(uid).pw_name
+    else:
+        def owner(self, *, follow_symlinks=True):
+            """
+            Return the login name of the file owner.
+            """
+            f = f"{type(self).__name__}.owner()"
+            raise UnsupportedOperation(f"{f} is unsupported on this system")
 
     if grp:
         def group(self, *, follow_symlinks=True):
@@ -839,6 +871,13 @@ class Path(PathBase, PurePath):
             """
             gid = self.stat(follow_symlinks=follow_symlinks).st_gid
             return grp.getgrgid(gid).gr_name
+    else:
+        def group(self, *, follow_symlinks=True):
+            """
+            Return the group name of the file gid.
+            """
+            f = f"{type(self).__name__}.group()"
+            raise UnsupportedOperation(f"{f} is unsupported on this system")
 
     if hasattr(os, "readlink"):
         def readlink(self):
@@ -846,6 +885,13 @@ class Path(PathBase, PurePath):
             Return the path to which the symbolic link points.
             """
             return self.with_segments(os.readlink(self))
+    else:
+        def readlink(self):
+            """
+            Return the path to which the symbolic link points.
+            """
+            f = f"{type(self).__name__}.readlink()"
+            raise UnsupportedOperation(f"{f} is unsupported on this system")
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -909,6 +955,13 @@ class Path(PathBase, PurePath):
         Change the permissions of the path, like os.chmod().
         """
         os.chmod(self, mode, follow_symlinks=follow_symlinks)
+
+    def lchmod(self, mode):
+        """
+        Like chmod(), except if the path points to a symlink, the symlink's
+        permissions are changed, rather than its target's.
+        """
+        self.chmod(mode, follow_symlinks=False)
 
     def unlink(self, missing_ok=False):
         """
@@ -989,6 +1042,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
+    else:
+        def symlink_to(self, target, target_is_directory=False):
+            """
+            Make this path a symlink pointing to the target path.
+            Note the order of arguments (link, target) is the reverse of os.symlink.
+            """
+            f = f"{type(self).__name__}.symlink_to()"
+            raise UnsupportedOperation(f"{f} is unsupported on this system")
 
     if os.name == 'nt':
         def _symlink_to_target_of(self, link):
@@ -1006,6 +1067,15 @@ class Path(PathBase, PurePath):
             Note the order of arguments (self, target) is the reverse of os.link's.
             """
             os.link(target, self)
+    else:
+        def hardlink_to(self, target):
+            """
+            Make this path a hard link pointing to the same file as *target*.
+
+            Note the order of arguments (self, target) is the reverse of os.link's.
+            """
+            f = f"{type(self).__name__}.hardlink_to()"
+            raise UnsupportedOperation(f"{f} is unsupported on this system")
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
