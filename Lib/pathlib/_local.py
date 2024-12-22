@@ -77,6 +77,10 @@ class PurePath(PurePathBase):
     """
 
     __slots__ = (
+        # The `_raw_paths` slot stores unjoined string paths. This is set in
+        # the `__init__()` method.
+        '_raw_paths',
+
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -140,8 +144,14 @@ class PurePath(PurePathBase):
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
                 paths.append(path)
-        # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
+
+    def with_segments(self, *pathsegments):
+        """Construct a new path object from any number of path-like objects.
+        Subclasses may override this method to customize how new path objects
+        are created from methods like `iterdir()`.
+        """
+        return type(self)(*pathsegments)
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
@@ -305,13 +315,28 @@ class PurePath(PurePathBase):
         return parts
 
     @property
+    def _raw_path(self):
+        paths = self._raw_paths
+        if len(paths) == 1:
+            return paths[0]
+        elif paths:
+            # Join path segments from the initializer.
+            path = self.parser.join(*paths)
+            # Cache the joined path.
+            paths.clear()
+            paths.append(path)
+            return path
+        else:
+            paths.append('')
+            return ''
+
+    @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._drv
 
     @property
@@ -320,8 +345,7 @@ class PurePath(PurePathBase):
         try:
             return self._root
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._root
 
     @property
@@ -329,8 +353,7 @@ class PurePath(PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            raw_path = PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(raw_path)
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._tail_cached
 
     @property
