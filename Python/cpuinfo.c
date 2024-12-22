@@ -49,8 +49,7 @@
 #  define SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
-#if defined(Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS)              \
-    // macros above should be sorted in alphabetical order
+#if defined(Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS)
 #  define SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
