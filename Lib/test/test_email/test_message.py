@@ -1,4 +1,3 @@
-from email.errors import InvalidHeaderDefect
 import textwrap
 import unittest
 from email import message_from_bytes, message_from_string, policy
