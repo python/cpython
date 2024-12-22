@@ -208,6 +208,12 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
 
 
+class IdleCmdDenyHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        self._send_tagged(tag, 'NO', 'IDLE is not allowed at this time')
+
+
 class IdleCmdHandler(SimpleIMAPHandler):
     capabilities = 'IDLE'
     def cmd_IDLE(self, tag, args):
@@ -527,6 +533,13 @@ class NewIMAPTestsMixin():
         with self.assertRaisesRegex(imaplib.IMAP4.error,
                 'does not support IMAP4 IDLE'):
             with client.idle():
+                pass
+
+    def test_idle_denied(self):
+        client, _ = self._setup(IdleCmdDenyHandler)
+        client.login('user', 'pass')
+        with self.assertRaises(imaplib.IMAP4.error):
+            with client.idle() as idler:
                 pass
 
     def test_idle_iter(self):

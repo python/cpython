@@ -1413,6 +1413,9 @@ class Idler:
             # this occurs.
             while resp := imap._get_response():
                 if imap.tagged_commands[self._tag]:
+                    typ, data = imap.tagged_commands.pop(self._tag)
+                    if typ == 'NO':
+                        raise imap.error(f'idle denied: {data}')
                     raise imap.abort(f'unexpected status response: {resp}')
 
             if __debug__ and imap.debug >= 4:
