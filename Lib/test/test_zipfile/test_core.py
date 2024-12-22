@@ -3447,100 +3447,53 @@ class StripExtraTests(unittest.TestCase):
         self.assertEqual(
             b"zzz", zipfile._Extra.strip(b"zzz", (self.ZIP64_EXTRA,)))
 
-class StoreSeekReadTest(unittest.TestCase):
-    def test_store_seek_read(self):
-        class StatIO(io.RawIOBase):
-            def __init__(self, buf: bytes):
+class StoredZipExtFileRandomAccessTest(unittest.TestCase):
+    def test_random_access(self):
+        from _pyio import BytesIO
+        class StatIO(BytesIO):
+            def __init__(self):
+                super().__init__()
                 self.bytes_read = 0
-                self.buffer = buf
-                self.pos = 0
-                self.eof = False
 
-            def readinto(self, buffer, /):
-                if self.eof:
-                    return 0
-                sz = min(len(buffer), len(self.buffer) - self.pos)
-                buffer[:sz] = self.buffer[self.pos:self.pos + sz]
-                self.pos += sz
-                self.bytes_read += sz
-                self.eof = self.pos == len(self.buffer)
-                return sz
-
-            def readall(self):
-                if self.eof:
-                    return b''
-                self.eof = True
-                self.bytes_read += len(self.buffer) - self.pos
-                ret = self.buffer[self.pos:]
-                self.pos = len(self.buffer)
-                return ret
-
-            def seek(self, offset, whence=os.SEEK_SET, /):
-                if whence == os.SEEK_CUR:
-                    new_pos = self.pos + offset
-                elif whence == os.SEEK_SET:
-                    new_pos = offset
-                elif whence == os.SEEK_END:
-                    new_pos = len(self.buffer) + offset
-                else:
-                    raise ValueError("unsupported whence")
-
-                if new_pos < 0:
-                    new_pos = 0
-                elif new_pos > len(self.buffer):
-                    new_pos = len(self.buffer)
-
-                self.eof = new_pos == len(self.buffer)
-                self.pos = new_pos
-                return new_pos
-
-            def tell(self):
-                return self.pos
-
-            def readable(self):
-                return True
-
-            def writable(self):
-                return False
-
-            def seekable(self):
-                return True
+            def read(self, size=-1):
+                bs = super().read(size)
+                self.bytes_read += len(bs)
+                return bs
 
             def get_bytes_read(self):
                 return self.bytes_read
 
-        bio = io.BytesIO()
+        sio = StatIO()
+        # 100000 bytes
         txt = b'0123456789'*10000
 
         # Check seek on a file
-        with zipfile.ZipFile(bio, "w") as zipf:
-            zipf.writestr("foo.txt", txt) # 100000 bytes
+        with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", txt)
 
-        sio = StatIO(bio.getvalue())
         with zipfile.ZipFile(sio, "r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
                 br = sio.get_bytes_read()
                 fp.seek(50000, os.SEEK_CUR)
-                self.assertEqual(sio.get_bytes_read() - br, 0, 'seek produces extra read!')
+                self.assertEqual(sio.get_bytes_read() - br, 0, 'seek produces redundant read!')
 
                 b = fp.read(100)
                 self.assertEqual(b, txt[:100])
 
+                # seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
                 # backward seek
-                # seek length must be more than MIN_READ_SIZE (4096)
                 br = sio.get_bytes_read()
                 fp.seek(5000, os.SEEK_CUR)
                 b = fp.read(100)
                 self.assertEqual(b, txt[50000:50100])
-                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read more bytes after backward seek!')
+                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read redundant bytes during backward seek!')
 
                 # forward seek
-                # seek length must be more than MIN_READ_SIZE (4096)
                 br = sio.get_bytes_read()
                 fp.seek(-40000, os.SEEK_CUR)
                 b = fp.read(100)
                 self.assertEqual(b, txt[10100:10200])
-                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read more bytes after forward seek!')
+                self.assertLessEqual(sio.get_bytes_read() - br, 4096, 'read redundant bytes during forward seek!')
 
 if __name__ == "__main__":
     unittest.main()
