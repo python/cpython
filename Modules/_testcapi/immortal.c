@@ -1,8 +1,6 @@
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
-
 #include "parts.h"
+
+#define Py_BUILD_CORE
 #include "internal/pycore_long.h"   // IMMORTALITY_BIT_MASK
 
 int verify_immortality(PyObject *object)
