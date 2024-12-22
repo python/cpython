@@ -3627,13 +3627,11 @@ void
 _PyLong_ExactDealloc(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
-#ifndef Py_GIL_DISABLED
     if (_long_is_small_int(self)) {
         // See PEP 683, section Accidental De-Immortalizing for details
         _Py_SetImmortal(self);
         return;
     }
-#endif
     if (_PyLong_IsCompact((PyLongObject *)self)) {
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
@@ -3644,7 +3642,6 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-#ifndef Py_GIL_DISABLED
     if (_long_is_small_int(self)) {
         /* This should never get called, but we also don't want to SEGV if
          * we accidentally decref small Ints out of existence. Instead,
@@ -3655,7 +3652,6 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-#endif
     if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
