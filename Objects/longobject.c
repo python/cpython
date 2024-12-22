@@ -3641,13 +3641,11 @@ _PyLong_ExactDealloc(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
     if (_PyLong_IsCompact((PyLongObject *)self)) {
-        #ifndef Py_GIL_DISABLED
         if (compact_int_is_small(self)) {
             // See PEP 683, section Accidental De-Immortalizing for details
             _Py_SetImmortal(self);
             return;
         }
-        #endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
