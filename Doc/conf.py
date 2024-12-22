@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'grammar_snippet',
 ]
 
 # Skip if downstream redistributors haven't installed them
