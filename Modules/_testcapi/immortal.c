@@ -1,4 +1,5 @@
 #include "parts.h"
+#include "internal/pycore_long.h"   // IMMORTALITY_BIT_MASK
 
 int verify_immortality(PyObject *object)
 {
