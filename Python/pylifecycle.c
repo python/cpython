@@ -47,7 +47,11 @@
 #if defined(__APPLE__)
 #  include <AvailabilityMacros.h>
 #  include <mach-o/loader.h>
-#  include <os/log.h>
+// The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
+// tvOS 10.0, and watchOS 3.0;
+#  if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+#    include <os/log.h>
+#  endif
 #endif
 
 #ifdef HAVE_SIGNAL_H
