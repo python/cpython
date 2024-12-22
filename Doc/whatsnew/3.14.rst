@@ -487,7 +487,7 @@ multiprocessing
 * The default start method (see :ref:`multiprocessing-start-methods`) changed
   from :ref:`fork <multiprocessing-start-method-fork>` to :ref:`forkserver
   <multiprocessing-start-method-forkserver>` on platforms other than macOS &
-  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>.
+  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>`.
 
   If the threading incompatible *fork* method is required, you must explicitly
   request it via a context from :func:`multiprocessing.get_context` (preferred)
