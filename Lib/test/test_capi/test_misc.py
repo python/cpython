@@ -48,6 +48,8 @@ except ModuleNotFoundError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+from _testcapi import HeapCTypeSubclass, HeapCTypeSubclassWithFinalizer
+
 import _testlimitedcapi
 import _testinternalcapi
 
@@ -653,9 +655,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclass))
 
     def test_c_subclass_of_heap_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
-        subclass_instance = _testcapi.HeapCTypeSubclassWithFinalizer()
-        type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer)
-        new_type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
+        subclass_instance = HeapCTypeSubclassWithFinalizer()
+        type_refcnt = sys.getrefcount(HeapCTypeSubclassWithFinalizer)
+        new_type_refcnt = sys.getrefcount(HeapCTypeSubclass)
 
         # Test that subclass instance was fully created
         self.assertEqual(subclass_instance.value, 10)
@@ -665,19 +667,46 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
+        #
+        # This is highly sensitive to implementation details and may break in the future.
+        #
+        # We expect the refcount on the old type, HeapCTypeSubclassWithFinalizer, to
+        # remain the same: the finalizer gets a strong reference (+1) when it gets the
+        # type from the module and setting __class__ decrements the refcount (-1).
+        #
+        # We expect the refcount on the new type, HeapCTypeSubclass, to increase by 2:
+        # the finalizer get a strong reference (+1) when it gets the type from the
+        # module and setting __class__ increments the refcount (+1).
+        expected_type_refcnt = type_refcnt
+        expected_new_type_refcnt = new_type_refcnt + 2
+
+        if not Py_GIL_DISABLED:
+            # In default builds the result returned from sys.getrefcount
+            # includes a temporary reference that is created by the interpreter
+            # when it pushes its argument on the operand stack. This temporary
+            # reference is not included in the result returned by Py_REFCNT, which
+            # is used in the finalizer.
+            #
+            # In free-threaded builds the result returned from sys.getrefcount
+            # does not include the temporary reference. Types use deferred
+            # refcounting and the interpreter will not create a new reference
+            # for deferred values on the operand stack.
+            expected_type_refcnt -= 1
+            expected_new_type_refcnt -= 1
+
         if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
-            self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        else:
-            self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
+            expected_type_refcnt += 1
+
+        self.assertEqual(expected_type_refcnt, HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        self.assertEqual(expected_new_type_refcnt, HeapCTypeSubclass.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
-        self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer))
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapCTypeSubclassWithFinalizer))
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
-        self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+        self.assertEqual(new_type_refcnt, sys.getrefcount(HeapCTypeSubclass))
 
     def test_heaptype_with_setattro(self):
         obj = _testcapi.HeapCTypeSetattr()

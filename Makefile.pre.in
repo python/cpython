@@ -488,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/stackrefs.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -2169,7 +2170,7 @@ testios:
 	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
-	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run -- test -uall --single-process --rerun -W
+	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
