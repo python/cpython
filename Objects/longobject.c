@@ -3649,7 +3649,9 @@ long_dealloc(PyObject *self)
          *
          * See PEP 683, section Accidental De-Immortalizing for details
          */
+#ifndef Py_GIL_DISABLED
         _Py_SetImmortal(self);
+#endif
         return;
     }
     if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
