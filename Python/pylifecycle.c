@@ -46,10 +46,23 @@
 
 #if defined(__APPLE__)
 #  include <AvailabilityMacros.h>
+#  include <TargetConditionals.h>
 #  include <mach-o/loader.h>
 // The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
 // tvOS 10.0, and watchOS 3.0;
-#  if TARGET_OS_IPHONE || (TARGET_OS_OSX && defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+#  if defined(TARGET_OS_IPHONE) && TARGET_IOS_IPHONE
+#    define HAS_APPLE_SYSTEM_LOG 1
+#  elif defined(TARGET_OS_OSX) && TARGET_OS_OSX
+#    if defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#      define HAS_APPLE_SYSTEM_LOG 1
+#    else
+#      define HAS_APPLE_SYSTEM_LOG 0
+#    endif
+#  else
+#    define HAS_APPLE_SYSTEM_LOG 0
+#  endif
+
+#  if HAS_APPLE_SYSTEM_LOG
 #    include <os/log.h>
 #  endif
 #endif
@@ -2964,7 +2977,7 @@ apple_log_write_impl(PyObject *self, PyObject *args)
     // Call the underlying Apple logging API. The os_log unified logging APIs
     // were introduced in macOS 10.12, iOS 10.0, tvOS 10.0, and watchOS 3.0;
     // this call is a no-op on older versions.
-    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+    #if HAS_APPLE_SYSTEM_LOG
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
     os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
