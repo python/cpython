@@ -239,9 +239,9 @@ class UUID:
 
     @classmethod
     def _from_int(cls, int, *, is_safe=SafeUUID.unknown):
+        """Internal use only."""
+        assert int >= 0 and int <= 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff
         self = cls.__new__(cls)
-        if int < 0 or int > 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff:
-            raise ValueError('int is out of range (need a 128-bit value)')
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
         return self
