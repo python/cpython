@@ -3474,14 +3474,18 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
                 # forward seek
                 old_count = sio.bytes_read
                 fp.seek(10002, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), 10002)
                 arr = fp.read(100)
+                self.assertEqual(fp.tell(), 10102)
                 self.assertEqual(arr, txt[10002:10102])
                 self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during forward seek and read!')
 
                 # backward seek
                 old_count = sio.bytes_read
                 fp.seek(-5003, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), 5099)
                 arr = fp.read(100)
+                self.assertEqual(fp.tell(), 5199)
                 self.assertEqual(arr, txt[5099:5199])
                 self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during backward seek and read!')
 
