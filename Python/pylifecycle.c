@@ -49,7 +49,7 @@
 #  include <mach-o/loader.h>
 // The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
 // tvOS 10.0, and watchOS 3.0;
-#  if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+#  if TARGET_OS_IPHONE || (TARGET_OS_OSX && defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
 #    include <os/log.h>
 #  endif
 #endif
@@ -2964,7 +2964,7 @@ apple_log_write_impl(PyObject *self, PyObject *args)
     // Call the underlying Apple logging API. The os_log unified logging APIs
     // were introduced in macOS 10.12, iOS 10.0, tvOS 10.0, and watchOS 3.0;
     // this call is a no-op on older versions.
-    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
+    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
     os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
