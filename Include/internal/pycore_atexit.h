@@ -36,22 +36,28 @@ typedef struct atexit_callback {
     struct atexit_callback *next;
 } atexit_callback;
 
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_py_callback;
-
 struct atexit_state {
+#ifdef Py_GIL_DISABLED
+    PyMutex ll_callbacks_lock;
+#endif
     atexit_callback *ll_callbacks;
 
     // XXX The rest of the state could be moved to the atexit module state
     // and a low-level callback added for it during module exec.
     // For the moment we leave it here.
-    atexit_py_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
+
+    // List containing tuples with callback information.
+    // e.g. [(func, args, kwargs), ...]
+    PyObject *callbacks;
 };
+
+#ifdef Py_GIL_DISABLED
+#  define _PyAtExit_LockCallbacks(state) PyMutex_Lock(&state->ll_callbacks_lock);
+#  define _PyAtExit_UnlockCallbacks(state) PyMutex_Unlock(&state->ll_callbacks_lock);
+#else
+#  define _PyAtExit_LockCallbacks(state)
+#  define _PyAtExit_UnlockCallbacks(state)
+#endif
 
 // Export for '_interpchannels' shared extension
 PyAPI_FUNC(int) _Py_AtExit(

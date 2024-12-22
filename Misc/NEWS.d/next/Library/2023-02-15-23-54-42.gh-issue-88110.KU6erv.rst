@@ -1,2 +1,0 @@
-Fixed :class:`multiprocessing.Process` reporting a ``.exitcode`` of 1 even on success when
-using the ``"fork"`` start method while using a :class:`concurrent.futures.ThreadPoolExecutor`.
