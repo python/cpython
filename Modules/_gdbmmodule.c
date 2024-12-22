@@ -848,7 +848,7 @@ _gdbm_module_clear(PyObject *module)
 static void
 _gdbm_module_free(void *module)
 {
-    _gdbm_module_clear((PyObject *)module);
+    (void)_gdbm_module_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _gdbm_module_slots[] = {
