@@ -3653,7 +3653,8 @@ long_dealloc(PyObject *self)
          *
          * See PEP 683, section Accidental De-Immortalizing for details
          */
-        assert(0);
+        //assert(0);
+        printf("call _Py_SetImmortal on %d: %d\n", PyLong_CheckExact(self), medium_value(pylong));
         _Py_SetImmortal(self);
         return;
     }
