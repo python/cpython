@@ -398,6 +398,7 @@ static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *,
 #define _PatternObject_CAST(op)     ((PatternObject *)(op))
 #define _MatchObject_CAST(op)       ((MatchObject *)(op))
 #define _TemplateObject_CAST(op)    ((TemplateObject *)(op))
+#define _ScannerObject_CAST(op)     ((ScannerObject *)(op))
 
 /*[clinic input]
 module _sre
@@ -2795,27 +2796,29 @@ pattern_new_match(_sremodulestate* module_state,
 /* scanner methods (experimental) */
 
 static int
-scanner_traverse(ScannerObject *self, visitproc visit, void *arg)
+scanner_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ScannerObject *self = _ScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pattern);
     return 0;
 }
 
 static int
-scanner_clear(ScannerObject *self)
+scanner_clear(PyObject *op)
 {
+    ScannerObject *self = _ScannerObject_CAST(op);
     Py_CLEAR(self->pattern);
     return 0;
 }
 
 static void
-scanner_dealloc(ScannerObject* self)
+scanner_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
     PyObject_GC_UnTrack(self);
-    state_fini(&self->state);
+    ScannerObject *scanner = _ScannerObject_CAST(self);
+    state_fini(&scanner->state);
     (void)scanner_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
