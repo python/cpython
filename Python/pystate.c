@@ -931,7 +931,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     interp->active_code_watchers = 0;
 
     for (int i=0; i < CONTEXT_MAX_WATCHERS; i++) {
-        interp->context_watchers[i] = NULL;
+        Py_CLEAR(interp->context_watchers[i]);
     }
     interp->active_context_watchers = 0;
     // XXX Once we have one allocator per interpreter (i.e.
