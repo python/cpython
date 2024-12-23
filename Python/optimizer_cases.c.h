@@ -211,7 +211,7 @@
 
         case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
         }

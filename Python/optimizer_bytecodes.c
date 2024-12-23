@@ -899,6 +899,10 @@ dummy_func(void) {
         (void)version;
     }
 
+    op(_REPLACE_WITH_TRUE, (value -- res)) {
+        res = sym_new_const(ctx, Py_True);
+    }
+
 // END BYTECODES //
 
 }
