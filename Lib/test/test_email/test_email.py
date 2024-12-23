@@ -749,12 +749,12 @@ class TestMessageAPI(TestEmailBase):
                             method=method,
                             ):
                         message = Message(policy=thispolicy)
-                        method = getattr(message, method)
+                        class_method = getattr(message, method)
                         with self.assertRaisesRegex(
                             ValueError,
                             '(?i)(?=.*invalid)(?=.*header)(?=.*name)'
                             ) as cm:
-                            method(name, value)
+                            class_method(name, value)
                         self.assertIn(f"{name!r}", str(cm.exception))
 
 
