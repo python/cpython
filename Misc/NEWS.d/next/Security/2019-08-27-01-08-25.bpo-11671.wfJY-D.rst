@@ -1,0 +1,1 @@
+Add validation in wsgiref.headers.Headers to disallow invalid characters in header names and values. Patch by Ashwin Ramaswami, initial patch by Devin Cook.
