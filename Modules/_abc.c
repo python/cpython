@@ -968,7 +968,7 @@ _abcmodule_clear(PyObject *module)
 static void
 _abcmodule_free(void *module)
 {
-    _abcmodule_clear((PyObject *)module);
+    (void)_abcmodule_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
