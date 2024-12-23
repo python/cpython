@@ -1136,12 +1136,7 @@ class _contextvars.Token "PyContextToken *" "&PyContextToken_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=338a5e2db13d3f5b]*/
 
 
-static inline PyContextToken *
-_PyContextToken_CAST(PyObject *op)
-{
-    assert(PyObject_TypeCheck(op, &PyContextToken_Type));
-    return (PyContextToken *)op;
-}
+#define _PyContextToken_CAST(op)    ((PyContextToken *)(op))
 
 
 static PyObject *
@@ -1290,7 +1285,7 @@ context_token_missing_tp_repr(PyObject *self)
 }
 
 static void
-context_token_missing_tp_dealloc(_PyContextTokenMissing *Py_UNUSED(self))
+context_token_missing_tp_dealloc(PyObject *Py_UNUSED(self))
 {
 #ifdef Py_DEBUG
     /* The singleton is statically allocated. */
@@ -1305,7 +1300,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token.MISSING",
     sizeof(_PyContextTokenMissing),
-    .tp_dealloc = (destructor)context_token_missing_tp_dealloc,
+    .tp_dealloc = context_token_missing_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_repr = context_token_missing_tp_repr,
