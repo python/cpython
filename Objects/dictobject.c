@@ -1139,10 +1139,7 @@ check_keys_and_hash(PyDictKeysObject *dk, PyObject *key)
     Py_hash_t hash = unicode_get_hash(key);
     if (hash == -1) {
         hash = PyUnicode_Type.tp_hash(key);
-        if (hash == -1) {
-            PyErr_Clear();
-            return -1;
-        }
+        assert(hash != -1);
     }
     return hash;
 }
