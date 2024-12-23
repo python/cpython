@@ -9,7 +9,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico">
+    <None Include="..\PC\icons\launcher.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
