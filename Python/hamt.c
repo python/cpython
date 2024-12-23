@@ -483,6 +483,8 @@ error:
 #endif  /* Py_DEBUG */
 /////////////////////////////////// Bitmap Node
 
+#define _PyHamtNode_Bitmap_CAST(op)     ((PyHamtNode_Bitmap *)(op))
+
 
 static PyHamtNode *
 hamt_node_bitmap_new(Py_ssize_t size)
@@ -1087,30 +1089,27 @@ hamt_node_bitmap_find(PyHamtNode_Bitmap *self,
 }
 
 static int
-hamt_node_bitmap_traverse(PyHamtNode_Bitmap *self, visitproc visit, void *arg)
+hamt_node_bitmap_traverse(PyObject *op, visitproc visit, void *arg)
 {
     /* Bitmap's tp_traverse */
-
-    Py_ssize_t i;
-
-    for (i = Py_SIZE(self); --i >= 0; ) {
+    PyHamtNode_Bitmap *self = _PyHamtNode_Bitmap_CAST(op);
+    for (Py_ssize_t i = Py_SIZE(self); --i >= 0;) {
         Py_VISIT(self->b_array[i]);
     }
-
     return 0;
 }
 
 static void
-hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
+hamt_node_bitmap_dealloc(PyObject *self)
 {
     /* Bitmap's tp_dealloc */
 
-    Py_ssize_t len = Py_SIZE(self);
-    Py_ssize_t i;
+    PyHamtNode_Bitmap *node = _PyHamtNode_Bitmap_CAST(self);
+    Py_ssize_t i, len = Py_SIZE(self);
 
-    if (Py_SIZE(self) == 0) {
+    if (len == 0) {
         /* The empty node is statically allocated. */
-        assert(self == &_Py_SINGLETON(hamt_bitmap_node_empty));
+        assert(node == &_Py_SINGLETON(hamt_bitmap_node_empty));
 #ifdef Py_DEBUG
         _Py_FatalRefcountError("deallocating the empty hamt node bitmap singleton");
 #else
@@ -1124,11 +1123,11 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
     if (len > 0) {
         i = len;
         while (--i >= 0) {
-            Py_XDECREF(self->b_array[i]);
+            Py_XDECREF(node->b_array[i]);
         }
     }
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
     Py_TRASHCAN_END
 }
 
@@ -2849,10 +2848,10 @@ PyTypeObject _PyHamt_BitmapNode_Type = {
     "hamt_bitmap_node",
     sizeof(PyHamtNode_Bitmap) - sizeof(PyObject *),
     sizeof(PyObject *),
-    .tp_dealloc = (destructor)hamt_node_bitmap_dealloc,
+    .tp_dealloc = hamt_node_bitmap_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)hamt_node_bitmap_traverse,
+    .tp_traverse = hamt_node_bitmap_traverse,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
 };
