@@ -108,7 +108,7 @@ typedef struct {
         3: Interned, Immortal, and Static
     This categorization allows the runtime to determine the right
     cleanup mechanism at runtime shutdown. */
-    uint16_t interned;
+    uint8_t interned;
     struct {
         /* Character size:
 
@@ -132,21 +132,21 @@ typedef struct {
              * all characters are in the range U+0000-U+10FFFF
              * at least one character is in the range U+10000-U+10FFFF
          */
-        uint16_t kind:3;
+        unsigned int kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
            objects only require one memory block while non-compact objects use
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
-        uint16_t compact:1;
+        unsigned int compact:1;
         /* The string only contains characters in the range U+0000-U+007F (ASCII)
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
-        uint16_t ascii:1;
+        unsigned int ascii:1;
         /* The object is statically allocated. */
-        uint16_t statically_allocated:1;
+        unsigned int statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        uint16_t :10;
+        unsigned int :10;
     } state;
 } PyASCIIObject;
 
@@ -196,7 +196,7 @@ typedef struct {
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint16_relaxed(&(_PyASCIIObject_CAST(op)->interned));
+    return _Py_atomic_load_uint8_relaxed(&(_PyASCIIObject_CAST(op)->interned));
 #else
     return _PyASCIIObject_CAST(op)->interned;
 #endif
