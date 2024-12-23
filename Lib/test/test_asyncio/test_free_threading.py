@@ -14,19 +14,19 @@ class TestFreeThreading:
             loop = asyncio.get_running_loop()
             future = loop.create_future()
 
-            async def task():
+            async def coro():
                 await future
 
             tasks = set()
 
             async with asyncio.TaskGroup() as tg:
                 for _ in range(100):
-                    tasks.add(tg.create_task(task()))
+                    tasks.add(tg.create_task(coro()))
 
                 all_tasks = self.all_tasks(loop)
                 self.assertEqual(len(all_tasks), 101)
 
-                for task in tasks:
+                for task in all_tasks:
                     self.assertEqual(task.get_loop(), loop)
                     self.assertFalse(task.done())
 
