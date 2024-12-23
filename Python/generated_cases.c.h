@@ -5836,7 +5836,7 @@
                     DEOPT_IF(true, LOAD_ATTR);
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                if (!DK_IS_UNICODE(dict->ma_keys)) {
+                if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                     UNLOCK_OBJECT(dict);
                     DEOPT_IF(true, LOAD_ATTR);
                 }
