@@ -102,14 +102,14 @@ typedef struct {
 
     struct {
         /* If interned is non-zero, the two references from the
-        dictionary to this object are *not* counted in ob_refcnt.
-        The possible values here are:
-            0: Not Interned
-            1: Interned
-            2: Interned and Immortal
-            3: Interned, Immortal, and Static
-        This categorization allows the runtime to determine the right
-        cleanup mechanism at runtime shutdown. */
+           dictionary to this object are *not* counted in ob_refcnt.
+           The possible values here are:
+               0: Not Interned
+               1: Interned
+               2: Interned and Immortal
+               3: Interned, Immortal, and Static
+           This categorization allows the runtime to determine the right
+           cleanup mechanism at runtime shutdown. */
         uint8_t interned;
         /* Character size:
 
