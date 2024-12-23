@@ -1024,11 +1024,14 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                             policy=thispolicy.__class__.__name__,
                             method=method,
                             ):
-                        with self.assertRaises(ValueError) as cm:
-                            getattr(EmailMessage(policy=thispolicy), method)(name, value)
-                        msg = str(cm.exception)
-                        self.assertRegex( msg, '(?i)(?=.*invalid)(?=.*header)(?=.*name)')
-                        self.assertIn(f"{name!r}", msg)
+                        message = EmailMessage(policy=thispolicy)
+                        method = getattr(message, method)
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            '(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+                            ) as cm:
+                            method(name,value)
+                        self.assertIn(f"{name!r}", str(cm.exception))
 
     def test_get_body_malformed(self):
         """test for bpo-42892"""
