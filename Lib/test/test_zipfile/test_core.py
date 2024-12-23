@@ -3464,30 +3464,45 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
         # 20000 bytes
         txt = b'0123456789' * 2000
 
+        # seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
+        min_size = zipfile.ZipExtFile.MIN_READ_SIZE
+        self.assertGreaterEqual(min_size, 100)
+
         with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", txt)
 
         # check random seek and read on a file
         with zipfile.ZipFile(sio, "r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
-                # seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
                 # forward seek
                 old_count = sio.bytes_read
                 fp.seek(10002, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), 10002)
+                self.assertEqual(fp._left, fp._compress_left)
                 arr = fp.read(100)
                 self.assertEqual(fp.tell(), 10102)
                 self.assertEqual(arr, txt[10002:10102])
-                self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during forward seek and read!')
+                self.assertEqual(fp._left, fp._compress_left)
+                d = sio.bytes_read - old_count
+                self.assertLessEqual(d, min_size)
 
                 # backward seek
                 old_count = sio.bytes_read
                 fp.seek(-5003, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), 5099)
+                self.assertEqual(fp._left, fp._compress_left)
                 arr = fp.read(100)
                 self.assertEqual(fp.tell(), 5199)
                 self.assertEqual(arr, txt[5099:5199])
-                self.assertLessEqual(sio.bytes_read - old_count, 4096, 'Redundant bytes were read during backward seek and read!')
+                self.assertEqual(fp._left, fp._compress_left)
+                d = sio.bytes_read - old_count
+                self.assertLessEqual(d, min_size)
+
+                # eof flags test
+                fp.seek(0, os.SEEK_END)
+                self.assertTrue(fp._eof)
+                fp.seek(12345, os.SEEK_SET)
+                self.assertFalse(fp._eof)
 
 if __name__ == "__main__":
     unittest.main()
