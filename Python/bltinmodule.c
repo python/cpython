@@ -494,6 +494,8 @@ typedef struct {
     PyObject *it;
 } filterobject;
 
+#define _filterobject_CAST(op)     ((filterobject *)(op))
+
 static PyObject *
 filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -559,8 +561,9 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-filter_dealloc(filterobject *lz)
+filter_dealloc(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
@@ -570,16 +573,18 @@ filter_dealloc(filterobject *lz)
 }
 
 static int
-filter_traverse(filterobject *lz, visitproc visit, void *arg)
+filter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    filterobject *lz = _filterobject_CAST(self);
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
     return 0;
 }
 
 static PyObject *
-filter_next(filterobject *lz)
+filter_next(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
@@ -613,15 +618,16 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
+filter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    filterobject *lz = _filterobject_CAST(self);
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef filter_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(filter_reduce), METH_NOARGS, reduce_doc},
+    {"__reduce__", filter_reduce, METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -638,7 +644,7 @@ PyTypeObject PyFilter_Type = {
     sizeof(filterobject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)filter_dealloc,         /* tp_dealloc */
+    filter_dealloc,                     /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -656,12 +662,12 @@ PyTypeObject PyFilter_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
-    (traverseproc)filter_traverse,      /* tp_traverse */
+    filter_traverse,                    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filter_next,          /* tp_iternext */
+    filter_next,                        /* tp_iternext */
     filter_methods,                     /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -674,7 +680,7 @@ PyTypeObject PyFilter_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     filter_new,                         /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)filter_vectorcall
+    .tp_vectorcall = filter_vectorcall
 };
 
 
