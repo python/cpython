@@ -397,6 +397,7 @@ static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *,
 
 #define _PatternObject_CAST(op)     ((PatternObject *)(op))
 #define _MatchObject_CAST(op)       ((MatchObject *)(op))
+#define _TemplateObject_CAST(op)    ((TemplateObject *)(op))
 
 /*[clinic input]
 module _sre
@@ -2971,8 +2972,9 @@ pattern_scanner(_sremodulestate *module_state,
 /* template methods */
 
 static int
-template_traverse(TemplateObject *self, visitproc visit, void *arg)
+template_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    TemplateObject *self = _TemplateObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->literal);
     for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
@@ -2982,8 +2984,9 @@ template_traverse(TemplateObject *self, visitproc visit, void *arg)
 }
 
 static int
-template_clear(TemplateObject *self)
+template_clear(PyObject *op)
 {
+    TemplateObject *self = _TemplateObject_CAST(op);
     Py_CLEAR(self->literal);
     for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
         Py_CLEAR(self->items[i].literal);
@@ -2992,10 +2995,9 @@ template_clear(TemplateObject *self)
 }
 
 static void
-template_dealloc(TemplateObject *self)
+template_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
     PyObject_GC_UnTrack(self);
     (void)template_clear(self);
     tp->tp_free(self);
