@@ -3649,9 +3649,8 @@ long_dealloc(PyObject *self)
          *
          * See PEP 683, section Accidental De-Immortalizing for details
          */
-#ifndef Py_GIL_DISABLED
+        assert(0);
         _Py_SetImmortal(self);
-#endif
         return;
     }
     if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
@@ -6019,7 +6018,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    newobj->long_value.lv_tag = tmp->long_value.lv_tag;
+    newobj->long_value.lv_tag = tmp->long_value.lv_tag & ~IMMORTALITY_BIT_MASK;
     for (i = 0; i < n; i++) {
         newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
     }
