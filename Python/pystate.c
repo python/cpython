@@ -19,6 +19,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
+#include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
@@ -663,6 +664,23 @@ init_interpreter(PyInterpreterState *interp,
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    interp->next_stackref = 1;
+    _Py_hashtable_allocator_t alloc = {
+        .malloc = malloc,
+        .free = free,
+    };
+    interp->stackref_debug_table = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
+        NULL,
+        NULL,
+        &alloc
+    );
+    _Py_stackref_associate(interp, Py_None, PyStackRef_None);
+    _Py_stackref_associate(interp, Py_False, PyStackRef_False);
+    _Py_stackref_associate(interp, Py_True, PyStackRef_True);
+#endif
 
     interp->_initialized = 1;
     return _PyStatus_OK();
@@ -767,6 +785,11 @@ PyInterpreterState_New(void)
     assert(interp != NULL);
     return interp;
 }
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+extern void
+_Py_stackref_report_leaks(PyInterpreterState *interp);
+#endif
 
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
@@ -876,6 +899,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    _Py_stackref_report_leaks(interp);
+    _Py_hashtable_destroy(interp->stackref_debug_table);
+    interp->stackref_debug_table = NULL;
+#endif
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */

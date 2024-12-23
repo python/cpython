@@ -88,6 +88,15 @@ as much as it can.
       Use :c:func:`PyWeakref_GetRef` instead.
 
 
+.. c:function:: int PyWeakref_IsDead(PyObject *ref)
+
+   Test if the weak reference *ref* is dead. Returns 1 if the reference is
+   dead, 0 if it is alive, and -1 with an error set if *ref* is not a weak
+   reference object.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: void PyObject_ClearWeakRefs(PyObject *object)
 
    This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
