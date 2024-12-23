@@ -3057,6 +3057,8 @@ fail:
 static PyObject *
 task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(task);
+
     int res;
     PyObject *o;
 
