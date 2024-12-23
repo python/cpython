@@ -2817,8 +2817,7 @@
                 }
             }
             STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
             null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
