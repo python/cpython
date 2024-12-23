@@ -77,7 +77,7 @@ _csv_traverse(PyObject *module, visitproc visit, void *arg)
 static void
 _csv_free(void *module)
 {
-   _csv_clear((PyObject *)module);
+    (void)_csv_clear((PyObject *)module);
 }
 
 typedef enum {
