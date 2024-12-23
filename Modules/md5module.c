@@ -227,19 +227,19 @@ static PyMethodDef MD5_methods[] = {
 };
 
 static PyObject *
-MD5_get_block_size(PyObject *self, void *closure)
+MD5_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_BLOCKSIZE);
 }
 
 static PyObject *
-MD5_get_name(PyObject *self, void *closure)
+MD5_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("md5", 3);
 }
 
 static PyObject *
-md5_get_digest_size(PyObject *self, void *closure)
+md5_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_DIGESTSIZE);
 }

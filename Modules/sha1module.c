@@ -220,19 +220,19 @@ static PyMethodDef SHA1_methods[] = {
 };
 
 static PyObject *
-SHA1_get_block_size(PyObject *self, void *closure)
+SHA1_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_BLOCKSIZE);
 }
 
 static PyObject *
-SHA1_get_name(PyObject *self, void *closure)
+SHA1_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("sha1", 4);
 }
 
 static PyObject *
-sha1_get_digest_size(PyObject *self, void *closure)
+sha1_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_DIGESTSIZE);
 }

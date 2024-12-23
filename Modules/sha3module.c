@@ -306,7 +306,7 @@ static PyMethodDef SHA3_methods[] = {
 
 
 static PyObject *
-SHA3_get_block_size(PyObject *op, void *closure)
+SHA3_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state);
@@ -315,7 +315,7 @@ SHA3_get_block_size(PyObject *op, void *closure)
 
 
 static PyObject *
-SHA3_get_name(PyObject *self, void *closure)
+SHA3_get_name(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = Py_TYPE(self);
 
@@ -342,7 +342,7 @@ SHA3_get_name(PyObject *self, void *closure)
 
 
 static PyObject *
-SHA3_get_digest_size(PyObject *op, void *closure)
+SHA3_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     // Preserving previous behavior: variable-length algorithms return 0
     SHA3object *self = _SHA3object_CAST(op);
@@ -354,7 +354,7 @@ SHA3_get_digest_size(PyObject *op, void *closure)
 
 
 static PyObject *
-SHA3_get_capacity_bits(PyObject *op, void *closure)
+SHA3_get_capacity_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
@@ -365,7 +365,7 @@ SHA3_get_capacity_bits(PyObject *op, void *closure)
 
 
 static PyObject *
-SHA3_get_rate_bits(PyObject *op, void *closure)
+SHA3_get_rate_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
@@ -373,7 +373,7 @@ SHA3_get_rate_bits(PyObject *op, void *closure)
 }
 
 static PyObject *
-SHA3_get_suffix(PyObject *self, void *closure)
+SHA3_get_suffix(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     unsigned char suffix[2] = {0x06, 0};
     return PyBytes_FromStringAndSize((const char *)suffix, 1);
@@ -512,13 +512,13 @@ _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
 }
 
 static PyObject *
-SHAKE_get_digest_size(PyObject *self, void *closure)
+SHAKE_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(0);
 }
 
 static PyObject *
-SHAKE_get_suffix(PyObject *self, void *closure)
+SHAKE_get_suffix(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     unsigned char suffix[2] = {0x1f, 0};
     return PyBytes_FromStringAndSize((const char *)suffix, 1);

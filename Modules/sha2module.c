@@ -443,33 +443,33 @@ static PyMethodDef SHA512_methods[] = {
 };
 
 static PyObject *
-SHA256_get_block_size(PyObject *self, void *closure)
+SHA256_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA256_BLOCKSIZE);
 }
 
 static PyObject *
-SHA512_get_block_size(PyObject *self, void *closure)
+SHA512_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA512_BLOCKSIZE);
 }
 
 static PyObject *
-SHA256_get_digest_size(PyObject *op, void *closure)
+SHA256_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA256object *self = _SHA256object_CAST(op);
     return PyLong_FromLong(self->digestsize);
 }
 
 static PyObject *
-SHA512_get_digest_size(PyObject *op, void *closure)
+SHA512_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA512object *self = _SHA512object_CAST(op);
     return PyLong_FromLong(self->digestsize);
 }
 
 static PyObject *
-SHA256_get_name(PyObject *op, void *closure)
+SHA256_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA256object *self = _SHA256object_CAST(op);
     if (self->digestsize == 28) {
@@ -479,7 +479,7 @@ SHA256_get_name(PyObject *op, void *closure)
 }
 
 static PyObject *
-SHA512_get_name(PyObject *op, void *closure)
+SHA512_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA512object *self = _SHA512object_CAST(op);
     if (self->digestsize == 64) {
