@@ -54,6 +54,8 @@ typedef struct {
     Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
 
+#define _MD5object_CAST(op)     ((MD5object *)(op))
+
 #include "clinic/md5module.c.h"
 
 
@@ -91,10 +93,11 @@ MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-MD5_dealloc(MD5object *ptr)
+MD5_dealloc(PyObject *op)
 {
+    MD5object *ptr = _MD5object_CAST(op);
     Hacl_Hash_MD5_free(ptr->hash_state);
-    PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
+    PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
@@ -242,19 +245,10 @@ md5_get_digest_size(PyObject *self, void *closure)
 }
 
 static PyGetSetDef MD5_getseters[] = {
-    {"block_size",
-     (getter)MD5_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)MD5_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)md5_get_digest_size, NULL,
-     NULL,
-     NULL},
-    {NULL}  /* Sentinel */
+    {"block_size", MD5_get_block_size, NULL, NULL, NULL},
+    {"name", MD5_get_name, NULL, NULL, NULL},
+    {"digest_size", md5_get_digest_size, NULL, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
 };
 
 static PyType_Slot md5_type_slots[] = {
