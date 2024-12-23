@@ -419,12 +419,7 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdf87f8e0cb580e8]*/
 
 
-static inline PyContext *
-_PyContext_CAST(PyObject *op)
-{
-    assert(PyObject_TypeCheck(op, &PyContext_Type));
-    return (PyContext *)op;
-}
+#define _PyContext_CAST(op)     ((PyContext *)(op))
 
 
 static inline PyContext *
@@ -914,6 +909,14 @@ class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=445da935fa8883c3]*/
 
 
+static inline PyContextVar *
+_PyContextVar_CAST(PyObject *op)
+{
+    assert(PyObject_TypeCheck(op, &PyContextVar_Type));
+    return (PyContextVar *)op;
+}
+
+
 static PyObject *
 contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -931,8 +934,9 @@ contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-contextvar_tp_clear(PyContextVar *self)
+contextvar_tp_clear(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     Py_CLEAR(self->var_name);
     Py_CLEAR(self->var_default);
 #ifndef Py_GIL_DISABLED
@@ -944,15 +948,16 @@ contextvar_tp_clear(PyContextVar *self)
 }
 
 static int
-contextvar_tp_traverse(PyContextVar *self, visitproc visit, void *arg)
+contextvar_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     Py_VISIT(self->var_name);
     Py_VISIT(self->var_default);
     return 0;
 }
 
 static void
-contextvar_tp_dealloc(PyContextVar *self)
+contextvar_tp_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     (void)contextvar_tp_clear(self);
@@ -960,14 +965,16 @@ contextvar_tp_dealloc(PyContextVar *self)
 }
 
 static Py_hash_t
-contextvar_tp_hash(PyContextVar *self)
+contextvar_tp_hash(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     return self->var_hash;
 }
 
 static PyObject *
-contextvar_tp_repr(PyContextVar *self)
+contextvar_tp_repr(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     // Estimation based on the shortest name and default value,
     // but maximize the pointer size.
     // "<ContextVar name='a' at 0x1234567812345678>"
@@ -1111,15 +1118,15 @@ PyTypeObject PyContextVar_Type = {
     sizeof(PyContextVar),
     .tp_methods = PyContextVar_methods,
     .tp_members = PyContextVar_members,
-    .tp_dealloc = (destructor)contextvar_tp_dealloc,
+    .tp_dealloc = contextvar_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)contextvar_tp_traverse,
-    .tp_clear = (inquiry)contextvar_tp_clear,
+    .tp_traverse = contextvar_tp_traverse,
+    .tp_clear = contextvar_tp_clear,
     .tp_new = contextvar_tp_new,
     .tp_free = PyObject_GC_Del,
-    .tp_hash = (hashfunc)contextvar_tp_hash,
-    .tp_repr = (reprfunc)contextvar_tp_repr,
+    .tp_hash = contextvar_tp_hash,
+    .tp_repr = contextvar_tp_repr,
 };
 
 
