@@ -214,17 +214,17 @@ class UUID:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if time_low < 0 or time_low > 0xffff_ffff:
+            if not 0 <= time_low <= 0xffff_ffff:
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if time_mid < 0 or time_mid > 0xffff:
+            if not 0 <= time_mid <= 0xffff:
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if time_hi_version < 0 or time_hi_version > 0xffff:
+            if not 0 <= time_hi_version <= 0xffff:
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if clock_seq_hi_variant < 0 or clock_seq_hi_variant > 0xff:
+            if not 0 <= clock_seq_hi_variant <= 0xff:
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if clock_seq_low < 0 or clock_seq_low > 0xff:
+            if not 0 <= clock_seq_low <= 0xff:
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if node < 0 or node > 0xffff_ffff_ffff:
+            if not 0 <= node <= 0xffff_ffff_ffff:
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
