@@ -2605,6 +2605,8 @@ static PyObject *
 hamt_dump(PyHamtObject *self);
 #endif
 
+#define _PyHamtObject_CAST(op)     ((PyHamtObject *)(op))
+
 
 static PyObject *
 hamt_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2613,24 +2615,27 @@ hamt_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-hamt_tp_clear(PyHamtObject *self)
+hamt_tp_clear(PyObject *op)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     Py_CLEAR(self->h_root);
     return 0;
 }
 
 
 static int
-hamt_tp_traverse(PyHamtObject *self, visitproc visit, void *arg)
+hamt_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     Py_VISIT(self->h_root);
     return 0;
 }
 
 static void
-hamt_tp_dealloc(PyHamtObject *self)
+hamt_tp_dealloc(PyObject *self)
 {
-    if (self == _empty_hamt) {
+    PyHamtObject *obj = _PyHamtObject_CAST(self);
+    if (obj == _empty_hamt) {
         /* The empty one is statically allocated. */
 #ifdef Py_DEBUG
         _Py_FatalRefcountError("deallocating the empty hamt singleton");
@@ -2640,8 +2645,8 @@ hamt_tp_dealloc(PyHamtObject *self)
     }
 
     PyObject_GC_UnTrack(self);
-    if (self->h_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
+    if (obj->h_weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
     (void)hamt_tp_clear(self);
     Py_TYPE(self)->tp_free(self);
@@ -2673,16 +2678,18 @@ hamt_tp_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static int
-hamt_tp_contains(PyHamtObject *self, PyObject *key)
+hamt_tp_contains(PyObject *op, PyObject *key)
 {
     PyObject *val;
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_Find(self, key, &val);
 }
 
 static PyObject *
-hamt_tp_subscript(PyHamtObject *self, PyObject *key)
+hamt_tp_subscript(PyObject *op, PyObject *key)
 {
     PyObject *val;
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     hamt_find_t res = hamt_find(self, key, &val);
     switch (res) {
         case F_ERROR:
@@ -2698,19 +2705,21 @@ hamt_tp_subscript(PyHamtObject *self, PyObject *key)
 }
 
 static Py_ssize_t
-hamt_tp_len(PyHamtObject *self)
+hamt_tp_len(PyObject *op)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_Len(self);
 }
 
 static PyObject *
-hamt_tp_iter(PyHamtObject *self)
+hamt_tp_iter(PyObject *op)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_NewIterKeys(self);
 }
 
 static PyObject *
-hamt_py_set(PyHamtObject *self, PyObject *args)
+hamt_py_set(PyObject *op, PyObject *args)
 {
     PyObject *key;
     PyObject *val;
@@ -2719,11 +2728,12 @@ hamt_py_set(PyHamtObject *self, PyObject *args)
         return NULL;
     }
 
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return (PyObject *)_PyHamt_Assoc(self, key, val);
 }
 
 static PyObject *
-hamt_py_get(PyHamtObject *self, PyObject *args)
+hamt_py_get(PyObject *op, PyObject *args)
 {
     PyObject *key;
     PyObject *def = NULL;
@@ -2733,6 +2743,7 @@ hamt_py_get(PyHamtObject *self, PyObject *args)
     }
 
     PyObject *val = NULL;
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     hamt_find_t res = hamt_find(self, key, &val);
     switch (res) {
         case F_ERROR:
@@ -2750,67 +2761,63 @@ hamt_py_get(PyHamtObject *self, PyObject *args)
 }
 
 static PyObject *
-hamt_py_delete(PyHamtObject *self, PyObject *key)
+hamt_py_delete(PyObject *op, PyObject *key)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return (PyObject *)_PyHamt_Without(self, key);
 }
 
 static PyObject *
-hamt_py_items(PyHamtObject *self, PyObject *args)
+hamt_py_items(PyObject *op, PyObject *args)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_NewIterItems(self);
 }
 
 static PyObject *
-hamt_py_values(PyHamtObject *self, PyObject *args)
+hamt_py_values(PyObject *op, PyObject *args)
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_NewIterValues(self);
 }
 
 static PyObject *
-hamt_py_keys(PyHamtObject *self, PyObject *Py_UNUSED(args))
+hamt_py_keys(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return _PyHamt_NewIterKeys(self);
 }
 
 #ifdef Py_DEBUG
 static PyObject *
-hamt_py_dump(PyHamtObject *self, PyObject *Py_UNUSED(args))
+hamt_py_dump(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    PyHamtObject *self = _PyHamtObject_CAST(op);
     return hamt_dump(self);
 }
 #endif
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", _PyCFunction_CAST(hamt_py_set), METH_VARARGS, NULL},
-    {"get", _PyCFunction_CAST(hamt_py_get), METH_VARARGS, NULL},
-    {"delete", _PyCFunction_CAST(hamt_py_delete), METH_O, NULL},
-    {"items", _PyCFunction_CAST(hamt_py_items), METH_NOARGS, NULL},
-    {"keys", _PyCFunction_CAST(hamt_py_keys), METH_NOARGS, NULL},
-    {"values", _PyCFunction_CAST(hamt_py_values), METH_NOARGS, NULL},
+    {"set", hamt_py_set, METH_VARARGS, NULL},
+    {"get", hamt_py_get, METH_VARARGS, NULL},
+    {"delete", hamt_py_delete, METH_O, NULL},
+    {"items", hamt_py_items, METH_NOARGS, NULL},
+    {"keys", hamt_py_keys, METH_NOARGS, NULL},
+    {"values", hamt_py_values, METH_NOARGS, NULL},
 #ifdef Py_DEBUG
-    {"__dump__", _PyCFunction_CAST(hamt_py_dump), METH_NOARGS, NULL},
+    {"__dump__", hamt_py_dump, METH_NOARGS, NULL},
 #endif
     {NULL, NULL}
 };
 
 static PySequenceMethods PyHamt_as_sequence = {
-    0,                                /* sq_length */
-    0,                                /* sq_concat */
-    0,                                /* sq_repeat */
-    0,                                /* sq_item */
-    0,                                /* sq_slice */
-    0,                                /* sq_ass_item */
-    0,                                /* sq_ass_slice */
-    (objobjproc)hamt_tp_contains,     /* sq_contains */
-    0,                                /* sq_inplace_concat */
-    0,                                /* sq_inplace_repeat */
+    .sq_contains = hamt_tp_contains,
 };
 
 static PyMappingMethods PyHamt_as_mapping = {
-    (lenfunc)hamt_tp_len,             /* mp_length */
-    (binaryfunc)hamt_tp_subscript,    /* mp_subscript */
+    .mp_length = hamt_tp_len,
+    .mp_subscript = hamt_tp_subscript,
 };
 
 PyTypeObject _PyHamt_Type = {
@@ -2820,13 +2827,13 @@ PyTypeObject _PyHamt_Type = {
     .tp_methods = PyHamt_methods,
     .tp_as_mapping = &PyHamt_as_mapping,
     .tp_as_sequence = &PyHamt_as_sequence,
-    .tp_iter = (getiterfunc)hamt_tp_iter,
-    .tp_dealloc = (destructor)hamt_tp_dealloc,
+    .tp_iter = hamt_tp_iter,
+    .tp_dealloc = hamt_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_richcompare = hamt_tp_richcompare,
-    .tp_traverse = (traverseproc)hamt_tp_traverse,
-    .tp_clear = (inquiry)hamt_tp_clear,
+    .tp_traverse = hamt_tp_traverse,
+    .tp_clear = hamt_tp_clear,
     .tp_new = hamt_tp_new,
     .tp_weaklistoffset = offsetof(PyHamtObject, h_weakreflist),
     .tp_hash = PyObject_HashNotImplemented,
