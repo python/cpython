@@ -99,7 +99,6 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
-
     struct {
         /* If interned is non-zero, the two references from the
            dictionary to this object are *not* counted in ob_refcnt.
