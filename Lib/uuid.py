@@ -245,12 +245,13 @@ class UUID:
         object.__setattr__(self, 'is_safe', is_safe)
 
     @classmethod
-    def _from_int(cls, int, *, is_safe=SafeUUID.unknown):
+    def _from_int(cls, value):
         """Internal use only."""
-        assert int >= 0 and int <= 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff
+        assert isinstance(value, int), repr(value)
+        assert 0 <= value <= _UINT_128_MAX, repr(value)
         self = cls.__new__(cls)
-        object.__setattr__(self, 'int', int)
-        object.__setattr__(self, 'is_safe', is_safe)
+        object.__setattr__(self, 'int', value)
+        object.__setattr__(self, 'is_safe', SafeUUID.unknown)
         return self
 
     def __getstate__(self):
