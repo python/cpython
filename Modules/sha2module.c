@@ -104,8 +104,7 @@ static void SHA512copy(SHA512object *src, SHA512object *dest)
 static SHA256object *
 newSHA224object(sha2_state *state)
 {
-    SHA256object *sha = (SHA256object *)PyObject_GC_New(
-        SHA256object, state->sha224_type);
+    SHA256object *sha = PyObject_GC_New(SHA256object, state->sha224_type);
     if (!sha) {
         return NULL;
     }
@@ -118,8 +117,7 @@ newSHA224object(sha2_state *state)
 static SHA256object *
 newSHA256object(sha2_state *state)
 {
-    SHA256object *sha = (SHA256object *)PyObject_GC_New(
-        SHA256object, state->sha256_type);
+    SHA256object *sha = PyObject_GC_New(SHA256object, state->sha256_type);
     if (!sha) {
         return NULL;
     }
@@ -132,8 +130,7 @@ newSHA256object(sha2_state *state)
 static SHA512object *
 newSHA384object(sha2_state *state)
 {
-    SHA512object *sha = (SHA512object *)PyObject_GC_New(
-        SHA512object, state->sha384_type);
+    SHA512object *sha = PyObject_GC_New(SHA512object, state->sha384_type);
     if (!sha) {
         return NULL;
     }
@@ -146,8 +143,7 @@ newSHA384object(sha2_state *state)
 static SHA512object *
 newSHA512object(sha2_state *state)
 {
-    SHA512object *sha = (SHA512object *)PyObject_GC_New(
-        SHA512object, state->sha512_type);
+    SHA512object *sha = PyObject_GC_New(SHA512object, state->sha512_type);
     if (!sha) {
         return NULL;
     }
