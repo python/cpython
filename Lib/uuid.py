@@ -733,14 +733,14 @@ def uuid3(namespace, name):
     import _md5
     h = _md5.md5(namespace.bytes + name, usedforsecurity=False)
     assert len(h.digest()) == 16
-    int_uuid_3 = int_.from_bytes(h.digest())
+    int_uuid_3 = int.from_bytes(h.digest())
     int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
     return UUID._from_int(int_uuid_3)
 
 def uuid4():
     """Generate a random UUID."""
-    int_uuid_4 = int_.from_bytes(os.urandom(16))
+    int_uuid_4 = int.from_bytes(os.urandom(16))
     int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
     return UUID._from_int(int_uuid_4)
@@ -753,7 +753,7 @@ def uuid5(namespace, name):
     # and 'import X; X.Y' is slightly faster than 'from X import Y'.
     import hashlib
     h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
-    int_uuid_5 = int_.from_bytes(h.digest()[:16])
+    int_uuid_5 = int.from_bytes(h.digest()[:16])
     int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
     return UUID._from_int(int_uuid_5)
