@@ -395,6 +395,8 @@ static struct PyModuleDef sremodule;
 static PyObject*pattern_new_match(_sremodulestate *, PatternObject*, SRE_STATE*, Py_ssize_t);
 static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *, Py_ssize_t, Py_ssize_t);
 
+#define _PatternObject_CAST(op)     ((PatternObject *)(op))
+
 /*[clinic input]
 module _sre
 class _sre.SRE_Pattern "PatternObject *" "get_sre_module_state_by_class(tp)->Pattern_Type"
@@ -699,8 +701,9 @@ pattern_error(Py_ssize_t status)
 }
 
 static int
-pattern_traverse(PatternObject *self, visitproc visit, void *arg)
+pattern_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PatternObject *self = _PatternObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->groupindex);
     Py_VISIT(self->indexgroup);
@@ -712,8 +715,9 @@ pattern_traverse(PatternObject *self, visitproc visit, void *arg)
 }
 
 static int
-pattern_clear(PatternObject *self)
+pattern_clear(PyObject *op)
 {
+    PatternObject *self = _PatternObject_CAST(op);
     Py_CLEAR(self->groupindex);
     Py_CLEAR(self->indexgroup);
     Py_CLEAR(self->pattern);
@@ -724,13 +728,13 @@ pattern_clear(PatternObject *self)
 }
 
 static void
-pattern_dealloc(PatternObject* self)
+pattern_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
     PyObject_GC_UnTrack(self);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
+    PatternObject *obj = _PatternObject_CAST(self);
+    if (obj->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
     (void)pattern_clear(self);
     tp->tp_free(self);
@@ -1497,7 +1501,7 @@ _sre_SRE_Pattern__fail_after_impl(PatternObject *self, int count,
 #endif /* Py_DEBUG */
 
 static PyObject *
-pattern_repr(PatternObject *obj)
+pattern_repr(PyObject *self)
 {
     static const struct {
         const char *name;
@@ -1512,6 +1516,8 @@ pattern_repr(PatternObject *obj)
         {"re.DEBUG", SRE_FLAG_DEBUG},
         {"re.ASCII", SRE_FLAG_ASCII},
     };
+
+    PatternObject *obj = _PatternObject_CAST(self);
     PyObject *result = NULL;
     PyObject *flag_items;
     size_t i;
@@ -1579,8 +1585,9 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression object.");
 
 /* PatternObject's 'groupindex' method. */
 static PyObject *
-pattern_groupindex(PatternObject *self, void *Py_UNUSED(ignored))
+pattern_groupindex(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PatternObject *self = _PatternObject_CAST(op);
     if (self->groupindex == NULL)
         return PyDict_New();
     return PyDictProxy_New(self->groupindex);
@@ -3056,8 +3063,10 @@ cleanup:
 
 
 static Py_hash_t
-pattern_hash(PatternObject *self)
+pattern_hash(PyObject *op)
 {
+    PatternObject *self = _PatternObject_CAST(op);
+
     Py_hash_t hash, hash2;
 
     hash = PyObject_Hash(self->pattern);
@@ -3148,7 +3157,7 @@ static PyMethodDef pattern_methods[] = {
 };
 
 static PyGetSetDef pattern_getset[] = {
-    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
+    {"groupindex", pattern_groupindex, NULL,
       "A dictionary mapping group names to group numbers."},
     {NULL}  /* Sentinel */
 };
@@ -3166,9 +3175,9 @@ static PyMemberDef pattern_members[] = {
 };
 
 static PyType_Slot pattern_slots[] = {
-    {Py_tp_dealloc, (destructor)pattern_dealloc},
-    {Py_tp_repr, (reprfunc)pattern_repr},
-    {Py_tp_hash, (hashfunc)pattern_hash},
+    {Py_tp_dealloc, pattern_dealloc},
+    {Py_tp_repr, pattern_repr},
+    {Py_tp_hash, pattern_hash},
     {Py_tp_doc, (void *)pattern_doc},
     {Py_tp_richcompare, pattern_richcompare},
     {Py_tp_methods, pattern_methods},
