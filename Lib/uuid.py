@@ -747,8 +747,6 @@ def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    # OpenSSL-based SHA-1 is slightly faster than its HACL* version,
-    # and 'import X; X.Y' is slightly faster than 'from X import Y'.
     import hashlib
     h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
     int_uuid_5 = int.from_bytes(h.digest()[:16])
