@@ -99,17 +99,17 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
+    /* If interned is non-zero, the two references from the
+    dictionary to this object are *not* counted in ob_refcnt.
+    The possible values here are:
+        0: Not Interned
+        1: Interned
+        2: Interned and Immortal
+        3: Interned, Immortal, and Static
+    This categorization allows the runtime to determine the right
+    cleanup mechanism at runtime shutdown. */
+    uint16_t interned;
     struct {
-        /* If interned is non-zero, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt.
-           The possible values here are:
-               0: Not Interned
-               1: Interned
-               2: Interned and Immortal
-               3: Interned, Immortal, and Static
-           This categorization allows the runtime to determine the right
-           cleanup mechanism at runtime shutdown. */
-        unsigned int interned:2;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -132,21 +132,21 @@ typedef struct {
              * all characters are in the range U+0000-U+10FFFF
              * at least one character is in the range U+10000-U+10FFFF
          */
-        unsigned int kind:3;
+        uint16_t kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
            objects only require one memory block while non-compact objects use
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
-        unsigned int compact:1;
+        uint16_t compact:1;
         /* The string only contains characters in the range U+0000-U+007F (ASCII)
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
-        unsigned int ascii:1;
+        uint16_t ascii:1;
         /* The object is statically allocated. */
-        unsigned int statically_allocated:1;
+        uint16_t statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :24;
+        uint16_t :10;
     } state;
 } PyASCIIObject;
 
@@ -195,7 +195,11 @@ typedef struct {
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
-    return _PyASCIIObject_CAST(op)->state.interned;
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_uint16_relaxed(&(_PyASCIIObject_CAST(op)->interned));
+#else
+    return _PyASCIIObject_CAST(op)->interned;
+#endif
 }
 #define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
