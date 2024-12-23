@@ -748,11 +748,14 @@ class TestMessageAPI(TestEmailBase):
                             policy=thispolicy.__class__.__name__,
                             method=method,
                             ):
-                        with self.assertRaises(ValueError) as cm:
-                            getattr(Message(policy=thispolicy), method)(name, value)
-                        msg = str(cm.exception)
-                        self.assertRegex(msg,'(?i)(?=.*invalid)(?=.*header)(?=.*name)')
-                        self.assertIn(f"{name!r}", msg)
+                        message = Message(policy=thispolicy)
+                        method = getattr(message, method)
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            '(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+                            ) as cm:
+                            method(name, value)
+                        self.assertIn(f"{name!r}", str(cm.exception))
 
 
     def test_binary_quopri_payload(self):
