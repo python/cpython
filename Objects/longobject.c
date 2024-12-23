@@ -3620,7 +3620,9 @@ static inline int
 _long_is_small_int(PyObject *op)
 {
     PyLongObject *long_object = (PyLongObject *)op;
-    return (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    assert((!is_small_int) || PyLong_CheckExact(op));
+    return is_small_int;
 }
 
 void
@@ -3649,7 +3651,6 @@ long_dealloc(PyObject *self)
          *
          * See PEP 683, section Accidental De-Immortalizing for details
          */
-        assert(0);
         _Py_SetImmortal(self);
         return;
     }
