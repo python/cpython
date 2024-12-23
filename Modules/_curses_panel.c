@@ -62,7 +62,7 @@ _curses_panel_traverse(PyObject *mod, visitproc visit, void *arg)
 static void
 _curses_panel_free(void *mod)
 {
-    _curses_panel_clear((PyObject *) mod);
+    (void)_curses_panel_clear((PyObject *)mod);
 }
 
 /* Utility Functions */
