@@ -2603,6 +2603,13 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
         esac
         AC_MSG_RESULT([$CC])
 
+        # Error on unguarded use of new symbols, which will fail at runtime for
+        # users on older versions of macOS
+        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability],
+            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability"])],
+            [],
+            [-Werror])
+
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
