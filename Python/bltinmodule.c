@@ -2978,6 +2978,8 @@ typedef struct {
     int strict;
 } zipobject;
 
+#define _zipobject_CAST(op)     ((zipobject *)(op))
+
 static PyObject *
 zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3046,8 +3048,9 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-zip_dealloc(zipobject *lz)
+zip_dealloc(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
@@ -3055,16 +3058,19 @@ zip_dealloc(zipobject *lz)
 }
 
 static int
-zip_traverse(zipobject *lz, visitproc visit, void *arg)
+zip_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    zipobject *lz = _zipobject_CAST(self);
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
     return 0;
 }
 
 static PyObject *
-zip_next(zipobject *lz)
+zip_next(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
+
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
@@ -3154,8 +3160,9 @@ check:
 }
 
 static PyObject *
-zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
+zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    zipobject *lz = _zipobject_CAST(self);
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
@@ -3164,19 +3171,20 @@ zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-zip_setstate(zipobject *lz, PyObject *state)
+zip_setstate(PyObject *self, PyObject *state)
 {
     int strict = PyObject_IsTrue(state);
     if (strict < 0) {
         return NULL;
     }
+    zipobject *lz = _zipobject_CAST(self);
     lz->strict = strict;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(zip_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", _PyCFunction_CAST(zip_setstate), METH_O, setstate_doc},
+    {"__reduce__", zip_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", zip_setstate, METH_O, setstate_doc},
     {NULL}  /* sentinel */
 };
 
@@ -3201,7 +3209,7 @@ PyTypeObject PyZip_Type = {
     sizeof(zipobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)zip_dealloc,            /* tp_dealloc */
+    zip_dealloc,                        /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -3219,12 +3227,12 @@ PyTypeObject PyZip_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     zip_doc,                            /* tp_doc */
-    (traverseproc)zip_traverse,    /* tp_traverse */
+    zip_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)zip_next,     /* tp_iternext */
+    zip_next,                           /* tp_iternext */
     zip_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
