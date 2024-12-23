@@ -396,6 +396,7 @@ static PyObject*pattern_new_match(_sremodulestate *, PatternObject*, SRE_STATE*,
 static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *, Py_ssize_t, Py_ssize_t);
 
 #define _PatternObject_CAST(op)     ((PatternObject *)(op))
+#define _MatchObject_CAST(op)       ((MatchObject *)(op))
 
 /*[clinic input]
 module _sre
@@ -2252,8 +2253,9 @@ _validate(PatternObject *self)
 /* match methods */
 
 static int
-match_traverse(MatchObject *self, visitproc visit, void *arg)
+match_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->string);
     Py_VISIT(self->regs);
@@ -2262,8 +2264,9 @@ match_traverse(MatchObject *self, visitproc visit, void *arg)
 }
 
 static int
-match_clear(MatchObject *self)
+match_clear(PyObject *op)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     Py_CLEAR(self->string);
     Py_CLEAR(self->regs);
     Py_CLEAR(self->pattern);
@@ -2271,10 +2274,9 @@ match_clear(MatchObject *self)
 }
 
 static void
-match_dealloc(MatchObject* self)
+match_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
     PyObject_GC_UnTrack(self);
     (void)match_clear(self);
     tp->tp_free(self);
@@ -2383,8 +2385,9 @@ _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
 }
 
 static PyObject*
-match_group(MatchObject* self, PyObject* args)
+match_group(PyObject *op, PyObject* args)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     PyObject* result;
     Py_ssize_t i, size;
 
@@ -2418,8 +2421,9 @@ match_group(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-match_getitem(MatchObject* self, PyObject* name)
+match_getitem(PyObject *op, PyObject* name)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     return match_getslice(self, name, Py_None);
 }
 
@@ -2661,16 +2665,18 @@ PyDoc_STRVAR(match_group_doc,
     For 0 returns the entire match.");
 
 static PyObject *
-match_lastindex_get(MatchObject *self, void *Py_UNUSED(ignored))
+match_lastindex_get(PyObject *op, void *Py_UNUSED(ignored))
 {
+    MatchObject *self = _MatchObject_CAST(op);
     if (self->lastindex >= 0)
         return PyLong_FromSsize_t(self->lastindex);
     Py_RETURN_NONE;
 }
 
 static PyObject *
-match_lastgroup_get(MatchObject *self, void *Py_UNUSED(ignored))
+match_lastgroup_get(PyObject *op, void *Py_UNUSED(ignored))
 {
+    MatchObject *self = _MatchObject_CAST(op);
     if (self->pattern->indexgroup &&
         self->lastindex >= 0 &&
         self->lastindex < PyTuple_GET_SIZE(self->pattern->indexgroup))
@@ -2683,8 +2689,9 @@ match_lastgroup_get(MatchObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-match_regs_get(MatchObject *self, void *Py_UNUSED(ignored))
+match_regs_get(PyObject *op, void *Py_UNUSED(ignored))
 {
+    MatchObject *self = _MatchObject_CAST(op);
     if (self->regs) {
         return Py_NewRef(self->regs);
     } else
@@ -3198,7 +3205,7 @@ static PyType_Spec pattern_spec = {
 };
 
 static PyMethodDef match_methods[] = {
-    {"group", (PyCFunction) match_group, METH_VARARGS, match_group_doc},
+    {"group", match_group, METH_VARARGS, match_group_doc},
     _SRE_SRE_MATCH_START_METHODDEF
     _SRE_SRE_MATCH_END_METHODDEF
     _SRE_SRE_MATCH_SPAN_METHODDEF
@@ -3213,11 +3220,11 @@ static PyMethodDef match_methods[] = {
 };
 
 static PyGetSetDef match_getset[] = {
-    {"lastindex", (getter)match_lastindex_get, (setter)NULL,
+    {"lastindex", match_lastindex_get, NULL,
      "The integer index of the last matched capturing group."},
-    {"lastgroup", (getter)match_lastgroup_get, (setter)NULL,
+    {"lastgroup", match_lastgroup_get, NULL,
      "The name of the last matched capturing group."},
-    {"regs",      (getter)match_regs_get,      (setter)NULL},
+    {"regs", match_regs_get, NULL, NULL},
     {NULL}
 };
 
