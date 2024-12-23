@@ -1409,7 +1409,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         data = unicode + 1;
     _PyUnicode_LENGTH(unicode) = size;
     _PyUnicode_HASH(unicode) = -1;
-    _PyASCIIObject_CAST(unicode)->interned = 0;
+    _PyUnicode_STATE(unicode).interned = 0;
     _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
@@ -1711,7 +1711,7 @@ unicode_dealloc(PyObject *unicode)
         _Py_SetImmortal(unicode);
         return;
     }
-    switch (_PyASCIIObject_CAST(unicode)->interned) {
+    switch (_PyUnicode_STATE(unicode).interned) {
         case SSTATE_NOT_INTERNED:
             break;
         case SSTATE_INTERNED_MORTAL:
@@ -1739,7 +1739,7 @@ unicode_dealloc(PyObject *unicode)
                 //   so it can't cause trouble (except wasted memory)
                 // - if it wasn't popped, it'll remain interned
                 _Py_SetImmortal(unicode);
-                _PyASCIIObject_CAST(unicode)->interned = SSTATE_INTERNED_IMMORTAL;
+                _PyUnicode_STATE(unicode).interned = SSTATE_INTERNED_IMMORTAL;
                 return;
             }
             if (r == 0) {
@@ -15470,7 +15470,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 #else
     _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
-    _PyASCIIObject_CAST(self)->interned = 0;
+    _PyUnicode_STATE(self).interned = 0;
     _PyUnicode_STATE(self).kind = kind;
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
@@ -15689,7 +15689,7 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(r == NULL);
     /* but just in case (for the non-debug build), handle this */
     if (r != NULL && r != s) {
-        assert(_PyASCIIObject_CAST(r)->interned == SSTATE_INTERNED_IMMORTAL_STATIC);
+        assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
         assert(_PyUnicode_CHECK(r));
         Py_DECREF(s);
         return Py_NewRef(r);
@@ -15699,7 +15699,7 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
         Py_FatalError("failed to intern static string");
     }
 
-    _PyASCIIObject_CAST(s)->interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
     return s;
 }
 
@@ -15726,7 +15726,7 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyASCIIObject_CAST(s)->interned, SSTATE_INTERNED_IMMORTAL);
+    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
 }
 
@@ -15833,7 +15833,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
 
     /* NOT_INTERNED -> INTERNED_MORTAL */
 
-    assert(_PyASCIIObject_CAST(s)->interned == SSTATE_NOT_INTERNED);
+    assert(_PyUnicode_STATE(s).interned == SSTATE_NOT_INTERNED);
 
     if (!_Py_IsImmortal(s)) {
         /* The two references in interned dict (key and value) are not counted.
@@ -15845,7 +15845,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
     }
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyASCIIObject_CAST(s)->interned, SSTATE_INTERNED_MORTAL);
+    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -15981,7 +15981,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         if (!shared) {
-            FT_ATOMIC_STORE_UINT8_RELAXED(_PyASCIIObject_CAST(s)->interned, SSTATE_NOT_INTERNED);
+            FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
         }
     }
 #ifdef INTERNED_STATS
