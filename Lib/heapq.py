@@ -1,3 +1,5 @@
+from operator import indexOf
+
 """Heap queue algorithm (a.k.a. priority queue).
 
 Heaps are arrays for which a[k] <= a[2*k+1] and a[k] <= a[2*k+2] for
@@ -135,7 +137,10 @@ def heappush(heap, item):
     _siftdown(heap, 0, len(heap)-1)
 
 def heappop(heap):
-    """Pop the smallest item off the heap, maintaining the heap invariant."""
+    """Pop the smallest item off the heap, maintaining the heap invariant.
+
+    This is equivalent to heapremove_index(heap, 0)
+    """
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
     if heap:
         returnitem = heap[0]
@@ -166,6 +171,40 @@ def heappushpop(heap, item):
         item, heap[0] = heap[0], item
         _siftup(heap, 0)
     return item
+
+def heapremove(heap, value, *, key = None):
+    """Remove and return the element corresponding to 'value' from the heap, maintaining
+    the heap invariant.
+    The first element comparing equal to 'value' is removed.
+    If a 'key' callable is provided, it is called
+    for each entry in the heap to produce a value to compare with 'value'.
+    Raises ValueError if item is not found in the heap.
+    """
+    index = heap.index(value) if key is None else indexOf(map(key, heap), value)
+    return heapremove_index(heap, index)
+
+def heapremove_index(heap, index):
+    """Remove the element at the given index maintaining the heap invariant.
+
+    Returns the removed object.
+    """
+    result = heap[index]  # fails on invalid index
+    n = len(heap)
+    if index < 0:
+        index += n
+    lastelt = heap.pop()
+    try:
+        heap[index] = lastelt
+    except IndexError:  # if this was the last item
+        return result
+
+    # since we have the old value, we can compare with it and
+    # decide on the direction of sift
+    if index > 0 and lastelt < result:
+        _siftdown(heap, 0, index)
+    else:
+        _siftup(heap, index)
+    return result
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""

@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_heapq_heappush__doc__,
@@ -146,6 +147,54 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_heapq_heapremove_index__doc__,
+"heapremove_index($module, heap, index, /)\n"
+"--\n"
+"\n"
+"Remove the element at the given index maintaining the heap invariant.\n"
+"\n"
+"Returns the removed item.");
+
+#define _HEAPQ_HEAPREMOVE_INDEX_METHODDEF    \
+    {"heapremove_index", _PyCFunction_CAST(_heapq_heapremove_index), METH_FASTCALL, _heapq_heapremove_index__doc__},
+
+static PyObject *
+_heapq_heapremove_index_impl(PyObject *module, PyObject *heap,
+                             Py_ssize_t index);
+
+static PyObject *
+_heapq_heapremove_index(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    Py_ssize_t index;
+
+    if (!_PyArg_CheckPositional("heapremove_index", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heapremove_index", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    return_value = _heapq_heapremove_index_impl(module, heap, index);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_heapq_heapify__doc__,
 "heapify($module, heap, /)\n"
 "--\n"
@@ -267,4 +316,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=051f8247c4f85985 input=a9049054013a1b77]*/
