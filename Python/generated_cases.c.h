@@ -5823,7 +5823,6 @@
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject *attr_o;
                 if (!LOCK_OBJECT(dict)) {
                     DEOPT_IF(true, LOAD_ATTR);

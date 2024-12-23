@@ -2224,9 +2224,7 @@ dummy_func(
         }
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject *attr_o;
-
             if (!LOCK_OBJECT(dict)) {
                 DEAD(dict);
                 POP_DEAD_INPUTS();

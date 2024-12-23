@@ -2776,7 +2776,6 @@
             dict = (PyDictObject *)stack_pointer[-1].bits;
             owner = stack_pointer[-2];
             uint16_t hint = (uint16_t)CURRENT_OPERAND0();
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
                 stack_pointer += -1;
