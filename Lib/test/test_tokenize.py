@@ -1786,11 +1786,11 @@ class UntokenizeTest(TestCase):
         u.prev_row = 2
         u.prev_col = 2
         with self.assertRaises(ValueError) as cm:
-            u.add_whitespace((1,3))
+            u.add_whitespace((1,3), line='   ')
         self.assertEqual(cm.exception.args[0],
                 'start (1,3) precedes previous end (2,2)')
         # raise if previous column in row
-        self.assertRaises(ValueError, u.add_whitespace, (2,1))
+        self.assertRaises(ValueError, u.add_whitespace, (2,1), '   ')
 
     def test_backslash_continuation(self):
         # The problem is that <whitespace>\<newline> leaves no token
@@ -1798,10 +1798,10 @@ class UntokenizeTest(TestCase):
         u.prev_row = 1
         u.prev_col =  1
         u.tokens = []
-        u.add_whitespace((2, 0))
+        u.add_whitespace((2, 0), line=' \n')
         self.assertEqual(u.tokens, ['\\\n'])
         u.prev_row = 2
-        u.add_whitespace((4, 4))
+        u.add_whitespace((4, 4), line='    ')
         self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
         TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n')
 
@@ -1984,6 +1984,11 @@ if 1:
     def test_string_concatenation(self):
         # Two string literals on the same line
         self.check_roundtrip("'' ''")
+
+    def test_tabs(self):
+        # Tabs should be preserved
+        self.check_roundtrip("a +\tb")
+        self.check_roundtrip("a + b\t# comment")
 
     def test_random_files(self):
         # Test roundtrip on random python modules.
