@@ -319,6 +319,8 @@ typedef struct {
     Py_ssize_t a_count;
 } PyHamtNode_Array;
 
+#define _PyHamtNode_Array_CAST(op)      ((PyHamtNode_Array *)(op))
+
 
 typedef struct {
     PyObject_VAR_HEAD
@@ -1868,35 +1870,27 @@ hamt_node_array_find(PyHamtNode_Array *self,
 }
 
 static int
-hamt_node_array_traverse(PyHamtNode_Array *self,
-                         visitproc visit, void *arg)
+hamt_node_array_traverse(PyObject *op, visitproc visit, void *arg)
 {
     /* Array's tp_traverse */
-
-    Py_ssize_t i;
-
-    for (i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
+    PyHamtNode_Array *self = _PyHamtNode_Array_CAST(op);
+    for (Py_ssize_t i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_VISIT(self->a_array[i]);
     }
-
     return 0;
 }
 
 static void
-hamt_node_array_dealloc(PyHamtNode_Array *self)
+hamt_node_array_dealloc(PyObject *self)
 {
     /* Array's tp_dealloc */
-
-    Py_ssize_t i;
-
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
-
-    for (i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
-        Py_XDECREF(self->a_array[i]);
+    PyHamtNode_Array *obj = _PyHamtNode_Array_CAST(self);
+    for (Py_ssize_t i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
+        Py_XDECREF(obj->a_array[i]);
     }
-
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
     Py_TRASHCAN_END
 }
 
@@ -2848,10 +2842,10 @@ PyTypeObject _PyHamt_ArrayNode_Type = {
     "hamt_array_node",
     sizeof(PyHamtNode_Array),
     0,
-    .tp_dealloc = (destructor)hamt_node_array_dealloc,
+    .tp_dealloc = hamt_node_array_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)hamt_node_array_traverse,
+    .tp_traverse = hamt_node_array_traverse,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
 };
