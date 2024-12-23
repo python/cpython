@@ -909,12 +909,7 @@ class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=445da935fa8883c3]*/
 
 
-static inline PyContextVar *
-_PyContextVar_CAST(PyObject *op)
-{
-    assert(PyObject_TypeCheck(op, &PyContextVar_Type));
-    return (PyContextVar *)op;
-}
+#define _PyContextVar_CAST(op)  ((PyContextVar *)(op))
 
 
 static PyObject *
@@ -1141,6 +1136,14 @@ class _contextvars.Token "PyContextToken *" "&PyContextToken_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=338a5e2db13d3f5b]*/
 
 
+static inline PyContextToken *
+_PyContextToken_CAST(PyObject *op)
+{
+    assert(PyObject_TypeCheck(op, &PyContextToken_Type));
+    return (PyContextToken *)op;
+}
+
+
 static PyObject *
 token_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1150,8 +1153,9 @@ token_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-token_tp_clear(PyContextToken *self)
+token_tp_clear(PyObject *op)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     Py_CLEAR(self->tok_ctx);
     Py_CLEAR(self->tok_var);
     Py_CLEAR(self->tok_oldval);
@@ -1159,8 +1163,9 @@ token_tp_clear(PyContextToken *self)
 }
 
 static int
-token_tp_traverse(PyContextToken *self, visitproc visit, void *arg)
+token_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     Py_VISIT(self->tok_ctx);
     Py_VISIT(self->tok_var);
     Py_VISIT(self->tok_oldval);
@@ -1168,7 +1173,7 @@ token_tp_traverse(PyContextToken *self, visitproc visit, void *arg)
 }
 
 static void
-token_tp_dealloc(PyContextToken *self)
+token_tp_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     (void)token_tp_clear(self);
@@ -1176,8 +1181,9 @@ token_tp_dealloc(PyContextToken *self)
 }
 
 static PyObject *
-token_tp_repr(PyContextToken *self)
+token_tp_repr(PyObject *op)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
@@ -1207,14 +1213,16 @@ error:
 }
 
 static PyObject *
-token_get_var(PyContextToken *self, void *Py_UNUSED(ignored))
+token_get_var(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     return Py_NewRef(self->tok_var);;
 }
 
 static PyObject *
-token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
+token_get_old_value(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     if (self->tok_oldval == NULL) {
         return get_token_missing();
     }
@@ -1223,8 +1231,8 @@ token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef PyContextTokenType_getsetlist[] = {
-    {"var", (getter)token_get_var, NULL, NULL},
-    {"old_value", (getter)token_get_old_value, NULL, NULL},
+    {"var", token_get_var, NULL, NULL},
+    {"old_value", token_get_old_value, NULL, NULL},
     {NULL}
 };
 
@@ -1240,15 +1248,15 @@ PyTypeObject PyContextToken_Type = {
     sizeof(PyContextToken),
     .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
-    .tp_dealloc = (destructor)token_tp_dealloc,
+    .tp_dealloc = token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)token_tp_traverse,
-    .tp_clear = (inquiry)token_tp_clear,
+    .tp_traverse = token_tp_traverse,
+    .tp_clear = token_tp_clear,
     .tp_new = token_tp_new,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
-    .tp_repr = (reprfunc)token_tp_repr,
+    .tp_repr = token_tp_repr,
 };
 
 static PyContextToken *
