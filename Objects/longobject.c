@@ -3642,7 +3642,11 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-    if (_long_is_small_int(self)) {
+    // test what happens if we do hit the "never should get called": we should expect memory leaks, but no crashes
+    PyLongObject *pylong = (PyLongObject *)self;
+    int dotest = PyLong_CheckExact(self) && _PyLong_IsCompact(pylong) && (medium_value(pylong)==5);
+
+    if (_long_is_small_int(self) || dotest) {
         /* This should never get called, but we also don't want to SEGV if
          * we accidentally decref small Ints out of existence. Instead,
          * since small Ints are immortal, re-set the reference count.
