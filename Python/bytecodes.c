@@ -2213,51 +2213,60 @@ dummy_func(
             _LOAD_ATTR_MODULE_FROM_KEYS +
             unused/5;
 
-        op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
+        op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict: PyDictObject *)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            EXIT_IF(dict == NULL);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
+            EXIT_IF(dict_o == NULL);
+            assert(PyDict_CheckExact((PyObject *)dict_o));
+            dict = dict_o;
         }
 
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject *attr_o;
 
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            DEOPT_IF(!LOCK_OBJECT(dict));
-            #ifdef Py_GIL_DISABLED
-            if (dict != _PyObject_GetManagedDict(owner_o)) {
-                UNLOCK_OBJECT(dict);
+            if (!LOCK_OBJECT(dict)) {
+                DEAD(dict);
+                POP_DEAD_INPUTS();
                 DEOPT_IF(true);
             }
-            #endif
+
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
+                DEAD(dict);
+                POP_DEAD_INPUTS();
                 DEOPT_IF(true);
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
+                DEAD(dict);
+                POP_DEAD_INPUTS();
                 DEOPT_IF(true);
             }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             if (ep->me_key != name) {
                 UNLOCK_OBJECT(dict);
+                DEAD(dict);
+                POP_DEAD_INPUTS();
                 DEOPT_IF(true);
             }
             attr_o = ep->me_value;
             if (attr_o == NULL) {
                 UNLOCK_OBJECT(dict);
+                DEAD(dict);
+                POP_DEAD_INPUTS();
                 DEOPT_IF(true);
             }
             STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
+            DEAD(dict);
             null = PyStackRef_NULL;
-            DECREF_INPUTS();
+            PyStackRef_CLOSE(owner);
+            INPUTS_DEAD();
         }
 
         macro(LOAD_ATTR_WITH_HINT) =
