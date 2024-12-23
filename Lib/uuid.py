@@ -229,8 +229,7 @@ class UUID:
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
-        # "x < a or int > b" is slightly faster than "not (a <= x <= b)"
-        if int < 0 or int > 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff:
+        if not 0 <= int <= _UINT_128_MAX:
             raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
             if not 1 <= version <= 8:
