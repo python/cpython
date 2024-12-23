@@ -328,6 +328,8 @@ typedef struct {
     PyObject *c_array[1];
 } PyHamtNode_Collision;
 
+#define _PyHamtNode_Collision_CAST(op)  ((PyHamtNode_Collision *)(op))
+
 
 static PyHamtObject *
 hamt_alloc(void);
@@ -1491,38 +1493,30 @@ hamt_node_collision_find(PyHamtNode_Collision *self,
 
 
 static int
-hamt_node_collision_traverse(PyHamtNode_Collision *self,
-                             visitproc visit, void *arg)
+hamt_node_collision_traverse(PyObject *op, visitproc visit, void *arg)
 {
     /* Collision's tp_traverse */
-
-    Py_ssize_t i;
-
-    for (i = Py_SIZE(self); --i >= 0; ) {
+    PyHamtNode_Collision *self = _PyHamtNode_Collision_CAST(op);
+    for (Py_ssize_t i = Py_SIZE(self); --i >= 0; ) {
         Py_VISIT(self->c_array[i]);
     }
-
     return 0;
 }
 
 static void
-hamt_node_collision_dealloc(PyHamtNode_Collision *self)
+hamt_node_collision_dealloc(PyObject *self)
 {
     /* Collision's tp_dealloc */
-
     Py_ssize_t len = Py_SIZE(self);
-
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
-
     if (len > 0) {
-
+        PyHamtNode_Collision *node = _PyHamtNode_Collision_CAST(self);
         while (--len >= 0) {
-            Py_XDECREF(self->c_array[len]);
+            Py_XDECREF(node->c_array[len]);
         }
     }
-
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
     Py_TRASHCAN_END
 }
 
@@ -2868,10 +2862,10 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
     "hamt_collision_node",
     sizeof(PyHamtNode_Collision) - sizeof(PyObject *),
     sizeof(PyObject *),
-    .tp_dealloc = (destructor)hamt_node_collision_dealloc,
+    .tp_dealloc = hamt_node_collision_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)hamt_node_collision_traverse,
+    .tp_traverse = hamt_node_collision_traverse,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
 };
