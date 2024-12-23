@@ -1437,33 +1437,25 @@ class DummyPathTest(DummyPurePathTest):
 
     def setUp(self):
         super().setUp()
-        parser = self.cls.parser
-        p = self.cls(self.base)
-        p.mkdir(parents=True)
-        p.joinpath('dirA').mkdir()
-        p.joinpath('dirB').mkdir()
-        p.joinpath('dirC').mkdir()
-        p.joinpath('dirC', 'dirD').mkdir()
-        p.joinpath('dirE').mkdir()
-        with p.joinpath('fileA').open('wb') as f:
-            f.write(b"this is file A\n")
-        with p.joinpath('dirB', 'fileB').open('wb') as f:
-            f.write(b"this is file B\n")
-        with p.joinpath('dirC', 'fileC').open('wb') as f:
-            f.write(b"this is file C\n")
-        with p.joinpath('dirC', 'novel.txt').open('wb') as f:
-            f.write(b"this is a novel\n")
-        with p.joinpath('dirC', 'dirD', 'fileD').open('wb') as f:
-            f.write(b"this is file D\n")
-        if self.can_symlink:
-            p.joinpath('linkA').symlink_to('fileA')
-            p.joinpath('brokenLink').symlink_to('non-existing')
-            p.joinpath('linkB').symlink_to('dirB', target_is_directory=True)
-            p.joinpath('dirA', 'linkC').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
-            p.joinpath('dirB', 'linkD').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
-            p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
+        self.createTestHierarchy()
+
+    def createTestHierarchy(self):
+        cls = self.cls
+        cls._files = {
+            f'{self.base}/fileA': b'this is file A\n',
+            f'{self.base}/dirB/fileB': b'this is file B\n',
+            f'{self.base}/dirC/fileC': b'this is file C\n',
+            f'{self.base}/dirC/dirD/fileD': b'this is file D\n',
+            f'{self.base}/dirC/novel.txt': b'this is a novel\n',
+        }
+        cls._directories = {
+            f'{self.base}': {'fileA', 'dirA', 'dirB', 'dirC', 'dirE'},
+            f'{self.base}/dirA': set(),
+            f'{self.base}/dirB': {'fileB'},
+            f'{self.base}/dirC': {'fileC', 'dirD', 'novel.txt'},
+            f'{self.base}/dirC/dirD': {'fileD'},
+            f'{self.base}/dirE': set(),
+        }
 
     def tearDown(self):
         cls = self.cls
