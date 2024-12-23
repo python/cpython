@@ -203,7 +203,7 @@ class UUID:
             assert isinstance(bytes_le, bytes_), repr(bytes_le)
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
-            int = int_.from_bytes(bytes)
+            int = int_.from_bytes(bytes)  # big endian
         elif bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
@@ -234,11 +234,11 @@ class UUID:
         if version is not None:
             if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
+            # clear the variant and the version number bits
+            int &= _RFC_4122_CLEARFLAGS_MASK
             # Set the variant to RFC 4122/9562.
-            int &= ~(0xc000 << 48)
-            int |= 0x8000 << 48
+            int |= 0x8000_0000_0000_0000  # (0x8000 << 48)
             # Set the version number.
-            int &= ~(0xf000 << 64)
             int |= version << 76
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
