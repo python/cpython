@@ -505,8 +505,15 @@ def _urlsplit(url, scheme=None, allow_fragments=True):
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
         if '[' in netloc and ']' in netloc:
-            bracketed_host = netloc.partition('[')[2].partition(']')[0]
-            _check_bracketed_host(bracketed_host)
+            _, _, hostinfo = netloc.rpartition('@')
+            bracket_prefix, have_open_br, bracketed = hostinfo.partition('[')
+            if bracket_prefix:
+                raise ValueError('Invalid IPv6 URL')
+            hostname, _, port = bracketed.partition(']')
+            _check_bracketed_host(hostname)
+            bracket_suffix, _, _ = port.partition(':')
+            if bracket_suffix:
+                raise ValueError('Invalid IPv6 URL')
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:
