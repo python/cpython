@@ -55,6 +55,8 @@ typedef struct {
     Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
 
+#define _SHA1object_CAST(op)    ((SHA1object *)(op))
+
 #include "clinic/sha1module.c.h"
 
 
@@ -93,8 +95,9 @@ SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA1_dealloc(SHA1object *ptr)
+SHA1_dealloc(PyObject *op)
 {
+    SHA1object *ptr = _SHA1object_CAST(op);
     Hacl_Hash_SHA1_free(ptr->hash_state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
@@ -235,19 +238,10 @@ sha1_get_digest_size(PyObject *self, void *closure)
 }
 
 static PyGetSetDef SHA1_getseters[] = {
-    {"block_size",
-     (getter)SHA1_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)SHA1_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)sha1_get_digest_size, NULL,
-     NULL,
-     NULL},
-    {NULL}  /* Sentinel */
+    {"block_size", SHA1_get_block_size, NULL, NULL, NULL},
+    {"name", SHA1_get_name, NULL, NULL, NULL},
+    {"digest_size", sha1_get_digest_size, NULL, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
 };
 
 static PyType_Slot sha1_type_slots[] = {
