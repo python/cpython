@@ -85,7 +85,14 @@ class SafeUUID:
     unknown = None
 
 
+_UINT_128_MAX = 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff
+# 128-bit mask to clear the variant and version bits of a UUID integral value
+#
+# This is equivalent to the 2-complement of '(0xc000 << 48) | (0xf000 << 64)'.
 _RFC_4122_CLEARFLAGS_MASK = 0xffff_ffff_ffff_0fff_3fff_ffff_ffff_ffff
+# RFC 4122 variant bits and version bits to activate on a UUID integral value.
+#
+# The values are equivalent to '(version << 76) | (0x8000 << 48)'.
 _RFC_4122_VERSION_1_FLAGS = 0x0000_0000_0000_1000_8000_0000_0000_0000
 _RFC_4122_VERSION_3_FLAGS = 0x0000_0000_0000_3000_8000_0000_0000_0000
 _RFC_4122_VERSION_4_FLAGS = 0x0000_0000_0000_4000_8000_0000_0000_0000
