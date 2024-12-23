@@ -1,0 +1,1 @@
+Prevent copying extended attributes of script files when creating a venv.
