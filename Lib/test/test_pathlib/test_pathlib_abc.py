@@ -1449,10 +1449,10 @@ class DummyPathTest(DummyPurePathTest):
             f'{self.base}/dirC/novel.txt': b'this is a novel\n',
         }
         cls._directories = {
-            f'{self.base}': {'dirA', 'dirB','dirC', 'dirE', 'fileA'},
+            f'{self.base}': {'fileA', 'dirA', 'dirB', 'dirC', 'dirE'},
             f'{self.base}/dirA': set(),
             f'{self.base}/dirB': {'fileB'},
-            f'{self.base}/dirC': {'dirD', 'fileC', 'novel.txt'},
+            f'{self.base}/dirC': {'fileC', 'dirD', 'novel.txt'},
             f'{self.base}/dirC/dirD': {'fileD'},
             f'{self.base}/dirE': set(),
         }
