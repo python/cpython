@@ -1,1 +1,1 @@
-Support digest authentication algorithm SHA-256
+Support digest authentication algorithm SHA-256 in :mod:`urllib.request`.
