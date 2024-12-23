@@ -728,8 +728,6 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    # HACL*-based MD5 is slightly faster than its OpenSSL version,
-    # and 'import X; X.Y' is slightly faster than 'from X import Y'.
     import _md5
     h = _md5.md5(namespace.bytes + name, usedforsecurity=False)
     assert len(h.digest()) == 16
