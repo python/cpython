@@ -420,6 +420,14 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 
 
 static inline PyContext *
+_PyContext_CAST(PyObject *op)
+{
+    assert(PyObject_TypeCheck(op, &PyContext_Type));
+    return (PyContext *)op;
+}
+
+
+static inline PyContext *
 _context_alloc(void)
 {
     PyContext *ctx = _Py_FREELIST_POP(PyContext, contexts);
@@ -513,28 +521,30 @@ context_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-context_tp_clear(PyContext *self)
+context_tp_clear(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     Py_CLEAR(self->ctx_prev);
     Py_CLEAR(self->ctx_vars);
     return 0;
 }
 
 static int
-context_tp_traverse(PyContext *self, visitproc visit, void *arg)
+context_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContext *self = _PyContext_CAST(op);
     Py_VISIT(self->ctx_prev);
     Py_VISIT(self->ctx_vars);
     return 0;
 }
 
 static void
-context_tp_dealloc(PyContext *self)
+context_tp_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-
-    if (self->ctx_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
+    PyContext *ctx = _PyContext_CAST(self);
+    if (ctx->ctx_weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
     (void)context_tp_clear(self);
 
@@ -542,8 +552,9 @@ context_tp_dealloc(PyContext *self)
 }
 
 static PyObject *
-context_tp_iter(PyContext *self)
+context_tp_iter(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_NewIterKeys(self->ctx_vars);
 }
 
@@ -575,18 +586,20 @@ context_tp_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static Py_ssize_t
-context_tp_len(PyContext *self)
+context_tp_len(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_Len(self->ctx_vars);
 }
 
 static PyObject *
-context_tp_subscript(PyContext *self, PyObject *key)
+context_tp_subscript(PyObject *op, PyObject *key)
 {
     if (context_check_key_type(key)) {
         return NULL;
     }
     PyObject *val = NULL;
+    PyContext *self = _PyContext_CAST(op);
     int found = _PyHamt_Find(self->ctx_vars, key, &val);
     if (found < 0) {
         return NULL;
@@ -599,12 +612,13 @@ context_tp_subscript(PyContext *self, PyObject *key)
 }
 
 static int
-context_tp_contains(PyContext *self, PyObject *key)
+context_tp_contains(PyObject *op, PyObject *key)
 {
     if (context_check_key_type(key)) {
         return -1;
     }
     PyObject *val = NULL;
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_Find(self->ctx_vars, key, &val);
 }
 
@@ -701,7 +715,7 @@ _contextvars_Context_copy_impl(PyContext *self)
 
 
 static PyObject *
-context_run(PyContext *self, PyObject *const *args,
+context_run(PyObject *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
     PyThreadState *ts = _PyThreadState_GET();
@@ -712,14 +726,14 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    if (_PyContext_Enter(ts, (PyObject *)self)) {
+    if (_PyContext_Enter(ts, self)) {
         return NULL;
     }
 
     PyObject *call_result = _PyObject_VectorcallTstate(
         ts, args[0], args + 1, nargs - 1, kwnames);
 
-    if (_PyContext_Exit(ts, (PyObject *)self)) {
+    if (_PyContext_Exit(ts, self)) {
         Py_XDECREF(call_result);
         return NULL;
     }
@@ -739,21 +753,12 @@ static PyMethodDef PyContext_methods[] = {
 };
 
 static PySequenceMethods PyContext_as_sequence = {
-    0,                                   /* sq_length */
-    0,                                   /* sq_concat */
-    0,                                   /* sq_repeat */
-    0,                                   /* sq_item */
-    0,                                   /* sq_slice */
-    0,                                   /* sq_ass_item */
-    0,                                   /* sq_ass_slice */
-    (objobjproc)context_tp_contains,     /* sq_contains */
-    0,                                   /* sq_inplace_concat */
-    0,                                   /* sq_inplace_repeat */
+    .sq_contains = context_tp_contains
 };
 
 static PyMappingMethods PyContext_as_mapping = {
-    (lenfunc)context_tp_len,             /* mp_length */
-    (binaryfunc)context_tp_subscript,    /* mp_subscript */
+    .mp_length = context_tp_len,
+    .mp_subscript = context_tp_subscript
 };
 
 PyTypeObject PyContext_Type = {
@@ -763,13 +768,13 @@ PyTypeObject PyContext_Type = {
     .tp_methods = PyContext_methods,
     .tp_as_mapping = &PyContext_as_mapping,
     .tp_as_sequence = &PyContext_as_sequence,
-    .tp_iter = (getiterfunc)context_tp_iter,
-    .tp_dealloc = (destructor)context_tp_dealloc,
+    .tp_iter = context_tp_iter,
+    .tp_dealloc = context_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_richcompare = context_tp_richcompare,
-    .tp_traverse = (traverseproc)context_tp_traverse,
-    .tp_clear = (inquiry)context_tp_clear,
+    .tp_traverse = context_tp_traverse,
+    .tp_clear = context_tp_clear,
     .tp_new = context_tp_new,
     .tp_weaklistoffset = offsetof(PyContext, ctx_weakreflist),
     .tp_hash = PyObject_HashNotImplemented,
