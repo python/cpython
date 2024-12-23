@@ -340,7 +340,7 @@ _sha1_clear(PyObject *module)
 static void
 _sha1_free(void *module)
 {
-    _sha1_clear((PyObject *)module);
+    (void)_sha1_clear((PyObject *)module);
 }
 
 static int

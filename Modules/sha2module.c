@@ -809,7 +809,7 @@ _sha2_clear(PyObject *module)
 static void
 _sha2_free(void *module)
 {
-    _sha2_clear((PyObject *)module);
+    (void)_sha2_clear((PyObject *)module);
 }
 
 /* Initialize this module. */
