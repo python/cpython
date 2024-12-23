@@ -1130,7 +1130,8 @@ dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, P
 }
 
 static Py_hash_t
-check_keys_and_hash(PyDictKeysObject *dk, PyObject *key) {
+check_keys_and_hash(PyDictKeysObject *dk, PyObject *key)
+{
     DictKeysKind kind = dk->dk_kind;
     if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
         return -1;
@@ -1192,7 +1193,7 @@ _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
 }
 
 Py_ssize_t
-_PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dk, PyObject *key, uint32_t *version)
+_PyDictKeys_StringLookupAndVersion(PyDictKeysObject *dk, PyObject *key, uint32_t *version)
 {
     Py_hash_t hash = check_keys_and_hash(dk, key);
     if (hash == -1) {
