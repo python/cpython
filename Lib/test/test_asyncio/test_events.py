@@ -2695,6 +2695,14 @@ class AbstractEventLoopTests(unittest.TestCase):
 
 class PolicyTests(unittest.TestCase):
 
+    def test_asyncio_set_event_loop_deprecation(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning, "'asyncio.set_event_loop' is deprecated"):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            self.assertIs(loop, asyncio.get_event_loop())
+            loop.close()
+
     def test_abstract_event_loop_policy_deprecation(self):
         with self.assertWarnsRegex(
                 DeprecationWarning, "'asyncio.AbstractEventLoopPolicy' is deprecated"):
