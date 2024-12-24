@@ -6,7 +6,6 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
-    <PreferredToolArchitecture Condition="'$(Platform)' == 'x64'">x64</PreferredToolArchitecture>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
     <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
@@ -19,7 +18,7 @@
 
   <ItemDefinitionGroup>
     <FreezeProjects>
-      <Platform>$(PreferredToolArchitecture)</Platform>
+      <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
       <Properties></Properties>
