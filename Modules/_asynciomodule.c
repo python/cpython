@@ -3723,6 +3723,11 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
+    // Clear the ref to running loop so that finalizers can run early.
+    // If there are other running loops in different threads,
+    // those get cleared in PyThreadState_Clear.
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    Py_CLEAR(ts->asyncio_running_loop);
 
     return 0;
 }
@@ -3773,7 +3778,7 @@ module_init(asyncio_state *state)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "get_event_loop_policy")
+    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "_get_event_loop_policy")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")

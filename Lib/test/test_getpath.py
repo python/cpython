@@ -92,8 +92,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=r"C:\venv\Scripts\python.exe",
-            prefix=r"C:\Python",
-            exec_prefix=r"C:\Python",
+            prefix=r"C:\venv",
+            exec_prefix=r"C:\venv",
             base_executable=r"C:\Python\python.exe",
             base_prefix=r"C:\Python",
             base_exec_prefix=r"C:\Python",
@@ -339,8 +339,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -371,8 +371,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python3",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -404,8 +404,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/path/to/non-installed",
-            exec_prefix="/path/to/non-installed",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/path/to/non-installed/bin/python",
             base_prefix="/path/to/non-installed",
             base_exec_prefix="/path/to/non-installed",
@@ -435,8 +435,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python9",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -652,8 +652,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=f"{venv_path}/bin/python",
-            prefix="/Library/Frameworks/Python.framework/Versions/9.8",
-            exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            prefix=venv_path,
+            exec_prefix=venv_path,
             base_executable="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
             base_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
             base_exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
@@ -697,8 +697,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=f"{venv_path}/bin/python",
-            prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
-            exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            prefix=venv_path,
+            exec_prefix=venv_path,
             base_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
             base_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
             base_exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
@@ -734,8 +734,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/framework/Python9.8/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/framework/Python9.8",
+            exec_prefix="/framework/Python9.8",
             base_executable="/usr/bin/python",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -832,6 +832,37 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_PYTHONHOME_in_venv(self):
+        "Make sure prefix/exec_prefix still point to the venv if PYTHONHOME was used."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            ENV_PYTHONHOME="/pythonhome",
+        )
+        # Setup venv
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        # Seutup PYTHONHOME
+        ns.add_known_file("/pythonhome/lib/python9.8/os.py")
+        ns.add_known_dir("/pythonhome/lib/python9.8/lib-dynload")
+
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_prefix="/pythonhome",
+            base_exec_prefix="/pythonhome",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/pythonhome/lib/python98.zip",
+                "/pythonhome/lib/python9.8",
+                "/pythonhome/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
 
 # ******************************************************************************
 

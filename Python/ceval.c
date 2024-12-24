@@ -28,7 +28,6 @@
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
 
@@ -165,7 +164,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
             PyErr_Clear();
         }
         // Don't call __repr__(), it might recurse into the interpreter.
-        printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)(ptr->bits));
+        printf("<%s at %p>", Py_TYPE(obj)->tp_name, PyStackRef_AsPyObjectBorrow(*ptr));
     }
     printf("]\n");
     fflush(stdout);
@@ -806,7 +805,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 
 
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
     entry_frame.f_locals = (PyObject*)0xaaa1;
@@ -818,6 +817,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.visited = 0;
     entry_frame.return_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
@@ -1095,6 +1095,7 @@ tier2_dispatch:
         UOP_PAIR_INC(uopcode, lastuop);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
+        ((_PyUOpInstruction  *)next_uop)[-1].execution_count++;
 #endif
 
         switch (uopcode) {
@@ -1800,33 +1801,6 @@ fail:
     return NULL;
 }
 
-static _PyInterpreterFrame *
-_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, _PyStackRef func,
-                        PyObject *locals, PyObject *const* args,
-                        size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
-{
-#if defined(Py_GIL_DISABLED)
-    size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
-    size_t total_argcount = argcount + kw_count;
-    _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
-    if (tagged_args_buffer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (size_t i = 0; i < argcount; i++) {
-        tagged_args_buffer[i] = PyStackRef_FromPyObjectSteal(args[i]);
-    }
-    for (size_t i = 0; i < kw_count; i++) {
-        tagged_args_buffer[argcount + i] = PyStackRef_FromPyObjectSteal(args[argcount + i]);
-    }
-    _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames, previous);
-    PyMem_Free(tagged_args_buffer);
-    return res;
-#else
-    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames, previous);
-#endif
-}
-
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
    Steals references to func, callargs and kwargs.
 */
@@ -1836,27 +1810,48 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
 {
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
-    PyObject *const *newargs;
+    _PyStackRef *newargs;
+    PyObject *const *object_array = NULL;
+    _PyStackRef stack_array[8];
     if (has_dict) {
-        newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
-        if (newargs == NULL) {
+        object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
+        if (object_array == NULL) {
             PyStackRef_CLOSE(func);
             goto error;
         }
-    }
-    else {
-        newargs = &PyTuple_GET_ITEM(callargs, 0);
-        /* We need to incref all our args since the new frame steals the references. */
-        for (Py_ssize_t i = 0; i < nargs; ++i) {
-            Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+        size_t total_args = nargs + PyDict_GET_SIZE(kwargs);
+        assert(sizeof(PyObject *) == sizeof(_PyStackRef));
+        newargs = (_PyStackRef *)object_array;
+        for (size_t i = 0; i < total_args; i++) {
+            newargs[i] = PyStackRef_FromPyObjectSteal(object_array[i]);
         }
     }
-    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_UnTagged(
+    else {
+        if (nargs <= 8) {
+            newargs = stack_array;
+        }
+        else {
+            newargs = PyMem_Malloc(sizeof(_PyStackRef) *nargs);
+            if (newargs == NULL) {
+                PyErr_NoMemory();
+                PyStackRef_CLOSE(func);
+                goto error;
+            }
+        }
+        /* We need to create a new reference for all our args since the new frame steals them. */
+        for (Py_ssize_t i = 0; i < nargs; i++) {
+            newargs[i] = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(callargs, i));
+        }
+    }
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, func, locals,
         newargs, nargs, kwnames, previous
     );
     if (has_dict) {
-        _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+        _PyStack_UnpackDict_FreeNoDecRef(object_array, kwnames);
+    }
+    else if (nargs > 8) {
+       PyMem_Free((void *)newargs);
     }
     /* No need to decref func here because the reference has been stolen by
        _PyEvalFramePushAndInit.
@@ -1876,21 +1871,39 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
+    size_t total_args = argcount;
+    if (kwnames) {
+        total_args += PyTuple_GET_SIZE(kwnames);
+    }
+    _PyStackRef stack_array[8];
+    _PyStackRef *arguments;
+    if (total_args <= 8) {
+        arguments = stack_array;
+    }
+    else {
+        arguments = PyMem_Malloc(sizeof(_PyStackRef) * total_args);
+        if (arguments == NULL) {
+            return PyErr_NoMemory();
+        }
+    }
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
     for (size_t i = 0; i < argcount; i++) {
-        Py_INCREF(args[i]);
+        arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            Py_INCREF(args[i+argcount]);
+            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
         }
     }
-    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit_UnTagged(
+    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,
-        args, argcount, kwnames, NULL);
+        arguments, argcount, kwnames, NULL);
+    if (total_args > 8) {
+        PyMem_Free(arguments);
+    }
     if (frame == NULL) {
         return NULL;
     }
@@ -2121,8 +2134,25 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
         if (pair == NULL) {
             return -1;
         }
-        assert(PyTuple_CheckExact(pair));
-        assert(PyTuple_GET_SIZE(pair) == 2);
+
+        if (!PyTuple_CheckExact(pair)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a tuple, not %.200s",
+                         Py_TYPE(exc_value)->tp_name, Py_TYPE(pair)->tp_name);
+            Py_DECREF(pair);
+            return -1;
+        }
+
+        // allow tuples of length > 2 for backwards compatibility
+        if (PyTuple_GET_SIZE(pair) < 2) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a 2-tuple, "
+                         "got tuple of size %zd",
+                         Py_TYPE(exc_value)->tp_name, PyTuple_GET_SIZE(pair));
+            Py_DECREF(pair);
+            return -1;
+        }
+
         *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
         *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
         Py_DECREF(pair);
@@ -2886,6 +2916,20 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
     }
 
+    if (origin == NULL && PyModule_Check(v)) {
+        // Fall back to __file__ for diagnostics if we don't have
+        // an origin that is a location
+        origin = PyModule_GetFilenameObject(v);
+        if (origin == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                goto done;
+            }
+            // PyModule_GetFilenameObject raised "module filename missing"
+            _PyErr_Clear(tstate);
+        }
+        assert(origin == NULL || PyUnicode_Check(origin));
+    }
+
     if (is_possibly_shadowing_stdlib) {
         assert(origin);
         errmsg = PyUnicode_FromFormat(
@@ -2946,9 +2990,11 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
 
 done_with_errmsg:
-    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
-    Py_DECREF(errmsg);
+    if (errmsg != NULL) {
+        /* NULL checks for mod_name and origin done by _PyErr_SetImportErrorWithNameFrom */
+        _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+        Py_DECREF(errmsg);
+    }
 
 done:
     Py_XDECREF(origin);

@@ -73,14 +73,24 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
         .ob_type = (type)                           \
+    }
+#else
+#if SIZEOF_VOID_P > 4
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT,  \
+        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG, \
+        .ob_type = (type)                 \
     }
 #else
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT, \
+        .ob_refcnt = _Py_STATIC_IMMORTAL_INITIAL_REFCNT, \
         .ob_type = (type)                 \
     }
+#endif
 #endif
 #define _PyVarObject_HEAD_INIT(type, size)    \
     {                                         \
@@ -121,13 +131,18 @@ extern void _Py_DecRefTotal(PyThreadState *);
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
     if (_Py_IsImmortal(op)) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyThreadState_GET(), n);
 #endif
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt += (PY_UINT32_T)n;
+#else
     op->ob_refcnt += n;
+#endif
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
@@ -145,6 +160,10 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
 #endif
+    // Although the ref count was increased by `n` (which may be greater than 1)
+    // it is only a single increment (i.e. addition) operation, so only 1 refcnt
+    // increment operation is counted.
+    _Py_INCREF_STAT_INC();
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
@@ -170,7 +189,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
-static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
+static inline void _Py_SetMortal(PyObject *op, short refcnt)
 {
     if (op) {
         assert(_Py_IsImmortal(op));
@@ -471,8 +490,8 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    /* Young objects will be moved into the visited space during GC, so set the bit here */
-    gc->_gc_next = ((uintptr_t)generation0) | (uintptr_t)interp->gc.visited_space;
+    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
+    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
@@ -697,7 +716,51 @@ _PyObject_SetMaybeWeakref(PyObject *op)
     }
 }
 
+extern int _PyObject_ResurrectEndSlow(PyObject *op);
 #endif
+
+// Temporarily resurrects an object during deallocation. The refcount is set
+// to one.
+static inline void
+_PyObject_ResurrectStart(PyObject *op)
+{
+    assert(Py_REFCNT(op) == 0);
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_ThreadId());
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 1);
+    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
+#else
+    Py_SET_REFCNT(op, 1);
+#endif
+}
+
+// Undoes an object resurrection by decrementing the refcount without calling
+// _Py_Dealloc(). Returns 0 if the object is dead (the normal case), and
+// deallocation should continue. Returns 1 if the object is still alive.
+static inline int
+_PyObject_ResurrectEnd(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    _Py_DecRefTotal(_PyThreadState_GET());
+#endif
+#ifndef Py_GIL_DISABLED
+    Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+    return Py_REFCNT(op) != 0;
+#else
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
+    if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
+        // Fast-path: object has a single refcount and is owned by this thread
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        return 0;
+    }
+    // Slow-path: object has a shared refcount or is not owned by this thread
+    return _PyObject_ResurrectEndSlow(op);
+#endif
+}
 
 /* Tries to incref op and returns 1 if successful or 0 otherwise. */
 static inline int
@@ -835,6 +898,20 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
                                             PyObject *name, PyObject *value);
 extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
+extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
+                                             unsigned int *);
+
+// Cache the provided init method in the specialization cache of type if the
+// provided type version matches the current version of the type.
+//
+// The cached value is borrowed and is only valid if guarded by a type
+// version check. In free-threaded builds the init method must also use
+// deferred reference counting.
+//
+// Returns 1 if the value was cached or 0 otherwise.
+extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
+                                              PyObject *init,
+                                              unsigned int tp_version);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
@@ -918,6 +995,13 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 PyAPI_DATA(int) _Py_SwappedOp[];
 
 extern void _Py_GetConstant_Init(void);
+
+enum _PyAnnotateFormat {
+    _Py_ANNOTATE_FORMAT_VALUE = 1,
+    _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS = 2,
+    _Py_ANNOTATE_FORMAT_FORWARDREF = 3,
+    _Py_ANNOTATE_FORMAT_STRING = 4,
+};
 
 #ifdef __cplusplus
 }

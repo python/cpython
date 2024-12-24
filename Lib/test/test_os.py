@@ -105,7 +105,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -188,9 +188,6 @@ class FileTests(unittest.TestCase):
         os.close(f)
         self.assertTrue(os.access(os_helper.TESTFN, os.W_OK))
 
-    @unittest.skipIf(
-        support.is_emscripten, "Test is unstable under Emscripten."
-    )
     @unittest.skipIf(
         support.is_wasi, "WASI does not support dup."
     )
@@ -805,14 +802,28 @@ class UtimeTests(unittest.TestCase):
         set_time(filename, (atime_ns, mtime_ns))
         st = os.stat(filename)
 
-        if support_subsecond:
-            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
-            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+        if support.is_emscripten:
+            # Emscripten timestamps are roundtripped through a 53 bit integer of
+            # nanoseconds. If we want to represent ~50 years which is an 11
+            # digits number of seconds:
+            # 2*log10(60) + log10(24) + log10(365) + log10(60) + log10(50)
+            # is about 11. Because 53 * log10(2) is about 16, we only have 5
+            # digits worth of sub-second precision.
+            # Some day it would be good to fix this upstream.
+            delta=1e-5
+            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
+            self.assertAlmostEqual(st.st_mtime_ns, mtime_ns, delta=1e9 * 1e-5)
         else:
-            self.assertEqual(st.st_atime, atime_ns * 1e-9)
-            self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
-        self.assertEqual(st.st_atime_ns, atime_ns)
-        self.assertEqual(st.st_mtime_ns, mtime_ns)
+            if support_subsecond:
+                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
+                self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+            else:
+                self.assertEqual(st.st_atime, atime_ns * 1e-9)
+                self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
+            self.assertEqual(st.st_atime_ns, atime_ns)
+            self.assertEqual(st.st_mtime_ns, mtime_ns)
 
     def test_utime(self):
         def set_time(filename, ns):
@@ -1414,9 +1425,7 @@ class WalkTests(unittest.TestCase):
         else:
             self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
 
-        if not support.is_emscripten:
-            # Emscripten fails with inaccessible directory
-            os.chmod(sub21_path, 0)
+        os.chmod(sub21_path, 0)
         try:
             os.listdir(sub21_path)
         except PermissionError:
@@ -1713,9 +1722,6 @@ class FwalkTests(WalkTests):
                 self.assertEqual(set(os.listdir(rootfd)), set(dirs) | set(files))
 
     @unittest.skipIf(
-        support.is_emscripten, "Cannot dup stdout on Emscripten"
-    )
-    @unittest.skipIf(
         support.is_android, "dup return value is unpredictable on Android"
     )
     def test_fd_leak(self):
@@ -1731,9 +1737,6 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Cannot dup stdout on Emscripten"
-    )
     @unittest.skipIf(
         support.is_android, "dup return value is unpredictable on Android"
     )
@@ -1802,8 +1805,8 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
@@ -1818,8 +1821,8 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
@@ -1836,8 +1839,8 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
@@ -2415,10 +2418,6 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.dup2, 20)
 
     @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
-    @unittest.skipIf(
-        support.is_emscripten,
-        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
-    )
     def test_dup2_negative_fd(self):
         valid_fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, valid_fd)
@@ -2443,14 +2442,14 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.fchown, -1, -1)
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
     def test_fpathconf(self):
         self.assertIn("PC_NAME_MAX", os.pathconf_names)
-        self.check(os.pathconf, "PC_NAME_MAX")
-        self.check(os.fpathconf, "PC_NAME_MAX")
+        if not (support.is_emscripten or support.is_wasi):
+            # musl libc pathconf ignores the file descriptor and always returns
+            # a constant, so the assertion that it should notice a bad file
+            # descriptor and return EBADF fails.
+            self.check(os.pathconf, "PC_NAME_MAX")
+            self.check(os.fpathconf, "PC_NAME_MAX")
         self.check_bool(os.pathconf, "PC_NAME_MAX")
         self.check_bool(os.fpathconf, "PC_NAME_MAX")
 
@@ -3381,9 +3380,6 @@ class DeviceEncodingTests(unittest.TestCase):
     @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
-    @unittest.skipIf(
-        support.is_emscripten, "Cannot get encoding of stdin on Emscripten"
-    )
     def test_device_encoding(self):
         encoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)
@@ -4174,12 +4170,13 @@ class EventfdTests(unittest.TestCase):
         os.eventfd_read(fd)
 
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 100 ms (gh-124873).
+    # emulators, where we allow 10 ms (gh-108277).
     if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 1
+        CLOCK_RES_PLACES = 2
     else:
         CLOCK_RES_PLACES = 3
 
