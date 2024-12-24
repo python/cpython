@@ -934,6 +934,12 @@ Constants
 
    .. versionadded:: 3.13
 
+.. data:: HAS_PHA
+
+   Whether the OpenSSL library has built-in support for TLS-PHA.
+
+   .. versionadded:: next
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list

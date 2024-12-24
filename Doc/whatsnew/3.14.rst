@@ -584,6 +584,14 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
+  TLSv1.3 post-handshake client authentication (PHA).
+  (Contributed by Will Childs-Klein in :gh:`128036`.)
+
+
 symtable
 --------
 

@@ -2073,8 +2073,8 @@ class HTTPSTest(TestCase):
 
     def test_tls13_pha(self):
         import ssl
-        if not ssl.HAS_TLSv1_3:
-            self.skipTest('TLS 1.3 support required')
+        if not ssl.HAS_TLSv1_3 or not ssl.HAS_PHA:
+            self.skipTest('TLS 1.3 PHA support required')
         # just check status of PHA flag
         h = client.HTTPSConnection('localhost', 443)
         self.assertTrue(h._context.post_handshake_auth)
