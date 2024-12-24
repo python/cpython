@@ -58,7 +58,7 @@ def _test_get_event_loop_new_process__sub_proc():
         return 'hello'
 
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    asyncio._set_event_loop(loop)
     return loop.run_until_complete(doit())
 
 
@@ -2695,6 +2695,14 @@ class AbstractEventLoopTests(unittest.TestCase):
 
 class PolicyTests(unittest.TestCase):
 
+    def test_asyncio_set_event_loop_deprecation(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning, "'asyncio.set_event_loop' is deprecated"):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            self.assertIs(loop, asyncio.get_event_loop())
+            loop.close()
+
     def test_abstract_event_loop_policy_deprecation(self):
         with self.assertWarnsRegex(
                 DeprecationWarning, "'asyncio.AbstractEventLoopPolicy' is deprecated"):
@@ -2824,14 +2832,14 @@ class GetEventLoopTestsMixin:
         super().setUp()
 
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        asyncio._set_event_loop(self.loop)
 
     def tearDown(self):
         try:
             super().tearDown()
         finally:
             self.loop.close()
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
 
             events._get_running_loop = self._get_running_loop_saved
             events._set_running_loop = self._set_running_loop_saved
@@ -2885,7 +2893,7 @@ class GetEventLoopTestsMixin:
 
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
 
@@ -2900,10 +2908,10 @@ class GetEventLoopTestsMixin:
 
             loop.run_until_complete(func())
 
-            asyncio.set_event_loop(loop)
+            asyncio._set_event_loop(loop)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
             with self.assertRaises(TestError):
                 asyncio.get_event_loop()
 
@@ -2927,7 +2935,7 @@ class GetEventLoopTestsMixin:
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
@@ -2938,10 +2946,10 @@ class GetEventLoopTestsMixin:
 
             loop.run_until_complete(func())
 
-            asyncio.set_event_loop(loop)
+            asyncio._set_event_loop(loop)
             self.assertIs(asyncio.get_event_loop(), loop)
 
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()
 
