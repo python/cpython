@@ -1,2 +1,2 @@
-Speed up :class:`bytes` creation from :class:`list` and :class:`tuple` by around 62%.
+Speed up :class:`bytes` creation from :class:`list` and :class:`tuple` by around 81%.
 Patch by Ben Hsing
