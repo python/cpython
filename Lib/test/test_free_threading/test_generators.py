@@ -28,6 +28,8 @@ class TestGen(TestCase):
 
                 threads.append(Thread(target=with_iterations, args=(gen,)))
 
+        # Errors might come up, but that's fine.
+        # All we care about is that this doesn't crash.
         for thread in threads:
             thread.start()
 
