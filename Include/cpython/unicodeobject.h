@@ -109,7 +109,7 @@ typedef struct {
                3: Interned, Immortal, and Static
            This categorization allows the runtime to determine the right
            cleanup mechanism at runtime shutdown. */
-        unsigned int interned:2;
+        uint8_t interned;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -146,7 +146,7 @@ typedef struct {
         unsigned int statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :24;
+        unsigned int :18;
     } state;
 } PyASCIIObject;
 
@@ -195,7 +195,11 @@ typedef struct {
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_uint8_relaxed(&_PyASCIIObject_CAST(op)->state.interned);
+#else
     return _PyASCIIObject_CAST(op)->state.interned;
+#endif
 }
 #define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
