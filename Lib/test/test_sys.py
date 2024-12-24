@@ -1762,7 +1762,9 @@ class SizeofTest(unittest.TestCase):
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
         # also update field definitions in test_unicode.test_raiseMemError
-        asciifields = "nnb7x"
+        asciifields = "nnb"
+        if not support.is_wasi:
+            asciifields = asciifields + "3x"
         compactfields = asciifields + "nP"
         unicodefields = compactfields + "P"
         for s in samples:
