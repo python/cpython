@@ -2449,7 +2449,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertIs(s.expandtabs(), s)
 
     def test_raiseMemError(self):
-        asciifields = "nnb"
+        asciifields = "nnb7x"
         compactfields = asciifields + "nP"
         ascii_struct_size = support.calcobjsize(asciifields)
         compact_struct_size = support.calcobjsize(compactfields)
