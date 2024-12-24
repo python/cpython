@@ -728,6 +728,36 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
+    def test_invalid_header_names(self):
+        invalid_headers = [
+            ('Invalid Header', 'contains space'),
+            ('Tab\tHeader', 'contains tab'),
+            ('Colon:Header', 'contains colon'),
+            ('', 'Empty name'),
+            (' LeadingSpace', 'starts with space'),
+            ('TrailingSpace ', 'ends with space'),
+            ('Header\x7F', 'Non-ASCII character'),
+            ('Header\x80', 'Extended ASCII'),
+        ]
+        for thispolicy in (email.policy.default, email.policy.compat32):
+            for method in ('__setitem__', 'add_header'):
+                for name, value in invalid_headers:
+                    with self.subTest(
+                            name=name,
+                            description=value,
+                            policy=thispolicy.__class__.__name__,
+                            method=method,
+                            ):
+                        message = Message(policy=thispolicy)
+                        class_method = getattr(message, method)
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            '(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+                            ) as cm:
+                            class_method(name, value)
+                        self.assertIn(f"{name!r}", str(cm.exception))
+
+
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
             msg = Message()
