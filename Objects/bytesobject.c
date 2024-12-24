@@ -3074,7 +3074,7 @@ PyTypeObject PyBytes_Type = {
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)bytes_richcompare,             /* tp_richcompare */
+    bytes_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     bytes_iter,                                 /* tp_iter */
     0,                                          /* tp_iternext */
