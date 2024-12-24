@@ -1,0 +1,1 @@
+Fix possible data races when using :term:`generator iterator` objects concurrently.

@@ -17,8 +17,14 @@
 
 #include "pystats.h"
 
+/*[clinic input]
+class generator "PyGenObject *" "&PyGen_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6c98fdc710c6976]*/
+
+#include "clinic/genobject.c.h"
+
 // Forward declarations
-static PyObject* gen_close(PyObject *, PyObject *);
 static PyObject* async_gen_asend_new(PyAsyncGenObject *, PyObject *);
 static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
 
@@ -119,7 +125,7 @@ _PyGen_Finalize(PyObject *self)
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
-        PyObject *res = gen_close((PyObject*)gen, NULL);
+        PyObject *res = gen_close(gen, NULL);
         if (res == NULL) {
             if (PyErr_Occurred()) {
                 PyErr_WriteUnraisable(self);
@@ -175,7 +181,7 @@ gen_dealloc(PyObject *self)
 }
 
 static PySendResult
-gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+gen_send_ex2_lock_held(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -273,6 +279,17 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
 
+static inline PySendResult
+gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+             int exc, int closing)
+{
+    PySendResult result;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    result = gen_send_ex2_lock_held(gen, arg, presult, exc, closing);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PySendResult
 PyGen_am_send(PyObject *self, PyObject *arg, PyObject **result)
 {
@@ -324,7 +341,7 @@ gen_close_iter(PyObject *yf)
     PyObject *retval = NULL;
 
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
-        retval = gen_close((PyObject *)yf, NULL);
+        retval = gen_close((PyGenObject *)yf, NULL);
         if (retval == NULL)
             return -1;
     }
@@ -355,8 +372,8 @@ is_resume(_Py_CODEUNIT *instr)
     );
 }
 
-PyObject *
-_PyGen_yf(PyGenObject *gen)
+static PyObject *
+_PyGen_yf_lock_held(PyGenObject *gen)
 {
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
@@ -368,8 +385,26 @@ _PyGen_yf(PyGenObject *gen)
     return NULL;
 }
 
+PyObject *
+_PyGen_yf(PyGenObject *gen)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _PyGen_yf_lock_held(gen);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+/*[clinic input]
+@critical_section
+generator.close as gen_close
+
+raise GeneratorExit inside generator.
+[clinic start generated code]*/
+
 static PyObject *
-gen_close(PyObject *self, PyObject *args)
+gen_close_impl(PyGenObject *self)
+/*[clinic end generated code: output=2d7adf450173059c input=417e6161842080c9]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
@@ -434,7 +469,6 @@ gen_close(PyObject *self, PyObject *args)
     }
     return NULL;
 }
-
 
 PyDoc_STRVAR(throw_doc,
 "throw(value)\n\
@@ -604,7 +638,11 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, 1, typ, val, tb);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _gen_throw(gen, 1, typ, val, tb);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
@@ -749,27 +787,40 @@ gen_getyieldfrom(PyObject *gen, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_running as gen_getrunning
+[clinic start generated code]*/
 
 static PyObject *
-gen_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+gen_getrunning_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a7233b957ce88a6f input=d3d995cf1581b21b]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
+    if (self->gi_frame_state == FRAME_EXECUTING) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_suspended as gen_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-gen_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+gen_getsuspended_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a0345f9be186eda3 input=880e9fb8436726cb]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
     return PyBool_FromLong(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
 }
 
 static PyObject *
-_gen_getframe(PyGenObject *gen, const char *const name)
+_gen_getframe(PyGenObject *self, const char *name)
 {
+    PyGenObject *gen = _PyGen_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
         return NULL;
     }
@@ -783,7 +834,11 @@ static PyObject *
 gen_getframe(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *gen = _PyGen_CAST(self);
-    return _gen_getframe(gen, "gi_frame");
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _gen_getframe(gen, "gi_frame");
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -809,9 +864,9 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("qualified name of the generator")},
     {"gi_yieldfrom", gen_getyieldfrom, NULL,
      PyDoc_STR("object being iterated by yield from, or None")},
-    {"gi_running", gen_getrunning, NULL, NULL},
+    GEN_GETRUNNING_GETSETDEF
+    GEN_GETSUSPENDED_GETSETDEF
     {"gi_frame", gen_getframe,  NULL, NULL},
-    {"gi_suspended", gen_getsuspended,  NULL, NULL},
     {"gi_code", gen_getcode,  NULL, NULL},
     {NULL} /* Sentinel */
 };
@@ -836,7 +891,7 @@ PyDoc_STRVAR(sizeof__doc__,
 static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
-    {"close", gen_close, METH_NOARGS, close_doc},
+    GEN_CLOSE_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1197,7 +1252,7 @@ PyDoc_STRVAR(coro_close_doc,
 static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
-    {"close", gen_close, METH_NOARGS, coro_close_doc},
+    GEN_CLOSE_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1296,7 +1351,7 @@ static PyObject *
 coro_wrapper_close(PyObject *self, PyObject *args)
 {
     PyCoroWrapper *cw = _PyCoroWrapper_CAST(self);
-    return gen_close((PyObject *)cw->cw_coroutine, args);
+    return gen_close((PyGenObject *)cw->cw_coroutine, args);
 }
 
 static int
