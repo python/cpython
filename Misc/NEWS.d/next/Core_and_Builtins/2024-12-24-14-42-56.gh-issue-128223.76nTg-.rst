@@ -1,0 +1,1 @@
+Made some minor changes to tokenize.py to clean up the imports, disambiguate some variable names and add comments to a method with some potentially confusing behavior.
