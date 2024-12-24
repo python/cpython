@@ -26436,8 +26436,8 @@ printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C99-specific strftime specifiers are supported" >&5
-printf %s "checking whether C99-specific strftime specifiers are supported... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C99-compatible strftime specifiers are supported" >&5
+printf %s "checking whether C99-compatible strftime specifiers are supported... " >&6; }
 if test ${ac_cv_strftime_c99_support+y}
 then :
   printf %s "(cached) " >&6
@@ -26445,7 +26445,7 @@ else $as_nop
 
 if test "$cross_compiling" = yes
 then :
-  ac_cv_strftime_c99_support=no
+  ac_cv_strftime_c99_support=yes
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -26481,11 +26481,9 @@ fi
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_strftime_c99_support" >&5
 printf "%s\n" "$ac_cv_strftime_c99_support" >&6; }
-if test "$ac_cv_strftime_c99_support" = yes
+if test "$ac_cv_strftime_c99_support" = no
 then
-
-printf "%s\n" "#define Py_STRFTIME_C99_SUPPORT 1" >>confdefs.h
-
+  as_fn_error $? "Python requires C99-compatible strftime specifiers" "$LINENO" 5
 fi
 
 have_curses=no
