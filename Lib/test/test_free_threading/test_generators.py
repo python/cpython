@@ -28,13 +28,14 @@ class TestGen(TestCase):
 
                 threads.append(Thread(target=with_iterations, args=(gen,)))
 
-        # Errors might come up, but that's fine.
-        # All we care about is that this doesn't crash.
-        for thread in threads:
-            thread.start()
+        with threading_helper.catch_threading_exception():
+            # Errors might come up, but that's fine.
+            # All we care about is that this doesn't crash.
+            for thread in threads:
+                thread.start()
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
 
     def test_generator_send(self):
         self.stress_generator(lambda gen: next(gen))
