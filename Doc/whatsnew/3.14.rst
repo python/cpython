@@ -300,12 +300,18 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
+
 * The default ``ProcessPoolExecutor`` start method (see
   :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
   platforms other than macOS & Windows. If you require the threading
   incompatible *fork* start method you must explicitly request it by
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`concurrent.futures.Executor.map` to specify the number
+  of results that can be buffered before being yielded.
+  (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
 
 ctypes
 ------
