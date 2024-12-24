@@ -328,14 +328,15 @@ class WinPolicyTests(WindowsEventsTestCase):
 
     def test_selector_win_policy(self):
         async def main():
-            self.assertIsInstance(
-                asyncio.get_running_loop(),
-                asyncio.SelectorEventLoop)
+            self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
 
         old_policy = asyncio._get_event_loop_policy()
         try:
-            asyncio._set_event_loop_policy(
-                asyncio.WindowsSelectorEventLoopPolicy())
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'asyncio.WindowsSelectorEventLoopPolicy' is deprecated",
+            ):
+                asyncio._set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
             asyncio.run(main())
         finally:
             asyncio._set_event_loop_policy(old_policy)
@@ -348,8 +349,11 @@ class WinPolicyTests(WindowsEventsTestCase):
 
         old_policy = asyncio._get_event_loop_policy()
         try:
-            asyncio._set_event_loop_policy(
-                asyncio.WindowsProactorEventLoopPolicy())
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'asyncio.WindowsProactorEventLoopPolicy' is deprecated",
+            ):
+                asyncio._set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
             asyncio.run(main())
         finally:
             asyncio._set_event_loop_policy(old_policy)

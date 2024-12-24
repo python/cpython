@@ -5,7 +5,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    'AbstractEventLoopPolicy',
+    '_AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
     'Handle', 'TimerHandle',
     '_get_event_loop_policy',
@@ -632,7 +632,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
 
-class AbstractEventLoopPolicy:
+class _AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
 
     def get_event_loop(self):
@@ -655,7 +655,7 @@ class AbstractEventLoopPolicy:
         the current context, set_event_loop must be called explicitly."""
         raise NotImplementedError
 
-class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
+class _BaseDefaultEventLoopPolicy(_AbstractEventLoopPolicy):
     """Default policy implementation for accessing the event loop.
 
     In this policy, each thread has its own event loop.  However, we
@@ -758,8 +758,8 @@ def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
         if _event_loop_policy is None:  # pragma: no branch
-            from . import DefaultEventLoopPolicy
-            _event_loop_policy = DefaultEventLoopPolicy()
+            from . import _DefaultEventLoopPolicy
+            _event_loop_policy = _DefaultEventLoopPolicy()
 
 
 def _get_event_loop_policy():
@@ -777,7 +777,7 @@ def _set_event_loop_policy(policy):
 
     If policy is None, the default policy is restored."""
     global _event_loop_policy
-    if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
+    if policy is not None and not isinstance(policy, _AbstractEventLoopPolicy):
         raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
@@ -838,7 +838,7 @@ if hasattr(os, 'fork'):
     def on_fork():
         # Reset the loop and wakeupfd in the forked child process.
         if _event_loop_policy is not None:
-            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+            _event_loop_policy._local = _BaseDefaultEventLoopPolicy._Local()
         _set_running_loop(None)
         signal.set_wakeup_fd(-1)
 
