@@ -266,11 +266,6 @@
       <IntFile>$(IntDir)abc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
     </None>
-    <None Include="..\Lib\aifc.py">
-      <ModName>aifc</ModName>
-      <IntFile>$(IntDir)aifc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\aifc.h</OutFile>
-    </None>
     <None Include="..\Lib\_aix_support.py">
       <ModName>_aix_support</ModName>
       <IntFile>$(IntDir)_aix_support.g.h</IntFile>
@@ -310,21 +305,6 @@
       <ModName>calendar</ModName>
       <IntFile>$(IntDir)calendar.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\calendar.h</OutFile>
-    </None>
-    <None Include="..\Lib\cgi.py">
-      <ModName>cgi</ModName>
-      <IntFile>$(IntDir)cgi.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\cgi.h</OutFile>
-    </None>
-    <None Include="..\Lib\cgitb.py">
-      <ModName>cgitb</ModName>
-      <IntFile>$(IntDir)cgitb.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\cgitb.h</OutFile>
-    </None>
-    <None Include="..\Lib\chunk.py">
-      <ModName>chunk</ModName>
-      <IntFile>$(IntDir)chunk.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\chunk.h</OutFile>
     </None>
     <None Include="..\Lib\cmd.py">
       <ModName>cmd</ModName>
@@ -436,11 +416,6 @@
       <IntFile>$(IntDir)cProfile.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\cProfile.h</OutFile>
     </None>
-    <None Include="..\Lib\crypt.py">
-      <ModName>crypt</ModName>
-      <IntFile>$(IntDir)crypt.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\crypt.h</OutFile>
-    </None>
     <None Include="..\Lib\csv.py">
       <ModName>csv</ModName>
       <IntFile>$(IntDir)csv.g.h</IntFile>
@@ -490,156 +465,6 @@
       <ModName>dis</ModName>
       <IntFile>$(IntDir)dis.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\dis.h</OutFile>
-    </None>
-    <None Include="..\Lib\doctest.py">
-      <ModName>doctest</ModName>
-      <IntFile>$(IntDir)doctest.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\doctest.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\__init__.py">
-      <ModName>email</ModName>
-      <IntFile>$(IntDir)email.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\_encoded_words.py">
-      <ModName>email._encoded_words</ModName>
-      <IntFile>$(IntDir)email._encoded_words.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email._encoded_words.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\_header_value_parser.py">
-      <ModName>email._header_value_parser</ModName>
-      <IntFile>$(IntDir)email._header_value_parser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email._header_value_parser.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\_parseaddr.py">
-      <ModName>email._parseaddr</ModName>
-      <IntFile>$(IntDir)email._parseaddr.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email._parseaddr.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\_policybase.py">
-      <ModName>email._policybase</ModName>
-      <IntFile>$(IntDir)email._policybase.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email._policybase.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\base64mime.py">
-      <ModName>email.base64mime</ModName>
-      <IntFile>$(IntDir)email.base64mime.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.base64mime.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\charset.py">
-      <ModName>email.charset</ModName>
-      <IntFile>$(IntDir)email.charset.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.charset.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\contentmanager.py">
-      <ModName>email.contentmanager</ModName>
-      <IntFile>$(IntDir)email.contentmanager.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.contentmanager.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\encoders.py">
-      <ModName>email.encoders</ModName>
-      <IntFile>$(IntDir)email.encoders.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.encoders.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\errors.py">
-      <ModName>email.errors</ModName>
-      <IntFile>$(IntDir)email.errors.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.errors.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\feedparser.py">
-      <ModName>email.feedparser</ModName>
-      <IntFile>$(IntDir)email.feedparser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.feedparser.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\generator.py">
-      <ModName>email.generator</ModName>
-      <IntFile>$(IntDir)email.generator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.generator.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\header.py">
-      <ModName>email.header</ModName>
-      <IntFile>$(IntDir)email.header.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.header.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\headerregistry.py">
-      <ModName>email.headerregistry</ModName>
-      <IntFile>$(IntDir)email.headerregistry.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.headerregistry.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\iterators.py">
-      <ModName>email.iterators</ModName>
-      <IntFile>$(IntDir)email.iterators.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.iterators.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\message.py">
-      <ModName>email.message</ModName>
-      <IntFile>$(IntDir)email.message.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.message.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\__init__.py">
-      <ModName>email.mime</ModName>
-      <IntFile>$(IntDir)email.mime.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\application.py">
-      <ModName>email.mime.application</ModName>
-      <IntFile>$(IntDir)email.mime.application.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.application.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\audio.py">
-      <ModName>email.mime.audio</ModName>
-      <IntFile>$(IntDir)email.mime.audio.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.audio.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\base.py">
-      <ModName>email.mime.base</ModName>
-      <IntFile>$(IntDir)email.mime.base.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.base.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\image.py">
-      <ModName>email.mime.image</ModName>
-      <IntFile>$(IntDir)email.mime.image.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.image.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\message.py">
-      <ModName>email.mime.message</ModName>
-      <IntFile>$(IntDir)email.mime.message.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.message.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\multipart.py">
-      <ModName>email.mime.multipart</ModName>
-      <IntFile>$(IntDir)email.mime.multipart.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.multipart.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\nonmultipart.py">
-      <ModName>email.mime.nonmultipart</ModName>
-      <IntFile>$(IntDir)email.mime.nonmultipart.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.nonmultipart.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\mime\text.py">
-      <ModName>email.mime.text</ModName>
-      <IntFile>$(IntDir)email.mime.text.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.mime.text.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\parser.py">
-      <ModName>email.parser</ModName>
-      <IntFile>$(IntDir)email.parser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.parser.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\policy.py">
-      <ModName>email.policy</ModName>
-      <IntFile>$(IntDir)email.policy.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.policy.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\quoprimime.py">
-      <ModName>email.quoprimime</ModName>
-      <IntFile>$(IntDir)email.quoprimime.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.quoprimime.h</OutFile>
-    </None>
-    <None Include="..\Lib\email\utils.py">
-      <ModName>email.utils</ModName>
-      <IntFile>$(IntDir)email.utils.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\email.utils.h</OutFile>
     </None>
     <None Include="..\Lib\encodings\__init__.py">
       <ModName>encodings</ModName>
@@ -1356,680 +1181,10 @@
       <IntFile>$(IntDir)hmac.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\hmac.h</OutFile>
     </None>
-    <None Include="..\Lib\html\__init__.py">
-      <ModName>html</ModName>
-      <IntFile>$(IntDir)html.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\html.h</OutFile>
-    </None>
-    <None Include="..\Lib\html\entities.py">
-      <ModName>html.entities</ModName>
-      <IntFile>$(IntDir)html.entities.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\html.entities.h</OutFile>
-    </None>
-    <None Include="..\Lib\html\parser.py">
-      <ModName>html.parser</ModName>
-      <IntFile>$(IntDir)html.parser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\html.parser.h</OutFile>
-    </None>
-    <None Include="..\Lib\http\__init__.py">
-      <ModName>http</ModName>
-      <IntFile>$(IntDir)http.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\http.h</OutFile>
-    </None>
-    <None Include="..\Lib\http\client.py">
-      <ModName>http.client</ModName>
-      <IntFile>$(IntDir)http.client.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\http.client.h</OutFile>
-    </None>
-    <None Include="..\Lib\http\cookiejar.py">
-      <ModName>http.cookiejar</ModName>
-      <IntFile>$(IntDir)http.cookiejar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\http.cookiejar.h</OutFile>
-    </None>
-    <None Include="..\Lib\http\cookies.py">
-      <ModName>http.cookies</ModName>
-      <IntFile>$(IntDir)http.cookies.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\http.cookies.h</OutFile>
-    </None>
-    <None Include="..\Lib\http\server.py">
-      <ModName>http.server</ModName>
-      <IntFile>$(IntDir)http.server.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\http.server.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\__init__.py">
-      <ModName>idlelib</ModName>
-      <IntFile>$(IntDir)idlelib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\__main__.py">
-      <ModName>idlelib.__main__</ModName>
-      <IntFile>$(IntDir)idlelib.__main__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.__main__.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\autocomplete.py">
-      <ModName>idlelib.autocomplete</ModName>
-      <IntFile>$(IntDir)idlelib.autocomplete.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.autocomplete.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\autocomplete_w.py">
-      <ModName>idlelib.autocomplete_w</ModName>
-      <IntFile>$(IntDir)idlelib.autocomplete_w.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.autocomplete_w.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\autoexpand.py">
-      <ModName>idlelib.autoexpand</ModName>
-      <IntFile>$(IntDir)idlelib.autoexpand.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.autoexpand.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\browser.py">
-      <ModName>idlelib.browser</ModName>
-      <IntFile>$(IntDir)idlelib.browser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.browser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\calltip.py">
-      <ModName>idlelib.calltip</ModName>
-      <IntFile>$(IntDir)idlelib.calltip.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.calltip.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\calltip_w.py">
-      <ModName>idlelib.calltip_w</ModName>
-      <IntFile>$(IntDir)idlelib.calltip_w.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.calltip_w.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\codecontext.py">
-      <ModName>idlelib.codecontext</ModName>
-      <IntFile>$(IntDir)idlelib.codecontext.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.codecontext.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\colorizer.py">
-      <ModName>idlelib.colorizer</ModName>
-      <IntFile>$(IntDir)idlelib.colorizer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.colorizer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\config.py">
-      <ModName>idlelib.config</ModName>
-      <IntFile>$(IntDir)idlelib.config.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.config.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\config_key.py">
-      <ModName>idlelib.config_key</ModName>
-      <IntFile>$(IntDir)idlelib.config_key.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.config_key.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\configdialog.py">
-      <ModName>idlelib.configdialog</ModName>
-      <IntFile>$(IntDir)idlelib.configdialog.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.configdialog.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\debugger.py">
-      <ModName>idlelib.debugger</ModName>
-      <IntFile>$(IntDir)idlelib.debugger.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.debugger.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\debugger_r.py">
-      <ModName>idlelib.debugger_r</ModName>
-      <IntFile>$(IntDir)idlelib.debugger_r.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.debugger_r.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\debugobj.py">
-      <ModName>idlelib.debugobj</ModName>
-      <IntFile>$(IntDir)idlelib.debugobj.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.debugobj.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\debugobj_r.py">
-      <ModName>idlelib.debugobj_r</ModName>
-      <IntFile>$(IntDir)idlelib.debugobj_r.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.debugobj_r.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\delegator.py">
-      <ModName>idlelib.delegator</ModName>
-      <IntFile>$(IntDir)idlelib.delegator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.delegator.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\dynoption.py">
-      <ModName>idlelib.dynoption</ModName>
-      <IntFile>$(IntDir)idlelib.dynoption.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.dynoption.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\editor.py">
-      <ModName>idlelib.editor</ModName>
-      <IntFile>$(IntDir)idlelib.editor.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.editor.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\filelist.py">
-      <ModName>idlelib.filelist</ModName>
-      <IntFile>$(IntDir)idlelib.filelist.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.filelist.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\format.py">
-      <ModName>idlelib.format</ModName>
-      <IntFile>$(IntDir)idlelib.format.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.format.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\grep.py">
-      <ModName>idlelib.grep</ModName>
-      <IntFile>$(IntDir)idlelib.grep.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.grep.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\help.py">
-      <ModName>idlelib.help</ModName>
-      <IntFile>$(IntDir)idlelib.help.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.help.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\help_about.py">
-      <ModName>idlelib.help_about</ModName>
-      <IntFile>$(IntDir)idlelib.help_about.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.help_about.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\history.py">
-      <ModName>idlelib.history</ModName>
-      <IntFile>$(IntDir)idlelib.history.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.history.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\hyperparser.py">
-      <ModName>idlelib.hyperparser</ModName>
-      <IntFile>$(IntDir)idlelib.hyperparser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.hyperparser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle.py">
-      <ModName>idlelib.idle</ModName>
-      <IntFile>$(IntDir)idlelib.idle.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\__init__.py">
-      <ModName>idlelib.idle_test</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\htest.py">
-      <ModName>idlelib.idle_test.htest</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.htest.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.htest.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\mock_idle.py">
-      <ModName>idlelib.idle_test.mock_idle</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.mock_idle.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.mock_idle.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\mock_tk.py">
-      <ModName>idlelib.idle_test.mock_tk</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.mock_tk.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.mock_tk.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\template.py">
-      <ModName>idlelib.idle_test.template</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.template.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.template.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autocomplete.py">
-      <ModName>idlelib.idle_test.test_autocomplete</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_autocomplete.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autocomplete.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autocomplete_w.py">
-      <ModName>idlelib.idle_test.test_autocomplete_w</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_autocomplete_w.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autocomplete_w.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autoexpand.py">
-      <ModName>idlelib.idle_test.test_autoexpand</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_autoexpand.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autoexpand.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_browser.py">
-      <ModName>idlelib.idle_test.test_browser</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_browser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_browser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_calltip.py">
-      <ModName>idlelib.idle_test.test_calltip</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_calltip.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_calltip.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_calltip_w.py">
-      <ModName>idlelib.idle_test.test_calltip_w</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_calltip_w.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_calltip_w.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_codecontext.py">
-      <ModName>idlelib.idle_test.test_codecontext</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_codecontext.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_codecontext.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_colorizer.py">
-      <ModName>idlelib.idle_test.test_colorizer</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_colorizer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_colorizer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_config.py">
-      <ModName>idlelib.idle_test.test_config</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_config.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_config.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_config_key.py">
-      <ModName>idlelib.idle_test.test_config_key</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_config_key.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_config_key.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_configdialog.py">
-      <ModName>idlelib.idle_test.test_configdialog</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_configdialog.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_configdialog.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugger.py">
-      <ModName>idlelib.idle_test.test_debugger</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_debugger.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugger.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugger_r.py">
-      <ModName>idlelib.idle_test.test_debugger_r</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_debugger_r.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugger_r.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugobj.py">
-      <ModName>idlelib.idle_test.test_debugobj</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_debugobj.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugobj.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugobj_r.py">
-      <ModName>idlelib.idle_test.test_debugobj_r</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_debugobj_r.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugobj_r.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_delegator.py">
-      <ModName>idlelib.idle_test.test_delegator</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_delegator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_delegator.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_editmenu.py">
-      <ModName>idlelib.idle_test.test_editmenu</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_editmenu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_editmenu.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_editor.py">
-      <ModName>idlelib.idle_test.test_editor</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_editor.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_editor.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_filelist.py">
-      <ModName>idlelib.idle_test.test_filelist</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_filelist.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_filelist.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_format.py">
-      <ModName>idlelib.idle_test.test_format</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_format.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_format.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_grep.py">
-      <ModName>idlelib.idle_test.test_grep</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_grep.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_grep.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_help.py">
-      <ModName>idlelib.idle_test.test_help</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_help.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_help.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_help_about.py">
-      <ModName>idlelib.idle_test.test_help_about</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_help_about.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_help_about.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_history.py">
-      <ModName>idlelib.idle_test.test_history</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_history.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_history.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_hyperparser.py">
-      <ModName>idlelib.idle_test.test_hyperparser</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_hyperparser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_hyperparser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_iomenu.py">
-      <ModName>idlelib.idle_test.test_iomenu</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_iomenu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_iomenu.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_macosx.py">
-      <ModName>idlelib.idle_test.test_macosx</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_macosx.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_macosx.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_mainmenu.py">
-      <ModName>idlelib.idle_test.test_mainmenu</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_mainmenu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_mainmenu.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_multicall.py">
-      <ModName>idlelib.idle_test.test_multicall</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_multicall.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_multicall.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_outwin.py">
-      <ModName>idlelib.idle_test.test_outwin</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_outwin.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_outwin.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_parenmatch.py">
-      <ModName>idlelib.idle_test.test_parenmatch</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_parenmatch.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_parenmatch.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pathbrowser.py">
-      <ModName>idlelib.idle_test.test_pathbrowser</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_pathbrowser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pathbrowser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_percolator.py">
-      <ModName>idlelib.idle_test.test_percolator</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_percolator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_percolator.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pyparse.py">
-      <ModName>idlelib.idle_test.test_pyparse</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_pyparse.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pyparse.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pyshell.py">
-      <ModName>idlelib.idle_test.test_pyshell</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_pyshell.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pyshell.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_query.py">
-      <ModName>idlelib.idle_test.test_query</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_query.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_query.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_redirector.py">
-      <ModName>idlelib.idle_test.test_redirector</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_redirector.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_redirector.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_replace.py">
-      <ModName>idlelib.idle_test.test_replace</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_replace.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_replace.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_rpc.py">
-      <ModName>idlelib.idle_test.test_rpc</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_rpc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_rpc.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_run.py">
-      <ModName>idlelib.idle_test.test_run</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_run.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_run.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_runscript.py">
-      <ModName>idlelib.idle_test.test_runscript</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_runscript.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_runscript.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_scrolledlist.py">
-      <ModName>idlelib.idle_test.test_scrolledlist</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_scrolledlist.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_scrolledlist.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_search.py">
-      <ModName>idlelib.idle_test.test_search</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_search.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_search.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_searchbase.py">
-      <ModName>idlelib.idle_test.test_searchbase</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_searchbase.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_searchbase.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_searchengine.py">
-      <ModName>idlelib.idle_test.test_searchengine</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_searchengine.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_searchengine.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_sidebar.py">
-      <ModName>idlelib.idle_test.test_sidebar</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_sidebar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_sidebar.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_squeezer.py">
-      <ModName>idlelib.idle_test.test_squeezer</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_squeezer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_squeezer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_stackviewer.py">
-      <ModName>idlelib.idle_test.test_stackviewer</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_stackviewer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_stackviewer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_statusbar.py">
-      <ModName>idlelib.idle_test.test_statusbar</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_statusbar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_statusbar.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_text.py">
-      <ModName>idlelib.idle_test.test_text</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_text.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_text.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_textview.py">
-      <ModName>idlelib.idle_test.test_textview</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_textview.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_textview.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_tooltip.py">
-      <ModName>idlelib.idle_test.test_tooltip</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_tooltip.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_tooltip.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_tree.py">
-      <ModName>idlelib.idle_test.test_tree</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_tree.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_tree.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_undo.py">
-      <ModName>idlelib.idle_test.test_undo</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_undo.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_undo.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_util.py">
-      <ModName>idlelib.idle_test.test_util</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_util.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_util.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_warning.py">
-      <ModName>idlelib.idle_test.test_warning</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_warning.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_warning.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_window.py">
-      <ModName>idlelib.idle_test.test_window</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_window.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_window.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_zoomheight.py">
-      <ModName>idlelib.idle_test.test_zoomheight</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_zoomheight.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_zoomheight.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_zzdummy.py">
-      <ModName>idlelib.idle_test.test_zzdummy</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.test_zzdummy.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_zzdummy.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\tkinter_testing_utils.py">
-      <ModName>idlelib.idle_test.tkinter_testing_utils</ModName>
-      <IntFile>$(IntDir)idlelib.idle_test.tkinter_testing_utils.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.idle_test.tkinter_testing_utils.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\iomenu.py">
-      <ModName>idlelib.iomenu</ModName>
-      <IntFile>$(IntDir)idlelib.iomenu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.iomenu.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\macosx.py">
-      <ModName>idlelib.macosx</ModName>
-      <IntFile>$(IntDir)idlelib.macosx.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.macosx.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\mainmenu.py">
-      <ModName>idlelib.mainmenu</ModName>
-      <IntFile>$(IntDir)idlelib.mainmenu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.mainmenu.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\multicall.py">
-      <ModName>idlelib.multicall</ModName>
-      <IntFile>$(IntDir)idlelib.multicall.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.multicall.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\outwin.py">
-      <ModName>idlelib.outwin</ModName>
-      <IntFile>$(IntDir)idlelib.outwin.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.outwin.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\parenmatch.py">
-      <ModName>idlelib.parenmatch</ModName>
-      <IntFile>$(IntDir)idlelib.parenmatch.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.parenmatch.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\pathbrowser.py">
-      <ModName>idlelib.pathbrowser</ModName>
-      <IntFile>$(IntDir)idlelib.pathbrowser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.pathbrowser.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\percolator.py">
-      <ModName>idlelib.percolator</ModName>
-      <IntFile>$(IntDir)idlelib.percolator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.percolator.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\pyparse.py">
-      <ModName>idlelib.pyparse</ModName>
-      <IntFile>$(IntDir)idlelib.pyparse.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.pyparse.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\pyshell.py">
-      <ModName>idlelib.pyshell</ModName>
-      <IntFile>$(IntDir)idlelib.pyshell.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.pyshell.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\query.py">
-      <ModName>idlelib.query</ModName>
-      <IntFile>$(IntDir)idlelib.query.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.query.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\redirector.py">
-      <ModName>idlelib.redirector</ModName>
-      <IntFile>$(IntDir)idlelib.redirector.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.redirector.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\replace.py">
-      <ModName>idlelib.replace</ModName>
-      <IntFile>$(IntDir)idlelib.replace.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.replace.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\rpc.py">
-      <ModName>idlelib.rpc</ModName>
-      <IntFile>$(IntDir)idlelib.rpc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.rpc.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\run.py">
-      <ModName>idlelib.run</ModName>
-      <IntFile>$(IntDir)idlelib.run.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.run.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\runscript.py">
-      <ModName>idlelib.runscript</ModName>
-      <IntFile>$(IntDir)idlelib.runscript.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.runscript.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\scrolledlist.py">
-      <ModName>idlelib.scrolledlist</ModName>
-      <IntFile>$(IntDir)idlelib.scrolledlist.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.scrolledlist.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\search.py">
-      <ModName>idlelib.search</ModName>
-      <IntFile>$(IntDir)idlelib.search.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.search.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\searchbase.py">
-      <ModName>idlelib.searchbase</ModName>
-      <IntFile>$(IntDir)idlelib.searchbase.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.searchbase.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\searchengine.py">
-      <ModName>idlelib.searchengine</ModName>
-      <IntFile>$(IntDir)idlelib.searchengine.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.searchengine.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\sidebar.py">
-      <ModName>idlelib.sidebar</ModName>
-      <IntFile>$(IntDir)idlelib.sidebar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.sidebar.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\squeezer.py">
-      <ModName>idlelib.squeezer</ModName>
-      <IntFile>$(IntDir)idlelib.squeezer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.squeezer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\stackviewer.py">
-      <ModName>idlelib.stackviewer</ModName>
-      <IntFile>$(IntDir)idlelib.stackviewer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.stackviewer.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\statusbar.py">
-      <ModName>idlelib.statusbar</ModName>
-      <IntFile>$(IntDir)idlelib.statusbar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.statusbar.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\textview.py">
-      <ModName>idlelib.textview</ModName>
-      <IntFile>$(IntDir)idlelib.textview.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.textview.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\tooltip.py">
-      <ModName>idlelib.tooltip</ModName>
-      <IntFile>$(IntDir)idlelib.tooltip.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.tooltip.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\tree.py">
-      <ModName>idlelib.tree</ModName>
-      <IntFile>$(IntDir)idlelib.tree.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.tree.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\undo.py">
-      <ModName>idlelib.undo</ModName>
-      <IntFile>$(IntDir)idlelib.undo.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.undo.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\util.py">
-      <ModName>idlelib.util</ModName>
-      <IntFile>$(IntDir)idlelib.util.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.util.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\window.py">
-      <ModName>idlelib.window</ModName>
-      <IntFile>$(IntDir)idlelib.window.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.window.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\zoomheight.py">
-      <ModName>idlelib.zoomheight</ModName>
-      <IntFile>$(IntDir)idlelib.zoomheight.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.zoomheight.h</OutFile>
-    </None>
-    <None Include="..\Lib\idlelib\zzdummy.py">
-      <ModName>idlelib.zzdummy</ModName>
-      <IntFile>$(IntDir)idlelib.zzdummy.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\idlelib.zzdummy.h</OutFile>
-    </None>
     <None Include="..\Lib\imaplib.py">
       <ModName>imaplib</ModName>
       <IntFile>$(IntDir)imaplib.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\imaplib.h</OutFile>
-    </None>
-    <None Include="..\Lib\imghdr.py">
-      <ModName>imghdr</ModName>
-      <IntFile>$(IntDir)imghdr.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\imghdr.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\__init__.py">
       <ModName>importlib</ModName>
@@ -2186,371 +1341,6 @@
       <IntFile>$(IntDir)keyword.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\keyword.h</OutFile>
     </None>
-    <None Include="..\Lib\lib2to3\__init__.py">
-      <ModName>lib2to3</ModName>
-      <IntFile>$(IntDir)lib2to3.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\__main__.py">
-      <ModName>lib2to3.__main__</ModName>
-      <IntFile>$(IntDir)lib2to3.__main__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.__main__.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\btm_matcher.py">
-      <ModName>lib2to3.btm_matcher</ModName>
-      <IntFile>$(IntDir)lib2to3.btm_matcher.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.btm_matcher.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\btm_utils.py">
-      <ModName>lib2to3.btm_utils</ModName>
-      <IntFile>$(IntDir)lib2to3.btm_utils.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.btm_utils.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixer_base.py">
-      <ModName>lib2to3.fixer_base</ModName>
-      <IntFile>$(IntDir)lib2to3.fixer_base.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixer_base.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixer_util.py">
-      <ModName>lib2to3.fixer_util</ModName>
-      <IntFile>$(IntDir)lib2to3.fixer_util.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixer_util.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\__init__.py">
-      <ModName>lib2to3.fixes</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_apply.py">
-      <ModName>lib2to3.fixes.fix_apply</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_apply.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_apply.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_asserts.py">
-      <ModName>lib2to3.fixes.fix_asserts</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_asserts.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_asserts.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_basestring.py">
-      <ModName>lib2to3.fixes.fix_basestring</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_basestring.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_basestring.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_buffer.py">
-      <ModName>lib2to3.fixes.fix_buffer</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_buffer.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_buffer.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_dict.py">
-      <ModName>lib2to3.fixes.fix_dict</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_dict.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_dict.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_except.py">
-      <ModName>lib2to3.fixes.fix_except</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_except.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_except.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_exec.py">
-      <ModName>lib2to3.fixes.fix_exec</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_exec.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_exec.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_execfile.py">
-      <ModName>lib2to3.fixes.fix_execfile</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_execfile.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_execfile.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_exitfunc.py">
-      <ModName>lib2to3.fixes.fix_exitfunc</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_exitfunc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_exitfunc.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_filter.py">
-      <ModName>lib2to3.fixes.fix_filter</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_filter.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_filter.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_funcattrs.py">
-      <ModName>lib2to3.fixes.fix_funcattrs</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_funcattrs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_funcattrs.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_future.py">
-      <ModName>lib2to3.fixes.fix_future</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_future.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_future.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_getcwdu.py">
-      <ModName>lib2to3.fixes.fix_getcwdu</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_getcwdu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_getcwdu.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_has_key.py">
-      <ModName>lib2to3.fixes.fix_has_key</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_has_key.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_has_key.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_idioms.py">
-      <ModName>lib2to3.fixes.fix_idioms</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_idioms.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_idioms.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_import.py">
-      <ModName>lib2to3.fixes.fix_import</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_import.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_import.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_imports.py">
-      <ModName>lib2to3.fixes.fix_imports</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_imports.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_imports.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_imports2.py">
-      <ModName>lib2to3.fixes.fix_imports2</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_imports2.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_imports2.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_input.py">
-      <ModName>lib2to3.fixes.fix_input</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_input.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_input.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_intern.py">
-      <ModName>lib2to3.fixes.fix_intern</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_intern.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_intern.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_isinstance.py">
-      <ModName>lib2to3.fixes.fix_isinstance</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_isinstance.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_isinstance.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_itertools.py">
-      <ModName>lib2to3.fixes.fix_itertools</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_itertools.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_itertools.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_itertools_imports.py">
-      <ModName>lib2to3.fixes.fix_itertools_imports</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_itertools_imports.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_itertools_imports.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_long.py">
-      <ModName>lib2to3.fixes.fix_long</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_long.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_long.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_map.py">
-      <ModName>lib2to3.fixes.fix_map</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_map.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_map.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_metaclass.py">
-      <ModName>lib2to3.fixes.fix_metaclass</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_metaclass.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_metaclass.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_methodattrs.py">
-      <ModName>lib2to3.fixes.fix_methodattrs</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_methodattrs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_methodattrs.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_ne.py">
-      <ModName>lib2to3.fixes.fix_ne</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_ne.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_ne.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_next.py">
-      <ModName>lib2to3.fixes.fix_next</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_next.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_next.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_nonzero.py">
-      <ModName>lib2to3.fixes.fix_nonzero</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_nonzero.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_nonzero.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_numliterals.py">
-      <ModName>lib2to3.fixes.fix_numliterals</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_numliterals.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_numliterals.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_operator.py">
-      <ModName>lib2to3.fixes.fix_operator</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_operator.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_operator.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_paren.py">
-      <ModName>lib2to3.fixes.fix_paren</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_paren.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_paren.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_print.py">
-      <ModName>lib2to3.fixes.fix_print</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_print.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_print.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_raise.py">
-      <ModName>lib2to3.fixes.fix_raise</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_raise.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_raise.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_raw_input.py">
-      <ModName>lib2to3.fixes.fix_raw_input</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_raw_input.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_raw_input.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_reduce.py">
-      <ModName>lib2to3.fixes.fix_reduce</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_reduce.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_reduce.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_reload.py">
-      <ModName>lib2to3.fixes.fix_reload</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_reload.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_reload.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_renames.py">
-      <ModName>lib2to3.fixes.fix_renames</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_renames.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_renames.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_repr.py">
-      <ModName>lib2to3.fixes.fix_repr</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_repr.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_repr.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_set_literal.py">
-      <ModName>lib2to3.fixes.fix_set_literal</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_set_literal.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_set_literal.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_standarderror.py">
-      <ModName>lib2to3.fixes.fix_standarderror</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_standarderror.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_standarderror.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_sys_exc.py">
-      <ModName>lib2to3.fixes.fix_sys_exc</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_sys_exc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_sys_exc.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_throw.py">
-      <ModName>lib2to3.fixes.fix_throw</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_throw.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_throw.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_tuple_params.py">
-      <ModName>lib2to3.fixes.fix_tuple_params</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_tuple_params.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_tuple_params.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_types.py">
-      <ModName>lib2to3.fixes.fix_types</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_types.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_types.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_unicode.py">
-      <ModName>lib2to3.fixes.fix_unicode</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_unicode.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_unicode.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_urllib.py">
-      <ModName>lib2to3.fixes.fix_urllib</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_urllib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_urllib.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_ws_comma.py">
-      <ModName>lib2to3.fixes.fix_ws_comma</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_ws_comma.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_ws_comma.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_xrange.py">
-      <ModName>lib2to3.fixes.fix_xrange</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_xrange.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_xrange.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_xreadlines.py">
-      <ModName>lib2to3.fixes.fix_xreadlines</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_xreadlines.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_xreadlines.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_zip.py">
-      <ModName>lib2to3.fixes.fix_zip</ModName>
-      <IntFile>$(IntDir)lib2to3.fixes.fix_zip.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_zip.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\main.py">
-      <ModName>lib2to3.main</ModName>
-      <IntFile>$(IntDir)lib2to3.main.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.main.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\patcomp.py">
-      <ModName>lib2to3.patcomp</ModName>
-      <IntFile>$(IntDir)lib2to3.patcomp.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.patcomp.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\__init__.py">
-      <ModName>lib2to3.pgen2</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\conv.py">
-      <ModName>lib2to3.pgen2.conv</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.conv.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.conv.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\driver.py">
-      <ModName>lib2to3.pgen2.driver</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.driver.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.driver.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\grammar.py">
-      <ModName>lib2to3.pgen2.grammar</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.grammar.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.grammar.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\literals.py">
-      <ModName>lib2to3.pgen2.literals</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.literals.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.literals.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\parse.py">
-      <ModName>lib2to3.pgen2.parse</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.parse.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.parse.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\pgen.py">
-      <ModName>lib2to3.pgen2.pgen</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.pgen.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.pgen.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\token.py">
-      <ModName>lib2to3.pgen2.token</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.token.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.token.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\tokenize.py">
-      <ModName>lib2to3.pgen2.tokenize</ModName>
-      <IntFile>$(IntDir)lib2to3.pgen2.tokenize.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.tokenize.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pygram.py">
-      <ModName>lib2to3.pygram</ModName>
-      <IntFile>$(IntDir)lib2to3.pygram.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pygram.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\pytree.py">
-      <ModName>lib2to3.pytree</ModName>
-      <IntFile>$(IntDir)lib2to3.pytree.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.pytree.h</OutFile>
-    </None>
-    <None Include="..\Lib\lib2to3\refactor.py">
-      <ModName>lib2to3.refactor</ModName>
-      <IntFile>$(IntDir)lib2to3.refactor.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\lib2to3.refactor.h</OutFile>
-    </None>
     <None Include="..\Lib\linecache.py">
       <ModName>linecache</ModName>
       <IntFile>$(IntDir)linecache.g.h</IntFile>
@@ -2581,16 +1371,6 @@
       <IntFile>$(IntDir)lzma.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\lzma.h</OutFile>
     </None>
-    <None Include="..\Lib\mailbox.py">
-      <ModName>mailbox</ModName>
-      <IntFile>$(IntDir)mailbox.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\mailbox.h</OutFile>
-    </None>
-    <None Include="..\Lib\mailcap.py">
-      <ModName>mailcap</ModName>
-      <IntFile>$(IntDir)mailcap.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\mailcap.h</OutFile>
-    </None>
     <None Include="..\Lib\_markupbase.py">
       <ModName>_markupbase</ModName>
       <IntFile>$(IntDir)_markupbase.g.h</IntFile>
@@ -2605,26 +1385,6 @@
       <ModName>modulefinder</ModName>
       <IntFile>$(IntDir)modulefinder.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\modulefinder.h</OutFile>
-    </None>
-    <None Include="..\Lib\msilib\__init__.py">
-      <ModName>msilib</ModName>
-      <IntFile>$(IntDir)msilib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\msilib.h</OutFile>
-    </None>
-    <None Include="..\Lib\msilib\schema.py">
-      <ModName>msilib.schema</ModName>
-      <IntFile>$(IntDir)msilib.schema.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\msilib.schema.h</OutFile>
-    </None>
-    <None Include="..\Lib\msilib\sequence.py">
-      <ModName>msilib.sequence</ModName>
-      <IntFile>$(IntDir)msilib.sequence.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\msilib.sequence.h</OutFile>
-    </None>
-    <None Include="..\Lib\msilib\text.py">
-      <ModName>msilib.text</ModName>
-      <IntFile>$(IntDir)msilib.text.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\msilib.text.h</OutFile>
     </None>
     <None Include="..\Lib\multiprocessing\__init__.py">
       <ModName>multiprocessing</ModName>
@@ -2746,11 +1506,6 @@
       <IntFile>$(IntDir)netrc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\netrc.h</OutFile>
     </None>
-    <None Include="..\Lib\nntplib.py">
-      <ModName>nntplib</ModName>
-      <IntFile>$(IntDir)nntplib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\nntplib.h</OutFile>
-    </None>
     <None Include="..\Lib\ntpath.py">
       <ModName>ntpath</ModName>
       <IntFile>$(IntDir)ntpath.g.h</IntFile>
@@ -2831,11 +1586,6 @@
       <IntFile>$(IntDir)pickletools.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\pickletools.h</OutFile>
     </None>
-    <None Include="..\Lib\pipes.py">
-      <ModName>pipes</ModName>
-      <IntFile>$(IntDir)pipes.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\pipes.h</OutFile>
-    </None>
     <None Include="..\Lib\pkgutil.py">
       <ModName>pkgutil</ModName>
       <IntFile>$(IntDir)pkgutil.g.h</IntFile>
@@ -2905,21 +1655,6 @@
       <ModName>_pydecimal</ModName>
       <IntFile>$(IntDir)_pydecimal.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\_pydecimal.h</OutFile>
-    </None>
-    <None Include="..\Lib\pydoc_data\__init__.py">
-      <ModName>pydoc_data</ModName>
-      <IntFile>$(IntDir)pydoc_data.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\pydoc_data.h</OutFile>
-    </None>
-    <None Include="..\Lib\pydoc_data\topics.py">
-      <ModName>pydoc_data.topics</ModName>
-      <IntFile>$(IntDir)pydoc_data.topics.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\pydoc_data.topics.h</OutFile>
-    </None>
-    <None Include="..\Lib\pydoc.py">
-      <ModName>pydoc</ModName>
-      <IntFile>$(IntDir)pydoc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\pydoc.h</OutFile>
     </None>
     <None Include="..\Lib\_pyio.py">
       <ModName>_pyio</ModName>
@@ -3016,11 +1751,6 @@
       <IntFile>$(IntDir)smtplib.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\smtplib.h</OutFile>
     </None>
-    <None Include="..\Lib\sndhdr.py">
-      <ModName>sndhdr</ModName>
-      <IntFile>$(IntDir)sndhdr.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\sndhdr.h</OutFile>
-    </None>
     <None Include="..\Lib\socket.py">
       <ModName>socket</ModName>
       <IntFile>$(IntDir)socket.g.h</IntFile>
@@ -3066,11 +1796,6 @@
       <IntFile>$(IntDir)subprocess.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\subprocess.h</OutFile>
     </None>
-    <None Include="..\Lib\sunau.py">
-      <ModName>sunau</ModName>
-      <IntFile>$(IntDir)sunau.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\sunau.h</OutFile>
-    </None>
     <None Include="..\Lib\symtable.py">
       <ModName>symtable</ModName>
       <IntFile>$(IntDir)symtable.g.h</IntFile>
@@ -3085,16 +1810,6 @@
       <ModName>tabnanny</ModName>
       <IntFile>$(IntDir)tabnanny.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\tabnanny.h</OutFile>
-    </None>
-    <None Include="..\Lib\tarfile.py">
-      <ModName>tarfile</ModName>
-      <IntFile>$(IntDir)tarfile.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\tarfile.h</OutFile>
-    </None>
-    <None Include="..\Lib\telnetlib.py">
-      <ModName>telnetlib</ModName>
-      <IntFile>$(IntDir)telnetlib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\telnetlib.h</OutFile>
     </None>
     <None Include="..\Lib\tempfile.py">
       <ModName>tempfile</ModName>
@@ -3186,45 +1901,10 @@
       <IntFile>$(IntDir)typing.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\typing.h</OutFile>
     </None>
-    <None Include="..\Lib\urllib\__init__.py">
-      <ModName>urllib</ModName>
-      <IntFile>$(IntDir)urllib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.h</OutFile>
-    </None>
-    <None Include="..\Lib\urllib\error.py">
-      <ModName>urllib.error</ModName>
-      <IntFile>$(IntDir)urllib.error.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.error.h</OutFile>
-    </None>
-    <None Include="..\Lib\urllib\parse.py">
-      <ModName>urllib.parse</ModName>
-      <IntFile>$(IntDir)urllib.parse.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.parse.h</OutFile>
-    </None>
-    <None Include="..\Lib\urllib\request.py">
-      <ModName>urllib.request</ModName>
-      <IntFile>$(IntDir)urllib.request.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.request.h</OutFile>
-    </None>
-    <None Include="..\Lib\urllib\response.py">
-      <ModName>urllib.response</ModName>
-      <IntFile>$(IntDir)urllib.response.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.response.h</OutFile>
-    </None>
-    <None Include="..\Lib\urllib\robotparser.py">
-      <ModName>urllib.robotparser</ModName>
-      <IntFile>$(IntDir)urllib.robotparser.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\urllib.robotparser.h</OutFile>
-    </None>
     <None Include="..\Lib\uuid.py">
       <ModName>uuid</ModName>
       <IntFile>$(IntDir)uuid.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\uuid.h</OutFile>
-    </None>
-    <None Include="..\Lib\uu.py">
-      <ModName>uu</ModName>
-      <IntFile>$(IntDir)uu.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\uu.h</OutFile>
     </None>
     <None Include="..\Lib\warnings.py">
       <ModName>warnings</ModName>
@@ -3285,11 +1965,6 @@
       <ModName>wsgiref.validate</ModName>
       <IntFile>$(IntDir)wsgiref.validate.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\wsgiref.validate.h</OutFile>
-    </None>
-    <None Include="..\Lib\xdrlib.py">
-      <ModName>xdrlib</ModName>
-      <IntFile>$(IntDir)xdrlib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\xdrlib.h</OutFile>
     </None>
     <None Include="..\Lib\zipapp.py">
       <ModName>zipapp</ModName>
@@ -3653,7 +2328,6 @@
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
 		 "$(PySourcePath)Python\frozen_modules\abc.h:abc" ^
-		 "$(PySourcePath)Python\frozen_modules\aifc.h:aifc" ^
 		 "$(PySourcePath)Python\frozen_modules\_aix_support.h:_aix_support" ^
 		 "$(PySourcePath)Python\frozen_modules\antigravity.h:antigravity" ^
 		 "$(PySourcePath)Python\frozen_modules\argparse.h:argparse" ^
@@ -3662,9 +2336,6 @@
 		 "$(PySourcePath)Python\frozen_modules\bdb.h:bdb" ^
 		 "$(PySourcePath)Python\frozen_modules\bisect.h:bisect" ^
 		 "$(PySourcePath)Python\frozen_modules\calendar.h:calendar" ^
-		 "$(PySourcePath)Python\frozen_modules\cgi.h:cgi" ^
-		 "$(PySourcePath)Python\frozen_modules\cgitb.h:cgitb" ^
-		 "$(PySourcePath)Python\frozen_modules\chunk.h:chunk" ^
 		 "$(PySourcePath)Python\frozen_modules\cmd.h:cmd" ^
 		 "$(PySourcePath)Python\frozen_modules\codecs.h:codecs" ^
 		 "$(PySourcePath)Python\frozen_modules\codeop.h:codeop" ^
@@ -3687,7 +2358,6 @@
 		 "$(PySourcePath)Python\frozen_modules\copy.h:copy" ^
 		 "$(PySourcePath)Python\frozen_modules\copyreg.h:copyreg" ^
 		 "$(PySourcePath)Python\frozen_modules\cProfile.h:cProfile" ^
-		 "$(PySourcePath)Python\frozen_modules\crypt.h:crypt" ^
 		 "$(PySourcePath)Python\frozen_modules\csv.h:csv" ^
 		 "$(PySourcePath)Python\frozen_modules\dataclasses.h:dataclasses" ^
 		 "$(PySourcePath)Python\frozen_modules\datetime.h:datetime" ^
@@ -3698,36 +2368,6 @@
 		 "$(PySourcePath)Python\frozen_modules\decimal.h:decimal" ^
 		 "$(PySourcePath)Python\frozen_modules\difflib.h:difflib" ^
 		 "$(PySourcePath)Python\frozen_modules\dis.h:dis" ^
-		 "$(PySourcePath)Python\frozen_modules\doctest.h:doctest" ^
-		 "$(PySourcePath)Python\frozen_modules\email.h:email" ^
-		 "$(PySourcePath)Python\frozen_modules\email._encoded_words.h:email._encoded_words" ^
-		 "$(PySourcePath)Python\frozen_modules\email._header_value_parser.h:email._header_value_parser" ^
-		 "$(PySourcePath)Python\frozen_modules\email._parseaddr.h:email._parseaddr" ^
-		 "$(PySourcePath)Python\frozen_modules\email._policybase.h:email._policybase" ^
-		 "$(PySourcePath)Python\frozen_modules\email.base64mime.h:email.base64mime" ^
-		 "$(PySourcePath)Python\frozen_modules\email.charset.h:email.charset" ^
-		 "$(PySourcePath)Python\frozen_modules\email.contentmanager.h:email.contentmanager" ^
-		 "$(PySourcePath)Python\frozen_modules\email.encoders.h:email.encoders" ^
-		 "$(PySourcePath)Python\frozen_modules\email.errors.h:email.errors" ^
-		 "$(PySourcePath)Python\frozen_modules\email.feedparser.h:email.feedparser" ^
-		 "$(PySourcePath)Python\frozen_modules\email.generator.h:email.generator" ^
-		 "$(PySourcePath)Python\frozen_modules\email.header.h:email.header" ^
-		 "$(PySourcePath)Python\frozen_modules\email.headerregistry.h:email.headerregistry" ^
-		 "$(PySourcePath)Python\frozen_modules\email.iterators.h:email.iterators" ^
-		 "$(PySourcePath)Python\frozen_modules\email.message.h:email.message" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.h:email.mime" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.application.h:email.mime.application" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.audio.h:email.mime.audio" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.base.h:email.mime.base" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.image.h:email.mime.image" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.message.h:email.mime.message" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.multipart.h:email.mime.multipart" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.nonmultipart.h:email.mime.nonmultipart" ^
-		 "$(PySourcePath)Python\frozen_modules\email.mime.text.h:email.mime.text" ^
-		 "$(PySourcePath)Python\frozen_modules\email.parser.h:email.parser" ^
-		 "$(PySourcePath)Python\frozen_modules\email.policy.h:email.policy" ^
-		 "$(PySourcePath)Python\frozen_modules\email.quoprimime.h:email.quoprimime" ^
-		 "$(PySourcePath)Python\frozen_modules\email.utils.h:email.utils" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.h:encodings" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.aliases.h:encodings.aliases" ^
 		 "$(PySourcePath)Python\frozen_modules\encodings.ascii.h:encodings.ascii" ^
@@ -3871,141 +2511,7 @@
 		 "$(PySourcePath)Python\frozen_modules\hashlib.h:hashlib" ^
 		 "$(PySourcePath)Python\frozen_modules\heapq.h:heapq" ^
 		 "$(PySourcePath)Python\frozen_modules\hmac.h:hmac" ^
-		 "$(PySourcePath)Python\frozen_modules\html.h:html" ^
-		 "$(PySourcePath)Python\frozen_modules\html.entities.h:html.entities" ^
-		 "$(PySourcePath)Python\frozen_modules\html.parser.h:html.parser" ^
-		 "$(PySourcePath)Python\frozen_modules\http.h:http" ^
-		 "$(PySourcePath)Python\frozen_modules\http.client.h:http.client" ^
-		 "$(PySourcePath)Python\frozen_modules\http.cookiejar.h:http.cookiejar" ^
-		 "$(PySourcePath)Python\frozen_modules\http.cookies.h:http.cookies" ^
-		 "$(PySourcePath)Python\frozen_modules\http.server.h:http.server" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.h:idlelib" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.__main__.h:idlelib.__main__" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.autocomplete.h:idlelib.autocomplete" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.autocomplete_w.h:idlelib.autocomplete_w" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.autoexpand.h:idlelib.autoexpand" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.browser.h:idlelib.browser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.calltip.h:idlelib.calltip" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.calltip_w.h:idlelib.calltip_w" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.codecontext.h:idlelib.codecontext" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.colorizer.h:idlelib.colorizer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.config.h:idlelib.config" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.config_key.h:idlelib.config_key" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.configdialog.h:idlelib.configdialog" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.debugger.h:idlelib.debugger" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.debugger_r.h:idlelib.debugger_r" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.debugobj.h:idlelib.debugobj" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.debugobj_r.h:idlelib.debugobj_r" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.delegator.h:idlelib.delegator" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.dynoption.h:idlelib.dynoption" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.editor.h:idlelib.editor" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.filelist.h:idlelib.filelist" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.format.h:idlelib.format" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.grep.h:idlelib.grep" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.help.h:idlelib.help" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.help_about.h:idlelib.help_about" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.history.h:idlelib.history" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.hyperparser.h:idlelib.hyperparser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle.h:idlelib.idle" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.h:idlelib.idle_test" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.htest.h:idlelib.idle_test.htest" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.mock_idle.h:idlelib.idle_test.mock_idle" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.mock_tk.h:idlelib.idle_test.mock_tk" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.template.h:idlelib.idle_test.template" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autocomplete.h:idlelib.idle_test.test_autocomplete" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autocomplete_w.h:idlelib.idle_test.test_autocomplete_w" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_autoexpand.h:idlelib.idle_test.test_autoexpand" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_browser.h:idlelib.idle_test.test_browser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_calltip.h:idlelib.idle_test.test_calltip" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_calltip_w.h:idlelib.idle_test.test_calltip_w" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_codecontext.h:idlelib.idle_test.test_codecontext" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_colorizer.h:idlelib.idle_test.test_colorizer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_config.h:idlelib.idle_test.test_config" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_config_key.h:idlelib.idle_test.test_config_key" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_configdialog.h:idlelib.idle_test.test_configdialog" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugger.h:idlelib.idle_test.test_debugger" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugger_r.h:idlelib.idle_test.test_debugger_r" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugobj.h:idlelib.idle_test.test_debugobj" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_debugobj_r.h:idlelib.idle_test.test_debugobj_r" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_delegator.h:idlelib.idle_test.test_delegator" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_editmenu.h:idlelib.idle_test.test_editmenu" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_editor.h:idlelib.idle_test.test_editor" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_filelist.h:idlelib.idle_test.test_filelist" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_format.h:idlelib.idle_test.test_format" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_grep.h:idlelib.idle_test.test_grep" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_help.h:idlelib.idle_test.test_help" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_help_about.h:idlelib.idle_test.test_help_about" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_history.h:idlelib.idle_test.test_history" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_hyperparser.h:idlelib.idle_test.test_hyperparser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_iomenu.h:idlelib.idle_test.test_iomenu" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_macosx.h:idlelib.idle_test.test_macosx" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_mainmenu.h:idlelib.idle_test.test_mainmenu" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_multicall.h:idlelib.idle_test.test_multicall" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_outwin.h:idlelib.idle_test.test_outwin" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_parenmatch.h:idlelib.idle_test.test_parenmatch" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pathbrowser.h:idlelib.idle_test.test_pathbrowser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_percolator.h:idlelib.idle_test.test_percolator" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pyparse.h:idlelib.idle_test.test_pyparse" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_pyshell.h:idlelib.idle_test.test_pyshell" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_query.h:idlelib.idle_test.test_query" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_redirector.h:idlelib.idle_test.test_redirector" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_replace.h:idlelib.idle_test.test_replace" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_rpc.h:idlelib.idle_test.test_rpc" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_run.h:idlelib.idle_test.test_run" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_runscript.h:idlelib.idle_test.test_runscript" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_scrolledlist.h:idlelib.idle_test.test_scrolledlist" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_search.h:idlelib.idle_test.test_search" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_searchbase.h:idlelib.idle_test.test_searchbase" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_searchengine.h:idlelib.idle_test.test_searchengine" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_sidebar.h:idlelib.idle_test.test_sidebar" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_squeezer.h:idlelib.idle_test.test_squeezer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_stackviewer.h:idlelib.idle_test.test_stackviewer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_statusbar.h:idlelib.idle_test.test_statusbar" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_text.h:idlelib.idle_test.test_text" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_textview.h:idlelib.idle_test.test_textview" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_tooltip.h:idlelib.idle_test.test_tooltip" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_tree.h:idlelib.idle_test.test_tree" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_undo.h:idlelib.idle_test.test_undo" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_util.h:idlelib.idle_test.test_util" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_warning.h:idlelib.idle_test.test_warning" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_window.h:idlelib.idle_test.test_window" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_zoomheight.h:idlelib.idle_test.test_zoomheight" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.test_zzdummy.h:idlelib.idle_test.test_zzdummy" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.idle_test.tkinter_testing_utils.h:idlelib.idle_test.tkinter_testing_utils" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.iomenu.h:idlelib.iomenu" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.macosx.h:idlelib.macosx" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.mainmenu.h:idlelib.mainmenu" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.multicall.h:idlelib.multicall" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.outwin.h:idlelib.outwin" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.parenmatch.h:idlelib.parenmatch" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.pathbrowser.h:idlelib.pathbrowser" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.percolator.h:idlelib.percolator" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.pyparse.h:idlelib.pyparse" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.pyshell.h:idlelib.pyshell" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.query.h:idlelib.query" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.redirector.h:idlelib.redirector" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.replace.h:idlelib.replace" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.rpc.h:idlelib.rpc" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.run.h:idlelib.run" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.runscript.h:idlelib.runscript" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.scrolledlist.h:idlelib.scrolledlist" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.search.h:idlelib.search" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.searchbase.h:idlelib.searchbase" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.searchengine.h:idlelib.searchengine" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.sidebar.h:idlelib.sidebar" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.squeezer.h:idlelib.squeezer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.stackviewer.h:idlelib.stackviewer" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.statusbar.h:idlelib.statusbar" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.textview.h:idlelib.textview" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.tooltip.h:idlelib.tooltip" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.tree.h:idlelib.tree" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.undo.h:idlelib.undo" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.util.h:idlelib.util" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.window.h:idlelib.window" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.zoomheight.h:idlelib.zoomheight" ^
-		 "$(PySourcePath)Python\frozen_modules\idlelib.zzdummy.h:idlelib.zzdummy" ^
 		 "$(PySourcePath)Python\frozen_modules\imaplib.h:imaplib" ^
-		 "$(PySourcePath)Python\frozen_modules\imghdr.h:imghdr" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib.h:importlib" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._abc.h:importlib._abc" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib.abc.h:importlib.abc" ^
@@ -4037,94 +2543,15 @@
 		 "$(PySourcePath)Python\frozen_modules\json.scanner.h:json.scanner" ^
 		 "$(PySourcePath)Python\frozen_modules\json.tool.h:json.tool" ^
 		 "$(PySourcePath)Python\frozen_modules\keyword.h:keyword" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.h:lib2to3" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.__main__.h:lib2to3.__main__" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.btm_matcher.h:lib2to3.btm_matcher" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.btm_utils.h:lib2to3.btm_utils" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixer_base.h:lib2to3.fixer_base" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixer_util.h:lib2to3.fixer_util" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.h:lib2to3.fixes" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_apply.h:lib2to3.fixes.fix_apply" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_asserts.h:lib2to3.fixes.fix_asserts" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_basestring.h:lib2to3.fixes.fix_basestring" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_buffer.h:lib2to3.fixes.fix_buffer" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_dict.h:lib2to3.fixes.fix_dict" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_except.h:lib2to3.fixes.fix_except" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_exec.h:lib2to3.fixes.fix_exec" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_execfile.h:lib2to3.fixes.fix_execfile" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_exitfunc.h:lib2to3.fixes.fix_exitfunc" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_filter.h:lib2to3.fixes.fix_filter" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_funcattrs.h:lib2to3.fixes.fix_funcattrs" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_future.h:lib2to3.fixes.fix_future" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_getcwdu.h:lib2to3.fixes.fix_getcwdu" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_has_key.h:lib2to3.fixes.fix_has_key" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_idioms.h:lib2to3.fixes.fix_idioms" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_import.h:lib2to3.fixes.fix_import" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_imports.h:lib2to3.fixes.fix_imports" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_imports2.h:lib2to3.fixes.fix_imports2" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_input.h:lib2to3.fixes.fix_input" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_intern.h:lib2to3.fixes.fix_intern" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_isinstance.h:lib2to3.fixes.fix_isinstance" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_itertools.h:lib2to3.fixes.fix_itertools" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_itertools_imports.h:lib2to3.fixes.fix_itertools_imports" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_long.h:lib2to3.fixes.fix_long" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_map.h:lib2to3.fixes.fix_map" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_metaclass.h:lib2to3.fixes.fix_metaclass" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_methodattrs.h:lib2to3.fixes.fix_methodattrs" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_ne.h:lib2to3.fixes.fix_ne" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_next.h:lib2to3.fixes.fix_next" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_nonzero.h:lib2to3.fixes.fix_nonzero" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_numliterals.h:lib2to3.fixes.fix_numliterals" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_operator.h:lib2to3.fixes.fix_operator" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_paren.h:lib2to3.fixes.fix_paren" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_print.h:lib2to3.fixes.fix_print" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_raise.h:lib2to3.fixes.fix_raise" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_raw_input.h:lib2to3.fixes.fix_raw_input" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_reduce.h:lib2to3.fixes.fix_reduce" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_reload.h:lib2to3.fixes.fix_reload" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_renames.h:lib2to3.fixes.fix_renames" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_repr.h:lib2to3.fixes.fix_repr" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_set_literal.h:lib2to3.fixes.fix_set_literal" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_standarderror.h:lib2to3.fixes.fix_standarderror" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_sys_exc.h:lib2to3.fixes.fix_sys_exc" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_throw.h:lib2to3.fixes.fix_throw" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_tuple_params.h:lib2to3.fixes.fix_tuple_params" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_types.h:lib2to3.fixes.fix_types" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_unicode.h:lib2to3.fixes.fix_unicode" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_urllib.h:lib2to3.fixes.fix_urllib" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_ws_comma.h:lib2to3.fixes.fix_ws_comma" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_xrange.h:lib2to3.fixes.fix_xrange" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_xreadlines.h:lib2to3.fixes.fix_xreadlines" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.fixes.fix_zip.h:lib2to3.fixes.fix_zip" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.main.h:lib2to3.main" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.patcomp.h:lib2to3.patcomp" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.h:lib2to3.pgen2" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.conv.h:lib2to3.pgen2.conv" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.driver.h:lib2to3.pgen2.driver" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.grammar.h:lib2to3.pgen2.grammar" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.literals.h:lib2to3.pgen2.literals" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.parse.h:lib2to3.pgen2.parse" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.pgen.h:lib2to3.pgen2.pgen" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.token.h:lib2to3.pgen2.token" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pgen2.tokenize.h:lib2to3.pgen2.tokenize" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pygram.h:lib2to3.pygram" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.pytree.h:lib2to3.pytree" ^
-		 "$(PySourcePath)Python\frozen_modules\lib2to3.refactor.h:lib2to3.refactor" ^
 		 "$(PySourcePath)Python\frozen_modules\linecache.h:linecache" ^
 		 "$(PySourcePath)Python\frozen_modules\locale.h:locale" ^
 		 "$(PySourcePath)Python\frozen_modules\logging.h:logging" ^
 		 "$(PySourcePath)Python\frozen_modules\logging.config.h:logging.config" ^
 		 "$(PySourcePath)Python\frozen_modules\logging.handlers.h:logging.handlers" ^
 		 "$(PySourcePath)Python\frozen_modules\lzma.h:lzma" ^
-		 "$(PySourcePath)Python\frozen_modules\mailbox.h:mailbox" ^
-		 "$(PySourcePath)Python\frozen_modules\mailcap.h:mailcap" ^
 		 "$(PySourcePath)Python\frozen_modules\_markupbase.h:_markupbase" ^
 		 "$(PySourcePath)Python\frozen_modules\mimetypes.h:mimetypes" ^
 		 "$(PySourcePath)Python\frozen_modules\modulefinder.h:modulefinder" ^
-		 "$(PySourcePath)Python\frozen_modules\msilib.h:msilib" ^
-		 "$(PySourcePath)Python\frozen_modules\msilib.schema.h:msilib.schema" ^
-		 "$(PySourcePath)Python\frozen_modules\msilib.sequence.h:msilib.sequence" ^
-		 "$(PySourcePath)Python\frozen_modules\msilib.text.h:msilib.text" ^
 		 "$(PySourcePath)Python\frozen_modules\multiprocessing.h:multiprocessing" ^
 		 "$(PySourcePath)Python\frozen_modules\multiprocessing.connection.h:multiprocessing.connection" ^
 		 "$(PySourcePath)Python\frozen_modules\multiprocessing.context.h:multiprocessing.context" ^
@@ -4149,7 +2576,6 @@
 		 "$(PySourcePath)Python\frozen_modules\multiprocessing.synchronize.h:multiprocessing.synchronize" ^
 		 "$(PySourcePath)Python\frozen_modules\multiprocessing.util.h:multiprocessing.util" ^
 		 "$(PySourcePath)Python\frozen_modules\netrc.h:netrc" ^
-		 "$(PySourcePath)Python\frozen_modules\nntplib.h:nntplib" ^
 		 "$(PySourcePath)Python\frozen_modules\ntpath.h:ntpath" ^
 		 "$(PySourcePath)Python\frozen_modules\nturl2path.h:nturl2path" ^
 		 "$(PySourcePath)Python\frozen_modules\numbers.h:numbers" ^
@@ -4166,7 +2592,6 @@
 		 "$(PySourcePath)Python\frozen_modules\__phello__.spam.h:__phello__.spam" ^
 		 "$(PySourcePath)Python\frozen_modules\pickle.h:pickle" ^
 		 "$(PySourcePath)Python\frozen_modules\pickletools.h:pickletools" ^
-		 "$(PySourcePath)Python\frozen_modules\pipes.h:pipes" ^
 		 "$(PySourcePath)Python\frozen_modules\pkgutil.h:pkgutil" ^
 		 "$(PySourcePath)Python\frozen_modules\platform.h:platform" ^
 		 "$(PySourcePath)Python\frozen_modules\plistlib.h:plistlib" ^
@@ -4181,9 +2606,6 @@
 		 "$(PySourcePath)Python\frozen_modules\py_compile.h:py_compile" ^
 		 "$(PySourcePath)Python\frozen_modules\_pydatetime.h:_pydatetime" ^
 		 "$(PySourcePath)Python\frozen_modules\_pydecimal.h:_pydecimal" ^
-		 "$(PySourcePath)Python\frozen_modules\pydoc_data.h:pydoc_data" ^
-		 "$(PySourcePath)Python\frozen_modules\pydoc_data.topics.h:pydoc_data.topics" ^
-		 "$(PySourcePath)Python\frozen_modules\pydoc.h:pydoc" ^
 		 "$(PySourcePath)Python\frozen_modules\_pyio.h:_pyio" ^
 		 "$(PySourcePath)Python\frozen_modules\_pylong.h:_pylong" ^
 		 "$(PySourcePath)Python\frozen_modules\queue.h:queue" ^
@@ -4203,7 +2625,6 @@
 		 "$(PySourcePath)Python\frozen_modules\shutil.h:shutil" ^
 		 "$(PySourcePath)Python\frozen_modules\signal.h:signal" ^
 		 "$(PySourcePath)Python\frozen_modules\smtplib.h:smtplib" ^
-		 "$(PySourcePath)Python\frozen_modules\sndhdr.h:sndhdr" ^
 		 "$(PySourcePath)Python\frozen_modules\socket.h:socket" ^
 		 "$(PySourcePath)Python\frozen_modules\socketserver.h:socketserver" ^
 		 "$(PySourcePath)Python\frozen_modules\statistics.h:statistics" ^
@@ -4213,12 +2634,9 @@
 		 "$(PySourcePath)Python\frozen_modules\_strptime.h:_strptime" ^
 		 "$(PySourcePath)Python\frozen_modules\struct.h:struct" ^
 		 "$(PySourcePath)Python\frozen_modules\subprocess.h:subprocess" ^
-		 "$(PySourcePath)Python\frozen_modules\sunau.h:sunau" ^
 		 "$(PySourcePath)Python\frozen_modules\symtable.h:symtable" ^
 		 "$(PySourcePath)Python\frozen_modules\sysconfig.h:sysconfig" ^
 		 "$(PySourcePath)Python\frozen_modules\tabnanny.h:tabnanny" ^
-		 "$(PySourcePath)Python\frozen_modules\tarfile.h:tarfile" ^
-		 "$(PySourcePath)Python\frozen_modules\telnetlib.h:telnetlib" ^
 		 "$(PySourcePath)Python\frozen_modules\tempfile.h:tempfile" ^
 		 "$(PySourcePath)Python\frozen_modules\textwrap.h:textwrap" ^
 		 "$(PySourcePath)Python\frozen_modules\this.h:this" ^
@@ -4237,14 +2655,7 @@
 		 "$(PySourcePath)Python\frozen_modules\tty.h:tty" ^
 		 "$(PySourcePath)Python\frozen_modules\types.h:types" ^
 		 "$(PySourcePath)Python\frozen_modules\typing.h:typing" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.h:urllib" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.error.h:urllib.error" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.parse.h:urllib.parse" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.request.h:urllib.request" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.response.h:urllib.response" ^
-		 "$(PySourcePath)Python\frozen_modules\urllib.robotparser.h:urllib.robotparser" ^
 		 "$(PySourcePath)Python\frozen_modules\uuid.h:uuid" ^
-		 "$(PySourcePath)Python\frozen_modules\uu.h:uu" ^
 		 "$(PySourcePath)Python\frozen_modules\warnings.h:warnings" ^
 		 "$(PySourcePath)Python\frozen_modules\wave.h:wave" ^
 		 "$(PySourcePath)Python\frozen_modules\weakref.h:weakref" ^
@@ -4257,7 +2668,6 @@
 		 "$(PySourcePath)Python\frozen_modules\wsgiref.types.h:wsgiref.types" ^
 		 "$(PySourcePath)Python\frozen_modules\wsgiref.util.h:wsgiref.util" ^
 		 "$(PySourcePath)Python\frozen_modules\wsgiref.validate.h:wsgiref.validate" ^
-		 "$(PySourcePath)Python\frozen_modules\xdrlib.h:xdrlib" ^
 		 "$(PySourcePath)Python\frozen_modules\zipapp.h:zipapp" ^
 		 "$(PySourcePath)Python\frozen_modules\zipfile.h:zipfile" ^
 		 "$(PySourcePath)Python\frozen_modules\zipfile.__main__.h:zipfile.__main__" ^

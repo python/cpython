@@ -45,7 +45,6 @@
 #include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
-#include "frozen_modules/aifc.h"
 #include "frozen_modules/_aix_support.h"
 #include "frozen_modules/antigravity.h"
 #include "frozen_modules/argparse.h"
@@ -54,9 +53,6 @@
 #include "frozen_modules/bdb.h"
 #include "frozen_modules/bisect.h"
 #include "frozen_modules/calendar.h"
-#include "frozen_modules/cgi.h"
-#include "frozen_modules/cgitb.h"
-#include "frozen_modules/chunk.h"
 #include "frozen_modules/cmd.h"
 #include "frozen_modules/codecs.h"
 #include "frozen_modules/codeop.h"
@@ -79,7 +75,6 @@
 #include "frozen_modules/copy.h"
 #include "frozen_modules/copyreg.h"
 #include "frozen_modules/cProfile.h"
-#include "frozen_modules/crypt.h"
 #include "frozen_modules/csv.h"
 #include "frozen_modules/dataclasses.h"
 #include "frozen_modules/datetime.h"
@@ -90,36 +85,6 @@
 #include "frozen_modules/decimal.h"
 #include "frozen_modules/difflib.h"
 #include "frozen_modules/dis.h"
-#include "frozen_modules/doctest.h"
-#include "frozen_modules/email.h"
-#include "frozen_modules/email._encoded_words.h"
-#include "frozen_modules/email._header_value_parser.h"
-#include "frozen_modules/email._parseaddr.h"
-#include "frozen_modules/email._policybase.h"
-#include "frozen_modules/email.base64mime.h"
-#include "frozen_modules/email.charset.h"
-#include "frozen_modules/email.contentmanager.h"
-#include "frozen_modules/email.encoders.h"
-#include "frozen_modules/email.errors.h"
-#include "frozen_modules/email.feedparser.h"
-#include "frozen_modules/email.generator.h"
-#include "frozen_modules/email.header.h"
-#include "frozen_modules/email.headerregistry.h"
-#include "frozen_modules/email.iterators.h"
-#include "frozen_modules/email.message.h"
-#include "frozen_modules/email.mime.h"
-#include "frozen_modules/email.mime.application.h"
-#include "frozen_modules/email.mime.audio.h"
-#include "frozen_modules/email.mime.base.h"
-#include "frozen_modules/email.mime.image.h"
-#include "frozen_modules/email.mime.message.h"
-#include "frozen_modules/email.mime.multipart.h"
-#include "frozen_modules/email.mime.nonmultipart.h"
-#include "frozen_modules/email.mime.text.h"
-#include "frozen_modules/email.parser.h"
-#include "frozen_modules/email.policy.h"
-#include "frozen_modules/email.quoprimime.h"
-#include "frozen_modules/email.utils.h"
 #include "frozen_modules/encodings.h"
 #include "frozen_modules/encodings.aliases.h"
 #include "frozen_modules/encodings.ascii.h"
@@ -263,141 +228,7 @@
 #include "frozen_modules/hashlib.h"
 #include "frozen_modules/heapq.h"
 #include "frozen_modules/hmac.h"
-#include "frozen_modules/html.h"
-#include "frozen_modules/html.entities.h"
-#include "frozen_modules/html.parser.h"
-#include "frozen_modules/http.h"
-#include "frozen_modules/http.client.h"
-#include "frozen_modules/http.cookiejar.h"
-#include "frozen_modules/http.cookies.h"
-#include "frozen_modules/http.server.h"
-#include "frozen_modules/idlelib.h"
-#include "frozen_modules/idlelib.__main__.h"
-#include "frozen_modules/idlelib.autocomplete.h"
-#include "frozen_modules/idlelib.autocomplete_w.h"
-#include "frozen_modules/idlelib.autoexpand.h"
-#include "frozen_modules/idlelib.browser.h"
-#include "frozen_modules/idlelib.calltip.h"
-#include "frozen_modules/idlelib.calltip_w.h"
-#include "frozen_modules/idlelib.codecontext.h"
-#include "frozen_modules/idlelib.colorizer.h"
-#include "frozen_modules/idlelib.config.h"
-#include "frozen_modules/idlelib.config_key.h"
-#include "frozen_modules/idlelib.configdialog.h"
-#include "frozen_modules/idlelib.debugger.h"
-#include "frozen_modules/idlelib.debugger_r.h"
-#include "frozen_modules/idlelib.debugobj.h"
-#include "frozen_modules/idlelib.debugobj_r.h"
-#include "frozen_modules/idlelib.delegator.h"
-#include "frozen_modules/idlelib.dynoption.h"
-#include "frozen_modules/idlelib.editor.h"
-#include "frozen_modules/idlelib.filelist.h"
-#include "frozen_modules/idlelib.format.h"
-#include "frozen_modules/idlelib.grep.h"
-#include "frozen_modules/idlelib.help.h"
-#include "frozen_modules/idlelib.help_about.h"
-#include "frozen_modules/idlelib.history.h"
-#include "frozen_modules/idlelib.hyperparser.h"
-#include "frozen_modules/idlelib.idle.h"
-#include "frozen_modules/idlelib.idle_test.h"
-#include "frozen_modules/idlelib.idle_test.htest.h"
-#include "frozen_modules/idlelib.idle_test.mock_idle.h"
-#include "frozen_modules/idlelib.idle_test.mock_tk.h"
-#include "frozen_modules/idlelib.idle_test.template.h"
-#include "frozen_modules/idlelib.idle_test.test_autocomplete.h"
-#include "frozen_modules/idlelib.idle_test.test_autocomplete_w.h"
-#include "frozen_modules/idlelib.idle_test.test_autoexpand.h"
-#include "frozen_modules/idlelib.idle_test.test_browser.h"
-#include "frozen_modules/idlelib.idle_test.test_calltip.h"
-#include "frozen_modules/idlelib.idle_test.test_calltip_w.h"
-#include "frozen_modules/idlelib.idle_test.test_codecontext.h"
-#include "frozen_modules/idlelib.idle_test.test_colorizer.h"
-#include "frozen_modules/idlelib.idle_test.test_config.h"
-#include "frozen_modules/idlelib.idle_test.test_config_key.h"
-#include "frozen_modules/idlelib.idle_test.test_configdialog.h"
-#include "frozen_modules/idlelib.idle_test.test_debugger.h"
-#include "frozen_modules/idlelib.idle_test.test_debugger_r.h"
-#include "frozen_modules/idlelib.idle_test.test_debugobj.h"
-#include "frozen_modules/idlelib.idle_test.test_debugobj_r.h"
-#include "frozen_modules/idlelib.idle_test.test_delegator.h"
-#include "frozen_modules/idlelib.idle_test.test_editmenu.h"
-#include "frozen_modules/idlelib.idle_test.test_editor.h"
-#include "frozen_modules/idlelib.idle_test.test_filelist.h"
-#include "frozen_modules/idlelib.idle_test.test_format.h"
-#include "frozen_modules/idlelib.idle_test.test_grep.h"
-#include "frozen_modules/idlelib.idle_test.test_help.h"
-#include "frozen_modules/idlelib.idle_test.test_help_about.h"
-#include "frozen_modules/idlelib.idle_test.test_history.h"
-#include "frozen_modules/idlelib.idle_test.test_hyperparser.h"
-#include "frozen_modules/idlelib.idle_test.test_iomenu.h"
-#include "frozen_modules/idlelib.idle_test.test_macosx.h"
-#include "frozen_modules/idlelib.idle_test.test_mainmenu.h"
-#include "frozen_modules/idlelib.idle_test.test_multicall.h"
-#include "frozen_modules/idlelib.idle_test.test_outwin.h"
-#include "frozen_modules/idlelib.idle_test.test_parenmatch.h"
-#include "frozen_modules/idlelib.idle_test.test_pathbrowser.h"
-#include "frozen_modules/idlelib.idle_test.test_percolator.h"
-#include "frozen_modules/idlelib.idle_test.test_pyparse.h"
-#include "frozen_modules/idlelib.idle_test.test_pyshell.h"
-#include "frozen_modules/idlelib.idle_test.test_query.h"
-#include "frozen_modules/idlelib.idle_test.test_redirector.h"
-#include "frozen_modules/idlelib.idle_test.test_replace.h"
-#include "frozen_modules/idlelib.idle_test.test_rpc.h"
-#include "frozen_modules/idlelib.idle_test.test_run.h"
-#include "frozen_modules/idlelib.idle_test.test_runscript.h"
-#include "frozen_modules/idlelib.idle_test.test_scrolledlist.h"
-#include "frozen_modules/idlelib.idle_test.test_search.h"
-#include "frozen_modules/idlelib.idle_test.test_searchbase.h"
-#include "frozen_modules/idlelib.idle_test.test_searchengine.h"
-#include "frozen_modules/idlelib.idle_test.test_sidebar.h"
-#include "frozen_modules/idlelib.idle_test.test_squeezer.h"
-#include "frozen_modules/idlelib.idle_test.test_stackviewer.h"
-#include "frozen_modules/idlelib.idle_test.test_statusbar.h"
-#include "frozen_modules/idlelib.idle_test.test_text.h"
-#include "frozen_modules/idlelib.idle_test.test_textview.h"
-#include "frozen_modules/idlelib.idle_test.test_tooltip.h"
-#include "frozen_modules/idlelib.idle_test.test_tree.h"
-#include "frozen_modules/idlelib.idle_test.test_undo.h"
-#include "frozen_modules/idlelib.idle_test.test_util.h"
-#include "frozen_modules/idlelib.idle_test.test_warning.h"
-#include "frozen_modules/idlelib.idle_test.test_window.h"
-#include "frozen_modules/idlelib.idle_test.test_zoomheight.h"
-#include "frozen_modules/idlelib.idle_test.test_zzdummy.h"
-#include "frozen_modules/idlelib.idle_test.tkinter_testing_utils.h"
-#include "frozen_modules/idlelib.iomenu.h"
-#include "frozen_modules/idlelib.macosx.h"
-#include "frozen_modules/idlelib.mainmenu.h"
-#include "frozen_modules/idlelib.multicall.h"
-#include "frozen_modules/idlelib.outwin.h"
-#include "frozen_modules/idlelib.parenmatch.h"
-#include "frozen_modules/idlelib.pathbrowser.h"
-#include "frozen_modules/idlelib.percolator.h"
-#include "frozen_modules/idlelib.pyparse.h"
-#include "frozen_modules/idlelib.pyshell.h"
-#include "frozen_modules/idlelib.query.h"
-#include "frozen_modules/idlelib.redirector.h"
-#include "frozen_modules/idlelib.replace.h"
-#include "frozen_modules/idlelib.rpc.h"
-#include "frozen_modules/idlelib.run.h"
-#include "frozen_modules/idlelib.runscript.h"
-#include "frozen_modules/idlelib.scrolledlist.h"
-#include "frozen_modules/idlelib.search.h"
-#include "frozen_modules/idlelib.searchbase.h"
-#include "frozen_modules/idlelib.searchengine.h"
-#include "frozen_modules/idlelib.sidebar.h"
-#include "frozen_modules/idlelib.squeezer.h"
-#include "frozen_modules/idlelib.stackviewer.h"
-#include "frozen_modules/idlelib.statusbar.h"
-#include "frozen_modules/idlelib.textview.h"
-#include "frozen_modules/idlelib.tooltip.h"
-#include "frozen_modules/idlelib.tree.h"
-#include "frozen_modules/idlelib.undo.h"
-#include "frozen_modules/idlelib.util.h"
-#include "frozen_modules/idlelib.window.h"
-#include "frozen_modules/idlelib.zoomheight.h"
-#include "frozen_modules/idlelib.zzdummy.h"
 #include "frozen_modules/imaplib.h"
-#include "frozen_modules/imghdr.h"
 #include "frozen_modules/importlib.h"
 #include "frozen_modules/importlib._abc.h"
 #include "frozen_modules/importlib.abc.h"
@@ -429,94 +260,15 @@
 #include "frozen_modules/json.scanner.h"
 #include "frozen_modules/json.tool.h"
 #include "frozen_modules/keyword.h"
-#include "frozen_modules/lib2to3.h"
-#include "frozen_modules/lib2to3.__main__.h"
-#include "frozen_modules/lib2to3.btm_matcher.h"
-#include "frozen_modules/lib2to3.btm_utils.h"
-#include "frozen_modules/lib2to3.fixer_base.h"
-#include "frozen_modules/lib2to3.fixer_util.h"
-#include "frozen_modules/lib2to3.fixes.h"
-#include "frozen_modules/lib2to3.fixes.fix_apply.h"
-#include "frozen_modules/lib2to3.fixes.fix_asserts.h"
-#include "frozen_modules/lib2to3.fixes.fix_basestring.h"
-#include "frozen_modules/lib2to3.fixes.fix_buffer.h"
-#include "frozen_modules/lib2to3.fixes.fix_dict.h"
-#include "frozen_modules/lib2to3.fixes.fix_except.h"
-#include "frozen_modules/lib2to3.fixes.fix_exec.h"
-#include "frozen_modules/lib2to3.fixes.fix_execfile.h"
-#include "frozen_modules/lib2to3.fixes.fix_exitfunc.h"
-#include "frozen_modules/lib2to3.fixes.fix_filter.h"
-#include "frozen_modules/lib2to3.fixes.fix_funcattrs.h"
-#include "frozen_modules/lib2to3.fixes.fix_future.h"
-#include "frozen_modules/lib2to3.fixes.fix_getcwdu.h"
-#include "frozen_modules/lib2to3.fixes.fix_has_key.h"
-#include "frozen_modules/lib2to3.fixes.fix_idioms.h"
-#include "frozen_modules/lib2to3.fixes.fix_import.h"
-#include "frozen_modules/lib2to3.fixes.fix_imports.h"
-#include "frozen_modules/lib2to3.fixes.fix_imports2.h"
-#include "frozen_modules/lib2to3.fixes.fix_input.h"
-#include "frozen_modules/lib2to3.fixes.fix_intern.h"
-#include "frozen_modules/lib2to3.fixes.fix_isinstance.h"
-#include "frozen_modules/lib2to3.fixes.fix_itertools.h"
-#include "frozen_modules/lib2to3.fixes.fix_itertools_imports.h"
-#include "frozen_modules/lib2to3.fixes.fix_long.h"
-#include "frozen_modules/lib2to3.fixes.fix_map.h"
-#include "frozen_modules/lib2to3.fixes.fix_metaclass.h"
-#include "frozen_modules/lib2to3.fixes.fix_methodattrs.h"
-#include "frozen_modules/lib2to3.fixes.fix_ne.h"
-#include "frozen_modules/lib2to3.fixes.fix_next.h"
-#include "frozen_modules/lib2to3.fixes.fix_nonzero.h"
-#include "frozen_modules/lib2to3.fixes.fix_numliterals.h"
-#include "frozen_modules/lib2to3.fixes.fix_operator.h"
-#include "frozen_modules/lib2to3.fixes.fix_paren.h"
-#include "frozen_modules/lib2to3.fixes.fix_print.h"
-#include "frozen_modules/lib2to3.fixes.fix_raise.h"
-#include "frozen_modules/lib2to3.fixes.fix_raw_input.h"
-#include "frozen_modules/lib2to3.fixes.fix_reduce.h"
-#include "frozen_modules/lib2to3.fixes.fix_reload.h"
-#include "frozen_modules/lib2to3.fixes.fix_renames.h"
-#include "frozen_modules/lib2to3.fixes.fix_repr.h"
-#include "frozen_modules/lib2to3.fixes.fix_set_literal.h"
-#include "frozen_modules/lib2to3.fixes.fix_standarderror.h"
-#include "frozen_modules/lib2to3.fixes.fix_sys_exc.h"
-#include "frozen_modules/lib2to3.fixes.fix_throw.h"
-#include "frozen_modules/lib2to3.fixes.fix_tuple_params.h"
-#include "frozen_modules/lib2to3.fixes.fix_types.h"
-#include "frozen_modules/lib2to3.fixes.fix_unicode.h"
-#include "frozen_modules/lib2to3.fixes.fix_urllib.h"
-#include "frozen_modules/lib2to3.fixes.fix_ws_comma.h"
-#include "frozen_modules/lib2to3.fixes.fix_xrange.h"
-#include "frozen_modules/lib2to3.fixes.fix_xreadlines.h"
-#include "frozen_modules/lib2to3.fixes.fix_zip.h"
-#include "frozen_modules/lib2to3.main.h"
-#include "frozen_modules/lib2to3.patcomp.h"
-#include "frozen_modules/lib2to3.pgen2.h"
-#include "frozen_modules/lib2to3.pgen2.conv.h"
-#include "frozen_modules/lib2to3.pgen2.driver.h"
-#include "frozen_modules/lib2to3.pgen2.grammar.h"
-#include "frozen_modules/lib2to3.pgen2.literals.h"
-#include "frozen_modules/lib2to3.pgen2.parse.h"
-#include "frozen_modules/lib2to3.pgen2.pgen.h"
-#include "frozen_modules/lib2to3.pgen2.token.h"
-#include "frozen_modules/lib2to3.pgen2.tokenize.h"
-#include "frozen_modules/lib2to3.pygram.h"
-#include "frozen_modules/lib2to3.pytree.h"
-#include "frozen_modules/lib2to3.refactor.h"
 #include "frozen_modules/linecache.h"
 #include "frozen_modules/locale.h"
 #include "frozen_modules/logging.h"
 #include "frozen_modules/logging.config.h"
 #include "frozen_modules/logging.handlers.h"
 #include "frozen_modules/lzma.h"
-#include "frozen_modules/mailbox.h"
-#include "frozen_modules/mailcap.h"
 #include "frozen_modules/_markupbase.h"
 #include "frozen_modules/mimetypes.h"
 #include "frozen_modules/modulefinder.h"
-#include "frozen_modules/msilib.h"
-#include "frozen_modules/msilib.schema.h"
-#include "frozen_modules/msilib.sequence.h"
-#include "frozen_modules/msilib.text.h"
 #include "frozen_modules/multiprocessing.h"
 #include "frozen_modules/multiprocessing.connection.h"
 #include "frozen_modules/multiprocessing.context.h"
@@ -541,7 +293,6 @@
 #include "frozen_modules/multiprocessing.synchronize.h"
 #include "frozen_modules/multiprocessing.util.h"
 #include "frozen_modules/netrc.h"
-#include "frozen_modules/nntplib.h"
 #include "frozen_modules/ntpath.h"
 #include "frozen_modules/nturl2path.h"
 #include "frozen_modules/numbers.h"
@@ -558,7 +309,6 @@
 #include "frozen_modules/__phello__.spam.h"
 #include "frozen_modules/pickle.h"
 #include "frozen_modules/pickletools.h"
-#include "frozen_modules/pipes.h"
 #include "frozen_modules/pkgutil.h"
 #include "frozen_modules/platform.h"
 #include "frozen_modules/plistlib.h"
@@ -573,9 +323,6 @@
 #include "frozen_modules/py_compile.h"
 #include "frozen_modules/_pydatetime.h"
 #include "frozen_modules/_pydecimal.h"
-#include "frozen_modules/pydoc_data.h"
-#include "frozen_modules/pydoc_data.topics.h"
-#include "frozen_modules/pydoc.h"
 #include "frozen_modules/_pyio.h"
 #include "frozen_modules/_pylong.h"
 #include "frozen_modules/queue.h"
@@ -595,7 +342,6 @@
 #include "frozen_modules/shutil.h"
 #include "frozen_modules/signal.h"
 #include "frozen_modules/smtplib.h"
-#include "frozen_modules/sndhdr.h"
 #include "frozen_modules/socket.h"
 #include "frozen_modules/socketserver.h"
 #include "frozen_modules/statistics.h"
@@ -605,12 +351,9 @@
 #include "frozen_modules/_strptime.h"
 #include "frozen_modules/struct.h"
 #include "frozen_modules/subprocess.h"
-#include "frozen_modules/sunau.h"
 #include "frozen_modules/symtable.h"
 #include "frozen_modules/sysconfig.h"
 #include "frozen_modules/tabnanny.h"
-#include "frozen_modules/tarfile.h"
-#include "frozen_modules/telnetlib.h"
 #include "frozen_modules/tempfile.h"
 #include "frozen_modules/textwrap.h"
 #include "frozen_modules/this.h"
@@ -629,14 +372,7 @@
 #include "frozen_modules/tty.h"
 #include "frozen_modules/types.h"
 #include "frozen_modules/typing.h"
-#include "frozen_modules/urllib.h"
-#include "frozen_modules/urllib.error.h"
-#include "frozen_modules/urllib.parse.h"
-#include "frozen_modules/urllib.request.h"
-#include "frozen_modules/urllib.response.h"
-#include "frozen_modules/urllib.robotparser.h"
 #include "frozen_modules/uuid.h"
-#include "frozen_modules/uu.h"
 #include "frozen_modules/warnings.h"
 #include "frozen_modules/wave.h"
 #include "frozen_modules/weakref.h"
@@ -649,7 +385,6 @@
 #include "frozen_modules/wsgiref.types.h"
 #include "frozen_modules/wsgiref.util.h"
 #include "frozen_modules/wsgiref.validate.h"
-#include "frozen_modules/xdrlib.h"
 #include "frozen_modules/zipapp.h"
 #include "frozen_modules/zipfile.h"
 #include "frozen_modules/zipfile.__main__.h"
@@ -722,7 +457,6 @@ extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
 extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
-extern PyObject *_Py_get_aifc_toplevel(void);
 extern PyObject *_Py_get__aix_support_toplevel(void);
 extern PyObject *_Py_get_antigravity_toplevel(void);
 extern PyObject *_Py_get_argparse_toplevel(void);
@@ -731,9 +465,6 @@ extern PyObject *_Py_get_base64_toplevel(void);
 extern PyObject *_Py_get_bdb_toplevel(void);
 extern PyObject *_Py_get_bisect_toplevel(void);
 extern PyObject *_Py_get_calendar_toplevel(void);
-extern PyObject *_Py_get_cgi_toplevel(void);
-extern PyObject *_Py_get_cgitb_toplevel(void);
-extern PyObject *_Py_get_chunk_toplevel(void);
 extern PyObject *_Py_get_cmd_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
 extern PyObject *_Py_get_codeop_toplevel(void);
@@ -756,7 +487,6 @@ extern PyObject *_Py_get_contextvars_toplevel(void);
 extern PyObject *_Py_get_copy_toplevel(void);
 extern PyObject *_Py_get_copyreg_toplevel(void);
 extern PyObject *_Py_get_cProfile_toplevel(void);
-extern PyObject *_Py_get_crypt_toplevel(void);
 extern PyObject *_Py_get_csv_toplevel(void);
 extern PyObject *_Py_get_dataclasses_toplevel(void);
 extern PyObject *_Py_get_datetime_toplevel(void);
@@ -767,36 +497,6 @@ extern PyObject *_Py_get_dbm_ndbm_toplevel(void);
 extern PyObject *_Py_get_decimal_toplevel(void);
 extern PyObject *_Py_get_difflib_toplevel(void);
 extern PyObject *_Py_get_dis_toplevel(void);
-extern PyObject *_Py_get_doctest_toplevel(void);
-extern PyObject *_Py_get_email_toplevel(void);
-extern PyObject *_Py_get_email__encoded_words_toplevel(void);
-extern PyObject *_Py_get_email__header_value_parser_toplevel(void);
-extern PyObject *_Py_get_email__parseaddr_toplevel(void);
-extern PyObject *_Py_get_email__policybase_toplevel(void);
-extern PyObject *_Py_get_email_base64mime_toplevel(void);
-extern PyObject *_Py_get_email_charset_toplevel(void);
-extern PyObject *_Py_get_email_contentmanager_toplevel(void);
-extern PyObject *_Py_get_email_encoders_toplevel(void);
-extern PyObject *_Py_get_email_errors_toplevel(void);
-extern PyObject *_Py_get_email_feedparser_toplevel(void);
-extern PyObject *_Py_get_email_generator_toplevel(void);
-extern PyObject *_Py_get_email_header_toplevel(void);
-extern PyObject *_Py_get_email_headerregistry_toplevel(void);
-extern PyObject *_Py_get_email_iterators_toplevel(void);
-extern PyObject *_Py_get_email_message_toplevel(void);
-extern PyObject *_Py_get_email_mime_toplevel(void);
-extern PyObject *_Py_get_email_mime_application_toplevel(void);
-extern PyObject *_Py_get_email_mime_audio_toplevel(void);
-extern PyObject *_Py_get_email_mime_base_toplevel(void);
-extern PyObject *_Py_get_email_mime_image_toplevel(void);
-extern PyObject *_Py_get_email_mime_message_toplevel(void);
-extern PyObject *_Py_get_email_mime_multipart_toplevel(void);
-extern PyObject *_Py_get_email_mime_nonmultipart_toplevel(void);
-extern PyObject *_Py_get_email_mime_text_toplevel(void);
-extern PyObject *_Py_get_email_parser_toplevel(void);
-extern PyObject *_Py_get_email_policy_toplevel(void);
-extern PyObject *_Py_get_email_quoprimime_toplevel(void);
-extern PyObject *_Py_get_email_utils_toplevel(void);
 extern PyObject *_Py_get_encodings_toplevel(void);
 extern PyObject *_Py_get_encodings_aliases_toplevel(void);
 extern PyObject *_Py_get_encodings_ascii_toplevel(void);
@@ -940,141 +640,7 @@ extern PyObject *_Py_get_gzip_toplevel(void);
 extern PyObject *_Py_get_hashlib_toplevel(void);
 extern PyObject *_Py_get_heapq_toplevel(void);
 extern PyObject *_Py_get_hmac_toplevel(void);
-extern PyObject *_Py_get_html_toplevel(void);
-extern PyObject *_Py_get_html_entities_toplevel(void);
-extern PyObject *_Py_get_html_parser_toplevel(void);
-extern PyObject *_Py_get_http_toplevel(void);
-extern PyObject *_Py_get_http_client_toplevel(void);
-extern PyObject *_Py_get_http_cookiejar_toplevel(void);
-extern PyObject *_Py_get_http_cookies_toplevel(void);
-extern PyObject *_Py_get_http_server_toplevel(void);
-extern PyObject *_Py_get_idlelib_toplevel(void);
-extern PyObject *_Py_get_idlelib___main___toplevel(void);
-extern PyObject *_Py_get_idlelib_autocomplete_toplevel(void);
-extern PyObject *_Py_get_idlelib_autocomplete_w_toplevel(void);
-extern PyObject *_Py_get_idlelib_autoexpand_toplevel(void);
-extern PyObject *_Py_get_idlelib_browser_toplevel(void);
-extern PyObject *_Py_get_idlelib_calltip_toplevel(void);
-extern PyObject *_Py_get_idlelib_calltip_w_toplevel(void);
-extern PyObject *_Py_get_idlelib_codecontext_toplevel(void);
-extern PyObject *_Py_get_idlelib_colorizer_toplevel(void);
-extern PyObject *_Py_get_idlelib_config_toplevel(void);
-extern PyObject *_Py_get_idlelib_config_key_toplevel(void);
-extern PyObject *_Py_get_idlelib_configdialog_toplevel(void);
-extern PyObject *_Py_get_idlelib_debugger_toplevel(void);
-extern PyObject *_Py_get_idlelib_debugger_r_toplevel(void);
-extern PyObject *_Py_get_idlelib_debugobj_toplevel(void);
-extern PyObject *_Py_get_idlelib_debugobj_r_toplevel(void);
-extern PyObject *_Py_get_idlelib_delegator_toplevel(void);
-extern PyObject *_Py_get_idlelib_dynoption_toplevel(void);
-extern PyObject *_Py_get_idlelib_editor_toplevel(void);
-extern PyObject *_Py_get_idlelib_filelist_toplevel(void);
-extern PyObject *_Py_get_idlelib_format_toplevel(void);
-extern PyObject *_Py_get_idlelib_grep_toplevel(void);
-extern PyObject *_Py_get_idlelib_help_toplevel(void);
-extern PyObject *_Py_get_idlelib_help_about_toplevel(void);
-extern PyObject *_Py_get_idlelib_history_toplevel(void);
-extern PyObject *_Py_get_idlelib_hyperparser_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_htest_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_mock_idle_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_mock_tk_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_template_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_autocomplete_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_autocomplete_w_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_autoexpand_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_browser_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_calltip_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_calltip_w_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_codecontext_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_colorizer_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_config_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_config_key_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_configdialog_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_debugger_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_debugger_r_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_debugobj_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_debugobj_r_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_delegator_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_editmenu_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_editor_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_filelist_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_format_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_grep_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_help_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_help_about_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_history_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_hyperparser_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_iomenu_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_macosx_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_mainmenu_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_multicall_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_outwin_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_parenmatch_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_pathbrowser_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_percolator_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_pyparse_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_pyshell_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_query_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_redirector_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_replace_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_rpc_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_run_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_runscript_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_scrolledlist_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_search_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_searchbase_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_searchengine_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_sidebar_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_squeezer_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_stackviewer_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_statusbar_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_text_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_textview_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_tooltip_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_tree_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_undo_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_util_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_warning_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_window_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_zoomheight_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_test_zzdummy_toplevel(void);
-extern PyObject *_Py_get_idlelib_idle_test_tkinter_testing_utils_toplevel(void);
-extern PyObject *_Py_get_idlelib_iomenu_toplevel(void);
-extern PyObject *_Py_get_idlelib_macosx_toplevel(void);
-extern PyObject *_Py_get_idlelib_mainmenu_toplevel(void);
-extern PyObject *_Py_get_idlelib_multicall_toplevel(void);
-extern PyObject *_Py_get_idlelib_outwin_toplevel(void);
-extern PyObject *_Py_get_idlelib_parenmatch_toplevel(void);
-extern PyObject *_Py_get_idlelib_pathbrowser_toplevel(void);
-extern PyObject *_Py_get_idlelib_percolator_toplevel(void);
-extern PyObject *_Py_get_idlelib_pyparse_toplevel(void);
-extern PyObject *_Py_get_idlelib_pyshell_toplevel(void);
-extern PyObject *_Py_get_idlelib_query_toplevel(void);
-extern PyObject *_Py_get_idlelib_redirector_toplevel(void);
-extern PyObject *_Py_get_idlelib_replace_toplevel(void);
-extern PyObject *_Py_get_idlelib_rpc_toplevel(void);
-extern PyObject *_Py_get_idlelib_run_toplevel(void);
-extern PyObject *_Py_get_idlelib_runscript_toplevel(void);
-extern PyObject *_Py_get_idlelib_scrolledlist_toplevel(void);
-extern PyObject *_Py_get_idlelib_search_toplevel(void);
-extern PyObject *_Py_get_idlelib_searchbase_toplevel(void);
-extern PyObject *_Py_get_idlelib_searchengine_toplevel(void);
-extern PyObject *_Py_get_idlelib_sidebar_toplevel(void);
-extern PyObject *_Py_get_idlelib_squeezer_toplevel(void);
-extern PyObject *_Py_get_idlelib_stackviewer_toplevel(void);
-extern PyObject *_Py_get_idlelib_statusbar_toplevel(void);
-extern PyObject *_Py_get_idlelib_textview_toplevel(void);
-extern PyObject *_Py_get_idlelib_tooltip_toplevel(void);
-extern PyObject *_Py_get_idlelib_tree_toplevel(void);
-extern PyObject *_Py_get_idlelib_undo_toplevel(void);
-extern PyObject *_Py_get_idlelib_util_toplevel(void);
-extern PyObject *_Py_get_idlelib_window_toplevel(void);
-extern PyObject *_Py_get_idlelib_zoomheight_toplevel(void);
-extern PyObject *_Py_get_idlelib_zzdummy_toplevel(void);
 extern PyObject *_Py_get_imaplib_toplevel(void);
-extern PyObject *_Py_get_imghdr_toplevel(void);
 extern PyObject *_Py_get_importlib_toplevel(void);
 extern PyObject *_Py_get_importlib__abc_toplevel(void);
 extern PyObject *_Py_get_importlib_abc_toplevel(void);
@@ -1106,94 +672,15 @@ extern PyObject *_Py_get_json_encoder_toplevel(void);
 extern PyObject *_Py_get_json_scanner_toplevel(void);
 extern PyObject *_Py_get_json_tool_toplevel(void);
 extern PyObject *_Py_get_keyword_toplevel(void);
-extern PyObject *_Py_get_lib2to3_toplevel(void);
-extern PyObject *_Py_get_lib2to3___main___toplevel(void);
-extern PyObject *_Py_get_lib2to3_btm_matcher_toplevel(void);
-extern PyObject *_Py_get_lib2to3_btm_utils_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixer_base_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixer_util_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_apply_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_asserts_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_basestring_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_buffer_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_dict_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_except_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_exec_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_execfile_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_exitfunc_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_filter_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_funcattrs_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_future_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_getcwdu_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_has_key_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_idioms_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_import_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_imports_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_imports2_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_input_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_intern_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_isinstance_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_itertools_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_itertools_imports_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_long_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_map_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_metaclass_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_methodattrs_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_ne_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_next_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_nonzero_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_numliterals_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_operator_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_paren_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_print_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_raise_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_raw_input_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_reduce_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_reload_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_renames_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_repr_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_set_literal_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_standarderror_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_sys_exc_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_throw_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_tuple_params_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_types_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_unicode_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_urllib_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_ws_comma_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_xrange_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_xreadlines_toplevel(void);
-extern PyObject *_Py_get_lib2to3_fixes_fix_zip_toplevel(void);
-extern PyObject *_Py_get_lib2to3_main_toplevel(void);
-extern PyObject *_Py_get_lib2to3_patcomp_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_conv_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_driver_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_grammar_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_literals_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_parse_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_pgen_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_token_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pgen2_tokenize_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pygram_toplevel(void);
-extern PyObject *_Py_get_lib2to3_pytree_toplevel(void);
-extern PyObject *_Py_get_lib2to3_refactor_toplevel(void);
 extern PyObject *_Py_get_linecache_toplevel(void);
 extern PyObject *_Py_get_locale_toplevel(void);
 extern PyObject *_Py_get_logging_toplevel(void);
 extern PyObject *_Py_get_logging_config_toplevel(void);
 extern PyObject *_Py_get_logging_handlers_toplevel(void);
 extern PyObject *_Py_get_lzma_toplevel(void);
-extern PyObject *_Py_get_mailbox_toplevel(void);
-extern PyObject *_Py_get_mailcap_toplevel(void);
 extern PyObject *_Py_get__markupbase_toplevel(void);
 extern PyObject *_Py_get_mimetypes_toplevel(void);
 extern PyObject *_Py_get_modulefinder_toplevel(void);
-extern PyObject *_Py_get_msilib_toplevel(void);
-extern PyObject *_Py_get_msilib_schema_toplevel(void);
-extern PyObject *_Py_get_msilib_sequence_toplevel(void);
-extern PyObject *_Py_get_msilib_text_toplevel(void);
 extern PyObject *_Py_get_multiprocessing_toplevel(void);
 extern PyObject *_Py_get_multiprocessing_connection_toplevel(void);
 extern PyObject *_Py_get_multiprocessing_context_toplevel(void);
@@ -1218,7 +705,6 @@ extern PyObject *_Py_get_multiprocessing_spawn_toplevel(void);
 extern PyObject *_Py_get_multiprocessing_synchronize_toplevel(void);
 extern PyObject *_Py_get_multiprocessing_util_toplevel(void);
 extern PyObject *_Py_get_netrc_toplevel(void);
-extern PyObject *_Py_get_nntplib_toplevel(void);
 extern PyObject *_Py_get_ntpath_toplevel(void);
 extern PyObject *_Py_get_nturl2path_toplevel(void);
 extern PyObject *_Py_get_numbers_toplevel(void);
@@ -1235,7 +721,6 @@ extern PyObject *_Py_get___phello___ham_eggs_toplevel(void);
 extern PyObject *_Py_get___phello___spam_toplevel(void);
 extern PyObject *_Py_get_pickle_toplevel(void);
 extern PyObject *_Py_get_pickletools_toplevel(void);
-extern PyObject *_Py_get_pipes_toplevel(void);
 extern PyObject *_Py_get_pkgutil_toplevel(void);
 extern PyObject *_Py_get_platform_toplevel(void);
 extern PyObject *_Py_get_plistlib_toplevel(void);
@@ -1250,9 +735,6 @@ extern PyObject *_Py_get_pyclbr_toplevel(void);
 extern PyObject *_Py_get_py_compile_toplevel(void);
 extern PyObject *_Py_get__pydatetime_toplevel(void);
 extern PyObject *_Py_get__pydecimal_toplevel(void);
-extern PyObject *_Py_get_pydoc_data_toplevel(void);
-extern PyObject *_Py_get_pydoc_data_topics_toplevel(void);
-extern PyObject *_Py_get_pydoc_toplevel(void);
 extern PyObject *_Py_get__pyio_toplevel(void);
 extern PyObject *_Py_get__pylong_toplevel(void);
 extern PyObject *_Py_get_queue_toplevel(void);
@@ -1272,7 +754,6 @@ extern PyObject *_Py_get_shlex_toplevel(void);
 extern PyObject *_Py_get_shutil_toplevel(void);
 extern PyObject *_Py_get_signal_toplevel(void);
 extern PyObject *_Py_get_smtplib_toplevel(void);
-extern PyObject *_Py_get_sndhdr_toplevel(void);
 extern PyObject *_Py_get_socket_toplevel(void);
 extern PyObject *_Py_get_socketserver_toplevel(void);
 extern PyObject *_Py_get_statistics_toplevel(void);
@@ -1282,12 +763,9 @@ extern PyObject *_Py_get_string_toplevel(void);
 extern PyObject *_Py_get__strptime_toplevel(void);
 extern PyObject *_Py_get_struct_toplevel(void);
 extern PyObject *_Py_get_subprocess_toplevel(void);
-extern PyObject *_Py_get_sunau_toplevel(void);
 extern PyObject *_Py_get_symtable_toplevel(void);
 extern PyObject *_Py_get_sysconfig_toplevel(void);
 extern PyObject *_Py_get_tabnanny_toplevel(void);
-extern PyObject *_Py_get_tarfile_toplevel(void);
-extern PyObject *_Py_get_telnetlib_toplevel(void);
 extern PyObject *_Py_get_tempfile_toplevel(void);
 extern PyObject *_Py_get_textwrap_toplevel(void);
 extern PyObject *_Py_get_this_toplevel(void);
@@ -1306,14 +784,7 @@ extern PyObject *_Py_get_trace_toplevel(void);
 extern PyObject *_Py_get_tty_toplevel(void);
 extern PyObject *_Py_get_types_toplevel(void);
 extern PyObject *_Py_get_typing_toplevel(void);
-extern PyObject *_Py_get_urllib_toplevel(void);
-extern PyObject *_Py_get_urllib_error_toplevel(void);
-extern PyObject *_Py_get_urllib_parse_toplevel(void);
-extern PyObject *_Py_get_urllib_request_toplevel(void);
-extern PyObject *_Py_get_urllib_response_toplevel(void);
-extern PyObject *_Py_get_urllib_robotparser_toplevel(void);
 extern PyObject *_Py_get_uuid_toplevel(void);
-extern PyObject *_Py_get_uu_toplevel(void);
 extern PyObject *_Py_get_warnings_toplevel(void);
 extern PyObject *_Py_get_wave_toplevel(void);
 extern PyObject *_Py_get_weakref_toplevel(void);
@@ -1326,7 +797,6 @@ extern PyObject *_Py_get_wsgiref_simple_server_toplevel(void);
 extern PyObject *_Py_get_wsgiref_types_toplevel(void);
 extern PyObject *_Py_get_wsgiref_util_toplevel(void);
 extern PyObject *_Py_get_wsgiref_validate_toplevel(void);
-extern PyObject *_Py_get_xdrlib_toplevel(void);
 extern PyObject *_Py_get_zipapp_toplevel(void);
 extern PyObject *_Py_get_zipfile_toplevel(void);
 extern PyObject *_Py_get_zipfile___main___toplevel(void);
@@ -1403,7 +873,6 @@ static const struct _frozen bootstrap_modules[] = {
 static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), false, GET_CODE(abc)},
-    {"aifc", _Py_M__aifc, (int)sizeof(_Py_M__aifc), false, GET_CODE(aifc)},
     {"_aix_support", _Py_M___aix_support, (int)sizeof(_Py_M___aix_support), false, GET_CODE(_aix_support)},
     {"antigravity", _Py_M__antigravity, (int)sizeof(_Py_M__antigravity), false, GET_CODE(antigravity)},
     {"argparse", _Py_M__argparse, (int)sizeof(_Py_M__argparse), false, GET_CODE(argparse)},
@@ -1412,9 +881,6 @@ static const struct _frozen stdlib_modules[] = {
     {"bdb", _Py_M__bdb, (int)sizeof(_Py_M__bdb), false, GET_CODE(bdb)},
     {"bisect", _Py_M__bisect, (int)sizeof(_Py_M__bisect), false, GET_CODE(bisect)},
     {"calendar", _Py_M__calendar, (int)sizeof(_Py_M__calendar), false, GET_CODE(calendar)},
-    {"cgi", _Py_M__cgi, (int)sizeof(_Py_M__cgi), false, GET_CODE(cgi)},
-    {"cgitb", _Py_M__cgitb, (int)sizeof(_Py_M__cgitb), false, GET_CODE(cgitb)},
-    {"chunk", _Py_M__chunk, (int)sizeof(_Py_M__chunk), false, GET_CODE(chunk)},
     {"cmd", _Py_M__cmd, (int)sizeof(_Py_M__cmd), false, GET_CODE(cmd)},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), false, GET_CODE(codecs)},
     {"codeop", _Py_M__codeop, (int)sizeof(_Py_M__codeop), false, GET_CODE(codeop)},
@@ -1440,7 +906,6 @@ static const struct _frozen stdlib_modules[] = {
     {"copy", _Py_M__copy, (int)sizeof(_Py_M__copy), false, GET_CODE(copy)},
     {"copyreg", _Py_M__copyreg, (int)sizeof(_Py_M__copyreg), false, GET_CODE(copyreg)},
     {"cProfile", _Py_M__cProfile, (int)sizeof(_Py_M__cProfile), false, GET_CODE(cProfile)},
-    {"crypt", _Py_M__crypt, (int)sizeof(_Py_M__crypt), false, GET_CODE(crypt)},
     {"csv", _Py_M__csv, (int)sizeof(_Py_M__csv), false, GET_CODE(csv)},
     {"dataclasses", _Py_M__dataclasses, (int)sizeof(_Py_M__dataclasses), false, GET_CODE(dataclasses)},
     {"datetime", _Py_M__datetime, (int)sizeof(_Py_M__datetime), false, GET_CODE(datetime)},
@@ -1452,38 +917,6 @@ static const struct _frozen stdlib_modules[] = {
     {"decimal", _Py_M__decimal, (int)sizeof(_Py_M__decimal), false, GET_CODE(decimal)},
     {"difflib", _Py_M__difflib, (int)sizeof(_Py_M__difflib), false, GET_CODE(difflib)},
     {"dis", _Py_M__dis, (int)sizeof(_Py_M__dis), false, GET_CODE(dis)},
-    {"doctest", _Py_M__doctest, (int)sizeof(_Py_M__doctest), false, GET_CODE(doctest)},
-    {"email", _Py_M__email, (int)sizeof(_Py_M__email), true, GET_CODE(email)},
-    {"email.__init__", _Py_M__email, (int)sizeof(_Py_M__email), false, GET_CODE(email)},
-    {"email._encoded_words", _Py_M__email__encoded_words, (int)sizeof(_Py_M__email__encoded_words), false, GET_CODE(email__encoded_words)},
-    {"email._header_value_parser", _Py_M__email__header_value_parser, (int)sizeof(_Py_M__email__header_value_parser), false, GET_CODE(email__header_value_parser)},
-    {"email._parseaddr", _Py_M__email__parseaddr, (int)sizeof(_Py_M__email__parseaddr), false, GET_CODE(email__parseaddr)},
-    {"email._policybase", _Py_M__email__policybase, (int)sizeof(_Py_M__email__policybase), false, GET_CODE(email__policybase)},
-    {"email.base64mime", _Py_M__email_base64mime, (int)sizeof(_Py_M__email_base64mime), false, GET_CODE(email_base64mime)},
-    {"email.charset", _Py_M__email_charset, (int)sizeof(_Py_M__email_charset), false, GET_CODE(email_charset)},
-    {"email.contentmanager", _Py_M__email_contentmanager, (int)sizeof(_Py_M__email_contentmanager), false, GET_CODE(email_contentmanager)},
-    {"email.encoders", _Py_M__email_encoders, (int)sizeof(_Py_M__email_encoders), false, GET_CODE(email_encoders)},
-    {"email.errors", _Py_M__email_errors, (int)sizeof(_Py_M__email_errors), false, GET_CODE(email_errors)},
-    {"email.feedparser", _Py_M__email_feedparser, (int)sizeof(_Py_M__email_feedparser), false, GET_CODE(email_feedparser)},
-    {"email.generator", _Py_M__email_generator, (int)sizeof(_Py_M__email_generator), false, GET_CODE(email_generator)},
-    {"email.header", _Py_M__email_header, (int)sizeof(_Py_M__email_header), false, GET_CODE(email_header)},
-    {"email.headerregistry", _Py_M__email_headerregistry, (int)sizeof(_Py_M__email_headerregistry), false, GET_CODE(email_headerregistry)},
-    {"email.iterators", _Py_M__email_iterators, (int)sizeof(_Py_M__email_iterators), false, GET_CODE(email_iterators)},
-    {"email.message", _Py_M__email_message, (int)sizeof(_Py_M__email_message), false, GET_CODE(email_message)},
-    {"email.mime", _Py_M__email_mime, (int)sizeof(_Py_M__email_mime), true, GET_CODE(email_mime)},
-    {"email.mime.__init__", _Py_M__email_mime, (int)sizeof(_Py_M__email_mime), false, GET_CODE(email_mime)},
-    {"email.mime.application", _Py_M__email_mime_application, (int)sizeof(_Py_M__email_mime_application), false, GET_CODE(email_mime_application)},
-    {"email.mime.audio", _Py_M__email_mime_audio, (int)sizeof(_Py_M__email_mime_audio), false, GET_CODE(email_mime_audio)},
-    {"email.mime.base", _Py_M__email_mime_base, (int)sizeof(_Py_M__email_mime_base), false, GET_CODE(email_mime_base)},
-    {"email.mime.image", _Py_M__email_mime_image, (int)sizeof(_Py_M__email_mime_image), false, GET_CODE(email_mime_image)},
-    {"email.mime.message", _Py_M__email_mime_message, (int)sizeof(_Py_M__email_mime_message), false, GET_CODE(email_mime_message)},
-    {"email.mime.multipart", _Py_M__email_mime_multipart, (int)sizeof(_Py_M__email_mime_multipart), false, GET_CODE(email_mime_multipart)},
-    {"email.mime.nonmultipart", _Py_M__email_mime_nonmultipart, (int)sizeof(_Py_M__email_mime_nonmultipart), false, GET_CODE(email_mime_nonmultipart)},
-    {"email.mime.text", _Py_M__email_mime_text, (int)sizeof(_Py_M__email_mime_text), false, GET_CODE(email_mime_text)},
-    {"email.parser", _Py_M__email_parser, (int)sizeof(_Py_M__email_parser), false, GET_CODE(email_parser)},
-    {"email.policy", _Py_M__email_policy, (int)sizeof(_Py_M__email_policy), false, GET_CODE(email_policy)},
-    {"email.quoprimime", _Py_M__email_quoprimime, (int)sizeof(_Py_M__email_quoprimime), false, GET_CODE(email_quoprimime)},
-    {"email.utils", _Py_M__email_utils, (int)sizeof(_Py_M__email_utils), false, GET_CODE(email_utils)},
     {"encodings", _Py_M__encodings, (int)sizeof(_Py_M__encodings), true, GET_CODE(encodings)},
     {"encodings.__init__", _Py_M__encodings, (int)sizeof(_Py_M__encodings), false, GET_CODE(encodings)},
     {"encodings.aliases", _Py_M__encodings_aliases, (int)sizeof(_Py_M__encodings_aliases), false, GET_CODE(encodings_aliases)},
@@ -1629,145 +1062,7 @@ static const struct _frozen stdlib_modules[] = {
     {"hashlib", _Py_M__hashlib, (int)sizeof(_Py_M__hashlib), false, GET_CODE(hashlib)},
     {"heapq", _Py_M__heapq, (int)sizeof(_Py_M__heapq), false, GET_CODE(heapq)},
     {"hmac", _Py_M__hmac, (int)sizeof(_Py_M__hmac), false, GET_CODE(hmac)},
-    {"html", _Py_M__html, (int)sizeof(_Py_M__html), true, GET_CODE(html)},
-    {"html.__init__", _Py_M__html, (int)sizeof(_Py_M__html), false, GET_CODE(html)},
-    {"html.entities", _Py_M__html_entities, (int)sizeof(_Py_M__html_entities), false, GET_CODE(html_entities)},
-    {"html.parser", _Py_M__html_parser, (int)sizeof(_Py_M__html_parser), false, GET_CODE(html_parser)},
-    {"http", _Py_M__http, (int)sizeof(_Py_M__http), true, GET_CODE(http)},
-    {"http.__init__", _Py_M__http, (int)sizeof(_Py_M__http), false, GET_CODE(http)},
-    {"http.client", _Py_M__http_client, (int)sizeof(_Py_M__http_client), false, GET_CODE(http_client)},
-    {"http.cookiejar", _Py_M__http_cookiejar, (int)sizeof(_Py_M__http_cookiejar), false, GET_CODE(http_cookiejar)},
-    {"http.cookies", _Py_M__http_cookies, (int)sizeof(_Py_M__http_cookies), false, GET_CODE(http_cookies)},
-    {"http.server", _Py_M__http_server, (int)sizeof(_Py_M__http_server), false, GET_CODE(http_server)},
-    {"idlelib", _Py_M__idlelib, (int)sizeof(_Py_M__idlelib), true, GET_CODE(idlelib)},
-    {"idlelib.__init__", _Py_M__idlelib, (int)sizeof(_Py_M__idlelib), false, GET_CODE(idlelib)},
-    {"idlelib.__main__", _Py_M__idlelib___main__, (int)sizeof(_Py_M__idlelib___main__), false, GET_CODE(idlelib___main__)},
-    {"idlelib.autocomplete", _Py_M__idlelib_autocomplete, (int)sizeof(_Py_M__idlelib_autocomplete), false, GET_CODE(idlelib_autocomplete)},
-    {"idlelib.autocomplete_w", _Py_M__idlelib_autocomplete_w, (int)sizeof(_Py_M__idlelib_autocomplete_w), false, GET_CODE(idlelib_autocomplete_w)},
-    {"idlelib.autoexpand", _Py_M__idlelib_autoexpand, (int)sizeof(_Py_M__idlelib_autoexpand), false, GET_CODE(idlelib_autoexpand)},
-    {"idlelib.browser", _Py_M__idlelib_browser, (int)sizeof(_Py_M__idlelib_browser), false, GET_CODE(idlelib_browser)},
-    {"idlelib.calltip", _Py_M__idlelib_calltip, (int)sizeof(_Py_M__idlelib_calltip), false, GET_CODE(idlelib_calltip)},
-    {"idlelib.calltip_w", _Py_M__idlelib_calltip_w, (int)sizeof(_Py_M__idlelib_calltip_w), false, GET_CODE(idlelib_calltip_w)},
-    {"idlelib.codecontext", _Py_M__idlelib_codecontext, (int)sizeof(_Py_M__idlelib_codecontext), false, GET_CODE(idlelib_codecontext)},
-    {"idlelib.colorizer", _Py_M__idlelib_colorizer, (int)sizeof(_Py_M__idlelib_colorizer), false, GET_CODE(idlelib_colorizer)},
-    {"idlelib.config", _Py_M__idlelib_config, (int)sizeof(_Py_M__idlelib_config), false, GET_CODE(idlelib_config)},
-    {"idlelib.config_key", _Py_M__idlelib_config_key, (int)sizeof(_Py_M__idlelib_config_key), false, GET_CODE(idlelib_config_key)},
-    {"idlelib.configdialog", _Py_M__idlelib_configdialog, (int)sizeof(_Py_M__idlelib_configdialog), false, GET_CODE(idlelib_configdialog)},
-    {"idlelib.debugger", _Py_M__idlelib_debugger, (int)sizeof(_Py_M__idlelib_debugger), false, GET_CODE(idlelib_debugger)},
-    {"idlelib.debugger_r", _Py_M__idlelib_debugger_r, (int)sizeof(_Py_M__idlelib_debugger_r), false, GET_CODE(idlelib_debugger_r)},
-    {"idlelib.debugobj", _Py_M__idlelib_debugobj, (int)sizeof(_Py_M__idlelib_debugobj), false, GET_CODE(idlelib_debugobj)},
-    {"idlelib.debugobj_r", _Py_M__idlelib_debugobj_r, (int)sizeof(_Py_M__idlelib_debugobj_r), false, GET_CODE(idlelib_debugobj_r)},
-    {"idlelib.delegator", _Py_M__idlelib_delegator, (int)sizeof(_Py_M__idlelib_delegator), false, GET_CODE(idlelib_delegator)},
-    {"idlelib.dynoption", _Py_M__idlelib_dynoption, (int)sizeof(_Py_M__idlelib_dynoption), false, GET_CODE(idlelib_dynoption)},
-    {"idlelib.editor", _Py_M__idlelib_editor, (int)sizeof(_Py_M__idlelib_editor), false, GET_CODE(idlelib_editor)},
-    {"idlelib.filelist", _Py_M__idlelib_filelist, (int)sizeof(_Py_M__idlelib_filelist), false, GET_CODE(idlelib_filelist)},
-    {"idlelib.format", _Py_M__idlelib_format, (int)sizeof(_Py_M__idlelib_format), false, GET_CODE(idlelib_format)},
-    {"idlelib.grep", _Py_M__idlelib_grep, (int)sizeof(_Py_M__idlelib_grep), false, GET_CODE(idlelib_grep)},
-    {"idlelib.help", _Py_M__idlelib_help, (int)sizeof(_Py_M__idlelib_help), false, GET_CODE(idlelib_help)},
-    {"idlelib.help_about", _Py_M__idlelib_help_about, (int)sizeof(_Py_M__idlelib_help_about), false, GET_CODE(idlelib_help_about)},
-    {"idlelib.history", _Py_M__idlelib_history, (int)sizeof(_Py_M__idlelib_history), false, GET_CODE(idlelib_history)},
-    {"idlelib.hyperparser", _Py_M__idlelib_hyperparser, (int)sizeof(_Py_M__idlelib_hyperparser), false, GET_CODE(idlelib_hyperparser)},
-    {"idlelib.idle", _Py_M__idlelib_idle, (int)sizeof(_Py_M__idlelib_idle), false, GET_CODE(idlelib_idle)},
-    {"idlelib.idle_test", _Py_M__idlelib_idle_test, (int)sizeof(_Py_M__idlelib_idle_test), true, GET_CODE(idlelib_idle_test)},
-    {"idlelib.idle_test.__init__", _Py_M__idlelib_idle_test, (int)sizeof(_Py_M__idlelib_idle_test), false, GET_CODE(idlelib_idle_test)},
-    {"idlelib.idle_test.htest", _Py_M__idlelib_idle_test_htest, (int)sizeof(_Py_M__idlelib_idle_test_htest), false, GET_CODE(idlelib_idle_test_htest)},
-    {"idlelib.idle_test.mock_idle", _Py_M__idlelib_idle_test_mock_idle, (int)sizeof(_Py_M__idlelib_idle_test_mock_idle), false, GET_CODE(idlelib_idle_test_mock_idle)},
-    {"idlelib.idle_test.mock_tk", _Py_M__idlelib_idle_test_mock_tk, (int)sizeof(_Py_M__idlelib_idle_test_mock_tk), false, GET_CODE(idlelib_idle_test_mock_tk)},
-    {"idlelib.idle_test.template", _Py_M__idlelib_idle_test_template, (int)sizeof(_Py_M__idlelib_idle_test_template), false, GET_CODE(idlelib_idle_test_template)},
-    {"idlelib.idle_test.test_autocomplete", _Py_M__idlelib_idle_test_test_autocomplete, (int)sizeof(_Py_M__idlelib_idle_test_test_autocomplete), false, GET_CODE(idlelib_idle_test_test_autocomplete)},
-    {"idlelib.idle_test.test_autocomplete_w", _Py_M__idlelib_idle_test_test_autocomplete_w, (int)sizeof(_Py_M__idlelib_idle_test_test_autocomplete_w), false, GET_CODE(idlelib_idle_test_test_autocomplete_w)},
-    {"idlelib.idle_test.test_autoexpand", _Py_M__idlelib_idle_test_test_autoexpand, (int)sizeof(_Py_M__idlelib_idle_test_test_autoexpand), false, GET_CODE(idlelib_idle_test_test_autoexpand)},
-    {"idlelib.idle_test.test_browser", _Py_M__idlelib_idle_test_test_browser, (int)sizeof(_Py_M__idlelib_idle_test_test_browser), false, GET_CODE(idlelib_idle_test_test_browser)},
-    {"idlelib.idle_test.test_calltip", _Py_M__idlelib_idle_test_test_calltip, (int)sizeof(_Py_M__idlelib_idle_test_test_calltip), false, GET_CODE(idlelib_idle_test_test_calltip)},
-    {"idlelib.idle_test.test_calltip_w", _Py_M__idlelib_idle_test_test_calltip_w, (int)sizeof(_Py_M__idlelib_idle_test_test_calltip_w), false, GET_CODE(idlelib_idle_test_test_calltip_w)},
-    {"idlelib.idle_test.test_codecontext", _Py_M__idlelib_idle_test_test_codecontext, (int)sizeof(_Py_M__idlelib_idle_test_test_codecontext), false, GET_CODE(idlelib_idle_test_test_codecontext)},
-    {"idlelib.idle_test.test_colorizer", _Py_M__idlelib_idle_test_test_colorizer, (int)sizeof(_Py_M__idlelib_idle_test_test_colorizer), false, GET_CODE(idlelib_idle_test_test_colorizer)},
-    {"idlelib.idle_test.test_config", _Py_M__idlelib_idle_test_test_config, (int)sizeof(_Py_M__idlelib_idle_test_test_config), false, GET_CODE(idlelib_idle_test_test_config)},
-    {"idlelib.idle_test.test_config_key", _Py_M__idlelib_idle_test_test_config_key, (int)sizeof(_Py_M__idlelib_idle_test_test_config_key), false, GET_CODE(idlelib_idle_test_test_config_key)},
-    {"idlelib.idle_test.test_configdialog", _Py_M__idlelib_idle_test_test_configdialog, (int)sizeof(_Py_M__idlelib_idle_test_test_configdialog), false, GET_CODE(idlelib_idle_test_test_configdialog)},
-    {"idlelib.idle_test.test_debugger", _Py_M__idlelib_idle_test_test_debugger, (int)sizeof(_Py_M__idlelib_idle_test_test_debugger), false, GET_CODE(idlelib_idle_test_test_debugger)},
-    {"idlelib.idle_test.test_debugger_r", _Py_M__idlelib_idle_test_test_debugger_r, (int)sizeof(_Py_M__idlelib_idle_test_test_debugger_r), false, GET_CODE(idlelib_idle_test_test_debugger_r)},
-    {"idlelib.idle_test.test_debugobj", _Py_M__idlelib_idle_test_test_debugobj, (int)sizeof(_Py_M__idlelib_idle_test_test_debugobj), false, GET_CODE(idlelib_idle_test_test_debugobj)},
-    {"idlelib.idle_test.test_debugobj_r", _Py_M__idlelib_idle_test_test_debugobj_r, (int)sizeof(_Py_M__idlelib_idle_test_test_debugobj_r), false, GET_CODE(idlelib_idle_test_test_debugobj_r)},
-    {"idlelib.idle_test.test_delegator", _Py_M__idlelib_idle_test_test_delegator, (int)sizeof(_Py_M__idlelib_idle_test_test_delegator), false, GET_CODE(idlelib_idle_test_test_delegator)},
-    {"idlelib.idle_test.test_editmenu", _Py_M__idlelib_idle_test_test_editmenu, (int)sizeof(_Py_M__idlelib_idle_test_test_editmenu), false, GET_CODE(idlelib_idle_test_test_editmenu)},
-    {"idlelib.idle_test.test_editor", _Py_M__idlelib_idle_test_test_editor, (int)sizeof(_Py_M__idlelib_idle_test_test_editor), false, GET_CODE(idlelib_idle_test_test_editor)},
-    {"idlelib.idle_test.test_filelist", _Py_M__idlelib_idle_test_test_filelist, (int)sizeof(_Py_M__idlelib_idle_test_test_filelist), false, GET_CODE(idlelib_idle_test_test_filelist)},
-    {"idlelib.idle_test.test_format", _Py_M__idlelib_idle_test_test_format, (int)sizeof(_Py_M__idlelib_idle_test_test_format), false, GET_CODE(idlelib_idle_test_test_format)},
-    {"idlelib.idle_test.test_grep", _Py_M__idlelib_idle_test_test_grep, (int)sizeof(_Py_M__idlelib_idle_test_test_grep), false, GET_CODE(idlelib_idle_test_test_grep)},
-    {"idlelib.idle_test.test_help", _Py_M__idlelib_idle_test_test_help, (int)sizeof(_Py_M__idlelib_idle_test_test_help), false, GET_CODE(idlelib_idle_test_test_help)},
-    {"idlelib.idle_test.test_help_about", _Py_M__idlelib_idle_test_test_help_about, (int)sizeof(_Py_M__idlelib_idle_test_test_help_about), false, GET_CODE(idlelib_idle_test_test_help_about)},
-    {"idlelib.idle_test.test_history", _Py_M__idlelib_idle_test_test_history, (int)sizeof(_Py_M__idlelib_idle_test_test_history), false, GET_CODE(idlelib_idle_test_test_history)},
-    {"idlelib.idle_test.test_hyperparser", _Py_M__idlelib_idle_test_test_hyperparser, (int)sizeof(_Py_M__idlelib_idle_test_test_hyperparser), false, GET_CODE(idlelib_idle_test_test_hyperparser)},
-    {"idlelib.idle_test.test_iomenu", _Py_M__idlelib_idle_test_test_iomenu, (int)sizeof(_Py_M__idlelib_idle_test_test_iomenu), false, GET_CODE(idlelib_idle_test_test_iomenu)},
-    {"idlelib.idle_test.test_macosx", _Py_M__idlelib_idle_test_test_macosx, (int)sizeof(_Py_M__idlelib_idle_test_test_macosx), false, GET_CODE(idlelib_idle_test_test_macosx)},
-    {"idlelib.idle_test.test_mainmenu", _Py_M__idlelib_idle_test_test_mainmenu, (int)sizeof(_Py_M__idlelib_idle_test_test_mainmenu), false, GET_CODE(idlelib_idle_test_test_mainmenu)},
-    {"idlelib.idle_test.test_multicall", _Py_M__idlelib_idle_test_test_multicall, (int)sizeof(_Py_M__idlelib_idle_test_test_multicall), false, GET_CODE(idlelib_idle_test_test_multicall)},
-    {"idlelib.idle_test.test_outwin", _Py_M__idlelib_idle_test_test_outwin, (int)sizeof(_Py_M__idlelib_idle_test_test_outwin), false, GET_CODE(idlelib_idle_test_test_outwin)},
-    {"idlelib.idle_test.test_parenmatch", _Py_M__idlelib_idle_test_test_parenmatch, (int)sizeof(_Py_M__idlelib_idle_test_test_parenmatch), false, GET_CODE(idlelib_idle_test_test_parenmatch)},
-    {"idlelib.idle_test.test_pathbrowser", _Py_M__idlelib_idle_test_test_pathbrowser, (int)sizeof(_Py_M__idlelib_idle_test_test_pathbrowser), false, GET_CODE(idlelib_idle_test_test_pathbrowser)},
-    {"idlelib.idle_test.test_percolator", _Py_M__idlelib_idle_test_test_percolator, (int)sizeof(_Py_M__idlelib_idle_test_test_percolator), false, GET_CODE(idlelib_idle_test_test_percolator)},
-    {"idlelib.idle_test.test_pyparse", _Py_M__idlelib_idle_test_test_pyparse, (int)sizeof(_Py_M__idlelib_idle_test_test_pyparse), false, GET_CODE(idlelib_idle_test_test_pyparse)},
-    {"idlelib.idle_test.test_pyshell", _Py_M__idlelib_idle_test_test_pyshell, (int)sizeof(_Py_M__idlelib_idle_test_test_pyshell), false, GET_CODE(idlelib_idle_test_test_pyshell)},
-    {"idlelib.idle_test.test_query", _Py_M__idlelib_idle_test_test_query, (int)sizeof(_Py_M__idlelib_idle_test_test_query), false, GET_CODE(idlelib_idle_test_test_query)},
-    {"idlelib.idle_test.test_redirector", _Py_M__idlelib_idle_test_test_redirector, (int)sizeof(_Py_M__idlelib_idle_test_test_redirector), false, GET_CODE(idlelib_idle_test_test_redirector)},
-    {"idlelib.idle_test.test_replace", _Py_M__idlelib_idle_test_test_replace, (int)sizeof(_Py_M__idlelib_idle_test_test_replace), false, GET_CODE(idlelib_idle_test_test_replace)},
-    {"idlelib.idle_test.test_rpc", _Py_M__idlelib_idle_test_test_rpc, (int)sizeof(_Py_M__idlelib_idle_test_test_rpc), false, GET_CODE(idlelib_idle_test_test_rpc)},
-    {"idlelib.idle_test.test_run", _Py_M__idlelib_idle_test_test_run, (int)sizeof(_Py_M__idlelib_idle_test_test_run), false, GET_CODE(idlelib_idle_test_test_run)},
-    {"idlelib.idle_test.test_runscript", _Py_M__idlelib_idle_test_test_runscript, (int)sizeof(_Py_M__idlelib_idle_test_test_runscript), false, GET_CODE(idlelib_idle_test_test_runscript)},
-    {"idlelib.idle_test.test_scrolledlist", _Py_M__idlelib_idle_test_test_scrolledlist, (int)sizeof(_Py_M__idlelib_idle_test_test_scrolledlist), false, GET_CODE(idlelib_idle_test_test_scrolledlist)},
-    {"idlelib.idle_test.test_search", _Py_M__idlelib_idle_test_test_search, (int)sizeof(_Py_M__idlelib_idle_test_test_search), false, GET_CODE(idlelib_idle_test_test_search)},
-    {"idlelib.idle_test.test_searchbase", _Py_M__idlelib_idle_test_test_searchbase, (int)sizeof(_Py_M__idlelib_idle_test_test_searchbase), false, GET_CODE(idlelib_idle_test_test_searchbase)},
-    {"idlelib.idle_test.test_searchengine", _Py_M__idlelib_idle_test_test_searchengine, (int)sizeof(_Py_M__idlelib_idle_test_test_searchengine), false, GET_CODE(idlelib_idle_test_test_searchengine)},
-    {"idlelib.idle_test.test_sidebar", _Py_M__idlelib_idle_test_test_sidebar, (int)sizeof(_Py_M__idlelib_idle_test_test_sidebar), false, GET_CODE(idlelib_idle_test_test_sidebar)},
-    {"idlelib.idle_test.test_squeezer", _Py_M__idlelib_idle_test_test_squeezer, (int)sizeof(_Py_M__idlelib_idle_test_test_squeezer), false, GET_CODE(idlelib_idle_test_test_squeezer)},
-    {"idlelib.idle_test.test_stackviewer", _Py_M__idlelib_idle_test_test_stackviewer, (int)sizeof(_Py_M__idlelib_idle_test_test_stackviewer), false, GET_CODE(idlelib_idle_test_test_stackviewer)},
-    {"idlelib.idle_test.test_statusbar", _Py_M__idlelib_idle_test_test_statusbar, (int)sizeof(_Py_M__idlelib_idle_test_test_statusbar), false, GET_CODE(idlelib_idle_test_test_statusbar)},
-    {"idlelib.idle_test.test_text", _Py_M__idlelib_idle_test_test_text, (int)sizeof(_Py_M__idlelib_idle_test_test_text), false, GET_CODE(idlelib_idle_test_test_text)},
-    {"idlelib.idle_test.test_textview", _Py_M__idlelib_idle_test_test_textview, (int)sizeof(_Py_M__idlelib_idle_test_test_textview), false, GET_CODE(idlelib_idle_test_test_textview)},
-    {"idlelib.idle_test.test_tooltip", _Py_M__idlelib_idle_test_test_tooltip, (int)sizeof(_Py_M__idlelib_idle_test_test_tooltip), false, GET_CODE(idlelib_idle_test_test_tooltip)},
-    {"idlelib.idle_test.test_tree", _Py_M__idlelib_idle_test_test_tree, (int)sizeof(_Py_M__idlelib_idle_test_test_tree), false, GET_CODE(idlelib_idle_test_test_tree)},
-    {"idlelib.idle_test.test_undo", _Py_M__idlelib_idle_test_test_undo, (int)sizeof(_Py_M__idlelib_idle_test_test_undo), false, GET_CODE(idlelib_idle_test_test_undo)},
-    {"idlelib.idle_test.test_util", _Py_M__idlelib_idle_test_test_util, (int)sizeof(_Py_M__idlelib_idle_test_test_util), false, GET_CODE(idlelib_idle_test_test_util)},
-    {"idlelib.idle_test.test_warning", _Py_M__idlelib_idle_test_test_warning, (int)sizeof(_Py_M__idlelib_idle_test_test_warning), false, GET_CODE(idlelib_idle_test_test_warning)},
-    {"idlelib.idle_test.test_window", _Py_M__idlelib_idle_test_test_window, (int)sizeof(_Py_M__idlelib_idle_test_test_window), false, GET_CODE(idlelib_idle_test_test_window)},
-    {"idlelib.idle_test.test_zoomheight", _Py_M__idlelib_idle_test_test_zoomheight, (int)sizeof(_Py_M__idlelib_idle_test_test_zoomheight), false, GET_CODE(idlelib_idle_test_test_zoomheight)},
-    {"idlelib.idle_test.test_zzdummy", _Py_M__idlelib_idle_test_test_zzdummy, (int)sizeof(_Py_M__idlelib_idle_test_test_zzdummy), false, GET_CODE(idlelib_idle_test_test_zzdummy)},
-    {"idlelib.idle_test.tkinter_testing_utils", _Py_M__idlelib_idle_test_tkinter_testing_utils, (int)sizeof(_Py_M__idlelib_idle_test_tkinter_testing_utils), false, GET_CODE(idlelib_idle_test_tkinter_testing_utils)},
-    {"idlelib.iomenu", _Py_M__idlelib_iomenu, (int)sizeof(_Py_M__idlelib_iomenu), false, GET_CODE(idlelib_iomenu)},
-    {"idlelib.macosx", _Py_M__idlelib_macosx, (int)sizeof(_Py_M__idlelib_macosx), false, GET_CODE(idlelib_macosx)},
-    {"idlelib.mainmenu", _Py_M__idlelib_mainmenu, (int)sizeof(_Py_M__idlelib_mainmenu), false, GET_CODE(idlelib_mainmenu)},
-    {"idlelib.multicall", _Py_M__idlelib_multicall, (int)sizeof(_Py_M__idlelib_multicall), false, GET_CODE(idlelib_multicall)},
-    {"idlelib.outwin", _Py_M__idlelib_outwin, (int)sizeof(_Py_M__idlelib_outwin), false, GET_CODE(idlelib_outwin)},
-    {"idlelib.parenmatch", _Py_M__idlelib_parenmatch, (int)sizeof(_Py_M__idlelib_parenmatch), false, GET_CODE(idlelib_parenmatch)},
-    {"idlelib.pathbrowser", _Py_M__idlelib_pathbrowser, (int)sizeof(_Py_M__idlelib_pathbrowser), false, GET_CODE(idlelib_pathbrowser)},
-    {"idlelib.percolator", _Py_M__idlelib_percolator, (int)sizeof(_Py_M__idlelib_percolator), false, GET_CODE(idlelib_percolator)},
-    {"idlelib.pyparse", _Py_M__idlelib_pyparse, (int)sizeof(_Py_M__idlelib_pyparse), false, GET_CODE(idlelib_pyparse)},
-    {"idlelib.pyshell", _Py_M__idlelib_pyshell, (int)sizeof(_Py_M__idlelib_pyshell), false, GET_CODE(idlelib_pyshell)},
-    {"idlelib.query", _Py_M__idlelib_query, (int)sizeof(_Py_M__idlelib_query), false, GET_CODE(idlelib_query)},
-    {"idlelib.redirector", _Py_M__idlelib_redirector, (int)sizeof(_Py_M__idlelib_redirector), false, GET_CODE(idlelib_redirector)},
-    {"idlelib.replace", _Py_M__idlelib_replace, (int)sizeof(_Py_M__idlelib_replace), false, GET_CODE(idlelib_replace)},
-    {"idlelib.rpc", _Py_M__idlelib_rpc, (int)sizeof(_Py_M__idlelib_rpc), false, GET_CODE(idlelib_rpc)},
-    {"idlelib.run", _Py_M__idlelib_run, (int)sizeof(_Py_M__idlelib_run), false, GET_CODE(idlelib_run)},
-    {"idlelib.runscript", _Py_M__idlelib_runscript, (int)sizeof(_Py_M__idlelib_runscript), false, GET_CODE(idlelib_runscript)},
-    {"idlelib.scrolledlist", _Py_M__idlelib_scrolledlist, (int)sizeof(_Py_M__idlelib_scrolledlist), false, GET_CODE(idlelib_scrolledlist)},
-    {"idlelib.search", _Py_M__idlelib_search, (int)sizeof(_Py_M__idlelib_search), false, GET_CODE(idlelib_search)},
-    {"idlelib.searchbase", _Py_M__idlelib_searchbase, (int)sizeof(_Py_M__idlelib_searchbase), false, GET_CODE(idlelib_searchbase)},
-    {"idlelib.searchengine", _Py_M__idlelib_searchengine, (int)sizeof(_Py_M__idlelib_searchengine), false, GET_CODE(idlelib_searchengine)},
-    {"idlelib.sidebar", _Py_M__idlelib_sidebar, (int)sizeof(_Py_M__idlelib_sidebar), false, GET_CODE(idlelib_sidebar)},
-    {"idlelib.squeezer", _Py_M__idlelib_squeezer, (int)sizeof(_Py_M__idlelib_squeezer), false, GET_CODE(idlelib_squeezer)},
-    {"idlelib.stackviewer", _Py_M__idlelib_stackviewer, (int)sizeof(_Py_M__idlelib_stackviewer), false, GET_CODE(idlelib_stackviewer)},
-    {"idlelib.statusbar", _Py_M__idlelib_statusbar, (int)sizeof(_Py_M__idlelib_statusbar), false, GET_CODE(idlelib_statusbar)},
-    {"idlelib.textview", _Py_M__idlelib_textview, (int)sizeof(_Py_M__idlelib_textview), false, GET_CODE(idlelib_textview)},
-    {"idlelib.tooltip", _Py_M__idlelib_tooltip, (int)sizeof(_Py_M__idlelib_tooltip), false, GET_CODE(idlelib_tooltip)},
-    {"idlelib.tree", _Py_M__idlelib_tree, (int)sizeof(_Py_M__idlelib_tree), false, GET_CODE(idlelib_tree)},
-    {"idlelib.undo", _Py_M__idlelib_undo, (int)sizeof(_Py_M__idlelib_undo), false, GET_CODE(idlelib_undo)},
-    {"idlelib.util", _Py_M__idlelib_util, (int)sizeof(_Py_M__idlelib_util), false, GET_CODE(idlelib_util)},
-    {"idlelib.window", _Py_M__idlelib_window, (int)sizeof(_Py_M__idlelib_window), false, GET_CODE(idlelib_window)},
-    {"idlelib.zoomheight", _Py_M__idlelib_zoomheight, (int)sizeof(_Py_M__idlelib_zoomheight), false, GET_CODE(idlelib_zoomheight)},
-    {"idlelib.zzdummy", _Py_M__idlelib_zzdummy, (int)sizeof(_Py_M__idlelib_zzdummy), false, GET_CODE(idlelib_zzdummy)},
     {"imaplib", _Py_M__imaplib, (int)sizeof(_Py_M__imaplib), false, GET_CODE(imaplib)},
-    {"imghdr", _Py_M__imghdr, (int)sizeof(_Py_M__imghdr), false, GET_CODE(imghdr)},
     {"importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib), true, GET_CODE(importlib)},
     {"importlib.__init__", _Py_M__importlib, (int)sizeof(_Py_M__importlib), false, GET_CODE(importlib)},
     {"importlib._abc", _Py_M__importlib__abc, (int)sizeof(_Py_M__importlib__abc), false, GET_CODE(importlib__abc)},
@@ -1803,82 +1098,6 @@ static const struct _frozen stdlib_modules[] = {
     {"json.scanner", _Py_M__json_scanner, (int)sizeof(_Py_M__json_scanner), false, GET_CODE(json_scanner)},
     {"json.tool", _Py_M__json_tool, (int)sizeof(_Py_M__json_tool), false, GET_CODE(json_tool)},
     {"keyword", _Py_M__keyword, (int)sizeof(_Py_M__keyword), false, GET_CODE(keyword)},
-    {"lib2to3", _Py_M__lib2to3, (int)sizeof(_Py_M__lib2to3), true, GET_CODE(lib2to3)},
-    {"lib2to3.__init__", _Py_M__lib2to3, (int)sizeof(_Py_M__lib2to3), false, GET_CODE(lib2to3)},
-    {"lib2to3.__main__", _Py_M__lib2to3___main__, (int)sizeof(_Py_M__lib2to3___main__), false, GET_CODE(lib2to3___main__)},
-    {"lib2to3.btm_matcher", _Py_M__lib2to3_btm_matcher, (int)sizeof(_Py_M__lib2to3_btm_matcher), false, GET_CODE(lib2to3_btm_matcher)},
-    {"lib2to3.btm_utils", _Py_M__lib2to3_btm_utils, (int)sizeof(_Py_M__lib2to3_btm_utils), false, GET_CODE(lib2to3_btm_utils)},
-    {"lib2to3.fixer_base", _Py_M__lib2to3_fixer_base, (int)sizeof(_Py_M__lib2to3_fixer_base), false, GET_CODE(lib2to3_fixer_base)},
-    {"lib2to3.fixer_util", _Py_M__lib2to3_fixer_util, (int)sizeof(_Py_M__lib2to3_fixer_util), false, GET_CODE(lib2to3_fixer_util)},
-    {"lib2to3.fixes", _Py_M__lib2to3_fixes, (int)sizeof(_Py_M__lib2to3_fixes), true, GET_CODE(lib2to3_fixes)},
-    {"lib2to3.fixes.__init__", _Py_M__lib2to3_fixes, (int)sizeof(_Py_M__lib2to3_fixes), false, GET_CODE(lib2to3_fixes)},
-    {"lib2to3.fixes.fix_apply", _Py_M__lib2to3_fixes_fix_apply, (int)sizeof(_Py_M__lib2to3_fixes_fix_apply), false, GET_CODE(lib2to3_fixes_fix_apply)},
-    {"lib2to3.fixes.fix_asserts", _Py_M__lib2to3_fixes_fix_asserts, (int)sizeof(_Py_M__lib2to3_fixes_fix_asserts), false, GET_CODE(lib2to3_fixes_fix_asserts)},
-    {"lib2to3.fixes.fix_basestring", _Py_M__lib2to3_fixes_fix_basestring, (int)sizeof(_Py_M__lib2to3_fixes_fix_basestring), false, GET_CODE(lib2to3_fixes_fix_basestring)},
-    {"lib2to3.fixes.fix_buffer", _Py_M__lib2to3_fixes_fix_buffer, (int)sizeof(_Py_M__lib2to3_fixes_fix_buffer), false, GET_CODE(lib2to3_fixes_fix_buffer)},
-    {"lib2to3.fixes.fix_dict", _Py_M__lib2to3_fixes_fix_dict, (int)sizeof(_Py_M__lib2to3_fixes_fix_dict), false, GET_CODE(lib2to3_fixes_fix_dict)},
-    {"lib2to3.fixes.fix_except", _Py_M__lib2to3_fixes_fix_except, (int)sizeof(_Py_M__lib2to3_fixes_fix_except), false, GET_CODE(lib2to3_fixes_fix_except)},
-    {"lib2to3.fixes.fix_exec", _Py_M__lib2to3_fixes_fix_exec, (int)sizeof(_Py_M__lib2to3_fixes_fix_exec), false, GET_CODE(lib2to3_fixes_fix_exec)},
-    {"lib2to3.fixes.fix_execfile", _Py_M__lib2to3_fixes_fix_execfile, (int)sizeof(_Py_M__lib2to3_fixes_fix_execfile), false, GET_CODE(lib2to3_fixes_fix_execfile)},
-    {"lib2to3.fixes.fix_exitfunc", _Py_M__lib2to3_fixes_fix_exitfunc, (int)sizeof(_Py_M__lib2to3_fixes_fix_exitfunc), false, GET_CODE(lib2to3_fixes_fix_exitfunc)},
-    {"lib2to3.fixes.fix_filter", _Py_M__lib2to3_fixes_fix_filter, (int)sizeof(_Py_M__lib2to3_fixes_fix_filter), false, GET_CODE(lib2to3_fixes_fix_filter)},
-    {"lib2to3.fixes.fix_funcattrs", _Py_M__lib2to3_fixes_fix_funcattrs, (int)sizeof(_Py_M__lib2to3_fixes_fix_funcattrs), false, GET_CODE(lib2to3_fixes_fix_funcattrs)},
-    {"lib2to3.fixes.fix_future", _Py_M__lib2to3_fixes_fix_future, (int)sizeof(_Py_M__lib2to3_fixes_fix_future), false, GET_CODE(lib2to3_fixes_fix_future)},
-    {"lib2to3.fixes.fix_getcwdu", _Py_M__lib2to3_fixes_fix_getcwdu, (int)sizeof(_Py_M__lib2to3_fixes_fix_getcwdu), false, GET_CODE(lib2to3_fixes_fix_getcwdu)},
-    {"lib2to3.fixes.fix_has_key", _Py_M__lib2to3_fixes_fix_has_key, (int)sizeof(_Py_M__lib2to3_fixes_fix_has_key), false, GET_CODE(lib2to3_fixes_fix_has_key)},
-    {"lib2to3.fixes.fix_idioms", _Py_M__lib2to3_fixes_fix_idioms, (int)sizeof(_Py_M__lib2to3_fixes_fix_idioms), false, GET_CODE(lib2to3_fixes_fix_idioms)},
-    {"lib2to3.fixes.fix_import", _Py_M__lib2to3_fixes_fix_import, (int)sizeof(_Py_M__lib2to3_fixes_fix_import), false, GET_CODE(lib2to3_fixes_fix_import)},
-    {"lib2to3.fixes.fix_imports", _Py_M__lib2to3_fixes_fix_imports, (int)sizeof(_Py_M__lib2to3_fixes_fix_imports), false, GET_CODE(lib2to3_fixes_fix_imports)},
-    {"lib2to3.fixes.fix_imports2", _Py_M__lib2to3_fixes_fix_imports2, (int)sizeof(_Py_M__lib2to3_fixes_fix_imports2), false, GET_CODE(lib2to3_fixes_fix_imports2)},
-    {"lib2to3.fixes.fix_input", _Py_M__lib2to3_fixes_fix_input, (int)sizeof(_Py_M__lib2to3_fixes_fix_input), false, GET_CODE(lib2to3_fixes_fix_input)},
-    {"lib2to3.fixes.fix_intern", _Py_M__lib2to3_fixes_fix_intern, (int)sizeof(_Py_M__lib2to3_fixes_fix_intern), false, GET_CODE(lib2to3_fixes_fix_intern)},
-    {"lib2to3.fixes.fix_isinstance", _Py_M__lib2to3_fixes_fix_isinstance, (int)sizeof(_Py_M__lib2to3_fixes_fix_isinstance), false, GET_CODE(lib2to3_fixes_fix_isinstance)},
-    {"lib2to3.fixes.fix_itertools", _Py_M__lib2to3_fixes_fix_itertools, (int)sizeof(_Py_M__lib2to3_fixes_fix_itertools), false, GET_CODE(lib2to3_fixes_fix_itertools)},
-    {"lib2to3.fixes.fix_itertools_imports", _Py_M__lib2to3_fixes_fix_itertools_imports, (int)sizeof(_Py_M__lib2to3_fixes_fix_itertools_imports), false, GET_CODE(lib2to3_fixes_fix_itertools_imports)},
-    {"lib2to3.fixes.fix_long", _Py_M__lib2to3_fixes_fix_long, (int)sizeof(_Py_M__lib2to3_fixes_fix_long), false, GET_CODE(lib2to3_fixes_fix_long)},
-    {"lib2to3.fixes.fix_map", _Py_M__lib2to3_fixes_fix_map, (int)sizeof(_Py_M__lib2to3_fixes_fix_map), false, GET_CODE(lib2to3_fixes_fix_map)},
-    {"lib2to3.fixes.fix_metaclass", _Py_M__lib2to3_fixes_fix_metaclass, (int)sizeof(_Py_M__lib2to3_fixes_fix_metaclass), false, GET_CODE(lib2to3_fixes_fix_metaclass)},
-    {"lib2to3.fixes.fix_methodattrs", _Py_M__lib2to3_fixes_fix_methodattrs, (int)sizeof(_Py_M__lib2to3_fixes_fix_methodattrs), false, GET_CODE(lib2to3_fixes_fix_methodattrs)},
-    {"lib2to3.fixes.fix_ne", _Py_M__lib2to3_fixes_fix_ne, (int)sizeof(_Py_M__lib2to3_fixes_fix_ne), false, GET_CODE(lib2to3_fixes_fix_ne)},
-    {"lib2to3.fixes.fix_next", _Py_M__lib2to3_fixes_fix_next, (int)sizeof(_Py_M__lib2to3_fixes_fix_next), false, GET_CODE(lib2to3_fixes_fix_next)},
-    {"lib2to3.fixes.fix_nonzero", _Py_M__lib2to3_fixes_fix_nonzero, (int)sizeof(_Py_M__lib2to3_fixes_fix_nonzero), false, GET_CODE(lib2to3_fixes_fix_nonzero)},
-    {"lib2to3.fixes.fix_numliterals", _Py_M__lib2to3_fixes_fix_numliterals, (int)sizeof(_Py_M__lib2to3_fixes_fix_numliterals), false, GET_CODE(lib2to3_fixes_fix_numliterals)},
-    {"lib2to3.fixes.fix_operator", _Py_M__lib2to3_fixes_fix_operator, (int)sizeof(_Py_M__lib2to3_fixes_fix_operator), false, GET_CODE(lib2to3_fixes_fix_operator)},
-    {"lib2to3.fixes.fix_paren", _Py_M__lib2to3_fixes_fix_paren, (int)sizeof(_Py_M__lib2to3_fixes_fix_paren), false, GET_CODE(lib2to3_fixes_fix_paren)},
-    {"lib2to3.fixes.fix_print", _Py_M__lib2to3_fixes_fix_print, (int)sizeof(_Py_M__lib2to3_fixes_fix_print), false, GET_CODE(lib2to3_fixes_fix_print)},
-    {"lib2to3.fixes.fix_raise", _Py_M__lib2to3_fixes_fix_raise, (int)sizeof(_Py_M__lib2to3_fixes_fix_raise), false, GET_CODE(lib2to3_fixes_fix_raise)},
-    {"lib2to3.fixes.fix_raw_input", _Py_M__lib2to3_fixes_fix_raw_input, (int)sizeof(_Py_M__lib2to3_fixes_fix_raw_input), false, GET_CODE(lib2to3_fixes_fix_raw_input)},
-    {"lib2to3.fixes.fix_reduce", _Py_M__lib2to3_fixes_fix_reduce, (int)sizeof(_Py_M__lib2to3_fixes_fix_reduce), false, GET_CODE(lib2to3_fixes_fix_reduce)},
-    {"lib2to3.fixes.fix_reload", _Py_M__lib2to3_fixes_fix_reload, (int)sizeof(_Py_M__lib2to3_fixes_fix_reload), false, GET_CODE(lib2to3_fixes_fix_reload)},
-    {"lib2to3.fixes.fix_renames", _Py_M__lib2to3_fixes_fix_renames, (int)sizeof(_Py_M__lib2to3_fixes_fix_renames), false, GET_CODE(lib2to3_fixes_fix_renames)},
-    {"lib2to3.fixes.fix_repr", _Py_M__lib2to3_fixes_fix_repr, (int)sizeof(_Py_M__lib2to3_fixes_fix_repr), false, GET_CODE(lib2to3_fixes_fix_repr)},
-    {"lib2to3.fixes.fix_set_literal", _Py_M__lib2to3_fixes_fix_set_literal, (int)sizeof(_Py_M__lib2to3_fixes_fix_set_literal), false, GET_CODE(lib2to3_fixes_fix_set_literal)},
-    {"lib2to3.fixes.fix_standarderror", _Py_M__lib2to3_fixes_fix_standarderror, (int)sizeof(_Py_M__lib2to3_fixes_fix_standarderror), false, GET_CODE(lib2to3_fixes_fix_standarderror)},
-    {"lib2to3.fixes.fix_sys_exc", _Py_M__lib2to3_fixes_fix_sys_exc, (int)sizeof(_Py_M__lib2to3_fixes_fix_sys_exc), false, GET_CODE(lib2to3_fixes_fix_sys_exc)},
-    {"lib2to3.fixes.fix_throw", _Py_M__lib2to3_fixes_fix_throw, (int)sizeof(_Py_M__lib2to3_fixes_fix_throw), false, GET_CODE(lib2to3_fixes_fix_throw)},
-    {"lib2to3.fixes.fix_tuple_params", _Py_M__lib2to3_fixes_fix_tuple_params, (int)sizeof(_Py_M__lib2to3_fixes_fix_tuple_params), false, GET_CODE(lib2to3_fixes_fix_tuple_params)},
-    {"lib2to3.fixes.fix_types", _Py_M__lib2to3_fixes_fix_types, (int)sizeof(_Py_M__lib2to3_fixes_fix_types), false, GET_CODE(lib2to3_fixes_fix_types)},
-    {"lib2to3.fixes.fix_unicode", _Py_M__lib2to3_fixes_fix_unicode, (int)sizeof(_Py_M__lib2to3_fixes_fix_unicode), false, GET_CODE(lib2to3_fixes_fix_unicode)},
-    {"lib2to3.fixes.fix_urllib", _Py_M__lib2to3_fixes_fix_urllib, (int)sizeof(_Py_M__lib2to3_fixes_fix_urllib), false, GET_CODE(lib2to3_fixes_fix_urllib)},
-    {"lib2to3.fixes.fix_ws_comma", _Py_M__lib2to3_fixes_fix_ws_comma, (int)sizeof(_Py_M__lib2to3_fixes_fix_ws_comma), false, GET_CODE(lib2to3_fixes_fix_ws_comma)},
-    {"lib2to3.fixes.fix_xrange", _Py_M__lib2to3_fixes_fix_xrange, (int)sizeof(_Py_M__lib2to3_fixes_fix_xrange), false, GET_CODE(lib2to3_fixes_fix_xrange)},
-    {"lib2to3.fixes.fix_xreadlines", _Py_M__lib2to3_fixes_fix_xreadlines, (int)sizeof(_Py_M__lib2to3_fixes_fix_xreadlines), false, GET_CODE(lib2to3_fixes_fix_xreadlines)},
-    {"lib2to3.fixes.fix_zip", _Py_M__lib2to3_fixes_fix_zip, (int)sizeof(_Py_M__lib2to3_fixes_fix_zip), false, GET_CODE(lib2to3_fixes_fix_zip)},
-    {"lib2to3.main", _Py_M__lib2to3_main, (int)sizeof(_Py_M__lib2to3_main), false, GET_CODE(lib2to3_main)},
-    {"lib2to3.patcomp", _Py_M__lib2to3_patcomp, (int)sizeof(_Py_M__lib2to3_patcomp), false, GET_CODE(lib2to3_patcomp)},
-    {"lib2to3.pgen2", _Py_M__lib2to3_pgen2, (int)sizeof(_Py_M__lib2to3_pgen2), true, GET_CODE(lib2to3_pgen2)},
-    {"lib2to3.pgen2.__init__", _Py_M__lib2to3_pgen2, (int)sizeof(_Py_M__lib2to3_pgen2), false, GET_CODE(lib2to3_pgen2)},
-    {"lib2to3.pgen2.conv", _Py_M__lib2to3_pgen2_conv, (int)sizeof(_Py_M__lib2to3_pgen2_conv), false, GET_CODE(lib2to3_pgen2_conv)},
-    {"lib2to3.pgen2.driver", _Py_M__lib2to3_pgen2_driver, (int)sizeof(_Py_M__lib2to3_pgen2_driver), false, GET_CODE(lib2to3_pgen2_driver)},
-    {"lib2to3.pgen2.grammar", _Py_M__lib2to3_pgen2_grammar, (int)sizeof(_Py_M__lib2to3_pgen2_grammar), false, GET_CODE(lib2to3_pgen2_grammar)},
-    {"lib2to3.pgen2.literals", _Py_M__lib2to3_pgen2_literals, (int)sizeof(_Py_M__lib2to3_pgen2_literals), false, GET_CODE(lib2to3_pgen2_literals)},
-    {"lib2to3.pgen2.parse", _Py_M__lib2to3_pgen2_parse, (int)sizeof(_Py_M__lib2to3_pgen2_parse), false, GET_CODE(lib2to3_pgen2_parse)},
-    {"lib2to3.pgen2.pgen", _Py_M__lib2to3_pgen2_pgen, (int)sizeof(_Py_M__lib2to3_pgen2_pgen), false, GET_CODE(lib2to3_pgen2_pgen)},
-    {"lib2to3.pgen2.token", _Py_M__lib2to3_pgen2_token, (int)sizeof(_Py_M__lib2to3_pgen2_token), false, GET_CODE(lib2to3_pgen2_token)},
-    {"lib2to3.pgen2.tokenize", _Py_M__lib2to3_pgen2_tokenize, (int)sizeof(_Py_M__lib2to3_pgen2_tokenize), false, GET_CODE(lib2to3_pgen2_tokenize)},
-    {"lib2to3.pygram", _Py_M__lib2to3_pygram, (int)sizeof(_Py_M__lib2to3_pygram), false, GET_CODE(lib2to3_pygram)},
-    {"lib2to3.pytree", _Py_M__lib2to3_pytree, (int)sizeof(_Py_M__lib2to3_pytree), false, GET_CODE(lib2to3_pytree)},
-    {"lib2to3.refactor", _Py_M__lib2to3_refactor, (int)sizeof(_Py_M__lib2to3_refactor), false, GET_CODE(lib2to3_refactor)},
     {"linecache", _Py_M__linecache, (int)sizeof(_Py_M__linecache), false, GET_CODE(linecache)},
     {"locale", _Py_M__locale, (int)sizeof(_Py_M__locale), false, GET_CODE(locale)},
     {"logging", _Py_M__logging, (int)sizeof(_Py_M__logging), true, GET_CODE(logging)},
@@ -1886,16 +1105,9 @@ static const struct _frozen stdlib_modules[] = {
     {"logging.config", _Py_M__logging_config, (int)sizeof(_Py_M__logging_config), false, GET_CODE(logging_config)},
     {"logging.handlers", _Py_M__logging_handlers, (int)sizeof(_Py_M__logging_handlers), false, GET_CODE(logging_handlers)},
     {"lzma", _Py_M__lzma, (int)sizeof(_Py_M__lzma), false, GET_CODE(lzma)},
-    {"mailbox", _Py_M__mailbox, (int)sizeof(_Py_M__mailbox), false, GET_CODE(mailbox)},
-    {"mailcap", _Py_M__mailcap, (int)sizeof(_Py_M__mailcap), false, GET_CODE(mailcap)},
     {"_markupbase", _Py_M___markupbase, (int)sizeof(_Py_M___markupbase), false, GET_CODE(_markupbase)},
     {"mimetypes", _Py_M__mimetypes, (int)sizeof(_Py_M__mimetypes), false, GET_CODE(mimetypes)},
     {"modulefinder", _Py_M__modulefinder, (int)sizeof(_Py_M__modulefinder), false, GET_CODE(modulefinder)},
-    {"msilib", _Py_M__msilib, (int)sizeof(_Py_M__msilib), true, GET_CODE(msilib)},
-    {"msilib.__init__", _Py_M__msilib, (int)sizeof(_Py_M__msilib), false, GET_CODE(msilib)},
-    {"msilib.schema", _Py_M__msilib_schema, (int)sizeof(_Py_M__msilib_schema), false, GET_CODE(msilib_schema)},
-    {"msilib.sequence", _Py_M__msilib_sequence, (int)sizeof(_Py_M__msilib_sequence), false, GET_CODE(msilib_sequence)},
-    {"msilib.text", _Py_M__msilib_text, (int)sizeof(_Py_M__msilib_text), false, GET_CODE(msilib_text)},
     {"multiprocessing", _Py_M__multiprocessing, (int)sizeof(_Py_M__multiprocessing), true, GET_CODE(multiprocessing)},
     {"multiprocessing.__init__", _Py_M__multiprocessing, (int)sizeof(_Py_M__multiprocessing), false, GET_CODE(multiprocessing)},
     {"multiprocessing.connection", _Py_M__multiprocessing_connection, (int)sizeof(_Py_M__multiprocessing_connection), false, GET_CODE(multiprocessing_connection)},
@@ -1922,7 +1134,6 @@ static const struct _frozen stdlib_modules[] = {
     {"multiprocessing.synchronize", _Py_M__multiprocessing_synchronize, (int)sizeof(_Py_M__multiprocessing_synchronize), false, GET_CODE(multiprocessing_synchronize)},
     {"multiprocessing.util", _Py_M__multiprocessing_util, (int)sizeof(_Py_M__multiprocessing_util), false, GET_CODE(multiprocessing_util)},
     {"netrc", _Py_M__netrc, (int)sizeof(_Py_M__netrc), false, GET_CODE(netrc)},
-    {"nntplib", _Py_M__nntplib, (int)sizeof(_Py_M__nntplib), false, GET_CODE(nntplib)},
     {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), false, GET_CODE(ntpath)},
     {"nturl2path", _Py_M__nturl2path, (int)sizeof(_Py_M__nturl2path), false, GET_CODE(nturl2path)},
     {"numbers", _Py_M__numbers, (int)sizeof(_Py_M__numbers), false, GET_CODE(numbers)},
@@ -1941,7 +1152,6 @@ static const struct _frozen stdlib_modules[] = {
     {"__phello__.spam", _Py_M____phello___spam, (int)sizeof(_Py_M____phello___spam), false, GET_CODE(__phello___spam)},
     {"pickle", _Py_M__pickle, (int)sizeof(_Py_M__pickle), false, GET_CODE(pickle)},
     {"pickletools", _Py_M__pickletools, (int)sizeof(_Py_M__pickletools), false, GET_CODE(pickletools)},
-    {"pipes", _Py_M__pipes, (int)sizeof(_Py_M__pipes), false, GET_CODE(pipes)},
     {"pkgutil", _Py_M__pkgutil, (int)sizeof(_Py_M__pkgutil), false, GET_CODE(pkgutil)},
     {"platform", _Py_M__platform, (int)sizeof(_Py_M__platform), false, GET_CODE(platform)},
     {"plistlib", _Py_M__plistlib, (int)sizeof(_Py_M__plistlib), false, GET_CODE(plistlib)},
@@ -1956,10 +1166,6 @@ static const struct _frozen stdlib_modules[] = {
     {"py_compile", _Py_M__py_compile, (int)sizeof(_Py_M__py_compile), false, GET_CODE(py_compile)},
     {"_pydatetime", _Py_M___pydatetime, (int)sizeof(_Py_M___pydatetime), false, GET_CODE(_pydatetime)},
     {"_pydecimal", _Py_M___pydecimal, (int)sizeof(_Py_M___pydecimal), false, GET_CODE(_pydecimal)},
-    {"pydoc_data", _Py_M__pydoc_data, (int)sizeof(_Py_M__pydoc_data), true, GET_CODE(pydoc_data)},
-    {"pydoc_data.__init__", _Py_M__pydoc_data, (int)sizeof(_Py_M__pydoc_data), false, GET_CODE(pydoc_data)},
-    {"pydoc_data.topics", _Py_M__pydoc_data_topics, (int)sizeof(_Py_M__pydoc_data_topics), false, GET_CODE(pydoc_data_topics)},
-    {"pydoc", _Py_M__pydoc, (int)sizeof(_Py_M__pydoc), false, GET_CODE(pydoc)},
     {"_pyio", _Py_M___pyio, (int)sizeof(_Py_M___pyio), false, GET_CODE(_pyio)},
     {"_pylong", _Py_M___pylong, (int)sizeof(_Py_M___pylong), false, GET_CODE(_pylong)},
     {"queue", _Py_M__queue, (int)sizeof(_Py_M__queue), false, GET_CODE(queue)},
@@ -1980,7 +1186,6 @@ static const struct _frozen stdlib_modules[] = {
     {"shutil", _Py_M__shutil, (int)sizeof(_Py_M__shutil), false, GET_CODE(shutil)},
     {"signal", _Py_M__signal, (int)sizeof(_Py_M__signal), false, GET_CODE(signal)},
     {"smtplib", _Py_M__smtplib, (int)sizeof(_Py_M__smtplib), false, GET_CODE(smtplib)},
-    {"sndhdr", _Py_M__sndhdr, (int)sizeof(_Py_M__sndhdr), false, GET_CODE(sndhdr)},
     {"socket", _Py_M__socket, (int)sizeof(_Py_M__socket), false, GET_CODE(socket)},
     {"socketserver", _Py_M__socketserver, (int)sizeof(_Py_M__socketserver), false, GET_CODE(socketserver)},
     {"statistics", _Py_M__statistics, (int)sizeof(_Py_M__statistics), false, GET_CODE(statistics)},
@@ -1990,12 +1195,9 @@ static const struct _frozen stdlib_modules[] = {
     {"_strptime", _Py_M___strptime, (int)sizeof(_Py_M___strptime), false, GET_CODE(_strptime)},
     {"struct", _Py_M__struct, (int)sizeof(_Py_M__struct), false, GET_CODE(struct)},
     {"subprocess", _Py_M__subprocess, (int)sizeof(_Py_M__subprocess), false, GET_CODE(subprocess)},
-    {"sunau", _Py_M__sunau, (int)sizeof(_Py_M__sunau), false, GET_CODE(sunau)},
     {"symtable", _Py_M__symtable, (int)sizeof(_Py_M__symtable), false, GET_CODE(symtable)},
     {"sysconfig", _Py_M__sysconfig, (int)sizeof(_Py_M__sysconfig), false, GET_CODE(sysconfig)},
     {"tabnanny", _Py_M__tabnanny, (int)sizeof(_Py_M__tabnanny), false, GET_CODE(tabnanny)},
-    {"tarfile", _Py_M__tarfile, (int)sizeof(_Py_M__tarfile), false, GET_CODE(tarfile)},
-    {"telnetlib", _Py_M__telnetlib, (int)sizeof(_Py_M__telnetlib), false, GET_CODE(telnetlib)},
     {"tempfile", _Py_M__tempfile, (int)sizeof(_Py_M__tempfile), false, GET_CODE(tempfile)},
     {"textwrap", _Py_M__textwrap, (int)sizeof(_Py_M__textwrap), false, GET_CODE(textwrap)},
     {"this", _Py_M__this, (int)sizeof(_Py_M__this), false, GET_CODE(this)},
@@ -2015,15 +1217,7 @@ static const struct _frozen stdlib_modules[] = {
     {"tty", _Py_M__tty, (int)sizeof(_Py_M__tty), false, GET_CODE(tty)},
     {"types", _Py_M__types, (int)sizeof(_Py_M__types), false, GET_CODE(types)},
     {"typing", _Py_M__typing, (int)sizeof(_Py_M__typing), false, GET_CODE(typing)},
-    {"urllib", _Py_M__urllib, (int)sizeof(_Py_M__urllib), true, GET_CODE(urllib)},
-    {"urllib.__init__", _Py_M__urllib, (int)sizeof(_Py_M__urllib), false, GET_CODE(urllib)},
-    {"urllib.error", _Py_M__urllib_error, (int)sizeof(_Py_M__urllib_error), false, GET_CODE(urllib_error)},
-    {"urllib.parse", _Py_M__urllib_parse, (int)sizeof(_Py_M__urllib_parse), false, GET_CODE(urllib_parse)},
-    {"urllib.request", _Py_M__urllib_request, (int)sizeof(_Py_M__urllib_request), false, GET_CODE(urllib_request)},
-    {"urllib.response", _Py_M__urllib_response, (int)sizeof(_Py_M__urllib_response), false, GET_CODE(urllib_response)},
-    {"urllib.robotparser", _Py_M__urllib_robotparser, (int)sizeof(_Py_M__urllib_robotparser), false, GET_CODE(urllib_robotparser)},
     {"uuid", _Py_M__uuid, (int)sizeof(_Py_M__uuid), false, GET_CODE(uuid)},
-    {"uu", _Py_M__uu, (int)sizeof(_Py_M__uu), false, GET_CODE(uu)},
     {"warnings", _Py_M__warnings, (int)sizeof(_Py_M__warnings), false, GET_CODE(warnings)},
     {"wave", _Py_M__wave, (int)sizeof(_Py_M__wave), false, GET_CODE(wave)},
     {"weakref", _Py_M__weakref, (int)sizeof(_Py_M__weakref), false, GET_CODE(weakref)},
@@ -2037,7 +1231,6 @@ static const struct _frozen stdlib_modules[] = {
     {"wsgiref.types", _Py_M__wsgiref_types, (int)sizeof(_Py_M__wsgiref_types), false, GET_CODE(wsgiref_types)},
     {"wsgiref.util", _Py_M__wsgiref_util, (int)sizeof(_Py_M__wsgiref_util), false, GET_CODE(wsgiref_util)},
     {"wsgiref.validate", _Py_M__wsgiref_validate, (int)sizeof(_Py_M__wsgiref_validate), false, GET_CODE(wsgiref_validate)},
-    {"xdrlib", _Py_M__xdrlib, (int)sizeof(_Py_M__xdrlib), false, GET_CODE(xdrlib)},
     {"zipapp", _Py_M__zipapp, (int)sizeof(_Py_M__zipapp), false, GET_CODE(zipapp)},
     {"zipfile", _Py_M__zipfile, (int)sizeof(_Py_M__zipfile), true, GET_CODE(zipfile)},
     {"zipfile.__init__", _Py_M__zipfile, (int)sizeof(_Py_M__zipfile), false, GET_CODE(zipfile)},
@@ -2138,31 +1331,19 @@ static const struct _module_alias aliases[] = {
     {"concurrent.__init__", "<concurrent"},
     {"concurrent.futures.__init__", "<concurrent.futures"},
     {"dbm.__init__", "<dbm"},
-    {"email.__init__", "<email"},
-    {"email.mime.__init__", "<email.mime"},
     {"encodings.__init__", "<encodings"},
     {"ensurepip.__init__", "<ensurepip"},
-    {"html.__init__", "<html"},
-    {"http.__init__", "<http"},
-    {"idlelib.__init__", "<idlelib"},
-    {"idlelib.idle_test.__init__", "<idlelib.idle_test"},
     {"importlib.__init__", "<importlib"},
     {"importlib.metadata.__init__", "<importlib.metadata"},
     {"importlib.resources.__init__", "<importlib.resources"},
     {"json.__init__", "<json"},
-    {"lib2to3.__init__", "<lib2to3"},
-    {"lib2to3.fixes.__init__", "<lib2to3.fixes"},
-    {"lib2to3.pgen2.__init__", "<lib2to3.pgen2"},
     {"logging.__init__", "<logging"},
-    {"msilib.__init__", "<msilib"},
     {"multiprocessing.__init__", "<multiprocessing"},
     {"multiprocessing.dummy.__init__", "<multiprocessing.dummy"},
     {"__phello__.__init__", "<__phello__"},
     {"__phello__.ham.__init__", "<__phello__.ham"},
-    {"pydoc_data.__init__", "<pydoc_data"},
     {"re.__init__", "<re"},
     {"tomllib.__init__", "<tomllib"},
-    {"urllib.__init__", "<urllib"},
     {"wsgiref.__init__", "<wsgiref"},
     {"zipfile.__init__", "<zipfile"},
     {"zipfile._path.__init__", "<zipfile._path"},

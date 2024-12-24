@@ -441,9 +441,6 @@
     <None Include="..\Lib\abc.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\aifc.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\_aix_support.py">
       <Filter>Python Files</Filter>
     </None>
@@ -466,15 +463,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\calendar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\cgi.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\cgitb.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\chunk.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\cmd.py">
@@ -543,9 +531,6 @@
     <None Include="..\Lib\cProfile.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\crypt.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\csv.py">
       <Filter>Python Files</Filter>
     </None>
@@ -574,96 +559,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\dis.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\doctest.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\_encoded_words.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\_header_value_parser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\_parseaddr.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\_policybase.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\base64mime.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\charset.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\contentmanager.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\encoders.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\errors.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\feedparser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\generator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\header.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\headerregistry.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\iterators.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\message.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\application.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\audio.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\base.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\image.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\message.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\multipart.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\nonmultipart.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\mime\text.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\parser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\policy.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\quoprimime.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\email\utils.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\encodings\__init__.py">
@@ -1095,409 +990,7 @@
     <None Include="..\Lib\hmac.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\html\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\html\entities.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\html\parser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\http\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\http\client.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\http\cookiejar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\http\cookies.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\http\server.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\__main__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\autocomplete.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\autocomplete_w.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\autoexpand.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\browser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\calltip.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\calltip_w.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\codecontext.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\colorizer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\config.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\config_key.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\configdialog.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\debugger.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\debugger_r.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\debugobj.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\debugobj_r.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\delegator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\dynoption.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\editor.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\filelist.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\format.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\grep.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\help.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\help_about.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\history.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\hyperparser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\htest.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\mock_idle.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\mock_tk.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\template.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autocomplete.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autocomplete_w.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_autoexpand.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_browser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_calltip.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_calltip_w.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_codecontext.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_colorizer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_config.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_config_key.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_configdialog.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugger.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugger_r.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugobj.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_debugobj_r.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_delegator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_editmenu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_editor.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_filelist.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_format.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_grep.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_help.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_help_about.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_history.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_hyperparser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_iomenu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_macosx.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_mainmenu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_multicall.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_outwin.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_parenmatch.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pathbrowser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_percolator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pyparse.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_pyshell.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_query.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_redirector.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_replace.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_rpc.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_run.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_runscript.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_scrolledlist.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_search.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_searchbase.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_searchengine.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_sidebar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_squeezer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_stackviewer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_statusbar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_text.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_textview.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_tooltip.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_tree.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_undo.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_util.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_warning.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_window.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_zoomheight.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\test_zzdummy.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\idle_test\tkinter_testing_utils.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\iomenu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\macosx.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\mainmenu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\multicall.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\outwin.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\parenmatch.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\pathbrowser.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\percolator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\pyparse.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\pyshell.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\query.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\redirector.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\replace.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\rpc.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\run.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\runscript.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\scrolledlist.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\search.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\searchbase.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\searchengine.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\sidebar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\squeezer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\stackviewer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\statusbar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\textview.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\tooltip.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\tree.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\undo.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\util.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\window.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\zoomheight.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\idlelib\zzdummy.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\imaplib.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\imghdr.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\importlib\__init__.py">
@@ -1593,225 +1086,6 @@
     <None Include="..\Lib\keyword.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\lib2to3\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\__main__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\btm_matcher.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\btm_utils.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixer_base.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixer_util.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_apply.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_asserts.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_basestring.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_buffer.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_dict.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_except.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_exec.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_execfile.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_exitfunc.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_filter.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_funcattrs.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_future.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_getcwdu.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_has_key.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_idioms.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_import.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_imports.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_imports2.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_input.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_intern.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_isinstance.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_itertools.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_itertools_imports.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_long.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_map.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_metaclass.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_methodattrs.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_ne.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_next.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_nonzero.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_numliterals.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_operator.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_paren.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_print.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_raise.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_raw_input.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_reduce.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_reload.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_renames.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_repr.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_set_literal.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_standarderror.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_sys_exc.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_throw.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_tuple_params.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_types.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_unicode.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_urllib.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_ws_comma.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_xrange.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_xreadlines.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\fixes\fix_zip.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\main.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\patcomp.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\conv.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\driver.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\grammar.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\literals.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\parse.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\pgen.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\token.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pgen2\tokenize.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pygram.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\pytree.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\lib2to3\refactor.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\linecache.py">
       <Filter>Python Files</Filter>
     </None>
@@ -1830,12 +1104,6 @@
     <None Include="..\Lib\lzma.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\mailbox.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\mailcap.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\_markupbase.py">
       <Filter>Python Files</Filter>
     </None>
@@ -1843,18 +1111,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\modulefinder.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\msilib\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\msilib\schema.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\msilib\sequence.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\msilib\text.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\multiprocessing\__init__.py">
@@ -1929,9 +1185,6 @@
     <None Include="..\Lib\netrc.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\nntplib.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\ntpath.py">
       <Filter>Python Files</Filter>
     </None>
@@ -1980,9 +1233,6 @@
     <None Include="..\Lib\pickletools.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\pipes.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\pkgutil.py">
       <Filter>Python Files</Filter>
     </None>
@@ -2023,15 +1273,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\_pydecimal.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\pydoc_data\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\pydoc_data\topics.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\pydoc.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\_pyio.py">
@@ -2091,9 +1332,6 @@
     <None Include="..\Lib\smtplib.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\sndhdr.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\socket.py">
       <Filter>Python Files</Filter>
     </None>
@@ -2121,9 +1359,6 @@
     <None Include="..\Lib\subprocess.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\sunau.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\symtable.py">
       <Filter>Python Files</Filter>
     </None>
@@ -2131,12 +1366,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\tabnanny.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\tarfile.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\telnetlib.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\tempfile.py">
@@ -2193,28 +1422,7 @@
     <None Include="..\Lib\typing.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\urllib\__init__.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\urllib\error.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\urllib\parse.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\urllib\request.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\urllib\response.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\urllib\robotparser.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\uuid.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\uu.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\warnings.py">
@@ -2251,9 +1459,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\wsgiref\validate.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\xdrlib.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\zipapp.py">

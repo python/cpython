@@ -1109,7 +1109,6 @@ FROZEN_FILES_IN = \
 		Lib/importlib/_bootstrap_external.py \
 		Lib/zipimport.py \
 		Lib/abc.py \
-		Lib/aifc.py \
 		Lib/_aix_support.py \
 		Lib/antigravity.py \
 		Lib/argparse.py \
@@ -1118,9 +1117,6 @@ FROZEN_FILES_IN = \
 		Lib/bdb.py \
 		Lib/bisect.py \
 		Lib/calendar.py \
-		Lib/cgi.py \
-		Lib/cgitb.py \
-		Lib/chunk.py \
 		Lib/cmd.py \
 		Lib/codecs.py \
 		Lib/codeop.py \
@@ -1143,7 +1139,6 @@ FROZEN_FILES_IN = \
 		Lib/copy.py \
 		Lib/copyreg.py \
 		Lib/cProfile.py \
-		Lib/crypt.py \
 		Lib/csv.py \
 		Lib/dataclasses.py \
 		Lib/datetime.py \
@@ -1154,36 +1149,6 @@ FROZEN_FILES_IN = \
 		Lib/decimal.py \
 		Lib/difflib.py \
 		Lib/dis.py \
-		Lib/doctest.py \
-		Lib/email/__init__.py \
-		Lib/email/_encoded_words.py \
-		Lib/email/_header_value_parser.py \
-		Lib/email/_parseaddr.py \
-		Lib/email/_policybase.py \
-		Lib/email/base64mime.py \
-		Lib/email/charset.py \
-		Lib/email/contentmanager.py \
-		Lib/email/encoders.py \
-		Lib/email/errors.py \
-		Lib/email/feedparser.py \
-		Lib/email/generator.py \
-		Lib/email/header.py \
-		Lib/email/headerregistry.py \
-		Lib/email/iterators.py \
-		Lib/email/message.py \
-		Lib/email/mime/__init__.py \
-		Lib/email/mime/application.py \
-		Lib/email/mime/audio.py \
-		Lib/email/mime/base.py \
-		Lib/email/mime/image.py \
-		Lib/email/mime/message.py \
-		Lib/email/mime/multipart.py \
-		Lib/email/mime/nonmultipart.py \
-		Lib/email/mime/text.py \
-		Lib/email/parser.py \
-		Lib/email/policy.py \
-		Lib/email/quoprimime.py \
-		Lib/email/utils.py \
 		Lib/encodings/__init__.py \
 		Lib/encodings/aliases.py \
 		Lib/encodings/ascii.py \
@@ -1327,141 +1292,7 @@ FROZEN_FILES_IN = \
 		Lib/hashlib.py \
 		Lib/heapq.py \
 		Lib/hmac.py \
-		Lib/html/__init__.py \
-		Lib/html/entities.py \
-		Lib/html/parser.py \
-		Lib/http/__init__.py \
-		Lib/http/client.py \
-		Lib/http/cookiejar.py \
-		Lib/http/cookies.py \
-		Lib/http/server.py \
-		Lib/idlelib/__init__.py \
-		Lib/idlelib/__main__.py \
-		Lib/idlelib/autocomplete.py \
-		Lib/idlelib/autocomplete_w.py \
-		Lib/idlelib/autoexpand.py \
-		Lib/idlelib/browser.py \
-		Lib/idlelib/calltip.py \
-		Lib/idlelib/calltip_w.py \
-		Lib/idlelib/codecontext.py \
-		Lib/idlelib/colorizer.py \
-		Lib/idlelib/config.py \
-		Lib/idlelib/config_key.py \
-		Lib/idlelib/configdialog.py \
-		Lib/idlelib/debugger.py \
-		Lib/idlelib/debugger_r.py \
-		Lib/idlelib/debugobj.py \
-		Lib/idlelib/debugobj_r.py \
-		Lib/idlelib/delegator.py \
-		Lib/idlelib/dynoption.py \
-		Lib/idlelib/editor.py \
-		Lib/idlelib/filelist.py \
-		Lib/idlelib/format.py \
-		Lib/idlelib/grep.py \
-		Lib/idlelib/help.py \
-		Lib/idlelib/help_about.py \
-		Lib/idlelib/history.py \
-		Lib/idlelib/hyperparser.py \
-		Lib/idlelib/idle.py \
-		Lib/idlelib/idle_test/__init__.py \
-		Lib/idlelib/idle_test/htest.py \
-		Lib/idlelib/idle_test/mock_idle.py \
-		Lib/idlelib/idle_test/mock_tk.py \
-		Lib/idlelib/idle_test/template.py \
-		Lib/idlelib/idle_test/test_autocomplete.py \
-		Lib/idlelib/idle_test/test_autocomplete_w.py \
-		Lib/idlelib/idle_test/test_autoexpand.py \
-		Lib/idlelib/idle_test/test_browser.py \
-		Lib/idlelib/idle_test/test_calltip.py \
-		Lib/idlelib/idle_test/test_calltip_w.py \
-		Lib/idlelib/idle_test/test_codecontext.py \
-		Lib/idlelib/idle_test/test_colorizer.py \
-		Lib/idlelib/idle_test/test_config.py \
-		Lib/idlelib/idle_test/test_config_key.py \
-		Lib/idlelib/idle_test/test_configdialog.py \
-		Lib/idlelib/idle_test/test_debugger.py \
-		Lib/idlelib/idle_test/test_debugger_r.py \
-		Lib/idlelib/idle_test/test_debugobj.py \
-		Lib/idlelib/idle_test/test_debugobj_r.py \
-		Lib/idlelib/idle_test/test_delegator.py \
-		Lib/idlelib/idle_test/test_editmenu.py \
-		Lib/idlelib/idle_test/test_editor.py \
-		Lib/idlelib/idle_test/test_filelist.py \
-		Lib/idlelib/idle_test/test_format.py \
-		Lib/idlelib/idle_test/test_grep.py \
-		Lib/idlelib/idle_test/test_help.py \
-		Lib/idlelib/idle_test/test_help_about.py \
-		Lib/idlelib/idle_test/test_history.py \
-		Lib/idlelib/idle_test/test_hyperparser.py \
-		Lib/idlelib/idle_test/test_iomenu.py \
-		Lib/idlelib/idle_test/test_macosx.py \
-		Lib/idlelib/idle_test/test_mainmenu.py \
-		Lib/idlelib/idle_test/test_multicall.py \
-		Lib/idlelib/idle_test/test_outwin.py \
-		Lib/idlelib/idle_test/test_parenmatch.py \
-		Lib/idlelib/idle_test/test_pathbrowser.py \
-		Lib/idlelib/idle_test/test_percolator.py \
-		Lib/idlelib/idle_test/test_pyparse.py \
-		Lib/idlelib/idle_test/test_pyshell.py \
-		Lib/idlelib/idle_test/test_query.py \
-		Lib/idlelib/idle_test/test_redirector.py \
-		Lib/idlelib/idle_test/test_replace.py \
-		Lib/idlelib/idle_test/test_rpc.py \
-		Lib/idlelib/idle_test/test_run.py \
-		Lib/idlelib/idle_test/test_runscript.py \
-		Lib/idlelib/idle_test/test_scrolledlist.py \
-		Lib/idlelib/idle_test/test_search.py \
-		Lib/idlelib/idle_test/test_searchbase.py \
-		Lib/idlelib/idle_test/test_searchengine.py \
-		Lib/idlelib/idle_test/test_sidebar.py \
-		Lib/idlelib/idle_test/test_squeezer.py \
-		Lib/idlelib/idle_test/test_stackviewer.py \
-		Lib/idlelib/idle_test/test_statusbar.py \
-		Lib/idlelib/idle_test/test_text.py \
-		Lib/idlelib/idle_test/test_textview.py \
-		Lib/idlelib/idle_test/test_tooltip.py \
-		Lib/idlelib/idle_test/test_tree.py \
-		Lib/idlelib/idle_test/test_undo.py \
-		Lib/idlelib/idle_test/test_util.py \
-		Lib/idlelib/idle_test/test_warning.py \
-		Lib/idlelib/idle_test/test_window.py \
-		Lib/idlelib/idle_test/test_zoomheight.py \
-		Lib/idlelib/idle_test/test_zzdummy.py \
-		Lib/idlelib/idle_test/tkinter_testing_utils.py \
-		Lib/idlelib/iomenu.py \
-		Lib/idlelib/macosx.py \
-		Lib/idlelib/mainmenu.py \
-		Lib/idlelib/multicall.py \
-		Lib/idlelib/outwin.py \
-		Lib/idlelib/parenmatch.py \
-		Lib/idlelib/pathbrowser.py \
-		Lib/idlelib/percolator.py \
-		Lib/idlelib/pyparse.py \
-		Lib/idlelib/pyshell.py \
-		Lib/idlelib/query.py \
-		Lib/idlelib/redirector.py \
-		Lib/idlelib/replace.py \
-		Lib/idlelib/rpc.py \
-		Lib/idlelib/run.py \
-		Lib/idlelib/runscript.py \
-		Lib/idlelib/scrolledlist.py \
-		Lib/idlelib/search.py \
-		Lib/idlelib/searchbase.py \
-		Lib/idlelib/searchengine.py \
-		Lib/idlelib/sidebar.py \
-		Lib/idlelib/squeezer.py \
-		Lib/idlelib/stackviewer.py \
-		Lib/idlelib/statusbar.py \
-		Lib/idlelib/textview.py \
-		Lib/idlelib/tooltip.py \
-		Lib/idlelib/tree.py \
-		Lib/idlelib/undo.py \
-		Lib/idlelib/util.py \
-		Lib/idlelib/window.py \
-		Lib/idlelib/zoomheight.py \
-		Lib/idlelib/zzdummy.py \
 		Lib/imaplib.py \
-		Lib/imghdr.py \
 		Lib/importlib/__init__.py \
 		Lib/importlib/_abc.py \
 		Lib/importlib/abc.py \
@@ -1493,94 +1324,15 @@ FROZEN_FILES_IN = \
 		Lib/json/scanner.py \
 		Lib/json/tool.py \
 		Lib/keyword.py \
-		Lib/lib2to3/__init__.py \
-		Lib/lib2to3/__main__.py \
-		Lib/lib2to3/btm_matcher.py \
-		Lib/lib2to3/btm_utils.py \
-		Lib/lib2to3/fixer_base.py \
-		Lib/lib2to3/fixer_util.py \
-		Lib/lib2to3/fixes/__init__.py \
-		Lib/lib2to3/fixes/fix_apply.py \
-		Lib/lib2to3/fixes/fix_asserts.py \
-		Lib/lib2to3/fixes/fix_basestring.py \
-		Lib/lib2to3/fixes/fix_buffer.py \
-		Lib/lib2to3/fixes/fix_dict.py \
-		Lib/lib2to3/fixes/fix_except.py \
-		Lib/lib2to3/fixes/fix_exec.py \
-		Lib/lib2to3/fixes/fix_execfile.py \
-		Lib/lib2to3/fixes/fix_exitfunc.py \
-		Lib/lib2to3/fixes/fix_filter.py \
-		Lib/lib2to3/fixes/fix_funcattrs.py \
-		Lib/lib2to3/fixes/fix_future.py \
-		Lib/lib2to3/fixes/fix_getcwdu.py \
-		Lib/lib2to3/fixes/fix_has_key.py \
-		Lib/lib2to3/fixes/fix_idioms.py \
-		Lib/lib2to3/fixes/fix_import.py \
-		Lib/lib2to3/fixes/fix_imports.py \
-		Lib/lib2to3/fixes/fix_imports2.py \
-		Lib/lib2to3/fixes/fix_input.py \
-		Lib/lib2to3/fixes/fix_intern.py \
-		Lib/lib2to3/fixes/fix_isinstance.py \
-		Lib/lib2to3/fixes/fix_itertools.py \
-		Lib/lib2to3/fixes/fix_itertools_imports.py \
-		Lib/lib2to3/fixes/fix_long.py \
-		Lib/lib2to3/fixes/fix_map.py \
-		Lib/lib2to3/fixes/fix_metaclass.py \
-		Lib/lib2to3/fixes/fix_methodattrs.py \
-		Lib/lib2to3/fixes/fix_ne.py \
-		Lib/lib2to3/fixes/fix_next.py \
-		Lib/lib2to3/fixes/fix_nonzero.py \
-		Lib/lib2to3/fixes/fix_numliterals.py \
-		Lib/lib2to3/fixes/fix_operator.py \
-		Lib/lib2to3/fixes/fix_paren.py \
-		Lib/lib2to3/fixes/fix_print.py \
-		Lib/lib2to3/fixes/fix_raise.py \
-		Lib/lib2to3/fixes/fix_raw_input.py \
-		Lib/lib2to3/fixes/fix_reduce.py \
-		Lib/lib2to3/fixes/fix_reload.py \
-		Lib/lib2to3/fixes/fix_renames.py \
-		Lib/lib2to3/fixes/fix_repr.py \
-		Lib/lib2to3/fixes/fix_set_literal.py \
-		Lib/lib2to3/fixes/fix_standarderror.py \
-		Lib/lib2to3/fixes/fix_sys_exc.py \
-		Lib/lib2to3/fixes/fix_throw.py \
-		Lib/lib2to3/fixes/fix_tuple_params.py \
-		Lib/lib2to3/fixes/fix_types.py \
-		Lib/lib2to3/fixes/fix_unicode.py \
-		Lib/lib2to3/fixes/fix_urllib.py \
-		Lib/lib2to3/fixes/fix_ws_comma.py \
-		Lib/lib2to3/fixes/fix_xrange.py \
-		Lib/lib2to3/fixes/fix_xreadlines.py \
-		Lib/lib2to3/fixes/fix_zip.py \
-		Lib/lib2to3/main.py \
-		Lib/lib2to3/patcomp.py \
-		Lib/lib2to3/pgen2/__init__.py \
-		Lib/lib2to3/pgen2/conv.py \
-		Lib/lib2to3/pgen2/driver.py \
-		Lib/lib2to3/pgen2/grammar.py \
-		Lib/lib2to3/pgen2/literals.py \
-		Lib/lib2to3/pgen2/parse.py \
-		Lib/lib2to3/pgen2/pgen.py \
-		Lib/lib2to3/pgen2/token.py \
-		Lib/lib2to3/pgen2/tokenize.py \
-		Lib/lib2to3/pygram.py \
-		Lib/lib2to3/pytree.py \
-		Lib/lib2to3/refactor.py \
 		Lib/linecache.py \
 		Lib/locale.py \
 		Lib/logging/__init__.py \
 		Lib/logging/config.py \
 		Lib/logging/handlers.py \
 		Lib/lzma.py \
-		Lib/mailbox.py \
-		Lib/mailcap.py \
 		Lib/_markupbase.py \
 		Lib/mimetypes.py \
 		Lib/modulefinder.py \
-		Lib/msilib/__init__.py \
-		Lib/msilib/schema.py \
-		Lib/msilib/sequence.py \
-		Lib/msilib/text.py \
 		Lib/multiprocessing/__init__.py \
 		Lib/multiprocessing/connection.py \
 		Lib/multiprocessing/context.py \
@@ -1605,7 +1357,6 @@ FROZEN_FILES_IN = \
 		Lib/multiprocessing/synchronize.py \
 		Lib/multiprocessing/util.py \
 		Lib/netrc.py \
-		Lib/nntplib.py \
 		Lib/ntpath.py \
 		Lib/nturl2path.py \
 		Lib/numbers.py \
@@ -1622,7 +1373,6 @@ FROZEN_FILES_IN = \
 		Lib/__phello__/spam.py \
 		Lib/pickle.py \
 		Lib/pickletools.py \
-		Lib/pipes.py \
 		Lib/pkgutil.py \
 		Lib/platform.py \
 		Lib/plistlib.py \
@@ -1637,9 +1387,6 @@ FROZEN_FILES_IN = \
 		Lib/py_compile.py \
 		Lib/_pydatetime.py \
 		Lib/_pydecimal.py \
-		Lib/pydoc_data/__init__.py \
-		Lib/pydoc_data/topics.py \
-		Lib/pydoc.py \
 		Lib/_pyio.py \
 		Lib/_pylong.py \
 		Lib/queue.py \
@@ -1659,7 +1406,6 @@ FROZEN_FILES_IN = \
 		Lib/shutil.py \
 		Lib/signal.py \
 		Lib/smtplib.py \
-		Lib/sndhdr.py \
 		Lib/socket.py \
 		Lib/socketserver.py \
 		Lib/statistics.py \
@@ -1669,12 +1415,9 @@ FROZEN_FILES_IN = \
 		Lib/_strptime.py \
 		Lib/struct.py \
 		Lib/subprocess.py \
-		Lib/sunau.py \
 		Lib/symtable.py \
 		Lib/sysconfig.py \
 		Lib/tabnanny.py \
-		Lib/tarfile.py \
-		Lib/telnetlib.py \
 		Lib/tempfile.py \
 		Lib/textwrap.py \
 		Lib/this.py \
@@ -1693,14 +1436,7 @@ FROZEN_FILES_IN = \
 		Lib/tty.py \
 		Lib/types.py \
 		Lib/typing.py \
-		Lib/urllib/__init__.py \
-		Lib/urllib/error.py \
-		Lib/urllib/parse.py \
-		Lib/urllib/request.py \
-		Lib/urllib/response.py \
-		Lib/urllib/robotparser.py \
 		Lib/uuid.py \
-		Lib/uu.py \
 		Lib/warnings.py \
 		Lib/wave.py \
 		Lib/weakref.py \
@@ -1713,7 +1449,6 @@ FROZEN_FILES_IN = \
 		Lib/wsgiref/types.py \
 		Lib/wsgiref/util.py \
 		Lib/wsgiref/validate.py \
-		Lib/xdrlib.py \
 		Lib/zipapp.py \
 		Lib/zipfile/__init__.py \
 		Lib/zipfile/__main__.py \
@@ -1783,7 +1518,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/importlib._bootstrap_external.h \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
-		Python/frozen_modules/aifc.h \
 		Python/frozen_modules/_aix_support.h \
 		Python/frozen_modules/antigravity.h \
 		Python/frozen_modules/argparse.h \
@@ -1792,9 +1526,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/bdb.h \
 		Python/frozen_modules/bisect.h \
 		Python/frozen_modules/calendar.h \
-		Python/frozen_modules/cgi.h \
-		Python/frozen_modules/cgitb.h \
-		Python/frozen_modules/chunk.h \
 		Python/frozen_modules/cmd.h \
 		Python/frozen_modules/codecs.h \
 		Python/frozen_modules/codeop.h \
@@ -1817,7 +1548,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/copy.h \
 		Python/frozen_modules/copyreg.h \
 		Python/frozen_modules/cProfile.h \
-		Python/frozen_modules/crypt.h \
 		Python/frozen_modules/csv.h \
 		Python/frozen_modules/dataclasses.h \
 		Python/frozen_modules/datetime.h \
@@ -1828,36 +1558,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/decimal.h \
 		Python/frozen_modules/difflib.h \
 		Python/frozen_modules/dis.h \
-		Python/frozen_modules/doctest.h \
-		Python/frozen_modules/email.h \
-		Python/frozen_modules/email._encoded_words.h \
-		Python/frozen_modules/email._header_value_parser.h \
-		Python/frozen_modules/email._parseaddr.h \
-		Python/frozen_modules/email._policybase.h \
-		Python/frozen_modules/email.base64mime.h \
-		Python/frozen_modules/email.charset.h \
-		Python/frozen_modules/email.contentmanager.h \
-		Python/frozen_modules/email.encoders.h \
-		Python/frozen_modules/email.errors.h \
-		Python/frozen_modules/email.feedparser.h \
-		Python/frozen_modules/email.generator.h \
-		Python/frozen_modules/email.header.h \
-		Python/frozen_modules/email.headerregistry.h \
-		Python/frozen_modules/email.iterators.h \
-		Python/frozen_modules/email.message.h \
-		Python/frozen_modules/email.mime.h \
-		Python/frozen_modules/email.mime.application.h \
-		Python/frozen_modules/email.mime.audio.h \
-		Python/frozen_modules/email.mime.base.h \
-		Python/frozen_modules/email.mime.image.h \
-		Python/frozen_modules/email.mime.message.h \
-		Python/frozen_modules/email.mime.multipart.h \
-		Python/frozen_modules/email.mime.nonmultipart.h \
-		Python/frozen_modules/email.mime.text.h \
-		Python/frozen_modules/email.parser.h \
-		Python/frozen_modules/email.policy.h \
-		Python/frozen_modules/email.quoprimime.h \
-		Python/frozen_modules/email.utils.h \
 		Python/frozen_modules/encodings.h \
 		Python/frozen_modules/encodings.aliases.h \
 		Python/frozen_modules/encodings.ascii.h \
@@ -2001,141 +1701,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/hashlib.h \
 		Python/frozen_modules/heapq.h \
 		Python/frozen_modules/hmac.h \
-		Python/frozen_modules/html.h \
-		Python/frozen_modules/html.entities.h \
-		Python/frozen_modules/html.parser.h \
-		Python/frozen_modules/http.h \
-		Python/frozen_modules/http.client.h \
-		Python/frozen_modules/http.cookiejar.h \
-		Python/frozen_modules/http.cookies.h \
-		Python/frozen_modules/http.server.h \
-		Python/frozen_modules/idlelib.h \
-		Python/frozen_modules/idlelib.__main__.h \
-		Python/frozen_modules/idlelib.autocomplete.h \
-		Python/frozen_modules/idlelib.autocomplete_w.h \
-		Python/frozen_modules/idlelib.autoexpand.h \
-		Python/frozen_modules/idlelib.browser.h \
-		Python/frozen_modules/idlelib.calltip.h \
-		Python/frozen_modules/idlelib.calltip_w.h \
-		Python/frozen_modules/idlelib.codecontext.h \
-		Python/frozen_modules/idlelib.colorizer.h \
-		Python/frozen_modules/idlelib.config.h \
-		Python/frozen_modules/idlelib.config_key.h \
-		Python/frozen_modules/idlelib.configdialog.h \
-		Python/frozen_modules/idlelib.debugger.h \
-		Python/frozen_modules/idlelib.debugger_r.h \
-		Python/frozen_modules/idlelib.debugobj.h \
-		Python/frozen_modules/idlelib.debugobj_r.h \
-		Python/frozen_modules/idlelib.delegator.h \
-		Python/frozen_modules/idlelib.dynoption.h \
-		Python/frozen_modules/idlelib.editor.h \
-		Python/frozen_modules/idlelib.filelist.h \
-		Python/frozen_modules/idlelib.format.h \
-		Python/frozen_modules/idlelib.grep.h \
-		Python/frozen_modules/idlelib.help.h \
-		Python/frozen_modules/idlelib.help_about.h \
-		Python/frozen_modules/idlelib.history.h \
-		Python/frozen_modules/idlelib.hyperparser.h \
-		Python/frozen_modules/idlelib.idle.h \
-		Python/frozen_modules/idlelib.idle_test.h \
-		Python/frozen_modules/idlelib.idle_test.htest.h \
-		Python/frozen_modules/idlelib.idle_test.mock_idle.h \
-		Python/frozen_modules/idlelib.idle_test.mock_tk.h \
-		Python/frozen_modules/idlelib.idle_test.template.h \
-		Python/frozen_modules/idlelib.idle_test.test_autocomplete.h \
-		Python/frozen_modules/idlelib.idle_test.test_autocomplete_w.h \
-		Python/frozen_modules/idlelib.idle_test.test_autoexpand.h \
-		Python/frozen_modules/idlelib.idle_test.test_browser.h \
-		Python/frozen_modules/idlelib.idle_test.test_calltip.h \
-		Python/frozen_modules/idlelib.idle_test.test_calltip_w.h \
-		Python/frozen_modules/idlelib.idle_test.test_codecontext.h \
-		Python/frozen_modules/idlelib.idle_test.test_colorizer.h \
-		Python/frozen_modules/idlelib.idle_test.test_config.h \
-		Python/frozen_modules/idlelib.idle_test.test_config_key.h \
-		Python/frozen_modules/idlelib.idle_test.test_configdialog.h \
-		Python/frozen_modules/idlelib.idle_test.test_debugger.h \
-		Python/frozen_modules/idlelib.idle_test.test_debugger_r.h \
-		Python/frozen_modules/idlelib.idle_test.test_debugobj.h \
-		Python/frozen_modules/idlelib.idle_test.test_debugobj_r.h \
-		Python/frozen_modules/idlelib.idle_test.test_delegator.h \
-		Python/frozen_modules/idlelib.idle_test.test_editmenu.h \
-		Python/frozen_modules/idlelib.idle_test.test_editor.h \
-		Python/frozen_modules/idlelib.idle_test.test_filelist.h \
-		Python/frozen_modules/idlelib.idle_test.test_format.h \
-		Python/frozen_modules/idlelib.idle_test.test_grep.h \
-		Python/frozen_modules/idlelib.idle_test.test_help.h \
-		Python/frozen_modules/idlelib.idle_test.test_help_about.h \
-		Python/frozen_modules/idlelib.idle_test.test_history.h \
-		Python/frozen_modules/idlelib.idle_test.test_hyperparser.h \
-		Python/frozen_modules/idlelib.idle_test.test_iomenu.h \
-		Python/frozen_modules/idlelib.idle_test.test_macosx.h \
-		Python/frozen_modules/idlelib.idle_test.test_mainmenu.h \
-		Python/frozen_modules/idlelib.idle_test.test_multicall.h \
-		Python/frozen_modules/idlelib.idle_test.test_outwin.h \
-		Python/frozen_modules/idlelib.idle_test.test_parenmatch.h \
-		Python/frozen_modules/idlelib.idle_test.test_pathbrowser.h \
-		Python/frozen_modules/idlelib.idle_test.test_percolator.h \
-		Python/frozen_modules/idlelib.idle_test.test_pyparse.h \
-		Python/frozen_modules/idlelib.idle_test.test_pyshell.h \
-		Python/frozen_modules/idlelib.idle_test.test_query.h \
-		Python/frozen_modules/idlelib.idle_test.test_redirector.h \
-		Python/frozen_modules/idlelib.idle_test.test_replace.h \
-		Python/frozen_modules/idlelib.idle_test.test_rpc.h \
-		Python/frozen_modules/idlelib.idle_test.test_run.h \
-		Python/frozen_modules/idlelib.idle_test.test_runscript.h \
-		Python/frozen_modules/idlelib.idle_test.test_scrolledlist.h \
-		Python/frozen_modules/idlelib.idle_test.test_search.h \
-		Python/frozen_modules/idlelib.idle_test.test_searchbase.h \
-		Python/frozen_modules/idlelib.idle_test.test_searchengine.h \
-		Python/frozen_modules/idlelib.idle_test.test_sidebar.h \
-		Python/frozen_modules/idlelib.idle_test.test_squeezer.h \
-		Python/frozen_modules/idlelib.idle_test.test_stackviewer.h \
-		Python/frozen_modules/idlelib.idle_test.test_statusbar.h \
-		Python/frozen_modules/idlelib.idle_test.test_text.h \
-		Python/frozen_modules/idlelib.idle_test.test_textview.h \
-		Python/frozen_modules/idlelib.idle_test.test_tooltip.h \
-		Python/frozen_modules/idlelib.idle_test.test_tree.h \
-		Python/frozen_modules/idlelib.idle_test.test_undo.h \
-		Python/frozen_modules/idlelib.idle_test.test_util.h \
-		Python/frozen_modules/idlelib.idle_test.test_warning.h \
-		Python/frozen_modules/idlelib.idle_test.test_window.h \
-		Python/frozen_modules/idlelib.idle_test.test_zoomheight.h \
-		Python/frozen_modules/idlelib.idle_test.test_zzdummy.h \
-		Python/frozen_modules/idlelib.idle_test.tkinter_testing_utils.h \
-		Python/frozen_modules/idlelib.iomenu.h \
-		Python/frozen_modules/idlelib.macosx.h \
-		Python/frozen_modules/idlelib.mainmenu.h \
-		Python/frozen_modules/idlelib.multicall.h \
-		Python/frozen_modules/idlelib.outwin.h \
-		Python/frozen_modules/idlelib.parenmatch.h \
-		Python/frozen_modules/idlelib.pathbrowser.h \
-		Python/frozen_modules/idlelib.percolator.h \
-		Python/frozen_modules/idlelib.pyparse.h \
-		Python/frozen_modules/idlelib.pyshell.h \
-		Python/frozen_modules/idlelib.query.h \
-		Python/frozen_modules/idlelib.redirector.h \
-		Python/frozen_modules/idlelib.replace.h \
-		Python/frozen_modules/idlelib.rpc.h \
-		Python/frozen_modules/idlelib.run.h \
-		Python/frozen_modules/idlelib.runscript.h \
-		Python/frozen_modules/idlelib.scrolledlist.h \
-		Python/frozen_modules/idlelib.search.h \
-		Python/frozen_modules/idlelib.searchbase.h \
-		Python/frozen_modules/idlelib.searchengine.h \
-		Python/frozen_modules/idlelib.sidebar.h \
-		Python/frozen_modules/idlelib.squeezer.h \
-		Python/frozen_modules/idlelib.stackviewer.h \
-		Python/frozen_modules/idlelib.statusbar.h \
-		Python/frozen_modules/idlelib.textview.h \
-		Python/frozen_modules/idlelib.tooltip.h \
-		Python/frozen_modules/idlelib.tree.h \
-		Python/frozen_modules/idlelib.undo.h \
-		Python/frozen_modules/idlelib.util.h \
-		Python/frozen_modules/idlelib.window.h \
-		Python/frozen_modules/idlelib.zoomheight.h \
-		Python/frozen_modules/idlelib.zzdummy.h \
 		Python/frozen_modules/imaplib.h \
-		Python/frozen_modules/imghdr.h \
 		Python/frozen_modules/importlib.h \
 		Python/frozen_modules/importlib._abc.h \
 		Python/frozen_modules/importlib.abc.h \
@@ -2167,94 +1733,15 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/json.scanner.h \
 		Python/frozen_modules/json.tool.h \
 		Python/frozen_modules/keyword.h \
-		Python/frozen_modules/lib2to3.h \
-		Python/frozen_modules/lib2to3.__main__.h \
-		Python/frozen_modules/lib2to3.btm_matcher.h \
-		Python/frozen_modules/lib2to3.btm_utils.h \
-		Python/frozen_modules/lib2to3.fixer_base.h \
-		Python/frozen_modules/lib2to3.fixer_util.h \
-		Python/frozen_modules/lib2to3.fixes.h \
-		Python/frozen_modules/lib2to3.fixes.fix_apply.h \
-		Python/frozen_modules/lib2to3.fixes.fix_asserts.h \
-		Python/frozen_modules/lib2to3.fixes.fix_basestring.h \
-		Python/frozen_modules/lib2to3.fixes.fix_buffer.h \
-		Python/frozen_modules/lib2to3.fixes.fix_dict.h \
-		Python/frozen_modules/lib2to3.fixes.fix_except.h \
-		Python/frozen_modules/lib2to3.fixes.fix_exec.h \
-		Python/frozen_modules/lib2to3.fixes.fix_execfile.h \
-		Python/frozen_modules/lib2to3.fixes.fix_exitfunc.h \
-		Python/frozen_modules/lib2to3.fixes.fix_filter.h \
-		Python/frozen_modules/lib2to3.fixes.fix_funcattrs.h \
-		Python/frozen_modules/lib2to3.fixes.fix_future.h \
-		Python/frozen_modules/lib2to3.fixes.fix_getcwdu.h \
-		Python/frozen_modules/lib2to3.fixes.fix_has_key.h \
-		Python/frozen_modules/lib2to3.fixes.fix_idioms.h \
-		Python/frozen_modules/lib2to3.fixes.fix_import.h \
-		Python/frozen_modules/lib2to3.fixes.fix_imports.h \
-		Python/frozen_modules/lib2to3.fixes.fix_imports2.h \
-		Python/frozen_modules/lib2to3.fixes.fix_input.h \
-		Python/frozen_modules/lib2to3.fixes.fix_intern.h \
-		Python/frozen_modules/lib2to3.fixes.fix_isinstance.h \
-		Python/frozen_modules/lib2to3.fixes.fix_itertools.h \
-		Python/frozen_modules/lib2to3.fixes.fix_itertools_imports.h \
-		Python/frozen_modules/lib2to3.fixes.fix_long.h \
-		Python/frozen_modules/lib2to3.fixes.fix_map.h \
-		Python/frozen_modules/lib2to3.fixes.fix_metaclass.h \
-		Python/frozen_modules/lib2to3.fixes.fix_methodattrs.h \
-		Python/frozen_modules/lib2to3.fixes.fix_ne.h \
-		Python/frozen_modules/lib2to3.fixes.fix_next.h \
-		Python/frozen_modules/lib2to3.fixes.fix_nonzero.h \
-		Python/frozen_modules/lib2to3.fixes.fix_numliterals.h \
-		Python/frozen_modules/lib2to3.fixes.fix_operator.h \
-		Python/frozen_modules/lib2to3.fixes.fix_paren.h \
-		Python/frozen_modules/lib2to3.fixes.fix_print.h \
-		Python/frozen_modules/lib2to3.fixes.fix_raise.h \
-		Python/frozen_modules/lib2to3.fixes.fix_raw_input.h \
-		Python/frozen_modules/lib2to3.fixes.fix_reduce.h \
-		Python/frozen_modules/lib2to3.fixes.fix_reload.h \
-		Python/frozen_modules/lib2to3.fixes.fix_renames.h \
-		Python/frozen_modules/lib2to3.fixes.fix_repr.h \
-		Python/frozen_modules/lib2to3.fixes.fix_set_literal.h \
-		Python/frozen_modules/lib2to3.fixes.fix_standarderror.h \
-		Python/frozen_modules/lib2to3.fixes.fix_sys_exc.h \
-		Python/frozen_modules/lib2to3.fixes.fix_throw.h \
-		Python/frozen_modules/lib2to3.fixes.fix_tuple_params.h \
-		Python/frozen_modules/lib2to3.fixes.fix_types.h \
-		Python/frozen_modules/lib2to3.fixes.fix_unicode.h \
-		Python/frozen_modules/lib2to3.fixes.fix_urllib.h \
-		Python/frozen_modules/lib2to3.fixes.fix_ws_comma.h \
-		Python/frozen_modules/lib2to3.fixes.fix_xrange.h \
-		Python/frozen_modules/lib2to3.fixes.fix_xreadlines.h \
-		Python/frozen_modules/lib2to3.fixes.fix_zip.h \
-		Python/frozen_modules/lib2to3.main.h \
-		Python/frozen_modules/lib2to3.patcomp.h \
-		Python/frozen_modules/lib2to3.pgen2.h \
-		Python/frozen_modules/lib2to3.pgen2.conv.h \
-		Python/frozen_modules/lib2to3.pgen2.driver.h \
-		Python/frozen_modules/lib2to3.pgen2.grammar.h \
-		Python/frozen_modules/lib2to3.pgen2.literals.h \
-		Python/frozen_modules/lib2to3.pgen2.parse.h \
-		Python/frozen_modules/lib2to3.pgen2.pgen.h \
-		Python/frozen_modules/lib2to3.pgen2.token.h \
-		Python/frozen_modules/lib2to3.pgen2.tokenize.h \
-		Python/frozen_modules/lib2to3.pygram.h \
-		Python/frozen_modules/lib2to3.pytree.h \
-		Python/frozen_modules/lib2to3.refactor.h \
 		Python/frozen_modules/linecache.h \
 		Python/frozen_modules/locale.h \
 		Python/frozen_modules/logging.h \
 		Python/frozen_modules/logging.config.h \
 		Python/frozen_modules/logging.handlers.h \
 		Python/frozen_modules/lzma.h \
-		Python/frozen_modules/mailbox.h \
-		Python/frozen_modules/mailcap.h \
 		Python/frozen_modules/_markupbase.h \
 		Python/frozen_modules/mimetypes.h \
 		Python/frozen_modules/modulefinder.h \
-		Python/frozen_modules/msilib.h \
-		Python/frozen_modules/msilib.schema.h \
-		Python/frozen_modules/msilib.sequence.h \
-		Python/frozen_modules/msilib.text.h \
 		Python/frozen_modules/multiprocessing.h \
 		Python/frozen_modules/multiprocessing.connection.h \
 		Python/frozen_modules/multiprocessing.context.h \
@@ -2279,7 +1766,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/multiprocessing.synchronize.h \
 		Python/frozen_modules/multiprocessing.util.h \
 		Python/frozen_modules/netrc.h \
-		Python/frozen_modules/nntplib.h \
 		Python/frozen_modules/ntpath.h \
 		Python/frozen_modules/nturl2path.h \
 		Python/frozen_modules/numbers.h \
@@ -2296,7 +1782,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/__phello__.spam.h \
 		Python/frozen_modules/pickle.h \
 		Python/frozen_modules/pickletools.h \
-		Python/frozen_modules/pipes.h \
 		Python/frozen_modules/pkgutil.h \
 		Python/frozen_modules/platform.h \
 		Python/frozen_modules/plistlib.h \
@@ -2311,9 +1796,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/py_compile.h \
 		Python/frozen_modules/_pydatetime.h \
 		Python/frozen_modules/_pydecimal.h \
-		Python/frozen_modules/pydoc_data.h \
-		Python/frozen_modules/pydoc_data.topics.h \
-		Python/frozen_modules/pydoc.h \
 		Python/frozen_modules/_pyio.h \
 		Python/frozen_modules/_pylong.h \
 		Python/frozen_modules/queue.h \
@@ -2333,7 +1815,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/shutil.h \
 		Python/frozen_modules/signal.h \
 		Python/frozen_modules/smtplib.h \
-		Python/frozen_modules/sndhdr.h \
 		Python/frozen_modules/socket.h \
 		Python/frozen_modules/socketserver.h \
 		Python/frozen_modules/statistics.h \
@@ -2343,12 +1824,9 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/_strptime.h \
 		Python/frozen_modules/struct.h \
 		Python/frozen_modules/subprocess.h \
-		Python/frozen_modules/sunau.h \
 		Python/frozen_modules/symtable.h \
 		Python/frozen_modules/sysconfig.h \
 		Python/frozen_modules/tabnanny.h \
-		Python/frozen_modules/tarfile.h \
-		Python/frozen_modules/telnetlib.h \
 		Python/frozen_modules/tempfile.h \
 		Python/frozen_modules/textwrap.h \
 		Python/frozen_modules/this.h \
@@ -2367,14 +1845,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/tty.h \
 		Python/frozen_modules/types.h \
 		Python/frozen_modules/typing.h \
-		Python/frozen_modules/urllib.h \
-		Python/frozen_modules/urllib.error.h \
-		Python/frozen_modules/urllib.parse.h \
-		Python/frozen_modules/urllib.request.h \
-		Python/frozen_modules/urllib.response.h \
-		Python/frozen_modules/urllib.robotparser.h \
 		Python/frozen_modules/uuid.h \
-		Python/frozen_modules/uu.h \
 		Python/frozen_modules/warnings.h \
 		Python/frozen_modules/wave.h \
 		Python/frozen_modules/weakref.h \
@@ -2387,7 +1858,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/wsgiref.types.h \
 		Python/frozen_modules/wsgiref.util.h \
 		Python/frozen_modules/wsgiref.validate.h \
-		Python/frozen_modules/xdrlib.h \
 		Python/frozen_modules/zipapp.h \
 		Python/frozen_modules/zipfile.h \
 		Python/frozen_modules/zipfile.__main__.h \
@@ -2478,9 +1948,6 @@ Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_BOOTSTRAP_DE
 Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) abc $(srcdir)/Lib/abc.py Python/frozen_modules/abc.h
 
-Python/frozen_modules/aifc.h: Lib/aifc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) aifc $(srcdir)/Lib/aifc.py Python/frozen_modules/aifc.h
-
 Python/frozen_modules/_aix_support.h: Lib/_aix_support.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) _aix_support $(srcdir)/Lib/_aix_support.py Python/frozen_modules/_aix_support.h
 
@@ -2504,15 +1971,6 @@ Python/frozen_modules/bisect.h: Lib/bisect.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/calendar.h: Lib/calendar.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) calendar $(srcdir)/Lib/calendar.py Python/frozen_modules/calendar.h
-
-Python/frozen_modules/cgi.h: Lib/cgi.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) cgi $(srcdir)/Lib/cgi.py Python/frozen_modules/cgi.h
-
-Python/frozen_modules/cgitb.h: Lib/cgitb.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) cgitb $(srcdir)/Lib/cgitb.py Python/frozen_modules/cgitb.h
-
-Python/frozen_modules/chunk.h: Lib/chunk.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) chunk $(srcdir)/Lib/chunk.py Python/frozen_modules/chunk.h
 
 Python/frozen_modules/cmd.h: Lib/cmd.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) cmd $(srcdir)/Lib/cmd.py Python/frozen_modules/cmd.h
@@ -2580,9 +2038,6 @@ Python/frozen_modules/copyreg.h: Lib/copyreg.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/cProfile.h: Lib/cProfile.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) cProfile $(srcdir)/Lib/cProfile.py Python/frozen_modules/cProfile.h
 
-Python/frozen_modules/crypt.h: Lib/crypt.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) crypt $(srcdir)/Lib/crypt.py Python/frozen_modules/crypt.h
-
 Python/frozen_modules/csv.h: Lib/csv.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) csv $(srcdir)/Lib/csv.py Python/frozen_modules/csv.h
 
@@ -2612,96 +2067,6 @@ Python/frozen_modules/difflib.h: Lib/difflib.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/dis.h: Lib/dis.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) dis $(srcdir)/Lib/dis.py Python/frozen_modules/dis.h
-
-Python/frozen_modules/doctest.h: Lib/doctest.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) doctest $(srcdir)/Lib/doctest.py Python/frozen_modules/doctest.h
-
-Python/frozen_modules/email.h: Lib/email/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email $(srcdir)/Lib/email/__init__.py Python/frozen_modules/email.h
-
-Python/frozen_modules/email._encoded_words.h: Lib/email/_encoded_words.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email._encoded_words $(srcdir)/Lib/email/_encoded_words.py Python/frozen_modules/email._encoded_words.h
-
-Python/frozen_modules/email._header_value_parser.h: Lib/email/_header_value_parser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email._header_value_parser $(srcdir)/Lib/email/_header_value_parser.py Python/frozen_modules/email._header_value_parser.h
-
-Python/frozen_modules/email._parseaddr.h: Lib/email/_parseaddr.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email._parseaddr $(srcdir)/Lib/email/_parseaddr.py Python/frozen_modules/email._parseaddr.h
-
-Python/frozen_modules/email._policybase.h: Lib/email/_policybase.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email._policybase $(srcdir)/Lib/email/_policybase.py Python/frozen_modules/email._policybase.h
-
-Python/frozen_modules/email.base64mime.h: Lib/email/base64mime.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.base64mime $(srcdir)/Lib/email/base64mime.py Python/frozen_modules/email.base64mime.h
-
-Python/frozen_modules/email.charset.h: Lib/email/charset.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.charset $(srcdir)/Lib/email/charset.py Python/frozen_modules/email.charset.h
-
-Python/frozen_modules/email.contentmanager.h: Lib/email/contentmanager.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.contentmanager $(srcdir)/Lib/email/contentmanager.py Python/frozen_modules/email.contentmanager.h
-
-Python/frozen_modules/email.encoders.h: Lib/email/encoders.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.encoders $(srcdir)/Lib/email/encoders.py Python/frozen_modules/email.encoders.h
-
-Python/frozen_modules/email.errors.h: Lib/email/errors.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.errors $(srcdir)/Lib/email/errors.py Python/frozen_modules/email.errors.h
-
-Python/frozen_modules/email.feedparser.h: Lib/email/feedparser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.feedparser $(srcdir)/Lib/email/feedparser.py Python/frozen_modules/email.feedparser.h
-
-Python/frozen_modules/email.generator.h: Lib/email/generator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.generator $(srcdir)/Lib/email/generator.py Python/frozen_modules/email.generator.h
-
-Python/frozen_modules/email.header.h: Lib/email/header.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.header $(srcdir)/Lib/email/header.py Python/frozen_modules/email.header.h
-
-Python/frozen_modules/email.headerregistry.h: Lib/email/headerregistry.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.headerregistry $(srcdir)/Lib/email/headerregistry.py Python/frozen_modules/email.headerregistry.h
-
-Python/frozen_modules/email.iterators.h: Lib/email/iterators.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.iterators $(srcdir)/Lib/email/iterators.py Python/frozen_modules/email.iterators.h
-
-Python/frozen_modules/email.message.h: Lib/email/message.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.message $(srcdir)/Lib/email/message.py Python/frozen_modules/email.message.h
-
-Python/frozen_modules/email.mime.h: Lib/email/mime/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime $(srcdir)/Lib/email/mime/__init__.py Python/frozen_modules/email.mime.h
-
-Python/frozen_modules/email.mime.application.h: Lib/email/mime/application.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.application $(srcdir)/Lib/email/mime/application.py Python/frozen_modules/email.mime.application.h
-
-Python/frozen_modules/email.mime.audio.h: Lib/email/mime/audio.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.audio $(srcdir)/Lib/email/mime/audio.py Python/frozen_modules/email.mime.audio.h
-
-Python/frozen_modules/email.mime.base.h: Lib/email/mime/base.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.base $(srcdir)/Lib/email/mime/base.py Python/frozen_modules/email.mime.base.h
-
-Python/frozen_modules/email.mime.image.h: Lib/email/mime/image.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.image $(srcdir)/Lib/email/mime/image.py Python/frozen_modules/email.mime.image.h
-
-Python/frozen_modules/email.mime.message.h: Lib/email/mime/message.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.message $(srcdir)/Lib/email/mime/message.py Python/frozen_modules/email.mime.message.h
-
-Python/frozen_modules/email.mime.multipart.h: Lib/email/mime/multipart.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.multipart $(srcdir)/Lib/email/mime/multipart.py Python/frozen_modules/email.mime.multipart.h
-
-Python/frozen_modules/email.mime.nonmultipart.h: Lib/email/mime/nonmultipart.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.nonmultipart $(srcdir)/Lib/email/mime/nonmultipart.py Python/frozen_modules/email.mime.nonmultipart.h
-
-Python/frozen_modules/email.mime.text.h: Lib/email/mime/text.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.mime.text $(srcdir)/Lib/email/mime/text.py Python/frozen_modules/email.mime.text.h
-
-Python/frozen_modules/email.parser.h: Lib/email/parser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.parser $(srcdir)/Lib/email/parser.py Python/frozen_modules/email.parser.h
-
-Python/frozen_modules/email.policy.h: Lib/email/policy.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.policy $(srcdir)/Lib/email/policy.py Python/frozen_modules/email.policy.h
-
-Python/frozen_modules/email.quoprimime.h: Lib/email/quoprimime.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.quoprimime $(srcdir)/Lib/email/quoprimime.py Python/frozen_modules/email.quoprimime.h
-
-Python/frozen_modules/email.utils.h: Lib/email/utils.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) email.utils $(srcdir)/Lib/email/utils.py Python/frozen_modules/email.utils.h
 
 Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
@@ -3132,410 +2497,8 @@ Python/frozen_modules/heapq.h: Lib/heapq.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/hmac.h: Lib/hmac.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) hmac $(srcdir)/Lib/hmac.py Python/frozen_modules/hmac.h
 
-Python/frozen_modules/html.h: Lib/html/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) html $(srcdir)/Lib/html/__init__.py Python/frozen_modules/html.h
-
-Python/frozen_modules/html.entities.h: Lib/html/entities.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) html.entities $(srcdir)/Lib/html/entities.py Python/frozen_modules/html.entities.h
-
-Python/frozen_modules/html.parser.h: Lib/html/parser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) html.parser $(srcdir)/Lib/html/parser.py Python/frozen_modules/html.parser.h
-
-Python/frozen_modules/http.h: Lib/http/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) http $(srcdir)/Lib/http/__init__.py Python/frozen_modules/http.h
-
-Python/frozen_modules/http.client.h: Lib/http/client.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) http.client $(srcdir)/Lib/http/client.py Python/frozen_modules/http.client.h
-
-Python/frozen_modules/http.cookiejar.h: Lib/http/cookiejar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) http.cookiejar $(srcdir)/Lib/http/cookiejar.py Python/frozen_modules/http.cookiejar.h
-
-Python/frozen_modules/http.cookies.h: Lib/http/cookies.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) http.cookies $(srcdir)/Lib/http/cookies.py Python/frozen_modules/http.cookies.h
-
-Python/frozen_modules/http.server.h: Lib/http/server.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) http.server $(srcdir)/Lib/http/server.py Python/frozen_modules/http.server.h
-
-Python/frozen_modules/idlelib.h: Lib/idlelib/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib $(srcdir)/Lib/idlelib/__init__.py Python/frozen_modules/idlelib.h
-
-Python/frozen_modules/idlelib.__main__.h: Lib/idlelib/__main__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.__main__ $(srcdir)/Lib/idlelib/__main__.py Python/frozen_modules/idlelib.__main__.h
-
-Python/frozen_modules/idlelib.autocomplete.h: Lib/idlelib/autocomplete.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.autocomplete $(srcdir)/Lib/idlelib/autocomplete.py Python/frozen_modules/idlelib.autocomplete.h
-
-Python/frozen_modules/idlelib.autocomplete_w.h: Lib/idlelib/autocomplete_w.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.autocomplete_w $(srcdir)/Lib/idlelib/autocomplete_w.py Python/frozen_modules/idlelib.autocomplete_w.h
-
-Python/frozen_modules/idlelib.autoexpand.h: Lib/idlelib/autoexpand.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.autoexpand $(srcdir)/Lib/idlelib/autoexpand.py Python/frozen_modules/idlelib.autoexpand.h
-
-Python/frozen_modules/idlelib.browser.h: Lib/idlelib/browser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.browser $(srcdir)/Lib/idlelib/browser.py Python/frozen_modules/idlelib.browser.h
-
-Python/frozen_modules/idlelib.calltip.h: Lib/idlelib/calltip.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.calltip $(srcdir)/Lib/idlelib/calltip.py Python/frozen_modules/idlelib.calltip.h
-
-Python/frozen_modules/idlelib.calltip_w.h: Lib/idlelib/calltip_w.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.calltip_w $(srcdir)/Lib/idlelib/calltip_w.py Python/frozen_modules/idlelib.calltip_w.h
-
-Python/frozen_modules/idlelib.codecontext.h: Lib/idlelib/codecontext.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.codecontext $(srcdir)/Lib/idlelib/codecontext.py Python/frozen_modules/idlelib.codecontext.h
-
-Python/frozen_modules/idlelib.colorizer.h: Lib/idlelib/colorizer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.colorizer $(srcdir)/Lib/idlelib/colorizer.py Python/frozen_modules/idlelib.colorizer.h
-
-Python/frozen_modules/idlelib.config.h: Lib/idlelib/config.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.config $(srcdir)/Lib/idlelib/config.py Python/frozen_modules/idlelib.config.h
-
-Python/frozen_modules/idlelib.config_key.h: Lib/idlelib/config_key.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.config_key $(srcdir)/Lib/idlelib/config_key.py Python/frozen_modules/idlelib.config_key.h
-
-Python/frozen_modules/idlelib.configdialog.h: Lib/idlelib/configdialog.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.configdialog $(srcdir)/Lib/idlelib/configdialog.py Python/frozen_modules/idlelib.configdialog.h
-
-Python/frozen_modules/idlelib.debugger.h: Lib/idlelib/debugger.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.debugger $(srcdir)/Lib/idlelib/debugger.py Python/frozen_modules/idlelib.debugger.h
-
-Python/frozen_modules/idlelib.debugger_r.h: Lib/idlelib/debugger_r.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.debugger_r $(srcdir)/Lib/idlelib/debugger_r.py Python/frozen_modules/idlelib.debugger_r.h
-
-Python/frozen_modules/idlelib.debugobj.h: Lib/idlelib/debugobj.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.debugobj $(srcdir)/Lib/idlelib/debugobj.py Python/frozen_modules/idlelib.debugobj.h
-
-Python/frozen_modules/idlelib.debugobj_r.h: Lib/idlelib/debugobj_r.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.debugobj_r $(srcdir)/Lib/idlelib/debugobj_r.py Python/frozen_modules/idlelib.debugobj_r.h
-
-Python/frozen_modules/idlelib.delegator.h: Lib/idlelib/delegator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.delegator $(srcdir)/Lib/idlelib/delegator.py Python/frozen_modules/idlelib.delegator.h
-
-Python/frozen_modules/idlelib.dynoption.h: Lib/idlelib/dynoption.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.dynoption $(srcdir)/Lib/idlelib/dynoption.py Python/frozen_modules/idlelib.dynoption.h
-
-Python/frozen_modules/idlelib.editor.h: Lib/idlelib/editor.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.editor $(srcdir)/Lib/idlelib/editor.py Python/frozen_modules/idlelib.editor.h
-
-Python/frozen_modules/idlelib.filelist.h: Lib/idlelib/filelist.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.filelist $(srcdir)/Lib/idlelib/filelist.py Python/frozen_modules/idlelib.filelist.h
-
-Python/frozen_modules/idlelib.format.h: Lib/idlelib/format.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.format $(srcdir)/Lib/idlelib/format.py Python/frozen_modules/idlelib.format.h
-
-Python/frozen_modules/idlelib.grep.h: Lib/idlelib/grep.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.grep $(srcdir)/Lib/idlelib/grep.py Python/frozen_modules/idlelib.grep.h
-
-Python/frozen_modules/idlelib.help.h: Lib/idlelib/help.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.help $(srcdir)/Lib/idlelib/help.py Python/frozen_modules/idlelib.help.h
-
-Python/frozen_modules/idlelib.help_about.h: Lib/idlelib/help_about.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.help_about $(srcdir)/Lib/idlelib/help_about.py Python/frozen_modules/idlelib.help_about.h
-
-Python/frozen_modules/idlelib.history.h: Lib/idlelib/history.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.history $(srcdir)/Lib/idlelib/history.py Python/frozen_modules/idlelib.history.h
-
-Python/frozen_modules/idlelib.hyperparser.h: Lib/idlelib/hyperparser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.hyperparser $(srcdir)/Lib/idlelib/hyperparser.py Python/frozen_modules/idlelib.hyperparser.h
-
-Python/frozen_modules/idlelib.idle.h: Lib/idlelib/idle.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle $(srcdir)/Lib/idlelib/idle.py Python/frozen_modules/idlelib.idle.h
-
-Python/frozen_modules/idlelib.idle_test.h: Lib/idlelib/idle_test/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test $(srcdir)/Lib/idlelib/idle_test/__init__.py Python/frozen_modules/idlelib.idle_test.h
-
-Python/frozen_modules/idlelib.idle_test.htest.h: Lib/idlelib/idle_test/htest.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.htest $(srcdir)/Lib/idlelib/idle_test/htest.py Python/frozen_modules/idlelib.idle_test.htest.h
-
-Python/frozen_modules/idlelib.idle_test.mock_idle.h: Lib/idlelib/idle_test/mock_idle.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.mock_idle $(srcdir)/Lib/idlelib/idle_test/mock_idle.py Python/frozen_modules/idlelib.idle_test.mock_idle.h
-
-Python/frozen_modules/idlelib.idle_test.mock_tk.h: Lib/idlelib/idle_test/mock_tk.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.mock_tk $(srcdir)/Lib/idlelib/idle_test/mock_tk.py Python/frozen_modules/idlelib.idle_test.mock_tk.h
-
-Python/frozen_modules/idlelib.idle_test.template.h: Lib/idlelib/idle_test/template.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.template $(srcdir)/Lib/idlelib/idle_test/template.py Python/frozen_modules/idlelib.idle_test.template.h
-
-Python/frozen_modules/idlelib.idle_test.test_autocomplete.h: Lib/idlelib/idle_test/test_autocomplete.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_autocomplete $(srcdir)/Lib/idlelib/idle_test/test_autocomplete.py Python/frozen_modules/idlelib.idle_test.test_autocomplete.h
-
-Python/frozen_modules/idlelib.idle_test.test_autocomplete_w.h: Lib/idlelib/idle_test/test_autocomplete_w.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_autocomplete_w $(srcdir)/Lib/idlelib/idle_test/test_autocomplete_w.py Python/frozen_modules/idlelib.idle_test.test_autocomplete_w.h
-
-Python/frozen_modules/idlelib.idle_test.test_autoexpand.h: Lib/idlelib/idle_test/test_autoexpand.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_autoexpand $(srcdir)/Lib/idlelib/idle_test/test_autoexpand.py Python/frozen_modules/idlelib.idle_test.test_autoexpand.h
-
-Python/frozen_modules/idlelib.idle_test.test_browser.h: Lib/idlelib/idle_test/test_browser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_browser $(srcdir)/Lib/idlelib/idle_test/test_browser.py Python/frozen_modules/idlelib.idle_test.test_browser.h
-
-Python/frozen_modules/idlelib.idle_test.test_calltip.h: Lib/idlelib/idle_test/test_calltip.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_calltip $(srcdir)/Lib/idlelib/idle_test/test_calltip.py Python/frozen_modules/idlelib.idle_test.test_calltip.h
-
-Python/frozen_modules/idlelib.idle_test.test_calltip_w.h: Lib/idlelib/idle_test/test_calltip_w.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_calltip_w $(srcdir)/Lib/idlelib/idle_test/test_calltip_w.py Python/frozen_modules/idlelib.idle_test.test_calltip_w.h
-
-Python/frozen_modules/idlelib.idle_test.test_codecontext.h: Lib/idlelib/idle_test/test_codecontext.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_codecontext $(srcdir)/Lib/idlelib/idle_test/test_codecontext.py Python/frozen_modules/idlelib.idle_test.test_codecontext.h
-
-Python/frozen_modules/idlelib.idle_test.test_colorizer.h: Lib/idlelib/idle_test/test_colorizer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_colorizer $(srcdir)/Lib/idlelib/idle_test/test_colorizer.py Python/frozen_modules/idlelib.idle_test.test_colorizer.h
-
-Python/frozen_modules/idlelib.idle_test.test_config.h: Lib/idlelib/idle_test/test_config.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_config $(srcdir)/Lib/idlelib/idle_test/test_config.py Python/frozen_modules/idlelib.idle_test.test_config.h
-
-Python/frozen_modules/idlelib.idle_test.test_config_key.h: Lib/idlelib/idle_test/test_config_key.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_config_key $(srcdir)/Lib/idlelib/idle_test/test_config_key.py Python/frozen_modules/idlelib.idle_test.test_config_key.h
-
-Python/frozen_modules/idlelib.idle_test.test_configdialog.h: Lib/idlelib/idle_test/test_configdialog.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_configdialog $(srcdir)/Lib/idlelib/idle_test/test_configdialog.py Python/frozen_modules/idlelib.idle_test.test_configdialog.h
-
-Python/frozen_modules/idlelib.idle_test.test_debugger.h: Lib/idlelib/idle_test/test_debugger.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_debugger $(srcdir)/Lib/idlelib/idle_test/test_debugger.py Python/frozen_modules/idlelib.idle_test.test_debugger.h
-
-Python/frozen_modules/idlelib.idle_test.test_debugger_r.h: Lib/idlelib/idle_test/test_debugger_r.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_debugger_r $(srcdir)/Lib/idlelib/idle_test/test_debugger_r.py Python/frozen_modules/idlelib.idle_test.test_debugger_r.h
-
-Python/frozen_modules/idlelib.idle_test.test_debugobj.h: Lib/idlelib/idle_test/test_debugobj.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_debugobj $(srcdir)/Lib/idlelib/idle_test/test_debugobj.py Python/frozen_modules/idlelib.idle_test.test_debugobj.h
-
-Python/frozen_modules/idlelib.idle_test.test_debugobj_r.h: Lib/idlelib/idle_test/test_debugobj_r.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_debugobj_r $(srcdir)/Lib/idlelib/idle_test/test_debugobj_r.py Python/frozen_modules/idlelib.idle_test.test_debugobj_r.h
-
-Python/frozen_modules/idlelib.idle_test.test_delegator.h: Lib/idlelib/idle_test/test_delegator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_delegator $(srcdir)/Lib/idlelib/idle_test/test_delegator.py Python/frozen_modules/idlelib.idle_test.test_delegator.h
-
-Python/frozen_modules/idlelib.idle_test.test_editmenu.h: Lib/idlelib/idle_test/test_editmenu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_editmenu $(srcdir)/Lib/idlelib/idle_test/test_editmenu.py Python/frozen_modules/idlelib.idle_test.test_editmenu.h
-
-Python/frozen_modules/idlelib.idle_test.test_editor.h: Lib/idlelib/idle_test/test_editor.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_editor $(srcdir)/Lib/idlelib/idle_test/test_editor.py Python/frozen_modules/idlelib.idle_test.test_editor.h
-
-Python/frozen_modules/idlelib.idle_test.test_filelist.h: Lib/idlelib/idle_test/test_filelist.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_filelist $(srcdir)/Lib/idlelib/idle_test/test_filelist.py Python/frozen_modules/idlelib.idle_test.test_filelist.h
-
-Python/frozen_modules/idlelib.idle_test.test_format.h: Lib/idlelib/idle_test/test_format.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_format $(srcdir)/Lib/idlelib/idle_test/test_format.py Python/frozen_modules/idlelib.idle_test.test_format.h
-
-Python/frozen_modules/idlelib.idle_test.test_grep.h: Lib/idlelib/idle_test/test_grep.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_grep $(srcdir)/Lib/idlelib/idle_test/test_grep.py Python/frozen_modules/idlelib.idle_test.test_grep.h
-
-Python/frozen_modules/idlelib.idle_test.test_help.h: Lib/idlelib/idle_test/test_help.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_help $(srcdir)/Lib/idlelib/idle_test/test_help.py Python/frozen_modules/idlelib.idle_test.test_help.h
-
-Python/frozen_modules/idlelib.idle_test.test_help_about.h: Lib/idlelib/idle_test/test_help_about.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_help_about $(srcdir)/Lib/idlelib/idle_test/test_help_about.py Python/frozen_modules/idlelib.idle_test.test_help_about.h
-
-Python/frozen_modules/idlelib.idle_test.test_history.h: Lib/idlelib/idle_test/test_history.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_history $(srcdir)/Lib/idlelib/idle_test/test_history.py Python/frozen_modules/idlelib.idle_test.test_history.h
-
-Python/frozen_modules/idlelib.idle_test.test_hyperparser.h: Lib/idlelib/idle_test/test_hyperparser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_hyperparser $(srcdir)/Lib/idlelib/idle_test/test_hyperparser.py Python/frozen_modules/idlelib.idle_test.test_hyperparser.h
-
-Python/frozen_modules/idlelib.idle_test.test_iomenu.h: Lib/idlelib/idle_test/test_iomenu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_iomenu $(srcdir)/Lib/idlelib/idle_test/test_iomenu.py Python/frozen_modules/idlelib.idle_test.test_iomenu.h
-
-Python/frozen_modules/idlelib.idle_test.test_macosx.h: Lib/idlelib/idle_test/test_macosx.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_macosx $(srcdir)/Lib/idlelib/idle_test/test_macosx.py Python/frozen_modules/idlelib.idle_test.test_macosx.h
-
-Python/frozen_modules/idlelib.idle_test.test_mainmenu.h: Lib/idlelib/idle_test/test_mainmenu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_mainmenu $(srcdir)/Lib/idlelib/idle_test/test_mainmenu.py Python/frozen_modules/idlelib.idle_test.test_mainmenu.h
-
-Python/frozen_modules/idlelib.idle_test.test_multicall.h: Lib/idlelib/idle_test/test_multicall.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_multicall $(srcdir)/Lib/idlelib/idle_test/test_multicall.py Python/frozen_modules/idlelib.idle_test.test_multicall.h
-
-Python/frozen_modules/idlelib.idle_test.test_outwin.h: Lib/idlelib/idle_test/test_outwin.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_outwin $(srcdir)/Lib/idlelib/idle_test/test_outwin.py Python/frozen_modules/idlelib.idle_test.test_outwin.h
-
-Python/frozen_modules/idlelib.idle_test.test_parenmatch.h: Lib/idlelib/idle_test/test_parenmatch.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_parenmatch $(srcdir)/Lib/idlelib/idle_test/test_parenmatch.py Python/frozen_modules/idlelib.idle_test.test_parenmatch.h
-
-Python/frozen_modules/idlelib.idle_test.test_pathbrowser.h: Lib/idlelib/idle_test/test_pathbrowser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_pathbrowser $(srcdir)/Lib/idlelib/idle_test/test_pathbrowser.py Python/frozen_modules/idlelib.idle_test.test_pathbrowser.h
-
-Python/frozen_modules/idlelib.idle_test.test_percolator.h: Lib/idlelib/idle_test/test_percolator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_percolator $(srcdir)/Lib/idlelib/idle_test/test_percolator.py Python/frozen_modules/idlelib.idle_test.test_percolator.h
-
-Python/frozen_modules/idlelib.idle_test.test_pyparse.h: Lib/idlelib/idle_test/test_pyparse.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_pyparse $(srcdir)/Lib/idlelib/idle_test/test_pyparse.py Python/frozen_modules/idlelib.idle_test.test_pyparse.h
-
-Python/frozen_modules/idlelib.idle_test.test_pyshell.h: Lib/idlelib/idle_test/test_pyshell.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_pyshell $(srcdir)/Lib/idlelib/idle_test/test_pyshell.py Python/frozen_modules/idlelib.idle_test.test_pyshell.h
-
-Python/frozen_modules/idlelib.idle_test.test_query.h: Lib/idlelib/idle_test/test_query.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_query $(srcdir)/Lib/idlelib/idle_test/test_query.py Python/frozen_modules/idlelib.idle_test.test_query.h
-
-Python/frozen_modules/idlelib.idle_test.test_redirector.h: Lib/idlelib/idle_test/test_redirector.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_redirector $(srcdir)/Lib/idlelib/idle_test/test_redirector.py Python/frozen_modules/idlelib.idle_test.test_redirector.h
-
-Python/frozen_modules/idlelib.idle_test.test_replace.h: Lib/idlelib/idle_test/test_replace.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_replace $(srcdir)/Lib/idlelib/idle_test/test_replace.py Python/frozen_modules/idlelib.idle_test.test_replace.h
-
-Python/frozen_modules/idlelib.idle_test.test_rpc.h: Lib/idlelib/idle_test/test_rpc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_rpc $(srcdir)/Lib/idlelib/idle_test/test_rpc.py Python/frozen_modules/idlelib.idle_test.test_rpc.h
-
-Python/frozen_modules/idlelib.idle_test.test_run.h: Lib/idlelib/idle_test/test_run.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_run $(srcdir)/Lib/idlelib/idle_test/test_run.py Python/frozen_modules/idlelib.idle_test.test_run.h
-
-Python/frozen_modules/idlelib.idle_test.test_runscript.h: Lib/idlelib/idle_test/test_runscript.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_runscript $(srcdir)/Lib/idlelib/idle_test/test_runscript.py Python/frozen_modules/idlelib.idle_test.test_runscript.h
-
-Python/frozen_modules/idlelib.idle_test.test_scrolledlist.h: Lib/idlelib/idle_test/test_scrolledlist.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_scrolledlist $(srcdir)/Lib/idlelib/idle_test/test_scrolledlist.py Python/frozen_modules/idlelib.idle_test.test_scrolledlist.h
-
-Python/frozen_modules/idlelib.idle_test.test_search.h: Lib/idlelib/idle_test/test_search.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_search $(srcdir)/Lib/idlelib/idle_test/test_search.py Python/frozen_modules/idlelib.idle_test.test_search.h
-
-Python/frozen_modules/idlelib.idle_test.test_searchbase.h: Lib/idlelib/idle_test/test_searchbase.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_searchbase $(srcdir)/Lib/idlelib/idle_test/test_searchbase.py Python/frozen_modules/idlelib.idle_test.test_searchbase.h
-
-Python/frozen_modules/idlelib.idle_test.test_searchengine.h: Lib/idlelib/idle_test/test_searchengine.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_searchengine $(srcdir)/Lib/idlelib/idle_test/test_searchengine.py Python/frozen_modules/idlelib.idle_test.test_searchengine.h
-
-Python/frozen_modules/idlelib.idle_test.test_sidebar.h: Lib/idlelib/idle_test/test_sidebar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_sidebar $(srcdir)/Lib/idlelib/idle_test/test_sidebar.py Python/frozen_modules/idlelib.idle_test.test_sidebar.h
-
-Python/frozen_modules/idlelib.idle_test.test_squeezer.h: Lib/idlelib/idle_test/test_squeezer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_squeezer $(srcdir)/Lib/idlelib/idle_test/test_squeezer.py Python/frozen_modules/idlelib.idle_test.test_squeezer.h
-
-Python/frozen_modules/idlelib.idle_test.test_stackviewer.h: Lib/idlelib/idle_test/test_stackviewer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_stackviewer $(srcdir)/Lib/idlelib/idle_test/test_stackviewer.py Python/frozen_modules/idlelib.idle_test.test_stackviewer.h
-
-Python/frozen_modules/idlelib.idle_test.test_statusbar.h: Lib/idlelib/idle_test/test_statusbar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_statusbar $(srcdir)/Lib/idlelib/idle_test/test_statusbar.py Python/frozen_modules/idlelib.idle_test.test_statusbar.h
-
-Python/frozen_modules/idlelib.idle_test.test_text.h: Lib/idlelib/idle_test/test_text.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_text $(srcdir)/Lib/idlelib/idle_test/test_text.py Python/frozen_modules/idlelib.idle_test.test_text.h
-
-Python/frozen_modules/idlelib.idle_test.test_textview.h: Lib/idlelib/idle_test/test_textview.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_textview $(srcdir)/Lib/idlelib/idle_test/test_textview.py Python/frozen_modules/idlelib.idle_test.test_textview.h
-
-Python/frozen_modules/idlelib.idle_test.test_tooltip.h: Lib/idlelib/idle_test/test_tooltip.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_tooltip $(srcdir)/Lib/idlelib/idle_test/test_tooltip.py Python/frozen_modules/idlelib.idle_test.test_tooltip.h
-
-Python/frozen_modules/idlelib.idle_test.test_tree.h: Lib/idlelib/idle_test/test_tree.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_tree $(srcdir)/Lib/idlelib/idle_test/test_tree.py Python/frozen_modules/idlelib.idle_test.test_tree.h
-
-Python/frozen_modules/idlelib.idle_test.test_undo.h: Lib/idlelib/idle_test/test_undo.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_undo $(srcdir)/Lib/idlelib/idle_test/test_undo.py Python/frozen_modules/idlelib.idle_test.test_undo.h
-
-Python/frozen_modules/idlelib.idle_test.test_util.h: Lib/idlelib/idle_test/test_util.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_util $(srcdir)/Lib/idlelib/idle_test/test_util.py Python/frozen_modules/idlelib.idle_test.test_util.h
-
-Python/frozen_modules/idlelib.idle_test.test_warning.h: Lib/idlelib/idle_test/test_warning.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_warning $(srcdir)/Lib/idlelib/idle_test/test_warning.py Python/frozen_modules/idlelib.idle_test.test_warning.h
-
-Python/frozen_modules/idlelib.idle_test.test_window.h: Lib/idlelib/idle_test/test_window.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_window $(srcdir)/Lib/idlelib/idle_test/test_window.py Python/frozen_modules/idlelib.idle_test.test_window.h
-
-Python/frozen_modules/idlelib.idle_test.test_zoomheight.h: Lib/idlelib/idle_test/test_zoomheight.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_zoomheight $(srcdir)/Lib/idlelib/idle_test/test_zoomheight.py Python/frozen_modules/idlelib.idle_test.test_zoomheight.h
-
-Python/frozen_modules/idlelib.idle_test.test_zzdummy.h: Lib/idlelib/idle_test/test_zzdummy.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.test_zzdummy $(srcdir)/Lib/idlelib/idle_test/test_zzdummy.py Python/frozen_modules/idlelib.idle_test.test_zzdummy.h
-
-Python/frozen_modules/idlelib.idle_test.tkinter_testing_utils.h: Lib/idlelib/idle_test/tkinter_testing_utils.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.idle_test.tkinter_testing_utils $(srcdir)/Lib/idlelib/idle_test/tkinter_testing_utils.py Python/frozen_modules/idlelib.idle_test.tkinter_testing_utils.h
-
-Python/frozen_modules/idlelib.iomenu.h: Lib/idlelib/iomenu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.iomenu $(srcdir)/Lib/idlelib/iomenu.py Python/frozen_modules/idlelib.iomenu.h
-
-Python/frozen_modules/idlelib.macosx.h: Lib/idlelib/macosx.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.macosx $(srcdir)/Lib/idlelib/macosx.py Python/frozen_modules/idlelib.macosx.h
-
-Python/frozen_modules/idlelib.mainmenu.h: Lib/idlelib/mainmenu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.mainmenu $(srcdir)/Lib/idlelib/mainmenu.py Python/frozen_modules/idlelib.mainmenu.h
-
-Python/frozen_modules/idlelib.multicall.h: Lib/idlelib/multicall.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.multicall $(srcdir)/Lib/idlelib/multicall.py Python/frozen_modules/idlelib.multicall.h
-
-Python/frozen_modules/idlelib.outwin.h: Lib/idlelib/outwin.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.outwin $(srcdir)/Lib/idlelib/outwin.py Python/frozen_modules/idlelib.outwin.h
-
-Python/frozen_modules/idlelib.parenmatch.h: Lib/idlelib/parenmatch.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.parenmatch $(srcdir)/Lib/idlelib/parenmatch.py Python/frozen_modules/idlelib.parenmatch.h
-
-Python/frozen_modules/idlelib.pathbrowser.h: Lib/idlelib/pathbrowser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.pathbrowser $(srcdir)/Lib/idlelib/pathbrowser.py Python/frozen_modules/idlelib.pathbrowser.h
-
-Python/frozen_modules/idlelib.percolator.h: Lib/idlelib/percolator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.percolator $(srcdir)/Lib/idlelib/percolator.py Python/frozen_modules/idlelib.percolator.h
-
-Python/frozen_modules/idlelib.pyparse.h: Lib/idlelib/pyparse.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.pyparse $(srcdir)/Lib/idlelib/pyparse.py Python/frozen_modules/idlelib.pyparse.h
-
-Python/frozen_modules/idlelib.pyshell.h: Lib/idlelib/pyshell.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.pyshell $(srcdir)/Lib/idlelib/pyshell.py Python/frozen_modules/idlelib.pyshell.h
-
-Python/frozen_modules/idlelib.query.h: Lib/idlelib/query.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.query $(srcdir)/Lib/idlelib/query.py Python/frozen_modules/idlelib.query.h
-
-Python/frozen_modules/idlelib.redirector.h: Lib/idlelib/redirector.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.redirector $(srcdir)/Lib/idlelib/redirector.py Python/frozen_modules/idlelib.redirector.h
-
-Python/frozen_modules/idlelib.replace.h: Lib/idlelib/replace.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.replace $(srcdir)/Lib/idlelib/replace.py Python/frozen_modules/idlelib.replace.h
-
-Python/frozen_modules/idlelib.rpc.h: Lib/idlelib/rpc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.rpc $(srcdir)/Lib/idlelib/rpc.py Python/frozen_modules/idlelib.rpc.h
-
-Python/frozen_modules/idlelib.run.h: Lib/idlelib/run.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.run $(srcdir)/Lib/idlelib/run.py Python/frozen_modules/idlelib.run.h
-
-Python/frozen_modules/idlelib.runscript.h: Lib/idlelib/runscript.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.runscript $(srcdir)/Lib/idlelib/runscript.py Python/frozen_modules/idlelib.runscript.h
-
-Python/frozen_modules/idlelib.scrolledlist.h: Lib/idlelib/scrolledlist.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.scrolledlist $(srcdir)/Lib/idlelib/scrolledlist.py Python/frozen_modules/idlelib.scrolledlist.h
-
-Python/frozen_modules/idlelib.search.h: Lib/idlelib/search.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.search $(srcdir)/Lib/idlelib/search.py Python/frozen_modules/idlelib.search.h
-
-Python/frozen_modules/idlelib.searchbase.h: Lib/idlelib/searchbase.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.searchbase $(srcdir)/Lib/idlelib/searchbase.py Python/frozen_modules/idlelib.searchbase.h
-
-Python/frozen_modules/idlelib.searchengine.h: Lib/idlelib/searchengine.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.searchengine $(srcdir)/Lib/idlelib/searchengine.py Python/frozen_modules/idlelib.searchengine.h
-
-Python/frozen_modules/idlelib.sidebar.h: Lib/idlelib/sidebar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.sidebar $(srcdir)/Lib/idlelib/sidebar.py Python/frozen_modules/idlelib.sidebar.h
-
-Python/frozen_modules/idlelib.squeezer.h: Lib/idlelib/squeezer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.squeezer $(srcdir)/Lib/idlelib/squeezer.py Python/frozen_modules/idlelib.squeezer.h
-
-Python/frozen_modules/idlelib.stackviewer.h: Lib/idlelib/stackviewer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.stackviewer $(srcdir)/Lib/idlelib/stackviewer.py Python/frozen_modules/idlelib.stackviewer.h
-
-Python/frozen_modules/idlelib.statusbar.h: Lib/idlelib/statusbar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.statusbar $(srcdir)/Lib/idlelib/statusbar.py Python/frozen_modules/idlelib.statusbar.h
-
-Python/frozen_modules/idlelib.textview.h: Lib/idlelib/textview.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.textview $(srcdir)/Lib/idlelib/textview.py Python/frozen_modules/idlelib.textview.h
-
-Python/frozen_modules/idlelib.tooltip.h: Lib/idlelib/tooltip.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.tooltip $(srcdir)/Lib/idlelib/tooltip.py Python/frozen_modules/idlelib.tooltip.h
-
-Python/frozen_modules/idlelib.tree.h: Lib/idlelib/tree.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.tree $(srcdir)/Lib/idlelib/tree.py Python/frozen_modules/idlelib.tree.h
-
-Python/frozen_modules/idlelib.undo.h: Lib/idlelib/undo.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.undo $(srcdir)/Lib/idlelib/undo.py Python/frozen_modules/idlelib.undo.h
-
-Python/frozen_modules/idlelib.util.h: Lib/idlelib/util.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.util $(srcdir)/Lib/idlelib/util.py Python/frozen_modules/idlelib.util.h
-
-Python/frozen_modules/idlelib.window.h: Lib/idlelib/window.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.window $(srcdir)/Lib/idlelib/window.py Python/frozen_modules/idlelib.window.h
-
-Python/frozen_modules/idlelib.zoomheight.h: Lib/idlelib/zoomheight.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.zoomheight $(srcdir)/Lib/idlelib/zoomheight.py Python/frozen_modules/idlelib.zoomheight.h
-
-Python/frozen_modules/idlelib.zzdummy.h: Lib/idlelib/zzdummy.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) idlelib.zzdummy $(srcdir)/Lib/idlelib/zzdummy.py Python/frozen_modules/idlelib.zzdummy.h
-
 Python/frozen_modules/imaplib.h: Lib/imaplib.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) imaplib $(srcdir)/Lib/imaplib.py Python/frozen_modules/imaplib.h
-
-Python/frozen_modules/imghdr.h: Lib/imghdr.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) imghdr $(srcdir)/Lib/imghdr.py Python/frozen_modules/imghdr.h
 
 Python/frozen_modules/importlib.h: Lib/importlib/__init__.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) importlib $(srcdir)/Lib/importlib/__init__.py Python/frozen_modules/importlib.h
@@ -3630,225 +2593,6 @@ Python/frozen_modules/json.tool.h: Lib/json/tool.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/keyword.h: Lib/keyword.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) keyword $(srcdir)/Lib/keyword.py Python/frozen_modules/keyword.h
 
-Python/frozen_modules/lib2to3.h: Lib/lib2to3/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3 $(srcdir)/Lib/lib2to3/__init__.py Python/frozen_modules/lib2to3.h
-
-Python/frozen_modules/lib2to3.__main__.h: Lib/lib2to3/__main__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.__main__ $(srcdir)/Lib/lib2to3/__main__.py Python/frozen_modules/lib2to3.__main__.h
-
-Python/frozen_modules/lib2to3.btm_matcher.h: Lib/lib2to3/btm_matcher.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.btm_matcher $(srcdir)/Lib/lib2to3/btm_matcher.py Python/frozen_modules/lib2to3.btm_matcher.h
-
-Python/frozen_modules/lib2to3.btm_utils.h: Lib/lib2to3/btm_utils.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.btm_utils $(srcdir)/Lib/lib2to3/btm_utils.py Python/frozen_modules/lib2to3.btm_utils.h
-
-Python/frozen_modules/lib2to3.fixer_base.h: Lib/lib2to3/fixer_base.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixer_base $(srcdir)/Lib/lib2to3/fixer_base.py Python/frozen_modules/lib2to3.fixer_base.h
-
-Python/frozen_modules/lib2to3.fixer_util.h: Lib/lib2to3/fixer_util.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixer_util $(srcdir)/Lib/lib2to3/fixer_util.py Python/frozen_modules/lib2to3.fixer_util.h
-
-Python/frozen_modules/lib2to3.fixes.h: Lib/lib2to3/fixes/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes $(srcdir)/Lib/lib2to3/fixes/__init__.py Python/frozen_modules/lib2to3.fixes.h
-
-Python/frozen_modules/lib2to3.fixes.fix_apply.h: Lib/lib2to3/fixes/fix_apply.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_apply $(srcdir)/Lib/lib2to3/fixes/fix_apply.py Python/frozen_modules/lib2to3.fixes.fix_apply.h
-
-Python/frozen_modules/lib2to3.fixes.fix_asserts.h: Lib/lib2to3/fixes/fix_asserts.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_asserts $(srcdir)/Lib/lib2to3/fixes/fix_asserts.py Python/frozen_modules/lib2to3.fixes.fix_asserts.h
-
-Python/frozen_modules/lib2to3.fixes.fix_basestring.h: Lib/lib2to3/fixes/fix_basestring.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_basestring $(srcdir)/Lib/lib2to3/fixes/fix_basestring.py Python/frozen_modules/lib2to3.fixes.fix_basestring.h
-
-Python/frozen_modules/lib2to3.fixes.fix_buffer.h: Lib/lib2to3/fixes/fix_buffer.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_buffer $(srcdir)/Lib/lib2to3/fixes/fix_buffer.py Python/frozen_modules/lib2to3.fixes.fix_buffer.h
-
-Python/frozen_modules/lib2to3.fixes.fix_dict.h: Lib/lib2to3/fixes/fix_dict.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_dict $(srcdir)/Lib/lib2to3/fixes/fix_dict.py Python/frozen_modules/lib2to3.fixes.fix_dict.h
-
-Python/frozen_modules/lib2to3.fixes.fix_except.h: Lib/lib2to3/fixes/fix_except.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_except $(srcdir)/Lib/lib2to3/fixes/fix_except.py Python/frozen_modules/lib2to3.fixes.fix_except.h
-
-Python/frozen_modules/lib2to3.fixes.fix_exec.h: Lib/lib2to3/fixes/fix_exec.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_exec $(srcdir)/Lib/lib2to3/fixes/fix_exec.py Python/frozen_modules/lib2to3.fixes.fix_exec.h
-
-Python/frozen_modules/lib2to3.fixes.fix_execfile.h: Lib/lib2to3/fixes/fix_execfile.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_execfile $(srcdir)/Lib/lib2to3/fixes/fix_execfile.py Python/frozen_modules/lib2to3.fixes.fix_execfile.h
-
-Python/frozen_modules/lib2to3.fixes.fix_exitfunc.h: Lib/lib2to3/fixes/fix_exitfunc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_exitfunc $(srcdir)/Lib/lib2to3/fixes/fix_exitfunc.py Python/frozen_modules/lib2to3.fixes.fix_exitfunc.h
-
-Python/frozen_modules/lib2to3.fixes.fix_filter.h: Lib/lib2to3/fixes/fix_filter.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_filter $(srcdir)/Lib/lib2to3/fixes/fix_filter.py Python/frozen_modules/lib2to3.fixes.fix_filter.h
-
-Python/frozen_modules/lib2to3.fixes.fix_funcattrs.h: Lib/lib2to3/fixes/fix_funcattrs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_funcattrs $(srcdir)/Lib/lib2to3/fixes/fix_funcattrs.py Python/frozen_modules/lib2to3.fixes.fix_funcattrs.h
-
-Python/frozen_modules/lib2to3.fixes.fix_future.h: Lib/lib2to3/fixes/fix_future.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_future $(srcdir)/Lib/lib2to3/fixes/fix_future.py Python/frozen_modules/lib2to3.fixes.fix_future.h
-
-Python/frozen_modules/lib2to3.fixes.fix_getcwdu.h: Lib/lib2to3/fixes/fix_getcwdu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_getcwdu $(srcdir)/Lib/lib2to3/fixes/fix_getcwdu.py Python/frozen_modules/lib2to3.fixes.fix_getcwdu.h
-
-Python/frozen_modules/lib2to3.fixes.fix_has_key.h: Lib/lib2to3/fixes/fix_has_key.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_has_key $(srcdir)/Lib/lib2to3/fixes/fix_has_key.py Python/frozen_modules/lib2to3.fixes.fix_has_key.h
-
-Python/frozen_modules/lib2to3.fixes.fix_idioms.h: Lib/lib2to3/fixes/fix_idioms.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_idioms $(srcdir)/Lib/lib2to3/fixes/fix_idioms.py Python/frozen_modules/lib2to3.fixes.fix_idioms.h
-
-Python/frozen_modules/lib2to3.fixes.fix_import.h: Lib/lib2to3/fixes/fix_import.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_import $(srcdir)/Lib/lib2to3/fixes/fix_import.py Python/frozen_modules/lib2to3.fixes.fix_import.h
-
-Python/frozen_modules/lib2to3.fixes.fix_imports.h: Lib/lib2to3/fixes/fix_imports.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_imports $(srcdir)/Lib/lib2to3/fixes/fix_imports.py Python/frozen_modules/lib2to3.fixes.fix_imports.h
-
-Python/frozen_modules/lib2to3.fixes.fix_imports2.h: Lib/lib2to3/fixes/fix_imports2.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_imports2 $(srcdir)/Lib/lib2to3/fixes/fix_imports2.py Python/frozen_modules/lib2to3.fixes.fix_imports2.h
-
-Python/frozen_modules/lib2to3.fixes.fix_input.h: Lib/lib2to3/fixes/fix_input.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_input $(srcdir)/Lib/lib2to3/fixes/fix_input.py Python/frozen_modules/lib2to3.fixes.fix_input.h
-
-Python/frozen_modules/lib2to3.fixes.fix_intern.h: Lib/lib2to3/fixes/fix_intern.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_intern $(srcdir)/Lib/lib2to3/fixes/fix_intern.py Python/frozen_modules/lib2to3.fixes.fix_intern.h
-
-Python/frozen_modules/lib2to3.fixes.fix_isinstance.h: Lib/lib2to3/fixes/fix_isinstance.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_isinstance $(srcdir)/Lib/lib2to3/fixes/fix_isinstance.py Python/frozen_modules/lib2to3.fixes.fix_isinstance.h
-
-Python/frozen_modules/lib2to3.fixes.fix_itertools.h: Lib/lib2to3/fixes/fix_itertools.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_itertools $(srcdir)/Lib/lib2to3/fixes/fix_itertools.py Python/frozen_modules/lib2to3.fixes.fix_itertools.h
-
-Python/frozen_modules/lib2to3.fixes.fix_itertools_imports.h: Lib/lib2to3/fixes/fix_itertools_imports.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_itertools_imports $(srcdir)/Lib/lib2to3/fixes/fix_itertools_imports.py Python/frozen_modules/lib2to3.fixes.fix_itertools_imports.h
-
-Python/frozen_modules/lib2to3.fixes.fix_long.h: Lib/lib2to3/fixes/fix_long.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_long $(srcdir)/Lib/lib2to3/fixes/fix_long.py Python/frozen_modules/lib2to3.fixes.fix_long.h
-
-Python/frozen_modules/lib2to3.fixes.fix_map.h: Lib/lib2to3/fixes/fix_map.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_map $(srcdir)/Lib/lib2to3/fixes/fix_map.py Python/frozen_modules/lib2to3.fixes.fix_map.h
-
-Python/frozen_modules/lib2to3.fixes.fix_metaclass.h: Lib/lib2to3/fixes/fix_metaclass.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_metaclass $(srcdir)/Lib/lib2to3/fixes/fix_metaclass.py Python/frozen_modules/lib2to3.fixes.fix_metaclass.h
-
-Python/frozen_modules/lib2to3.fixes.fix_methodattrs.h: Lib/lib2to3/fixes/fix_methodattrs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_methodattrs $(srcdir)/Lib/lib2to3/fixes/fix_methodattrs.py Python/frozen_modules/lib2to3.fixes.fix_methodattrs.h
-
-Python/frozen_modules/lib2to3.fixes.fix_ne.h: Lib/lib2to3/fixes/fix_ne.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_ne $(srcdir)/Lib/lib2to3/fixes/fix_ne.py Python/frozen_modules/lib2to3.fixes.fix_ne.h
-
-Python/frozen_modules/lib2to3.fixes.fix_next.h: Lib/lib2to3/fixes/fix_next.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_next $(srcdir)/Lib/lib2to3/fixes/fix_next.py Python/frozen_modules/lib2to3.fixes.fix_next.h
-
-Python/frozen_modules/lib2to3.fixes.fix_nonzero.h: Lib/lib2to3/fixes/fix_nonzero.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_nonzero $(srcdir)/Lib/lib2to3/fixes/fix_nonzero.py Python/frozen_modules/lib2to3.fixes.fix_nonzero.h
-
-Python/frozen_modules/lib2to3.fixes.fix_numliterals.h: Lib/lib2to3/fixes/fix_numliterals.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_numliterals $(srcdir)/Lib/lib2to3/fixes/fix_numliterals.py Python/frozen_modules/lib2to3.fixes.fix_numliterals.h
-
-Python/frozen_modules/lib2to3.fixes.fix_operator.h: Lib/lib2to3/fixes/fix_operator.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_operator $(srcdir)/Lib/lib2to3/fixes/fix_operator.py Python/frozen_modules/lib2to3.fixes.fix_operator.h
-
-Python/frozen_modules/lib2to3.fixes.fix_paren.h: Lib/lib2to3/fixes/fix_paren.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_paren $(srcdir)/Lib/lib2to3/fixes/fix_paren.py Python/frozen_modules/lib2to3.fixes.fix_paren.h
-
-Python/frozen_modules/lib2to3.fixes.fix_print.h: Lib/lib2to3/fixes/fix_print.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_print $(srcdir)/Lib/lib2to3/fixes/fix_print.py Python/frozen_modules/lib2to3.fixes.fix_print.h
-
-Python/frozen_modules/lib2to3.fixes.fix_raise.h: Lib/lib2to3/fixes/fix_raise.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_raise $(srcdir)/Lib/lib2to3/fixes/fix_raise.py Python/frozen_modules/lib2to3.fixes.fix_raise.h
-
-Python/frozen_modules/lib2to3.fixes.fix_raw_input.h: Lib/lib2to3/fixes/fix_raw_input.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_raw_input $(srcdir)/Lib/lib2to3/fixes/fix_raw_input.py Python/frozen_modules/lib2to3.fixes.fix_raw_input.h
-
-Python/frozen_modules/lib2to3.fixes.fix_reduce.h: Lib/lib2to3/fixes/fix_reduce.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_reduce $(srcdir)/Lib/lib2to3/fixes/fix_reduce.py Python/frozen_modules/lib2to3.fixes.fix_reduce.h
-
-Python/frozen_modules/lib2to3.fixes.fix_reload.h: Lib/lib2to3/fixes/fix_reload.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_reload $(srcdir)/Lib/lib2to3/fixes/fix_reload.py Python/frozen_modules/lib2to3.fixes.fix_reload.h
-
-Python/frozen_modules/lib2to3.fixes.fix_renames.h: Lib/lib2to3/fixes/fix_renames.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_renames $(srcdir)/Lib/lib2to3/fixes/fix_renames.py Python/frozen_modules/lib2to3.fixes.fix_renames.h
-
-Python/frozen_modules/lib2to3.fixes.fix_repr.h: Lib/lib2to3/fixes/fix_repr.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_repr $(srcdir)/Lib/lib2to3/fixes/fix_repr.py Python/frozen_modules/lib2to3.fixes.fix_repr.h
-
-Python/frozen_modules/lib2to3.fixes.fix_set_literal.h: Lib/lib2to3/fixes/fix_set_literal.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_set_literal $(srcdir)/Lib/lib2to3/fixes/fix_set_literal.py Python/frozen_modules/lib2to3.fixes.fix_set_literal.h
-
-Python/frozen_modules/lib2to3.fixes.fix_standarderror.h: Lib/lib2to3/fixes/fix_standarderror.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_standarderror $(srcdir)/Lib/lib2to3/fixes/fix_standarderror.py Python/frozen_modules/lib2to3.fixes.fix_standarderror.h
-
-Python/frozen_modules/lib2to3.fixes.fix_sys_exc.h: Lib/lib2to3/fixes/fix_sys_exc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_sys_exc $(srcdir)/Lib/lib2to3/fixes/fix_sys_exc.py Python/frozen_modules/lib2to3.fixes.fix_sys_exc.h
-
-Python/frozen_modules/lib2to3.fixes.fix_throw.h: Lib/lib2to3/fixes/fix_throw.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_throw $(srcdir)/Lib/lib2to3/fixes/fix_throw.py Python/frozen_modules/lib2to3.fixes.fix_throw.h
-
-Python/frozen_modules/lib2to3.fixes.fix_tuple_params.h: Lib/lib2to3/fixes/fix_tuple_params.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_tuple_params $(srcdir)/Lib/lib2to3/fixes/fix_tuple_params.py Python/frozen_modules/lib2to3.fixes.fix_tuple_params.h
-
-Python/frozen_modules/lib2to3.fixes.fix_types.h: Lib/lib2to3/fixes/fix_types.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_types $(srcdir)/Lib/lib2to3/fixes/fix_types.py Python/frozen_modules/lib2to3.fixes.fix_types.h
-
-Python/frozen_modules/lib2to3.fixes.fix_unicode.h: Lib/lib2to3/fixes/fix_unicode.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_unicode $(srcdir)/Lib/lib2to3/fixes/fix_unicode.py Python/frozen_modules/lib2to3.fixes.fix_unicode.h
-
-Python/frozen_modules/lib2to3.fixes.fix_urllib.h: Lib/lib2to3/fixes/fix_urllib.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_urllib $(srcdir)/Lib/lib2to3/fixes/fix_urllib.py Python/frozen_modules/lib2to3.fixes.fix_urllib.h
-
-Python/frozen_modules/lib2to3.fixes.fix_ws_comma.h: Lib/lib2to3/fixes/fix_ws_comma.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_ws_comma $(srcdir)/Lib/lib2to3/fixes/fix_ws_comma.py Python/frozen_modules/lib2to3.fixes.fix_ws_comma.h
-
-Python/frozen_modules/lib2to3.fixes.fix_xrange.h: Lib/lib2to3/fixes/fix_xrange.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_xrange $(srcdir)/Lib/lib2to3/fixes/fix_xrange.py Python/frozen_modules/lib2to3.fixes.fix_xrange.h
-
-Python/frozen_modules/lib2to3.fixes.fix_xreadlines.h: Lib/lib2to3/fixes/fix_xreadlines.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_xreadlines $(srcdir)/Lib/lib2to3/fixes/fix_xreadlines.py Python/frozen_modules/lib2to3.fixes.fix_xreadlines.h
-
-Python/frozen_modules/lib2to3.fixes.fix_zip.h: Lib/lib2to3/fixes/fix_zip.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.fixes.fix_zip $(srcdir)/Lib/lib2to3/fixes/fix_zip.py Python/frozen_modules/lib2to3.fixes.fix_zip.h
-
-Python/frozen_modules/lib2to3.main.h: Lib/lib2to3/main.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.main $(srcdir)/Lib/lib2to3/main.py Python/frozen_modules/lib2to3.main.h
-
-Python/frozen_modules/lib2to3.patcomp.h: Lib/lib2to3/patcomp.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.patcomp $(srcdir)/Lib/lib2to3/patcomp.py Python/frozen_modules/lib2to3.patcomp.h
-
-Python/frozen_modules/lib2to3.pgen2.h: Lib/lib2to3/pgen2/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2 $(srcdir)/Lib/lib2to3/pgen2/__init__.py Python/frozen_modules/lib2to3.pgen2.h
-
-Python/frozen_modules/lib2to3.pgen2.conv.h: Lib/lib2to3/pgen2/conv.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.conv $(srcdir)/Lib/lib2to3/pgen2/conv.py Python/frozen_modules/lib2to3.pgen2.conv.h
-
-Python/frozen_modules/lib2to3.pgen2.driver.h: Lib/lib2to3/pgen2/driver.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.driver $(srcdir)/Lib/lib2to3/pgen2/driver.py Python/frozen_modules/lib2to3.pgen2.driver.h
-
-Python/frozen_modules/lib2to3.pgen2.grammar.h: Lib/lib2to3/pgen2/grammar.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.grammar $(srcdir)/Lib/lib2to3/pgen2/grammar.py Python/frozen_modules/lib2to3.pgen2.grammar.h
-
-Python/frozen_modules/lib2to3.pgen2.literals.h: Lib/lib2to3/pgen2/literals.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.literals $(srcdir)/Lib/lib2to3/pgen2/literals.py Python/frozen_modules/lib2to3.pgen2.literals.h
-
-Python/frozen_modules/lib2to3.pgen2.parse.h: Lib/lib2to3/pgen2/parse.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.parse $(srcdir)/Lib/lib2to3/pgen2/parse.py Python/frozen_modules/lib2to3.pgen2.parse.h
-
-Python/frozen_modules/lib2to3.pgen2.pgen.h: Lib/lib2to3/pgen2/pgen.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.pgen $(srcdir)/Lib/lib2to3/pgen2/pgen.py Python/frozen_modules/lib2to3.pgen2.pgen.h
-
-Python/frozen_modules/lib2to3.pgen2.token.h: Lib/lib2to3/pgen2/token.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.token $(srcdir)/Lib/lib2to3/pgen2/token.py Python/frozen_modules/lib2to3.pgen2.token.h
-
-Python/frozen_modules/lib2to3.pgen2.tokenize.h: Lib/lib2to3/pgen2/tokenize.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pgen2.tokenize $(srcdir)/Lib/lib2to3/pgen2/tokenize.py Python/frozen_modules/lib2to3.pgen2.tokenize.h
-
-Python/frozen_modules/lib2to3.pygram.h: Lib/lib2to3/pygram.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pygram $(srcdir)/Lib/lib2to3/pygram.py Python/frozen_modules/lib2to3.pygram.h
-
-Python/frozen_modules/lib2to3.pytree.h: Lib/lib2to3/pytree.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.pytree $(srcdir)/Lib/lib2to3/pytree.py Python/frozen_modules/lib2to3.pytree.h
-
-Python/frozen_modules/lib2to3.refactor.h: Lib/lib2to3/refactor.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) lib2to3.refactor $(srcdir)/Lib/lib2to3/refactor.py Python/frozen_modules/lib2to3.refactor.h
-
 Python/frozen_modules/linecache.h: Lib/linecache.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) linecache $(srcdir)/Lib/linecache.py Python/frozen_modules/linecache.h
 
@@ -3867,12 +2611,6 @@ Python/frozen_modules/logging.handlers.h: Lib/logging/handlers.py $(FREEZE_MODUL
 Python/frozen_modules/lzma.h: Lib/lzma.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) lzma $(srcdir)/Lib/lzma.py Python/frozen_modules/lzma.h
 
-Python/frozen_modules/mailbox.h: Lib/mailbox.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) mailbox $(srcdir)/Lib/mailbox.py Python/frozen_modules/mailbox.h
-
-Python/frozen_modules/mailcap.h: Lib/mailcap.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) mailcap $(srcdir)/Lib/mailcap.py Python/frozen_modules/mailcap.h
-
 Python/frozen_modules/_markupbase.h: Lib/_markupbase.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) _markupbase $(srcdir)/Lib/_markupbase.py Python/frozen_modules/_markupbase.h
 
@@ -3881,18 +2619,6 @@ Python/frozen_modules/mimetypes.h: Lib/mimetypes.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/modulefinder.h: Lib/modulefinder.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) modulefinder $(srcdir)/Lib/modulefinder.py Python/frozen_modules/modulefinder.h
-
-Python/frozen_modules/msilib.h: Lib/msilib/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) msilib $(srcdir)/Lib/msilib/__init__.py Python/frozen_modules/msilib.h
-
-Python/frozen_modules/msilib.schema.h: Lib/msilib/schema.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) msilib.schema $(srcdir)/Lib/msilib/schema.py Python/frozen_modules/msilib.schema.h
-
-Python/frozen_modules/msilib.sequence.h: Lib/msilib/sequence.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) msilib.sequence $(srcdir)/Lib/msilib/sequence.py Python/frozen_modules/msilib.sequence.h
-
-Python/frozen_modules/msilib.text.h: Lib/msilib/text.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) msilib.text $(srcdir)/Lib/msilib/text.py Python/frozen_modules/msilib.text.h
 
 Python/frozen_modules/multiprocessing.h: Lib/multiprocessing/__init__.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) multiprocessing $(srcdir)/Lib/multiprocessing/__init__.py Python/frozen_modules/multiprocessing.h
@@ -3966,9 +2692,6 @@ Python/frozen_modules/multiprocessing.util.h: Lib/multiprocessing/util.py $(FREE
 Python/frozen_modules/netrc.h: Lib/netrc.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) netrc $(srcdir)/Lib/netrc.py Python/frozen_modules/netrc.h
 
-Python/frozen_modules/nntplib.h: Lib/nntplib.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) nntplib $(srcdir)/Lib/nntplib.py Python/frozen_modules/nntplib.h
-
 Python/frozen_modules/ntpath.h: Lib/ntpath.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) ntpath $(srcdir)/Lib/ntpath.py Python/frozen_modules/ntpath.h
 
@@ -4017,9 +2740,6 @@ Python/frozen_modules/pickle.h: Lib/pickle.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/pickletools.h: Lib/pickletools.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) pickletools $(srcdir)/Lib/pickletools.py Python/frozen_modules/pickletools.h
 
-Python/frozen_modules/pipes.h: Lib/pipes.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) pipes $(srcdir)/Lib/pipes.py Python/frozen_modules/pipes.h
-
 Python/frozen_modules/pkgutil.h: Lib/pkgutil.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) pkgutil $(srcdir)/Lib/pkgutil.py Python/frozen_modules/pkgutil.h
 
@@ -4061,15 +2781,6 @@ Python/frozen_modules/_pydatetime.h: Lib/_pydatetime.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/_pydecimal.h: Lib/_pydecimal.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) _pydecimal $(srcdir)/Lib/_pydecimal.py Python/frozen_modules/_pydecimal.h
-
-Python/frozen_modules/pydoc_data.h: Lib/pydoc_data/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) pydoc_data $(srcdir)/Lib/pydoc_data/__init__.py Python/frozen_modules/pydoc_data.h
-
-Python/frozen_modules/pydoc_data.topics.h: Lib/pydoc_data/topics.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) pydoc_data.topics $(srcdir)/Lib/pydoc_data/topics.py Python/frozen_modules/pydoc_data.topics.h
-
-Python/frozen_modules/pydoc.h: Lib/pydoc.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) pydoc $(srcdir)/Lib/pydoc.py Python/frozen_modules/pydoc.h
 
 Python/frozen_modules/_pyio.h: Lib/_pyio.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) _pyio $(srcdir)/Lib/_pyio.py Python/frozen_modules/_pyio.h
@@ -4128,9 +2839,6 @@ Python/frozen_modules/signal.h: Lib/signal.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/smtplib.h: Lib/smtplib.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) smtplib $(srcdir)/Lib/smtplib.py Python/frozen_modules/smtplib.h
 
-Python/frozen_modules/sndhdr.h: Lib/sndhdr.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) sndhdr $(srcdir)/Lib/sndhdr.py Python/frozen_modules/sndhdr.h
-
 Python/frozen_modules/socket.h: Lib/socket.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) socket $(srcdir)/Lib/socket.py Python/frozen_modules/socket.h
 
@@ -4158,9 +2866,6 @@ Python/frozen_modules/struct.h: Lib/struct.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/subprocess.h: Lib/subprocess.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) subprocess $(srcdir)/Lib/subprocess.py Python/frozen_modules/subprocess.h
 
-Python/frozen_modules/sunau.h: Lib/sunau.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) sunau $(srcdir)/Lib/sunau.py Python/frozen_modules/sunau.h
-
 Python/frozen_modules/symtable.h: Lib/symtable.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) symtable $(srcdir)/Lib/symtable.py Python/frozen_modules/symtable.h
 
@@ -4169,12 +2874,6 @@ Python/frozen_modules/sysconfig.h: Lib/sysconfig.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/tabnanny.h: Lib/tabnanny.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) tabnanny $(srcdir)/Lib/tabnanny.py Python/frozen_modules/tabnanny.h
-
-Python/frozen_modules/tarfile.h: Lib/tarfile.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) tarfile $(srcdir)/Lib/tarfile.py Python/frozen_modules/tarfile.h
-
-Python/frozen_modules/telnetlib.h: Lib/telnetlib.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) telnetlib $(srcdir)/Lib/telnetlib.py Python/frozen_modules/telnetlib.h
 
 Python/frozen_modules/tempfile.h: Lib/tempfile.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) tempfile $(srcdir)/Lib/tempfile.py Python/frozen_modules/tempfile.h
@@ -4230,29 +2929,8 @@ Python/frozen_modules/types.h: Lib/types.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/typing.h: Lib/typing.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) typing $(srcdir)/Lib/typing.py Python/frozen_modules/typing.h
 
-Python/frozen_modules/urllib.h: Lib/urllib/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib $(srcdir)/Lib/urllib/__init__.py Python/frozen_modules/urllib.h
-
-Python/frozen_modules/urllib.error.h: Lib/urllib/error.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib.error $(srcdir)/Lib/urllib/error.py Python/frozen_modules/urllib.error.h
-
-Python/frozen_modules/urllib.parse.h: Lib/urllib/parse.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib.parse $(srcdir)/Lib/urllib/parse.py Python/frozen_modules/urllib.parse.h
-
-Python/frozen_modules/urllib.request.h: Lib/urllib/request.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib.request $(srcdir)/Lib/urllib/request.py Python/frozen_modules/urllib.request.h
-
-Python/frozen_modules/urllib.response.h: Lib/urllib/response.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib.response $(srcdir)/Lib/urllib/response.py Python/frozen_modules/urllib.response.h
-
-Python/frozen_modules/urllib.robotparser.h: Lib/urllib/robotparser.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) urllib.robotparser $(srcdir)/Lib/urllib/robotparser.py Python/frozen_modules/urllib.robotparser.h
-
 Python/frozen_modules/uuid.h: Lib/uuid.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) uuid $(srcdir)/Lib/uuid.py Python/frozen_modules/uuid.h
-
-Python/frozen_modules/uu.h: Lib/uu.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) uu $(srcdir)/Lib/uu.py Python/frozen_modules/uu.h
 
 Python/frozen_modules/warnings.h: Lib/warnings.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) warnings $(srcdir)/Lib/warnings.py Python/frozen_modules/warnings.h
@@ -4289,9 +2967,6 @@ Python/frozen_modules/wsgiref.util.h: Lib/wsgiref/util.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/wsgiref.validate.h: Lib/wsgiref/validate.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) wsgiref.validate $(srcdir)/Lib/wsgiref/validate.py Python/frozen_modules/wsgiref.validate.h
-
-Python/frozen_modules/xdrlib.h: Lib/xdrlib.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) xdrlib $(srcdir)/Lib/xdrlib.py Python/frozen_modules/xdrlib.h
 
 Python/frozen_modules/zipapp.h: Lib/zipapp.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) zipapp $(srcdir)/Lib/zipapp.py Python/frozen_modules/zipapp.h
@@ -4506,7 +3181,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
 	Python/frozen_modules/zipimport.h:zipimport \
 	Python/frozen_modules/abc.h:abc \
-	Python/frozen_modules/aifc.h:aifc \
 	Python/frozen_modules/_aix_support.h:_aix_support \
 	Python/frozen_modules/antigravity.h:antigravity \
 	Python/frozen_modules/argparse.h:argparse \
@@ -4515,9 +3189,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/bdb.h:bdb \
 	Python/frozen_modules/bisect.h:bisect \
 	Python/frozen_modules/calendar.h:calendar \
-	Python/frozen_modules/cgi.h:cgi \
-	Python/frozen_modules/cgitb.h:cgitb \
-	Python/frozen_modules/chunk.h:chunk \
 	Python/frozen_modules/cmd.h:cmd \
 	Python/frozen_modules/codecs.h:codecs \
 	Python/frozen_modules/codeop.h:codeop \
@@ -4540,7 +3211,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/copy.h:copy \
 	Python/frozen_modules/copyreg.h:copyreg \
 	Python/frozen_modules/cProfile.h:cProfile \
-	Python/frozen_modules/crypt.h:crypt \
 	Python/frozen_modules/csv.h:csv \
 	Python/frozen_modules/dataclasses.h:dataclasses \
 	Python/frozen_modules/datetime.h:datetime \
@@ -4551,36 +3221,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/decimal.h:decimal \
 	Python/frozen_modules/difflib.h:difflib \
 	Python/frozen_modules/dis.h:dis \
-	Python/frozen_modules/doctest.h:doctest \
-	Python/frozen_modules/email.h:email \
-	Python/frozen_modules/email._encoded_words.h:email._encoded_words \
-	Python/frozen_modules/email._header_value_parser.h:email._header_value_parser \
-	Python/frozen_modules/email._parseaddr.h:email._parseaddr \
-	Python/frozen_modules/email._policybase.h:email._policybase \
-	Python/frozen_modules/email.base64mime.h:email.base64mime \
-	Python/frozen_modules/email.charset.h:email.charset \
-	Python/frozen_modules/email.contentmanager.h:email.contentmanager \
-	Python/frozen_modules/email.encoders.h:email.encoders \
-	Python/frozen_modules/email.errors.h:email.errors \
-	Python/frozen_modules/email.feedparser.h:email.feedparser \
-	Python/frozen_modules/email.generator.h:email.generator \
-	Python/frozen_modules/email.header.h:email.header \
-	Python/frozen_modules/email.headerregistry.h:email.headerregistry \
-	Python/frozen_modules/email.iterators.h:email.iterators \
-	Python/frozen_modules/email.message.h:email.message \
-	Python/frozen_modules/email.mime.h:email.mime \
-	Python/frozen_modules/email.mime.application.h:email.mime.application \
-	Python/frozen_modules/email.mime.audio.h:email.mime.audio \
-	Python/frozen_modules/email.mime.base.h:email.mime.base \
-	Python/frozen_modules/email.mime.image.h:email.mime.image \
-	Python/frozen_modules/email.mime.message.h:email.mime.message \
-	Python/frozen_modules/email.mime.multipart.h:email.mime.multipart \
-	Python/frozen_modules/email.mime.nonmultipart.h:email.mime.nonmultipart \
-	Python/frozen_modules/email.mime.text.h:email.mime.text \
-	Python/frozen_modules/email.parser.h:email.parser \
-	Python/frozen_modules/email.policy.h:email.policy \
-	Python/frozen_modules/email.quoprimime.h:email.quoprimime \
-	Python/frozen_modules/email.utils.h:email.utils \
 	Python/frozen_modules/encodings.h:encodings \
 	Python/frozen_modules/encodings.aliases.h:encodings.aliases \
 	Python/frozen_modules/encodings.ascii.h:encodings.ascii \
@@ -4724,141 +3364,7 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/hashlib.h:hashlib \
 	Python/frozen_modules/heapq.h:heapq \
 	Python/frozen_modules/hmac.h:hmac \
-	Python/frozen_modules/html.h:html \
-	Python/frozen_modules/html.entities.h:html.entities \
-	Python/frozen_modules/html.parser.h:html.parser \
-	Python/frozen_modules/http.h:http \
-	Python/frozen_modules/http.client.h:http.client \
-	Python/frozen_modules/http.cookiejar.h:http.cookiejar \
-	Python/frozen_modules/http.cookies.h:http.cookies \
-	Python/frozen_modules/http.server.h:http.server \
-	Python/frozen_modules/idlelib.h:idlelib \
-	Python/frozen_modules/idlelib.__main__.h:idlelib.__main__ \
-	Python/frozen_modules/idlelib.autocomplete.h:idlelib.autocomplete \
-	Python/frozen_modules/idlelib.autocomplete_w.h:idlelib.autocomplete_w \
-	Python/frozen_modules/idlelib.autoexpand.h:idlelib.autoexpand \
-	Python/frozen_modules/idlelib.browser.h:idlelib.browser \
-	Python/frozen_modules/idlelib.calltip.h:idlelib.calltip \
-	Python/frozen_modules/idlelib.calltip_w.h:idlelib.calltip_w \
-	Python/frozen_modules/idlelib.codecontext.h:idlelib.codecontext \
-	Python/frozen_modules/idlelib.colorizer.h:idlelib.colorizer \
-	Python/frozen_modules/idlelib.config.h:idlelib.config \
-	Python/frozen_modules/idlelib.config_key.h:idlelib.config_key \
-	Python/frozen_modules/idlelib.configdialog.h:idlelib.configdialog \
-	Python/frozen_modules/idlelib.debugger.h:idlelib.debugger \
-	Python/frozen_modules/idlelib.debugger_r.h:idlelib.debugger_r \
-	Python/frozen_modules/idlelib.debugobj.h:idlelib.debugobj \
-	Python/frozen_modules/idlelib.debugobj_r.h:idlelib.debugobj_r \
-	Python/frozen_modules/idlelib.delegator.h:idlelib.delegator \
-	Python/frozen_modules/idlelib.dynoption.h:idlelib.dynoption \
-	Python/frozen_modules/idlelib.editor.h:idlelib.editor \
-	Python/frozen_modules/idlelib.filelist.h:idlelib.filelist \
-	Python/frozen_modules/idlelib.format.h:idlelib.format \
-	Python/frozen_modules/idlelib.grep.h:idlelib.grep \
-	Python/frozen_modules/idlelib.help.h:idlelib.help \
-	Python/frozen_modules/idlelib.help_about.h:idlelib.help_about \
-	Python/frozen_modules/idlelib.history.h:idlelib.history \
-	Python/frozen_modules/idlelib.hyperparser.h:idlelib.hyperparser \
-	Python/frozen_modules/idlelib.idle.h:idlelib.idle \
-	Python/frozen_modules/idlelib.idle_test.h:idlelib.idle_test \
-	Python/frozen_modules/idlelib.idle_test.htest.h:idlelib.idle_test.htest \
-	Python/frozen_modules/idlelib.idle_test.mock_idle.h:idlelib.idle_test.mock_idle \
-	Python/frozen_modules/idlelib.idle_test.mock_tk.h:idlelib.idle_test.mock_tk \
-	Python/frozen_modules/idlelib.idle_test.template.h:idlelib.idle_test.template \
-	Python/frozen_modules/idlelib.idle_test.test_autocomplete.h:idlelib.idle_test.test_autocomplete \
-	Python/frozen_modules/idlelib.idle_test.test_autocomplete_w.h:idlelib.idle_test.test_autocomplete_w \
-	Python/frozen_modules/idlelib.idle_test.test_autoexpand.h:idlelib.idle_test.test_autoexpand \
-	Python/frozen_modules/idlelib.idle_test.test_browser.h:idlelib.idle_test.test_browser \
-	Python/frozen_modules/idlelib.idle_test.test_calltip.h:idlelib.idle_test.test_calltip \
-	Python/frozen_modules/idlelib.idle_test.test_calltip_w.h:idlelib.idle_test.test_calltip_w \
-	Python/frozen_modules/idlelib.idle_test.test_codecontext.h:idlelib.idle_test.test_codecontext \
-	Python/frozen_modules/idlelib.idle_test.test_colorizer.h:idlelib.idle_test.test_colorizer \
-	Python/frozen_modules/idlelib.idle_test.test_config.h:idlelib.idle_test.test_config \
-	Python/frozen_modules/idlelib.idle_test.test_config_key.h:idlelib.idle_test.test_config_key \
-	Python/frozen_modules/idlelib.idle_test.test_configdialog.h:idlelib.idle_test.test_configdialog \
-	Python/frozen_modules/idlelib.idle_test.test_debugger.h:idlelib.idle_test.test_debugger \
-	Python/frozen_modules/idlelib.idle_test.test_debugger_r.h:idlelib.idle_test.test_debugger_r \
-	Python/frozen_modules/idlelib.idle_test.test_debugobj.h:idlelib.idle_test.test_debugobj \
-	Python/frozen_modules/idlelib.idle_test.test_debugobj_r.h:idlelib.idle_test.test_debugobj_r \
-	Python/frozen_modules/idlelib.idle_test.test_delegator.h:idlelib.idle_test.test_delegator \
-	Python/frozen_modules/idlelib.idle_test.test_editmenu.h:idlelib.idle_test.test_editmenu \
-	Python/frozen_modules/idlelib.idle_test.test_editor.h:idlelib.idle_test.test_editor \
-	Python/frozen_modules/idlelib.idle_test.test_filelist.h:idlelib.idle_test.test_filelist \
-	Python/frozen_modules/idlelib.idle_test.test_format.h:idlelib.idle_test.test_format \
-	Python/frozen_modules/idlelib.idle_test.test_grep.h:idlelib.idle_test.test_grep \
-	Python/frozen_modules/idlelib.idle_test.test_help.h:idlelib.idle_test.test_help \
-	Python/frozen_modules/idlelib.idle_test.test_help_about.h:idlelib.idle_test.test_help_about \
-	Python/frozen_modules/idlelib.idle_test.test_history.h:idlelib.idle_test.test_history \
-	Python/frozen_modules/idlelib.idle_test.test_hyperparser.h:idlelib.idle_test.test_hyperparser \
-	Python/frozen_modules/idlelib.idle_test.test_iomenu.h:idlelib.idle_test.test_iomenu \
-	Python/frozen_modules/idlelib.idle_test.test_macosx.h:idlelib.idle_test.test_macosx \
-	Python/frozen_modules/idlelib.idle_test.test_mainmenu.h:idlelib.idle_test.test_mainmenu \
-	Python/frozen_modules/idlelib.idle_test.test_multicall.h:idlelib.idle_test.test_multicall \
-	Python/frozen_modules/idlelib.idle_test.test_outwin.h:idlelib.idle_test.test_outwin \
-	Python/frozen_modules/idlelib.idle_test.test_parenmatch.h:idlelib.idle_test.test_parenmatch \
-	Python/frozen_modules/idlelib.idle_test.test_pathbrowser.h:idlelib.idle_test.test_pathbrowser \
-	Python/frozen_modules/idlelib.idle_test.test_percolator.h:idlelib.idle_test.test_percolator \
-	Python/frozen_modules/idlelib.idle_test.test_pyparse.h:idlelib.idle_test.test_pyparse \
-	Python/frozen_modules/idlelib.idle_test.test_pyshell.h:idlelib.idle_test.test_pyshell \
-	Python/frozen_modules/idlelib.idle_test.test_query.h:idlelib.idle_test.test_query \
-	Python/frozen_modules/idlelib.idle_test.test_redirector.h:idlelib.idle_test.test_redirector \
-	Python/frozen_modules/idlelib.idle_test.test_replace.h:idlelib.idle_test.test_replace \
-	Python/frozen_modules/idlelib.idle_test.test_rpc.h:idlelib.idle_test.test_rpc \
-	Python/frozen_modules/idlelib.idle_test.test_run.h:idlelib.idle_test.test_run \
-	Python/frozen_modules/idlelib.idle_test.test_runscript.h:idlelib.idle_test.test_runscript \
-	Python/frozen_modules/idlelib.idle_test.test_scrolledlist.h:idlelib.idle_test.test_scrolledlist \
-	Python/frozen_modules/idlelib.idle_test.test_search.h:idlelib.idle_test.test_search \
-	Python/frozen_modules/idlelib.idle_test.test_searchbase.h:idlelib.idle_test.test_searchbase \
-	Python/frozen_modules/idlelib.idle_test.test_searchengine.h:idlelib.idle_test.test_searchengine \
-	Python/frozen_modules/idlelib.idle_test.test_sidebar.h:idlelib.idle_test.test_sidebar \
-	Python/frozen_modules/idlelib.idle_test.test_squeezer.h:idlelib.idle_test.test_squeezer \
-	Python/frozen_modules/idlelib.idle_test.test_stackviewer.h:idlelib.idle_test.test_stackviewer \
-	Python/frozen_modules/idlelib.idle_test.test_statusbar.h:idlelib.idle_test.test_statusbar \
-	Python/frozen_modules/idlelib.idle_test.test_text.h:idlelib.idle_test.test_text \
-	Python/frozen_modules/idlelib.idle_test.test_textview.h:idlelib.idle_test.test_textview \
-	Python/frozen_modules/idlelib.idle_test.test_tooltip.h:idlelib.idle_test.test_tooltip \
-	Python/frozen_modules/idlelib.idle_test.test_tree.h:idlelib.idle_test.test_tree \
-	Python/frozen_modules/idlelib.idle_test.test_undo.h:idlelib.idle_test.test_undo \
-	Python/frozen_modules/idlelib.idle_test.test_util.h:idlelib.idle_test.test_util \
-	Python/frozen_modules/idlelib.idle_test.test_warning.h:idlelib.idle_test.test_warning \
-	Python/frozen_modules/idlelib.idle_test.test_window.h:idlelib.idle_test.test_window \
-	Python/frozen_modules/idlelib.idle_test.test_zoomheight.h:idlelib.idle_test.test_zoomheight \
-	Python/frozen_modules/idlelib.idle_test.test_zzdummy.h:idlelib.idle_test.test_zzdummy \
-	Python/frozen_modules/idlelib.idle_test.tkinter_testing_utils.h:idlelib.idle_test.tkinter_testing_utils \
-	Python/frozen_modules/idlelib.iomenu.h:idlelib.iomenu \
-	Python/frozen_modules/idlelib.macosx.h:idlelib.macosx \
-	Python/frozen_modules/idlelib.mainmenu.h:idlelib.mainmenu \
-	Python/frozen_modules/idlelib.multicall.h:idlelib.multicall \
-	Python/frozen_modules/idlelib.outwin.h:idlelib.outwin \
-	Python/frozen_modules/idlelib.parenmatch.h:idlelib.parenmatch \
-	Python/frozen_modules/idlelib.pathbrowser.h:idlelib.pathbrowser \
-	Python/frozen_modules/idlelib.percolator.h:idlelib.percolator \
-	Python/frozen_modules/idlelib.pyparse.h:idlelib.pyparse \
-	Python/frozen_modules/idlelib.pyshell.h:idlelib.pyshell \
-	Python/frozen_modules/idlelib.query.h:idlelib.query \
-	Python/frozen_modules/idlelib.redirector.h:idlelib.redirector \
-	Python/frozen_modules/idlelib.replace.h:idlelib.replace \
-	Python/frozen_modules/idlelib.rpc.h:idlelib.rpc \
-	Python/frozen_modules/idlelib.run.h:idlelib.run \
-	Python/frozen_modules/idlelib.runscript.h:idlelib.runscript \
-	Python/frozen_modules/idlelib.scrolledlist.h:idlelib.scrolledlist \
-	Python/frozen_modules/idlelib.search.h:idlelib.search \
-	Python/frozen_modules/idlelib.searchbase.h:idlelib.searchbase \
-	Python/frozen_modules/idlelib.searchengine.h:idlelib.searchengine \
-	Python/frozen_modules/idlelib.sidebar.h:idlelib.sidebar \
-	Python/frozen_modules/idlelib.squeezer.h:idlelib.squeezer \
-	Python/frozen_modules/idlelib.stackviewer.h:idlelib.stackviewer \
-	Python/frozen_modules/idlelib.statusbar.h:idlelib.statusbar \
-	Python/frozen_modules/idlelib.textview.h:idlelib.textview \
-	Python/frozen_modules/idlelib.tooltip.h:idlelib.tooltip \
-	Python/frozen_modules/idlelib.tree.h:idlelib.tree \
-	Python/frozen_modules/idlelib.undo.h:idlelib.undo \
-	Python/frozen_modules/idlelib.util.h:idlelib.util \
-	Python/frozen_modules/idlelib.window.h:idlelib.window \
-	Python/frozen_modules/idlelib.zoomheight.h:idlelib.zoomheight \
-	Python/frozen_modules/idlelib.zzdummy.h:idlelib.zzdummy \
 	Python/frozen_modules/imaplib.h:imaplib \
-	Python/frozen_modules/imghdr.h:imghdr \
 	Python/frozen_modules/importlib.h:importlib \
 	Python/frozen_modules/importlib._abc.h:importlib._abc \
 	Python/frozen_modules/importlib.abc.h:importlib.abc \
@@ -4890,94 +3396,15 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/json.scanner.h:json.scanner \
 	Python/frozen_modules/json.tool.h:json.tool \
 	Python/frozen_modules/keyword.h:keyword \
-	Python/frozen_modules/lib2to3.h:lib2to3 \
-	Python/frozen_modules/lib2to3.__main__.h:lib2to3.__main__ \
-	Python/frozen_modules/lib2to3.btm_matcher.h:lib2to3.btm_matcher \
-	Python/frozen_modules/lib2to3.btm_utils.h:lib2to3.btm_utils \
-	Python/frozen_modules/lib2to3.fixer_base.h:lib2to3.fixer_base \
-	Python/frozen_modules/lib2to3.fixer_util.h:lib2to3.fixer_util \
-	Python/frozen_modules/lib2to3.fixes.h:lib2to3.fixes \
-	Python/frozen_modules/lib2to3.fixes.fix_apply.h:lib2to3.fixes.fix_apply \
-	Python/frozen_modules/lib2to3.fixes.fix_asserts.h:lib2to3.fixes.fix_asserts \
-	Python/frozen_modules/lib2to3.fixes.fix_basestring.h:lib2to3.fixes.fix_basestring \
-	Python/frozen_modules/lib2to3.fixes.fix_buffer.h:lib2to3.fixes.fix_buffer \
-	Python/frozen_modules/lib2to3.fixes.fix_dict.h:lib2to3.fixes.fix_dict \
-	Python/frozen_modules/lib2to3.fixes.fix_except.h:lib2to3.fixes.fix_except \
-	Python/frozen_modules/lib2to3.fixes.fix_exec.h:lib2to3.fixes.fix_exec \
-	Python/frozen_modules/lib2to3.fixes.fix_execfile.h:lib2to3.fixes.fix_execfile \
-	Python/frozen_modules/lib2to3.fixes.fix_exitfunc.h:lib2to3.fixes.fix_exitfunc \
-	Python/frozen_modules/lib2to3.fixes.fix_filter.h:lib2to3.fixes.fix_filter \
-	Python/frozen_modules/lib2to3.fixes.fix_funcattrs.h:lib2to3.fixes.fix_funcattrs \
-	Python/frozen_modules/lib2to3.fixes.fix_future.h:lib2to3.fixes.fix_future \
-	Python/frozen_modules/lib2to3.fixes.fix_getcwdu.h:lib2to3.fixes.fix_getcwdu \
-	Python/frozen_modules/lib2to3.fixes.fix_has_key.h:lib2to3.fixes.fix_has_key \
-	Python/frozen_modules/lib2to3.fixes.fix_idioms.h:lib2to3.fixes.fix_idioms \
-	Python/frozen_modules/lib2to3.fixes.fix_import.h:lib2to3.fixes.fix_import \
-	Python/frozen_modules/lib2to3.fixes.fix_imports.h:lib2to3.fixes.fix_imports \
-	Python/frozen_modules/lib2to3.fixes.fix_imports2.h:lib2to3.fixes.fix_imports2 \
-	Python/frozen_modules/lib2to3.fixes.fix_input.h:lib2to3.fixes.fix_input \
-	Python/frozen_modules/lib2to3.fixes.fix_intern.h:lib2to3.fixes.fix_intern \
-	Python/frozen_modules/lib2to3.fixes.fix_isinstance.h:lib2to3.fixes.fix_isinstance \
-	Python/frozen_modules/lib2to3.fixes.fix_itertools.h:lib2to3.fixes.fix_itertools \
-	Python/frozen_modules/lib2to3.fixes.fix_itertools_imports.h:lib2to3.fixes.fix_itertools_imports \
-	Python/frozen_modules/lib2to3.fixes.fix_long.h:lib2to3.fixes.fix_long \
-	Python/frozen_modules/lib2to3.fixes.fix_map.h:lib2to3.fixes.fix_map \
-	Python/frozen_modules/lib2to3.fixes.fix_metaclass.h:lib2to3.fixes.fix_metaclass \
-	Python/frozen_modules/lib2to3.fixes.fix_methodattrs.h:lib2to3.fixes.fix_methodattrs \
-	Python/frozen_modules/lib2to3.fixes.fix_ne.h:lib2to3.fixes.fix_ne \
-	Python/frozen_modules/lib2to3.fixes.fix_next.h:lib2to3.fixes.fix_next \
-	Python/frozen_modules/lib2to3.fixes.fix_nonzero.h:lib2to3.fixes.fix_nonzero \
-	Python/frozen_modules/lib2to3.fixes.fix_numliterals.h:lib2to3.fixes.fix_numliterals \
-	Python/frozen_modules/lib2to3.fixes.fix_operator.h:lib2to3.fixes.fix_operator \
-	Python/frozen_modules/lib2to3.fixes.fix_paren.h:lib2to3.fixes.fix_paren \
-	Python/frozen_modules/lib2to3.fixes.fix_print.h:lib2to3.fixes.fix_print \
-	Python/frozen_modules/lib2to3.fixes.fix_raise.h:lib2to3.fixes.fix_raise \
-	Python/frozen_modules/lib2to3.fixes.fix_raw_input.h:lib2to3.fixes.fix_raw_input \
-	Python/frozen_modules/lib2to3.fixes.fix_reduce.h:lib2to3.fixes.fix_reduce \
-	Python/frozen_modules/lib2to3.fixes.fix_reload.h:lib2to3.fixes.fix_reload \
-	Python/frozen_modules/lib2to3.fixes.fix_renames.h:lib2to3.fixes.fix_renames \
-	Python/frozen_modules/lib2to3.fixes.fix_repr.h:lib2to3.fixes.fix_repr \
-	Python/frozen_modules/lib2to3.fixes.fix_set_literal.h:lib2to3.fixes.fix_set_literal \
-	Python/frozen_modules/lib2to3.fixes.fix_standarderror.h:lib2to3.fixes.fix_standarderror \
-	Python/frozen_modules/lib2to3.fixes.fix_sys_exc.h:lib2to3.fixes.fix_sys_exc \
-	Python/frozen_modules/lib2to3.fixes.fix_throw.h:lib2to3.fixes.fix_throw \
-	Python/frozen_modules/lib2to3.fixes.fix_tuple_params.h:lib2to3.fixes.fix_tuple_params \
-	Python/frozen_modules/lib2to3.fixes.fix_types.h:lib2to3.fixes.fix_types \
-	Python/frozen_modules/lib2to3.fixes.fix_unicode.h:lib2to3.fixes.fix_unicode \
-	Python/frozen_modules/lib2to3.fixes.fix_urllib.h:lib2to3.fixes.fix_urllib \
-	Python/frozen_modules/lib2to3.fixes.fix_ws_comma.h:lib2to3.fixes.fix_ws_comma \
-	Python/frozen_modules/lib2to3.fixes.fix_xrange.h:lib2to3.fixes.fix_xrange \
-	Python/frozen_modules/lib2to3.fixes.fix_xreadlines.h:lib2to3.fixes.fix_xreadlines \
-	Python/frozen_modules/lib2to3.fixes.fix_zip.h:lib2to3.fixes.fix_zip \
-	Python/frozen_modules/lib2to3.main.h:lib2to3.main \
-	Python/frozen_modules/lib2to3.patcomp.h:lib2to3.patcomp \
-	Python/frozen_modules/lib2to3.pgen2.h:lib2to3.pgen2 \
-	Python/frozen_modules/lib2to3.pgen2.conv.h:lib2to3.pgen2.conv \
-	Python/frozen_modules/lib2to3.pgen2.driver.h:lib2to3.pgen2.driver \
-	Python/frozen_modules/lib2to3.pgen2.grammar.h:lib2to3.pgen2.grammar \
-	Python/frozen_modules/lib2to3.pgen2.literals.h:lib2to3.pgen2.literals \
-	Python/frozen_modules/lib2to3.pgen2.parse.h:lib2to3.pgen2.parse \
-	Python/frozen_modules/lib2to3.pgen2.pgen.h:lib2to3.pgen2.pgen \
-	Python/frozen_modules/lib2to3.pgen2.token.h:lib2to3.pgen2.token \
-	Python/frozen_modules/lib2to3.pgen2.tokenize.h:lib2to3.pgen2.tokenize \
-	Python/frozen_modules/lib2to3.pygram.h:lib2to3.pygram \
-	Python/frozen_modules/lib2to3.pytree.h:lib2to3.pytree \
-	Python/frozen_modules/lib2to3.refactor.h:lib2to3.refactor \
 	Python/frozen_modules/linecache.h:linecache \
 	Python/frozen_modules/locale.h:locale \
 	Python/frozen_modules/logging.h:logging \
 	Python/frozen_modules/logging.config.h:logging.config \
 	Python/frozen_modules/logging.handlers.h:logging.handlers \
 	Python/frozen_modules/lzma.h:lzma \
-	Python/frozen_modules/mailbox.h:mailbox \
-	Python/frozen_modules/mailcap.h:mailcap \
 	Python/frozen_modules/_markupbase.h:_markupbase \
 	Python/frozen_modules/mimetypes.h:mimetypes \
 	Python/frozen_modules/modulefinder.h:modulefinder \
-	Python/frozen_modules/msilib.h:msilib \
-	Python/frozen_modules/msilib.schema.h:msilib.schema \
-	Python/frozen_modules/msilib.sequence.h:msilib.sequence \
-	Python/frozen_modules/msilib.text.h:msilib.text \
 	Python/frozen_modules/multiprocessing.h:multiprocessing \
 	Python/frozen_modules/multiprocessing.connection.h:multiprocessing.connection \
 	Python/frozen_modules/multiprocessing.context.h:multiprocessing.context \
@@ -5002,7 +3429,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/multiprocessing.synchronize.h:multiprocessing.synchronize \
 	Python/frozen_modules/multiprocessing.util.h:multiprocessing.util \
 	Python/frozen_modules/netrc.h:netrc \
-	Python/frozen_modules/nntplib.h:nntplib \
 	Python/frozen_modules/ntpath.h:ntpath \
 	Python/frozen_modules/nturl2path.h:nturl2path \
 	Python/frozen_modules/numbers.h:numbers \
@@ -5019,7 +3445,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
 	Python/frozen_modules/pickle.h:pickle \
 	Python/frozen_modules/pickletools.h:pickletools \
-	Python/frozen_modules/pipes.h:pipes \
 	Python/frozen_modules/pkgutil.h:pkgutil \
 	Python/frozen_modules/platform.h:platform \
 	Python/frozen_modules/plistlib.h:plistlib \
@@ -5034,9 +3459,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/py_compile.h:py_compile \
 	Python/frozen_modules/_pydatetime.h:_pydatetime \
 	Python/frozen_modules/_pydecimal.h:_pydecimal \
-	Python/frozen_modules/pydoc_data.h:pydoc_data \
-	Python/frozen_modules/pydoc_data.topics.h:pydoc_data.topics \
-	Python/frozen_modules/pydoc.h:pydoc \
 	Python/frozen_modules/_pyio.h:_pyio \
 	Python/frozen_modules/_pylong.h:_pylong \
 	Python/frozen_modules/queue.h:queue \
@@ -5056,7 +3478,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/shutil.h:shutil \
 	Python/frozen_modules/signal.h:signal \
 	Python/frozen_modules/smtplib.h:smtplib \
-	Python/frozen_modules/sndhdr.h:sndhdr \
 	Python/frozen_modules/socket.h:socket \
 	Python/frozen_modules/socketserver.h:socketserver \
 	Python/frozen_modules/statistics.h:statistics \
@@ -5066,12 +3487,9 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/_strptime.h:_strptime \
 	Python/frozen_modules/struct.h:struct \
 	Python/frozen_modules/subprocess.h:subprocess \
-	Python/frozen_modules/sunau.h:sunau \
 	Python/frozen_modules/symtable.h:symtable \
 	Python/frozen_modules/sysconfig.h:sysconfig \
 	Python/frozen_modules/tabnanny.h:tabnanny \
-	Python/frozen_modules/tarfile.h:tarfile \
-	Python/frozen_modules/telnetlib.h:telnetlib \
 	Python/frozen_modules/tempfile.h:tempfile \
 	Python/frozen_modules/textwrap.h:textwrap \
 	Python/frozen_modules/this.h:this \
@@ -5090,14 +3508,7 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/tty.h:tty \
 	Python/frozen_modules/types.h:types \
 	Python/frozen_modules/typing.h:typing \
-	Python/frozen_modules/urllib.h:urllib \
-	Python/frozen_modules/urllib.error.h:urllib.error \
-	Python/frozen_modules/urllib.parse.h:urllib.parse \
-	Python/frozen_modules/urllib.request.h:urllib.request \
-	Python/frozen_modules/urllib.response.h:urllib.response \
-	Python/frozen_modules/urllib.robotparser.h:urllib.robotparser \
 	Python/frozen_modules/uuid.h:uuid \
-	Python/frozen_modules/uu.h:uu \
 	Python/frozen_modules/warnings.h:warnings \
 	Python/frozen_modules/wave.h:wave \
 	Python/frozen_modules/weakref.h:weakref \
@@ -5110,7 +3521,6 @@ $(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/wsgiref.types.h:wsgiref.types \
 	Python/frozen_modules/wsgiref.util.h:wsgiref.util \
 	Python/frozen_modules/wsgiref.validate.h:wsgiref.validate \
-	Python/frozen_modules/xdrlib.h:xdrlib \
 	Python/frozen_modules/zipapp.h:zipapp \
 	Python/frozen_modules/zipfile.h:zipfile \
 	Python/frozen_modules/zipfile.__main__.h:zipfile.__main__ \
