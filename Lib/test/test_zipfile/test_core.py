@@ -3464,8 +3464,14 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
         # 20000 bytes
         txt = b'0123456789' * 2000
 
-        # seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
+        # The seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
+        # as `ZipExtFile._read2()` reads in blocks of this size and we need to
+        # seek out of the buffered data
         min_size = zipfile.ZipExtFile.MIN_READ_SIZE
+        self.assertGreaterEqual(10002, min_size)
+        self.assertGreaterEqual(5003, min_size)
+        # The read length must be less than MIN_READ_SIZE, since we assume that
+        # only 1 block is read in the test.
         self.assertGreaterEqual(min_size, 100)
 
         with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
@@ -3474,6 +3480,9 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
         # check random seek and read on a file
         with zipfile.ZipFile(sio, "r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
+                # Test this optimized read hasn't rewound and read from the
+                # start of the file (as in the case of the unoptimized path)
+
                 # forward seek
                 old_count = sio.bytes_read
                 fp.seek(10002, os.SEEK_CUR)
