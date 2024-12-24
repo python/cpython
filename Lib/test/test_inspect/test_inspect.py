@@ -199,7 +199,7 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
     def test_ispackage(self):
-        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'unittest')
         self.istest(inspect.ispackage, 'importlib')
         self.assertFalse(inspect.ispackage(inspect))
         self.assertFalse(inspect.ispackage(mod))
