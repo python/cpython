@@ -404,7 +404,7 @@ raise GeneratorExit inside generator.
 
 static PyObject *
 gen_close_impl(PyGenObject *self)
-/*[clinic end generated code: output=2d7adf450173059c input=6c40e85559b6f098]*/
+/*[clinic end generated code: output=2d7adf450173059c input=417e6161842080c9]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
@@ -787,27 +787,40 @@ gen_getyieldfrom(PyObject *gen, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_running as gen_getrunning
+[clinic start generated code]*/
 
 static PyObject *
-gen_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+gen_getrunning_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a7233b957ce88a6f input=d3d995cf1581b21b]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
+    if (self->gi_frame_state == FRAME_EXECUTING) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_suspended as gen_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-gen_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+gen_getsuspended_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a0345f9be186eda3 input=880e9fb8436726cb]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
     return PyBool_FromLong(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
 }
 
 static PyObject *
-_gen_getframe(PyGenObject *gen, const char *const name)
+_gen_getframe(PyGenObject *self, const char *name)
 {
+    PyGenObject *gen = _PyGen_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
         return NULL;
     }
@@ -821,7 +834,11 @@ static PyObject *
 gen_getframe(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *gen = _PyGen_CAST(self);
-    return _gen_getframe(gen, "gi_frame");
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _gen_getframe(gen, "gi_frame");
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -847,9 +864,9 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("qualified name of the generator")},
     {"gi_yieldfrom", gen_getyieldfrom, NULL,
      PyDoc_STR("object being iterated by yield from, or None")},
-    {"gi_running", gen_getrunning, NULL, NULL},
+    GEN_GETRUNNING_GETSETDEF
+    GEN_GETSUSPENDED_GETSETDEF
     {"gi_frame", gen_getframe,  NULL, NULL},
-    {"gi_suspended", gen_getsuspended,  NULL, NULL},
     {"gi_code", gen_getcode,  NULL, NULL},
     {NULL} /* Sentinel */
 };
