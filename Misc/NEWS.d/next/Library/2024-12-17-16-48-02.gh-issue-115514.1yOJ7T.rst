@@ -1,0 +1,3 @@
+Fix exceptions and incomplete writes after asyncio _SelectorTransport
+is closed before writes are completed.
+Breaking change introduced in gh-106503, released in 3.12.0.
