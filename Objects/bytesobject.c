@@ -2834,7 +2834,7 @@ _PyBytes_FromSequence(PyObject *x)
                             "bytes must be in range(0, 256)");
             goto error;
         }
-        s[i] = value;
+        s[i] = (char)value;
     }
     return bytes;
   error:
