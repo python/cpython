@@ -564,6 +564,16 @@ class TestCallCache(TestBase):
             instantiate()
 
 
+def make_deferred_ref_count_obj():
+    """Create an object that uses deferred reference counting.
+
+    Only objects that use deferred refence counting may be stored in inline
+    caches in free-threaded builds. This constructs a new class named Foo,
+    which uses deferred reference counting.
+    """
+    return type("Foo", (object,), {})
+
+
 @threading_helper.requires_working_threading()
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
@@ -718,9 +728,7 @@ class TestRacesDoNotCrash(TestBase):
     def test_load_attr_class(self):
         def get_items():
             class C:
-                # a must be set to an instance that uses deferred reference
-                # counting in free-threaded builds
-                a = type("Foo", (object,), {})
+                a = make_deferred_ref_count_obj()
 
             items = []
             for _ in range(self.ITEMS):
@@ -741,7 +749,7 @@ class TestRacesDoNotCrash(TestBase):
                     del item.a
                 except AttributeError:
                     pass
-                item.a = type("Foo", (object,), {})
+                item.a = make_deferred_ref_count_obj()
 
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
@@ -753,9 +761,7 @@ class TestRacesDoNotCrash(TestBase):
                 pass
 
             class C(metaclass=Meta):
-                # a must be set to an instance that uses deferred reference
-                # counting in free-threaded builds
-                a = type("Foo", (object,), {})
+                a = make_deferred_ref_count_obj()
 
             items = []
             for _ in range(self.ITEMS):
@@ -776,7 +782,7 @@ class TestRacesDoNotCrash(TestBase):
                     del item.a
                 except AttributeError:
                     pass
-                item.a = type("Foo", (object,), {})
+                item.a = make_deferred_ref_count_obj()
 
         opname = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
         self.assert_races_do_not_crash(opname, get_items, read, write)
