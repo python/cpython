@@ -201,7 +201,7 @@ class Emitter:
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
-            storage.copy().flush(self.out)
+            storage.copy().stack.flush(self.out)
             self.out.emit("goto ")
             self.out.emit(label)
             self.out.emit(";\n")
