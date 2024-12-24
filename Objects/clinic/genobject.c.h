@@ -77,29 +77,4 @@ gen_getsuspended_get(PyGenObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(gen_getframe_DOCSTR)
-#  define gen_getframe_DOCSTR NULL
-#endif
-#if defined(GEN_GETFRAME_GETSETDEF)
-#  undef GEN_GETFRAME_GETSETDEF
-#  define GEN_GETFRAME_GETSETDEF {"gi_frame", (getter)gen_getframe_get, (setter)gen_getframe_set, gen_getframe_DOCSTR},
-#else
-#  define GEN_GETFRAME_GETSETDEF {"gi_frame", (getter)gen_getframe_get, NULL, gen_getframe_DOCSTR},
-#endif
-
-static PyObject *
-gen_getframe_get_impl(PyGenObject *self);
-
-static PyObject *
-gen_getframe_get(PyGenObject *self, void *Py_UNUSED(context))
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = gen_getframe_get_impl(self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-/*[clinic end generated code: output=71e69e51fda7e6a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff4665c12c43063f input=a9049054013a1b77]*/
