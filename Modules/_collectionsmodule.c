@@ -1667,10 +1667,13 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
     if (it2 == NULL)
         goto done;
     for (;;) {
-        x = PyIter_Next(it1);
-        if (x == NULL && PyErr_Occurred())
+        if ((x = PyIter_Next(it1)) == NULL && PyErr_Occurred()) {
             goto done;
-        y = PyIter_Next(it2);
+        }
+        if ((y = PyIter_Next(it2)) == NULL && PyErr_Occurred()) {
+            Py_XDECREF(x);
+            goto done;
+        }
         if (x == NULL || y == NULL)
             break;
         b = PyObject_RichCompareBool(x, y, Py_EQ);

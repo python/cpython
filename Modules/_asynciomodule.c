@@ -3623,6 +3623,14 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(item);
     }
     Py_DECREF(eager_iter);
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+
     int err = 0;
     ASYNCIO_STATE_LOCK(state);
     TaskObj *first = &state->asyncio_tasks.first;
@@ -3662,6 +3670,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
     return tasks;
 }
 
