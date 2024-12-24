@@ -136,7 +136,8 @@ class Monitor:
             return
 
         line = line[1:].lstrip()
-        assert line
+        if not line:
+            return
 
         fields = line.split()
         token = fields[0].lower()
