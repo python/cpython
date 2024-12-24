@@ -66,6 +66,10 @@ an event loop:
 
    Set *loop* as the current event loop for the current OS thread.
 
+   .. deprecated:: next
+      The :func:`set_event_loop` function is deprecated and will be removed
+      in Python 3.16.
+
 .. function:: new_event_loop()
 
    Create and return a new event loop object.
