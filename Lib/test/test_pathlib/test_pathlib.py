@@ -229,6 +229,31 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self._check_str(p.__fspath__(), ('a/b',))
         self._check_str(os.fspath(p), ('a/b',))
 
+    def test_bytes(self):
+        P = self.cls
+        with self.assertRaises(TypeError):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
     def test_bytes_exc_message(self):
         P = self.cls
         message = (r"argument should be a str or an os\.PathLike object "
@@ -553,10 +578,44 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         if name in _tests_needing_symlinks and not self.can_symlink:
             self.skipTest('requires symlinks')
         super().setUp()
-        os.chmod(self.parser.join(self.base, 'dirE'), 0)
+
+    def createTestHierarchy(self):
+        os.mkdir(self.base)
+        os.mkdir(os.path.join(self.base, 'dirA'))
+        os.mkdir(os.path.join(self.base, 'dirB'))
+        os.mkdir(os.path.join(self.base, 'dirC'))
+        os.mkdir(os.path.join(self.base, 'dirC', 'dirD'))
+        os.mkdir(os.path.join(self.base, 'dirE'))
+        with open(os.path.join(self.base, 'fileA'), 'wb') as f:
+            f.write(b"this is file A\n")
+        with open(os.path.join(self.base, 'dirB', 'fileB'), 'wb') as f:
+            f.write(b"this is file B\n")
+        with open(os.path.join(self.base, 'dirC', 'fileC'), 'wb') as f:
+            f.write(b"this is file C\n")
+        with open(os.path.join(self.base, 'dirC', 'novel.txt'), 'wb') as f:
+            f.write(b"this is a novel\n")
+        with open(os.path.join(self.base, 'dirC', 'dirD', 'fileD'), 'wb') as f:
+            f.write(b"this is file D\n")
+        os.chmod(os.path.join(self.base, 'dirE'), 0)
+        if self.can_symlink:
+            # Relative symlinks.
+            os.symlink('fileA', os.path.join(self.base, 'linkA'))
+            os.symlink('non-existing', os.path.join(self.base, 'brokenLink'))
+            os.symlink('dirB',
+                       os.path.join(self.base, 'linkB'),
+                       target_is_directory=True)
+            os.symlink(os.path.join('..', 'dirB'),
+                       os.path.join(self.base, 'dirA', 'linkC'),
+                       target_is_directory=True)
+            # This one goes upwards, creating a loop.
+            os.symlink(os.path.join('..', 'dirB'),
+                       os.path.join(self.base, 'dirB', 'linkD'),
+                       target_is_directory=True)
+            # Broken symlink (pointing to itself).
+            os.symlink('brokenLinkLoop', os.path.join(self.base, 'brokenLinkLoop'))
 
     def tearDown(self):
-        os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
+        os.chmod(os.path.join(self.base, 'dirE'), 0o777)
         os_helper.rmtree(self.base)
 
     def tempdir(self):
@@ -1673,7 +1732,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(p.exists())
         self.assertEqual(p.stat().st_ctime, st_ctime_first)
 
-    @unittest.skipIf(is_emscripten, "FS root cannot be modified on Emscripten.")
     def test_mkdir_exist_ok_root(self):
         # Issue #25803: A drive root could raise PermissionError on Windows.
         self.cls('/').resolve().mkdir(exist_ok=True)
@@ -2039,7 +2097,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expect, set(p.rglob(FakePath(pattern))))
 
     @needs_symlinks
-    @unittest.skipIf(is_emscripten, "Hangs")
     def test_glob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, recurse_symlinks=True)
@@ -2077,7 +2134,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
     @needs_symlinks
-    @unittest.skipIf(is_emscripten, "Hangs")
     def test_rglob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, recurse_symlinks=True)
@@ -2484,9 +2540,7 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
             os.symlink(tmp5_path, broken_link3_path)
             self.sub2_tree[2].append('broken_link3')
             self.sub2_tree[2].sort()
-        if not is_emscripten:
-            # Emscripten fails with inaccessible directories.
-            os.chmod(sub21_path, 0)
+        os.chmod(sub21_path, 0)
         try:
             os.listdir(sub21_path)
         except PermissionError:

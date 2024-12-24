@@ -680,9 +680,6 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat unlinked files."
-    )
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')
     def test_race(self):
@@ -5355,7 +5352,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
     @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
@@ -5367,7 +5364,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
 
 class BasicConfigTest(unittest.TestCase):
@@ -5671,7 +5668,7 @@ class BasicConfigTest(unittest.TestCase):
                 data = f.read().strip()
             self.assertRegex(data, r'Task-\d+ - hello world')
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
             if handler:
                 handler.close()
 
