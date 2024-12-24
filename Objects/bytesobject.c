@@ -2810,79 +2810,33 @@ fail:
 }
 
 static PyObject*
-_PyBytes_FromList(PyObject *x)
+_PyBytes_FromSequence(PyObject *x)
 {
-    Py_ssize_t i, size = PyList_GET_SIZE(x);
-    Py_ssize_t value;
-    char *str;
-    PyObject *item;
-    _PyBytesWriter writer;
-
-    _PyBytesWriter_Init(&writer);
-    str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
-        return NULL;
-    writer.overallocate = 1;
-    size = writer.allocated;
-
-    for (i = 0; i < PyList_GET_SIZE(x); i++) {
-        item = PyList_GET_ITEM(x, i);
-        Py_INCREF(item);
-        value = PyNumber_AsSsize_t(item, NULL);
-        Py_DECREF(item);
-        if (value == -1 && PyErr_Occurred())
-            goto error;
-
-        if (value < 0 || value >= 256) {
-            PyErr_SetString(PyExc_ValueError,
-                            "bytes must be in range(0, 256)");
-            goto error;
-        }
-
-        if (i >= size) {
-            str = _PyBytesWriter_Resize(&writer, str, size+1);
-            if (str == NULL)
-                return NULL;
-            size = writer.allocated;
-        }
-        *str++ = (char) value;
-    }
-    return _PyBytesWriter_Finish(&writer, str);
-
-  error:
-    _PyBytesWriter_Dealloc(&writer);
-    return NULL;
-}
-
-static PyObject*
-_PyBytes_FromTuple(PyObject *x)
-{
-    PyObject *bytes;
-    Py_ssize_t i, size = PyTuple_GET_SIZE(x);
-    Py_ssize_t value;
-    char *str;
-    PyObject *item;
-
-    bytes = PyBytes_FromStringAndSize(NULL, size);
+    Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
+    PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
         return NULL;
-    str = ((PyBytesObject *)bytes)->ob_sval;
-
-    for (i = 0; i < size; i++) {
-        item = PyTuple_GET_ITEM(x, i);
-        value = PyNumber_AsSsize_t(item, NULL);
-        if (value == -1 && PyErr_Occurred())
+    char *s = PyBytes_AS_STRING(bytes);
+    PyObject **items = PySequence_Fast_ITEMS(x);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        if (!PyLong_CheckExact(items[i])) {
+            Py_DECREF(bytes);
+            return Py_None; // None as fallback sentinel to the slow path
+        }
+        int overflow;
+        long value = PyLong_AsLongAndOverflow(items[i], &overflow);
+        if (value == -1 && PyErr_Occurred()) {
             goto error;
-
+        }
         if (value < 0 || value >= 256) {
+            /* this includes an overflow in converting to C long */
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             goto error;
         }
-        *str++ = (char) value;
+        s[i] = value;
     }
     return bytes;
-
   error:
     Py_DECREF(bytes);
     return NULL;
@@ -2968,11 +2922,12 @@ PyBytes_FromObject(PyObject *x)
     if (PyObject_CheckBuffer(x))
         return _PyBytes_FromBuffer(x);
 
-    if (PyList_CheckExact(x))
-        return _PyBytes_FromList(x);
-
-    if (PyTuple_CheckExact(x))
-        return _PyBytes_FromTuple(x);
+    if (PyList_CheckExact(x) || PyTuple_CheckExact(x)) {
+        PyObject *bytes = _PyBytes_FromSequence(x);
+        if (bytes != Py_None) {
+            return bytes;
+        }
+    }
 
     if (!PyUnicode_Check(x)) {
         it = PyObject_GetIter(x);
