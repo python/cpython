@@ -1,5 +1,4 @@
 from annotationlib import Format, ForwardRef
-import asyncio
 import builtins
 import collections
 import copy
@@ -71,11 +70,6 @@ def revise(filename, *args):
     return (normcase(filename),) + args
 
 git = mod.StupidGit()
-
-
-def tearDownModule():
-    if support.has_socket_support:
-        asyncio._set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -1172,10 +1166,9 @@ class TestBuggyCases(GetSourceBase):
     )
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
+        self.assertSourceEqual(asyncio.run(mod2.func225(), loop_factory=asyncio.EventLoop), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
-        self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+        self.assertSourceEqual(asyncio.run(mod2.cls226().func232(), loop_factory=asyncio.EventLoop), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
