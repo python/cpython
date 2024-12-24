@@ -20,10 +20,12 @@ operators.  Additionally, all token lists start with an ENCODING token
 which tells you which encoding was used to decode the bytes stream.
 """
 
-__author__ = 'Ka-Ping Yee <ping@lfw.org>'
-__credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
-               'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
-               'Michael Foord')
+__author__ = "Ka-Ping Yee <ping@lfw.org>"
+__credits__ = (
+    "GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, "
+    "Skip Montanaro, Raymond Hettinger, Trent Nelson, "
+    "Michael Foord"
+)
 from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
@@ -32,23 +34,34 @@ from io import TextIOWrapper
 import itertools as _itertools
 import re
 import sys
-from token import *
-from token import EXACT_TOKEN_TYPES
-import _tokenize
-
-cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
-blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
-
 import token
-__all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
-                           "untokenize", "TokenInfo", "open", "TokenError"]
-del token
+import _tokenize  # type: ignore
 
-class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
+# kind of a hack, but allows us to avoid importing the token module 3 times
+globals().update({name: getattr(token, name) for name in token.__all__})
+# ruff: noqa: F821
+
+cookie_re = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)", re.ASCII)
+blank_re = re.compile(rb"^[ \t\f]*(?:[#\r\n]|$)", re.ASCII)
+
+
+__all__ = token.__all__ + [
+    "tokenize",
+    "generate_tokens",
+    "detect_encoding",
+    "untokenize",
+    "TokenInfo",
+    "open",
+    "TokenError",
+]
+
+
+
+class TokenInfo(collections.namedtuple("TokenInfo", "type string start end line")):
     def __repr__(self):
-        annotated_type = '%d (%s)' % (self.type, tok_name[self.type])
-        return ('TokenInfo(type=%s, string=%r, start=%r, end=%r, line=%r)' %
-                self._replace(type=annotated_type))
+        annotated_type = f"{self.type} ({tok_name[self.type]})"
+        return f"TokenInfo(type={annotated_type!s}, string={self.string!s},\
+            start={self.start!s}, end={self.end!s}, line={self.line!s})"
 
     @property
     def exact_type(self):
@@ -57,49 +70,62 @@ class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line'
         else:
             return self.type
 
-def group(*choices): return '(' + '|'.join(choices) + ')'
-def any(*choices): return group(*choices) + '*'
-def maybe(*choices): return group(*choices) + '?'
+
+def group(*choices):
+    return "(" + "|".join(choices) + ")"
+
+
+def any(*choices):
+    return group(*choices) + "*"
+
+
+def maybe(*choices):
+    return group(*choices) + "?"
+
 
 # Note: we use unicode matching for names ("\w") but ascii matching for
 # number literals.
-Whitespace = r'[ \f\t]*'
-Comment = r'#[^\r\n]*'
-Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
-Name = r'\w+'
+Whitespace = r"[ \f\t]*"
+Comment = r"#[^\r\n]*"
+Ignore = Whitespace + any(r"\\\r?\n" + Whitespace) + maybe(Comment)
+Name = r"\w+"
 
-Hexnumber = r'0[xX](?:_?[0-9a-fA-F])+'
-Binnumber = r'0[bB](?:_?[01])+'
-Octnumber = r'0[oO](?:_?[0-7])+'
-Decnumber = r'(?:0(?:_?0)*|[1-9](?:_?[0-9])*)'
+Hexnumber = r"0[xX](?:_?[0-9a-fA-F])+"
+Binnumber = r"0[bB](?:_?[01])+"
+Octnumber = r"0[oO](?:_?[0-7])+"
+Decnumber = r"(?:0(?:_?0)*|[1-9](?:_?[0-9])*)"
 Intnumber = group(Hexnumber, Binnumber, Octnumber, Decnumber)
-Exponent = r'[eE][-+]?[0-9](?:_?[0-9])*'
-Pointfloat = group(r'[0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?',
-                   r'\.[0-9](?:_?[0-9])*') + maybe(Exponent)
-Expfloat = r'[0-9](?:_?[0-9])*' + Exponent
+Exponent = r"[eE][-+]?[0-9](?:_?[0-9])*"
+Pointfloat = group(
+    r"[0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?", r"\.[0-9](?:_?[0-9])*"
+) + maybe(Exponent)
+Expfloat = r"[0-9](?:_?[0-9])*" + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group(r'[0-9](?:_?[0-9])*[jJ]', Floatnumber + r'[jJ]')
+Imagnumber = group(r"[0-9](?:_?[0-9])*[jJ]", Floatnumber + r"[jJ]")
 Number = group(Imagnumber, Floatnumber, Intnumber)
+
 
 # Return the empty string, plus all of the valid string prefixes.
 def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
     #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
-    _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
+    _valid_string_prefixes = ["b", "r", "u", "f", "br", "fr"]
     # if we add binary f-strings, add: ['fb', 'fbr']
-    result = {''}
+    result = {""}
     for prefix in _valid_string_prefixes:
         for t in _itertools.permutations(prefix):
             # create a list with upper and lower versions of each
             #  character
             for u in _itertools.product(*[(c, c.upper()) for c in t]):
-                result.add(''.join(u))
+                result.add("".join(u))
     return result
+
 
 @functools.lru_cache
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
+
 
 # Note that since _all_string_prefixes includes the empty string,
 #  StringPrefix can be the empty string (making it optional).
@@ -115,24 +141,26 @@ Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
 Triple = group(StringPrefix + "'''", StringPrefix + '"""')
 # Single-line ' or " string.
-String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(
+    StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+    StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"',
+)
 
 # Sorting in reverse order puts the long operators before their prefixes.
 # Otherwise if = came before ==, == would get recognized as two instances
 # of =.
 Special = group(*map(re.escape, sorted(EXACT_TOKEN_TYPES, reverse=True)))
-Funny = group(r'\r?\n', Special)
+Funny = group(r"\r?\n", Special)
 
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
-                group("'", r'\\\r?\n'),
-                StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
-                group('"', r'\\\r?\n'))
-PseudoExtras = group(r'\\\r?\n|\Z', Comment, Triple)
+ContStr = group(
+    StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" + group("'", r"\\\r?\n"),
+    StringPrefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' + group('"', r"\\\r?\n"),
+)
+PseudoExtras = group(r"\\\r?\n|\Z", Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
 # For a given string prefix plus quotes, endpats maps it to a regex
@@ -159,11 +187,12 @@ del t, u
 
 tabsize = 8
 
-class TokenError(Exception): pass
+
+class TokenError(Exception):
+    pass
 
 
 class Untokenizer:
-
     def __init__(self):
         self.tokens = []
         self.prev_row = 1
@@ -174,8 +203,9 @@ class Untokenizer:
     def add_whitespace(self, start):
         row, col = start
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
-            raise ValueError("start ({},{}) precedes previous end ({},{})"
-                             .format(row, col, self.prev_row, self.prev_col))
+            raise ValueError(
+                f"start ({row},{col}) precedes previous end ({self.prev_row},{self.prev_col})"
+            )
         row_offset = row - self.prev_row
         if row_offset:
             self.tokens.append("\\\n" * row_offset)
@@ -184,10 +214,10 @@ class Untokenizer:
         if col_offset:
             self.tokens.append(" " * col_offset)
 
-    def escape_brackets(self, token):
+    def escape_brackets(self, tok):
         characters = []
         consume_until_next_bracket = False
-        for character in token:
+        for character in tok:
             if character == "}":
                 if consume_until_next_bracket:
                     consume_until_next_bracket = False
@@ -215,14 +245,14 @@ class Untokenizer:
             if len(t) == 2:
                 self.compat(t, it)
                 break
-            tok_type, token, start, end, line = t
+            tok_type, tok, start, end, line = t
             if tok_type == ENCODING:
-                self.encoding = token
+                self.encoding = tok
                 continue
             if tok_type == ENDMARKER:
                 break
             if tok_type == INDENT:
-                indents.append(token)
+                indents.append(tok)
                 continue
             elif tok_type == DEDENT:
                 indents.pop()
@@ -237,17 +267,20 @@ class Untokenizer:
                     self.prev_col = len(indent)
                 startline = False
             elif tok_type == FSTRING_MIDDLE:
-                if '{' in token or '}' in token:
-                    token = self.escape_brackets(token)
-                    last_line = token.splitlines()[-1]
+                if "{" in tok or "}" in tok:
+                    tok = self.escape_brackets(tok)
+                    last_line = tok.splitlines()[-1]
                     end_line, end_col = end
                     extra_chars = last_line.count("{{") + last_line.count("}}")
                     end = (end_line, end_col + extra_chars)
-            elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+            elif tok_type in (
+                STRING,
+                FSTRING_START,
+            ) and self.prev_type in (STRING, FSTRING_END):
                 self.tokens.append(" ")
 
             self.add_whitespace(start)
-            self.tokens.append(token)
+            self.tokens.append(tok)
             self.prev_row, self.prev_col = end
             if tok_type in (NEWLINE, NL):
                 self.prev_row += 1
@@ -255,26 +288,26 @@ class Untokenizer:
             self.prev_type = tok_type
         return "".join(self.tokens)
 
-    def compat(self, token, iterable):
+    def compat(self, tok, iterable):
         indents = []
         toks_append = self.tokens.append
-        startline = token[0] in (NEWLINE, NL)
+        startline = tok[0] in (NEWLINE, NL)
         prevstring = False
         in_fstring = 0
 
-        for tok in _itertools.chain([token], iterable):
+        for tok in _itertools.chain([tok], iterable):
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
                 self.encoding = tokval
                 continue
 
             if toknum in (NAME, NUMBER):
-                tokval += ' '
+                tokval += " "
 
             # Insert a space between two consecutive strings
             if toknum == STRING:
                 if prevstring:
-                    tokval = ' ' + tokval
+                    tokval = " " + tokval
                 prevstring = True
             else:
                 prevstring = False
@@ -298,11 +331,21 @@ class Untokenizer:
                 tokval = self.escape_brackets(tokval)
 
             # Insert a space between two consecutive brackets if we are in an f-string
-            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
-                tokval = ' ' + tokval
+            if (
+                tokval in {"{", "}"}
+                and self.tokens
+                and self.tokens[-1] == tokval
+                and in_fstring
+            ):
+                tokval = " " + tokval
 
             # Insert a space between two consecutive f-strings
-            if toknum in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+            if toknum in (
+                STRING, FSTRING_START
+            ) and self.prev_type in (
+                STRING,
+                FSTRING_END,
+            ):
                 self.tokens.append(" ")
 
             toks_append(tokval)
@@ -342,10 +385,12 @@ def _get_normal_name(orig_enc):
     enc = orig_enc[:12].lower().replace("_", "-")
     if enc == "utf-8" or enc.startswith("utf-8-"):
         return "utf-8"
-    if enc in ("latin-1", "iso-8859-1", "iso-latin-1") or \
-       enc.startswith(("latin-1-", "iso-8859-1-", "iso-latin-1-")):
+    if enc in ("latin-1", "iso-8859-1", "iso-latin-1") or enc.startswith(
+        ("latin-1-", "iso-8859-1-", "iso-latin-1-")
+    ):
         return "iso-8859-1"
     return orig_enc
+
 
 def detect_encoding(readline):
     """
@@ -370,23 +415,24 @@ def detect_encoding(readline):
         filename = None
     bom_found = False
     encoding = None
-    default = 'utf-8'
+    default = "utf-8"
+
     def read_or_stop():
         try:
             return readline()
         except StopIteration:
-            return b''
+            return b""
 
     def find_cookie(line):
         try:
             # Decode as UTF-8. Either the line is an encoding declaration,
             # in which case it should be pure ASCII, or it must be UTF-8
             # per default encoding.
-            line_string = line.decode('utf-8')
+            line_string = line.decode("utf-8")
         except UnicodeDecodeError:
             msg = "invalid or missing encoding declaration"
             if filename is not None:
-                msg = '{} for {!r}'.format(msg, filename)
+                msg = f"{msg} for {filename!r}"
             raise SyntaxError(msg)
 
         match = cookie_re.match(line_string)
@@ -394,32 +440,31 @@ def detect_encoding(readline):
             return None
         encoding = _get_normal_name(match.group(1))
         try:
-            codec = lookup(encoding)
+            lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
             if filename is None:
                 msg = "unknown encoding: " + encoding
             else:
-                msg = "unknown encoding for {!r}: {}".format(filename,
-                        encoding)
+                msg = f"unknown encoding for {filename!r}: {encoding}"
             raise SyntaxError(msg)
 
         if bom_found:
-            if encoding != 'utf-8':
+            if encoding != "utf-8":
                 # This behaviour mimics the Python interpreter
                 if filename is None:
-                    msg = 'encoding problem: utf-8'
+                    msg = "encoding problem: utf-8"
                 else:
-                    msg = 'encoding problem for {!r}: utf-8'.format(filename)
+                    msg = f"encoding problem for {filename!r}: utf-8"
                 raise SyntaxError(msg)
-            encoding += '-sig'
+            encoding += "-sig"
         return encoding
 
     first = read_or_stop()
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]
-        default = 'utf-8-sig'
+        default = "utf-8-sig"
     if not first:
         return default, []
 
@@ -444,16 +489,17 @@ def open(filename):
     """Open a file in read only mode using the encoding detected by
     detect_encoding().
     """
-    buffer = _builtin_open(filename, 'rb')
+    buffer = _builtin_open(filename, "rb")
     try:
-        encoding, lines = detect_encoding(buffer.readline)
+        encoding, _ = detect_encoding(buffer.readline)
         buffer.seek(0)
         text = TextIOWrapper(buffer, encoding, line_buffering=True)
-        text.mode = 'r'
+        text.mode = "r"
         return text
     except:
         buffer.close()
         raise
+
 
 def tokenize(readline):
     """
@@ -483,6 +529,7 @@ def tokenize(readline):
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
     yield from _generate_tokens_from_c_tokenizer(rl_gen.__next__, encoding, extra_tokens=True)
 
+
 def generate_tokens(readline):
     """Tokenize a source reading Python code as unicode strings.
 
@@ -491,53 +538,63 @@ def generate_tokens(readline):
     """
     return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
+
 def main():
     import argparse
 
     # Helper error handling routines
     def perror(message):
-        sys.stderr.write(message)
-        sys.stderr.write('\n')
+        sys.stderr.write(f"{message}\n")
 
     def error(message, filename=None, location=None):
         if location:
-            args = (filename,) + location + (message,)
-            perror("%s:%d:%d: error: %s" % args)
+            perror(f"{filename}:{location[0]}:{location[1]}: error: {message}")
         elif filename:
-            perror("%s: error: %s" % (filename, message))
+            perror(f"{filename}: error: {message}")
         else:
-            perror("error: %s" % message)
+            perror(f"error: {message}")
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser()
-    parser.add_argument(dest='filename', nargs='?',
-                        metavar='filename.py',
-                        help='the file to tokenize; defaults to stdin')
-    parser.add_argument('-e', '--exact', dest='exact', action='store_true',
-                        help='display token names using the exact type')
+    parser = argparse.ArgumentParser(prog="python -m tokenize")
+    parser.add_argument(
+        dest="filename",
+        nargs="?",
+        metavar="filename.py",
+        help="the file to tokenize; defaults to stdin",
+    )
+    parser.add_argument(
+        "-e",
+        "--exact",
+        dest="exact",
+        action="store_true",
+        help="display token names using the exact type",
+    )
     args = parser.parse_args()
 
     try:
         # Tokenize the input
         if args.filename:
             filename = args.filename
-            with _builtin_open(filename, 'rb') as f:
+            with _builtin_open(filename, "rb") as f:
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"
             tokens = _generate_tokens_from_c_tokenizer(
-                sys.stdin.readline, extra_tokens=True)
-
+                sys.stdin.readline, extra_tokens=True
+            )
 
         # Output the tokenization
-        for token in tokens:
-            token_type = token.type
+        for tok in tokens:
+            token_type = tok.type
             if args.exact:
-                token_type = token.exact_type
-            token_range = "%d,%d-%d,%d:" % (token.start + token.end)
-            print("%-20s%-15s%-15r" %
-                  (token_range, tok_name[token_type], token.string))
+                token_type = tok.exact_type
+            token_range = (
+                f"{tok.start[0]},{tok.start[1]}-{tok.end[0]},{tok.end[1]}:"
+            )
+            print(
+                f"{token_range:<20}{tok_name[token_type]:<15}{tok.string!r}"
+            )
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))
@@ -551,8 +608,9 @@ def main():
     except KeyboardInterrupt:
         print("interrupted\n")
     except Exception as err:
-        perror("unexpected error: %s" % err)
+        perror(f"unexpected error: {err}")
         raise
+
 
 def _transform_msg(msg):
     """Transform error messages from the C tokenizer into the Python tokenize
@@ -564,21 +622,28 @@ def _transform_msg(msg):
         return "EOF in multi-line string"
     return msg
 
+
 def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     if encoding is None:
         it = _tokenize.TokenizerIter(source, extra_tokens=extra_tokens)
     else:
-        it = _tokenize.TokenizerIter(source, encoding=encoding, extra_tokens=extra_tokens)
+        it = _tokenize.TokenizerIter(
+            source, encoding=encoding, extra_tokens=extra_tokens
+        )
     try:
         for info in it:
             yield TokenInfo._make(info)
     except SyntaxError as e:
-        if type(e) != SyntaxError:
+        # Error messages raised by the tokenizer are subclasses of SyntaxError
+        # So we should pass those through.  If we get an actual SyntaxError(the base class)
+        # transform it into a TokenError
+        if type(e) is not SyntaxError:
             raise e from None
         msg = _transform_msg(e.msg)
         raise TokenError(msg, (e.lineno, e.offset)) from None
 
 
 if __name__ == "__main__":
+
     main()
