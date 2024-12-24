@@ -390,7 +390,7 @@ _PyGen_yf(PyGenObject *gen)
 }
 
 static PyObject *
-gen_close_lock_held(PyObject *self, PyObject *args)
+gen_close(PyObject *self, PyObject *args)
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
