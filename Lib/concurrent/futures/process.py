@@ -57,6 +57,7 @@ import threading
 import weakref
 from functools import partial
 import itertools
+import signal
 import sys
 from traceback import format_exception
 
@@ -855,3 +856,41 @@ class ProcessPoolExecutor(_base.Executor):
         self._executor_manager_thread_wakeup = None
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
+
+    def terminate_workers(self, signal=signal.SIGTERM):
+        """Attempts to terminate the executor's workers using the given signal.
+        Iterates through all of the current processes and sends the given signal if
+        the process is still alive.
+
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+
+        Args:
+            signal: The signal to send to each worker process. Defaults to
+                signal.SIGTERM.
+        """
+        processes = {}
+        if self._processes:
+            processes = self._processes.copy()
+
+        # shutdown will invalidate ._processes, so we copy it right before calling.
+        # If we waited here, we would deadlock if a process decides not to exit.
+        self.shutdown(wait=False, cancel_futures=True)
+
+        if not processes:
+            return
+
+        for pid, proc in processes.items():
+            try:
+                if not proc.is_alive():
+                    continue
+            except ValueError:
+                # The process is already exited/closed out.
+                continue
+
+            try:
+                os.kill(pid, signal)
+            except ProcessLookupError:
+                # The process just ended before our signal
+                continue

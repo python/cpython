@@ -307,6 +307,10 @@ concurrent.futures
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
+* Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` as
+  a way to terminate all living worker processes in the given pool.
+  (Contributed by Charles Machalow in :gh:`128043`.)
+
 ctypes
 ------
 
