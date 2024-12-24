@@ -366,8 +366,8 @@ is_resume(_Py_CODEUNIT *instr)
     );
 }
 
-PyObject *
-_PyGen_yf(PyGenObject *gen)
+static PyObject *
+_PyGen_yf_lock_held(PyGenObject *gen)
 {
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
@@ -379,8 +379,18 @@ _PyGen_yf(PyGenObject *gen)
     return NULL;
 }
 
+PyObject *
+_PyGen_yf(PyGenObject *gen)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _PyGen_yf_lock_held(gen);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static PyObject *
-gen_close(PyObject *self, PyObject *args)
+gen_close_lock_held(PyObject *self, PyObject *args)
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
@@ -445,7 +455,6 @@ gen_close(PyObject *self, PyObject *args)
     }
     return NULL;
 }
-
 
 PyDoc_STRVAR(throw_doc,
 "throw(value)\n\
