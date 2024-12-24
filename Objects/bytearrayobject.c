@@ -2113,8 +2113,9 @@ PyDoc_STRVAR(alloc_doc,
 Return the number of bytes actually allocated.");
 
 static PyObject *
-bytearray_alloc(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
+bytearray_alloc(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyByteArrayObject *self = _PyByteArray_CAST(op);
     return PyLong_FromSsize_t(self->ob_alloc);
 }
 
@@ -2313,7 +2314,7 @@ static PyBufferProcs bytearray_as_buffer = {
 };
 
 static PyMethodDef bytearray_methods[] = {
-    {"__alloc__", (PyCFunction)bytearray_alloc, METH_NOARGS, alloc_doc},
+    {"__alloc__", bytearray_alloc, METH_NOARGS, alloc_doc},
     BYTEARRAY_REDUCE_METHODDEF
     BYTEARRAY_REDUCE_EX_METHODDEF
     BYTEARRAY_SIZEOF_METHODDEF
