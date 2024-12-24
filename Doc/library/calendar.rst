@@ -14,10 +14,10 @@
 This module allows you to output calendars like the Unix :program:`cal` program,
 and provides additional useful functions related to the calendar. By default,
 these calendars have Monday as the first day of the week, and Sunday as the last
-(the European convention). Use :func:`setfirstweekday` to set the first day of
-the week to Sunday (6) or to any other weekday.  Parameters that specify dates
-are given as integers. For related
-functionality, see also the :mod:`datetime` and :mod:`time` modules.
+(the European convention). Use :func:`setfirstweekday` to set the ``firstweekday``
+to Sunday (6) or to any other weekday.  Parameters that specify dates
+are given as integers. For related functionality, see also the :mod:`datetime`
+and :mod:`time` modules.
 
 The functions and classes defined in this module
 use an idealized calendar, the current Gregorian calendar extended indefinitely
@@ -30,7 +30,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. class:: Calendar(firstweekday=0)
 
-   Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
+   Creates a :class:`Calendar` object. ``firstweekday`` is an integer specifying the
    first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
 
    A :class:`Calendar` object provides several methods that can be used for
@@ -39,6 +39,14 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 
    :class:`Calendar` instances have the following methods:
+
+   .. method:: getfirstweekday()
+
+      Return an :class:`int` for the current first weekday (0-6).
+
+   .. method:: setfirstweekday(firstweekday)
+
+      Change the first weekday by setting ``firstweekday`` to an :class:`int` (0–6).
 
    .. method:: iterweekdays()
 
@@ -391,10 +399,16 @@ For simple text calendars this module provides the following functions.
 
 The :mod:`calendar` module exports the following data attributes:
 
+.. data:: firstweekday
+   :no-index:
+
+   An :class:`int` (0-6) representing the current setting for the first weekday.
+   The default is 0, which corresponds to Monday.
+
 .. data:: day_name
 
    A sequence that represents the days of the week in the current locale,
-   where Monday is day number 0.
+   where Monday is day number ``0``.
 
        >>> import calendar
        >>> list(calendar.day_name)
@@ -404,7 +418,7 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: day_abbr
 
    A sequence that represents the abbreviated days of the week in the current locale,
-   where Mon is day number 0.
+   where Monday is day number ``0``.
 
        >>> import calendar
        >>> list(calendar.day_abbr)
