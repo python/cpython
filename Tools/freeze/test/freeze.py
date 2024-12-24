@@ -128,6 +128,7 @@ def prepare(script=None, outdir=None):
     # Run configure.
     print(f'configuring python in {builddir}...')
     config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+    config_args = [arg for arg in config_args if not arg.startswith("--libdir=/")]
     cmd = [os.path.join(srcdir, 'configure'), *config_args]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
