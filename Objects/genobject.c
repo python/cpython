@@ -17,8 +17,14 @@
 
 #include "pystats.h"
 
+/*[clinic input]
+class generator "PyGenObject *" "&PyGen_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6c98fdc710c6976]*/
+
+#include "clinic/genobject.c.h"
+
 // Forward declarations
-static PyObject* gen_close(PyObject *, PyObject *);
 static PyObject* async_gen_asend_new(PyAsyncGenObject *, PyObject *);
 static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
 
@@ -119,7 +125,7 @@ _PyGen_Finalize(PyObject *self)
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
-        PyObject *res = gen_close((PyObject*)gen, NULL);
+        PyObject *res = gen_close(gen, NULL);
         if (res == NULL) {
             if (PyErr_Occurred()) {
                 PyErr_WriteUnraisable(self);
@@ -335,7 +341,7 @@ gen_close_iter(PyObject *yf)
     PyObject *retval = NULL;
 
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
-        retval = gen_close((PyObject *)yf, NULL);
+        retval = gen_close((PyGenObject *)yf, NULL);
         if (retval == NULL)
             return -1;
     }
@@ -389,8 +395,16 @@ _PyGen_yf(PyGenObject *gen)
     return res;
 }
 
+/*[clinic input]
+@critical_section
+generator.close as gen_close
+
+raise GeneratorExit inside generator.
+[clinic start generated code]*/
+
 static PyObject *
-gen_close(PyObject *self, PyObject *args)
+gen_close_impl(PyGenObject *self)
+/*[clinic end generated code: output=2d7adf450173059c input=6c40e85559b6f098]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
@@ -624,7 +638,11 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, 1, typ, val, tb);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _gen_throw(gen, 1, typ, val, tb);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
@@ -856,7 +874,7 @@ PyDoc_STRVAR(sizeof__doc__,
 static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
-    {"close", gen_close, METH_NOARGS, close_doc},
+    GEN_CLOSE_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1217,7 +1235,7 @@ PyDoc_STRVAR(coro_close_doc,
 static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
-    {"close", gen_close, METH_NOARGS, coro_close_doc},
+    GEN_CLOSE_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1316,7 +1334,7 @@ static PyObject *
 coro_wrapper_close(PyObject *self, PyObject *args)
 {
     PyCoroWrapper *cw = _PyCoroWrapper_CAST(self);
-    return gen_close((PyObject *)cw->cw_coroutine, args);
+    return gen_close((PyGenObject *)cw->cw_coroutine, args);
 }
 
 static int
