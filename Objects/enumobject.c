@@ -23,6 +23,7 @@ typedef struct {
     PyObject* one;                 /* borrowed reference */
 } enumobject;
 
+#define _enumobject_CAST(op)    ((enumobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -150,8 +151,9 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
 }
 
 static void
-enum_dealloc(enumobject *en)
+enum_dealloc(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject_GC_UnTrack(en);
     Py_XDECREF(en->en_sit);
     Py_XDECREF(en->en_result);
@@ -160,8 +162,9 @@ enum_dealloc(enumobject *en)
 }
 
 static int
-enum_traverse(enumobject *en, visitproc visit, void *arg)
+enum_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    enumobject *en = _enumobject_CAST(op);
     Py_VISIT(en->en_sit);
     Py_VISIT(en->en_result);
     Py_VISIT(en->en_longindex);
@@ -220,8 +223,9 @@ enum_next_long(enumobject *en, PyObject* next_item)
 }
 
 static PyObject *
-enum_next(enumobject *en)
+enum_next(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject *next_index;
     PyObject *next_item;
     PyObject *result = en->en_result;
@@ -270,8 +274,9 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
+enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    enumobject *en = _enumobject_CAST(op);
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
     else
@@ -281,7 +286,7 @@ enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
-    {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -293,7 +298,7 @@ PyTypeObject PyEnum_Type = {
     sizeof(enumobject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
-    (destructor)enum_dealloc,       /* tp_dealloc */
+    enum_dealloc,                   /* tp_dealloc */
     0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -311,12 +316,12 @@ PyTypeObject PyEnum_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
     enum_new__doc__,                /* tp_doc */
-    (traverseproc)enum_traverse,    /* tp_traverse */
+    enum_traverse,                  /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)enum_next,        /* tp_iternext */
+    enum_next,                      /* tp_iternext */
     enum_methods,                   /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
@@ -329,7 +334,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
+    .tp_vectorcall = enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
