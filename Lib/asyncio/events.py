@@ -5,16 +5,22 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    '_AbstractEventLoopPolicy',
-    'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
-    '_get_event_loop_policy',
-    'get_event_loop_policy',
-    '_set_event_loop_policy',
-    'set_event_loop_policy',
-    'get_event_loop', 'set_event_loop', 'new_event_loop',
-    '_set_running_loop', 'get_running_loop',
-    '_get_running_loop',
+    "_AbstractEventLoopPolicy",
+    "AbstractEventLoop",
+    "AbstractServer",
+    "Handle",
+    "TimerHandle",
+    "_get_event_loop_policy",
+    "get_event_loop_policy",
+    "_set_event_loop_policy",
+    "set_event_loop_policy",
+    "get_event_loop",
+    "_set_event_loop",
+    "set_event_loop",
+    "new_event_loop",
+    "_set_running_loop",
+    "get_running_loop",
+    "_get_running_loop",
 )
 
 import contextvars
@@ -801,9 +807,13 @@ def get_event_loop():
     return _get_event_loop_policy().get_event_loop()
 
 
+def _set_event_loop(loop):
+    _get_event_loop_policy().set_event_loop(loop)
+
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
-    _get_event_loop_policy().set_event_loop(loop)
+    warnings._deprecated('asyncio.set_event_loop', remove=(3,16))
+    _set_event_loop(loop)
 
 
 def new_event_loop():
