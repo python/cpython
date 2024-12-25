@@ -19,8 +19,9 @@
 
 /*[clinic input]
 class generator "PyGenObject *" "&PyGen_Type"
+class async_generator "PyAsyncGenObject *" "&PyAsyncGen_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6c98fdc710c6976]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=403b2ee985491847]*/
 
 #include "clinic/genobject.c.h"
 
@@ -810,6 +811,12 @@ gen_getrunning_get_impl(PyGenObject *self)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+gen_getsuspended_lock_held(PyGenObject *self)
+{
+    return PyBool_FromLong(FRAME_STATE_SUSPENDED(self->gi_frame_state));
+}
+
 /*[clinic input]
 @getter
 @critical_section
@@ -820,8 +827,7 @@ static PyObject *
 gen_getsuspended_get_impl(PyGenObject *self)
 /*[clinic end generated code: output=a0345f9be186eda3 input=880e9fb8436726cb]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    return PyBool_FromLong(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
+    return PyBool_FromLong(FRAME_STATE_SUSPENDED(self->gi_frame_state));
 }
 
 static PyObject *
@@ -837,15 +843,17 @@ gen_getframe_lock_held(PyGenObject *self, const char *name)
     return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+generator.gi_frame
+[clinic start generated code]*/
+
 static PyObject *
-gen_getframe(PyObject *self, void *Py_UNUSED(ignored))
+generator_gi_frame_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=8e17169979687334 input=70e20e834b852c3a]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(gen);
-    res = gen_getframe_lock_held(gen, "gi_frame");
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return gen_getframe_lock_held(self, "gi_frame");
 }
 
 static PyObject *
@@ -873,7 +881,7 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("object being iterated by yield from, or None")},
     GEN_GETRUNNING_GETSETDEF
     GEN_GETSUSPENDED_GETSETDEF
-    {"gi_frame", gen_getframe,  NULL, NULL},
+    GENERATOR_GI_FRAME_GETSETDEF
     {"gi_code", gen_getcode,  NULL, NULL},
     {NULL} /* Sentinel */
 };
@@ -1649,14 +1657,17 @@ ag_getcode(PyObject *gen, void *Py_UNUSED(ignored))
     return _gen_getcode((PyGenObject*)gen, "ag_code");
 }
 
+/*[clinic input]
+@critical_section
+@getter
+async_generator.ag_suspended as ag_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-ag_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+ag_getsuspended_get_impl(PyAsyncGenObject *self)
+/*[clinic end generated code: output=f9c6d455edce4c50 input=e463d3db950251a3]*/
 {
-    PyAsyncGenObject *ag = _PyAsyncGenObject_CAST(self);
-    if (FRAME_STATE_SUSPENDED(ag->ag_frame_state)) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return gen_getsuspended_lock_held(_PyGen_CAST(self));
 }
 
 static PyGetSetDef async_gen_getsetlist[] = {
@@ -1668,7 +1679,7 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("object being awaited on, or None")},
      {"ag_frame", ag_getframe, NULL, NULL},
      {"ag_code", ag_getcode, NULL, NULL},
-     {"ag_suspended", ag_getsuspended, NULL, NULL},
+    AG_GETSUSPENDED_GETSETDEF
     {NULL} /* Sentinel */
 };
 
