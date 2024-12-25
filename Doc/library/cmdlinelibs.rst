@@ -14,6 +14,7 @@ Here's an overview:
 
    argparse.rst
    optparse.rst
+   getopt.rst
    getpass.rst
    fileinput.rst
    curses.rst

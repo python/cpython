@@ -22,5 +22,3 @@ currently no modules in this latter category.
 
 .. toctree::
    :maxdepth: 1
-
-   getopt.rst
