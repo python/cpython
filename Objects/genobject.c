@@ -20,8 +20,9 @@
 /*[clinic input]
 class generator "PyGenObject *" "&PyGen_Type"
 class async_generator "PyAsyncGenObject *" "&PyAsyncGen_Type"
+class coroutine "PyCoroObject *" "&PyCoro_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=403b2ee985491847]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=593e3f7a2581251e]*/
 
 #include "clinic/genobject.c.h"
 
@@ -1195,8 +1196,15 @@ coro_get_cr_await(PyObject *coro, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+coroutine.cr_suspended as cr_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-cr_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+cr_getsuspended_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=fa37923084e2a87d input=2581134666285807]*/
 {
     PyCoroObject *coro = _PyCoroObject_CAST(self);
     if (FRAME_STATE_SUSPENDED(coro->cr_frame_state)) {
@@ -1205,8 +1213,15 @@ cr_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+coroutine.cr_running as cr_getrunning
+[clinic start generated code]*/
+
 static PyObject *
-cr_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+cr_getrunning_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=153bd71b7b6e4842 input=9b43ec12b69a9f01]*/
 {
     PyCoroObject *coro = _PyCoroObject_CAST(self);
     if (coro->cr_frame_state == FRAME_EXECUTING) {
@@ -1215,14 +1230,17 @@ cr_getrunning(PyObject *self, void *Py_UNUSED(ignored))
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+coroutine.cr_frame as cr_getframe
+[clinic start generated code]*/
+
 static PyObject *
-cr_getframe(PyObject *coro, void *Py_UNUSED(ignored))
+cr_getframe_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=300f3facb67ebc50 input=32fca6ffc44085b7]*/
 {
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(coro);
-    res = gen_getframe_lock_held(_PyGen_CAST(coro), "cr_frame");
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return gen_getframe_lock_held(_PyGen_CAST(self), "cr_frame");
 }
 
 static PyObject *
@@ -1239,10 +1257,10 @@ static PyGetSetDef coro_getsetlist[] = {
      PyDoc_STR("qualified name of the coroutine")},
     {"cr_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
-    {"cr_running", cr_getrunning, NULL, NULL},
-    {"cr_frame", cr_getframe, NULL, NULL},
+    CR_GETRUNNING_GETSETDEF
+    CR_GETFRAME_GETSETDEF
     {"cr_code", cr_getcode, NULL, NULL},
-    {"cr_suspended", cr_getsuspended, NULL, NULL},
+    CR_GETSUSPENDED_GETSETDEF
     {NULL} /* Sentinel */
 };
 
@@ -1641,14 +1659,17 @@ async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
     return async_gen_athrow_new(o, args);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+async_generator.ag_frame as ag_getframe
+[clinic start generated code]*/
+
 static PyObject *
-ag_getframe(PyObject *ag, void *Py_UNUSED(ignored))
+ag_getframe_get_impl(PyAsyncGenObject *self)
+/*[clinic end generated code: output=7a31c7181090a4fb input=b059ce210436a682]*/
 {
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(ag);
-    res = gen_getframe_lock_held((PyGenObject *)ag, "ag_frame");
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return gen_getframe_lock_held(_PyGen_CAST(self), "ag_frame");
 }
 
 static PyObject *
@@ -1677,7 +1698,7 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("qualified name of the async generator")},
     {"ag_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
-     {"ag_frame", ag_getframe, NULL, NULL},
+    AG_GETFRAME_GETSETDEF
      {"ag_code", ag_getcode, NULL, NULL},
     AG_GETSUSPENDED_GETSETDEF
     {NULL} /* Sentinel */
