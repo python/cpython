@@ -825,7 +825,7 @@ gen_getsuspended_get_impl(PyGenObject *self)
 }
 
 static PyObject *
-_gen_getframe(PyGenObject *self, const char *name)
+gen_getframe_lock_held(PyGenObject *self, const char *name)
 {
     PyGenObject *gen = _PyGen_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
@@ -843,7 +843,7 @@ gen_getframe(PyObject *self, void *Py_UNUSED(ignored))
     PyGenObject *gen = _PyGen_CAST(self);
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(gen);
-    res = _gen_getframe(gen, "gi_frame");
+    res = gen_getframe_lock_held(gen, "gi_frame");
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -1210,7 +1210,11 @@ cr_getrunning(PyObject *self, void *Py_UNUSED(ignored))
 static PyObject *
 cr_getframe(PyObject *coro, void *Py_UNUSED(ignored))
 {
-    return _gen_getframe(_PyGen_CAST(coro), "cr_frame");
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(coro);
+    res = gen_getframe_lock_held(_PyGen_CAST(coro), "cr_frame");
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -1632,7 +1636,11 @@ async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
 static PyObject *
 ag_getframe(PyObject *ag, void *Py_UNUSED(ignored))
 {
-    return _gen_getframe((PyGenObject *)ag, "ag_frame");
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(ag);
+    res = gen_getframe_lock_held((PyGenObject *)ag, "ag_frame");
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
