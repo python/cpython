@@ -480,7 +480,7 @@ the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyObject *
-_gen_throw(PyGenObject *gen, int close_on_genexit,
+gen_throw_lock_held(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     PyObject *yf = _PyGen_yf(gen);
@@ -520,7 +520,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
-            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
+            ret = gen_throw_lock_held((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_frame_state = state;
             tstate->current_frame = prev;
@@ -640,7 +640,7 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     }
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(gen);
-    res = _gen_throw(gen, 1, typ, val, tb);
+    res = gen_throw_lock_held(gen, 1, typ, val, tb);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -2193,12 +2193,12 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         if (o->agt_args == NULL) {
             /* aclose() mode */
             o->agt_gen->ag_closed = 1;
-
-            retval = _gen_throw((PyGenObject *)gen,
+            Py_BEGIN_CRITICAL_SECTION(gen);
+            retval = gen_throw_lock_held((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
                                 PyExc_GeneratorExit, NULL, NULL);
-
+            Py_END_CRITICAL_SECTION();
             if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
                 Py_DECREF(retval);
                 goto yield_close;
@@ -2213,10 +2213,12 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
                 return NULL;
             }
 
-            retval = _gen_throw((PyGenObject *)gen,
+            Py_BEGIN_CRITICAL_SECTION(gen);
+            retval = gen_throw_lock_held((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
                                 typ, val, tb);
+            Py_END_CRITICAL_SECTION();
             retval = async_gen_unwrap_value(o->agt_gen, retval);
         }
         if (retval == NULL) {
