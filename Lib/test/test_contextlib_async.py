@@ -22,7 +22,7 @@ def _run_async_fn(async_fn, /, *args, **kwargs):
 
 
 def _async_test(async_fn):
-    """Decorator to turn an async function into a test case."""
+    """Decorator to turn an async function into a synchronous function"""
     @functools.wraps(async_fn)
     def wrapper(*args, **kwargs):
         return _run_async_fn(async_fn, *args, **kwargs)
