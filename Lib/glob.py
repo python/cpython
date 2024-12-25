@@ -5,7 +5,6 @@ import os
 import re
 import fnmatch
 import functools
-import itertools
 import operator
 import stat
 import sys
@@ -52,13 +51,10 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     it = _iglob(pathname, root_dir, dir_fd, recursive, False,
                 include_hidden=include_hidden)
     if not pathname or recursive and _isrecursive(pathname[:2]):
-        try:
-            s = next(it)  # skip empty string
-            if s:
-                it = itertools.chain((s,), it)
-        except StopIteration:
-            pass
-    return it
+        peek = next(it, sentinel := object())
+        if peek and peek is not sentinel:
+            yield peek
+    yield from it
 
 def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
            include_hidden=False):
