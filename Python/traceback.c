@@ -102,7 +102,7 @@ tb_dir(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 static PyObject *
 tb_next_get(PyObject *op, void *Py_UNUSED(_))
 {
-    PyTracebackObject *self = _PyTracebackObject_CAST(op)
+    PyTracebackObject *self = _PyTracebackObject_CAST(op);
     PyObject* ret = (PyObject*)self->tb_next;
     if (!ret) {
         ret = Py_None;
@@ -125,7 +125,7 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
     PyTracebackObject *self = _PyTracebackObject_CAST(op);
     int lineno = self->tb_lineno;
     if (lineno == -1) {
-        lineno = tb_get_lineno(self);
+        lineno = tb_get_lineno(op);
         if (lineno < 0) {
             Py_RETURN_NONE;
         }
@@ -673,7 +673,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         code = PyFrame_GetCode(tb->tb_frame);
         int tb_lineno = tb->tb_lineno;
         if (tb_lineno == -1) {
-            tb_lineno = tb_get_lineno(tb);
+            tb_lineno = tb_get_lineno((PyObject *)tb);
         }
         if (last_file == NULL ||
             code->co_filename != last_file ||
