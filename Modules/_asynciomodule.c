@@ -3599,6 +3599,13 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(item);
     }
     Py_DECREF(eager_iter);
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+
     int err = 0;
     ASYNCIO_STATE_LOCK(state);
     struct llist_node *node;
@@ -3636,6 +3643,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(tasks);
+        return NULL;
+    }
+
     return tasks;
 }
 
