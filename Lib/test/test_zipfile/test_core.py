@@ -26,6 +26,7 @@ from test.support import (
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
+import _pyio
 
 
 TESTFN2 = TESTFN + "2"
@@ -3447,18 +3448,20 @@ class StripExtraTests(unittest.TestCase):
         self.assertEqual(
             b"zzz", zipfile._Extra.strip(b"zzz", (self.ZIP64_EXTRA,)))
 
+
+class StatIO(_pyio.BytesIO):
+    def __init__(self):
+        super().__init__()
+        self.bytes_read = 0
+
+    def read(self, size=-1):
+        bs = super().read(size)
+        self.bytes_read += len(bs)
+        return bs
+
+
 class StoredZipExtFileRandomReadTest(unittest.TestCase):
     def test_random_read(self):
-        from _pyio import BytesIO
-        class StatIO(BytesIO):
-            def __init__(self):
-                super().__init__()
-                self.bytes_read = 0
-
-            def read(self, size=-1):
-                bs = super().read(size)
-                self.bytes_read += len(bs)
-                return bs
 
         sio = StatIO()
         # 20000 bytes
