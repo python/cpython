@@ -403,8 +403,8 @@ raise GeneratorExit inside generator.
 [clinic start generated code]*/
 
 static PyObject *
-gen_close_impl(PyGenObject *self)
-/*[clinic end generated code: output=2d7adf450173059c input=417e6161842080c9]*/
+gen_close_meth_impl(PyGenObject *self)
+/*[clinic end generated code: output=b6f489da23415c60 input=f90b586ecfb6d2fa]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
