@@ -93,7 +93,7 @@ tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
 }
 
 static PyObject *
-tb_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
+tb_dir(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
                                    "tb_lasti", "tb_lineno");
@@ -111,7 +111,8 @@ tb_next_get(PyObject *op, void *Py_UNUSED(_))
 }
 
 static int
-tb_get_lineno(PyObject *op) {
+tb_get_lineno(PyObject *op)
+{
     PyTracebackObject *tb = _PyTracebackObject_CAST(op);
     _PyInterpreterFrame* frame = tb->tb_frame->f_frame;
     assert(frame != NULL);
