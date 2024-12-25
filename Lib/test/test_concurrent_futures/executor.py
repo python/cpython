@@ -110,7 +110,17 @@ class ExecutorTest:
         self.assertEqual(next(res, None), "0")
         self.assertEqual(next(res, None), "1")
         self.assertEqual(next(res, None), "2")
-        self.assertEqual(next(res, None), "3")
+
+    def test_map_buffersize_on_multiple_infinite_iterables(self):
+        res = self.executor.map(
+            add,
+            itertools.count(),
+            itertools.count(),
+            buffersize=2
+        )
+        self.assertEqual(next(res, None), 0)
+        self.assertEqual(next(res, None), 2)
+        self.assertEqual(next(res, None), 4)
 
     def test_map_buffersize_on_empty_iterable(self):
         res = self.executor.map(str, [], buffersize=2)
