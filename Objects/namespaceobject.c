@@ -141,7 +141,6 @@ namespace_repr(PyObject *ns)
             goto error;
     }
 
-    /* Check if loop ended because of exception in PyIter_Next */
     if (PyErr_Occurred()) {
         goto error;
     }

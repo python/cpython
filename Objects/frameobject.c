@@ -264,7 +264,6 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
 
     Py_DECREF(iter);
 
-    /* Check if loop ended because of exception in PyIter_Next */
     if (PyErr_Occurred()) {
         return -1;
     }

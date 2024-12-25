@@ -3624,7 +3624,6 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(eager_iter);
 
-    /* Check if loop ended because of exception in PyIter_Next */
     if (PyErr_Occurred()) {
         Py_DECREF(tasks);
         Py_DECREF(loop);
@@ -3671,7 +3670,6 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
 
-    /* Check if loop ended because of exception in PyIter_Next */
     if (PyErr_Occurred()) {
         Py_DECREF(tasks);
         return NULL;
