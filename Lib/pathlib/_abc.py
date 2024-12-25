@@ -25,6 +25,23 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
+def _explode_path(path):
+    """
+    Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+    uppermost parent of the path (equivalent to path.parents[-1]), and
+    *parts* is a reversed list of parts following the anchor.
+    """
+    split = path.parser.split
+    path = str(path)
+    parent, name = split(path)
+    names = []
+    while path != parent:
+        names.append(name)
+        path = parent
+        parent, name = split(path)
+    return path, names
+
+
 class PathGlobber(_GlobberBase):
     """
     Class providing shell-style globbing for path objects.
@@ -40,53 +57,154 @@ class PathGlobber(_GlobberBase):
         return path.with_segments(str(path) + text)
 
 
+class CopyWorker:
+    """
+    Class that implements copying between path objects. An instance of this
+    class is available from the PathBase.copy property; it's made callable so
+    that PathBase.copy() can be treated as a method.
+
+    The target path's CopyWorker drives the process from its _create() method.
+    Files and directories are exchanged by calling methods on the source and
+    target paths, and metadata is exchanged by calling
+    source.copy._read_metadata() and target.copy._write_metadata().
+    """
+    __slots__ = ('_path',)
+
+    def __init__(self, path):
+        self._path = path
+
+    def __call__(self, target, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False):
+        """
+        Recursively copy this file or directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self._path.with_segments(target)
+
+        # Delegate to the target path's CopyWorker object.
+        return target.copy._create(self._path, follow_symlinks, dirs_exist_ok, preserve_metadata)
+
+    _readable_metakeys = frozenset()
+
+    def _read_metadata(self, metakeys, *, follow_symlinks=True):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        raise NotImplementedError
+
+    _writable_metakeys = frozenset()
+
+    def _write_metadata(self, metadata, *, follow_symlinks=True):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        raise NotImplementedError
+
+    def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
+        self._ensure_distinct_path(source)
+        if preserve_metadata:
+            metakeys = self._writable_metakeys & source.copy._readable_metakeys
+        else:
+            metakeys = None
+        if not follow_symlinks and source.is_symlink():
+            self._create_symlink(source, metakeys)
+        elif source.is_dir():
+            self._create_dir(source, metakeys, follow_symlinks, dirs_exist_ok)
+        else:
+            self._create_file(source, metakeys)
+        return self._path
+
+    def _create_dir(self, source, metakeys, follow_symlinks, dirs_exist_ok):
+        """Copy the given directory to our path."""
+        children = list(source.iterdir())
+        self._path.mkdir(exist_ok=dirs_exist_ok)
+        for src in children:
+            dst = self._path.joinpath(src.name)
+            if not follow_symlinks and src.is_symlink():
+                dst.copy._create_symlink(src, metakeys)
+            elif src.is_dir():
+                dst.copy._create_dir(src, metakeys, follow_symlinks, dirs_exist_ok)
+            else:
+                dst.copy._create_file(src, metakeys)
+        if metakeys:
+            metadata = source.copy._read_metadata(metakeys)
+            if metadata:
+                self._write_metadata(metadata)
+
+    def _create_file(self, source, metakeys):
+        """Copy the given file to our path."""
+        self._ensure_different_file(source)
+        with source.open('rb') as source_f:
+            try:
+                with self._path.open('wb') as target_f:
+                    copyfileobj(source_f, target_f)
+            except IsADirectoryError as e:
+                if not self._path.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {self._path}') from e
+                raise
+        if metakeys:
+            metadata = source.copy._read_metadata(metakeys)
+            if metadata:
+                self._write_metadata(metadata)
+
+    def _create_symlink(self, source, metakeys):
+        """Copy the given symbolic link to our path."""
+        self._path.symlink_to(source.readlink())
+        if metakeys:
+            metadata = source.copy._read_metadata(metakeys, follow_symlinks=False)
+            if metadata:
+                self._write_metadata(metadata, follow_symlinks=False)
+
+    def _ensure_different_file(self, source):
+        """
+        Raise OSError(EINVAL) if both paths refer to the same file.
+        """
+        pass
+
+    def _ensure_distinct_path(self, source):
+        """
+        Raise OSError(EINVAL) if the other path is within this path.
+        """
+        # Note: there is no straightforward, foolproof algorithm to determine
+        # if one directory is within another (a particularly perverse example
+        # would be a single network share mounted in one location via NFS, and
+        # in another location via CIFS), so we simply checks whether the
+        # other path is lexically equal to, or within, this path.
+        if source == self._path:
+            err = OSError(EINVAL, "Source and target are the same path")
+        elif source in self._path.parents:
+            err = OSError(EINVAL, "Source path is a parent of target path")
+        else:
+            return
+        err.filename = str(source)
+        err.filename2 = str(self._path)
+        raise err
+
+
 class PurePathBase:
     """Base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
-    its subclass PurePath. They are: __fspath__, __bytes__, __reduce__,
-    __hash__, __eq__, __lt__, __le__, __gt__, __ge__. Its initializer and path
-    joining methods accept only strings, not os.PathLike objects more broadly.
+    its subclass PurePath. They are: __init__, __fspath__, __bytes__,
+    __reduce__, __hash__, __eq__, __lt__, __le__, __gt__, __ge__.
     """
 
-    __slots__ = (
-        # The `_raw_paths` slot stores unjoined string paths. This is set in
-        # the `__init__()` method.
-        '_raw_paths',
-    )
+    __slots__ = ()
     parser = posixpath
-    _globber = PathGlobber
-
-    def __init__(self, *args):
-        for arg in args:
-            if not isinstance(arg, str):
-                raise TypeError(
-                    f"argument should be a str, not {type(arg).__name__!r}")
-        self._raw_paths = list(args)
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
         """
-        return type(self)(*pathsegments)
+        raise NotImplementedError
 
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        paths = self._raw_paths
-        if len(paths) == 1:
-            return paths[0]
-        elif paths:
-            # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
-        else:
-            paths.append('')
-            return ''
+        raise NotImplementedError
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -106,7 +224,7 @@ class PurePathBase:
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return self._stack[0]
+        return _explode_path(self)[0]
 
     @property
     def name(self):
@@ -184,8 +302,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -207,8 +325,8 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        anchor0, parts0 = self._stack
-        anchor1, parts1 = other._stack
+        anchor0, parts0 = _explode_path(self)
+        anchor1, parts1 = _explode_path(other)
         if anchor0 != anchor1:
             return False
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -223,7 +341,7 @@ class PurePathBase:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = self._stack
+        anchor, parts = _explode_path(self)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -234,36 +352,19 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(str(self), *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(*self._raw_paths, key)
+            return self.with_segments(str(self), key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, str(self))
         except TypeError:
             return NotImplemented
-
-    @property
-    def _stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        split = self.parser.split
-        path = str(self)
-        parent, name = split(path)
-        names = []
-        while path != parent:
-            names.append(name)
-            path = parent
-            parent, name = split(path)
-        return path, names
 
     @property
     def parent(self):
@@ -292,11 +393,6 @@ class PurePathBase:
         a drive)."""
         return self.parser.isabs(str(self))
 
-    @property
-    def _pattern_str(self):
-        """The path expressed as a string, for use in pattern-matching."""
-        return str(self)
-
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern. If the pattern is
@@ -317,7 +413,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(sep, case_sensitive)
+        globber = PathGlobber(sep, case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -333,9 +429,9 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(pattern._pattern_str)
-        return match(self._pattern_str) is not None
+        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
+        match = globber.compile(str(pattern))
+        return match(str(self)) is not None
 
 
 
@@ -404,31 +500,6 @@ class PathBase(PurePathBase):
         except (OSError, ValueError):
             return False
 
-    def _ensure_different_file(self, other_path):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
-        pass
-
-    def _ensure_distinct_path(self, other_path):
-        """
-        Raise OSError(EINVAL) if the other path is within this path.
-        """
-        # Note: there is no straightforward, foolproof algorithm to determine
-        # if one directory is within another (a particularly perverse example
-        # would be a single network share mounted in one location via NFS, and
-        # in another location via CIFS), so we simply checks whether the
-        # other path is lexically equal to, or within, this path.
-        if self == other_path:
-            err = OSError(EINVAL, "Source and target are the same path")
-        elif self in other_path.parents:
-            err = OSError(EINVAL, "Source path is a parent of target path")
-        else:
-            return
-        err.filename = str(self)
-        err.filename2 = str(other_path)
-        raise err
-
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -487,29 +558,25 @@ class PathBase(PurePathBase):
         """
         raise NotImplementedError
 
-    def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-            case_pedantic = False
-        else:
-            # The user has expressed a case sensitivity choice, but we don't
-            # know the case sensitivity of the underlying filesystem, so we
-            # must use scandir() for everything, including non-wildcard parts.
-            case_pedantic = True
-        recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
-        return globber.selector(parts)
-
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
-        anchor, parts = pattern._stack
+        anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.parser)
+            case_pedantic = False
+        elif case_sensitive == _is_case_sensitive(self.parser):
+            case_pedantic = False
+        else:
+            case_pedantic = True
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
+        globber = PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        select = globber.selector(parts)
         return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
@@ -571,88 +638,13 @@ class PathBase(PurePathBase):
         """
         raise NotImplementedError
 
-    def _symlink_to_target_of(self, link):
-        """
-        Make this path a symlink with the same target as the given link. This
-        is used by copy().
-        """
-        self.symlink_to(link.readlink())
-
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.
         """
         raise NotImplementedError
 
-    # Metadata keys supported by this path type.
-    _readable_metadata = _writable_metadata = frozenset()
-
-    def _read_metadata(self, keys=None, *, follow_symlinks=True):
-        """
-        Returns path metadata as a dict with string keys.
-        """
-        raise NotImplementedError
-
-    def _write_metadata(self, metadata, *, follow_symlinks=True):
-        """
-        Sets path metadata from the given dict with string keys.
-        """
-        raise NotImplementedError
-
-    def _copy_metadata(self, target, *, follow_symlinks=True):
-        """
-        Copies metadata (permissions, timestamps, etc) from this path to target.
-        """
-        # Metadata types supported by both source and target.
-        keys = self._readable_metadata & target._writable_metadata
-        if keys:
-            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
-            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
-
-    def _copy_file(self, target):
-        """
-        Copy the contents of this file to the given target.
-        """
-        self._ensure_different_file(target)
-        with self.open('rb') as source_f:
-            try:
-                with target.open('wb') as target_f:
-                    copyfileobj(source_f, target_f)
-            except IsADirectoryError as e:
-                if not target.exists():
-                    # Raise a less confusing exception.
-                    raise FileNotFoundError(
-                        f'Directory does not exist: {target}') from e
-                else:
-                    raise
-
-    def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
-        """
-        Recursively copy this file or directory tree to the given destination.
-        """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
-        self._ensure_distinct_path(target)
-        stack = [(self, target)]
-        while stack:
-            src, dst = stack.pop()
-            if not follow_symlinks and src.is_symlink():
-                dst._symlink_to_target_of(src)
-                if preserve_metadata:
-                    src._copy_metadata(dst, follow_symlinks=False)
-            elif src.is_dir():
-                children = src.iterdir()
-                dst.mkdir(exist_ok=dirs_exist_ok)
-                stack.extend((child, dst.joinpath(child.name))
-                             for child in children)
-                if preserve_metadata:
-                    src._copy_metadata(dst)
-            else:
-                src._copy_file(dst)
-                if preserve_metadata:
-                    src._copy_metadata(dst)
-        return target
+    copy = property(CopyWorker, doc=CopyWorker.__call__.__doc__)
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):

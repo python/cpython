@@ -211,7 +211,7 @@
 
         case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
         }
@@ -592,21 +592,29 @@
         }
 
         case _BINARY_SUBSCR_CHECK_FUNC: {
+            _Py_UopsSymbol *getitem;
+            getitem = sym_new_not_null(ctx);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
+            _Py_UopsSymbol *getitem;
             _Py_UopsSymbol *sub;
             _Py_UopsSymbol *container;
             _Py_UOpsAbstractFrame *new_frame;
-            sub = stack_pointer[-1];
-            container = stack_pointer[-2];
+            getitem = stack_pointer[-1];
+            sub = stack_pointer[-2];
+            container = stack_pointer[-3];
             (void)container;
             (void)sub;
+            (void)getitem;
             new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
-            stack_pointer += -1;
+            stack_pointer[-3] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1110,6 +1118,10 @@
                     }
                 }
             }
+            break;
+        }
+
+        case _GUARD_TYPE_VERSION_AND_LOCK: {
             break;
         }
 
@@ -2334,6 +2346,8 @@
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
         /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+
+        /* _INSTRUMENTED_NOT_TAKEN is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
