@@ -11,15 +11,14 @@ from test.test_contextlib import TestBaseExitStack
 
 def _run_async_fn(async_fn, /, *args, **kwargs):
     coro = async_fn(*args, **kwargs)
-    gen = type(coro).__await__(coro)
     try:
-        gen.send(None)
+        coro.send(None)
     except StopIteration as e:
         return e.value
     else:
         raise AssertionError("coroutine did not complete")
     finally:
-        gen.close()
+        coro.close()
 
 
 def _async_test(async_fn):
