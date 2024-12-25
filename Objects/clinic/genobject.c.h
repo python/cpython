@@ -78,26 +78,26 @@ gen_getsuspended_get(PyGenObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(generator_gi_frame_DOCSTR)
-#  define generator_gi_frame_DOCSTR NULL
+#if !defined(gen_getframe_DOCSTR)
+#  define gen_getframe_DOCSTR NULL
 #endif
-#if defined(GENERATOR_GI_FRAME_GETSETDEF)
-#  undef GENERATOR_GI_FRAME_GETSETDEF
-#  define GENERATOR_GI_FRAME_GETSETDEF {"gi_frame", (getter)generator_gi_frame_get, (setter)generator_gi_frame_set, generator_gi_frame_DOCSTR},
+#if defined(GEN_GETFRAME_GETSETDEF)
+#  undef GEN_GETFRAME_GETSETDEF
+#  define GEN_GETFRAME_GETSETDEF {"gi_frame", (getter)gen_getframe_get, (setter)gen_getframe_set, gen_getframe_DOCSTR},
 #else
-#  define GENERATOR_GI_FRAME_GETSETDEF {"gi_frame", (getter)generator_gi_frame_get, NULL, generator_gi_frame_DOCSTR},
+#  define GEN_GETFRAME_GETSETDEF {"gi_frame", (getter)gen_getframe_get, NULL, gen_getframe_DOCSTR},
 #endif
 
 static PyObject *
-generator_gi_frame_get_impl(PyGenObject *self);
+gen_getframe_get_impl(PyGenObject *self);
 
 static PyObject *
-generator_gi_frame_get(PyGenObject *self, void *Py_UNUSED(context))
+gen_getframe_get(PyGenObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = generator_gi_frame_get_impl(self);
+    return_value = gen_getframe_get_impl(self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -227,4 +227,4 @@ ag_getsuspended_get(PyAsyncGenObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=c19d74dfeefdb5db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb2d54f4bfdabe4f input=a9049054013a1b77]*/

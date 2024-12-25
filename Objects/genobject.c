@@ -847,12 +847,12 @@ gen_getframe_lock_held(PyGenObject *self, const char *name)
 /*[clinic input]
 @critical_section
 @getter
-generator.gi_frame
+generator.gi_frame as gen_getframe
 [clinic start generated code]*/
 
 static PyObject *
-generator_gi_frame_get_impl(PyGenObject *self)
-/*[clinic end generated code: output=8e17169979687334 input=70e20e834b852c3a]*/
+gen_getframe_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=69a961dad790fd48 input=0d906f30ab99e1e4]*/
 {
     return gen_getframe_lock_held(self, "gi_frame");
 }
@@ -882,7 +882,7 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("object being iterated by yield from, or None")},
     GEN_GETRUNNING_GETSETDEF
     GEN_GETSUSPENDED_GETSETDEF
-    GENERATOR_GI_FRAME_GETSETDEF
+    GEN_GETFRAME_GETSETDEF
     {"gi_code", gen_getcode,  NULL, NULL},
     {NULL} /* Sentinel */
 };
