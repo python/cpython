@@ -4494,7 +4494,8 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
 
-@unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
+@unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
+                     "Test needs TLS 1.3 PHA")
 class TestPostHandshakeAuth(unittest.TestCase):
     def test_pha_setter(self):
         protocols = [
