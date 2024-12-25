@@ -17,7 +17,7 @@ def _run_async_fn(async_fn, /, *args, **kwargs):
     except StopIteration as e:
         return e.value
     else:
-        raise AssertionError("coroutine did not stop")
+        raise AssertionError("coroutine did not complete")
     finally:
         gen.close()
 
