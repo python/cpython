@@ -2940,3 +2940,31 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         os.close(fd)
 
     return False
+
+def run_simple_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        coro.send(None)
+    except StopIteration as e:
+        return e.value
+    else:
+        raise AssertionError("coroutine did not complete")
+    finally:
+        coro.close()
+
+
+@types.coroutine
+def async_yield(v):
+    return (yield v)
+
+
+def run_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        while True:
+            try:
+                coro.send(None)
+            except StopIteration as e:
+                return e.value
+    finally:
+        coro.close()
