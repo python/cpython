@@ -546,7 +546,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = SyncAsyncExitStack
     callback_error_internal_frames = [
         ('__exit__', 'return _run_async_fn(self.__aexit__, *exc_details)'),
-        ('_run_async_fn', 'gen.send(None)'),
+        ('_run_async_fn', 'coro.send(None)'),
         ('__aexit__', 'raise exc'),
         ('__aexit__', 'cb_suppress = cb(*exc_details)'),
     ]
