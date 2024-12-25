@@ -397,7 +397,7 @@ _PyGen_yf(PyGenObject *gen)
 
 /*[clinic input]
 @critical_section
-generator.close as gen_close
+generator.close as gen_close_meth
 
 raise GeneratorExit inside generator.
 [clinic start generated code]*/
