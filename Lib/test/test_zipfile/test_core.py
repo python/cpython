@@ -3464,15 +3464,15 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
         # 20000 bytes
         txt = b'0123456789' * 2000
 
-        # The seek length must be greater than ZipExtFile.MIN_READ_SIZE (4096)
-        # as `ZipExtFile._read2()` reads in blocks of this size and we need to
-        # seek out of the buffered data
+        # The seek length must be greater than ZipExtFile.MIN_READ_SIZE
+        # as `ZipExtFile._read2()` reads in blocks of this size and we
+        # need to seek out of the buffered data
         min_size = zipfile.ZipExtFile.MIN_READ_SIZE
-        self.assertGreaterEqual(10002, min_size)
-        self.assertGreaterEqual(5003, min_size)
+        self.assertGreaterEqual(10002, min_size)  # for forward seek test
+        self.assertGreaterEqual(5003, min_size)  # for backward seek test
         # The read length must be less than MIN_READ_SIZE, since we assume that
         # only 1 block is read in the test.
-        self.assertGreaterEqual(min_size, 100)
+        self.assertGreaterEqual(min_size, 100)  # for read() calls
 
         with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", txt)
@@ -3498,7 +3498,7 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
                 # backward seek
                 old_count = sio.bytes_read
                 fp.seek(-5003, os.SEEK_CUR)
-                self.assertEqual(fp.tell(), 5099)
+                self.assertEqual(fp.tell(), 5099)  # 5099 = 10102 - 5003
                 self.assertEqual(fp._left, fp._compress_left)
                 arr = fp.read(100)
                 self.assertEqual(fp.tell(), 5199)
