@@ -29,6 +29,12 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: PyHASH_MULTIPLIER
+
+   Prime multiplier used in string and various other hashes.
+
+   .. versionadded:: 3.13
+
 .. c:macro:: PyHASH_INF
 
    The hash value returned for a positive infinity.
@@ -82,6 +88,25 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    The function cannot fail: it cannot return ``-1``.
 
    .. versionadded:: 3.13
+
+
+.. c:function:: Py_hash_t Py_HashBuffer(const void *ptr, Py_ssize_t len)
+
+   Compute and return the hash value of a buffer of *len* bytes
+   starting at address *ptr*. The hash is guaranteed to match that of
+   :class:`bytes`, :class:`memoryview`, and other built-in objects
+   that implement the :ref:`buffer protocol <bufferobjects>`.
+
+   Use this function to implement hashing for immutable objects whose
+   :c:member:`~PyTypeObject.tp_richcompare` function compares to another
+   object's buffer.
+
+   *len* must be greater than or equal to ``0``.
+
+   This function always succeeds.
+
+   .. versionadded:: 3.14
+
 
 .. c:function:: Py_hash_t PyObject_GenericHash(PyObject *obj)
 

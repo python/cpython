@@ -1,6 +1,6 @@
 // Need limited C API version 3.13 for Py_GetConstant()
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API )
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 #  define Py_LIMITED_API 0x030d0000
 #endif
 

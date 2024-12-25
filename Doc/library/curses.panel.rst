@@ -1,5 +1,5 @@
-:mod:`curses.panel` --- A panel stack extension for curses
-==========================================================
+:mod:`!curses.panel` --- A panel stack extension for curses
+===========================================================
 
 .. module:: curses.panel
    :synopsis: A panel stack extension that adds depth to  curses windows.

@@ -1,5 +1,0 @@
-Refreshed zipfile._path from `zipp 3.18
-<https://zipp.readthedocs.io/en/latest/history.html#v3-18-0>`_, providing
-better compatibility for PyPy, better glob performance for deeply nested
-zipfiles, and providing internal access to ``CompleteDirs.inject`` for use
-in other tests (like importlib.resources).

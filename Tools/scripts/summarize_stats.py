@@ -394,16 +394,22 @@ class Stats:
         return result
 
     def get_object_stats(self) -> dict[str, tuple[int, int]]:
-        total_materializations = self._data.get("Object new values", 0)
+        total_materializations = self._data.get("Object inline values", 0)
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
-        total_increfs = self._data.get(
-            "Object interpreter increfs", 0
-        ) + self._data.get("Object increfs", 0)
-        total_decrefs = self._data.get(
-            "Object interpreter decrefs", 0
-        ) + self._data.get("Object decrefs", 0)
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
 
         result = {}
         for key, value in self._data.items():
@@ -477,7 +483,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoced because it it too short.",
+                "A potential trace is abandoned because it it too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
@@ -736,9 +742,9 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section() -> Section:
+def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        opcode_stats = stats.get_opcode_stats("opcode")
+        opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
         total = opcode_stats.get_total_execution_count()
 
@@ -760,7 +766,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 Tier 1 instructions",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1094,8 +1100,7 @@ def object_stats_section() -> Section:
         Below, "allocations" means "allocations that are not from a freelist".
         Total allocations = "Allocations from freelist" + "Allocations".
 
-        "New values" is the number of values arrays created for objects with
-        managed dicts.
+        "Inline values" is the number of values arrays inlined into objects.
 
         The cache hit/miss numbers are for the MRO cache, split into dunder and
         other names.
@@ -1113,6 +1118,8 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
+                Count(gen["objects reachable from roots"]),
+                Count(gen["objects not reachable from roots"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1122,7 +1129,8 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
+                 "Reachable from roots:", "Not reachable from roots:"),
                 calc_gc_stats,
             )
         ],
@@ -1233,6 +1241,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1293,7 +1302,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section(),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),

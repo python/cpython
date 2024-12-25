@@ -1,5 +1,5 @@
-:mod:`doctest` --- Test interactive Python examples
-===================================================
+:mod:`!doctest` --- Test interactive Python examples
+====================================================
 
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.
@@ -135,6 +135,10 @@ Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
 :file:`Lib/test/test_doctest/test_doctest.py`.
+
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
 .. _doctest-simple-testmod:
@@ -800,18 +804,18 @@ guarantee about output.  For example, when printing a set, Python doesn't
 guarantee that the element is printed in any particular order, so a test like ::
 
    >>> foo()
-   {"Hermione", "Harry"}
+   {"spam", "eggs"}
 
 is vulnerable!  One workaround is to do ::
 
-   >>> foo() == {"Hermione", "Harry"}
+   >>> foo() == {"spam", "eggs"}
    True
 
 instead.  Another is to do ::
 
    >>> d = sorted(foo())
    >>> d
-   ['Harry', 'Hermione']
+   ['eggs', 'spam']
 
 There are others, but you get the idea.
 

@@ -1,5 +1,5 @@
-:mod:`email.contentmanager`: Managing MIME Content
---------------------------------------------------
+:mod:`!email.contentmanager`: Managing MIME Content
+---------------------------------------------------
 
 .. module:: email.contentmanager
    :synopsis: Storing and Retrieving Content from MIME Parts
@@ -58,11 +58,12 @@
       * the type itself (``typ``)
       * the type's fully qualified name (``typ.__module__ + '.' +
         typ.__qualname__``).
-      * the type's qualname (``typ.__qualname__``)
-      * the type's name (``typ.__name__``).
+      * the type's :attr:`qualname <type.__qualname__>` (``typ.__qualname__``)
+      * the type's :attr:`name <type.__name__>` (``typ.__name__``).
 
       If none of the above match, repeat all of the checks above for each of
-      the types in the :term:`MRO` (``typ.__mro__``).  Finally, if no other key
+      the types in the :term:`MRO` (:attr:`typ.__mro__ <type.__mro__>`).
+      Finally, if no other key
       yields a handler, check for a handler for the key ``None``.  If there is
       no handler for ``None``, raise a :exc:`KeyError` for the fully
       qualified name of the type.
