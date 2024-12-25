@@ -13,7 +13,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class EagerTaskFactoryLoopTests:
