@@ -77,8 +77,8 @@ typedef struct {
 #define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #ifdef Py_GIL_DISABLED
-#   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
-#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION()
+#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
 #else
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
@@ -3798,6 +3798,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     int err = 0;
     ASYNCIO_STATE_LOCK(state);
     struct llist_node *node;
+
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         Py_INCREF(task);
