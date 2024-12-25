@@ -330,7 +330,7 @@ concurrent.futures
   may affect existing code with mutable global shared variables and/or shared
   objects that can not be automatically :mod:`pickled <pickle>`.
 
-  (Contributed by Gregory P.  Smith in :gh:`84559`.)
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
 
 
 ctypes
