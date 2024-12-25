@@ -6,6 +6,7 @@
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -2813,18 +2814,21 @@ static PyObject*
 _PyBytes_FromSequence(PyObject *x)
 {
     Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
-    PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyObject *bytes = _PyBytes_FromSize(size, 0);
+    if (bytes == NULL) {
         return NULL;
-    char *s = PyBytes_AS_STRING(bytes);
-    PyObject **items = PySequence_Fast_ITEMS(x);
+    }
+    char *str = PyBytes_AS_STRING(bytes);
+    PyObject *const *items = PySequence_Fast_ITEMS(x);
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(x);
     for (Py_ssize_t i = 0; i < size; i++) {
-        if (!PyLong_CheckExact(items[i])) {
+        if (!PyLong_Check(items[i])) {
             Py_DECREF(bytes);
-            return Py_None; // None as fallback sentinel to the slow path
+            /* Py_None as a fallback sentinel to the slow path */
+            bytes = Py_None;
+	    goto done;
         }
-        int overflow;
-        long value = PyLong_AsLongAndOverflow(items[i], &overflow);
+        int value = PyLong_AsInt(items[i]);
         if (value == -1 && PyErr_Occurred()) {
             goto error;
         }
@@ -2834,12 +2838,16 @@ _PyBytes_FromSequence(PyObject *x)
                             "bytes must be in range(0, 256)");
             goto error;
         }
-        s[i] = (char)value;
+        *str++ = (char) value;
     }
-    return bytes;
+    goto done;
   error:
     Py_DECREF(bytes);
-    return NULL;
+    bytes = NULL;
+  done:
+    /* both success and failure need to end the critical section */
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+    return bytes;
 }
 
 static PyObject *
@@ -2924,6 +2932,7 @@ PyBytes_FromObject(PyObject *x)
 
     if (PyList_CheckExact(x) || PyTuple_CheckExact(x)) {
         PyObject *bytes = _PyBytes_FromSequence(x);
+        /* Py_None as a fallback sentinel to the slow path */
         if (bytes != Py_None) {
             return bytes;
         }
