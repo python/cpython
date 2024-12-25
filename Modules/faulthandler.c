@@ -10,9 +10,6 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
-#ifdef HAVE_EXECINFO_H
-#  include <execinfo.h>           // backtrace(), backtrace_symbols()
-#endif
 
 #include <signal.h>               // sigaction()
 #include <stdlib.h>               // abort()
@@ -216,66 +213,6 @@ faulthandler_dump_traceback(int fd, int all_threads,
     reentrant = 0;
 }
 
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS)
-static void
-faulthandler_stack_dump_impl(int fd)
-{
-#define BACKTRACE_SIZE 32
-#define TRACEBACK_ENTRY_MAX_SIZE 256
-    void *callstack[BACKTRACE_SIZE];
-    int frames = backtrace(callstack, BACKTRACE_SIZE);
-    if (frames == 0) {
-        // Some systems won't return anything for the stack trace
-        PUTS(fd, "  <system returned no stack trace>\n");
-        return;
-    }
-
-    char **strings = backtrace_symbols(callstack, BACKTRACE_SIZE);
-    if (strings == NULL) {
-        PUTS(fd, "  <not enough memory to get stack trace>\n");
-        return;
-    }
-    for (int i = 0; i < frames; ++i) {
-        char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
-        snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", strings[i]);
-        size_t length = strlen(entry_str) + 1;
-        if (length == TRACEBACK_ENTRY_MAX_SIZE) {
-            /* We exceeded the size, make it look prettier */
-            // Add ellipsis to last 3 characters
-            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
-            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
-            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
-            // Ensure trailing newline
-            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
-            // Ensure that it's null-terminated
-            entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
-        }
-        _Py_write_noraise(fd, entry_str, length);
-    }
-
-    if (frames == BACKTRACE_SIZE) {
-        PUTS(fd, "  <truncated rest of calls>\n");
-    }
-
-    free(strings);
-#undef BACKTRACE_SIZE
-#undef TRACEBACK_ENTRY_MAX_SIZE
-}
-#else
-static void
-faulthandler_stack_dump_impl(int fd)
-{
-    PUTS(fd, "  <cannot get C stack on this system>\n");
-}
-#endif
-
-static void
-faulthandler_dump_c_stack_nocheck(int fd)
-{
-    PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
-    faulthandler_stack_dump_impl(fd);
-}
-
 static void
 faulthandler_dump_c_stack(int fd)
 {
@@ -288,7 +225,7 @@ faulthandler_dump_c_stack(int fd)
 
     if (fatal_error.c_stack) {
         PUTS(fd, "\n");
-        faulthandler_dump_c_stack_nocheck(fd);
+        _Py_DumpStack(fd);
     }
 
     reentrant = 0;
@@ -352,7 +289,7 @@ faulthandler_dump_c_stack_py(PyObject *self,
         return NULL;
     }
 
-    faulthandler_dump_c_stack_nocheck(fd);
+    _Py_DumpStack(fd);
 
     if (PyErr_CheckSignals()) {
         return NULL;
