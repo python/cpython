@@ -2828,7 +2828,8 @@ _PyBytes_FromSequence(PyObject *x)
             bytes = Py_None;
 	    goto done;
         }
-        int value = PyLong_AsInt(items[i]);
+        int overflow;
+        long value = PyLong_AsLongAndOverflow(items[i], &overflow);
         if (value == -1 && PyErr_Occurred()) {
             goto error;
         }
