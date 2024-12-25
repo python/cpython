@@ -2354,13 +2354,13 @@ class TestDocString(unittest.TestCase):
 
                 @dataclass
                 class C:
-                    def __init__(self, x: X) -> None: ...
+                    def __init__(self, x: X, num: int) -> None: ...
                 """,
             ),
             ns,
         )
 
-        self.assertDocStrEqual(ns['C'].__doc__, "C(x:'X')")
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:'X',num:'int')")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
