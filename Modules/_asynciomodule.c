@@ -3673,6 +3673,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 
     /* Check if loop ended because of exception in PyIter_Next */
     if (PyErr_Occurred()) {
+        Py_DECREF(tasks);
         return NULL;
     }
 
