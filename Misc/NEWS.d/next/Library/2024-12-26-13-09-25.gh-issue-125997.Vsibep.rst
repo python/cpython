@@ -1,0 +1,2 @@
+Ensure that :func:`time.sleep(0) <time.sleep>` does not accumulate delays on
+non-Windows platforms. Patch by Bénédikt Tran.
