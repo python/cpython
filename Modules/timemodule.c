@@ -2400,7 +2400,7 @@ error:
 }
 
 
-#ifndef MS_WINDWOS
+#ifndef MS_WINDOWS
 // time.sleep(0) optimized implementation.
 // On error, raise an exception and return -1.
 // On success, return 0.
