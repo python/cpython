@@ -494,7 +494,7 @@ typedef struct {
     PyObject *it;
 } filterobject;
 
-#define _filterobject_CAST(op)     ((filterobject *)(op))
+#define _filterobject_CAST(op)      ((filterobject *)(op))
 
 static PyObject *
 filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
