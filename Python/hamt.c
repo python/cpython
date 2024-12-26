@@ -2592,7 +2592,7 @@ static PyObject *
 hamt_dump(PyHamtObject *self);
 #endif
 
-#define _PyHamtObject_CAST(op)     ((PyHamtObject *)(op))
+#define _PyHamtObject_CAST(op)      ((PyHamtObject *)(op))
 
 
 static PyObject *
