@@ -72,6 +72,9 @@ module time
 
 /* Forward declarations */
 static int pysleep(PyTime_t timeout);
+#ifndef MS_WINDOWS
+static int pysleep_zero_posix(void);
+#endif
 
 
 typedef struct {
@@ -2213,6 +2216,11 @@ static int
 pysleep(PyTime_t timeout)
 {
     assert(timeout >= 0);
+#ifndef MS_WINDOWS
+    if (timeout == 0) {
+        return pysleep_zero_posix();
+    }
+#endif
 
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
@@ -2390,3 +2398,44 @@ error:
     return -1;
 #endif
 }
+
+
+#ifndef MS_WINDWOS
+// time.sleep(0) optimized implementation.
+// On error, raise an exception and return -1.
+// On success, return 0.
+static int
+pysleep_zero_posix(void)
+{
+    static struct timeval zero = {0, 0};
+
+    PyTime_t deadline, monotonic;
+    if (PyTime_Monotonic(&monotonic) < 0) {
+        return -1;
+    }
+    deadline = monotonic;
+    do {
+        int ret, err;
+        Py_BEGIN_ALLOW_THREADS
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &zero);
+        err = errno;
+        Py_END_ALLOW_THREADS
+        if (ret == 0) {
+            break;
+        }
+        if (err != EINTR) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        /* sleep was interrupted by SIGINT */
+        if (PyErr_CheckSignals()) {
+            return -1;
+        }
+        if (PyTime_Monotonic(&monotonic) < 0) {
+            return -1;
+        }
+    } while (monotonic == deadline);
+    return 0;
+}
+#endif
