@@ -3697,14 +3697,14 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 
     status = 0;
     /* mpd_qexport_*() functions used here with assumption, that no resizing
-       occur, i.e. len was obtained by a call to mpd_sizeinbase.  Note that
-       it can overestimate size by 1 digit, so set it first to zero. */
+       occur, i.e. len was obtained by a call to mpd_sizeinbase.  Set digits
+       to zero, as size can be overestimated. */
     if (base > UINT16_MAX) {
-        ((uint32_t *)digits)[len - 1] = 0;
+        memset(digits, 0, len*sizeof(uint32_t));
         n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
     }
     else {
-        ((uint16_t *)digits)[len - 1] = 0;
+        memset(digits, 0, len*sizeof(uint16_t));
         n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
     }
 
