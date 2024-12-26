@@ -270,6 +270,25 @@ class TestRaces(TestBase):
 
         do_race(set_value, mutate)
 
+    def test_generic_getattr(self):
+        """Test generic attribute load"""
+        import concurrent.futures
+
+        num_threads = 100
+
+
+        def closure(b, o):
+            b.wait()
+            getattr(o, "foo", None)
+            o.foo = 42
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            for _ in range(100):
+                b = threading.Barrier(num_threads)
+                o = functools.partial(lambda x: x, 42)
+                for _ in range(num_threads):
+                    executor.submit(functools.partial(closure, b, o))
+
 
 if __name__ == "__main__":
     unittest.main()

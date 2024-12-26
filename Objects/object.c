@@ -1716,13 +1716,13 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
         else {
             Py_BEGIN_CRITICAL_SECTION(obj);
-            PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
-            if (dictptr) {
 #ifdef DISABLE_GIL
-                dict = (PyObject *)_Py_atomic_load_ptr(dictptr);
+            PyObject **dictptr = _Py_atomic_load_ptr(_PyObject_ComputedDictPointer(obj));
 #else
-                dict = *dictptr;
+            PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
 #endif
+            if (dictptr) {
+                dict = *dictptr;
             }
             Py_END_CRITICAL_SECTION();
         }
