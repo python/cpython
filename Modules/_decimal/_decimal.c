@@ -2335,17 +2335,9 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
         return NULL;
     }
     if (export_long.digits) {
-        const uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
-
-        if (PyUnstable_Long_IsCompact((PyLongObject *)v)) {
-            _dec_settriple(dec, sign, ((uint32_t *)export_long.digits)[0], 0);
-            mpd_qfinalize(MPD(dec), ctx, status);
-            PyLong_FreeExport(&export_long);
-            return dec;
-        }
-
         const PyLongLayout *layout = PyLong_GetNativeLayout();
         const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+        const uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
         const Py_ssize_t len = export_long.ndigits;
 
         if (base > UINT16_MAX) {
