@@ -1023,6 +1023,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is clear in the subtype and the
    :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have
    ``NULL`` values.
+
    .. XXX are most flag bits *really* inherited individually?
 
    **Default:**
