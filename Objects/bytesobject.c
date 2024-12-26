@@ -2826,15 +2826,13 @@ _PyBytes_FromSequence(PyObject *x)
             Py_DECREF(bytes);
             /* Py_None as a fallback sentinel to the slow path */
             bytes = Py_None;
-	    goto done;
+            goto done;
         }
-        int overflow;
-        long value = PyLong_AsLongAndOverflow(items[i], &overflow);
+        Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
         if (value == -1 && PyErr_Occurred()) {
             goto error;
         }
         if (value < 0 || value >= 256) {
-            /* this includes an overflow in converting to C long */
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             goto error;
@@ -2846,6 +2844,10 @@ _PyBytes_FromSequence(PyObject *x)
     Py_DECREF(bytes);
     bytes = NULL;
   done:
+    /* some C parsers require a label not to be at the end of a compound
+       statement, which the ending macro of a critical section introduces, so
+       we need an empty statement here to satisfy that syntax rule */
+    ;
     /* both success and failure need to end the critical section */
     Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     return bytes;
