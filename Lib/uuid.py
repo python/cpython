@@ -247,7 +247,7 @@ class UUID:
     def _from_int(cls, value):
         """Create a UUID from an integer *value*. Internal use only."""
         assert 0 <= value <= _UINT_128_MAX, repr(value)
-        self = cls.__new__(cls)
+        self = object.__new__(cls)
         object.__setattr__(self, 'int', value)
         object.__setattr__(self, 'is_safe', SafeUUID.unknown)
         return self
