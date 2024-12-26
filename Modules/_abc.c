@@ -67,7 +67,7 @@ typedef struct {
     uint64_t _abc_negative_cache_version;
 } _abc_data;
 
-#define _abc_data_CAST(op)   ((_abc_data *)(op))
+#define _abc_data_CAST(op)  ((_abc_data *)(op))
 
 static inline uint64_t
 get_cache_version(_abc_data *impl)
