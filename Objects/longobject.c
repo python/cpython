@@ -166,7 +166,7 @@ _PyLong_New(Py_ssize_t size)
      * assume that there is always at least one digit present. */
     Py_ssize_t ndigits = size ? size : 1;
 
-    if (ndigits==1) {
+    if (ndigits == 1) {
         result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
     }
     if (result == NULL) {
