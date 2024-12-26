@@ -590,7 +590,7 @@ class HTTPResponse(io.BufferedIOBase):
 
     def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
-        if amt < 0:
+        if amt is not None and amt < 0:
             amt = None
         value = []
         try:
