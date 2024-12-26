@@ -1,3 +1,4 @@
+import _pyio
 import array
 import contextlib
 import importlib.util
@@ -26,7 +27,6 @@ from test.support import (
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
-import _pyio
 
 
 TESTFN2 = TESTFN + "2"
@@ -3450,6 +3450,8 @@ class StripExtraTests(unittest.TestCase):
 
 
 class StatIO(_pyio.BytesIO):
+    """Buffer which remembers the number of bytes that were read."""
+
     def __init__(self):
         super().__init__()
         self.bytes_read = 0
@@ -3515,6 +3517,7 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
                 self.assertTrue(fp._eof)
                 fp.seek(12345, os.SEEK_SET)
                 self.assertFalse(fp._eof)
+
 
 if __name__ == "__main__":
     unittest.main()
