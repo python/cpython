@@ -1,0 +1,32 @@
+# Loja simples no terminal
+
+# Estoque inicial
+estoque = {
+    "1": {"nome": "Camisa", "preco": 50.0, "quantidade": 10},
+    "2": {"nome": "Calça", "preco": 80.0, "quantidade": 5},
+    "3": {"nome": "Tênis", "preco": 120.0, "quantidade": 3},
+}
+
+carrinho = {}
+
+# Exibir produtos
+def exibir_produtos():
+    print("\nProdutos disponíveis:")
+    for id_produto, produto in estoque.items():
+        print(f"[{id_produto}] {produto['nome']} - R$ {produto['preco']} (Estoque: {produto['quantidade']})")
+
+# Adicionar produto ao carrinho
+def adicionar_ao_carrinho():
+    id_produto = input("\nDigite o ID do produto que deseja comprar: ")
+    if id_produto in estoque:
+        quantidade = int(input("Digite a quantidade: "))
+        if quantidade <= estoque[id_produto]["quantidade"]:
+            carrinho[id_produto] = carrinho.get(id_produto, 0) + quantidade
+            estoque[id_produto]["quantidade"] -= quantidade
+            print(f"{estoque[id_produto]['nome']} adicionado ao carrinho.")
+        else:
+            print("Quantidade indisponível no estoque.")
+    else:
+        print("Produto não encontrado.")
+
+# Finalizar
