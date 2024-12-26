@@ -245,8 +245,7 @@ class UUID:
 
     @classmethod
     def _from_int(cls, value):
-        """Internal use only."""
-        assert isinstance(value, int), repr(value)
+        """Create a UUID from an integer *value*. Internal use only."""
         assert 0 <= value <= _UINT_128_MAX, repr(value)
         self = cls.__new__(cls)
         object.__setattr__(self, 'int', value)
@@ -730,7 +729,6 @@ def uuid3(namespace, name):
         name = bytes(name, "utf-8")
     import _md5
     h = _md5.md5(namespace.bytes + name, usedforsecurity=False)
-    assert len(h.digest()) == 16
     int_uuid_3 = int.from_bytes(h.digest())
     int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
