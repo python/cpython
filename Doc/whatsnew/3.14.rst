@@ -711,7 +711,7 @@ Deprecated
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
 
-    For example: to use :class:`asyncio.SelectorEventLoop` on Windows::
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
 
       import asyncio
 
