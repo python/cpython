@@ -3144,6 +3144,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyObject *ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
+    assert(!PyWeakref_IsDead(weakref));
     assert(Py_REFCNT(obj) == (refcnt + 1));
     Py_DECREF(ref);
 
@@ -3158,6 +3159,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
+
+    assert(PyWeakref_IsDead(weakref));
 
     // test PyWeakref_GET_OBJECT(), reference is dead
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
@@ -3181,6 +3184,12 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyErr_Clear();
     assert(ref == NULL);
 
+    // test PyWeakRef_IsDead(), invalid type
+    assert(!PyErr_Occurred());
+    assert(PyWeakref_IsDead(invalid_weakref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
     // test PyWeakref_GetObject(), invalid type
     assert(PyWeakref_GetObject(invalid_weakref) == NULL);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -3191,6 +3200,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GetRef(NULL, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_IsDead(NULL)
+    assert(PyWeakref_IsDead(NULL) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
 
     // test PyWeakref_GetObject(NULL)

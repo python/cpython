@@ -53,7 +53,15 @@ class PurePathBaseTest(unittest.TestCase):
 
 
 class DummyPurePath(PurePathBase):
-    __slots__ = ()
+    __slots__ = ('_segments',)
+
+    def __init__(self, *segments):
+        self._segments = segments
+
+    def __str__(self):
+        if self._segments:
+            return self.parser.join(*self._segments)
+        return ''
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -65,6 +73,9 @@ class DummyPurePath(PurePathBase):
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+
+    def with_segments(self, *pathsegments):
+        return type(self)(*pathsegments)
 
 
 class DummyPurePathTest(unittest.TestCase):
@@ -97,30 +108,11 @@ class DummyPurePathTest(unittest.TestCase):
         P('a/b/c')
         P('/a/b/c')
 
-    def test_bytes(self):
-        P = self.cls
-        with self.assertRaises(TypeError):
-            P(b'a')
-        with self.assertRaises(TypeError):
-            P(b'a', 'b')
-        with self.assertRaises(TypeError):
-            P('a', b'b')
-        with self.assertRaises(TypeError):
-            P('a').joinpath(b'b')
-        with self.assertRaises(TypeError):
-            P('a') / b'b'
-        with self.assertRaises(TypeError):
-            b'a' / P('b')
-        with self.assertRaises(TypeError):
-            P('a').match(b'b')
-        with self.assertRaises(TypeError):
-            P('a').relative_to(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_name(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_stem(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_suffix(b'b')
+    def test_fspath_common(self):
+        self.assertRaises(TypeError, os.fspath, self.cls(''))
+
+    def test_as_bytes_common(self):
+        self.assertRaises(TypeError, bytes, self.cls(''))
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -1286,36 +1278,6 @@ class DummyPurePathTest(unittest.TestCase):
 # Tests for the virtual classes.
 #
 
-class PathBaseTest(PurePathBaseTest):
-    cls = PathBase
-
-    def test_not_implemented_error(self):
-        p = self.cls('')
-        e = NotImplementedError
-        self.assertRaises(e, p.stat)
-        self.assertRaises(e, p.exists)
-        self.assertRaises(e, p.is_dir)
-        self.assertRaises(e, p.is_file)
-        self.assertRaises(e, p.is_symlink)
-        self.assertRaises(e, p.open)
-        self.assertRaises(e, p.read_bytes)
-        self.assertRaises(e, p.read_text)
-        self.assertRaises(e, p.write_bytes, b'foo')
-        self.assertRaises(e, p.write_text, 'foo')
-        self.assertRaises(e, p.iterdir)
-        self.assertRaises(e, lambda: list(p.glob('*')))
-        self.assertRaises(e, lambda: list(p.rglob('*')))
-        self.assertRaises(e, lambda: list(p.walk()))
-        self.assertRaises(e, p.readlink)
-        self.assertRaises(e, p.symlink_to, 'foo')
-        self.assertRaises(e, p.mkdir)
-
-    def test_fspath_common(self):
-        self.assertRaises(TypeError, os.fspath, self.cls(''))
-
-    def test_as_bytes_common(self):
-        self.assertRaises(TypeError, bytes, self.cls(''))
-
 
 class DummyPathIO(io.BytesIO):
     """
@@ -1342,10 +1304,18 @@ class DummyPath(PathBase):
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
-    __slots__ = ()
+    __slots__ = ('_segments')
 
     _files = {}
     _directories = {}
+
+    def __init__(self, *segments):
+        self._segments = segments
+
+    def __str__(self):
+        if self._segments:
+            return self.parser.join(*self._segments)
+        return ''
 
     def __eq__(self, other):
         if not isinstance(other, DummyPath):
@@ -1357,6 +1327,9 @@ class DummyPath(PathBase):
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+
+    def with_segments(self, *pathsegments):
+        return type(self)(*pathsegments)
 
     def stat(self, *, follow_symlinks=True):
         path = str(self).rstrip('/')
@@ -1464,33 +1437,25 @@ class DummyPathTest(DummyPurePathTest):
 
     def setUp(self):
         super().setUp()
-        parser = self.cls.parser
-        p = self.cls(self.base)
-        p.mkdir(parents=True)
-        p.joinpath('dirA').mkdir()
-        p.joinpath('dirB').mkdir()
-        p.joinpath('dirC').mkdir()
-        p.joinpath('dirC', 'dirD').mkdir()
-        p.joinpath('dirE').mkdir()
-        with p.joinpath('fileA').open('wb') as f:
-            f.write(b"this is file A\n")
-        with p.joinpath('dirB', 'fileB').open('wb') as f:
-            f.write(b"this is file B\n")
-        with p.joinpath('dirC', 'fileC').open('wb') as f:
-            f.write(b"this is file C\n")
-        with p.joinpath('dirC', 'novel.txt').open('wb') as f:
-            f.write(b"this is a novel\n")
-        with p.joinpath('dirC', 'dirD', 'fileD').open('wb') as f:
-            f.write(b"this is file D\n")
-        if self.can_symlink:
-            p.joinpath('linkA').symlink_to('fileA')
-            p.joinpath('brokenLink').symlink_to('non-existing')
-            p.joinpath('linkB').symlink_to('dirB', target_is_directory=True)
-            p.joinpath('dirA', 'linkC').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
-            p.joinpath('dirB', 'linkD').symlink_to(
-                parser.join('..', 'dirB'), target_is_directory=True)
-            p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
+        self.createTestHierarchy()
+
+    def createTestHierarchy(self):
+        cls = self.cls
+        cls._files = {
+            f'{self.base}/fileA': b'this is file A\n',
+            f'{self.base}/dirB/fileB': b'this is file B\n',
+            f'{self.base}/dirC/fileC': b'this is file C\n',
+            f'{self.base}/dirC/dirD/fileD': b'this is file D\n',
+            f'{self.base}/dirC/novel.txt': b'this is a novel\n',
+        }
+        cls._directories = {
+            f'{self.base}': {'fileA', 'dirA', 'dirB', 'dirC', 'dirE'},
+            f'{self.base}/dirA': set(),
+            f'{self.base}/dirB': {'fileB'},
+            f'{self.base}/dirC': {'fileC', 'dirD', 'novel.txt'},
+            f'{self.base}/dirC/dirD': {'fileD'},
+            f'{self.base}/dirE': set(),
+        }
 
     def tearDown(self):
         cls = self.cls
