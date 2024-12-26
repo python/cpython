@@ -1081,7 +1081,7 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), expected)
         resp.close()
 
-        # explicit full read
+        # Explicit full read
         for n in (-1, None):
             with self.subTest('full read', n=n):
                 sock = FakeSocket(chunked_start + last_chunk + chunked_end)
