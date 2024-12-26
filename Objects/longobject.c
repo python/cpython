@@ -6842,36 +6842,15 @@ PyLong_Export(PyObject *obj, PyLongExport *export_long)
         return -1;
     }
 
-    // Fast-path: try to convert to a int64_t
-    int overflow;
-#if SIZEOF_LONG == 8
-    long value = PyLong_AsLongAndOverflow(obj, &overflow);
-#else
-    // Windows has 32-bit long, so use 64-bit long long instead
-    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
-#endif
-    Py_BUILD_ASSERT(sizeof(value) == sizeof(int64_t));
-    // the function cannot fail since obj is a PyLongObject
-    assert(!(value == -1 && PyErr_Occurred()));
-
-    if (!overflow) {
-        export_long->value = value;
-        export_long->negative = 0;
-        export_long->ndigits = 0;
-        export_long->digits = NULL;
-        export_long->_reserved = 0;
+    PyLongObject *self = (PyLongObject*)obj;
+    export_long->value = 0;
+    export_long->negative = _PyLong_IsNegative(self);
+    export_long->ndigits = _PyLong_DigitCount(self);
+    if (export_long->ndigits == 0) {
+        export_long->ndigits = 1;
     }
-    else {
-        PyLongObject *self = (PyLongObject*)obj;
-        export_long->value = 0;
-        export_long->negative = _PyLong_IsNegative(self);
-        export_long->ndigits = _PyLong_DigitCount(self);
-        if (export_long->ndigits == 0) {
-            export_long->ndigits = 1;
-        }
-        export_long->digits = self->long_value.ob_digit;
-        export_long->_reserved = (Py_uintptr_t)Py_NewRef(obj);
-    }
+    export_long->digits = self->long_value.ob_digit;
+    export_long->_reserved = (Py_uintptr_t)Py_NewRef(obj);
     return 0;
 }
 
