@@ -1182,9 +1182,9 @@ class AbstractDigestAuthHandler:
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
         elif algorithm == 'SHA':
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
-        # XXX MD5-sess
         elif algorithm == 'SHA-256':
             H = lambda x: hashlib.sha256(x.encode("ascii")).hexdigest()
+        # XXX MD5-sess
         else:
             raise ValueError("Unsupported digest authentication "
                              "algorithm %r" % algorithm)
