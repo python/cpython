@@ -2407,8 +2407,6 @@ error:
 static int
 pysleep_zero_posix(void)
 {
-    static struct timeval zero = {0, 0};
-
     PyTime_t deadline, monotonic;
     if (PyTime_Monotonic(&monotonic) < 0) {
         return -1;
@@ -2416,6 +2414,16 @@ pysleep_zero_posix(void)
     deadline = monotonic;
     do {
         int ret, err;
+        // POSIX-compliant select(2) allows the 'timeout' parameter to
+        // be modified but also mandates that the function should return
+        // immediately if *both* structure's fields are zero (which is
+        // the case here).
+        //
+        // However, since System V (but not BSD) variant typically sets
+        // the timeout before returning (but does not specify whether
+        // this is also the case for zero timeouts), we prefer supplying
+        // a fresh timeout everytime.
+        struct timeval zero = {0, 0};
         Py_BEGIN_ALLOW_THREADS
         ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &zero);
         err = errno;
