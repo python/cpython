@@ -177,6 +177,7 @@ def run(main, *, debug=None, loop_factory=None):
     running in the same thread.
 
     If debug is True, the event loop will be run in debug mode.
+    If loop_factory is passed, it is used for new event loop creation.
 
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
