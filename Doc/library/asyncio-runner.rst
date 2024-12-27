@@ -76,6 +76,10 @@ Running an asyncio Program
 
       *coro* can be any awaitable object.
 
+   .. note::
+      asyncio policy system is deprecated and will be removed in Python 3.16
+      as such in future *loop_factory* must be used to configure the event loop.
+
 
 Runner context manager
 ======================
