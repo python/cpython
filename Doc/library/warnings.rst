@@ -324,11 +324,13 @@ the warning using the :class:`catch_warnings` context manager::
 While within the context manager all warnings will simply be ignored. This
 allows you to use known-deprecated code without having to see the warning while
 not suppressing the warning for other code that might not be aware of its use
-of deprecated code.  Note: this can only be guaranteed in a single-threaded
-application. If two or more threads use the :class:`catch_warnings` context
-manager at the same time, the behavior is undefined.
+of deprecated code.
 
+    .. note::
 
+        See :ref:`warning-thread-safe` for details on the thread-safety of the
+        :class:`catch_warnings` context manager when used in multi-threaded
+        programs.
 
 .. _warning-testing:
 
@@ -364,10 +366,13 @@ the warning has been cleared.
 Once the context manager exits, the warnings filter is restored to its state
 when the context was entered. This prevents tests from changing the warnings
 filter in unexpected ways between tests and leading to indeterminate test
-results. The :func:`showwarning` function in the module is also restored to
-its original value.  Note: this can only be guaranteed in a single-threaded
-application. If two or more threads use the :class:`catch_warnings` context
-manager at the same time, the behavior is undefined.
+results.
+
+    .. note::
+
+        See :ref:`warning-thread-safe` for details on the thread-safety of the
+        :class:`catch_warnings` context manager when used in multi-threaded
+        programs.
 
 When testing multiple operations that raise the same kind of warning, it
 is important to test them in a manner that confirms each operation is raising
@@ -615,12 +620,62 @@ Available Context Managers
 
     .. note::
 
-        The :class:`catch_warnings` manager works by replacing and
-        then later restoring the module's
-        :func:`showwarning` function and internal list of filter
-        specifications.  This means the context manager is modifying
-        global state and therefore is not thread-safe.
+        See :ref:`warning-thread-safe` for details on the thread-safety of the
+        :class:`catch_warnings` context manager when used in multi-threaded
+        programs.
+
 
     .. versionchanged:: 3.11
 
         Added the *action*, *category*, *lineno*, and *append* parameters.
+
+
+.. _warning-thread-safe:
+
+Thread-safety of Context Managers
+---------------------------------
+
+The behavior of :class:`catch_warnings` context manager depends on the value
+of the :data:`sys.flags.inherit_context` flag.  Being thread-safe means that
+behavior is predictable in a multi-threaded program.  For free-threaded
+builds, the flag defaults to true, and false otherwise.
+
+If the :data:`~sys.flags.inherit_context` flag is false, then
+:class:`catch_warnings` will manipulate the global attributes of the
+:mod:`warnings` module.  This is not thread-safe.  If two or more threads use
+the context manager at the same time, the behavior is undefined.
+
+If the flag is true, :class:`catch_warnings` will not manipulate global
+attributes and will instead use a :class:`~contextvars.ContextVar` to
+store the newly established warning filtering state.  A context variable
+provides thread-local storage and it makes the use of :class:`catch_warnings`
+thread-safe.
+
+The *record* parameter of the context handler also behaves differently
+depending on the value of the flag.  When *record* is true and the flag is
+false, the context manager works by replacing and then later restoring the
+module's :func:`showwarning` function.  This is not thread-safe.
+
+When *record* is true and the flag is false, the :func:`showwarning` function
+is not replaced.  The recording status is instead indicated by an internal
+property in the context variable.  In this case, the :func:`showwarning`
+function will not be restored when exiting the context handler.
+
+The :data:`~sys.flags.inherit_context` flag can be set the :option:`-X
+inherit_context <-X>` command-line option or by the
+:envvar:`PYTHON_INHERIT_CONTEXT` environment variable.
+
+    .. note::
+
+        When the :data:`~sys.flags.inherit_context` flag true, it also causes
+        threads created by :class:`threading.Thread` to start with a copy of
+        the context variables from the thread starting it.  This means that
+        context established by using :class:`catch_warnings` in one thread
+        will also apply to new threads started by it.  If the new thread creates
+        a new context with :class:`catch_warnings`, that context only applies to
+        that thread.
+
+.. versionchanged:: 3.14
+
+   Added the :data:`sys.flags.inherit_context` flag and the use of a context
+   variable for :class:`catch_warnings` if the flag is true.

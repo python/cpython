@@ -1,11 +1,76 @@
 """Python part of the warnings subsystem."""
 
 import sys
+import _contextvars
 
 
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings", "deprecated"]
+
+# If true, catch_warnings() will use a context var to hold the modified
+# filters list.  Otherwise, catch_warnings() will operate on the 'filters'
+# global of the warnings module.
+_use_context = sys.flags.inherit_context
+
+class _Context:
+    def __init__(self, filters):
+        self._filters = filters
+        self.log = None  # if set to a list, logging is enabled
+
+    def copy(self):
+        context = _Context(self._filters[:])
+        if self.log is not None:
+            context.log = self.log
+        return context
+
+    def _record_warning(self, msg):
+        self.log.append(msg)
+
+
+class _GlobalContext(_Context):
+    def __init__(self):
+        self.log = None
+
+    @property
+    def _filters(self):
+        # Since there is quite a lot of code that assigns to
+        # warnings.filters, this needs to return the current value of
+        # the module global.
+        try:
+            return filters
+        except NameError:
+            # 'filters' global was deleted.  Do we need to actually handle this case?
+            return []
+
+
+_global_context = _GlobalContext()
+
+_warnings_context = _contextvars.ContextVar('warnings_context')
+
+def _get_context():
+    if not _use_context:
+        return _global_context
+    try:
+        return _warnings_context.get()
+    except LookupError:
+        return _global_context
+
+def _set_context(context):
+    assert _use_context
+    _warnings_context.set(context)
+
+def _new_context():
+    assert _use_context
+    old_context = _get_context()
+    new_context = old_context.copy()
+    _set_context(new_context)
+    return old_context, new_context
+
+def _get_filters():
+    """Return the current list of filters.  This is a non-public API used by
+    module functions and by the unit tests."""
+    return _get_context()._filters
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
@@ -18,6 +83,10 @@ def formatwarning(message, category, filename, lineno, line=None):
     return _formatwarnmsg_impl(msg)
 
 def _showwarnmsg_impl(msg):
+    context = _get_context()
+    if context.log is not None:
+        context._record_warning(msg)
+        return
     file = msg.file
     if file is None:
         file = sys.stderr
@@ -193,6 +262,7 @@ def _filters_mutated():
 
 def _add_filter(*item, append):
     with _lock:
+        filters = _get_filters()
         if not append:
             # Remove possible duplicate filters, so new one will be placed
             # in correct place. If append=True and duplicate exists, do nothing.
@@ -209,7 +279,7 @@ def _add_filter(*item, append):
 def resetwarnings():
     """Clear the list of warning filters, so that no filters are active."""
     with _lock:
-        filters[:] = []
+        del _get_filters()[:]
         _filters_mutated_lock_held()
 
 class _OptionError(Exception):
@@ -378,7 +448,7 @@ def warn_explicit(message, category, filename, lineno,
         if registry.get(key):
             return
         # Search the filters
-        for item in filters:
+        for item in _get_filters():
             action, msg, cat, mod, ln = item
             if ((msg is None or msg.match(text)) and
                 issubclass(category, cat) and
@@ -499,31 +569,41 @@ class catch_warnings(object):
             raise RuntimeError("Cannot enter %r twice" % self)
         self._entered = True
         with _lock:
-            self._filters = self._module.filters
-            self._module.filters = self._filters[:]
+            if _use_context:
+                self._saved_context, context = self._module._new_context()
+            else:
+                context = None
+                self._filters = self._module.filters
+                self._module.filters = self._filters[:]
+                self._showwarning = self._module.showwarning
+                self._showwarnmsg_impl = self._module._showwarnmsg_impl
             self._module._filters_mutated_lock_held()
-            self._showwarning = self._module.showwarning
-            self._showwarnmsg_impl = self._module._showwarnmsg_impl
             if self._record:
-                log = []
-                self._module._showwarnmsg_impl = log.append
-                # Reset showwarning() to the default implementation to make sure
-                # that _showwarnmsg() calls _showwarnmsg_impl()
-                self._module.showwarning = self._module._showwarning_orig
+                if _use_context:
+                    context.log = log = []
+                else:
+                    log = []
+                    self._module._showwarnmsg_impl = log.append
+                    # Reset showwarning() to the default implementation to make sure
+                    # that _showwarnmsg() calls _showwarnmsg_impl()
+                    self._module.showwarning = self._module._showwarning_orig
             else:
                 log = None
         if self._filter is not None:
-            simplefilter(*self._filter)
+            self._module.simplefilter(*self._filter)
         return log
 
     def __exit__(self, *exc_info):
         if not self._entered:
             raise RuntimeError("Cannot exit %r without entering first" % self)
         with _lock:
-            self._module.filters = self._filters
+            if _use_context:
+                self._module._warnings_context.set(self._saved_context)
+            else:
+                self._module.filters = self._filters
+                self._module.showwarning = self._showwarning
+                self._module._showwarnmsg_impl = self._showwarnmsg_impl
             self._module._filters_mutated_lock_held()
-            self._module.showwarning = self._showwarning
-            self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
 class deprecated:
