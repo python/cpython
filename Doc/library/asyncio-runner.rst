@@ -86,6 +86,12 @@ Running an asyncio Program
 
       Added *eager_tasks* parameter.
 
+   .. note::
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, an explicit *loop_factory* is needed
+      to configure the event loop.
+
 
 Runner context manager
 ======================
