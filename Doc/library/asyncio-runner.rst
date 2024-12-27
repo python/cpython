@@ -22,7 +22,7 @@ to simplify async code usage for common wide-spread scenarios.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, *, debug=None, loop_factory=None)
+.. function:: run(coro, *, debug=None, loop_factory=None, eager_tasks=False)
 
    Execute *coro* in an asyncio event loop and return the result.
 
@@ -47,9 +47,17 @@ Running an asyncio Program
    Passing :class:`asyncio.EventLoop` allows running asyncio without the
    policy system.
 
+   If *eager_tasks* is ``True``, the created loop is configured to use
+   :ref:`eager-task-factory` by default.
+
    The executor is given a timeout duration of 5 minutes to shutdown.
    If the executor hasn't finished within that duration, a warning is
    emitted and the executor is closed.
+
+   .. note::
+
+      Users are encouraged to use ``eager_tasks=True`` in their code;
+      the default lazy tasks will be deprecated starting from Python 3.16.
 
    Example::
 
@@ -76,11 +84,13 @@ Running an asyncio Program
 
       *coro* can be any awaitable object.
 
+      Added *eager_tasks* parameter.
+
 
 Runner context manager
 ======================
 
-.. class:: Runner(*, debug=None, loop_factory=None)
+.. class:: Runner(*, debug=None, loop_factory=None, eager_tasks=False)
 
    A context manager that simplifies *multiple* async function calls in the same
    context.
@@ -97,6 +107,9 @@ Runner context manager
    current one. By default :func:`asyncio.new_event_loop` is used and set as
    current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
 
+   If *eager_tasks* is ``True``, the created loop is configured to use
+   :ref:`eager-task-factory` by default.
+
    Basically, :func:`asyncio.run` example can be rewritten with the runner usage::
 
         async def main():
@@ -106,7 +119,16 @@ Runner context manager
         with asyncio.Runner() as runner:
             runner.run(main())
 
+   .. note::
+
+      Users are encouraged to use ``eager_tasks=True`` in their code;
+      the default lazy tasks will be deprecated starting from Python 3.16.
+
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.14
+
+      Added *eager_tasks* parameter.
 
    .. method:: run(coro, *, context=None)
 

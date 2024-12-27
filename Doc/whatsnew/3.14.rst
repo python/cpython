@@ -1,4 +1,3 @@
-
 ****************************
   What's new in Python 3.14
 ****************************
@@ -291,6 +290,13 @@ ast
 
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
+
+asyncio
+-------
+
+* Add *eager_tasks* parameter to :func:`asyncio.run` function and
+  :class:`asyncio.Runner` class constructor.
+  (Contributed by Andrew Svetlov in :gh:`128289`.)
 
 concurrent.futures
 ------------------
