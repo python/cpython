@@ -812,6 +812,29 @@ class ExplicitConstructionTest:
             x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
             self.assertEqual(x, float(nc.create_decimal(x))) # roundtrip
 
+    def test_from_number(self, cls=None):
+        Decimal = self.decimal.Decimal
+        if cls is None:
+            cls = Decimal
+
+        def check(arg, expected):
+            d = cls.from_number(arg)
+            self.assertIs(type(d), cls)
+            self.assertEqual(d, expected)
+
+        check(314, Decimal(314))
+        check(3.14, Decimal.from_float(3.14))
+        check(Decimal('3.14'), Decimal('3.14'))
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '314')
+        self.assertRaises(TypeError, cls.from_number, (0, (3, 1, 4), 0))
+        self.assertRaises(TypeError, cls.from_number, object())
+
+    def test_from_number_subclass(self, cls=None):
+        class DecimalSubclass(self.decimal.Decimal):
+            pass
+        self.test_from_number(DecimalSubclass)
+
     def test_unicode_digits(self):
         Decimal = self.decimal.Decimal
 
@@ -1253,7 +1276,7 @@ class FormatTest:
             self.assertRaises(ValueError, format, h, '10Nf')
             self.assertRaises(ValueError, format, h, 'Nx')
 
-    @run_with_locale('LC_ALL', 'ps_AF')
+    @run_with_locale('LC_ALL', 'ps_AF', '')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal
@@ -4381,7 +4404,8 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.__version__, P.__version__)
 
-        self.assertEqual(dir(C), dir(P))
+        self.assertLessEqual(set(dir(C)), set(dir(P)))
+        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
 
     def test_context_attributes(self):
 

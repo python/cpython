@@ -23,7 +23,7 @@ from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 import urllib.error
 import http.client
 
@@ -717,18 +717,6 @@ class OpenerDirectorTests(unittest.TestCase):
                     self.assertIsInstance(args[1], MockResponse)
 
 
-def sanepathname2url(path):
-    try:
-        path.encode("utf-8")
-    except UnicodeEncodeError:
-        raise unittest.SkipTest("path is not encodable to utf8")
-    urlpath = urllib.request.pathname2url(path)
-    if os.name == "nt" and urlpath.startswith("///"):
-        urlpath = urlpath[2:]
-    # XXX don't ask me about the mac...
-    return urlpath
-
-
 class HandlerTests(unittest.TestCase):
 
     def test_ftp(self):
@@ -794,6 +782,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
 
+    @support.requires_resource("network")
     def test_ftp_error(self):
         class ErrorFTPHandler(urllib.request.FTPHandler):
             def __init__(self, exception):
@@ -821,19 +810,22 @@ class HandlerTests(unittest.TestCase):
         o = h.parent = MockOpener()
 
         TESTFN = os_helper.TESTFN
-        urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = b"hello, world\n"
+        canonurl = 'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN))
+        parsed = urlsplit(canonurl)
+        if parsed.netloc:
+            raise unittest.SkipTest("non-local working directory")
         urls = [
-            "file://localhost%s" % urlpath,
-            "file://%s" % urlpath,
-            "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
+            canonurl,
+            parsed._replace(netloc='localhost').geturl(),
+            parsed._replace(netloc=socket.gethostbyname('localhost')).geturl(),
             ]
         try:
             localaddr = socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
             localaddr = ''
         if localaddr:
-            urls.append("file://%s%s" % (localaddr, urlpath))
+            urls.append(parsed._replace(netloc=localaddr).geturl())
 
         for url in urls:
             f = open(TESTFN, "wb")
@@ -858,10 +850,10 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers["Content-type"], "text/plain")
             self.assertEqual(headers["Content-length"], "13")
             self.assertEqual(headers["Last-modified"], modified)
-            self.assertEqual(respurl, url)
+            self.assertEqual(respurl, canonurl)
 
         for url in [
-            "file://localhost:80%s" % urlpath,
+            parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
@@ -1159,13 +1151,13 @@ class HandlerTests(unittest.TestCase):
         r = Request('http://example.com')
         for url in urls:
             r.full_url = url
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
 
             self.assertEqual(r.get_full_url(), url)
             # full_url setter uses splittag to split into components.
             # splittag sets the fragment as None while urlparse sets it to ''
             self.assertEqual(r.fragment or '', parsed.fragment)
-            self.assertEqual(urlparse(r.get_full_url()).query, parsed.query)
+            self.assertEqual(urlsplit(r.get_full_url()).query, parsed.query)
 
     def test_full_url_deleter(self):
         r = Request('http://www.example.com')
