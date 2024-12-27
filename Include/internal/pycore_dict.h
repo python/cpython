@@ -43,8 +43,6 @@ extern int _PyDict_Next(
 
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
-extern void _PyDict_MaybeUntrack(PyObject *mp);
-
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 
@@ -92,6 +90,17 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
+/* Gets a version number unique to the current state of the keys of dict, if possible.
+ *
+ * In free-threaded builds ensures that the dict can be used for lock-free
+ * reads if a version was assigned.
+ *
+ * The caller must hold the per-object lock on dict.
+ *
+ * Returns the version number, or zero if it was not possible to get a version number. */
+extern uint32_t _PyDict_GetKeysVersionForCurrentState(
+        PyInterpreterState *interp, PyDictObject *dict);
+
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
 extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
@@ -105,8 +114,12 @@ extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
+extern Py_ssize_t _PyDictKeys_StringLookupSplit(PyDictKeysObject* dictkeys, PyObject *key);
 PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
+
+// Loads the __builtins__ object from the globals dict. Returns a new reference.
+extern PyObject *_PyDict_LoadBuiltinsFromGlobals(PyObject *globals);
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
@@ -318,6 +331,8 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 #ifndef Py_GIL_DISABLED
 #  define _Py_INCREF_DICT Py_INCREF
 #  define _Py_DECREF_DICT Py_DECREF
+#  define _Py_INCREF_BUILTINS Py_INCREF
+#  define _Py_DECREF_BUILTINS Py_DECREF
 #else
 static inline Py_ssize_t
 _PyDict_UniqueId(PyDictObject *mp)
@@ -340,6 +355,30 @@ _Py_DECREF_DICT(PyObject *op)
     assert(PyDict_Check(op));
     Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
     _Py_THREAD_DECREF_OBJECT(op, id);
+}
+
+// Like `_Py_INCREF_DICT`, but also handles non-dict objects because builtins
+// may not be a dict.
+static inline void
+_Py_INCREF_BUILTINS(PyObject *op)
+{
+    if (PyDict_CheckExact(op)) {
+        _Py_INCREF_DICT(op);
+    }
+    else {
+        Py_INCREF(op);
+    }
+}
+
+static inline void
+_Py_DECREF_BUILTINS(PyObject *op)
+{
+    if (PyDict_CheckExact(op)) {
+        _Py_DECREF_DICT(op);
+    }
+    else {
+        Py_DECREF(op);
+    }
 }
 #endif
 

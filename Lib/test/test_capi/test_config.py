@@ -100,6 +100,7 @@ class CAPITests(unittest.TestCase):
             options.append(("run_presite", str | None, None))
         if sysconfig.get_config_var('Py_GIL_DISABLED'):
             options.append(("enable_gil", int, None))
+            options.append(("tlbc_enabled", int, None))
         if support.MS_WINDOWS:
             options.extend((
                 ("legacy_windows_stdio", bool, None),
@@ -108,6 +109,10 @@ class CAPITests(unittest.TestCase):
         if Py_STATS:
             options.extend((
                 ("_pystats", bool, None),
+            ))
+        if support.is_apple:
+            options.extend((
+                ("use_system_logger", bool, None),
             ))
 
         for name, option_type, sys_attr in options:

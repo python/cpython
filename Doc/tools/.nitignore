@@ -13,8 +13,6 @@ Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
 Doc/glossary.rst
-Doc/howto/descriptor.rst
-Doc/howto/enum.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-subprocess.rst
@@ -73,13 +71,11 @@ Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
-Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
 Doc/whatsnew/2.7.rst
-Doc/whatsnew/3.0.rst
 Doc/whatsnew/3.3.rst
 Doc/whatsnew/3.4.rst
 Doc/whatsnew/3.5.rst

@@ -872,6 +872,27 @@ class BasicTest(BaseTest):
                 else:
                     self.assertFalse(same_path(path1, path2))
 
+    # gh-126084: venvwlauncher should run pythonw, not python
+    @requireVenvCreate
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_venvwlauncher(self):
+        """
+        Test that the GUI launcher runs the GUI python.
+        """
+        rmtree(self.env_dir)
+        venv.create(self.env_dir)
+        exename = self.exe
+        # Retain the debug suffix if present
+        if "python" in exename and not "pythonw" in exename:
+            exename = exename.replace("python", "pythonw")
+        envpyw = os.path.join(self.env_dir, self.bindir, exename)
+        try:
+            subprocess.check_call([envpyw, "-c", "import sys; "
+                "assert sys._base_executable.endswith('%s')" % exename])
+        except subprocess.CalledProcessError:
+            self.fail("venvwlauncher.exe did not run %s" % exename)
+
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""

@@ -136,7 +136,8 @@ class InteractiveInterpreter:
         # Set the line of text that the exception refers to
         lines = source.splitlines()
         if (source and typ is SyntaxError
-                and not value.text and len(lines) >= value.lineno):
+                and not value.text and value.lineno is not None
+                and len(lines) >= value.lineno):
             value.text = lines[value.lineno - 1]
         sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:

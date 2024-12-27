@@ -9,9 +9,9 @@ from analyzer import (
     analysis_error,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Iterable
+from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local, Storage, StackError
+from stack import Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -118,7 +118,9 @@ class Emitter:
             "PyStackRef_CLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            "DISPATCH": self.dispatch
+            "DISPATCH": self.dispatch,
+            "INSTRUCTION_SIZE": self.instruction_size,
+            "POP_DEAD_INPUTS": self.pop_dead_inputs,
         }
         self.out = out
 
@@ -347,6 +349,20 @@ class Emitter:
         self.emit_save(storage)
         return True
 
+    def pop_dead_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        storage.pop_dead_inputs(self.out)
+        return True
+
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
         self._print_storage(storage)
@@ -363,6 +379,19 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.emit_reload(storage)
+        return True
+
+    def instruction_size(self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
+        if uop.instruction_size is None:
+            raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
+        self.out.emit(f" {uop.instruction_size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:

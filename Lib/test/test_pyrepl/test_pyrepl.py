@@ -1313,6 +1313,11 @@ class TestMain(ReplTestCase):
                         self.assertIn("in x3", output)
                         self.assertIn("in <module>", output)
 
+    def test_null_byte(self):
+        output, exit_code = self.run_repl("\x00\nexit()\n")
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("TypeError", output)
+
     def test_readline_history_file(self):
         # skip, if readline module is not available
         readline = import_module('readline')

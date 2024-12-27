@@ -24,7 +24,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
@@ -802,6 +802,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport.writelines([data])
+        self.assertTrue(self.sock.send.called)
+        self.assertTrue(self.loop.writers)
+
+    def test_writelines_pauses_protocol(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+        transport.writelines([data])
+        self.assertTrue(self.protocol.pause_writing.called)
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 

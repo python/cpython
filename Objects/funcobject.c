@@ -2,7 +2,6 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
 #include "pycore_dict.h"          // _Py_INCREF_DICT()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
@@ -115,12 +114,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     }
     _Py_INCREF_DICT(constr->fc_globals);
     op->func_globals = constr->fc_globals;
-    if (PyDict_Check(constr->fc_builtins)) {
-        _Py_INCREF_DICT(constr->fc_builtins);
-    }
-    else {
-        Py_INCREF(constr->fc_builtins);
-    }
+    _Py_INCREF_BUILTINS(constr->fc_builtins);
     op->func_builtins = constr->fc_builtins;
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
@@ -153,8 +147,6 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     assert(PyDict_Check(globals));
     _Py_INCREF_DICT(globals);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-
     PyCodeObject *code_obj = (PyCodeObject *)code;
     _Py_INCREF_CODE(code_obj);
 
@@ -170,7 +162,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *consts = code_obj->co_consts;
     assert(PyTuple_Check(consts));
     PyObject *doc;
-    if (PyTuple_Size(consts) >= 1) {
+    if (code_obj->co_flags & CO_HAS_DOCSTRING) {
+        assert(PyTuple_Size(consts) >= 1);
         doc = PyTuple_GetItem(consts, 0);
         if (!PyUnicode_Check(doc)) {
             doc = Py_None;
@@ -188,15 +181,9 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
         goto error;
     }
 
-    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         goto error;
-    }
-    if (PyDict_Check(builtins)) {
-        _Py_INCREF_DICT(builtins);
-    }
-    else {
-        Py_INCREF(builtins);
     }
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
@@ -223,10 +210,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = FUNC_VERSION_UNSET;
-    if ((code_obj->co_flags & CO_NESTED) == 0) {
+    if (((code_obj->co_flags & CO_NESTED) == 0) ||
+        (code_obj->co_flags & CO_METHOD)) {
         // Use deferred reference counting for top-level functions, but not
         // nested functions because they are more likely to capture variables,
         // which makes prompt deallocation more important.
+        //
+        // Nested methods (functions defined in class scope) are also deferred,
+        // since they will likely be cleaned up by GC anyway.
         _PyObject_SetDeferredRefcount((PyObject *)op);
     }
     _PyObject_GC_TRACK(op);
@@ -302,12 +293,14 @@ functions is running.
 
 */
 
+#ifndef Py_GIL_DISABLED
 static inline struct _func_version_cache_item *
 get_cache_item(PyInterpreterState *interp, uint32_t version)
 {
     return interp->func_state.func_version_cache +
            (version % FUNC_VERSION_CACHE_SIZE);
 }
+#endif
 
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
@@ -1078,12 +1071,7 @@ func_clear(PyObject *self)
     PyObject *builtins = op->func_builtins;
     op->func_builtins = NULL;
     if (builtins != NULL) {
-        if (PyDict_Check(builtins)) {
-            _Py_DECREF_DICT(builtins);
-        }
-        else {
-            Py_DECREF(builtins);
-        }
+        _Py_DECREF_BUILTINS(builtins);
     }
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
@@ -1108,14 +1096,11 @@ static void
 func_dealloc(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    assert(Py_REFCNT(op) == 0);
-    Py_SET_REFCNT(op, 1);
+    _PyObject_ResurrectStart(self);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
-    if (Py_REFCNT(op) > 1) {
-        Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
-    Py_SET_REFCNT(op, 0);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);

@@ -11,11 +11,11 @@ extern "C" {
 /* Total tool ids available */
 #define  _PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 10
+#define  _PY_MONITORING_LOCAL_EVENTS 11
 /* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 15
+#define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 17
+#define _PY_MONITORING_EVENTS 19
 
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
@@ -72,6 +72,24 @@ typedef struct {
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
+#ifdef Py_GIL_DISABLED
+
+/* Each thread specializes a thread-local copy of the bytecode in free-threaded
+ * builds. These copies are stored on the code object in a `_PyCodeArray`. The
+ * first entry in the array always points to the "main" copy of the bytecode
+ * that is stored at the end of the code object.
+ */
+typedef struct {
+    Py_ssize_t size;
+    char *entries[1];
+} _PyCodeArray;
+
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
+    _PyCodeArray *co_tlbc;
+#else
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
+#endif
+
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
 #define _PyCode_DEF(SIZE) {                                                    \
@@ -113,7 +131,8 @@ typedef struct {
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
-    int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_nlocalsplus;           /* number of spaces for holding local, cell, \
+                                     and free variables */                     \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_ncellvars;             /* total number of cell variables */         \
@@ -138,6 +157,7 @@ typedef struct {
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
     void *co_extra;                                                            \
+    _PyCode_DEF_THREAD_LOCAL_BYTECODE()                                        \
     char co_code_adaptive[(SIZE)];                                             \
 }
 
@@ -173,6 +193,14 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_FUTURE_ANNOTATIONS    0x1000000
 
 #define CO_NO_MONITORING_EVENTS 0x2000000
+
+/* Whether the code object has a docstring,
+   If so, it will be the first item in co_consts
+*/
+#define CO_HAS_DOCSTRING 0x4000000
+
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.

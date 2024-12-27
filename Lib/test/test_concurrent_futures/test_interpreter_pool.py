@@ -56,6 +56,16 @@ class InterpretersMixin(InterpreterPoolMixin):
         return r, w
 
 
+class PickleShenanigans:
+    """Succeeds with pickle.dumps(), but fails with pickle.loads()"""
+    def __init__(self, value):
+        if value == 1:
+            raise RuntimeError("gotcha")
+
+    def __reduce__(self):
+        return (self.__class__, (1,))
+
+
 class InterpreterPoolExecutorTest(
             InterpretersMixin, ExecutorTest, BaseTestCase):
 
@@ -279,6 +289,14 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
 
+    def test_pickle_errors_propagate(self):
+        # GH-125864: Pickle errors happen before the script tries to execute, so the
+        # queue used to wait infinitely.
+
+        fut = self.executor.submit(PickleShenanigans(0))
+        with self.assertRaisesRegex(RuntimeError, "gotcha"):
+            fut.result()
+
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
@@ -293,7 +311,7 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         # tests left a policy in place, just in case.
         policy = support.maybe_get_event_loop_policy()
         assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio.set_event_loop_policy(None))
+        cls.addClassCleanup(lambda: asyncio._set_event_loop_policy(None))
 
     def setUp(self):
         super().setUp()
