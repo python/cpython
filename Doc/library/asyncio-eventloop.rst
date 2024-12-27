@@ -63,8 +63,10 @@ an event loop:
       Raises a :exc:`RuntimeError` if there is no current event loop.
 
    .. note::
-      asyncio policy system is deprecated and will be removed in Python 3.16
-      as such in future this function will always return the running event loop.
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, this function will always return the
+      running event loop.
 
 
 .. function:: set_event_loop(loop)
