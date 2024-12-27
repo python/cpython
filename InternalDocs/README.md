@@ -1,4 +1,3 @@
-
 # CPython Internals Documentation
 
 The documentation in this folder is intended for CPython maintainers.
@@ -30,12 +29,14 @@ Runtime Objects
 
 - [Frames](frames.md)
 
+- [String Interning](string_interning.md)
+
 Program Execution
 ---
 
-- [The Interpreter](interpreter.md)
+- [The Bytecode Interpreter](interpreter.md)
 
-- [Adaptive Instruction Families](adaptive.md)
+- [The JIT](jit.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 

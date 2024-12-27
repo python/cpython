@@ -1969,10 +1969,16 @@ class OtherTests(unittest.TestCase):
             zip_contents = fp.read()
         # - passing a file-like object
         fp = io.BytesIO()
-        fp.write(zip_contents)
+        end = fp.write(zip_contents)
+        self.assertEqual(fp.tell(), end)
+        mid = end // 2
+        fp.seek(mid, 0)
         self.assertTrue(zipfile.is_zipfile(fp))
-        fp.seek(0, 0)
+        # check that the position is left unchanged after the call
+        # see: https://github.com/python/cpython/issues/122356
+        self.assertEqual(fp.tell(), mid)
         self.assertTrue(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), mid)
 
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
@@ -2326,6 +2332,18 @@ class OtherTests(unittest.TestCase):
                 fp.read(6)
                 fp.seek(1, os.SEEK_CUR)
                 self.assertEqual(fp.read(-1), b'men!')
+
+    def test_uncompressed_interleaved_seek_read(self):
+        # gh-127847: Make sure the position in the archive is correct
+        # in the special case of seeking in a ZIP_STORED entry.
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("a.txt", "123")
+            zipf.writestr("b.txt", "456")
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            with zipf.open("a.txt", "r") as a, zipf.open("b.txt", "r") as b:
+                self.assertEqual(a.read(1), b"1")
+                self.assertEqual(b.seek(1), 1)
+                self.assertEqual(b.read(1), b"5")
 
     @requires_bz2()
     def test_decompress_without_3rd_party_library(self):

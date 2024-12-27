@@ -1949,6 +1949,24 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.14
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
@@ -2035,9 +2053,9 @@ Utility functions
 
 .. function:: FormatError([code])
 
-   Returns a textual description of the error code *code*.  If no
-   error code is specified, the last error code is used by calling the Windows
-   api function GetLastError.
+   Returns a textual description of the error code *code*.  If no error code is
+   specified, the last error code is used by calling the Windows API function
+   :func:`GetLastError`.
 
    .. availability:: Windows
 
@@ -2142,9 +2160,8 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   This function is probably the worst-named thing in ctypes. It
-   creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
@@ -2808,4 +2825,4 @@ Exceptions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14

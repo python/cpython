@@ -65,6 +65,8 @@ Summary -- release highlights
 
 .. PEP-sized items next.
 
+* :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
+* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 
 
 New features
@@ -172,6 +174,40 @@ Improved error messages
      ValueError: too many values to unpack (expected 3, got 4)
 
 
+.. _whatsnew314-pep741:
+
+PEP 741: Python Configuration C API
+-----------------------------------
+
+Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
+initialization without relying on C structures and the ability to make
+ABI-compatible changes in the future.
+
+Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
+:c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
+module; feature previously referred to as the “inittab”.
+
+Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
+the current runtime configuration.
+
+PEP 587 “Python Initialization Configuration” unified all the ways to configure
+the Python initialization. This PEP unifies also the configuration of the
+Python preinitialization and the Python initialization in a single API.
+Moreover, this PEP only provides a single choice to embed Python, instead of
+having two “Python” and “Isolated” choices (PEP 587), to simplify the API
+further.
+
+The lower level PEP 587 PyConfig API remains available for use cases with an
+intentionally higher level of coupling to CPython implementation details (such
+as emulating the full functionality of CPython’s CLI, including its
+configuration mechanisms).
+
+(Contributed by Victor Stinner in :gh:`107954`.)
+
+.. seealso::
+   :pep:`741`.
+
+
 Other language changes
 ======================
 
@@ -194,6 +230,10 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* Implement mixed-mode arithmetic rules combining real and complex numbers as
+  specified by C standards since C99.
+  (Contributed by Sergey B Kirpichev in :gh:`69639`.)
+
 * All Windows code pages are now supported as "cpXXX" codecs on Windows.
   (Contributed by Serhiy Storchaka in :gh:`123803`.)
 
@@ -205,6 +245,13 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* iOS and macOS apps can now be configured to redirect ``stdout`` and
+  ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
+  :gh:`127592`.)
+
+* The iOS testbed is now able to stream test output while the test is running.
+  The testbed can also be used to run the test suite of projects other than
+  CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
 New modules
 ===========
@@ -273,8 +320,11 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
-* The :exc:`~ctypes.COMError` exception is now public.
+* On Windows, the :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
+
+* On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
+  (Contributed by Jun Komoda in :gh:`127275`.)
 
 datetime
 --------
@@ -304,6 +354,17 @@ dis
 
   This feature is also exposed via :option:`dis --show-positions`.
   (Contributed by Bénédikt Tran in :gh:`123165`.)
+
+* Add the :option:`dis --specialized` command-line option to
+  show specialized bytecode.
+  (Contributed by Bénédikt Tran in :gh:`127413`.)
+
+
+errno
+-----
+
+* Add :data:`errno.EHWPOISON` error code.
+  (Contributed by James Roy in :gh:`126585`.)
 
 
 fractions
@@ -362,6 +423,15 @@ inspect
 * Add function :func:`inspect.ispackage` to determine whether an object is a
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
+
+
+
+io
+--
+
+* Reading text from a non-blocking stream with ``read`` may now raise a
+  :exc:`BlockingIOError` if the operation cannot immediately return bytes.
+  (Contributed by Giovanni Siragusa in :gh:`109523`.)
 
 
 json
@@ -455,6 +525,10 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.SCHED_DEADLINE` and :data:`~os.SCHED_NORMAL` constants
+  to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127688`.)
+
 
 pathlib
 -------
@@ -468,12 +542,6 @@ pathlib
   * :meth:`~pathlib.Path.move_into` moves *into* a destination directory.
 
   (Contributed by Barney Gale in :gh:`73991`.)
-
-* Add :meth:`pathlib.Path.scandir` to scan a directory and return an iterator
-  of :class:`os.DirEntry` objects. This is exactly equivalent to calling
-  :func:`os.scandir` on a path object.
-
-  (Contributed by Barney Gale in :gh:`125413`.)
 
 
 pdb
@@ -516,6 +584,14 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
+  TLSv1.3 post-handshake client authentication (PHA).
+  (Contributed by Will Childs-Klein in :gh:`128036`.)
+
+
 symtable
 --------
 
@@ -535,6 +611,19 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+sys.monitoring
+--------------
+
+Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+:monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
+
+tkinter
+-------
+
+* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
+  arguments passed by keyword.
+  (Contributed by Zhikang Yan in :gh:`126899`.)
+
 
 unicodedata
 -----------
@@ -544,6 +633,13 @@ unicodedata
 
 unittest
 --------
+
+* :mod:`unittest` output is now colored by default.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`127221`.)
 
 * unittest discovery supports :term:`namespace package` as start
   directory again. It was removed in Python 3.11.
@@ -595,10 +691,36 @@ Deprecated
     (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
-  :func:`!asyncio.iscoroutinefunction` is deprecated
-  and will be removed in Python 3.16,
-  use :func:`inspect.iscoroutinefunction` instead.
-  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :func:`!asyncio.iscoroutinefunction` is deprecated
+    and will be removed in Python 3.16;
+    use :func:`inspect.iscoroutinefunction` instead.
+    (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
+    In particular, the following classes and functions are deprecated:
+
+    * :class:`asyncio.AbstractEventLoopPolicy`
+    * :class:`asyncio.DefaultEventLoopPolicy`
+    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`asyncio.get_event_loop_policy`
+    * :func:`asyncio.set_event_loop_policy`
+    * :func:`asyncio.set_event_loop`
+
+    Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
+    *loop_factory* to use the desired event loop implementation.
+
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
+
+      import asyncio
+
+      async def main():
+          ...
+
+      asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
+
+    (Contributed by Kumar Aditya in :gh:`127949`.)
 
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
@@ -640,6 +762,14 @@ argparse
 * Remove the *type*, *choices*, and *metavar* parameters
   of :class:`!argparse.BooleanOptionalAction`.
   They were deprecated since 3.12.
+
+* Calling :meth:`~argparse.ArgumentParser.add_argument_group` on an argument
+  group, and calling :meth:`~argparse.ArgumentParser.add_argument_group` or
+  :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group` on a mutually
+  exclusive group now raise exceptions. This nesting was never supported,
+  often failed to work correctly, and was unintentionally exposed through
+  inheritance. This functionality has been deprecated since Python 3.11.
+  (Contributed by Savannah Ostrowski in :gh:`127186`.)
 
 ast
 ---
@@ -692,6 +822,96 @@ asyncio
 * Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
   It now raises a :exc:`RuntimeError` if there is no current event loop.
   (Contributed by Kumar Aditya in :gh:`126353`.)
+
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`.
+
+  Before::
+
+    async def main():
+        ...
+
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()
+
+  After::
+
+    async def main():
+        ...
+
+    asyncio.run(main())
+
+  If you need to start something, e.g. a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`.
+
+  Before::
+
+    def start_server(loop):
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        start_server(loop)
+        loop.run_forever()
+    finally:
+        loop.close()
+
+  After::
+
+    def start_server(loop):
+        ...
+
+    async def main():
+        start_server(asyncio.get_running_loop())
+        await asyncio.Event().wait()
+
+    asyncio.run(main())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`.
+
+  Before::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(operation_one())
+        blocking_code()
+        loop.run_until_complete(operation_two())
+    finally:
+        loop.close()
+
+  After::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    with asyncio.Runner() as runner:
+        runner.run(operation_one())
+        blocking_code()
+        runner.run(operation_two())
+
 
 
 collections.abc
@@ -931,6 +1151,17 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
+
+  * :c:func:`PyLong_GetNativeLayout`;
+  * :c:func:`PyLong_Export`;
+  * :c:func:`PyLong_FreeExport`;
+  * :c:func:`PyLongWriter_Create`;
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
+
+  (Contributed by Victor Stinner in :gh:`102471`.)
+
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
@@ -946,6 +1177,17 @@ New features
 
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+* Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
+  :c:func:`PyMonitoring_FireBranchRightEvent` for generating
+  :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+  events, respectively.
+
 
 Porting to Python 3.14
 ----------------------
@@ -969,11 +1211,19 @@ Deprecated
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
+* The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
+  Use :c:func:`PySequence_Contains` instead.
+  (Contributed by Yuki Kobayashi in :gh:`127896`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
+* The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
+  be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
+  and :c:func:`PyMonitoring_FireBranchRightEvent`.
 
 Removed
 -------

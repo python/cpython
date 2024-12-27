@@ -241,7 +241,9 @@ def is_zipfile(filename):
     result = False
     try:
         if hasattr(filename, "read"):
+            pos = filename.tell()
             result = _check_zipfile(fp=filename)
+            filename.seek(pos)
         else:
             with open(filename, "rb") as fp:
                 result = _check_zipfile(fp)
@@ -817,7 +819,10 @@ class _SharedFile:
                 raise ValueError("Can't reposition in the ZIP file while "
                         "there is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
-            self._file.seek(offset, whence)
+            if whence == os.SEEK_CUR:
+                self._file.seek(self._pos + offset)
+            else:
+                self._file.seek(offset, whence)
             self._pos = self._file.tell()
             return self._pos
 
