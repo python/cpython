@@ -189,7 +189,7 @@ class DOMBuilder:
         options.filter = self.filter
         options.errorHandler = self.errorHandler
         fp = input.byteStream
-        if fp is None and options.systemId:
+        if fp is None and input.systemId:
             import urllib.request
             fp = urllib.request.urlopen(input.systemId)
         return self._parse_bytestream(fp, options)
