@@ -109,6 +109,10 @@ extern "C" {
     _Py_atomic_store_ullong_relaxed(&value, new_value)
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) \
     _Py_atomic_load_ullong_relaxed(&value)
+#define FT_ATOMIC_STORE_INT64_RELAXED(value, new_value) \
+    _Py_atomic_store_int64_relaxed(&value, new_value)
+#define FT_ATOMIC_LOAD_INT64_RELAXED(value) \
+    _Py_atomic_load_int64_relaxed(&value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -156,6 +160,8 @@ extern "C" {
 #define FT_ATOMIC_STORE_LLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
+#define FT_ATOMIC_LOAD_INT64_RELAXED(value) value
+#define FT_ATOMIC_STORE_INT64_RELAXED(value, new_value) value = new_value
 
 #endif
 
