@@ -43,15 +43,14 @@ def warnings_state(module):
     except NameError:
         pass
     original_warnings = warning_tests.warnings
-    original_filters = module.filters
+    saved_context, context = module._new_context()
     try:
-        module.filters = original_filters[:]
         module.simplefilter("once")
         warning_tests.warnings = module
         yield
     finally:
         warning_tests.warnings = original_warnings
-        module.filters = original_filters
+        module._set_context(saved_context)
 
 
 class TestWarning(Warning):
@@ -336,15 +335,15 @@ class FilterTests(BaseTest):
         with original_warnings.catch_warnings(module=self.module):
             self.module.resetwarnings()
             self.module.filterwarnings("error", category=UserWarning)
-            self.assertEqual(len(self.module.filters), 1)
+            self.assertEqual(len(self.module._get_filters()), 1)
             self.module.filterwarnings("ignore", category=UserWarning)
             self.module.filterwarnings("error", category=UserWarning)
             self.assertEqual(
-                len(self.module.filters), 2,
+                len(self.module._get_filters()), 2,
                 "filterwarnings inserted duplicate filter"
             )
             self.assertEqual(
-                self.module.filters[0][0], "error",
+                self.module._get_filters()[0][0], "error",
                 "filterwarnings did not promote filter to "
                 "the beginning of list"
             )
@@ -353,15 +352,15 @@ class FilterTests(BaseTest):
         with original_warnings.catch_warnings(module=self.module):
             self.module.resetwarnings()
             self.module.simplefilter("error", category=UserWarning)
-            self.assertEqual(len(self.module.filters), 1)
+            self.assertEqual(len(self.module._get_filters()), 1)
             self.module.simplefilter("ignore", category=UserWarning)
             self.module.simplefilter("error", category=UserWarning)
             self.assertEqual(
-                len(self.module.filters), 2,
+                len(self.module._get_filters()), 2,
                 "simplefilter inserted duplicate filter"
             )
             self.assertEqual(
-                self.module.filters[0][0], "error",
+                self.module._get_filters()[0][0], "error",
                 "simplefilter did not promote filter to the beginning of list"
             )
 
@@ -373,7 +372,7 @@ class FilterTests(BaseTest):
             self.module.simplefilter("error", append=True)
             self.module.simplefilter("ignore", append=True)
             self.module.warn("test_append_duplicate", category=UserWarning)
-            self.assertEqual(len(self.module.filters), 2,
+            self.assertEqual(len(self.module._get_filters()), 2,
                 "simplefilter inserted duplicate filter"
             )
             self.assertEqual(len(w), 0,
@@ -1049,11 +1048,11 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # bad warnings.filters or warnings.defaultaction.
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
-            wmod.filters = [(None, None, Warning, None, 0)]
+            wmod._get_filters()[:] = [(None, None, Warning, None, 0)]
             with self.assertRaises(TypeError):
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
 
-            wmod.filters = []
+            wmod._get_filters()[:] = []
             with support.swap_attr(wmod, 'defaultaction', None), \
                  self.assertRaises(TypeError):
                 wmod.warn_explicit('foo', Warning, 'bar', 1)
@@ -1191,17 +1190,17 @@ class CatchWarningTests(BaseTest):
 
     def test_catch_warnings_restore(self):
         wmod = self.module
-        orig_filters = wmod.filters
+        orig_filters = wmod._get_filters()
         orig_showwarning = wmod.showwarning
         # Ensure both showwarning and filters are restored when recording
         with wmod.catch_warnings(module=wmod, record=True):
-            wmod.filters = wmod.showwarning = object()
-        self.assertIs(wmod.filters, orig_filters)
+            wmod.get_context()._filters = wmod.showwarning = object()
+        self.assertIs(wmod._get_filters(), orig_filters)
         self.assertIs(wmod.showwarning, orig_showwarning)
         # Same test, but with recording disabled
         with wmod.catch_warnings(module=wmod, record=False):
-            wmod.filters = wmod.showwarning = object()
-        self.assertIs(wmod.filters, orig_filters)
+            wmod.get_context()._filters = wmod.showwarning = object()
+        self.assertIs(wmod._get_filters(), orig_filters)
         self.assertIs(wmod.showwarning, orig_showwarning)
 
     def test_catch_warnings_recording(self):
@@ -1240,21 +1239,21 @@ class CatchWarningTests(BaseTest):
 
     def test_catch_warnings_defaults(self):
         wmod = self.module
-        orig_filters = wmod.filters
+        orig_filters = wmod._get_filters()
         orig_showwarning = wmod.showwarning
         # Ensure default behaviour is not to record warnings
         with wmod.catch_warnings(module=wmod) as w:
             self.assertIsNone(w)
             self.assertIs(wmod.showwarning, orig_showwarning)
-            self.assertIsNot(wmod.filters, orig_filters)
-        self.assertIs(wmod.filters, orig_filters)
+            self.assertIsNot(wmod._get_filters(), orig_filters)
+        self.assertIs(wmod._get_filters(), orig_filters)
         if wmod is sys.modules['warnings']:
             # Ensure the default module is this one
             with wmod.catch_warnings() as w:
                 self.assertIsNone(w)
                 self.assertIs(wmod.showwarning, orig_showwarning)
-                self.assertIsNot(wmod.filters, orig_filters)
-            self.assertIs(wmod.filters, orig_filters)
+                self.assertIsNot(wmod._get_filters(), orig_filters)
+            self.assertIs(wmod._get_filters(), orig_filters)
 
     def test_record_override_showwarning_before(self):
         # Issue #28835: If warnings.showwarning() was overridden, make sure
@@ -1406,7 +1405,7 @@ class EnvironmentVariableTests(BaseTest):
             code = "import sys; sys.modules.pop('warnings', None); sys.modules['_warnings'] = None; "
         else:
             code = ""
-        code += "import warnings; [print(f) for f in warnings.filters]"
+        code += "import warnings; [print(f) for f in warnings._get_filters()]"
 
         rc, stdout, stderr = assert_python_ok("-c", code, __isolated=True)
         stdout_lines = [line.strip() for line in stdout.splitlines()]
@@ -1820,6 +1819,7 @@ class DeprecatedTests(PyPublicAPITests):
         self.assertTrue(inspect.iscoroutinefunction(coro))
         self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
+
 
 def setUpModule():
     py_warnings.onceregistry.clear()
