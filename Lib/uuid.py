@@ -85,19 +85,15 @@ class SafeUUID:
     unknown = None
 
 
-_UINT_128_MAX = 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff
+_UINT_128_MAX = (1 << 128) - 1
 # 128-bit mask to clear the variant and version bits of a UUID integral value
-#
-# This is equivalent to the 2-complement of '(0xc000 << 48) | (0xf000 << 64)'.
-_RFC_4122_CLEARFLAGS_MASK = 0xffff_ffff_ffff_0fff_3fff_ffff_ffff_ffff
+_RFC_4122_CLEARFLAGS_MASK = ~((0xf000 << 64) | (0xc000 << 48))
 # RFC 4122 variant bits and version bits to activate on a UUID integral value.
-#
-# The values are equivalent to '(version << 76) | (0x8000 << 48)'.
-_RFC_4122_VERSION_1_FLAGS = 0x0000_0000_0000_1000_8000_0000_0000_0000
-_RFC_4122_VERSION_3_FLAGS = 0x0000_0000_0000_3000_8000_0000_0000_0000
-_RFC_4122_VERSION_4_FLAGS = 0x0000_0000_0000_4000_8000_0000_0000_0000
-_RFC_4122_VERSION_5_FLAGS = 0x0000_0000_0000_5000_8000_0000_0000_0000
-_RFC_4122_VERSION_8_FLAGS = 0x0000_0000_0000_8000_8000_0000_0000_0000
+_RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 
 class UUID:
@@ -214,17 +210,17 @@ class UUID:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low <= 0xffff_ffff:
+            if not 0 <= time_low < (1 << 32):
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid <= 0xffff:
+            if not 0 <= time_mid < (1 << 16):
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version <= 0xffff:
+            if not 0 <= time_hi_version < (1 << 16):
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant <= 0xff:
+            if not 0 <= clock_seq_hi_variant < (1 << 8):
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if not 0 <= clock_seq_low <= 0xff:
+            if not 0 <= clock_seq_low < (1 << 8):
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if not 0 <= node <= 0xffff_ffff_ffff:
+            if not 0 <= node < (1 << 48):
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
